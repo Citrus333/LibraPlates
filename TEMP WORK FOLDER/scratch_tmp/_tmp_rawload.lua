@@ -1,0 +1,5 @@
+local f=assert(io.open("C:\\catseyexi\\catseyexi-client\\Ashita\\addons\\LibraPlates\\data\\npc_icons.lua","r"))
+local src=f:read('*a')
+f:close()
+local chunk,err=loadstring(src)
+print(chunk and 'loaded' or err)

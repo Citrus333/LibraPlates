@@ -1,0 +1,37 @@
+Use this exactly as your handoff note:
+
+Context: We added a packet/command-based action queue range system in core\target_action_range.luaand wired it inlibraplates.lua` via command + packet_out hooks. It parses:
+
+/ma, /ma "Spell" style command text
+/ja and /ws style command text
+outbound action packets (0x01A, 0x015, 0x1A2, 0x061, 0x0xC0)
+and then tries to resolve action {category, id} -> resource -> range -> current queued action display.
+What worked:
+
+Packet parsing catches queue/command events and can cache "last queued action + range."
+Existing debug text flows (GetDebugText, GetQueuedActionText) are connected.
+What broke / became risky:
+
+Command action-id resolution is too broad and expensive (scans many resource IDs per category on first use).
+Multiple fallback/resource paths are unreliable across abilities/spells/skills and can return wrong ids.
+Command names are ambiguous (same text can map to wrong action).
+The module adds extra per-command/per-packet work and can spike/perf-lock when /st behavior is in use.
+This also conflicts with stable targeting visuals work in progress.
+Decision:
+
+For stability and gameplay safety, revert/disable the range feature now and keep targeting visuals only.
+Re-enable range feature later from scratch in a dedicated, minimal pass:
+only queue when command/packet is confidently resolved to one action id,
+cache resolved action lookups once and reuse,
+keep /st and target rendering paths isolated.
+If you want immediate no-freeze state: disable this module temporarily by removing/guarding its event hooks in libraplates.lua and stop requiring core.target_action_range until reimplementation.
+`
+
+“Keep target range queue disabled by default.”
+“Only enable enableTargetActionRange when explicitly reworking/ debugging that feature.”
+Cause (short version):
+
+The freeze came from core.target_action_range being active in command and packet_out paths during /st.
+That module was parsing queue events and doing heavy/fragile resource resolution work (including broad scans/method fallbacks) on live input flow, which can spike or lock up while targeting.
+We saw it in your runtime as instability right at /st command use, so keeping it hard-disabled prevents that path entirely.
+So no code prompt required from you every time, just make sure we keep the feature guard and default set to false in libraplates.lua unless you deliberately want to test range detection again.

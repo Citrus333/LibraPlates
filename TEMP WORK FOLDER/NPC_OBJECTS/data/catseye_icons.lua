@@ -1,0 +1,63 @@
+local itemIcons = T{
+
+    ['Aether Traveler']        = { type = 'Aether Traveler', icon = 'AetherTraveler.png' },
+	['Alternix'] 			   = { type = 'HELM Vendor', icon = 'Alternix.png' },		
+    ['Ancestry Moogle']        = { type = 'Race Change', icon = 'AncestryMoogle.png' },
+	['Brewnix'] 			   = { type = 'Ventures', icon = 'Brewnix.png' },	
+	['Cerdoux'] 			   = { type = 'PF Rewards', icon = 'Cerdoux.png' },
+    ['Crooked Jones']          = { type = 'Fish Exchange', icon = 'CrookedJones.png' },
+    ['Crystal Crunch']         = { type = 'Crystal Exchange', icon = 'CrystalCrunch.png' },
+    ['Cumetouflaix']           = { type = 'Beastcoin Exchange', icon = 'Cumetouflaix.png' },
+    ['Curio Moogle']           = { type = 'Curio Shop', icon = 'CurioMoogle.png' },
+    ['Domain Traveler']        = { type = 'Domain Warp', icon = 'DomainTraveler.png' },
+
+    ['Emilia']                 = { type = 'Outpost Warp', icon = 'Emilia.png' },
+    ['Emilio']                 = { type = 'Outpost Warp', icon = 'Emilio.png' },
+    ['Emiliu']                 = { type = 'Outpost Warp', icon = 'Emiliu.png' },
+    ['Ephemeral Box']          = { type = 'Ephemeral Box', icon = 'EphemeralBox.png' },
+    ['EXP Guide']              = { type = 'EXP Guide', icon = 'EXPGuide.png' },
+    ['EXP Guide (S)']          = { type = 'EXP Guide (S)', icon = 'EXPGuideS.png' },
+    ['Freya']                  = { type = 'Dynamis Storage', icon = 'Freya.png' },
+    ['Garbagio']               = { type = 'Item Recycling', icon = 'Garbagio.png' },
+    ['Geppetto']               = { type = 'Attachment Fixer', icon = 'Geppetto.png' },
+    ['Gobbie Mystery Box']     = { type = 'Daily Box', icon = 'GobbieMysteryBox.png' },
+
+    ['Goldilox']               = { type = 'Daily Shard Rewards', icon = 'Goldilox.png' },
+    ['Gramateus']              = { type = 'Scroll Storage', icon = 'Gramateus.png' },
+    ['Hunter']                 = { type = 'Weekly Hunt', icon = 'Hunter.png' },
+    ['Imperial Spy']           = { type = 'Incursion Warp', icon = 'ImperialSpy.png' },
+    ['Imperial Trader']        = { type = 'Incursion Exchange', icon = 'ImperialTrader.png' },
+    ['Junknix']                = { type = 'Junk Exchange', icon = 'Junknix.png' },
+    ['Limitrix']               = { type = 'Merit Reset', icon = 'Limitrix.png' },
+    ['Marceo']                 = { type = 'Fish Exchange', icon = 'Marceo.png' },
+    ['Mild Traveler']          = { type = 'Domain Warp', icon = 'MildTraveler.png' },
+    ['Mnejing']                = { type = 'PUP Shop', icon = 'Mnejing.png' },
+
+    ['Myrios']                 = { type = 'Item Collections', icon = 'Myrios.png' },
+    ['Oboro']                  = { type = 'JSE Weapons', icon = 'Oboro.png' },
+    ['Palalumin']              = { type = 'Sea Dailies', icon = 'Palaumin.png' },
+    ['Perrin']                 = { type = 'Helper Rewards', icon = 'Perrin.png' },
+    ['Picklox']                = { type = 'Key Storage', icon = 'Picklox.png' },
+    ['Populox']                = { type = 'EXP Ventures', icon = 'Populox.png' },
+    ['Portalix']               = { type = 'Stronghold Warp', icon = 'Portalix.png' },
+    ['Prestix']                = { type = 'Prestige System', icon = 'Prestix.png' },
+    ['Quartermaster']          = { type = 'Imperial Marks', icon = 'Quartermaster.png' },
+    ['Renovio']                = { type = 'Gear Upgrades', icon = 'Renovio.png' },
+
+    ['Ruspix']                 = { type = 'Activity Shop', icon = 'Ruspix.png' },
+    ['Squires']                = { type = 'Armor Storage', icon = 'Squires.png' },
+    ['Steel Teeth']            = { type = 'Gear Upgrades', icon = 'SteelTeeth.png' },
+    ['Stoic Traveler']         = { type = 'Domain Warp', icon = 'StoicTraveler.png' },
+    ['Summit Warden']          = { type = 'Strongholds', icon = 'SummitWarden.png' },
+    ['Sylvie']                 = { type = 'GEO Spells', icon = 'Sylvie.png' },
+    ['Vault Keeper']           = { type = 'Item Storage', icon = 'VaultKeeper.png' },
+    ['Vision']                 = { type = 'AF+1 Augments', icon = 'Vision.png' },
+    ['Wildcat Armorer']        = { type = 'Assault Gear', icon = 'WildcatArmorer.png' },
+    ['Wildcat Captain']        = { type = 'Imperial Rank', icon = 'WildcatCaptain.png' },
+
+    ['Wizardoll']              = { type = 'Spell Training', icon = 'Wizardoll.png' },
+    ['Ygnas']                  = { type = 'AP Shop & Warp', icon = 'Ygnas.png' },
+
+};
+
+return itemIcons;

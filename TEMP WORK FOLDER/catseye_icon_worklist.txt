@@ -1,0 +1,182 @@
+CatsEyeXI icon worklist
+Generated: 2026-06-05 20:34:18
+
+No missing icon files were found. This list is entries using generic/shared icons that are good candidates for custom icons.
+
+
+[NPC / Event.png]
+Adeptus | Adept Reforging
+Ametrine | CW Quest Upgrade
+Atla | Mog Vault Quest
+Beetrix | Goblin Daily
+Boboroon | CW Daily Reward
+Bobortimer | Novice Trials
+Carnelian | CW Issue Recovery
+Cassie | Grand Trials
+Chiliad the Snoll | CEXI 1000 Player Event
+Courier Helper | Holiday Event
+Crystal Warden | CW Intro Quest
+Decrepit S. Lord | Halloween Event
+Delivery Helper | Holiday Event
+Dragon Lore | Dragonslaying Merit Storage
+Eryndor | Leafallia Amenities
+Fishtix | Goblin Daily
+Franz | Dynamis Augments
+Garret | Garrison & Incursion Rewards
+Huebald | Novice Trials
+Irvina | Salvage Upgrades
+Kumop | Letter Moogle
+Lanira | Summit Global Buffs
+Mehira | Summit Target Family
+Mellie | Novice Trials
+Mimoza | Letter Moogle
+Mistrix | Goblin Daily
+Mochos | Mog Vault Quest
+Moggy | Mog Vault Shop
+Mogki | Letter Moogle
+Mogmi | Letter Moogle
+Mogret | Letter Moogle
+Mogrich | Letter Moogle
+Mogrika | Letter Moogle
+Mogryo | Letter Moogle
+Mogster | Mog Vault Fight
+Mogsy | Letter Moogle
+Mogtaka | Letter Moogle
+Moguel | Letter Moogle
+Mogwin | Letter Moogle
+Mois | Letter Moogle
+Monty | Letter Moogle
+Moodon | Letter Moogle
+Mooel | Letter Moogle
+Moonte | Letter Moogle
+Moorock | Letter Moogle
+Mopli | Letter Moogle
+Mosco | Letter Moogle
+Mozme | Mog Vault Quest
+Mugmug | Letter Moogle
+Murdox | Goblin Daily
+Nazna | Letter Moogle
+Nemosyne | CW Reward Recovery
+Petros | CW Mode Services
+Riding Thunder | Mount Customization
+Sadoc | Novice Trials
+Saltlix | Goblin Daily
+Serino | Mog Vault Quest
+Shattering Stone | CW Mode Conversion
+Sigmund | Dragonslaying DKP
+Squire Guard | Trial Gear Storage
+Wrapping Helper | Holiday Event
+
+[NPC / Merchant.png]
+Domain Officer | Domain Shard Exchange
+Jeuno Envoy | Conquest Item Vendor
+Soupox | Summit Tax Rewards
+Teodor | Chair Shop
+
+[NPC / QuestGiver.png]
+Aeolia | CW Starting Ring
+Alutanie | CW Early Gear
+Magilox | Venture Registration
+Moyeyo | CW Starting Ring
+Orenix | Venture Registration
+Verona | CW Starting Ring
+Woodnix | Venture Registration
+Woodnox | Venture Registration
+
+[NPC / QuestNPC.png]
+Aesculian | CW HELM Quest
+Agent M97 | Quest NPC
+Aletta | CW Armor Quest
+Andrus | EXP Guide Unlock
+Archimedes | CW Starting Quest
+Ash | EXP Guide Unlock
+Bagatrix | CW Daily Content
+Bardus | CW Starting Quest
+Bella | CW Armor Quest
+Chilly Wolf | CW Starting Quest
+Conchata-Potata | CW Starting Quest
+Couquillard | CW Starting Quest
+Cramp | CW Armor Quest
+Dadaroon | HELM Unlock Quest
+Disarmed Knight | Outpost Unlock Quest
+Dusty Footprint | CW Content Quest
+Erbelie | CW Starting Quest
+Erudu-Faludu | CW Intro Quest
+Felyna | HELM Unlock Quest
+Ferredec | CW Early Gear
+Fha Mhakyaa | CW HELM Quest
+Gan-Ban | CW Armor Quest
+Hermin-Harmon | CW Starting Quest
+Iron Digger | CW HELM Quest
+Iron Wolf | CW Intro Quest
+Khartes | HELM Unlock Quest
+Lectilas | Quest NPC
+Letheb | System Unlock Quest
+Manusiel | CW Early Gear
+Mathias | HELM Unlock Quest
+Megasolus | Quest NPC
+Neavias | CW Starting Quest
+Nefari | CW Armor Quest
+Octavien | Job Unlock
+Pedro | Quest NPC
+Pennana | CW Early Gear
+Perah Celehsi | CW Starting Quest
+Perara | CW Starting Quest
+Puluki-Culuki | CW Starting Quest
+Robineaux | CW Intro Quest
+Rusty Hammer | CW Storage Unlock
+Sebastian | System Unlock Quest
+Shady Dealer | Curio Unlock Quest
+Shining Stone | CW Starting Quest
+Sinister Moon | CW Starting Quest
+Somnelius | CW Starting Quest
+Tenebraux | Quest NPC
+Yagudo Outlaw | CW Arena Unlock
+
+[NPC / star.png]
+Afdeen | PvP Teleporter
+Cara R.C. | Referral Concierge
+Una Mhiga R.C. | Referral Concierge
+Vennoire R.C. | Referral Concierge
+
+[NPC / Trust.png]
+Keenajaques | CW Trust Quest
+Reisle | CW Trust Quest
+Sharara | CW Trust Quest
+
+[Object / Box.png]
+Lost Present | Holiday Event
+Sinister Stash | Doubloon Fish Daily
+
+[Object / Footprint.png]
+Faded Footprint | CW Armor Quest
+Hume Footprint | CW Early Gear
+Large Hoofprint | Novice Trial NM
+Mithra Tracks | CW Early Gear
+Yagudo Tracks | CW Arena Entry
+
+[Object / QuestionMark.png]
+Book of Mastery | Adept Reforging
+Brittle Rocks | CW Intro Gather
+Buried Note | HELM Unlock Quest
+Campfire | CW Crafting Buff
+Crooked Trunk | CW Storage Unlock
+Crystal Anomaly | CW Trust Fight
+Crystal Guide | CW Issue Recovery
+Crystal Guide Book | CW Issue Recovery
+Dangling Root | CW Intro Gather
+Dirt | System Unlock Quest
+Dragon Lore | Dragonslaying Merit Storage
+Glittering Gift | Holiday Event
+Loose Branch | CW Intro Gather
+Lost Lockpick | Novice Trial NM
+Lost Needle | Novice Trial NM
+Lost Tongs | Novice Trial NM
+Orc Offering | Summit Offering
+Quadav Offering | Summit Offering
+Shredded Page | EXP Guide Unlock
+Tattered Page | EXP Guide Unlock
+Torn Page | EXP Guide Unlock
+Training Supplies | Outpost Unlock Quest
+Vantage Point | HELM Unlock Quest
+Yagudo Offering | Summit Offering

@@ -1,0 +1,82 @@
+Folder PATH listing
+Volume serial number is C2B0-0853
+C:\CATSEYEXI\CATSEYEXI-CLIENT\ASHITA\ADDONS\LIBRAPLATES\ASSETS\IMAGES\NPC_ICONS
+    AdventurersAssistant.png
+    afstorage.png
+    AirshipTravelAgent.png
+    AllegianceChanger.png
+    Alternix.png
+    ArmorStorer.png
+    AssaultMissionGiver.png
+    AssaultPersonnel.png
+    AtmaFabricant.png
+    AtmaInfusionist.png
+    AuctionManager.png
+    BallistaPursuivant.png
+    BallistaReferee.png
+    BastionPrefect.png
+    CampaignArbiter.png
+    Cerdoux.png
+    ChocoboRenter.png
+    ConfluxSurveyor.png
+    ConquestOverseer.png
+    ConsulateRepresentative.png
+    CruorProspector.png
+    Cumetouflaix.png
+    DailyQuestGiver.png
+    Deliverer.png
+    Derrick.png
+    EventItemStorer.png
+    FameChecker.png
+    fd4d49ca-0f75-4808-af00-93d48adc9067.png
+    folder-structure.txt
+    folder_structure.bat
+    GoalTracker.png
+    GuildMaster - Copy.png
+    GuildMaster.png
+    GuildMerchant.png
+    GuildworkersUnionRepresentative.png
+    ImmigrationNPC.png
+    ImperialGateGuard.png
+    ImperialOverseer.png
+    ItemDeliverer.png
+    ItemStorage.png
+    MachineOutfitter.png
+    MapDealer.png
+    MapMarker.png
+    MapViewer.png
+    MentorRecruiter.png
+    Merchant.png
+    MissionGiver.png
+    OutpostSentry.png
+    OutpostTeleporter.png
+    OutpostVendor.png
+    PankrationOfficial.png
+    PastEventWatcher.png
+    QuestGiver.png
+    RecipeGiver.png
+    RegionalVendor.png
+    ReputationNPC.png
+    ResistanceSapper.png
+    ResistanceSergeant.png
+    RoomRenters.png
+    SpecialEventCoordinator.png
+    StandardMerchant.png
+    star.png
+    TacticalAssessment.png
+    TenshodoMerchant.png
+    TicketSalesperson.png
+    TitleChanger.png
+    TutorialNPC.png
+    ugly post.png
+    Valkurm1.webp
+    Valkurm_Swirling_Vortex.webp
+    Valkurm_Whitebone_Sands.webp
+    VCSChocoboRacingAssociate.png
+    WarpNPC.png
+    WeatherChecker.png
+    WeatherForecast.png
+    WorldPassDealer.png
+    
+No subfolders exist 
+

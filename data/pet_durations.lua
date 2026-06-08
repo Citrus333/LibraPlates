@@ -1,0 +1,65 @@
+local petDurations = T{};
+
+petDurations.bstJugMinutes = T{
+    ['HareFamiliar'] = 90,
+    ['FunguarFamiliar'] = 90,
+    ['CourierCarrie'] = 90,
+    ['SheepFamiliar'] = 90,
+    ['TigerFamiliar'] = 90,
+    ['FlytrapFamiliar'] = 90,
+    ['LizardFamiliar'] = 90,
+    ['MayflyFamiliar'] = 90,
+
+    ['EftFamiliar'] = 60,
+    ['BeetleFamiliar'] = 60,
+    ['AntlionFamiliar'] = 60,
+    ['MiteFamiliar'] = 60,
+    ['KeenearedSteffi'] = 60,
+    ['LullabyMelodia'] = 60,
+    ['FlowerpotBen'] = 60,
+    ['FlowerpotBill'] = 60,
+    ['Homunculus'] = 60,
+    ['VoraciousAudrey'] = 60,
+    ['AmbusherAllie'] = 60,
+    ['LifedrinkerLars'] = 60,
+    ['PanzerGalahad'] = 60,
+    ['ChopsueyChucky'] = 60,
+    ['AmigoSabotender'] = 60,
+
+    ['CraftyClyvonne'] = 30,
+    ['BloodclawShasra'] = 30,
+    ['GorefangHobs'] = 30,
+    ['DipperYuly'] = 30,
+    ['SunburstMalfik'] = 30,
+    ['WarlikePatrick'] = 30,
+    ['ScissorlegXerin'] = 30,
+    ['BouncingBertha'] = 30,
+    ['RhymingShizuna'] = 30,
+    ['AttentiveIbuki'] = 30,
+    ['SwoopingZhivago'] = 30,
+    ['GenerousArthur'] = 30,
+    ['ThreestarLynn'] = 30,
+    ['BrainyWaluis'] = 30,
+    ['FaithfulFalcorr'] = 30,
+    ['SharpwitHermes'] = 30,
+    ['HeadbreakerKen'] = 30,
+    ['RedolentCandi'] = 30,
+    ['AlluringHoney'] = 30,
+    ['CaringKiyomaro'] = 30,
+    ['VivaciousVickie'] = 30,
+    ['HurlerPercival'] = 30,
+    ['BlackbeardRandy'] = 30,
+    ['FleetReinhard'] = 30,
+    ['GooeyGerard'] = 30,
+    ['CrudeRaphie'] = 30,
+    ['DroopyDortwin'] = 30,
+    ['PonderingPeter'] = 30,
+    ['MosquitoFamilia'] = 30,
+    ['Left-HandedYoko'] = 30,
+};
+
+function petDurations.GetBstJugDurationMinutes(petName)
+    return petDurations.bstJugMinutes[tostring(petName or '')];
+end
+
+return petDurations;

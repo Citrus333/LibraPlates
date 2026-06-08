@@ -1,0 +1,55 @@
+Bacherume | Northern San d'Oria
+Guilerme | Northern San d'Oria
+Anieuvansand | Northern San d'Oria
+Porter Moogle | Northern San d'Oria
+Ronpaurege | Northern San d'Oria
+Telmoda | Northern San d'Oria
+Madaline | Northern San d'Oria
+Squire Knight | Northern San d'Oria
+Letterare | Northern San d'Oria
+Icoua | Northern San d'Oria
+Chat Manual | Northern San d'Oria
+Odyssean Passage | Northern San d'Oria
+Shomo Pochachilo | Northern San d'Oria
+Door:Bastokan Consul | Northern San d'Oria
+Baraka | Northern San d'Oria
+Danngogg | Northern San d'Oria
+Shakir | Northern San d'Oria
+Esqualea | Northern San d'Oria
+Nouveil | Northern San d'Oria
+Door. Chantry | Northern San d'Oria
+Malfine | Northern San d'Oria
+Prerivon | Northern San d'Oria
+Pellimie | Northern San d'Oria
+Pellimie | Northern San d'Oria
+Coullene | Northern San d'Oria
+Maurine | Northern San d'Oria
+Fittesegat | Northern San d'Oria
+Arnau | Northern San d'Oria
+Calovour | Northern San d'Oria
+Morjean | Northern San d'Oria
+Halaviabeau | Northern San d'Oria
+Chasalvige | Northern San d'Oria
+Door:Manuscript Room | Northern San d'Oria
+['Door:Manuscript Room'] = { type = 'Cathedral Library', icon = 'Building.png', zones = { "Northern San d\'Oria" } },Himura | Northern San d'Oria
+Door:Reliquary | Northern San d'Oria
+Door:Papal Chambers | Northern San d'Oria
+Door:Jeunoan Consul | Northern San d'Oria
+Arienh | Northern San d'Oria
+Emilia | Northern San d'Oria
+Saprut | Lower Jeuno
+Raji | Lower Jeuno
+Shomera | Lower Jeuno
+Venika | Lower Jeuno
+Door:Othon's Garments | Lower Jeuno
+Chetak | Lower Jeuno
+Chenokih | Lower Jeuno
+Squire Warlock | Windurst Waters
+Synergy Furnace | Windurst Waters
+Synergy Furnace | Port Jeuno
+Guide Stone | Port Jeuno
+
+Falreze | Ru'Lude Gardens
+Volgoi | Ru'Lude Gardens
+Explorer Moogle | Ru'Lude Gardens
+West Minstrel | Ru'Lude Gardens

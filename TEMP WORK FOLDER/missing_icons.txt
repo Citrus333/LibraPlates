@@ -1,0 +1,83 @@
+Missing Icon Audit
+icon refs=3259 missing refs=61 missing unique=16
+
+QuestionMark.png | source=catseye_item | refs=29
+  expected: assets/images/catseye_icons/QuestionMark.png
+  types: Adept Reforging; CW Crafting Buff; CW Intro Gather; CW Issue Recovery; CW Storage Unlock; CW Trust Fight; Dragonslaying Merit Storage; EXP Guide Unlock; HELM Unlock Quest; Holiday Event; Novice Trial NM; Outpost Unlock Quest; Summit Offering; Summit Offering Turn-in; Summit Quest Fight; System Unlock Quest
+  examples: Miner's Helmet (catseye_item); Campfire (catseye_item); Loose Branch (catseye_item); Book of Mastery (catseye_item); Brittle Rocks (catseye_item); Shredded Page (catseye_item); Crystal Anomaly (catseye_item); Yagudo's Essence (catseye_item); Lost Lockpick (catseye_item); Dragon Lore (catseye_item); Nyx's Essence (catseye_item); Quadav's Essence (catseye_item)
+
+QuestGiver.png | source=catseye_npc | refs=8
+  expected: assets/images/catseye_icons/QuestGiver.png
+  types: CW Early Gear; CW Starting Ring; Venture Registration
+  examples: Orenix (catseye_npc); Woodnox (catseye_npc); Magilox (catseye_npc); Verona (catseye_npc); Moyeyo (catseye_npc); Woodnix (catseye_npc); Aeolia (catseye_npc); Alutanie (catseye_npc)
+
+Footprint.png | source=catseye_item | refs=5
+  expected: assets/images/catseye_icons/Footprint.png
+  types: CW Arena Entry; CW Armor Quest; CW Early Gear; Novice Trial NM
+  examples: Mithra Tracks (catseye_item); Hume Footprint (catseye_item); Large Hoofprint (catseye_item); Faded Footprint (catseye_item); Yagudo Tracks (catseye_item)
+
+Merchant.png | source=catseye_npc | refs=4
+  expected: assets/images/catseye_icons/Merchant.png
+  types: Chair Shop; Conquest Item Vendor; Domain Shard Exchange; Summit Tax Rewards
+  examples: Domain Officer (catseye_npc); Soupox (catseye_npc); Teodor (catseye_npc); Jeuno Envoy (catseye_npc)
+
+Trust.png | source=catseye_npc | refs=3
+  expected: assets/images/catseye_icons/Trust.png
+  types: CW Trust Quest
+  examples: Keenajaques (catseye_npc); Reisle (catseye_npc); Sharara (catseye_npc)
+
+Box.png | source=catseye_item | refs=2
+  expected: assets/images/catseye_icons/Box.png
+  types: Doubloon Fish Daily; Holiday Event
+  examples: Sinister Stash (catseye_item); Lost Present (catseye_item)
+
+MiningPoint.png | source=catseye_item | refs=1
+  expected: assets/images/catseye_icons/MiningPoint.png
+  types: Dragonslayer Intro
+  examples: Pile of Stones (catseye_item)
+
+AuctionManager.png | source=item | refs=1
+  expected: assets/images/item_icons/AuctionManager.png
+  types: Auction House
+  examples: Auction Counter (item)
+
+CrystalCrunch.png | source=item | refs=1
+  expected: assets/images/item_icons/CrystalCrunch.png
+  types: Crystal Exchange
+  examples: Crystal Crunch (item)
+
+Cutscene.png | source=item | refs=1
+  expected: assets/images/item_icons/Cutscene.png
+  types: Cutscene Replay
+  examples: Enigmatic Footprints #1 (item)
+
+Event.png | source=item | refs=1
+  expected: assets/images/item_icons/Event.png
+  types: Odyssey Entry
+  examples: Odyssean Passage (item)
+
+GuildMerchant.png | source=item | refs=1
+  expected: assets/images/item_icons/GuildMerchant.png
+  types: Leathercraft Guild
+  examples: Door:Tanners' Guild (item)
+
+MissionNPC.png | source=item | refs=1
+  expected: assets/images/item_icons/MissionNPC.png
+  types: Manuscript Room
+  examples: Door:Manuscript Room (item)
+
+Reward.png | source=item | refs=1
+  expected: assets/images/item_icons/Reward.png
+  types: Reward Retrieval
+  examples: Mystic Retriever (item)
+
+TutorialNPC.png | source=item | refs=1
+  expected: assets/images/item_icons/TutorialNPC.png
+  types: Tutorial
+  examples: Chat Manual (item)
+
+craft_01.png | source=item | refs=1
+  expected: assets/images/item_icons/craft_01.png
+  types: Synergy Furnace
+  examples: Synergy Furnace (item)
+

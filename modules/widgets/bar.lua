@@ -1,0 +1,780 @@
+local baseDefaults = require('config.widgets.bar');
+local barTextures = require('core.bar_textures');
+local barAnimations = require('core.bar_animations');
+local textScale = require('core.text_scale');
+local imgui = require('imgui');
+local anchorControls = require('modules.widgets.anchor_controls');
+
+local bar = {};
+local unpackTable = table.unpack or unpack;
+local labelColor = { 0.92, 0.92, 0.90, 1.0 };
+local valueColor = { 0.65, 0.90, 1.0, 1.0 };
+local actionColor = { 1.0, 0.84, 0.0, 1.0 };
+local colorEditFlags = bit ~= nil and bit.bor ~= nil
+    and bit.bor(_G.ImGuiColorEditFlags_NoAlpha or 0, _G.ImGuiColorEditFlags_NoInputs or 0)
+    or ((_G.ImGuiColorEditFlags_NoAlpha or 0) + (_G.ImGuiColorEditFlags_NoInputs or 0));
+local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
+local pendingReset = nil;
+local heldButtonState = {};
+
+local function ClickText(label, color)
+    imgui.TextColored(color or valueColor, label);
+
+    if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+        return true;
+    end
+
+    if (imgui.IsItemActive ~= nil and imgui.IsItemActive() == true) then
+        if (imgui.IsMouseDown == nil or imgui.IsMouseDown(0) == true) then
+            return true;
+        end
+    end
+
+    if (imgui.IsItemHovered ~= nil and imgui.IsMouseDown ~= nil) then
+        return imgui.IsItemHovered() == true and imgui.IsMouseDown(0) == true;
+    end
+
+    return false;
+end
+
+local function DrawActionButton(label)
+    if (imgui.Button ~= nil) then
+        return imgui.Button(tostring(label)) == true;
+    end
+
+    return ClickText(tostring(label), actionColor) == true;
+end
+
+local function DrawToggle(label, value)
+    if (imgui.Checkbox ~= nil) then
+        local ref = { value == true };
+
+        if (imgui.Checkbox(label, ref) == true) then
+            return ref[1] == true;
+        end
+
+        return ref[1] == true;
+    end
+
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+
+    if (ClickText((value == true) and 'On' or 'Off', valueColor) == true) then
+        return not (value == true);
+    end
+
+    return value == true;
+end
+
+local function DrawNumber(label, value, minValue, maxValue, step)
+    local current = tonumber(value) or 0;
+    local amount = tonumber(step) or 1;
+
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+    imgui.TextColored(valueColor, tostring(current));
+    imgui.SameLine();
+
+    if (ClickText('less', actionColor) == true) then
+        current = current - amount;
+    end
+
+    imgui.SameLine();
+
+    if (ClickText('more', actionColor) == true) then
+        current = current + amount;
+    end
+
+    if (minValue ~= nil and current < minValue) then current = minValue; end
+    if (maxValue ~= nil and current > maxValue) then current = maxValue; end
+
+    return current;
+end
+
+local function IsHeldButton(label)
+    if (imgui.Button == nil) then
+        return false;
+    end
+
+    local clicked = imgui.Button(label) == true;
+    local active = imgui.IsItemActive ~= nil and imgui.IsItemActive() == true;
+    local mouseDown = imgui.IsMouseDown == nil or imgui.IsMouseDown(0) == true;
+    local now = os.clock();
+    local key = tostring(label or '');
+
+    if (active == true and mouseDown == true) then
+        local itemClicked = (imgui.IsItemActivated ~= nil and imgui.IsItemActivated() == true)
+            or (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true);
+        local state = heldButtonState[key];
+
+        if (state == nil) then
+            state = { nextRepeat = now + 0.35, clicked = false };
+            heldButtonState[key] = state;
+        end
+
+        if ((clicked == true or itemClicked == true) and state.clicked ~= true) then
+            state.clicked = true;
+            return true;
+        end
+
+        if (now >= (tonumber(state.nextRepeat) or now + 0.35)) then
+            state.nextRepeat = now + 0.08;
+            return true;
+        end
+
+        return false;
+    end
+
+    if (heldButtonState[key] ~= nil) then
+        heldButtonState[key] = nil;
+        return false;
+    end
+
+    heldButtonState[key] = nil;
+    return clicked;
+end
+
+local function DrawSliderControl(id, value, minValue, maxValue, width, showButtons)
+    local current = math.floor((tonumber(value) or 0) + 0.5);
+    local minimum = minValue or -1000;
+    local maximum = maxValue or 1000;
+
+    if (imgui.SliderInt == nil) then
+        return DrawNumber('', value, minValue, maxValue, 1);
+    end
+
+    if (showButtons ~= false and imgui.Button ~= nil) then
+        if (IsHeldButton('-##bar_' .. id .. '_minus')) then
+            current = current - 1;
+        end
+
+        imgui.SameLine();
+    end
+
+    if (imgui.PushItemWidth ~= nil) then
+        imgui.PushItemWidth(width or 95);
+    end
+
+    local ref = { current };
+    imgui.SliderInt('##bar_' .. id, ref, minimum, maximum);
+
+    if (imgui.PopItemWidth ~= nil) then
+        imgui.PopItemWidth();
+    end
+
+    current = tonumber(ref[1]) or current;
+
+    if (showButtons ~= false and imgui.Button ~= nil) then
+        imgui.SameLine();
+
+        if (IsHeldButton('+##bar_' .. id .. '_plus')) then
+            current = current + 1;
+        end
+    end
+
+    if (minValue ~= nil and current < minValue) then current = minValue; end
+    if (maxValue ~= nil and current > maxValue) then current = maxValue; end
+
+    return current;
+end
+
+local function DrawTableSlider(label, id, value, minValue, maxValue, showButtons, width)
+    imgui.TextColored(labelColor, label);
+    imgui.TableNextColumn();
+    return DrawSliderControl(id, value, minValue, maxValue, width or (showButtons == false and 140 or 95), showButtons);
+end
+
+local function DrawSingleSlider(label, id, value, minValue, maxValue, showButtons)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local result = value;
+
+        if (imgui.BeginTable('##bar_' .. id .. '_row', 2, tableFlags)) then
+            imgui.TableSetupColumn('##label', 0, 170);
+            imgui.TableSetupColumn('##control', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, label);
+            imgui.TableNextColumn();
+            result = DrawSliderControl(id, value, minValue, maxValue, showButtons == false and 140 or 95, showButtons);
+            imgui.EndTable();
+        end
+
+        return result;
+    end
+
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+    return DrawSliderControl(id, value, minValue, maxValue, showButtons == false and 140 or 95, showButtons);
+end
+
+local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local leftResult = leftValue;
+        local rightResult = rightValue;
+
+        if (imgui.BeginTable('##bar_' .. rowId, 4, tableFlags)) then
+            imgui.TableSetupColumn('##label_left', 0, 108);
+            imgui.TableSetupColumn('##control_left', 0, 170);
+            imgui.TableSetupColumn('##label_right', 0, 108);
+            imgui.TableSetupColumn('##control_right', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax, true, 95);
+            imgui.TableNextColumn();
+            rightResult = DrawTableSlider(rightLabel, rightId, rightValue, rightMin, rightMax, true, 95);
+            imgui.EndTable();
+        end
+
+        return leftResult, rightResult;
+    end
+
+    local leftResult = DrawNumber(leftLabel, leftValue, leftMin, leftMax, 1);
+    imgui.SameLine();
+    local rightResult = DrawNumber(rightLabel, rightValue, rightMin, rightMax, 1);
+    return leftResult, rightResult;
+end
+
+local function DrawChoice(label, value, options, id)
+    local current = tostring(value or options[1]);
+    local comboId = '##bar_' .. tostring(id or label or 'choice');
+    local currentAllowed = false;
+
+    for _, option in ipairs(options) do
+        if (option == current) then
+            currentAllowed = true;
+            break;
+        end
+    end
+
+    if (currentAllowed ~= true) then
+        current = options[1];
+    end
+
+    if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+        if (imgui.PushItemWidth ~= nil) then
+            imgui.PushItemWidth(230);
+        end
+
+        if (imgui.BeginCombo(comboId, current) == true) then
+            for _, option in ipairs(options) do
+                local selected = (option == current);
+
+                if (imgui.Selectable(tostring(option), selected) == true) then
+                    current = option;
+                end
+
+                if (selected == true and imgui.SetItemDefaultFocus ~= nil) then
+                    imgui.SetItemDefaultFocus();
+                end
+            end
+
+            imgui.EndCombo();
+        end
+
+        if (imgui.PopItemWidth ~= nil) then
+            imgui.PopItemWidth();
+        end
+
+        return current;
+    end
+
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+
+    if (ClickText(current, valueColor) ~= true) then
+        return current;
+    end
+
+    for index, option in ipairs(options) do
+        if (option == current) then
+            local nextIndex = index + 1;
+
+            if (nextIndex > #options) then
+                nextIndex = 1;
+            end
+
+            return options[nextIndex];
+        end
+    end
+
+    return options[1];
+end
+
+local function DrawComboRow(label, value, options, id)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local result = value;
+
+        if (imgui.BeginTable('##bar_' .. tostring(id or label or 'combo') .. '_row', 2, tableFlags)) then
+            imgui.TableSetupColumn('##label', 0, 170);
+            imgui.TableSetupColumn('##control', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, label);
+            imgui.TableNextColumn();
+            result = DrawChoice(label, value, options, id);
+            imgui.EndTable();
+        end
+
+        return result;
+    end
+
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+    return DrawChoice(label, value, options, id);
+end
+
+local function DrawAnchorCombo(label, current, choices)
+    local value = tostring(current or 'Plate');
+
+    if (value == 'Plate') then
+        value = 'None';
+    end
+
+    if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+        if (imgui.BeginCombo('##bar_anchor_' .. label, value) == true) then
+            for _, choice in ipairs(choices or {}) do
+                local selected = (value == tostring(choice));
+
+                if (imgui.Selectable(tostring(choice), selected) == true) then
+                    value = tostring(choice);
+                end
+            end
+
+            imgui.EndCombo();
+        end
+    else
+        imgui.TextColored(labelColor, label);
+        imgui.SameLine();
+        imgui.TextColored(valueColor, value);
+    end
+
+    if (value == 'None') then
+        return 'Plate';
+    end
+
+    return value;
+end
+
+local function DrawAnchorControls(settings, context, label)
+    anchorControls.Draw(settings, context, label);
+end
+
+local function ClampColorChannel(value)
+    local channel = tonumber(value) or 0;
+
+    if (channel < 0) then return 0; end
+    if (channel > 1) then return 1; end
+
+    return channel;
+end
+
+local function DrawColor(label, value)
+    local color = value or { 1.0, 1.0, 1.0, 1.0 };
+    color[4] = tonumber(color[4]) or 1.0;
+    local red = math.floor(ClampColorChannel(color[1]) * 255);
+    local green = math.floor(ClampColorChannel(color[2]) * 255);
+    local blue = math.floor(ClampColorChannel(color[3]) * 255);
+    local edit = nil;
+
+    if (imgui.ColorEdit4 ~= nil) then
+        imgui.ColorEdit4('##bar_' .. label, color, colorEditFlags);
+        return color;
+    end
+
+    imgui.TextColored(color, label);
+    imgui.SameLine();
+    imgui.TextColored(valueColor, tostring(red) .. '/' .. tostring(green) .. '/' .. tostring(blue));
+    imgui.SameLine();
+
+    if (ClickText('red-', actionColor) == true) then edit = 'red-'; end
+    imgui.SameLine();
+    if (ClickText('red+', actionColor) == true) then edit = 'red+'; end
+    imgui.SameLine();
+    if (ClickText('green-', actionColor) == true) then edit = 'green-'; end
+    imgui.SameLine();
+    if (ClickText('green+', actionColor) == true) then edit = 'green+'; end
+    imgui.SameLine();
+    if (ClickText('blue-', actionColor) == true) then edit = 'blue-'; end
+    imgui.SameLine();
+    if (ClickText('blue+', actionColor) == true) then edit = 'blue+'; end
+
+    if (edit == 'red-') then
+        red = math.max(0, red - 5);
+    elseif (edit == 'red+') then
+        red = math.min(255, red + 5);
+    elseif (edit == 'green-') then
+        green = math.max(0, green - 5);
+    elseif (edit == 'green+') then
+        green = math.min(255, green + 5);
+    elseif (edit == 'blue-') then
+        blue = math.max(0, blue - 5);
+    elseif (edit == 'blue+') then
+        blue = math.min(255, blue + 5);
+    end
+
+    color[1] = red / 255;
+    color[2] = green / 255;
+    color[3] = blue / 255;
+    color[4] = tonumber(color[4]) or 1.0;
+
+    return color;
+end
+
+local function DrawColorCell(label, id, color)
+    imgui.TextColored(labelColor, label);
+    imgui.TableNextColumn();
+    return DrawColor(id, color);
+end
+
+local function DrawColorPair(rowId, leftLabel, leftId, leftValue, rightLabel, rightId, rightValue)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local leftResult = leftValue;
+        local rightResult = rightValue;
+
+        if (imgui.BeginTable('##bar_' .. rowId, 4, tableFlags)) then
+            imgui.TableSetupColumn('##label_left', 0, 108);
+            imgui.TableSetupColumn('##control_left', 0, 170);
+            imgui.TableSetupColumn('##label_right', 0, 108);
+            imgui.TableSetupColumn('##control_right', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            leftResult = DrawColorCell(leftLabel, leftId, leftValue);
+            imgui.TableNextColumn();
+            rightResult = DrawColorCell(rightLabel, rightId, rightValue);
+            imgui.EndTable();
+        end
+
+        return leftResult, rightResult;
+    end
+
+    imgui.TextColored(labelColor, leftLabel);
+    imgui.SameLine();
+    local leftResult = DrawColor(leftId, leftValue);
+    imgui.SameLine();
+    imgui.TextColored(labelColor, rightLabel);
+    imgui.SameLine();
+    local rightResult = DrawColor(rightId, rightValue);
+    return leftResult, rightResult;
+end
+
+local function DrawFontRow(settings, defaults)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##bar_font_row', 4, tableFlags)) then
+            imgui.TableSetupColumn('##font_size_label', 0, 108);
+            imgui.TableSetupColumn('##font_size_control', 0, 170);
+            imgui.TableSetupColumn('##font_color_label', 0, 108);
+            imgui.TableSetupColumn('##font_color_control', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            settings.fontSize = DrawTableSlider('Font size', 'font_size', textScale.NormalizeSetting(settings.fontSize, defaults.fontSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
+            imgui.TableNextColumn();
+            settings.textColor = DrawColorCell('Font color', 'font_color', settings.textColor);
+            imgui.EndTable();
+        end
+
+        return;
+    end
+
+    settings.fontSize = DrawNumber('Font size', textScale.NormalizeSetting(settings.fontSize, defaults.fontSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize(), 1);
+    settings.textColor = DrawColor('font_color', settings.textColor);
+end
+
+local function DrawOutlineRow(settings)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##bar_outline_row', 4, tableFlags)) then
+            imgui.TableSetupColumn('##outline_size_label', 0, 108);
+            imgui.TableSetupColumn('##outline_size_control', 0, 170);
+            imgui.TableSetupColumn('##outline_color_label', 0, 108);
+            imgui.TableSetupColumn('##outline_color_control', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            settings.textOutlineSize = DrawTableSlider('Outline size', 'outline_size', settings.textOutlineSize, 0, 12, false);
+            imgui.TableNextColumn();
+            settings.textOutlineColor = DrawColorCell('Outline color', 'outline_color', settings.textOutlineColor);
+            imgui.EndTable();
+        end
+
+        return;
+    end
+
+    settings.textOutlineSize = DrawNumber('Outline size', settings.textOutlineSize, 0, 12, 1);
+    settings.textOutlineColor = DrawColor('outline_color', settings.textOutlineColor);
+end
+
+local function ApplyDefaults(settings, defaults)
+    for key, value in pairs(defaults or baseDefaults) do
+        if (settings[key] == nil) then
+            settings[key] = type(value) == 'table' and { unpackTable(value) } or value;
+        end
+    end
+end
+
+local function ResetSettings(settings, defaults)
+    for key, value in pairs(defaults or baseDefaults) do
+        settings[key] = type(value) == 'table' and { unpackTable(value) } or value;
+    end
+end
+
+local function RequestReset(kind, label)
+    pendingReset = {
+        kind = kind,
+        label = label,
+    };
+
+    if (imgui.OpenPopup ~= nil) then
+        imgui.OpenPopup('Reset bar##libraplates_bar_reset_confirm');
+    end
+end
+
+local function DrawResetConfirm(settings, defaults, label)
+    if (pendingReset == nil) then
+        return;
+    end
+
+    if (imgui.BeginPopupModal == nil) then
+        imgui.TextColored({ 0.20, 0.65, 0.67, 1.0 }, 'Reset ' .. pendingReset.label .. '?');
+
+        if (ClickText('Cancel', actionColor) == true) then
+            pendingReset = nil;
+        end
+
+        imgui.SameLine();
+
+        if (ClickText('Confirm reset', actionColor) == true) then
+            if (pendingReset.kind == 'position') then
+                settings.offsetX = defaults.offsetX;
+                settings.offsetY = defaults.offsetY;
+            else
+                ResetSettings(settings, defaults);
+            end
+
+            pendingReset = nil;
+        end
+
+        return;
+    end
+
+    if (imgui.BeginPopupModal('Reset bar##libraplates_bar_reset_confirm')) then
+        imgui.Text('Reset ' .. pendingReset.label .. '?');
+
+        if (pendingReset.kind == 'position') then
+            imgui.Text('This will reset Position X and Position Y.');
+        else
+            imgui.Text('This will reset all ' .. label .. ' settings.');
+        end
+
+        imgui.Separator();
+
+        if (imgui.Button('Cancel##bar_reset_cancel')) then
+            pendingReset = nil;
+            imgui.CloseCurrentPopup();
+        end
+
+        imgui.SameLine();
+
+        if (imgui.Button('Reset##bar_reset_confirm')) then
+            if (pendingReset.kind == 'position') then
+                settings.offsetX = defaults.offsetX;
+                settings.offsetY = defaults.offsetY;
+            else
+                ResetSettings(settings, defaults);
+            end
+
+            pendingReset = nil;
+            imgui.CloseCurrentPopup();
+        end
+
+        imgui.EndPopup();
+    end
+end
+
+local function GetAnimationOptions()
+    local options = T{ 'None' };
+
+    for _, option in ipairs(barAnimations.GetOptions()) do
+        options[#options + 1] = option;
+    end
+
+    return options;
+end
+
+-- ============================================================
+-- Defaults
+-- ============================================================
+
+function bar.GetDefaults()
+    return baseDefaults;
+end
+
+-- ============================================================
+-- Rendering
+-- ============================================================
+
+function bar.Draw(data, settings, context)
+end
+
+-- ============================================================
+-- Settings UI
+-- ============================================================
+
+function bar.DrawSettings(settings, context)
+    if (settings == nil) then
+        return;
+    end
+
+    local label = tostring(context ~= nil and context.widget or 'Bar');
+    local resourceName = tostring(context ~= nil and context.resourceName or 'HP');
+    local defaults = context ~= nil and context.defaults or baseDefaults;
+    local isSegmentedResource = (resourceName == 'TP' or resourceName == 'Ready');
+    local showLowState = (
+        resourceName ~= 'TP' and
+        resourceName ~= 'Ready' and
+        resourceName ~= 'Sic' and
+        resourceName ~= 'Reward' and
+        resourceName ~= 'Ward' and
+        resourceName ~= 'Rage'
+    );
+    local labelIconOptions = context ~= nil and context.labelIconOptions == true;
+
+    ApplyDefaults(settings, defaults);
+
+    if (context == nil or context.hideActive ~= true) then
+        settings.enabled = DrawToggle('Active', settings.enabled);
+    end
+
+    DrawAnchorControls(settings, context, label);
+
+    imgui.Separator();
+    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Bar Settings:');
+    settings.width, settings.height = DrawSliderPair('size', 'Width', 'width', settings.width, 20, 800, 'Height', 'height', settings.height, 1, 160);
+    settings.offsetX, settings.offsetY = DrawSliderPair('position', 'Position X', 'offset_x', settings.offsetX, -400, 400, 'Position Y', 'offset_y', settings.offsetY, -400, 400);
+    settings.color, settings.backgroundColor = DrawColorPair('colors', 'Fill color', 'fill_color', settings.color, 'BG color', 'bg_color', settings.backgroundColor);
+    settings.texture = DrawComboRow('Texture', settings.texture, barTextures.GetOptions(), 'texture');
+
+    if (resourceName == 'HP') then
+        settings.showAtPercent = DrawSingleSlider('Show at HP %', 'show_at_percent', settings.showAtPercent, 1, 100, false);
+    elseif (resourceName == 'MP') then
+        settings.showAtPercent = DrawSingleSlider('Show at MP %', 'show_at_percent', settings.showAtPercent, 1, 100, false);
+    end
+
+    if (isSegmentedResource == true) then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, resourceName .. ' Sections:');
+        settings.segmented = DrawToggle('Three sections', settings.segmented ~= false);
+        settings.segmentGap = DrawSingleSlider('Section gap', 'segment_gap', settings.segmentGap, 0, 24, false);
+        settings.color2, settings.color3 = DrawColorPair('tp_section_colors', 'Section 2 color', 'section_2_color', settings.color2 or defaults.color2 or settings.color, 'Section 3 color', 'section_3_color', settings.color3 or defaults.color3 or settings.color);
+
+        if (resourceName == 'Ready') then
+            settings.chargeSeconds = DrawSingleSlider('Seconds per charge', 'charge_seconds', settings.chargeSeconds or defaults.chargeSeconds or 30, 10, 30, true);
+        end
+    end
+
+    if (labelIconOptions ~= true) then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Text Settings:');
+        DrawFontRow(settings, defaults);
+        DrawOutlineRow(settings);
+        settings.textOutlineEnabled = (tonumber(settings.textOutlineSize) or 0) > 0;
+        settings.textOffsetX, settings.textOffsetY = DrawSliderPair('text_position', 'Position X', 'text_offset_x', settings.textOffsetX, -400, 400, 'Position Y', 'text_offset_y', settings.textOffsetY, -400, 400);
+
+        if (context ~= nil and context.showValueControl == false) then
+            settings.showValue = false;
+        elseif (resourceName == 'Ready') then
+            settings.showValue = DrawToggle('Show ' .. resourceName .. ' text', settings.showValue);
+        else
+            settings.showValue = DrawToggle('Show ' .. resourceName .. ' value', settings.showValue);
+        end
+
+        if (resourceName == 'Ready') then
+            settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' counter', settings.showPercent);
+        elseif (resourceName == 'Sic') then
+            settings.showPercent = false;
+        else
+            settings.showPercent = DrawToggle('Show ' .. resourceName .. ' percent', settings.showPercent);
+        end
+        settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
+    end
+
+    local function DrawLabelTextSettings()
+        DrawFontRow(settings, defaults);
+        DrawOutlineRow(settings);
+        settings.textOutlineEnabled = (tonumber(settings.textOutlineSize) or 0) > 0;
+        settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
+    end
+
+    if (labelIconOptions == true) then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Labels:');
+        if (settings.labelDisplayMode == 'Icon + text') then
+            settings.labelDisplayMode = 'Text';
+        end
+        local labelDisplayOptions = (context ~= nil and context.labelDisplayOptions ~= nil) and context.labelDisplayOptions or { 'None', 'Text', 'Icon' };
+        settings.labelDisplayMode = DrawComboRow('Display', settings.labelDisplayMode or 'Text', labelDisplayOptions, 'label_display');
+
+        if (settings.labelDisplayMode == 'Text' or settings.labelDisplayMode == 'Icon') then
+            local positionLabel = (settings.labelDisplayMode == 'Icon') and 'Icon' or 'Label';
+            settings.labelIconOffsetX, settings.labelIconOffsetY = DrawSliderPair('label_position', positionLabel .. ' X', 'label_icon_offset_x', settings.labelIconOffsetX, -400, 400, positionLabel .. ' Y', 'label_icon_offset_y', settings.labelIconOffsetY, -400, 400);
+        end
+
+        if (settings.labelDisplayMode == 'Icon') then
+            settings.labelIconSize = DrawSingleSlider('Icon size', 'label_icon_size', settings.labelIconSize, 6, 128);
+        end
+
+        if (resourceName == 'Ready') then
+            settings.showValue = false;
+            settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' counter', settings.showPercent);
+            if (settings.showPercent == true) then
+                settings.textOffsetX, settings.textOffsetY = DrawSliderPair('counter_position', 'Counter X', 'text_offset_x', settings.textOffsetX, -400, 400, 'Counter Y', 'text_offset_y', settings.textOffsetY, -400, 400);
+            end
+        elseif (resourceName == 'Ward' or resourceName == 'Rage') then
+            settings.showValue = false;
+            settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' timer', settings.showPercent ~= false);
+            if (settings.showPercent == true) then
+                settings.textOffsetX, settings.textOffsetY = DrawSliderPair('timer_position', 'Timer X', 'text_offset_x', settings.textOffsetX, -400, 400, 'Timer Y', 'text_offset_y', settings.textOffsetY, -400, 400);
+            end
+        elseif (resourceName == 'Sic') then
+            settings.showValue = false;
+            settings.showPercent = false;
+        end
+
+        if (settings.labelDisplayMode == 'Text' or settings.showPercent == true) then
+            DrawLabelTextSettings();
+        end
+    end
+
+    if (showLowState == true) then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Low ' .. resourceName);
+        settings.lowColorEnabled = DrawToggle('Enable low ' .. resourceName .. ' state', settings.lowColorEnabled);
+
+        if (settings.lowColorEnabled == true) then
+            settings.lowColorPercent = DrawSingleSlider('When HP is at or below %', 'low_percent', settings.lowColorPercent, 1, 100, false);
+            settings.lowColor = DrawColor('low_color', settings.lowColor);
+
+            local animation = settings.lowAnimationEnabled == true and tostring(settings.lowAnimation or defaults.lowAnimation or 'Important') or 'None';
+            animation = DrawComboRow('Low ' .. resourceName .. ' animation', animation, GetAnimationOptions(), 'low_animation');
+
+            if (animation == 'None') then
+                settings.lowAnimationEnabled = false;
+            else
+                settings.lowAnimationEnabled = true;
+                settings.lowAnimation = animation;
+                settings.lowAnimationSpeed = DrawSingleSlider('Animation speed', 'low_animation_speed', settings.lowAnimationSpeed, 0, 240, false);
+            end
+        end
+    end
+
+    imgui.Separator();
+
+    if (DrawActionButton('Reset ' .. label .. ' position') == true) then
+        RequestReset('position', label .. ' position');
+    end
+
+    if (DrawActionButton('Reset ' .. label .. ' settings') == true) then
+        RequestReset('settings', label .. ' settings');
+    end
+
+    DrawResetConfirm(settings, defaults, label);
+end
+
+return bar;

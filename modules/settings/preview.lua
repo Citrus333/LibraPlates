@@ -1,0 +1,3313 @@
+local imgui = require('imgui');
+local barTextures = require('core.bar_textures');
+local barAnimations = require('core.bar_animations');
+local canvasTexture = require('core.canvas_texture');
+local entities = require('core.entities');
+local gameMode = require('core.game_mode');
+local statusIconTextures = require('core.status_icon_textures');
+local statusTimerFormat = require('core.status_timer_format');
+local jobIconTextures = require('core.job_icon_textures');
+local textureLoader = require('core.texture_loader');
+local targetModuleMarker = require('core.target_module_marker');
+local npcObjectInfo = require('core.npc_object_info');
+local fishing = require('core.fishing');
+local crafting = require('core.crafting');
+local pupManeuvers = require('core.pup_maneuvers');
+local fonts = require('core.fonts');
+local textScale = require('core.text_scale');
+local state = require('core.state');
+local uiTooltip = require('core.ui_tooltip');
+local globalDefaults = require('config.global');
+local nameDefaults = require('config.widgets.name');
+local backgroundDefaults = require('config.widgets.background');
+local jobDefaults = require('config.widgets.job');
+local levelDefaults = require('config.widgets.level');
+local idDefaults = require('config.widgets.id');
+local distanceDefaults = require('config.widgets.distance');
+local typeLineDefaults = require('config.widgets.type_line');
+local npcObjectIconDefaults = require('config.widgets.npc_object_icon');
+local buffsDefaults = require('config.widgets.buffs');
+local debuffsDefaults = require('config.widgets.debuffs');
+local barDefaults = require('config.widgets.bar');
+local mpBarDefaults = require('config.widgets.mp_bar');
+local tpBarDefaults = require('config.widgets.tp_bar');
+local castBarDefaults = require('config.widgets.cast_bar');
+local maneuverDefaults = require('config.widgets.maneuvers');
+local gameModeIconDefaults = require('config.widgets.game_mode_icon');
+local bazaarIconDefaults = require('config.widgets.bazaar_icon');
+local linkshellIconDefaults = require('config.widgets.linkshell_icon');
+local awayIconDefaults = require('config.widgets.away_icon');
+local disconnectIconDefaults = require('config.widgets.disconnect_icon');
+local anonIconDefaults = require('config.widgets.anon_icon');
+local followIconDefaults = require('config.widgets.follow_icon');
+local partyLeaderIconDefaults = require('config.widgets.party_leader_icon');
+local allianceLeaderIconDefaults = require('config.widgets.alliance_leader_icon');
+local starsIconDefaults = require('config.widgets.stars_icon');
+local levelSyncIconDefaults = require('config.widgets.level_sync_icon');
+local newAdventurerIconDefaults = require('config.widgets.new_adventurer_icon');
+local targetModuleDefaults = require('config.widgets.target_module');
+local subtargetModuleDefaults = require('config.widgets.subtarget_module');
+
+local petTimerDefaults = {
+    enabled = true,
+    displayMode = 'Text',
+    iconSize = 18,
+    labelOffsetX = 0,
+    labelOffsetY = 0,
+    textOffsetX = 0,
+    textOffsetY = 0,
+    textSize = 12,
+    color = { 1.0, 1.0, 1.0, 1.0 },
+    outlineEnabled = true,
+    outlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    outlineSize = 2,
+    offsetX = -52,
+    offsetY = -52,
+};
+local petStateDefaults = {
+    enabled = true,
+    displayMode = 'Text',
+    iconSize = 22,
+    labelOffsetX = 0,
+    labelOffsetY = 0,
+    textSize = 12,
+    color = { 1.0, 1.0, 1.0, 1.0 },
+    outlineEnabled = true,
+    outlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    outlineSize = 2,
+    offsetX = 52,
+    offsetY = -52,
+};
+local petReadyBarDefaults = {
+    enabled = true,
+    width = 160,
+    height = 6,
+    offsetX = 0,
+    offsetY = 28,
+    color = { 0.90, 0.65, 0.25, 1.0 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    texture = 'Solid',
+    color2 = { 0.80, 0.45, 1.0, 0.95 },
+    color3 = { 0.35, 0.75, 1.0, 0.95 },
+    segmented = true,
+    segmentGap = 6,
+    chargeSeconds = 30,
+    labelDisplayMode = 'Text',
+    labelIconSize = 14,
+    labelIconOffsetX = 0,
+    labelIconOffsetY = 0,
+    showValue = false,
+    showPercent = false,
+    showAtPercent = 100,
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 7,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
+local petRewardBarDefaults = {
+    enabled = true,
+    width = 160,
+    height = 6,
+    offsetX = 0,
+    offsetY = 52,
+    color = { 0.70, 0.90, 0.45, 1.0 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    texture = 'Solid',
+    labelDisplayMode = 'Text',
+    labelIconSize = 14,
+    labelIconOffsetX = 0,
+    labelIconOffsetY = 0,
+    showValue = false,
+    showPercent = false,
+    showAtPercent = 100,
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 7,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
+local petWardBarDefaults = {
+    enabled = true,
+    width = 81,
+    height = 12,
+    offsetX = -44,
+    offsetY = 16,
+    color = { 0.00, 0.75, 0.85, 1.0 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    texture = 'Solid',
+    labelDisplayMode = 'Text',
+    labelIconSize = 14,
+    labelIconOffsetX = 0,
+    labelIconOffsetY = 0,
+    showValue = false,
+    showPercent = true,
+    showAtPercent = 100,
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 7,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
+local petRageBarDefaults = {
+    enabled = true,
+    width = 81,
+    height = 12,
+    offsetX = 44,
+    offsetY = 16,
+    color = { 0.85, 0.20, 0.10, 1.0 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    texture = 'Solid',
+    labelDisplayMode = 'Text',
+    labelIconSize = 14,
+    labelIconOffsetX = 0,
+    labelIconOffsetY = 0,
+    showValue = false,
+    showPercent = true,
+    showAtPercent = 100,
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 7,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
+local smnHpBarDefaults = {
+    enabled = true,
+    width = 170,
+    height = 14,
+    texture = 'Solid',
+    color = { 0.95, 0.45, 0.45, 1.0 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    offsetX = 0,
+    offsetY = 0,
+    showValue = false,
+    showPercent = true,
+    showAtPercent = 100,
+    lowColorEnabled = false,
+    lowColorPercent = 25,
+    lowColor = { 1.0, 0.15, 0.10, 1.0 },
+    lowAnimationEnabled = false,
+    lowAnimation = 'Important',
+    lowAnimationSpeed = 40,
+    lowAnimationColor = { 1.0, 1.0, 1.0, 0.35 },
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 7,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
+local smnMpBarDefaults = {
+    enabled = true,
+    width = 170,
+    height = 12,
+    texture = 'Solid',
+    color = { 0.70, 0.90, 0.45, 1.0 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    offsetX = 0,
+    offsetY = 16,
+    showValue = false,
+    showPercent = true,
+    showAtPercent = 100,
+    lowColorEnabled = false,
+    lowColorPercent = 25,
+    lowColor = { 0.55, 0.25, 1.0, 1.0 },
+    lowAnimationEnabled = false,
+    lowAnimation = 'Important',
+    lowAnimationSpeed = 40,
+    lowAnimationColor = { 1.0, 1.0, 1.0, 0.35 },
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 7,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
+local smnTpBarDefaults = {
+    enabled = true,
+    width = 170,
+    height = 12,
+    texture = 'Solid',
+    color = { 0.0, 0.55, 0.95, 1.0 },
+    color2 = { 0.80, 0.45, 1.0, 0.95 },
+    color3 = { 0.35, 0.75, 1.0, 0.95 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    offsetX = 0,
+    offsetY = 30,
+    showValue = false,
+    showPercent = false,
+    showAtPercent = 300,
+    lowColorEnabled = false,
+    lowColorPercent = 25,
+    lowColor = { 1.0, 0.30, 0.10, 1.0 },
+    segmented = false,
+    segmentGap = 6,
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 7,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
+local smnCastBarDefaults = {
+    enabled = true,
+    width = 170,
+    height = 10,
+    texture = 'Solid',
+    color = { 0.95, 0.75, 0.20, 1.0 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    offsetX = 0,
+    offsetY = 32,
+    showSpellName = true,
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 8,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
+
+local preview = {};
+local iconCache = {};
+local backgroundCache = {};
+local petIconCache = {};
+local quickMenuIconCache = {};
+local quickMenuMissingIcons = {};
+local previewInfoIconTextureId = nil;
+local enmityIconTextureId = nil;
+local selectedBackground = 'Light';
+local selectedZoom = '1x';
+local dragEnabled = false;
+local activeDragKind = nil;
+local mouseInPreview = false;
+local backgroundOptions = T{ 'Light', 'Mid', 'Dark' };
+local zoomOptions = T{ '1x', '2x' };
+local backgroundFiles = {
+    ['Light'] = 'bg_light.png',
+    ['Mid'] = 'bg_mid.png',
+    ['Dark'] = 'bg_dark.png',
+};
+
+local function GetPreviewDifficultyColor(settings, defaults)
+    if (settings == nil or settings.difficultyColorsEnabled ~= true) then
+        return settings ~= nil and settings.color or defaults.color;
+    end
+
+    return settings.tColor or defaults.tColor or settings.color or defaults.color;
+end
+
+local function GetPreviewIdBoxColor(settings, defaults)
+    if (settings == nil or settings.boxDifficultyColorsEnabled ~= true) then
+        return settings ~= nil and settings.boxBackgroundColor or defaults.boxBackgroundColor;
+    end
+
+    return settings.boxTColor or defaults.boxTColor or settings.boxBackgroundColor or defaults.boxBackgroundColor;
+end
+
+local function ClampPercent(value, fallback)
+    local percent = tonumber(value) or fallback or 100;
+
+    if (percent < 0) then
+        return 0;
+    end
+
+    if (percent > 100) then
+        return 100;
+    end
+
+    return percent;
+end
+
+local function LoadWidgetIcon(fileName)
+    if (iconCache[fileName] ~= nil) then
+        return iconCache[fileName];
+    end
+
+    local path = addon.path .. '\\assets\\images\\widget-icons\\' .. fileName;
+    iconCache[fileName] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return iconCache[fileName];
+end
+
+local function LoadPreviewInfoIcon()
+    if (previewInfoIconTextureId ~= nil) then
+        return previewInfoIconTextureId;
+    end
+
+    previewInfoIconTextureId = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\ui-icons\\info.png'));
+    return previewInfoIconTextureId;
+end
+
+local function LoadEnmityIcon()
+    if (enmityIconTextureId ~= nil) then
+        return enmityIconTextureId;
+    end
+
+    enmityIconTextureId = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\enmity_icon.png'));
+    return enmityIconTextureId;
+end
+
+local function LoadPetIcon(fileName)
+    if (petIconCache[fileName] ~= nil) then
+        return petIconCache[fileName];
+    end
+
+    local path = addon.path .. '\\assets\\images\\pet\\' .. fileName;
+    petIconCache[fileName] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return petIconCache[fileName];
+end
+
+local function LoadPetStateIcon(commandName)
+    local iconName = tostring(commandName or ''):lower();
+
+    if (iconName == 'sic') then
+        iconName = 'ready';
+    end
+
+    local jobFolder = (iconName == 'ward' or iconName == 'rage') and 'smn' or 'bst';
+    local key = jobFolder .. '/' .. iconName .. '.png';
+    return LoadPetIcon(key);
+end
+
+local function SanitizePeerIconStyle(iconStyle)
+    local style = tostring(iconStyle or 'round'):gsub('[\\/]', '');
+
+    if (style == '') then
+        return 'round';
+    end
+
+    return style;
+end
+
+local function LoadPeerIcon(iconName, iconStyle)
+    iconName = tostring(iconName or '');
+
+    if (iconName == '') then
+        return nil;
+    end
+
+    iconStyle = SanitizePeerIconStyle(iconStyle);
+
+    local key = 'peer:' .. iconStyle .. ':' .. iconName;
+
+    if (iconCache[key] ~= nil) then
+        return iconCache[key];
+    end
+
+    local path = addon.path .. '\\assets\\images\\peer-icons\\' .. iconStyle .. '\\' .. iconName .. '.png';
+    iconCache[key] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return iconCache[key];
+end
+
+local function LoadSelfElementIcon(iconName)
+    iconName = tostring(iconName or '');
+
+    if (iconName == '') then
+        return nil;
+    end
+
+    local key = 'self-element:' .. iconName;
+
+    if (iconCache[key] ~= nil) then
+        return iconCache[key];
+    end
+
+    local path = addon.path .. '\\assets\\images\\self-peer\\' .. iconName .. '.png';
+    iconCache[key] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return iconCache[key];
+end
+
+local function LoadBackground(name)
+    local fileName = backgroundFiles[name] or backgroundFiles.Light;
+
+    if (backgroundCache[fileName] ~= nil) then
+        return backgroundCache[fileName];
+    end
+
+    local path = addon.path .. '\\assets\\images\\preview\\' .. fileName;
+    backgroundCache[fileName] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return backgroundCache[fileName];
+end
+
+local function LoadQuickMenuIcon(fileName)
+    local name = tostring(fileName or '');
+
+    if (name == '') then
+        return nil;
+    end
+
+    if (quickMenuMissingIcons[name] == true) then
+        return nil;
+    end
+
+    if (quickMenuIconCache[name] ~= nil) then
+        return quickMenuIconCache[name];
+    end
+
+    local path = addon.path .. '\\assets\\images\\quick-menu\\' .. name;
+    local exists = false;
+
+    pcall(function()
+        exists = ashita.fs.exists(path);
+    end);
+
+    if (exists ~= true) then
+        quickMenuMissingIcons[name] = true;
+        return nil;
+    end
+
+    local ok, texture = pcall(function()
+        return textureLoader.Load(path);
+    end);
+
+    if (ok ~= true or texture == nil) then
+        quickMenuMissingIcons[name] = true;
+        return nil;
+    end
+
+    quickMenuIconCache[name] = textureLoader.ToTextureId(texture);
+
+    if (quickMenuIconCache[name] == nil) then
+        quickMenuMissingIcons[name] = true;
+    end
+
+    return quickMenuIconCache[name];
+end
+
+local function Number(settings, key, fallback)
+    local value = tonumber(settings ~= nil and settings[key]);
+
+    if (value == nil) then
+        return fallback;
+    end
+
+    return value;
+end
+
+local function BuildTargetMarker(context, hpBarSettings)
+    if (context == nil or context.widgetKey == nil) then
+        return nil;
+    end
+
+    if (context.widgetKey ~= 'Target Module' and context.widgetKey ~= 'Subtarget Module') then
+        return nil;
+    end
+
+    local targetStateName = (context.widgetKey == 'Subtarget Module') and 'Subtarget' or 'Target';
+    local marker = targetModuleMarker.Build(
+        context.entityName,
+        context.stateName,
+        targetStateName,
+        hpBarSettings,
+        Number(context, 'distance', 0)
+    );
+
+    if (marker ~= nil) then
+        marker.anchorKinds = { 'name', 'hp' };
+        marker.arrowAnchorKinds = { 'name' };
+    end
+
+    return marker;
+end
+
+local function DrawBackgroundSelector()
+    for index, option in ipairs(backgroundOptions) do
+        if (index > 1) then
+            imgui.SameLine();
+        end
+
+        local label = option;
+        local color = { 0.92, 0.92, 0.90, 1.0 };
+
+        if (selectedBackground == option) then
+            label = '> ' .. option;
+            color = { 1.0, 0.84, 0.0, 1.0 };
+        end
+
+        imgui.TextColored(color, label);
+
+        if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+            selectedBackground = option;
+        end
+    end
+end
+
+local function DrawPreviewInfo(text)
+    uiTooltip.Info(text, false);
+    imgui.SameLine();
+end
+
+local function DrawPreviewButton(label, selected)
+    local pushed = 0;
+
+    if (imgui.PushStyleColor ~= nil) then
+        local button = _G.ImGuiCol_Button;
+        local hovered = _G.ImGuiCol_ButtonHovered;
+        local active = _G.ImGuiCol_ButtonActive;
+        local text = _G.ImGuiCol_Text;
+
+        if (selected == true) then
+            if (button ~= nil) then imgui.PushStyleColor(button, { 0.20, 0.65, 0.67, 1.0 }); pushed = pushed + 1; end
+            if (hovered ~= nil) then imgui.PushStyleColor(hovered, { 0.28, 0.78, 0.80, 1.0 }); pushed = pushed + 1; end
+            if (active ~= nil) then imgui.PushStyleColor(active, { 0.16, 0.52, 0.54, 1.0 }); pushed = pushed + 1; end
+            if (text ~= nil) then imgui.PushStyleColor(text, { 1.0, 1.0, 1.0, 1.0 }); pushed = pushed + 1; end
+        else
+            if (button ~= nil) then imgui.PushStyleColor(button, { 0.18, 0.20, 0.25, 1.0 }); pushed = pushed + 1; end
+            if (hovered ~= nil) then imgui.PushStyleColor(hovered, { 0.25, 0.29, 0.36, 1.0 }); pushed = pushed + 1; end
+            if (active ~= nil) then imgui.PushStyleColor(active, { 0.20, 0.65, 0.67, 1.0 }); pushed = pushed + 1; end
+            if (text ~= nil) then imgui.PushStyleColor(text, { 0.92, 0.92, 0.90, 1.0 }); pushed = pushed + 1; end
+        end
+    end
+
+    local clicked = false;
+
+    if (imgui.Button ~= nil) then
+        clicked = imgui.Button(label) == true;
+    else
+        imgui.TextColored(selected and { 1.0, 0.84, 0.0, 1.0 } or { 0.92, 0.92, 0.90, 1.0 }, selected and ('> ' .. label) or label);
+        clicked = imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true;
+    end
+
+    if (pushed > 0 and imgui.PopStyleColor ~= nil) then
+        imgui.PopStyleColor(pushed);
+    end
+
+    return clicked;
+end
+
+local function DrawStyledBackgroundSelector()
+    for index, option in ipairs(backgroundOptions) do
+        if (index > 1) then
+            imgui.SameLine();
+        end
+
+        if (DrawPreviewButton(option, selectedBackground == option) == true) then
+            selectedBackground = option;
+        end
+    end
+end
+
+local function DrawStyledZoomSelector()
+    for index, option in ipairs(zoomOptions) do
+        if (index > 1) then
+            imgui.SameLine();
+        end
+
+        if (DrawPreviewButton(option, selectedZoom == option) == true) then
+            selectedZoom = option;
+        end
+    end
+end
+
+local function DrawStyledDragToggle()
+    local label = dragEnabled == true and 'Enabled' or 'Disabled';
+
+    if (DrawPreviewButton(label, dragEnabled == true) == true) then
+        dragEnabled = dragEnabled ~= true;
+        activeDragKind = nil;
+    end
+end
+
+local function DrawStyledPreviewControls()
+    DrawPreviewInfo('Preview how the plate reads in different lighting conditions. This only changes the preview background, not the live plate.');
+    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Preview');
+    imgui.SameLine();
+    DrawStyledBackgroundSelector();
+    imgui.SameLine();
+    DrawPreviewInfo('Zoom changes the preview magnification so you can inspect placement and spacing.');
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Zoom');
+    imgui.SameLine();
+    DrawStyledZoomSelector();
+    imgui.SameLine();
+    DrawPreviewInfo('When enabled, drag plate elements directly inside the preview window to update their positions. Turn it off to avoid accidental position changes.');
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Drag');
+    imgui.SameLine();
+    DrawStyledDragToggle();
+end
+
+local function DrawZoomSelector()
+    imgui.SameLine();
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Zoom');
+
+    for _, option in ipairs(zoomOptions) do
+        imgui.SameLine();
+
+        local label = option;
+        local color = { 0.92, 0.92, 0.90, 1.0 };
+
+        if (selectedZoom == option) then
+            label = '> ' .. option;
+            color = { 1.0, 0.84, 0.0, 1.0 };
+        end
+
+        imgui.TextColored(color, label);
+
+        if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+            selectedZoom = option;
+        end
+    end
+
+    imgui.SameLine();
+
+    local dragLabel = dragEnabled == true and '> Drag enabled' or 'Drag disabled';
+    local dragColor = dragEnabled == true and { 1.0, 0.84, 0.0, 1.0 } or { 0.92, 0.92, 0.90, 1.0 };
+    imgui.TextColored(dragColor, dragLabel);
+
+    if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+        dragEnabled = dragEnabled ~= true;
+        activeDragKind = nil;
+    end
+end
+
+function preview.IsDragEnabled()
+    return dragEnabled == true;
+end
+
+function preview.IsElementDragActive()
+    return activeDragKind ~= nil;
+end
+
+function preview.ShouldLockSettingsWindowMove()
+    return dragEnabled == true and mouseInPreview == true;
+end
+
+local function GetZoomUvs(entityName, stateName)
+    local zoom = tonumber(tostring(selectedZoom or '1x'):match('(%d+)')) or 1;
+    zoom = math.max(1, zoom);
+
+    return { 0, 0 }, { 1, 1 }, zoom;
+end
+
+local function ClampTextureOffset(value, axisSize, minVisible)
+    local halfAxis = (tonumber(axisSize) or 0) * 0.5;
+    local visible = math.max(1, tonumber(minVisible) or 24);
+    local limit = math.max(0, halfAxis - visible);
+    local current = tonumber(value) or 0;
+
+    if (current < -limit) then
+        return -limit;
+    end
+
+    if (current > limit) then
+        return limit;
+    end
+
+    return current;
+end
+
+local function ApplyNpcAnchorDefaults(settings, defaults, oldOffsetX, oldOffsetY)
+    if (settings == nil or defaults == nil or settings.anchorTo ~= nil) then
+        return;
+    end
+
+    settings.anchorTo = defaults.anchorTo;
+    settings.anchorPoint = defaults.anchorPoint;
+
+    if (
+        tonumber(settings.offsetX) == tonumber(oldOffsetX) and
+        tonumber(settings.offsetY) == tonumber(oldOffsetY)
+    ) then
+        settings.offsetX = defaults.offsetX;
+        settings.offsetY = defaults.offsetY;
+    end
+end
+
+local function BuildResourceText(settings, label, value, maxValue, percent)
+    local parts = {};
+
+    if (settings.showValue == true and value ~= nil) then
+        if (maxValue ~= nil and tonumber(maxValue) ~= nil and tonumber(maxValue) > 0) then
+            local prefix = (label == 'TP') and '' or (label .. ' ');
+            table.insert(parts, prefix .. tostring(value) .. '/' .. tostring(maxValue));
+        else
+            table.insert(parts, tostring(value));
+        end
+    end
+
+    if (settings.showPercent == true) then
+        table.insert(parts, tostring(math.floor(ClampPercent(percent, 100) + 0.5)) .. '%');
+    end
+
+    return table.concat(parts, ' ');
+end
+
+local function BuildPercentFallbackResourceText(settings, label, value, maxValue, percent)
+    local text = BuildResourceText(settings, label, value, maxValue, percent);
+
+    if (text ~= '') then
+        return text;
+    end
+
+    if (settings ~= nil and settings.showValue == true and percent ~= nil) then
+        return tostring(math.floor(ClampPercent(percent, 100) + 0.5)) .. '%';
+    end
+
+    return text;
+end
+
+local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind)
+    if (settings == nil or settings.enabled ~= true or textureId == nil) then
+        return;
+    end
+
+    table.insert(icons, {
+        kind = kind,
+        textureId = textureId,
+        size = tonumber(settings.iconSize) or 16,
+        offsetX = tonumber(settings.offsetX) or defaultX,
+        offsetY = tonumber(settings.offsetY) or defaultY,
+        anchorTo = settings.anchorTo,
+        anchorPoint = settings.anchorPoint,
+    });
+end
+
+local function AddEnmityPreviewIcon(plateData, globalSettings, context)
+    if (plateData == nil or context == nil or context.widgetKey ~= 'Enmity') then
+        return;
+    end
+
+    globalSettings.enmity = globalSettings.enmity or {};
+
+    if (globalSettings.enmity.enabled == false) then
+        return;
+    end
+
+    plateData.icons = plateData.icons or {};
+    AddIcon(plateData.icons, globalSettings.enmity, LoadEnmityIcon(), -108, -17, 'enmity');
+end
+
+local function AddFishingPreviewIcon(plateData, globalSettings, context)
+    if (plateData == nil or context == nil or context.widgetKey ~= 'Fishing') then
+        return;
+    end
+
+    globalSettings.fishing = globalSettings.fishing or {};
+
+    if (globalSettings.fishing.enabled == false) then
+        return;
+    end
+
+    local previewSettings = {};
+
+    for key, value in pairs(globalSettings.fishing) do
+        previewSettings[key] = value;
+    end
+
+    if (context.previewFishingResult == true) then
+        previewSettings.iconFile = 'fishing_01.png';
+        previewSettings.showLabel = true;
+        previewSettings.previewResult = true;
+    end
+
+    fishing.AddIcon(plateData, previewSettings);
+
+    local icon = plateData.icons ~= nil and plateData.icons[#plateData.icons] or nil;
+    if (icon ~= nil and context.previewFishingResult == true) then
+        icon.timerText = 'Easy catch';
+    end
+end
+
+local function AddCraftingPreviewWidget(plateData, globalSettings, context)
+    if (plateData == nil or context == nil or context.widgetKey ~= 'Crafting') then
+        return;
+    end
+
+    globalSettings.crafting = globalSettings.crafting or {};
+
+    if (globalSettings.crafting.enabled == false) then
+        return;
+    end
+
+    local previewSettings = {};
+
+    for key, value in pairs(globalSettings.crafting) do
+        previewSettings[key] = value;
+    end
+
+    previewSettings.previewResult = true;
+    previewSettings.previewResultName = previewSettings.previewResultName or 'High-Quality';
+
+    crafting.AddWidget(plateData, previewSettings);
+end
+
+local function AddRestingPreviewBar(plateData, globalSettings, context)
+    if (plateData == nil or context == nil or context.widgetKey ~= 'Resting') then
+        return;
+    end
+
+    local resting = globalSettings.resting or {};
+
+    if (resting.enabled == false) then
+        return;
+    end
+
+    plateData.extraBars = plateData.extraBars or {};
+    plateData.extraBars[#plateData.extraBars + 1] = {
+        kind = 'resting',
+        enabled = true,
+        displayMode = resting.displayMode or 'Bar',
+        progress = 55,
+        width = tonumber(resting.width) or 180,
+        height = tonumber(resting.height) or 12,
+        ringSize = tonumber(resting.ringSize) or 88,
+        ringThickness = tonumber(resting.ringThickness) or 10,
+        offsetX = tonumber(resting.offsetX) or 0,
+        offsetY = tonumber(resting.offsetY) or 38,
+        anchorTo = resting.anchorTo or 'Plate',
+        anchorPoint = resting.anchorPoint,
+        color = resting.color or { 0.55, 0.95, 0.35, 1.0 },
+        backgroundColor = resting.backgroundColor or { 0.10, 0.10, 0.10, 1.0 },
+        borderColor = resting.borderColor or { 1.0, 1.0, 1.0, 1.0 },
+        borderSize = tonumber(resting.borderSize) or 0,
+        textureId = barTextures.GetTextureId(resting.texture or 'Solid'),
+        text = '11s',
+        fontFamily = fonts.GetRole(globalSettings, true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, true),
+        fontSize = textScale.ToTextureFontSize(resting.fontSize, 12),
+        textColor = resting.textColor or { 0.0, 0.0, 0.0, 1.0 },
+        textOutlineEnabled = resting.textOutlineEnabled == true,
+        textOutlineColor = resting.textOutlineColor or { 1.0, 1.0, 1.0, 1.0 },
+        textOutlineSize = tonumber(resting.textOutlineSize) or 1,
+    };
+end
+
+local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
+    if (settings == nil or settings.enabled ~= true or statusIds == nil or #statusIds == 0) then
+        return;
+    end
+
+    local maxIcons = math.max(1, math.min(64, tonumber(settings.maxIcons) or 12));
+    local iconsPerRow = math.max(1, math.min(24, tonumber(settings.iconsPerRow) or 6));
+    local iconSize = math.max(6, math.min(160, tonumber(settings.iconSize) or 18));
+    local spacing = math.max(0, math.min(24, tonumber(settings.iconSpacing) or 2));
+    local rowHeight = iconSize + spacing;
+
+    if (settings.showTimers == true) then
+        rowHeight = iconSize + math.max(spacing, (tonumber(settings.timerFontSize) or 8) + math.max(0, tonumber(settings.timerOffsetY) or 0) + 2);
+    end
+
+    local baseX = tonumber(settings.offsetX) or 0;
+    local baseY = tonumber(settings.offsetY) or 0;
+    local visibleRows = {};
+    local hideAboveSeconds = nil;
+
+    if (settings.hideAboveDurationEnabled == true) then
+        local minutes = tonumber(settings.hideAboveDurationMinutes) or 0;
+        if (minutes > 0) then hideAboveSeconds = minutes * 60; end
+    end
+
+    for _, rowData in ipairs(statusIds) do
+        local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
+        if (hideAboveSeconds == nil or timerSeconds == nil or timerSeconds <= hideAboveSeconds) then
+            visibleRows[#visibleRows + 1] = rowData;
+        end
+    end
+
+    local total = math.min(maxIcons, #visibleRows);
+
+    for i = 1, total do
+        local rowData = visibleRows[i];
+        local statusId = type(rowData) == 'table' and rowData.id or rowData;
+        local textureId = statusIconTextures.GetTextureId(statusId, settings.iconPack);
+
+        if (textureId ~= nil) then
+            local row = math.floor((i - 1) / iconsPerRow);
+            local col = (i - 1) % iconsPerRow;
+            local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
+            local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
+            local timerText = nil;
+
+            if (settings.showTimers == true and timerSeconds ~= nil) then
+                timerText = statusTimerFormat.Format(timerSeconds);
+            end
+
+            icons[#icons + 1] = {
+                kind = kind,
+                textureId = textureId,
+                size = iconSize,
+                offsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing)),
+                offsetY = baseY + (row * rowHeight),
+                anchorTo = settings.anchorTo,
+                anchorPoint = settings.anchorPoint,
+                timerText = timerText,
+                timerSeconds = timerSeconds,
+                timerOffsetY = tonumber(settings.timerOffsetY) or 0,
+                timerFontFamily = fonts.GetRole(state.GetGlobalSettings(globalDefaults), settings.timerUseSmallFont == true),
+                timerFontFlags = fonts.GetRoleFlags(state.GetGlobalSettings(globalDefaults), settings.timerUseSmallFont == true),
+                timerFontSize = textScale.ToTextureFontSize(settings.timerFontSize, 8),
+                timerTextColor = settings.timerTextColor,
+                timerTextOutline = settings.timerTextOutline,
+                timerTextOutlineColor = settings.timerTextOutlineColor,
+                timerTextOutlineSize = tonumber(settings.timerTextOutlineSize) or 1,
+                timerBackground = settings.timerBackground == true,
+                timerBackgroundPaddingX = tonumber(settings.timerBackgroundPaddingX) or 2,
+                timerBackgroundPaddingY = tonumber(settings.timerBackgroundPaddingY) or 1,
+                timerBackgroundBorderSize = tonumber(settings.timerBackgroundBorderSize) or 0,
+                timerBackgroundBorderColor = settings.timerBackgroundBorderColor,
+                timerCornerRadius = tonumber(settings.timerCornerRadius) or 0,
+                timerWarningEnabled = settings.timerWarningEnabled == true,
+                timerWarningStage1Seconds = tonumber(settings.timerWarningStage1Seconds) or 10,
+                timerWarningStage2Seconds = tonumber(settings.timerWarningStage2Seconds) or 8,
+                timerWarningStage3Seconds = tonumber(settings.timerWarningStage3Seconds) or 5,
+                timerWarningStage1Color = settings.timerWarningStage1Color,
+                timerWarningStage2Color = settings.timerWarningStage2Color,
+                timerWarningStage3Color = settings.timerWarningStage3Color,
+                timerWarningTextColorEnabled = settings.timerWarningTextColorEnabled == true,
+                timerWarningFontStage1Color = settings.timerWarningFontStage1Color,
+                timerWarningFontStage2Color = settings.timerWarningFontStage2Color,
+                timerWarningFontStage3Color = settings.timerWarningFontStage3Color,
+                timerWarningBoxColorEnabled = settings.timerWarningBoxColorEnabled == true,
+                timerWarningBoxStage1Color = settings.timerWarningBoxStage1Color,
+                timerWarningBoxStage2Color = settings.timerWarningBoxStage2Color,
+                timerWarningBoxStage3Color = settings.timerWarningBoxStage3Color,
+                timerWarningBackgroundEnabled = settings.timerWarningBackgroundEnabled == true,
+                timerWarningIconPadding = tonumber(settings.iconWarningPadding) or 6,
+                timerWarningIconBackgroundStage1Color = settings.timerWarningIconBackgroundStage1Color,
+                timerWarningIconBackgroundStage2Color = settings.timerWarningIconBackgroundStage2Color,
+                timerWarningIconBackgroundStage3Color = settings.timerWarningIconBackgroundStage3Color,
+                timerWarningBorderEnabled = settings.timerWarningBorderEnabled == true,
+                timerWarningIconBorderStage1Color = settings.timerWarningIconBorderStage1Color,
+                timerWarningIconBorderStage2Color = settings.timerWarningIconBorderStage2Color,
+                timerWarningIconBorderStage3Color = settings.timerWarningIconBorderStage3Color,
+                timerNormalSeconds = tonumber(settings.timerNormalSeconds) or 60,
+                timerSoonSeconds = tonumber(settings.timerSoonSeconds) or 20,
+                timerNormalBackgroundColor = settings.timerNormalBackgroundColor,
+                timerSoonBackgroundColor = settings.timerSoonBackgroundColor,
+                timerUrgentBackgroundColor = settings.timerUrgentBackgroundColor,
+            };
+        end
+    end
+end
+
+local function AddPreviewTextBadge(plateData, text, settings, defaults, globalSettings, kind)
+    if (settings == nil or settings.enabled ~= true or text == nil or tostring(text) == '') then
+        return;
+    end
+
+    plateData.badges = plateData.badges or {};
+    plateData.badges[#plateData.badges + 1] = {
+        kind = kind or 'text',
+        text = tostring(text),
+        offsetX = tonumber(settings.offsetX) or defaults.offsetX,
+        offsetY = tonumber(settings.offsetY) or defaults.offsetY,
+        fontFamily = fonts.GetRole(globalSettings, true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, true),
+        fontSize = textScale.ToTextureFontSize(settings.textSize, defaults.textSize),
+        textColor = settings.color or defaults.color,
+        textOutlineEnabled = settings.outlineEnabled == true,
+        textOutlineColor = settings.outlineColor or defaults.outlineColor,
+        textOutlineSize = tonumber(settings.outlineSize) or defaults.outlineSize,
+        backgroundEnabled = false,
+    };
+end
+
+local function AddPreviewPetTimerBadge(plateData, text, settings, globalSettings, labelName, iconName)
+    if (settings == nil or settings.enabled ~= true or text == nil or tostring(text) == '') then
+        return;
+    end
+
+    local badgeText = tostring(text);
+    local labelText = '';
+    local iconTextureId = nil;
+    local displayMode = tostring(settings.displayMode or 'Text');
+    local timerLabel = tostring(labelName or 'Jug');
+
+    badgeText = badgeText:gsub('^Jug%s+', '');
+    badgeText = badgeText:gsub('^Charmed%s+', '');
+
+    if (displayMode == 'Text') then
+        labelText = timerLabel;
+    elseif (displayMode == 'Icon') then
+        if (tostring(iconName or timerLabel):lower() == 'jug') then
+            iconTextureId = LoadPetIcon('bst/jug.png');
+        else
+            iconTextureId = LoadPetStateIcon(iconName or timerLabel);
+        end
+    end
+
+    plateData.badges = plateData.badges or {};
+    plateData.badges[#plateData.badges + 1] = {
+        kind = 'petTimer',
+        text = badgeText,
+        labelText = labelText,
+        offsetX = tonumber(settings.offsetX) or petTimerDefaults.offsetX,
+        offsetY = tonumber(settings.offsetY) or petTimerDefaults.offsetY,
+        fontFamily = fonts.GetRole(globalSettings, true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, true),
+        fontSize = textScale.ToTextureFontSize(settings.textSize, petTimerDefaults.textSize),
+        textColor = settings.color or petTimerDefaults.color,
+        textOutlineEnabled = settings.outlineEnabled == true,
+        textOutlineColor = settings.outlineColor or petTimerDefaults.outlineColor,
+        textOutlineSize = tonumber(settings.outlineSize) or petTimerDefaults.outlineSize,
+        backgroundEnabled = false,
+        iconTextureId = iconTextureId,
+        iconSize = tonumber(settings.iconSize) or petTimerDefaults.iconSize,
+        labelOffsetX = tonumber(settings.labelOffsetX) or 0,
+        labelOffsetY = tonumber(settings.labelOffsetY) or 0,
+        textOffsetX = tonumber(settings.textOffsetX) or 0,
+        textOffsetY = tonumber(settings.textOffsetY) or 0,
+        separateLabelOffsets = true,
+    };
+end
+
+local function AddPreviewPetStateBadge(plateData, commandName, settings, globalSettings)
+    if (settings == nil or settings.enabled ~= true or commandName == nil or tostring(commandName) == '') then
+        return;
+    end
+
+    local displayMode = tostring(settings.displayMode or 'Text');
+    local badgeText = '';
+    local labelText = '';
+    local iconTextureId = nil;
+
+    if (displayMode == 'Text') then
+        labelText = tostring(commandName);
+    elseif (displayMode == 'Icon') then
+        iconTextureId = LoadPetStateIcon(commandName);
+    end
+
+    plateData.badges = plateData.badges or {};
+    plateData.badges[#plateData.badges + 1] = {
+        kind = 'petState',
+        text = badgeText,
+        labelText = labelText,
+        offsetX = tonumber(settings.offsetX) or petStateDefaults.offsetX,
+        offsetY = tonumber(settings.offsetY) or petStateDefaults.offsetY,
+        fontFamily = fonts.GetRole(globalSettings, true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, true),
+        fontSize = textScale.ToTextureFontSize(settings.textSize, petStateDefaults.textSize),
+        textColor = settings.color or petStateDefaults.color,
+        textOutlineEnabled = settings.outlineEnabled == true,
+        textOutlineColor = settings.outlineColor or petStateDefaults.outlineColor,
+        textOutlineSize = tonumber(settings.outlineSize) or petStateDefaults.outlineSize,
+        backgroundEnabled = false,
+        iconTextureId = iconTextureId,
+        iconSize = tonumber(settings.iconSize) or petStateDefaults.iconSize,
+        labelOffsetX = tonumber(settings.labelOffsetX) or 0,
+        labelOffsetY = tonumber(settings.labelOffsetY) or 0,
+        separateLabelOffsets = true,
+    };
+end
+
+local function BuildPreviewExtraBar(settings, defaults, progress, text, kind, iconName, globalSettings, labelText)
+    if (settings == nil or settings.enabled ~= true) then
+        return nil;
+    end
+
+    local displayMode = tostring(settings.labelDisplayMode or 'Text');
+    local barText = tostring(text or '');
+    local iconTextureId = nil;
+
+    if (iconName ~= nil and displayMode == 'Icon') then
+        iconTextureId = LoadPetStateIcon(iconName);
+    end
+
+    local segmented = settings.segmented == true;
+    local barProgress = tonumber(progress) or 0;
+
+    if (segmented == true) then
+        barProgress = barProgress * 3;
+    end
+
+    return {
+        kind = kind,
+        enabled = true,
+        progress = barProgress,
+        width = tonumber(settings.width) or defaults.width,
+        height = tonumber(settings.height) or defaults.height,
+        offsetX = tonumber(settings.offsetX) or defaults.offsetX,
+        offsetY = tonumber(settings.offsetY) or defaults.offsetY,
+        color = settings.color or defaults.color,
+        backgroundColor = settings.backgroundColor or defaults.backgroundColor,
+        borderColor = settings.borderColor or defaults.borderColor,
+        borderSize = tonumber(settings.borderSize) or defaults.borderSize,
+        textureId = barTextures.GetTextureId(settings.texture),
+        showAtPercent = segmented and 300 or (tonumber(settings.showAtPercent) or 100),
+        segmented = segmented,
+        segmentGap = tonumber(settings.segmentGap) or defaults.segmentGap,
+        color2 = settings.color2 or defaults.color2,
+        color3 = settings.color3 or defaults.color3,
+        text = barText,
+        labelText = tostring(labelText or ''),
+        textOffsetX = tonumber(settings.textOffsetX) or 0,
+        textOffsetY = tonumber(settings.textOffsetY) or 0,
+        fontFamily = fonts.GetRole(globalSettings or globalDefaults, settings.useSmallFont == true),
+        fontFlags = fonts.GetRoleFlags(globalSettings or globalDefaults, settings.useSmallFont == true),
+        fontSize = textScale.ToTextureFontSize(settings.fontSize, defaults.fontSize),
+        textColor = settings.textColor or defaults.textColor,
+        textOutlineEnabled = settings.textOutlineEnabled == true,
+        textOutlineColor = settings.textOutlineColor or defaults.textOutlineColor,
+        textOutlineSize = tonumber(settings.textOutlineSize) or defaults.textOutlineSize,
+        iconTextureId = iconTextureId,
+        iconSize = tonumber(settings.labelIconSize) or defaults.labelIconSize,
+        iconOffsetX = tonumber(settings.labelIconOffsetX) or 0,
+        iconOffsetY = tonumber(settings.labelIconOffsetY) or 0,
+        separateLabelOffsets = iconTextureId ~= nil or tostring(labelText or '') ~= '',
+    };
+end
+
+local function CopySettingsWith(settings, overrides)
+    local copy = {};
+
+    for key, value in pairs(settings or {}) do
+        copy[key] = value;
+    end
+
+    for key, value in pairs(overrides or {}) do
+        copy[key] = value;
+    end
+
+    return copy;
+end
+
+local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings, hpBarSettings, tpBarSettings, distanceSettings, globalSettings, context)
+    local petTimerSettings = state.GetWidgetSettings('Pet (BST)', stateName, 'Pet timer', petTimerDefaults);
+    local petStateSettings = state.GetWidgetSettings('Pet (BST)', stateName, 'Pet state', petStateDefaults);
+    local sicSettings = state.GetWidgetSettings('Pet (BST)', stateName, 'Sic', petReadyBarDefaults);
+    local readySettings = state.GetWidgetSettings('Pet (BST)', stateName, 'Ready bar', petReadyBarDefaults);
+    local rewardSettings = state.GetWidgetSettings('Pet (BST)', stateName, 'Reward', petRewardBarDefaults);
+    local hp = 985;
+    local maxHp = 1074;
+    local hpPercent = ClampPercent((hp / maxHp) * 100, 92);
+    local tpValue = 1375;
+    local tpPercent = tpValue / 10;
+    local hpColor = hpBarSettings.color or { 0.95, 0.45, 0.45, 1.0 };
+    hpBarSettings.showValue = false;
+
+    if (
+        hpBarSettings.lowColorEnabled == true and
+        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
+    ) then
+        hpColor = hpBarSettings.lowColor or hpColor;
+    end
+
+    local hpLowActive = (
+        hpBarSettings.lowColorEnabled == true and
+        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
+    );
+
+    local plateData = {
+        hp = hpPercent,
+        tp = tpPercent,
+        targetMarker = { enabled = false },
+        background = {
+            enabled = backgroundSettings.enabled == true,
+            width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
+            height = tonumber(backgroundSettings.height) or backgroundDefaults.height,
+            offsetX = tonumber(backgroundSettings.offsetX) or backgroundDefaults.offsetX,
+            offsetY = tonumber(backgroundSettings.offsetY) or backgroundDefaults.offsetY,
+            color = backgroundSettings.color or backgroundDefaults.color,
+            borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
+            borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
+            anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+        },
+        name = (nameSettings.enabled == true) and ((stateName == 'Charmed Pet') and 'Desert Beetle' or 'CourierCarrie') or '',
+        nameFontFamily = fonts.GetRole(globalSettings, false),
+        nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
+        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameColor = nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
+        nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
+        nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
+        nameOffsetX = ClampTextureOffset(tonumber(nameSettings.offsetX) or -38, 1024, 24),
+        nameOffsetY = ClampTextureOffset(tonumber(nameSettings.offsetY) or -34, 512, 24),
+        nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
+        nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        hpBar = {
+            enabled = hpBarSettings.enabled == true,
+            width = tonumber(hpBarSettings.width) or 160,
+            height = tonumber(hpBarSettings.height) or 14,
+            offsetX = tonumber(hpBarSettings.offsetX) or 0,
+            offsetY = tonumber(hpBarSettings.offsetY) or -16,
+            color = hpColor,
+            backgroundColor = hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
+            borderColor = hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = tonumber(hpBarSettings.borderSize) or 0,
+            anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
+            anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
+            textureId = barTextures.GetTextureId(hpBarSettings.texture),
+            animationEnabled = hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
+            animationTextureId = barAnimations.GetTextureId(hpBarSettings.lowAnimation),
+            animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or 40,
+            animationColor = hpBarSettings.lowAnimationColor,
+            showAtPercent = tonumber(hpBarSettings.showAtPercent) or 100,
+            text = pupPreview == true and BuildPercentFallbackResourceText(hpBarSettings, 'HP', hp, maxHp, hpPercent) or BuildResourceText(hpBarSettings, 'HP', hp, maxHp, hpPercent),
+            textOffsetX = tonumber(hpBarSettings.textOffsetX) or 0,
+            textOffsetY = tonumber(hpBarSettings.textOffsetY) or 0,
+            fontFamily = fonts.GetRole(globalSettings, hpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, hpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(hpBarSettings.fontSize, barDefaults.fontSize),
+            textColor = hpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = hpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = hpBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = tonumber(hpBarSettings.textOutlineSize) or 1,
+        },
+        mpBar = { enabled = false },
+        tpBar = {
+            enabled = tpBarSettings.enabled == true,
+            width = tonumber(tpBarSettings.width) or 160,
+            height = tonumber(tpBarSettings.height) or 6,
+            offsetX = tonumber(tpBarSettings.offsetX) or 0,
+            offsetY = tonumber(tpBarSettings.offsetY) or 4,
+            color = tpBarSettings.color or { 0.0, 0.55, 0.95, 1.0 },
+            backgroundColor = tpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
+            borderColor = tpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = tonumber(tpBarSettings.borderSize) or 0,
+            anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
+            anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
+            textureId = barTextures.GetTextureId(tpBarSettings.texture),
+            color2 = tpBarSettings.color2 or tpBarDefaults.color2,
+            color3 = tpBarSettings.color3 or tpBarDefaults.color3,
+            showAtPercent = tonumber(tpBarSettings.showAtPercent) or 300,
+            segmented = tpBarSettings.segmented ~= false,
+            segmentGap = tonumber(tpBarSettings.segmentGap) or 6,
+            text = BuildResourceText(tpBarSettings, 'TP', tpValue, 3000, tpPercent),
+            textOffsetX = tonumber(tpBarSettings.textOffsetX) or 0,
+            textOffsetY = tonumber(tpBarSettings.textOffsetY) or 0,
+            fontFamily = fonts.GetRole(globalSettings, tpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, tpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(tpBarSettings.fontSize, tpBarDefaults.fontSize),
+            textColor = tpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = tpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = tpBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = tonumber(tpBarSettings.textOutlineSize) or 1,
+        },
+    };
+
+    if (distanceSettings ~= nil and distanceSettings.enabled == true) then
+        plateData.badges = plateData.badges or {};
+        plateData.badges[#plateData.badges + 1] = {
+            kind = 'distance',
+            text = tostring(distanceSettings.prefix or '') .. '12.4',
+            offsetX = tonumber(distanceSettings.offsetX) or 66,
+            offsetY = tonumber(distanceSettings.offsetY) or -52,
+            fontFamily = fonts.GetRole(globalSettings, distanceSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, distanceSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(distanceSettings.textSize, distanceDefaults.textSize),
+            textColor = distanceSettings.color or distanceDefaults.color,
+            textOutlineEnabled = distanceSettings.outlineEnabled == true,
+            textOutlineColor = distanceSettings.outlineColor or distanceDefaults.outlineColor,
+            textOutlineSize = tonumber(distanceSettings.outlineSize) or distanceDefaults.outlineSize,
+            anchorTo = distanceSettings.anchorTo or distanceDefaults.anchorTo,
+            anchorPoint = distanceSettings.anchorPoint or distanceDefaults.anchorPoint,
+            backgroundEnabled = false,
+        };
+    end
+
+    if (stateName == 'Jug Pet') then
+        AddPreviewPetTimerBadge(plateData, 'Jug 90m', petTimerSettings, globalSettings, 'Jug', 'jug');
+        AddPreviewPetStateBadge(plateData, 'Fight', petStateSettings, globalSettings);
+        plateData.extraBars = plateData.extraBars or {};
+        local readyCounterText = (readySettings.showPercent == true) and '3/3' or '';
+        local readyLabelText = (tostring(readySettings.labelDisplayMode or 'Text') == 'Text') and 'Ready' or '';
+
+        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(readySettings, petReadyBarDefaults, 100, readyCounterText, 'ready', 'ready', globalSettings, readyLabelText);
+        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(rewardSettings, petRewardBarDefaults, 100, '', 'reward', 'reward', globalSettings, (tostring(rewardSettings.labelDisplayMode or 'Text') == 'Text') and 'Reward' or '');
+    else
+        AddPreviewPetTimerBadge(plateData, 'Charmed 4m', petTimerSettings, globalSettings, 'Charmed', 'charmed');
+        AddPreviewPetStateBadge(plateData, 'Stay', petStateSettings, globalSettings);
+        local sicLabelText = (tostring(sicSettings.labelDisplayMode or 'Text') == 'Text') and 'Sic' or '';
+        local sicBar = BuildPreviewExtraBar(CopySettingsWith(sicSettings, { segmented = false, showPercent = false }), petReadyBarDefaults, 100, '', 'sic', 'sic', globalSettings, sicLabelText);
+
+        if (sicBar ~= nil) then
+            plateData.extraBars = plateData.extraBars or {};
+            plateData.extraBars[#plateData.extraBars + 1] = sicBar;
+        end
+
+        plateData.extraBars = plateData.extraBars or {};
+        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(rewardSettings, petRewardBarDefaults, 100, '', 'reward', 'reward', globalSettings, (tostring(rewardSettings.labelDisplayMode or 'Text') == 'Text') and 'Reward' or '');
+    end
+
+    AddEnmityPreviewIcon(plateData, globalSettings, context);
+
+    return plateData;
+end
+
+local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, hpBarSettings, tpBarSettings, distanceSettings, globalSettings, context)
+    local hpPercent = 92;
+    local tpValue = 1375;
+    local tpPercent = tpValue / 10;
+    local hpColor = hpBarSettings.color or barDefaults.color;
+    local tpColor = tpBarSettings.color or tpBarDefaults.color;
+
+    local hpLowActive = (
+        hpBarSettings.lowColorEnabled == true and
+        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
+    );
+    local tpLowActive = (
+        tpBarSettings.lowColorEnabled == true and
+        tpPercent <= (tonumber(tpBarSettings.lowColorPercent) or 25)
+    );
+
+    if (hpLowActive == true) then
+        hpColor = hpBarSettings.lowColor or hpColor;
+    end
+
+    if (tpLowActive == true) then
+        tpColor = tpBarSettings.lowColor or tpColor;
+    end
+
+    local plateData = {
+        hp = hpPercent,
+        tp = tpPercent,
+        targetMarker = BuildTargetMarker(context, hpBarSettings),
+        background = {
+            enabled = backgroundSettings.enabled == true,
+            width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
+            height = tonumber(backgroundSettings.height) or backgroundDefaults.height,
+            offsetX = tonumber(backgroundSettings.offsetX) or backgroundDefaults.offsetX,
+            offsetY = tonumber(backgroundSettings.offsetY) or backgroundDefaults.offsetY,
+            color = backgroundSettings.color or backgroundDefaults.color,
+            borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
+            borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
+            anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+        },
+        name = (nameSettings.enabled == true) and tostring(name or 'Lumiere') or '',
+        nameFontFamily = fonts.GetRole(globalSettings, false),
+        nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
+        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameColor = nameSettings.color or nameDefaults.color,
+        nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
+        nameOutlineColor = nameSettings.outlineColor or nameDefaults.outlineColor,
+        nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
+        nameOffsetX = ClampTextureOffset(tonumber(nameSettings.offsetX) or nameDefaults.offsetX, 1024, 24),
+        nameOffsetY = ClampTextureOffset(tonumber(nameSettings.offsetY) or nameDefaults.offsetY, 512, 24),
+        nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
+        nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        hpBar = {
+            enabled = hpBarSettings.enabled == true,
+            width = tonumber(hpBarSettings.width) or barDefaults.width,
+            height = tonumber(hpBarSettings.height) or barDefaults.height,
+            offsetX = tonumber(hpBarSettings.offsetX) or barDefaults.offsetX,
+            offsetY = tonumber(hpBarSettings.offsetY) or barDefaults.offsetY,
+            color = hpColor,
+            backgroundColor = hpBarSettings.backgroundColor or barDefaults.backgroundColor,
+            borderColor = hpBarSettings.borderColor or barDefaults.borderColor,
+            borderSize = tonumber(hpBarSettings.borderSize) or barDefaults.borderSize,
+            anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
+            anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
+            texture = hpBarSettings.texture or barDefaults.texture,
+            textureId = barTextures.GetTextureId(hpBarSettings.texture or barDefaults.texture),
+            animationEnabled = hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
+            animationTextureId = barAnimations.GetTextureId(hpBarSettings.lowAnimation),
+            animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or barDefaults.lowAnimationSpeed,
+            animationColor = hpBarSettings.lowAnimationColor,
+            showAtPercent = tonumber(hpBarSettings.showAtPercent) or barDefaults.showAtPercent,
+            text = BuildPercentFallbackResourceText(hpBarSettings, 'HP', nil, nil, hpPercent),
+            textOffsetX = tonumber(hpBarSettings.textOffsetX) or barDefaults.textOffsetX,
+            textOffsetY = tonumber(hpBarSettings.textOffsetY) or barDefaults.textOffsetY,
+            fontFamily = fonts.GetRole(globalSettings, hpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, hpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(hpBarSettings.fontSize, barDefaults.fontSize),
+            textColor = hpBarSettings.textColor or barDefaults.textColor,
+            textOutlineEnabled = hpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = hpBarSettings.textOutlineColor or barDefaults.textOutlineColor,
+            textOutlineSize = tonumber(hpBarSettings.textOutlineSize) or barDefaults.textOutlineSize,
+        },
+        mpBar = {
+            enabled = false,
+        },
+        tpBar = {
+            enabled = tpBarSettings.enabled == true,
+            width = tonumber(tpBarSettings.width) or tpBarDefaults.width,
+            height = tonumber(tpBarSettings.height) or tpBarDefaults.height,
+            offsetX = tonumber(tpBarSettings.offsetX) or tpBarDefaults.offsetX,
+            offsetY = tonumber(tpBarSettings.offsetY) or tpBarDefaults.offsetY,
+            color = tpColor,
+            backgroundColor = tpBarSettings.backgroundColor or tpBarDefaults.backgroundColor,
+            borderColor = tpBarSettings.borderColor or tpBarDefaults.borderColor,
+            borderSize = tonumber(tpBarSettings.borderSize) or tpBarDefaults.borderSize,
+            anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
+            anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
+            texture = tpBarSettings.texture or tpBarDefaults.texture,
+            textureId = barTextures.GetTextureId(tpBarSettings.texture or tpBarDefaults.texture),
+            animationEnabled = tpLowActive == true and tpBarSettings.lowAnimationEnabled == true,
+            animationTextureId = barAnimations.GetTextureId(tpBarSettings.lowAnimation),
+            animationSpeed = tonumber(tpBarSettings.lowAnimationSpeed) or tpBarDefaults.lowAnimationSpeed,
+            animationColor = tpBarSettings.lowAnimationColor,
+            color2 = tpBarSettings.color2 or tpBarDefaults.color2,
+            color3 = tpBarSettings.color3 or tpBarDefaults.color3,
+            showAtPercent = tonumber(tpBarSettings.showAtPercent) or tpBarDefaults.showAtPercent,
+            segmented = tpBarSettings.segmented ~= false,
+            segmentGap = tonumber(tpBarSettings.segmentGap) or tpBarDefaults.segmentGap,
+            text = BuildResourceText(tpBarSettings, 'TP', tpValue, 3000, tpPercent),
+            textOffsetX = tonumber(tpBarSettings.textOffsetX) or tpBarDefaults.textOffsetX,
+            textOffsetY = tonumber(tpBarSettings.textOffsetY) or tpBarDefaults.textOffsetY,
+            fontFamily = fonts.GetRole(globalSettings, tpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, tpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(tpBarSettings.fontSize, tpBarDefaults.fontSize),
+            textColor = tpBarSettings.textColor or tpBarDefaults.textColor,
+            textOutlineEnabled = tpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = tpBarSettings.textOutlineColor or tpBarDefaults.textOutlineColor,
+            textOutlineSize = tonumber(tpBarSettings.textOutlineSize) or tpBarDefaults.textOutlineSize,
+        },
+    };
+
+    if (distanceSettings ~= nil and distanceSettings.enabled == true) then
+        plateData.badges = plateData.badges or {};
+        plateData.badges[#plateData.badges + 1] = {
+            kind = 'distance',
+            text = tostring(distanceSettings.prefix or '') .. '12.4',
+            offsetX = tonumber(distanceSettings.offsetX) or distanceDefaults.offsetX,
+            offsetY = tonumber(distanceSettings.offsetY) or distanceDefaults.offsetY,
+            fontFamily = fonts.GetRole(globalSettings, distanceSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, distanceSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(distanceSettings.textSize, distanceDefaults.textSize),
+            textColor = distanceSettings.color or distanceDefaults.color,
+            textOutlineEnabled = distanceSettings.outlineEnabled == true,
+            textOutlineColor = distanceSettings.outlineColor or distanceDefaults.outlineColor,
+            textOutlineSize = tonumber(distanceSettings.outlineSize) or distanceDefaults.outlineSize,
+            anchorTo = distanceSettings.anchorTo or distanceDefaults.anchorTo,
+            anchorPoint = distanceSettings.anchorPoint or distanceDefaults.anchorPoint,
+            backgroundEnabled = false,
+        };
+    end
+
+    AddEnmityPreviewIcon(plateData, globalSettings, context);
+
+    return plateData;
+end
+
+local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettings, hpBarSettings, mpBarSettings, tpBarSettings, castBarSettings, globalSettings, context)
+    local isSpirit = stateName == 'Spirit';
+    local wardSettings = state.GetWidgetSettings('Pet (SMN)', stateName, 'Ward timer', petWardBarDefaults);
+    local rageSettings = state.GetWidgetSettings('Pet (SMN)', stateName, 'Rage timer', petRageBarDefaults);
+    local hp = isSpirit and 742 or 985;
+    local maxHp = isSpirit and 886 or 1074;
+    local mp = 612;
+    local maxMp = 886;
+    local tpValue = 1375;
+    local hpPercent = ClampPercent((hp / maxHp) * 100, 92);
+    local mpPercent = ClampPercent((mp / maxMp) * 100, 69);
+    local tpPercent = tpValue / 10;
+    local hpColor = hpBarSettings.color or { 0.95, 0.45, 0.45, 1.0 };
+    local mpColor = mpBarSettings.color or { 0.70, 0.90, 0.45, 1.0 };
+    local tpColor = tpBarSettings.color or { 0.0, 0.55, 0.95, 1.0 };
+    local hpLowActive = (
+        hpBarSettings.lowColorEnabled == true and
+        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
+    );
+    local mpLowActive = (
+        mpBarSettings.lowColorEnabled == true and
+        mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25)
+    );
+    local tpLowActive = (
+        tpBarSettings.lowColorEnabled == true and
+        tpPercent <= (tonumber(tpBarSettings.lowColorPercent) or 25)
+    );
+
+    if (hpLowActive == true) then hpColor = hpBarSettings.lowColor or hpColor; end
+    if (mpLowActive == true) then mpColor = mpBarSettings.lowColor or mpColor; end
+    if (tpLowActive == true) then tpColor = tpBarSettings.lowColor or tpColor; end
+
+    local plateData = {
+        hp = hpPercent,
+        mp = mpPercent,
+        tp = tpPercent,
+        cast = isSpirit and 62 or 0,
+        targetMarker = { enabled = false },
+        background = {
+            enabled = backgroundSettings.enabled == true,
+            width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
+            height = tonumber(backgroundSettings.height) or backgroundDefaults.height,
+            offsetX = tonumber(backgroundSettings.offsetX) or backgroundDefaults.offsetX,
+            offsetY = tonumber(backgroundSettings.offsetY) or backgroundDefaults.offsetY,
+            color = backgroundSettings.color or backgroundDefaults.color,
+            borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
+            borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
+            anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+        },
+        name = (nameSettings.enabled == true) and (isSpirit and 'LightSpirit' or 'Carbuncle') or '',
+        nameFontFamily = fonts.GetRole(globalSettings, false),
+        nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
+        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameColor = nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
+        nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
+        nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
+        nameOffsetX = ClampTextureOffset(tonumber(nameSettings.offsetX) or -38, 1024, 24),
+        nameOffsetY = ClampTextureOffset(tonumber(nameSettings.offsetY) or -34, 512, 24),
+        nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
+        nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        hpBar = {
+            enabled = hpBarSettings.enabled == true,
+            width = tonumber(hpBarSettings.width) or 160,
+            height = tonumber(hpBarSettings.height) or 14,
+            offsetX = tonumber(hpBarSettings.offsetX) or 0,
+            offsetY = tonumber(hpBarSettings.offsetY) or -16,
+            color = hpColor,
+            backgroundColor = hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
+            borderColor = hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = tonumber(hpBarSettings.borderSize) or 0,
+            anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
+            anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
+            textureId = barTextures.GetTextureId(hpBarSettings.texture),
+            animationEnabled = hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
+            animationTextureId = barAnimations.GetTextureId(hpBarSettings.lowAnimation),
+            animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or 40,
+            animationColor = hpBarSettings.lowAnimationColor,
+            showAtPercent = tonumber(hpBarSettings.showAtPercent) or 100,
+            text = pupPreview == true and BuildPercentFallbackResourceText(hpBarSettings, 'HP', nil, nil, hpPercent) or BuildResourceText(hpBarSettings, 'HP', hp, maxHp, hpPercent),
+            textOffsetX = tonumber(hpBarSettings.textOffsetX) or 0,
+            textOffsetY = tonumber(hpBarSettings.textOffsetY) or 0,
+            fontFamily = fonts.GetRole(globalSettings, hpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, hpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(hpBarSettings.fontSize, barDefaults.fontSize),
+            textColor = hpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = hpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = hpBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = tonumber(hpBarSettings.textOutlineSize) or 1,
+        },
+        mpBar = {
+            enabled = isSpirit and mpBarSettings.enabled == true,
+            width = tonumber(mpBarSettings.width) or 170,
+            height = tonumber(mpBarSettings.height) or 12,
+            offsetX = tonumber(mpBarSettings.offsetX) or 0,
+            offsetY = tonumber(mpBarSettings.offsetY) or 16,
+            color = mpColor,
+            backgroundColor = mpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
+            borderColor = mpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = tonumber(mpBarSettings.borderSize) or 0,
+            anchorTo = mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
+            anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
+            textureId = barTextures.GetTextureId(mpBarSettings.texture),
+            animationEnabled = mpLowActive == true and mpBarSettings.lowAnimationEnabled == true,
+            animationTextureId = barAnimations.GetTextureId(mpBarSettings.lowAnimation),
+            animationSpeed = tonumber(mpBarSettings.lowAnimationSpeed) or 40,
+            animationColor = mpBarSettings.lowAnimationColor,
+            showAtPercent = tonumber(mpBarSettings.showAtPercent) or 100,
+            text = pupPreview == true and BuildPercentFallbackResourceText(mpBarSettings, 'MP', mp, maxMp, mpPercent) or BuildResourceText(mpBarSettings, 'MP', mp, maxMp, mpPercent),
+            textOffsetX = tonumber(mpBarSettings.textOffsetX) or 0,
+            textOffsetY = tonumber(mpBarSettings.textOffsetY) or 0,
+            fontFamily = fonts.GetRole(globalSettings, mpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, mpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(mpBarSettings.fontSize, mpBarDefaults.fontSize),
+            textColor = mpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = mpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = mpBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = tonumber(mpBarSettings.textOutlineSize) or 1,
+        },
+        tpBar = {
+            enabled = (not isSpirit) and tpBarSettings.enabled == true,
+            width = tonumber(tpBarSettings.width) or 170,
+            height = tonumber(tpBarSettings.height) or 12,
+            offsetX = tonumber(tpBarSettings.offsetX) or 0,
+            offsetY = tonumber(tpBarSettings.offsetY) or 30,
+            color = tpColor,
+            backgroundColor = tpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
+            borderColor = tpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = tonumber(tpBarSettings.borderSize) or 0,
+            anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
+            anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
+            textureId = barTextures.GetTextureId(tpBarSettings.texture),
+            color2 = tpBarSettings.color2 or tpBarDefaults.color2,
+            color3 = tpBarSettings.color3 or tpBarDefaults.color3,
+            showAtPercent = tonumber(tpBarSettings.showAtPercent) or 300,
+            segmented = tpBarSettings.segmented ~= false,
+            segmentGap = tonumber(tpBarSettings.segmentGap) or 6,
+            text = BuildResourceText(tpBarSettings, 'TP', tpValue, 3000, tpPercent),
+            textOffsetX = tonumber(tpBarSettings.textOffsetX) or 0,
+            textOffsetY = tonumber(tpBarSettings.textOffsetY) or 0,
+            fontFamily = fonts.GetRole(globalSettings, tpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, tpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(tpBarSettings.fontSize, tpBarDefaults.fontSize),
+            textColor = tpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = tpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = tpBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = tonumber(tpBarSettings.textOutlineSize) or 1,
+        },
+        castBar = {
+            enabled = isSpirit and castBarSettings.enabled == true,
+            width = tonumber(castBarSettings.width) or castBarDefaults.width,
+            height = tonumber(castBarSettings.height) or castBarDefaults.height,
+            offsetX = tonumber(castBarSettings.offsetX) or castBarDefaults.offsetX,
+            offsetY = tonumber(castBarSettings.offsetY) or castBarDefaults.offsetY,
+            color = castBarSettings.color or castBarDefaults.color,
+            backgroundColor = castBarSettings.backgroundColor or castBarDefaults.backgroundColor,
+            borderColor = castBarSettings.borderColor or castBarDefaults.borderColor,
+            borderSize = tonumber(castBarSettings.borderSize) or castBarDefaults.borderSize,
+            anchorTo = castBarSettings.anchorTo or castBarDefaults.anchorTo,
+            anchorPoint = castBarSettings.anchorPoint or castBarDefaults.anchorPoint,
+            textureId = barTextures.GetTextureId(castBarSettings.texture),
+            text = (castBarSettings.showSpellName ~= false) and 'Stone III' or '',
+            textOffsetX = tonumber(castBarSettings.textOffsetX) or castBarDefaults.textOffsetX,
+            textOffsetY = tonumber(castBarSettings.textOffsetY) or castBarDefaults.textOffsetY,
+            fontFamily = fonts.GetRole(globalSettings, castBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, castBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(castBarSettings.fontSize, castBarDefaults.fontSize),
+            textColor = castBarSettings.textColor or castBarDefaults.textColor,
+            textOutlineEnabled = castBarSettings.textOutlineEnabled == true,
+            textOutlineColor = castBarSettings.textOutlineColor or castBarDefaults.textOutlineColor,
+            textOutlineSize = tonumber(castBarSettings.textOutlineSize) or castBarDefaults.textOutlineSize,
+        },
+    };
+
+    if (isSpirit ~= true) then
+        plateData.extraBars = plateData.extraBars or {};
+        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(wardSettings, petWardBarDefaults, 72, (wardSettings.showPercent ~= false) and '17' or '', 'ward', 'ward', globalSettings, (tostring(wardSettings.labelDisplayMode or 'Text') == 'Text') and 'Ward' or '');
+        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(rageSettings, petRageBarDefaults, 100, '', 'rage', 'rage', globalSettings, (tostring(rageSettings.labelDisplayMode or 'Text') == 'Text') and 'Rage' or '');
+    end
+
+    AddEnmityPreviewIcon(plateData, globalSettings, context);
+
+    return plateData;
+end
+
+local AddPeerPreview = nil;
+
+local function BuildPlate(entityName, stateName, context)
+    entityName = tostring(entityName or 'Self');
+    stateName = tostring(stateName or 'Idle');
+    local storageEntityName = (entityName == 'NPC/Object') and 'NPC' or ((entityName == 'Pet (PUP)') and 'Automaton' or ((entityName == 'Pet (DRG)') and 'Wyvern' or entityName));
+    local hpDefaults = (entityName == 'Pet (SMN)') and smnHpBarDefaults or barDefaults;
+    local mpDefaults = (entityName == 'Pet (SMN)') and smnMpBarDefaults or mpBarDefaults;
+    local tpDefaults = (entityName == 'Pet (SMN)') and smnTpBarDefaults or tpBarDefaults;
+    local castDefaults = (entityName == 'Pet (SMN)') and smnCastBarDefaults or castBarDefaults;
+
+    local nameSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Name', nameDefaults);
+    local backgroundSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Background', backgroundDefaults);
+    local hpBarSettings = state.GetWidgetSettings(storageEntityName, stateName, 'HP Bar', hpDefaults);
+    local jobSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Job', jobDefaults);
+    local levelSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Level', levelDefaults);
+    local idSettings = state.GetWidgetSettings(storageEntityName, stateName, 'ID', idDefaults);
+    local distanceSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Distance', distanceDefaults);
+    local typeLineSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Type line', typeLineDefaults);
+    local iconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Icon', npcObjectIconDefaults);
+    local buffsSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Buffs', buffsDefaults);
+    local debuffsSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Debuffs', debuffsDefaults);
+    local mpBarSettings = state.GetWidgetSettings(storageEntityName, stateName, 'MP Bar', mpDefaults);
+    local tpBarSettings = state.GetWidgetSettings(storageEntityName, stateName, 'TP Bar', tpDefaults);
+    local castBarSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Cast bar', castDefaults);
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local gameModeIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Game mode icon', gameModeIconDefaults);
+    local partyLeaderIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Party leader icon', partyLeaderIconDefaults);
+    local allianceLeaderIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Alliance leader icon', allianceLeaderIconDefaults);
+    local linkshellIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Linkshell icon', linkshellIconDefaults);
+    local bazaarIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Bazaar icon', bazaarIconDefaults);
+    local awayIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Away icon', awayIconDefaults);
+    local disconnectIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Disconnect icon', disconnectIconDefaults);
+    local anonIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Anon icon', anonIconDefaults);
+    local followIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Follow icon', followIconDefaults);
+    local starsIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Stars icon', starsIconDefaults);
+    local levelSyncIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Level sync icon', levelSyncIconDefaults);
+    local newAdventurerIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'New adventurer icon', newAdventurerIconDefaults);
+    local maneuverSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Maneuvers', maneuverDefaults);
+
+    if (entityName == 'NPC' or entityName == 'Object' or entityName == 'NPC/Object') then
+        ApplyNpcAnchorDefaults(iconSettings, npcObjectIconDefaults, -28, -30);
+        ApplyNpcAnchorDefaults(typeLineSettings, typeLineDefaults, 0, -30);
+    end
+
+    local hp = 985;
+    local maxHp = 1074;
+    local mp = 612;
+    local maxMp = 886;
+    local tp = 1375;
+    local pupPreview = (entityName == 'Pet (PUP)');
+
+    if (pupPreview == true) then
+        hp = nil;
+        maxHp = nil;
+        mp = nil;
+        maxMp = nil;
+        tp = 152;
+    end
+    local previewNames = {
+        ['PC'] = 'Libra',
+        ['Enemy'] = 'Sabotender Enamorado',
+        ['Trust'] = 'Kupipi',
+        ['Pet (BST)'] = (stateName == 'Charmed Pet') and 'Desert Beetle' or 'CourierCarrie',
+        ['Pet (DRG)'] = 'Lumiere',
+        ['Pet (PUP)'] = 'Lobo',
+        ['NPC'] = 'Hunter',
+        ['Object'] = 'Mining Point',
+        ['NPC/Object'] = 'Hunter',
+    };
+    local previewName = previewNames[entityName] or 'Player';
+    local self = nil;
+
+    if (entityName == 'Self') then
+        pcall(function()
+            self = entities.GetSelf();
+        end);
+
+        if (self ~= nil and self.name ~= nil and tostring(self.name) ~= '') then
+            previewName = tostring(self.name);
+        end
+
+        if (self ~= nil and tonumber(self.hp) ~= nil and tonumber(self.hp) > 0) then
+            hp = tonumber(self.hp);
+        end
+
+        if (self ~= nil and tonumber(self.maxHp) ~= nil and tonumber(self.maxHp) > 0) then
+            maxHp = tonumber(self.maxHp);
+        end
+
+        if (self ~= nil and tonumber(self.mp) ~= nil) then
+            mp = tonumber(self.mp);
+        end
+
+        if (self ~= nil and tonumber(self.maxMp) ~= nil and tonumber(self.maxMp) > 0) then
+            maxMp = tonumber(self.maxMp);
+        end
+
+        if (self ~= nil and tonumber(self.tp) ~= nil) then
+            tp = tonumber(self.tp);
+        end
+    end
+
+    local hpPercent = pupPreview == true and 100 or ClampPercent((hp / maxHp) * 100, 92);
+    local mpPercent = pupPreview == true and 0 or ClampPercent((mp / maxMp) * 100, 69);
+    local tpPercent = math.max(0, math.min(300, (math.max(0, math.min(3000, tp)) / 10)));
+
+    if (entityName == 'Self' and self ~= nil and tonumber(self.hpPercent) ~= nil and tonumber(self.hpPercent) > 0) then
+        hpPercent = ClampPercent(self.hpPercent, hpPercent);
+    end
+
+    if (entityName == 'Self' and self ~= nil and tonumber(self.mpPercent) ~= nil and tonumber(self.mpPercent) >= 0) then
+        mpPercent = ClampPercent(self.mpPercent, mpPercent);
+    end
+
+    local npcObjectPreview = (entityName == 'NPC' or entityName == 'Object' or entityName == 'NPC/Object');
+
+    local hpColor = hpBarSettings.color or { 0.20, 0.95, 0.34, 0.95 };
+    local mpColor = mpBarSettings.color or { 0.25, 0.45, 1.0, 0.95 };
+    local tpColor = tpBarSettings.color or { 1.0, 0.70, 0.18, 0.95 };
+    local icons = {};
+
+    if (
+        hpBarSettings.lowColorEnabled == true and
+        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
+    ) then
+        hpColor = hpBarSettings.lowColor or hpColor;
+    end
+
+    if (
+        mpBarSettings.lowColorEnabled == true and
+        mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25)
+    ) then
+        mpColor = mpBarSettings.lowColor or mpColor;
+    end
+
+    if (
+        tpBarSettings.lowColorEnabled == true and
+        tpPercent <= (tonumber(tpBarSettings.lowColorPercent) or 25)
+    ) then
+        tpColor = tpBarSettings.lowColor or tpColor;
+    end
+
+    if (entityName == 'Pet (BST)') then
+        return BuildPetPreviewPlate(
+            stateName,
+            nameSettings,
+            backgroundSettings,
+            hpBarSettings,
+            tpBarSettings,
+            distanceSettings,
+            globalSettings,
+            context
+        );
+    end
+
+    if (entityName == 'Pet (SMN)') then
+        return BuildSmnPetPreviewPlate(
+            stateName,
+            nameSettings,
+            backgroundSettings,
+            hpBarSettings,
+            mpBarSettings,
+            tpBarSettings,
+            castBarSettings,
+            globalSettings,
+            context
+        );
+    end
+
+    if (entityName == 'Pet (DRG)') then
+        return BuildWyvernPreviewPlate(
+            previewName,
+            nameSettings,
+            backgroundSettings,
+            hpBarSettings,
+            tpBarSettings,
+            distanceSettings,
+            globalSettings,
+            context
+        );
+    end
+
+    if (entityName == 'Self' or entityName == 'PC' or entityName == 'Trust') then
+        AddIcon(icons, allianceLeaderIconSettings, LoadWidgetIcon('alliance_leader.png'), -120, -54, 'allianceLeaderIcon');
+        AddIcon(icons, partyLeaderIconSettings, LoadWidgetIcon('party_leader.png'), -96, -54, 'partyLeaderIcon');
+        AddIcon(icons, gameModeIconSettings, gameMode.GetIconTextureId('ACE'), -72, -54, 'gameModeIcon');
+        AddIcon(icons, linkshellIconSettings, LoadWidgetIcon('linkshell.png'), 48, -54, 'linkshellIcon');
+        AddIcon(icons, bazaarIconSettings, LoadWidgetIcon('bazaar.png'), 72, -54, 'bazaarIcon');
+        AddIcon(icons, awayIconSettings, LoadWidgetIcon('away.png'), 120, -54, 'awayIcon');
+        AddIcon(icons, disconnectIconSettings, LoadWidgetIcon('dc.png'), 144, -54, 'disconnectIcon');
+        AddIcon(icons, starsIconSettings, LoadWidgetIcon('stars.png'), -48, -54, 'starsIcon');
+        AddIcon(icons, newAdventurerIconSettings, LoadWidgetIcon('new_adventurer.png'), 24, -54, 'newAdventurerIcon');
+    end
+
+    if ((entityName == 'Enemy' or entityName == 'Self' or (entityName == 'PC' and stateName == 'Combat')) and (context == nil or context.widgetKey ~= 'Peer')) then
+        local buffRows = T{
+            { id = 33, seconds = 148 },
+            { id = 40, seconds = 82 },
+            { id = 41, seconds = 28 },
+        };
+        local debuffRows = T{
+            { id = 4, seconds = 118 },
+            { id = 13, seconds = 44 },
+            { id = 134, seconds = 12 },
+        };
+
+        AddStatusPreviewIcons(icons, buffsSettings, buffRows, 'buffs');
+        AddStatusPreviewIcons(icons, debuffsSettings, debuffRows, 'debuffs');
+    end
+
+    local plateData = {
+        hp = hpPercent,
+        mp = mpPercent,
+        tp = tpPercent,
+        name = (nameSettings.enabled == true) and previewName or '',
+        nameFontFamily = fonts.GetRole(globalSettings, false),
+        nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
+        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameColor = (entityName == 'Enemy') and GetPreviewDifficultyColor(nameSettings, nameDefaults) or (nameSettings.color or { 1.0, 1.0, 1.0, 1.0 }),
+        nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
+        nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
+        nameOffsetX = tonumber(nameSettings.offsetX) or 0,
+        nameOffsetY = tonumber(nameSettings.offsetY) or -54,
+        nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
+        nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        anchorMap = {
+            ['Background'] = 'background',
+            ['Name'] = 'name',
+            ['HP Bar'] = 'hp',
+            ['MP Bar'] = 'mp',
+            ['TP Bar'] = 'tp',
+            ['Cast bar'] = 'cast',
+            ['Job'] = 'job',
+            ['Level'] = 'level',
+            ['ID'] = 'id',
+            ['Icon'] = 'npc_object_icon',
+            ['Type line'] = 'type',
+            ['Distance'] = 'distance',
+        },
+        hpBar = {
+            enabled = npcObjectPreview ~= true and hpBarSettings.enabled == true,
+            width = tonumber(hpBarSettings.width) or 180,
+            height = tonumber(hpBarSettings.height) or 12,
+            offsetX = tonumber(hpBarSettings.offsetX) or 0,
+            offsetY = tonumber(hpBarSettings.offsetY) or 0,
+            color = hpColor,
+            backgroundColor = hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
+            borderColor = hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = tonumber(hpBarSettings.borderSize) or 0,
+            anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
+            anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
+            textureId = barTextures.GetTextureId(hpBarSettings.texture),
+            animationEnabled = (
+                hpBarSettings.lowColorEnabled == true and
+                hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25) and
+                hpBarSettings.lowAnimationEnabled == true
+            ),
+            animationTextureId = barAnimations.GetTextureId(hpBarSettings.lowAnimation),
+            animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or 40,
+            animationColor = hpBarSettings.lowAnimationColor,
+            showAtPercent = tonumber(hpBarSettings.showAtPercent) or 100,
+            text = BuildResourceText(hpBarSettings, 'HP', hp, maxHp, hpPercent),
+            textOffsetX = tonumber(hpBarSettings.textOffsetX) or 0,
+            textOffsetY = tonumber(hpBarSettings.textOffsetY) or 0,
+            fontFamily = fonts.GetRole(globalSettings, hpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, hpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(hpBarSettings.fontSize, barDefaults.fontSize),
+            textColor = hpBarSettings.textColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineEnabled = hpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = hpBarSettings.textOutlineColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineSize = tonumber(hpBarSettings.textOutlineSize) or 1,
+        },
+        mpBar = {
+            enabled = npcObjectPreview ~= true and mpBarSettings.enabled == true,
+            width = tonumber(mpBarSettings.width) or 180,
+            height = tonumber(mpBarSettings.height) or 8,
+            offsetX = tonumber(mpBarSettings.offsetX) or 0,
+            offsetY = tonumber(mpBarSettings.offsetY) or 16,
+            color = mpColor,
+            backgroundColor = mpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
+            borderColor = mpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = tonumber(mpBarSettings.borderSize) or 0,
+            anchorTo = mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
+            anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
+            textureId = barTextures.GetTextureId(mpBarSettings.texture),
+            animationEnabled = (
+                mpBarSettings.lowColorEnabled == true and
+                mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25) and
+                mpBarSettings.lowAnimationEnabled == true
+            ),
+            animationTextureId = barAnimations.GetTextureId(mpBarSettings.lowAnimation),
+            animationSpeed = tonumber(mpBarSettings.lowAnimationSpeed) or 40,
+            animationColor = mpBarSettings.lowAnimationColor,
+            showAtPercent = tonumber(mpBarSettings.showAtPercent) or 100,
+            text = pupPreview == true and BuildPercentFallbackResourceText(mpBarSettings, 'MP', nil, nil, mpPercent) or BuildResourceText(mpBarSettings, 'MP', mp, maxMp, mpPercent),
+            textOffsetX = tonumber(mpBarSettings.textOffsetX) or 0,
+            textOffsetY = tonumber(mpBarSettings.textOffsetY) or 0,
+            fontFamily = fonts.GetRole(globalSettings, mpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, mpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(mpBarSettings.fontSize, mpBarDefaults.fontSize),
+            textColor = mpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = mpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = mpBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = tonumber(mpBarSettings.textOutlineSize) or 1,
+        },
+        tpBar = {
+            enabled = npcObjectPreview ~= true and tpBarSettings.enabled == true,
+            width = tonumber(tpBarSettings.width) or 180,
+            height = tonumber(tpBarSettings.height) or 6,
+            offsetX = tonumber(tpBarSettings.offsetX) or 0,
+            offsetY = tonumber(tpBarSettings.offsetY) or 28,
+            color = tpColor,
+            backgroundColor = tpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
+            borderColor = tpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = tonumber(tpBarSettings.borderSize) or 0,
+            anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
+            anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
+            textureId = barTextures.GetTextureId(tpBarSettings.texture),
+            color2 = tpBarSettings.color2 or tpBarDefaults.color2,
+            color3 = tpBarSettings.color3 or tpBarDefaults.color3,
+            showAtPercent = tonumber(tpBarSettings.showAtPercent) or 100,
+            segmented = tpBarSettings.segmented ~= false,
+            segmentGap = tonumber(tpBarSettings.segmentGap) or 3,
+            text = BuildResourceText(tpBarSettings, 'TP', tp, 3000, tpPercent),
+            textOffsetX = tonumber(tpBarSettings.textOffsetX) or 0,
+            textOffsetY = tonumber(tpBarSettings.textOffsetY) or 0,
+            fontFamily = fonts.GetRole(globalSettings, tpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, tpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(tpBarSettings.fontSize, tpBarDefaults.fontSize),
+            textColor = tpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = tpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = tpBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = tonumber(tpBarSettings.textOutlineSize) or 1,
+        },
+        cast = 62,
+        castBar = {
+            enabled = npcObjectPreview ~= true and castBarSettings.enabled == true,
+            width = tonumber(castBarSettings.width) or 155,
+            height = tonumber(castBarSettings.height) or 6,
+            offsetX = tonumber(castBarSettings.offsetX) or 0,
+            offsetY = tonumber(castBarSettings.offsetY) or 24,
+            color = castBarSettings.color or { 0.65, 0.35, 1.0, 0.95 },
+            backgroundColor = castBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
+            borderColor = castBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = tonumber(castBarSettings.borderSize) or 0,
+            anchorTo = castBarSettings.anchorTo or castBarDefaults.anchorTo,
+            anchorPoint = castBarSettings.anchorPoint or castBarDefaults.anchorPoint,
+            textureId = barTextures.GetTextureId(castBarSettings.texture),
+            text = (castBarSettings.showSpellName ~= false) and 'Stonega III' or '',
+            textOffsetX = tonumber(castBarSettings.textOffsetX) or 0,
+            textOffsetY = tonumber(castBarSettings.textOffsetY) or 0,
+            fontFamily = fonts.GetRole(globalSettings, castBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, castBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(castBarSettings.fontSize, castBarDefaults.fontSize),
+            textColor = castBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = castBarSettings.textOutlineEnabled == true,
+            textOutlineColor = castBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = tonumber(castBarSettings.textOutlineSize) or 1,
+        },
+        icons = icons,
+        targetMarker = BuildTargetMarker(context, hpBarSettings),
+        background = {
+            enabled = backgroundSettings.enabled == true,
+            width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
+            height = tonumber(backgroundSettings.height) or backgroundDefaults.height,
+            offsetX = tonumber(backgroundSettings.offsetX) or backgroundDefaults.offsetX,
+            offsetY = tonumber(backgroundSettings.offsetY) or backgroundDefaults.offsetY,
+            color = backgroundSettings.color or backgroundDefaults.color,
+            borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
+            borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
+            anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+        },
+    };
+
+    AddEnmityPreviewIcon(plateData, globalSettings, context);
+    AddFishingPreviewIcon(plateData, globalSettings, context);
+    AddCraftingPreviewWidget(plateData, globalSettings, context);
+    AddRestingPreviewBar(plateData, globalSettings, context);
+
+    if (entityName == 'Pet (PUP)') then
+        pupManeuvers.AddIcons(plateData, maneuverSettings, globalSettings, pupManeuvers.GetPreviewState());
+    end
+
+    if ((entityName == 'Enemy' or (entityName == 'PC' and stateName == 'Combat')) and jobSettings ~= nil and jobSettings.enabled == true) then
+        local jobText = 'BLM';
+
+        if ((tonumber(jobSettings.displayModeIndex) or 1) == 2) then
+            local textureId = jobIconTextures.GetTextureId(jobText, jobSettings.iconTheme);
+
+            if (textureId ~= nil) then
+                plateData.icons[#plateData.icons + 1] = {
+                    kind = 'job',
+                    textureId = textureId,
+                    size = math.max(8, math.min(160, tonumber(jobSettings.iconSize) or 16)),
+                    offsetX = tonumber(jobSettings.offsetX) or 0,
+                    offsetY = tonumber(jobSettings.offsetY) or -54,
+                    anchorTo = jobSettings.anchorTo or jobDefaults.anchorTo,
+                    anchorPoint = jobSettings.anchorPoint or jobDefaults.anchorPoint,
+                };
+            end
+        else
+            plateData.jobText = jobText;
+            plateData.jobFontFamily = fonts.GetRole(globalSettings, true);
+            plateData.jobFontFlags = fonts.GetRoleFlags(globalSettings, true);
+            plateData.jobFontSize = textScale.ToTextureFontSize(jobSettings.textSize, jobDefaults.textSize);
+            plateData.jobColor = jobSettings.color or jobDefaults.color;
+            plateData.jobOutlineEnabled = jobSettings.outlineEnabled == true;
+            plateData.jobOutlineColor = jobSettings.outlineColor or jobDefaults.outlineColor;
+            plateData.jobOutlineSize = tonumber(jobSettings.outlineSize) or jobDefaults.outlineSize;
+            plateData.jobOffsetX = tonumber(jobSettings.offsetX) or 0;
+            plateData.jobOffsetY = tonumber(jobSettings.offsetY) or -54;
+            plateData.jobAnchorTo = jobSettings.anchorTo or jobDefaults.anchorTo;
+            plateData.jobAnchorPoint = jobSettings.anchorPoint or jobDefaults.anchorPoint;
+        end
+    end
+
+    if ((entityName == 'Enemy' or (entityName == 'PC' and stateName == 'Combat')) and levelSettings ~= nil and levelSettings.enabled == true) then
+        local levelText = '75';
+
+        plateData.badges = plateData.badges or {};
+        plateData.badges[#plateData.badges + 1] = {
+            kind = 'level',
+            text = levelText,
+            offsetX = tonumber(levelSettings.offsetX) or 0,
+            offsetY = tonumber(levelSettings.offsetY) or -54,
+            fontFamily = fonts.GetRole(globalSettings, true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, true),
+            fontSize = textScale.ToTextureFontSize(levelSettings.textSize, levelDefaults.textSize),
+            textColor = GetPreviewDifficultyColor(levelSettings, levelDefaults),
+            textOutlineEnabled = levelSettings.outlineEnabled == true,
+            textOutlineColor = levelSettings.outlineColor or levelDefaults.outlineColor,
+            textOutlineSize = tonumber(levelSettings.outlineSize) or levelDefaults.outlineSize,
+            anchorTo = levelSettings.anchorTo or levelDefaults.anchorTo,
+            anchorPoint = levelSettings.anchorPoint or levelDefaults.anchorPoint,
+            backgroundEnabled = false,
+        };
+    end
+
+    if (entityName == 'Enemy' and idSettings ~= nil and idSettings.enabled == true) then
+        local boxSize = tonumber(idSettings.boxSize) or idDefaults.boxSize;
+
+        plateData.badges = plateData.badges or {};
+        plateData.badges[#plateData.badges + 1] = {
+            kind = 'id',
+            text = '32',
+            offsetX = tonumber(idSettings.offsetX) or 0,
+            offsetY = tonumber(idSettings.offsetY) or 24,
+            fontFamily = fonts.GetRole(globalSettings, idSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, idSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(idSettings.textSize, idDefaults.textSize),
+            textColor = idSettings.color or idDefaults.color,
+            textOutlineEnabled = idSettings.outlineEnabled == true,
+            textOutlineColor = idSettings.outlineColor or idDefaults.outlineColor,
+            textOutlineSize = tonumber(idSettings.outlineSize) or idDefaults.outlineSize,
+            anchorTo = idSettings.anchorTo or idDefaults.anchorTo,
+            anchorPoint = idSettings.anchorPoint or idDefaults.anchorPoint,
+            backgroundEnabled = idSettings.boxEnabled == true,
+            backgroundColor = GetPreviewIdBoxColor(idSettings, idDefaults),
+            borderColor = idSettings.boxBorderColor or idDefaults.boxBorderColor,
+            borderSize = tonumber(idSettings.boxBorderSize) or idDefaults.boxBorderSize,
+            paddingX = 0,
+            paddingY = 0,
+            minWidth = boxSize,
+            minHeight = boxSize,
+            cornerRadius = tonumber(idSettings.cornerRadius) or idDefaults.cornerRadius,
+        };
+    end
+
+    if (
+        (entityName == 'Enemy' or entityName == 'PC' or entityName == 'NPC' or entityName == 'Object' or entityName == 'NPC/Object') and
+        distanceSettings ~= nil and
+        distanceSettings.enabled == true
+    ) then
+        plateData.badges = plateData.badges or {};
+        plateData.badges[#plateData.badges + 1] = {
+            kind = 'distance',
+            text = tostring(distanceSettings.prefix or '') .. '12.4',
+            offsetX = tonumber(distanceSettings.offsetX) or distanceDefaults.offsetX,
+            offsetY = tonumber(distanceSettings.offsetY) or distanceDefaults.offsetY,
+            fontFamily = fonts.GetRole(globalSettings, distanceSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, distanceSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(distanceSettings.textSize, distanceDefaults.textSize),
+            textColor = distanceSettings.color or distanceDefaults.color,
+            textOutlineEnabled = distanceSettings.outlineEnabled == true,
+            textOutlineColor = distanceSettings.outlineColor or distanceDefaults.outlineColor,
+            textOutlineSize = tonumber(distanceSettings.outlineSize) or distanceDefaults.outlineSize,
+            anchorTo = distanceSettings.anchorTo or distanceDefaults.anchorTo,
+            anchorPoint = distanceSettings.anchorPoint or distanceDefaults.anchorPoint,
+            backgroundEnabled = false,
+        };
+    end
+
+    if (entityName == 'NPC' or entityName == 'NPC/Object') then
+        local iconTextureId = npcObjectInfo.GetTextureId(previewName, 'NPC');
+
+        if (iconSettings ~= nil and iconSettings.enabled == true and iconTextureId ~= nil) then
+            plateData.icons = plateData.icons or {};
+            plateData.icons[#plateData.icons + 1] = {
+                kind = 'npc_object_icon',
+                textureId = iconTextureId,
+                size = tonumber(iconSettings.iconSize) or npcObjectIconDefaults.iconSize,
+                offsetX = tonumber(iconSettings.offsetX) or npcObjectIconDefaults.offsetX,
+                offsetY = tonumber(iconSettings.offsetY) or npcObjectIconDefaults.offsetY,
+                anchorTo = iconSettings.anchorTo or npcObjectIconDefaults.anchorTo,
+                anchorPoint = iconSettings.anchorPoint or npcObjectIconDefaults.anchorPoint,
+            };
+        end
+    elseif (entityName == 'Object') then
+        local iconTextureId = npcObjectInfo.GetTextureId(previewName, 'Object');
+
+        if (iconSettings ~= nil and iconSettings.enabled == true and iconTextureId ~= nil) then
+            plateData.icons = plateData.icons or {};
+            plateData.icons[#plateData.icons + 1] = {
+                kind = 'npc_object_icon',
+                textureId = iconTextureId,
+                size = tonumber(iconSettings.iconSize) or npcObjectIconDefaults.iconSize,
+                offsetX = tonumber(iconSettings.offsetX) or npcObjectIconDefaults.offsetX,
+                offsetY = tonumber(iconSettings.offsetY) or npcObjectIconDefaults.offsetY,
+                anchorTo = iconSettings.anchorTo or npcObjectIconDefaults.anchorTo,
+                anchorPoint = iconSettings.anchorPoint or npcObjectIconDefaults.anchorPoint,
+            };
+        end
+    end
+
+    if (
+        (entityName == 'NPC' or entityName == 'Object' or entityName == 'NPC/Object') and
+        typeLineSettings ~= nil and
+        typeLineSettings.enabled == true
+    ) then
+        local previewTypeText = npcObjectInfo.GetType(previewName, entityName) or ((entityName == 'Object') and 'Mining Point' or 'Weekly Hunt');
+
+        plateData.texts = plateData.texts or {};
+        plateData.texts[#plateData.texts + 1] = {
+            kind = 'type',
+            text = previewTypeText,
+            align = 'center',
+            offsetX = tonumber(typeLineSettings.offsetX) or typeLineDefaults.offsetX,
+            offsetY = tonumber(typeLineSettings.offsetY) or typeLineDefaults.offsetY,
+            anchorTo = typeLineSettings.anchorTo or typeLineDefaults.anchorTo,
+            anchorPoint = typeLineSettings.anchorPoint or typeLineDefaults.anchorPoint,
+            fontFamily = fonts.GetRole(globalSettings, typeLineSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, typeLineSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(typeLineSettings.textSize, typeLineDefaults.textSize),
+            color = typeLineSettings.color or typeLineDefaults.color,
+            outlineEnabled = typeLineSettings.outlineEnabled == true,
+            outlineColor = typeLineSettings.outlineColor or typeLineDefaults.outlineColor,
+            outlineSize = tonumber(typeLineSettings.outlineSize) or typeLineDefaults.outlineSize,
+        };
+    end
+
+    return plateData;
+end
+
+local function GetContentRegionAvail()
+    if (imgui.GetContentRegionAvail == nil) then
+        return 360, 180;
+    end
+
+    local availA, availB = imgui.GetContentRegionAvail();
+
+    if (type(availA) == 'table') then
+        return tonumber(availA.x or availA[1]) or 360, tonumber(availA.y or availA[2]) or 180;
+    end
+
+    return tonumber(availA) or 360, tonumber(availB) or 180;
+end
+
+local function GetMousePos()
+    if (imgui.GetMousePos == nil) then
+        return nil, nil;
+    end
+
+    local posA, posB = imgui.GetMousePos();
+
+    if (type(posA) == 'table') then
+        return tonumber(posA.x or posA[1]), tonumber(posA.y or posA[2]);
+    end
+
+    return tonumber(posA), tonumber(posB);
+end
+
+local function WasPreviewClicked()
+    if (imgui.IsMouseClicked ~= nil) then
+        return imgui.IsMouseClicked(0) == true;
+    end
+
+    if (imgui.IsMouseReleased ~= nil) then
+        return imgui.IsMouseReleased(0) == true;
+    end
+
+    return false;
+end
+
+local function GetPreviewElementAtMouse(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight)
+    local mouseX, mouseY = GetMousePos();
+
+    if (mouseX == nil or mouseY == nil) then
+        return nil;
+    end
+
+    local rects = plate._elementRects or canvasTexture.GetElementRects(plate);
+    local sourceW = math.max(1, tonumber(textureWidth) or 1024);
+    local sourceH = math.max(1, tonumber(textureHeight) or 512);
+
+    for index = #rects, 1, -1 do
+        local rect = rects[index];
+        local x1 = zoomX + ((tonumber(rect.x1) or 0) / sourceW) * zoomWidth;
+        local y1 = zoomY + ((tonumber(rect.y1) or 0) / sourceH) * zoomHeight;
+        local x2 = zoomX + ((tonumber(rect.x2) or 0) / sourceW) * zoomWidth;
+        local y2 = zoomY + ((tonumber(rect.y2) or 0) / sourceH) * zoomHeight;
+
+        if (mouseX >= x1 and mouseX <= x2 and mouseY >= y1 and mouseY <= y2) then
+            return tostring(rect.kind or '');
+        end
+    end
+
+    return nil;
+end
+
+local function HandlePreviewElementClick(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight, context)
+    if (context == nil or type(context.onElementClick) ~= 'function' or WasPreviewClicked() ~= true) then
+        return;
+    end
+
+    local kind = GetPreviewElementAtMouse(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight);
+
+    if (kind ~= nil) then
+        context.onElementClick(kind, context);
+    end
+end
+
+local function HandlePreviewElementDrag(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight, context)
+    if (
+        dragEnabled ~= true or
+        context == nil or
+        type(context.onElementDrag) ~= 'function' or
+        imgui.GetMouseDragDelta == nil or
+        imgui.IsMouseDown == nil
+    ) then
+        activeDragKind = nil;
+        return;
+    end
+
+    if (imgui.IsMouseDown(0) ~= true) then
+        activeDragKind = nil;
+        return;
+    end
+
+    if (activeDragKind == nil) then
+        activeDragKind = GetPreviewElementAtMouse(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight);
+    end
+
+    if (activeDragKind == nil) then
+        return;
+    end
+
+    local dragA, dragB = imgui.GetMouseDragDelta(0);
+    local dragX, dragY = 0, 0;
+
+    if (type(dragA) == 'table') then
+        dragX = tonumber(dragA.x or dragA[1]) or 0;
+        dragY = tonumber(dragA.y or dragA[2]) or 0;
+    else
+        dragX = tonumber(dragA) or 0;
+        dragY = tonumber(dragB) or 0;
+    end
+
+    if (math.abs(dragX) < 0.5 and math.abs(dragY) < 0.5) then
+        return;
+    end
+
+    local sourceW = math.max(1, tonumber(textureWidth) or 1024);
+    local sourceH = math.max(1, tonumber(textureHeight) or 512);
+    local dx = dragX * (sourceW / math.max(1, zoomWidth));
+    local dy = dragY * (sourceH / math.max(1, zoomHeight));
+
+    context.onElementDrag(activeDragKind, dx, dy, context);
+
+    if (imgui.ResetMouseDragDelta ~= nil) then
+        imgui.ResetMouseDragDelta(0);
+    end
+end
+
+local function DrawPreviewInfoOverlay(drawList, x, y)
+    local size = 28;
+    local pad = 8;
+    local iconX = x + pad;
+    local iconY = y + pad;
+    local textureId = LoadPreviewInfoIcon();
+
+    if (textureId ~= nil and drawList ~= nil and drawList.AddImage ~= nil) then
+        drawList:AddImage(textureId, { iconX, iconY }, { iconX + size, iconY + size }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+    elseif (drawList ~= nil and drawList.AddText ~= nil) then
+        drawList:AddText({ iconX, iconY }, 0xFFFFFFFF, '(?)');
+    end
+
+    local mouseX, mouseY = GetMousePos();
+
+    if (mouseX == nil or mouseY == nil) then
+        return;
+    end
+
+    if (mouseX < iconX or mouseX > (iconX + size) or mouseY < iconY or mouseY > (iconY + size)) then
+        return;
+    end
+
+    local text = 'Click a preview element to open its settings. In Peer preview, clicking a Peer element selects the matching Peer component, such as Background, HP bar, Range, or Damage modifiers.';
+
+    if (imgui.BeginTooltip ~= nil and imgui.EndTooltip ~= nil) then
+        imgui.BeginTooltip();
+
+        if (imgui.PushTextWrapPos ~= nil) then
+            imgui.PushTextWrapPos(360);
+        end
+
+        if (imgui.TextWrapped ~= nil) then
+            imgui.TextWrapped(text);
+        else
+            imgui.Text(text);
+        end
+
+        if (imgui.PopTextWrapPos ~= nil) then
+            imgui.PopTextWrapPos();
+        end
+
+        imgui.EndTooltip();
+    elseif (imgui.SetTooltip ~= nil) then
+        imgui.SetTooltip(text);
+    end
+end
+
+local function RemoveBadgeKind(plateData, kind)
+    if (plateData == nil or plateData.badges == nil) then
+        return;
+    end
+
+    local keep = {};
+
+    for _, badge in ipairs(plateData.badges) do
+        if (badge.kind ~= kind) then
+            keep[#keep + 1] = badge;
+        end
+    end
+
+    plateData.badges = keep;
+end
+
+local function RemovePeerReplacedNormalElements(plateData)
+    if (plateData == nil) then
+        return;
+    end
+
+    plateData.jobText = '';
+    RemoveBadgeKind(plateData, 'level');
+    RemoveBadgeKind(plateData, 'id');
+    RemoveBadgeKind(plateData, 'distance');
+end
+
+local function AddPeerPreviewText(plateData, text, x, y, globalSettings, peerSettings, prefix, kind)
+    if (text == nil or tostring(text) == '') then
+        return;
+    end
+
+    plateData.texts = plateData.texts or {};
+    plateData.texts[#plateData.texts + 1] = {
+        text = tostring(text),
+        offsetX = tonumber(x) or 0,
+        offsetY = tonumber(y) or 0,
+        fontFamily = fonts.GetRole(globalSettings, true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, true),
+        fontSize = textScale.ToTextureFontSize(peerSettings[prefix .. 'FontSize'], 12),
+        color = peerSettings[prefix .. 'Color'] or { 1.0, 1.0, 1.0, 1.0 },
+        outlineEnabled = (tonumber(peerSettings[prefix .. 'OutlineSize']) or 0) > 0,
+        outlineColor = peerSettings[prefix .. 'OutlineColor'] or { 0.0, 0.0, 0.0, 1.0 },
+        outlineSize = tonumber(peerSettings[prefix .. 'OutlineSize']) or 2,
+        kind = kind or ('peer' .. prefix),
+    };
+end
+
+local function AddPeerPreviewIconRow(plateData, iconNames, peerSettings, prefix)
+    if (iconNames == nil or #iconNames == 0) then
+        return;
+    end
+
+    plateData.icons = plateData.icons or {};
+
+    local iconStyle = SanitizePeerIconStyle(peerSettings.iconStyle);
+    local iconSize = math.max(6, math.min(64, tonumber(peerSettings[prefix .. 'IconSize']) or tonumber(peerSettings.iconSize) or 18));
+    local x = tonumber(peerSettings[prefix .. 'OffsetX']) or tonumber(peerSettings.iconOffsetX) or -190;
+    local y = tonumber(peerSettings[prefix .. 'OffsetY']) or tonumber(peerSettings.iconOffsetY) or -16;
+    local maxX = x + 395;
+
+    for _, iconName in ipairs(iconNames) do
+        if (x > maxX) then break; end
+
+        local textureId = LoadPeerIcon(iconName, iconStyle);
+
+        if (textureId ~= nil) then
+            plateData.icons[#plateData.icons + 1] = {
+                kind = ({
+                    aggro = 'peerAggro',
+                    detection = 'peerDetection',
+                    immunity = 'peerImmunity',
+                    modifier = 'peerModifiers',
+                })[prefix] or 'peer',
+                textureId = textureId,
+                size = iconSize,
+                offsetX = x,
+                offsetY = y,
+            };
+
+            x = x + iconSize + 3;
+        end
+    end
+end
+
+local function ApplyPeerPreviewHpBar(plateData, peerSettings, hpPercent, globalSettings)
+    if (peerSettings.showHpBar == false) then
+        plateData.hpBar.enabled = false;
+        return;
+    end
+
+    plateData.hpBar.enabled = true;
+    plateData.hpBar.width = tonumber(peerSettings.hpBarWidth) or 437;
+    plateData.hpBar.height = tonumber(peerSettings.hpBarHeight) or 16;
+    plateData.hpBar.offsetX = tonumber(peerSettings.hpBarOffsetX) or 0;
+    plateData.hpBar.offsetY = tonumber(peerSettings.hpBarOffsetY) or 0;
+    plateData.hpBar.color = peerSettings.hpBarColor or { 0.0, 0.75, 0.16, 1.0 };
+    plateData.hpBar.backgroundColor = peerSettings.hpBarBackgroundColor or { 0.05, 0.05, 0.05, 0.85 };
+    plateData.hpBar.borderColor = peerSettings.hpBarBorderColor or { 0.0, 0.0, 0.0, 1.0 };
+    plateData.hpBar.borderSize = tonumber(peerSettings.hpBarBorderSize) or 0;
+    plateData.hpBar.text = (peerSettings.showHpPercent ~= false) and (tostring(math.floor((tonumber(hpPercent) or 0) + 0.5)) .. '%') or '';
+    plateData.hpBar.textOffsetX = tonumber(peerSettings.hpPercentOffsetX) or 0;
+    plateData.hpBar.textOffsetY = tonumber(peerSettings.hpPercentOffsetY) or 0;
+    plateData.hpBar.fontFamily = fonts.GetRole(globalSettings, true);
+    plateData.hpBar.fontFlags = fonts.GetRoleFlags(globalSettings, true);
+    plateData.hpBar.fontSize = textScale.ToTextureFontSize(peerSettings.hpPercentFontSize, 12);
+    plateData.hpBar.textColor = peerSettings.hpPercentColor or { 1.0, 1.0, 1.0, 1.0 };
+    plateData.hpBar.textOutlineEnabled = (tonumber(peerSettings.hpPercentOutlineSize) or 0) > 0;
+    plateData.hpBar.textOutlineColor = peerSettings.hpPercentOutlineColor or { 0.0, 0.0, 0.0, 1.0 };
+    plateData.hpBar.textOutlineSize = tonumber(peerSettings.hpPercentOutlineSize) or 2;
+end
+
+local function ApplyPeerPreviewBackground(plateData, peerSettings)
+    plateData.background = plateData.background or {};
+    plateData.background.enabled = peerSettings.showBackground == true;
+
+    if (plateData.background.enabled ~= true) then
+        return;
+    end
+
+    plateData.background.width = tonumber(peerSettings.backgroundWidth) or 460;
+    plateData.background.height = tonumber(peerSettings.backgroundHeight) or 72;
+    plateData.background.offsetX = tonumber(peerSettings.backgroundOffsetX) or 0;
+    plateData.background.offsetY = tonumber(peerSettings.backgroundOffsetY) or 0;
+    local color = peerSettings.backgroundColor or { 0.0, 0.0, 0.0, 0.45 };
+    plateData.background.color = {
+        tonumber(color[1]) or 0.0,
+        tonumber(color[2]) or 0.0,
+        tonumber(color[3]) or 0.0,
+        math.max(0.0, math.min(1.0, (tonumber(peerSettings.backgroundOpacity) or ((tonumber(color[4]) or 0.45) * 100)) / 100)),
+    };
+    plateData.background.borderColor = peerSettings.backgroundBorderColor or { 0.0, 0.0, 0.0, 1.0 };
+    plateData.background.borderSize = tonumber(peerSettings.backgroundBorderSize) or 0;
+end
+
+local function ApplyPeerPreviewName(plateData, peerSettings, globalSettings)
+    if (peerSettings.showName == false) then
+        plateData.name = '';
+        return;
+    end
+
+    plateData.nameFontFamily = fonts.GetRole(globalSettings, false);
+    plateData.nameFontFlags = fonts.GetRoleFlags(globalSettings, false);
+    plateData.nameFontSize = textScale.ToTextureFontSize(peerSettings.nameFontSize, 32);
+    plateData.nameColor = peerSettings.nameColor or { 1.0, 1.0, 1.0, 1.0 };
+    plateData.nameOutlineEnabled = (tonumber(peerSettings.nameOutlineSize) or 0) > 0;
+    plateData.nameOutlineColor = peerSettings.nameOutlineColor or { 0.0, 0.0, 0.0, 1.0 };
+    plateData.nameOutlineSize = tonumber(peerSettings.nameOutlineSize) or 3;
+    plateData.nameOffsetX = tonumber(peerSettings.nameOffsetX) or 0;
+    plateData.nameOffsetY = tonumber(peerSettings.nameOffsetY) or -54;
+end
+
+local function AddPeerPreviewId(plateData, peerSettings, globalSettings)
+    if (peerSettings.showId ~= true) then
+        return;
+    end
+
+    local boxSize = tonumber(peerSettings.idBoxSize) or 18;
+
+    plateData.badges = plateData.badges or {};
+    plateData.badges[#plateData.badges + 1] = {
+        kind = 'peerId',
+        text = '32',
+        offsetX = tonumber(peerSettings.idOffsetX) or 0,
+        offsetY = tonumber(peerSettings.idOffsetY) or 24,
+        fontFamily = fonts.GetRole(globalSettings, true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, true),
+        fontSize = textScale.ToTextureFontSize(peerSettings.idFontSize, 7),
+        textColor = peerSettings.idColor or { 0.65, 0.90, 1.0, 1.0 },
+        textOutlineEnabled = (tonumber(peerSettings.idOutlineSize) or 0) > 0,
+        textOutlineColor = peerSettings.idOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        textOutlineSize = tonumber(peerSettings.idOutlineSize) or 2,
+        backgroundEnabled = peerSettings.idBoxEnabled == true,
+        backgroundColor = peerSettings.idBoxColor or { 0.45, 0.15, 0.15, 0.90 },
+        borderColor = peerSettings.idBoxBorderColor or { 1.0, 1.0, 1.0, 1.0 },
+        borderSize = tonumber(peerSettings.idBoxBorderSize) or 0,
+        paddingX = 0,
+        paddingY = 0,
+        minWidth = boxSize,
+        minHeight = boxSize,
+        cornerRadius = tonumber(peerSettings.idCornerRadius) or 4,
+    };
+end
+
+AddPeerPreview = function(plateData, globalSettings)
+    local peerSettings = globalSettings.peer or {};
+
+    RemovePeerReplacedNormalElements(plateData);
+    ApplyPeerPreviewBackground(plateData, peerSettings);
+    ApplyPeerPreviewName(plateData, peerSettings, globalSettings);
+    ApplyPeerPreviewHpBar(plateData, peerSettings, plateData.hp, globalSettings);
+    AddPeerPreviewId(plateData, peerSettings, globalSettings);
+
+    if (peerSettings.showJob ~= false) then
+        if (tostring(peerSettings.jobDisplay or 'Text') == 'Icon') then
+            local textureId = jobIconTextures.GetTextureId('BLM', peerSettings.jobIconTheme);
+
+            if (textureId ~= nil) then
+                plateData.icons = plateData.icons or {};
+                plateData.icons[#plateData.icons + 1] = {
+                    kind = 'peerJob',
+                    textureId = textureId,
+                    size = math.max(6, math.min(160, tonumber(peerSettings.jobIconSize) or 18)),
+                    offsetX = tonumber(peerSettings.jobOffsetX) or -190,
+                    offsetY = tonumber(peerSettings.jobOffsetY) or -16,
+                };
+            end
+        else
+            AddPeerPreviewText(
+                plateData,
+                'BLM',
+                tonumber(peerSettings.jobOffsetX) or -190,
+                tonumber(peerSettings.jobOffsetY) or -16,
+                globalSettings,
+                peerSettings,
+                'job',
+                'peerJob'
+            );
+        end
+    end
+
+    if (peerSettings.showLevel ~= false) then
+        local originalLevelColor = peerSettings.levelColor;
+
+        if (peerSettings.levelDifficultyColorsEnabled == true) then
+            peerSettings.levelColor = peerSettings.levelTColor or peerSettings.levelColor;
+        end
+
+        AddPeerPreviewText(
+            plateData,
+            '70-73',
+            tonumber(peerSettings.levelOffsetX) or -145,
+            tonumber(peerSettings.levelOffsetY) or -16,
+            globalSettings,
+            peerSettings,
+            'level',
+            'peerLevel'
+        );
+
+        peerSettings.levelColor = originalLevelColor;
+    end
+
+    if (peerSettings.showRange ~= false) then
+        AddPeerPreviewText(
+            plateData,
+            '44.9',
+            tonumber(peerSettings.rangeOffsetX) or 92,
+            tonumber(peerSettings.rangeOffsetY) or -54,
+            globalSettings,
+            peerSettings,
+            'range',
+            'peerRange'
+        );
+    end
+
+    if (peerSettings.showAggro ~= false) then
+        AddPeerPreviewIconRow(plateData, T{ 'AggroNQ' }, peerSettings, 'aggro');
+    end
+
+    if (peerSettings.showDetection ~= false) then
+        AddPeerPreviewIconRow(plateData, T{ 'Sight', 'Sound', 'Magic', 'Link' }, peerSettings, 'detection');
+    end
+
+    if (peerSettings.showImmunities ~= false) then
+        AddPeerPreviewIconRow(plateData, T{ 'ImmuneSleep', 'ImmuneSilence', 'ImmuneGravity' }, peerSettings, 'immunity');
+    end
+
+    if (peerSettings.showModifiers ~= false) then
+        plateData.icons = plateData.icons or {};
+
+        local iconStyle = SanitizePeerIconStyle(peerSettings.iconStyle);
+        local iconSize = math.max(6, math.min(64, tonumber(peerSettings.modifierIconSize) or tonumber(peerSettings.iconSize) or 18));
+        local x = tonumber(peerSettings.modifierOffsetX) or 120;
+        local y = tonumber(peerSettings.modifierOffsetY) or -16;
+        local modifierIcons = T{
+            { icon = 'Slashing', value = '-50%' },
+            { icon = 'Fire', value = '+25%' },
+        };
+
+        for _, modifier in ipairs(modifierIcons) do
+            local textureId = LoadPeerIcon(modifier.icon, iconStyle);
+
+            if (textureId ~= nil) then
+                plateData.icons[#plateData.icons + 1] = {
+                    kind = 'peerModifiers',
+                    textureId = textureId,
+                    size = iconSize,
+                    offsetX = x,
+                    offsetY = y,
+                };
+
+                if (peerSettings.showModifierValues ~= false) then
+                    plateData.texts = plateData.texts or {};
+                    plateData.texts[#plateData.texts + 1] = {
+                        text = modifier.value,
+                        offsetX = x,
+                        offsetY = y + (iconSize * 0.5) + 1,
+                        fontFamily = fonts.GetRole(globalSettings, true),
+                        fontFlags = fonts.GetRoleFlags(globalSettings, true),
+                        fontSize = textScale.ToTextureFontSize(peerSettings.modifierValueFontSize, 12),
+                        color = peerSettings.modifierValueColor or { 1.0, 1.0, 1.0, 1.0 },
+                        outlineEnabled = (tonumber(peerSettings.modifierValueOutlineSize) or 0) > 0,
+                        outlineColor = peerSettings.modifierValueOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+                        outlineSize = tonumber(peerSettings.modifierValueOutlineSize) or 2,
+                        kind = 'peerModifiers',
+                        align = 'center',
+                    };
+                end
+
+                x = x + iconSize + 3;
+            end
+        end
+    end
+end
+
+local function ColorToU32(color, fallback)
+    local c = color or fallback or { 1.0, 1.0, 1.0, 1.0 };
+    local r = math.floor((tonumber(c[1]) or 1.0) * 255 + 0.5);
+    local g = math.floor((tonumber(c[2]) or 1.0) * 255 + 0.5);
+    local b = math.floor((tonumber(c[3]) or 1.0) * 255 + 0.5);
+    local a = math.floor((tonumber(c[4]) or 1.0) * 255 + 0.5);
+
+    if (r < 0) then r = 0 elseif (r > 255) then r = 255 end
+    if (g < 0) then g = 0 elseif (g > 255) then g = 255 end
+    if (b < 0) then b = 0 elseif (b > 255) then b = 255 end
+    if (a < 0) then a = 0 elseif (a > 255) then a = 255 end
+
+    return (a * 0x1000000) + (b * 0x10000) + (g * 0x100) + r;
+end
+
+local function GetQuickMenuPreviewRows(entityName)
+    local entity = tostring(entityName or '');
+
+    if (entity == 'Self') then
+        return 'Libra', 'Player.png', {
+            { 'Accept Invite', 'accept-invite.png' },
+            { 'Leave Party', 'LeaveParty.png' },
+            { 'Cancel Party Request', 'cancel-party-request.png' },
+            { 'Ignore Other Trusts: On', 'ignore-trust-on.png' },
+            { 'Hide Other Trusts: Off', 'hide-other-trusts-off.png' },
+            { 'Emote Trust: Off', 'emote-trusts-off.png' },
+        };
+    end
+
+    if (entity == 'Trust') then
+        return 'Curilla', 'Player.png', {
+            { 'Dismiss This Trust', 'DismissTrust.png' },
+            { 'Dismiss All Trusts', 'DismissAllTrusts.png' },
+        };
+    end
+
+    if (entity == 'NPC' or entity == 'Object') then
+        return (entity == 'Object') and 'Mining Point' or 'Hunter', nil, {
+            { (entity == 'Object') and 'Mining Point' or 'Weekly Hunt', nil },
+            { 'Open Wiki Page', 'catseye.png' },
+        };
+    end
+
+    return 'Libranya', 'Player.png', {
+        { 'Examine', 'Examine.png' },
+        { 'Open Catseye Profile', 'catseye.png' },
+        { 'Follow', 'Follow.png' },
+        { 'Invite to Party', 'InviteToParty.png' },
+        { 'Pass Party Leader', 'PassPartyLeader.png' },
+    };
+end
+
+local function DrawQuickMenuPreview(drawList, x, y, previewWidth, previewHeight, entityName)
+    if (drawList == nil or drawList.AddRectFilled == nil or drawList.AddText == nil) then
+        return;
+    end
+
+    local settings = state.GetGlobalSettings(globalDefaults);
+    local menu = settings.quickMenu or {};
+    local title, titleIcon, rows = GetQuickMenuPreviewRows(entityName);
+    local iconSize = tonumber(menu.iconSize) or 22;
+    local width = math.max(220, math.min(tonumber(menu.width) or 270, previewWidth - 28));
+    local rowHeight = math.max(24, iconSize + 4);
+    local height = 44 + (#rows * rowHeight);
+    local menuX = x + math.max(12, math.floor((previewWidth - width) * 0.5));
+    local menuY = y + math.max(32, math.floor((previewHeight - height) * 0.5));
+    local bgColor = ColorToU32(menu.backgroundColor, { 0.02, 0.02, 0.07, 0.96 });
+    local borderColor = ColorToU32(menu.borderColor, { 0.25, 0.25, 0.36, 1.0 });
+    local textColor = ColorToU32(menu.textColor, { 1.0, 1.0, 1.0, 1.0 });
+    local headerColor = ColorToU32(menu.headerColor, { 1.0, 0.84, 0.0, 1.0 });
+
+    drawList:AddRectFilled({ menuX, menuY }, { menuX + width, menuY + height }, bgColor);
+
+    if (drawList.AddRect ~= nil and (tonumber(menu.borderSize) or 1) > 0) then
+        drawList:AddRect({ menuX, menuY }, { menuX + width, menuY + height }, borderColor, 0, 0, tonumber(menu.borderSize) or 1);
+    end
+
+    local headerX = menuX + 12;
+    local headerY = menuY + 10;
+
+    if (menu.iconsEnabled ~= false and titleIcon ~= nil and drawList.AddImage ~= nil) then
+        local textureId = LoadQuickMenuIcon(titleIcon);
+
+        if (textureId ~= nil) then
+            drawList:AddImage(textureId, { headerX, headerY }, { headerX + iconSize, headerY + iconSize }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+            headerX = headerX + iconSize + 8;
+        end
+    end
+
+    drawList:AddText({ headerX, headerY + 2 }, headerColor, title);
+
+    if (drawList.AddLine ~= nil) then
+        drawList:AddLine({ menuX + 12, menuY + 36 }, { menuX + width - 12, menuY + 36 }, borderColor, 1);
+    end
+
+    local rowY = menuY + 42;
+
+    for _, row in ipairs(rows) do
+        local label = row[1];
+        local iconFile = row[2];
+        local labelX = menuX + 12;
+
+        if (menu.iconsEnabled ~= false and iconFile ~= nil and drawList.AddImage ~= nil) then
+            local textureId = LoadQuickMenuIcon(iconFile);
+
+            if (textureId ~= nil) then
+                drawList:AddImage(textureId, { labelX, rowY }, { labelX + iconSize, rowY + iconSize }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+                labelX = labelX + iconSize + 8;
+            end
+        end
+
+        drawList:AddText({ labelX, rowY + 3 }, textColor, label);
+        rowY = rowY + rowHeight;
+    end
+end
+
+local function DrawPreviewText(drawList, x, y, color, text, outlineSize, outlineColor)
+    outlineSize = math.max(0, math.min(4, tonumber(outlineSize) or 0));
+
+    if (outlineSize > 0) then
+        for ox = -outlineSize, outlineSize do
+            for oy = -outlineSize, outlineSize do
+                if (ox ~= 0 or oy ~= 0) then
+                    drawList:AddText({ x + ox, y + oy }, outlineColor, tostring(text or ''));
+                end
+            end
+        end
+    end
+
+    drawList:AddText({ x, y }, color, tostring(text or ''));
+end
+
+local function DrawPreviewPeerTextRow(drawList, labelX, valueX, y, labelColor, valueColor, label, value, outlineSize, outlineColor)
+    DrawPreviewText(drawList, labelX, y, labelColor, label, outlineSize, outlineColor);
+    DrawPreviewText(drawList, valueX, y, valueColor, tostring(value or ''), outlineSize, outlineColor);
+end
+
+local function DrawPreviewPeerIconRow(drawList, x, y, iconNames, peerSettings, iconSize, maxWidth)
+    local cursorX = x;
+    local iconStyle = SanitizePeerIconStyle(peerSettings.iconStyle);
+
+    for _, iconName in ipairs(iconNames or {}) do
+        if ((cursorX + iconSize) > (x + maxWidth)) then
+            break;
+        end
+
+        local textureId = LoadPeerIcon(iconName, iconStyle);
+
+        if (textureId ~= nil) then
+            drawList:AddImage(textureId, { cursorX, y }, { cursorX + iconSize, y + iconSize }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+            cursorX = cursorX + iconSize + 5;
+        end
+    end
+end
+
+local function DrawPreviewPeerPanelBox(drawList, x, y, w, h, peerSettings)
+    local bgColor = peerSettings.backgroundColor or { 0.0, 0.0, 0.0, 0.45 };
+    local opacity = math.max(0.0, math.min(1.0, (tonumber(peerSettings.backgroundOpacity) or 45) / 100));
+    local borderSize = math.max(0, math.min(12, tonumber(peerSettings.backgroundBorderSize) or 0));
+
+    drawList:AddRectFilled({ x, y }, { x + w, y + h }, ColorToU32({
+        bgColor[1] or 0.0,
+        bgColor[2] or 0.0,
+        bgColor[3] or 0.0,
+        opacity,
+    }));
+
+    if (borderSize > 0 and drawList.AddRect ~= nil) then
+        local borderColor = ColorToU32(peerSettings.backgroundBorderColor, { 0.78, 0.12, 0.10, 0.88 });
+        for i = 0, borderSize - 1 do
+            drawList:AddRect({ x + i, y + i }, { x + w - i, y + h - i }, borderColor);
+        end
+    end
+end
+
+local function DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHeight)
+    if (drawList == nil or drawList.AddText == nil or drawList.AddRectFilled == nil) then
+        return;
+    end
+
+    local settings = state.GetGlobalSettings(globalDefaults);
+    local peerSettings = settings.peer or {};
+    local panelW = math.max(320, math.min(430, previewWidth - 36));
+    local panelH = math.max(220, math.min(292, previewHeight - 36));
+    local panelX = x + math.floor((previewWidth - panelW) * 0.5);
+    local panelY = y + math.floor((previewHeight - panelH) * 0.5);
+    local textColor = ColorToU32(peerSettings.textColor, { 0.94, 0.94, 0.90, 1.0 });
+    local outlineColor = ColorToU32(peerSettings.textOutlineColor, { 0.0, 0.0, 0.0, 1.0 });
+    local outlineSize = tonumber(peerSettings.textOutlineSize) or 0;
+    local muted = ColorToU32({ 0.68, 0.72, 0.74, 1.0 });
+    local blue = ColorToU32({ 0.40, 0.70, 1.0, 1.0 });
+    local good = ColorToU32({ 0.44, 0.95, 0.70, 1.0 });
+    local bad = ColorToU32({ 1.0, 0.58, 0.50, 1.0 });
+    local heading = ColorToU32({ 1.0, 0.84, 0.0, 1.0 });
+    local labelX = panelX + 14;
+    local valueX = panelX + 118;
+    local rowY = panelY + 52;
+    local levelJobText = '';
+
+    DrawPreviewPeerPanelBox(drawList, panelX, panelY, panelW, panelH, peerSettings);
+
+    if (peerSettings.showLevel ~= false) then
+        levelJobText = 'Lv. 70-73';
+    end
+
+    if (peerSettings.showJob ~= false) then
+        levelJobText = (levelJobText ~= '' and (levelJobText .. ' ') or '') .. 'PLD';
+    end
+
+    if (levelJobText ~= '') then
+        DrawPreviewText(drawList, labelX, panelY + 10, blue, levelJobText, outlineSize, outlineColor);
+    end
+
+    if (peerSettings.showName ~= false) then
+        DrawPreviewText(drawList, panelX + 142, panelY + 10, textColor, 'Sabotender Enamorado', outlineSize + 1, outlineColor);
+    end
+
+    if (peerSettings.showDistance ~= false) then
+        DrawPreviewText(drawList, panelX + panelW - 54, panelY + 10, muted, '44.9', outlineSize, outlineColor);
+    end
+
+    if (tostring(peerSettings.displayMode or 'Text') == 'Text') then
+        if (peerSettings.showHpValue ~= false) then
+            DrawPreviewPeerTextRow(drawList, labelX, valueX, rowY, heading, textColor, 'HP', '87%', outlineSize, outlineColor);
+            rowY = rowY + 28;
+        end
+        if (peerSettings.showBehavior ~= false) then
+            DrawPreviewPeerTextRow(drawList, labelX, valueX, rowY, heading, textColor, 'Behavior', 'Aggro', outlineSize, outlineColor);
+            rowY = rowY + 28;
+        end
+        if (peerSettings.showDetects ~= false) then
+            DrawPreviewPeerTextRow(drawList, labelX, valueX, rowY, heading, textColor, 'Detects', 'Sight, Sound, Magic', outlineSize, outlineColor);
+            rowY = rowY + 28;
+        end
+        if (peerSettings.showLinks ~= false) then
+            DrawPreviewPeerTextRow(drawList, labelX, valueX, rowY, heading, textColor, 'Links', 'Yes', outlineSize, outlineColor);
+            rowY = rowY + 32;
+        end
+        if (peerSettings.showWeakTo ~= false) then
+            DrawPreviewPeerTextRow(drawList, labelX, valueX, rowY, heading, good, 'Weak To', 'Fire +25%, Wind +25%', outlineSize, outlineColor);
+            rowY = rowY + 28;
+        end
+        if (peerSettings.showResists ~= false) then
+            DrawPreviewPeerTextRow(drawList, labelX, valueX, rowY, heading, bad, 'Resists', 'Earth -50%, Dark -50%', outlineSize, outlineColor);
+            rowY = rowY + 28;
+        end
+        if (peerSettings.showImmunities ~= false) then
+            DrawPreviewPeerTextRow(drawList, labelX, valueX, rowY, heading, muted, 'Immunities', 'Sleep, Silence', outlineSize, outlineColor);
+        end
+        return;
+    end
+
+    local iconSize = math.max(18, math.min(30, tonumber(peerSettings.iconSize) or 22));
+    local contentX = panelX + 142;
+    local contentW = panelW - 156;
+
+    if (peerSettings.showHpValue ~= false) then
+        drawList:AddText({ labelX, rowY }, heading, 'HP');
+        drawList:AddText({ contentX, rowY }, textColor, '87%');
+        rowY = rowY + 30;
+    end
+    if (peerSettings.showBehavior ~= false) then
+        drawList:AddText({ labelX, rowY }, heading, 'Behavior');
+        DrawPreviewPeerIconRow(drawList, contentX, rowY - 3, T{ 'AggroNQ' }, peerSettings, iconSize, contentW);
+        rowY = rowY + 30;
+    end
+    if (peerSettings.showDetects ~= false) then
+        drawList:AddText({ labelX, rowY }, heading, 'Detects');
+        DrawPreviewPeerIconRow(drawList, contentX, rowY - 3, T{ 'Sight', 'Sound', 'Magic' }, peerSettings, iconSize, contentW);
+        rowY = rowY + 30;
+    end
+    if (peerSettings.showLinks ~= false) then
+        drawList:AddText({ labelX, rowY }, heading, 'Links');
+        DrawPreviewPeerIconRow(drawList, contentX, rowY - 3, T{ 'Link' }, peerSettings, iconSize, contentW);
+        rowY = rowY + 36;
+    end
+    if (peerSettings.showWeakTo ~= false) then
+        drawList:AddText({ labelX, rowY }, heading, 'Weak To');
+        DrawPreviewPeerIconRow(drawList, contentX, rowY - 3, T{ 'Fire', 'Wind' }, peerSettings, iconSize, contentW);
+        rowY = rowY + 34;
+    end
+    if (peerSettings.showResists ~= false) then
+        drawList:AddText({ labelX, rowY }, heading, 'Resists');
+        DrawPreviewPeerIconRow(drawList, contentX, rowY - 3, T{ 'Earth', 'Dark' }, peerSettings, iconSize, contentW);
+        rowY = rowY + 34;
+    end
+    if (peerSettings.showImmunities ~= false) then
+        drawList:AddText({ labelX, rowY }, heading, 'Immunities');
+        DrawPreviewPeerIconRow(drawList, contentX, rowY - 3, T{ 'ImmuneSleep', 'ImmuneSilence' }, peerSettings, iconSize, contentW);
+    end
+end
+
+local function DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight)
+    if (drawList == nil or drawList.AddText == nil or drawList.AddRectFilled == nil) then
+        return;
+    end
+
+    local settings = state.GetGlobalSettings(globalDefaults);
+    local peerSettings = settings.peer or {};
+    local showName = peerSettings.showName ~= false;
+    local showJobLine = peerSettings.showJob ~= false or peerSettings.showLevel ~= false;
+    local showStats = peerSettings.showHpValue ~= false;
+    local showAttackDefense = peerSettings.showWeakTo ~= false;
+    local showResists = peerSettings.showResists ~= false;
+    local panelHeight = 12 +
+        (showName and 22 or 0) +
+        (showJobLine and 22 or 0) +
+        (showStats and (7 * 22) or 0) +
+        ((showAttackDefense or showResists) and 16 or 0) +
+        (showAttackDefense and 26 or 0) +
+        (showResists and 46 or 0) +
+        12;
+    local panelW = math.min(292, previewWidth - 36);
+    local panelH = math.min(math.max(52, panelHeight), previewHeight - 28);
+    local panelX = x + math.floor((previewWidth - panelW) * 0.5);
+    local panelY = y + math.floor((previewHeight - panelH) * 0.5);
+    local textColor = ColorToU32(peerSettings.textColor, { 0.94, 0.94, 0.90, 1.0 });
+    local outlineColor = ColorToU32(peerSettings.textOutlineColor, { 0.0, 0.0, 0.0, 1.0 });
+    local outlineSize = tonumber(peerSettings.textOutlineSize) or 0;
+    local muted = ColorToU32({ 0.68, 0.72, 0.74, 1.0 });
+    local blue = ColorToU32({ 0.62, 0.80, 1.0, 1.0 });
+    local green = ColorToU32({ 0.35, 1.0, 0.45, 1.0 });
+    local heading = ColorToU32({ 1.0, 0.84, 0.0, 1.0 });
+    local labelX = panelX + 14;
+    local valueX = panelX + 84;
+    local rowY = panelY + 12;
+    local rowStep = 22;
+
+    DrawPreviewPeerPanelBox(drawList, panelX, panelY, panelW, panelH, peerSettings);
+
+    if (showName == true) then
+        DrawPreviewText(drawList, labelX, rowY, textColor, 'Libra', outlineSize + 1, outlineColor);
+        rowY = rowY + rowStep;
+    end
+
+    if (showJobLine == true) then
+        local mainJob = peerSettings.showJob ~= false and 'WHM' or '';
+        local subJob = peerSettings.showJob ~= false and 'BLM' or '';
+        local mainText = '';
+        local subText = '';
+
+        if (peerSettings.showLevel ~= false) then
+            mainText = 'Lv75';
+            subText = 'Lv37';
+        end
+
+        if (mainJob ~= '') then
+            mainText = (mainText ~= '' and (mainText .. ' ') or '') .. mainJob;
+            subText = (subText ~= '' and (subText .. ' ') or '') .. subJob;
+        end
+
+        DrawPreviewText(drawList, labelX, rowY, blue, mainText .. ' / ' .. subText, outlineSize, outlineColor);
+        rowY = rowY + rowStep;
+    end
+
+    local statRows = T{
+        T{ 'STR', '64', '+8' },
+        T{ 'DEX', '63', '+12' },
+        T{ 'VIT', '65', '+2' },
+        T{ 'AGI', '67', '+3' },
+        T{ 'INT', '68', '+1' },
+        T{ 'MND', '66', '' },
+        T{ 'CHR', '69', '' },
+    };
+
+    if (showStats == true) then
+        for _, stat in ipairs(statRows) do
+            DrawPreviewText(drawList, labelX, rowY, heading, stat[1], outlineSize, outlineColor);
+            DrawPreviewText(drawList, valueX, rowY, textColor, stat[2], outlineSize, outlineColor);
+            if (stat[3] ~= '') then
+                DrawPreviewText(drawList, valueX + 42, rowY, green, stat[3], outlineSize, outlineColor);
+            end
+            rowY = rowY + rowStep;
+        end
+    end
+
+    if (showAttackDefense == true or showResists == true) then
+        rowY = rowY + 4;
+        if (drawList.AddLine ~= nil) then
+            drawList:AddLine({ panelX + 10, rowY }, { panelX + panelW - 10, rowY }, ColorToU32({ 0.62, 0.67, 0.72, 0.55 }), 1);
+        end
+        rowY = rowY + 12;
+    end
+
+    if (showAttackDefense == true) then
+        DrawPreviewText(drawList, labelX, rowY, textColor, 'Attack 278', outlineSize, outlineColor);
+        DrawPreviewText(drawList, labelX + 126, rowY, textColor, 'Defense 326', outlineSize, outlineColor);
+        rowY = rowY + 26;
+    end
+
+    local iconSize = 15;
+    local elements = T{
+        T{ icon = 'Fire', label = 'Fire' },
+        T{ icon = 'Ice', label = 'Ice' },
+        T{ icon = 'Wind', label = 'Wind' },
+        T{ icon = 'Earth', label = 'Earth' },
+        T{ icon = 'Lightning', label = 'Lightning' },
+        T{ icon = 'Water', label = 'Water' },
+        T{ icon = 'Light', label = 'Light' },
+        T{ icon = 'Dark', label = 'Dark' },
+    };
+    local startX = labelX;
+
+    if (showResists == true) then
+        for i, element in ipairs(elements) do
+            local col = (i - 1) % 4;
+            local row = math.floor((i - 1) / 4);
+            local iconX = startX + (col * 58);
+            local iconY = rowY + (row * 23);
+            local textureId = LoadSelfElementIcon(element.icon);
+            local valueXOffset = iconSize + 4;
+
+            if (textureId ~= nil and drawList.AddImage ~= nil) then
+                drawList:AddImage(textureId, { iconX, iconY }, { iconX + iconSize, iconY + iconSize }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+            else
+                DrawPreviewText(drawList, iconX, iconY - 1, muted, string.sub(element.label, 1, 1), outlineSize, outlineColor);
+                valueXOffset = 14;
+            end
+            DrawPreviewText(drawList, iconX + valueXOffset, iconY - 1, muted, '0', outlineSize, outlineColor);
+        end
+    end
+end
+
+local function DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight)
+    if (drawList == nil or drawList.AddText == nil or drawList.AddRectFilled == nil) then
+        return;
+    end
+
+    local settings = state.GetGlobalSettings(globalDefaults);
+    local peerSettings = settings.peer or {};
+    local panelW = math.min(330, previewWidth - 36);
+    local panelH = math.min(136, previewHeight - 28);
+    local panelX = x + math.floor((previewWidth - panelW) * 0.5);
+    local panelY = y + math.floor((previewHeight - panelH) * 0.5);
+    local textColor = ColorToU32(peerSettings.textColor, { 0.94, 0.94, 0.90, 1.0 });
+    local outlineColor = ColorToU32(peerSettings.textOutlineColor, { 0.0, 0.0, 0.0, 1.0 });
+    local outlineSize = tonumber(peerSettings.textOutlineSize) or 0;
+    local blue = ColorToU32({ 0.62, 0.80, 1.0, 1.0 });
+    local heading = ColorToU32({ 1.0, 0.84, 0.0, 1.0 });
+    local labelX = panelX + 14;
+    local valueX = panelX + 104;
+    local rightX = panelX + 204;
+    local rowY = panelY + 12;
+    local rowStep = 24;
+
+    DrawPreviewPeerPanelBox(drawList, panelX, panelY, panelW, panelH, peerSettings);
+
+    DrawPreviewText(drawList, labelX, rowY, textColor, 'Libra', outlineSize + 1, outlineColor);
+    DrawPreviewText(drawList, rightX, rowY, heading, 'Distance', outlineSize, outlineColor);
+    DrawPreviewText(drawList, rightX + 74, rowY, textColor, '12.4', outlineSize, outlineColor);
+    rowY = rowY + rowStep;
+
+    DrawPreviewText(drawList, labelX, rowY, heading, 'HP', outlineSize, outlineColor);
+    DrawPreviewText(drawList, valueX, rowY, textColor, '87%', outlineSize, outlineColor);
+    rowY = rowY + rowStep;
+
+    DrawPreviewText(drawList, labelX, rowY, heading, 'Linkshell', outlineSize, outlineColor);
+    DrawPreviewText(drawList, valueX, rowY, textColor, 'Star Onion Brigade', outlineSize, outlineColor);
+    rowY = rowY + rowStep;
+
+    DrawPreviewText(drawList, labelX, rowY, heading, 'Mode', outlineSize, outlineColor);
+    DrawPreviewText(drawList, valueX, rowY, textColor, 'ACE', outlineSize, outlineColor);
+    rowY = rowY + rowStep;
+
+    DrawPreviewText(drawList, labelX, rowY, heading, 'Target', outlineSize, outlineColor);
+    DrawPreviewText(drawList, valueX, rowY, textColor, 'Wild Rabbit', outlineSize, outlineColor);
+end
+
+function preview.Draw(entityName, stateName, context)
+    mouseInPreview = false;
+
+    local plate = BuildPlate(entityName, stateName, context);
+    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plate, 'settings-preview');
+    local plateTextureId = canvasTexture.GetTextureId(plateTexture);
+    local availWidth, availHeight = GetContentRegionAvail();
+    local labelHeight = 42;
+    local previewWidth = math.max(240, math.min(availWidth - 12, 720));
+    local previewHeight = math.floor(previewWidth * (textureHeight / textureWidth));
+    local maxPreviewHeight = math.max(60, availHeight - labelHeight - 8);
+    local isSelfPeerContext = entityName == 'Self' and context ~= nil and context.widgetKey == 'Peer';
+
+    if (previewHeight > maxPreviewHeight) then
+        previewHeight = maxPreviewHeight;
+        previewWidth = math.floor(previewHeight * (textureWidth / textureHeight));
+    end
+
+    DrawStyledPreviewControls();
+
+    if (plateTextureId == nil) then
+        imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Preview unavailable.');
+        return;
+    end
+
+    local drawList = imgui.GetWindowDrawList();
+
+    if (drawList == nil or drawList.AddImage == nil or imgui.GetCursorScreenPos == nil) then
+        if (imgui.Image ~= nil) then
+            imgui.Image(plateTextureId, { previewWidth, previewHeight }, { 0, 0 }, { 1, 1 });
+            return;
+        end
+
+        imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Preview image unavailable.');
+        return;
+    end
+
+    local x, y = imgui.GetCursorScreenPos();
+    local backgroundTextureId = LoadBackground(selectedBackground);
+    local uv1, uv2, plateZoom = GetZoomUvs(entityName, stateName);
+    local mouseX, mouseY = GetMousePos();
+    local isPeerContext = context ~= nil and context.widgetKey == 'Peer';
+    local isEnemyPeerPreview = entityName == 'Enemy' and isPeerContext == true;
+    local isSelfPeerPreview = isSelfPeerContext == true;
+    local isPcPeerPreview = entityName == 'PC' and isPeerContext == true;
+    local isPeerPreview = isEnemyPeerPreview == true or isSelfPeerPreview == true or isPcPeerPreview == true;
+
+    mouseInPreview = (
+        mouseX ~= nil and
+        mouseY ~= nil and
+        mouseX >= x and
+        mouseX <= (x + previewWidth) and
+        mouseY >= y and
+        mouseY <= (y + previewHeight)
+    );
+
+    if (backgroundTextureId ~= nil) then
+        drawList:AddImage(backgroundTextureId, { x, y }, { x + previewWidth, y + previewHeight }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+    else
+        drawList:AddRectFilled({ x, y }, { x + previewWidth, y + previewHeight }, 0xFF30343A);
+    end
+
+    if (drawList.PushClipRect ~= nil and drawList.PopClipRect ~= nil) then
+        drawList:PushClipRect({ x, y }, { x + previewWidth, y + previewHeight }, true);
+    end
+
+    local zoomWidth = previewWidth * plateZoom;
+    local zoomHeight = previewHeight * plateZoom;
+    local zoomX = x + ((previewWidth - zoomWidth) * 0.5);
+    local zoomY = y + ((previewHeight - zoomHeight) * 0.5);
+
+    if (isPeerPreview ~= true) then
+        drawList:AddImage(plateTextureId, { zoomX, zoomY }, { zoomX + zoomWidth, zoomY + zoomHeight }, uv1, uv2, 0xFFFFFFFF);
+    end
+
+    if (context ~= nil and context.previewQuickMenu == true) then
+        DrawQuickMenuPreview(drawList, x, y, previewWidth, previewHeight, entityName);
+    end
+
+    if (isEnemyPeerPreview == true) then
+        DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHeight);
+    elseif (isSelfPeerPreview == true) then
+        DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight);
+    elseif (isPcPeerPreview == true) then
+        DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight);
+    end
+
+    if (drawList.PushClipRect ~= nil and drawList.PopClipRect ~= nil) then
+        drawList:PopClipRect();
+    end
+
+    DrawPreviewInfoOverlay(drawList, x, y);
+
+    if (isPeerPreview ~= true) then
+        HandlePreviewElementDrag(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight, context);
+        HandlePreviewElementClick(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight, context);
+    end
+
+    imgui.SetCursorPosY(imgui.GetCursorPosY() + previewHeight);
+end
+
+return preview;

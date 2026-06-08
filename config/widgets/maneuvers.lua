@@ -1,0 +1,14 @@
+return {
+    enabled = true,
+    iconSize = 26,
+    iconSpacing = 10,
+    offsetX = 0,
+    offsetY = 34,
+    showTimers = true,
+    timerUseSmallFont = true,
+    timerFontSize = 7,
+    timerOffsetY = 0,
+    timerTextColor = { 1.0, 1.0, 1.0, 1.0 },
+    timerTextOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    timerTextOutlineSize = 1,
+};

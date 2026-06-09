@@ -31,6 +31,7 @@ local entities = require('core.entities');
 local gameMode = require('core.game_mode');
 local playerIndicators = require('core.player_indicators');
 local perfMeter = require('core.perf_meter');
+local adaptivePerformance = require('core.adaptive_performance');
 local state = require('core.state');
 local targetModuleMarker = require('core.target_module_marker');
 local targeting = require('core.targeting');
@@ -827,6 +828,7 @@ local function QueuePlayer(player)
 
     local cacheKey = nil;
     local signature = nil;
+    local staleCached = nil;
 
     if (cacheEligible == true) then
         cacheKey = 'pc:' .. tostring(player.index);
@@ -856,7 +858,8 @@ local function QueuePlayer(player)
         }, '\n');
 
         local indexed = indexCache[tonumber(player.index) or 0];
-        local cached = indexed ~= nil and indexed.signature == signature and plateCache[indexed.cacheKey] or nil;
+        staleCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
+        local cached = indexed ~= nil and indexed.signature == signature and staleCached or nil;
 
         if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true) then
             cached.lastFullRefresh = os.clock();
@@ -864,7 +867,32 @@ local function QueuePlayer(player)
             return;
         end
 
+        if (
+            adaptivePerformance.ShouldThrottleBackground() == true and
+            staleCached ~= nil and
+            (os.clock() - (tonumber(staleCached.lastUsed) or 0)) < 1.00 and
+            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true
+        ) then
+            perfMeter.Count('pc.cache.smooth', 1);
+            return;
+        end
+
         perfMeter.Count('pc.cache.miss', 1);
+    end
+
+    if (
+        cacheEligible == true and
+        adaptivePerformance.ShouldThrottleBackground() == true and
+        adaptivePerformance.AllowBackgroundBuild('pc.idle.canvas', 1) ~= true
+    ) then
+        if (
+            staleCached ~= nil and
+            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true
+        ) then
+            perfMeter.Count('pc.cache.deferred', 1);
+        end
+
+        return;
     end
 
     local buildTimer = perfMeter.BeginDetail('pc.build');

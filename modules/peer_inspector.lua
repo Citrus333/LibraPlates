@@ -6,6 +6,7 @@ local textureLoader = require('core.texture_loader');
 local worldMarkerProbe = require('core.world_marker_probe');
 local entities = require('core.entities');
 local mobInfoData = require('core.mobinfo_data');
+local adaptivePerformance = require('core.adaptive_performance');
 local gameMode = require('core.game_mode');
 local playerIndicators = require('core.player_indicators');
 local state = require('core.state');
@@ -13,6 +14,11 @@ local globalDefaults = require('config.global');
 
 local iconCache = {};
 local selfElementIconCache = {};
+local enemyInfoCache = {
+    key = nil,
+    info = nil,
+    updated = 0,
+};
 
 local function IsVirtualKeyDown(vk)
     if (peerInspector.user32 == nil) then
@@ -838,6 +844,43 @@ local function BuildThreatRows(info)
     return aggro, detection, links;
 end
 
+local function GetEnemyPeerDisplayName(enemy)
+    local rawName = enemy ~= nil and enemy.name or '';
+    local cleanName = mobInfoData.GetLookupName(rawName);
+
+    if (mobInfoData.HasActivityPointMarker(rawName) == true) then
+        return 'AP - ' .. tostring(cleanName or '');
+    end
+
+    return tostring(cleanName or rawName or '');
+end
+
+local function GetEnemyPeerMobInfo(enemy)
+    if (enemy == nil) then
+        return nil;
+    end
+
+    local key = tostring(enemy.index or '') .. ':' .. tostring(enemy.name or '');
+
+    if (adaptivePerformance.ShouldThrottleBackground() == true) then
+        local now = os.clock();
+
+        if (
+            enemyInfoCache.key == key and
+            (now - (tonumber(enemyInfoCache.updated) or 0)) < 0.25
+        ) then
+            return enemyInfoCache.info;
+        end
+
+        enemyInfoCache.key = key;
+        enemyInfoCache.info = mobInfoData.GetMobInfo(enemy.name, enemy.index);
+        enemyInfoCache.updated = now;
+        return enemyInfoCache.info;
+    end
+
+    return mobInfoData.GetMobInfo(enemy.name, enemy.index);
+end
+
 DrawTextRow = function(drawList, labelX, valueX, y, labelColor, valueColor, label, value, outlineSize, outlineColor)
     DrawOutlinedText(drawList, labelX, y, labelColor, label, outlineSize, outlineColor);
     DrawOutlinedText(drawList, valueX, y, valueColor, LimitText(value, 44), outlineSize, outlineColor);
@@ -908,6 +951,7 @@ local function DrawEnemyTextInspector(enemy, info, peerSettings)
     local levelText = mobInfoData.GetLevelString(info);
     local jobText = mobInfoData.GetJobString(info);
     local levelJobText = '';
+    local displayName = GetEnemyPeerDisplayName(enemy);
     local weakRows, resistRows = SplitModifierRows(info);
     local aggroIcons, detectionIcons, linkIcons = BuildThreatRows(info);
     local immunityIcons = mobInfoData.GetImmunityFlags(info);
@@ -927,7 +971,7 @@ local function DrawEnemyTextInspector(enemy, info, peerSettings)
     end
 
     if (peerSettings.showName ~= false) then
-        DrawOutlinedText(drawList, x + 142, y + 10, text, LimitText(enemy.name, 24), outlineSize + 1, outline);
+        DrawOutlinedText(drawList, x + 142, y + 10, text, LimitText(displayName, 24), outlineSize + 1, outline);
     end
 
     if (peerSettings.showDistance ~= false) then
@@ -1009,6 +1053,7 @@ local function DrawEnemyInspector(enemy, info, peerSettings)
     local levelText = mobInfoData.GetLevelString(info);
     local jobText = mobInfoData.GetJobString(info);
     local levelJobText = '';
+    local displayName = GetEnemyPeerDisplayName(enemy);
     local weakRows, resistRows = SplitModifierRows(info);
     local aggroIcons, detectionIcons, linkIcons = BuildThreatRows(info);
     local immunityIcons = mobInfoData.GetImmunityFlags(info);
@@ -1028,7 +1073,7 @@ local function DrawEnemyInspector(enemy, info, peerSettings)
     end
 
     if (peerSettings.showName ~= false) then
-        DrawText(drawList, x + 142, y + 10, text, enemy.name);
+        DrawText(drawList, x + 142, y + 10, text, displayName);
     end
 
     if (peerSettings.showDistance ~= false) then
@@ -1136,6 +1181,13 @@ function peerInspector.Render()
         return;
     end
 
+    if (
+        adaptivePerformance.ShouldThrottleBackground() == true and
+        IsModifierActive(peerSettings) ~= true
+    ) then
+        return;
+    end
+
     local enemy = entities.GetEnemy(hovered.targetIndex, true);
 
     if (enemy == nil) then
@@ -1146,7 +1198,7 @@ function peerInspector.Render()
         return;
     end
 
-    local info = mobInfoData.GetMobInfo(enemy.name, enemy.index);
+    local info = GetEnemyPeerMobInfo(enemy);
 
     if (info == nil) then
         return;

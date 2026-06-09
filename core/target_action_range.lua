@@ -4,7 +4,7 @@ local resourceCache = {};
 local lastAction = nil;
 local lastQueuedPacketSignature = nil;
 local lastQueuedPacketAt = 0;
-local actionCacheSeconds = 1.0;
+local actionCacheSeconds = nil;
 local debugUntil = nil;
 local commandOverrideWindowSeconds = 1.0;
 local queuedPacketDedupeSeconds = 2.5;
@@ -2336,7 +2336,7 @@ function targetActionRange.GetCurrentRange()
     end
 
     local updated = tonumber(lastAction.updated) or 0;
-    if (updated > 0 and (os.clock() - updated) > actionCacheSeconds) then
+    if (tonumber(actionCacheSeconds) ~= nil and updated > 0 and (os.clock() - updated) > tonumber(actionCacheSeconds)) then
         lastAction = nil;
         return nil;
     end

@@ -20,6 +20,7 @@ local diagnostics = require('core.diagnostics');
 local petState = require('core.pet_state');
 local abilityRecast = require('libs.abilityrecast');
 local targetActionRange = require('core.target_action_range');
+local adaptivePerformance = require('core.adaptive_performance');
 local petPlate = require('modules.plates.pet');
 local globalDefaults = require('config.global');
 local jobDefaults = require('config.widgets.job');
@@ -816,6 +817,15 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'perftest') then
+        adaptivePerformance.SetEnabled(true);
+        perfMeter.Reset();
+        perfMeter.SetDetailEnabled(true);
+        perfMeter.SetOverlayEnabled(true);
+        log.Info('Perf test ready: fpsobserve=on detail=on overlay=on. After a stutter, run /lp perf status.');
+        return;
+    end
+
     if (subcommand == 'lag') then
         local path, phaseName, seconds = diagnostics.StartAuto(tonumber(args[3]) or 15);
         log.Info('Lag diagnostics started. Play normally; I will say when done. file=' .. tostring(path) .. ' phase=' .. tostring(phaseName) .. ' seconds=' .. tostring(seconds));
@@ -1296,7 +1306,36 @@ function commands.Handle(e)
         return;
     end
 
-    log.Info('Commands: /lp config, /lp perf on, /lp perf detail on, /lp diag start, /lp diag scenario target-on, /lp diag restore, /lp world on, /lp world off, /lp mousemove on, /lp mousesteer on, /lp bridge status, /lp depthbridge, /lp depthtest, /lp castdebug on [seconds]');
+    if (subcommand == 'fpsobserve') then
+        local action = tostring(args[3] or 'status'):lower();
+
+        if (action == 'on') then
+            adaptivePerformance.SetEnabled(true);
+        elseif (action == 'off') then
+            adaptivePerformance.SetEnabled(false);
+        end
+
+        log.Info(adaptivePerformance.GetStatusText());
+        return;
+    end
+
+    if (subcommand == 'fpsmode') then
+        local mode = tostring(args[3] or ''):lower();
+
+        if (mode == 'auto' or mode == 'quality' or mode == 'smooth' or mode == 'fps1' or mode == 'light') then
+            adaptivePerformance.SetSelectedMode(mode);
+        end
+
+        log.Info(adaptivePerformance.GetStatusText());
+        return;
+    end
+
+    if (subcommand == 'fpsstatus') then
+        log.Info(adaptivePerformance.GetStatusText());
+        return;
+    end
+
+    log.Info('Commands: /lp config, /lp perf on, /lp perf detail on, /lp diag start, /lp diag scenario target-on, /lp diag restore, /lp world on, /lp world off, /lp mousemove on, /lp mousesteer on, /lp bridge status, /lp depthbridge, /lp depthtest, /lp castdebug on [seconds], /lp fpsstatus');
 end
 
 return commands;

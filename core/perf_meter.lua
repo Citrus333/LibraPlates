@@ -1,6 +1,7 @@
 local perfMeter = {};
 
 local imgui = require('imgui');
+local adaptivePerformance = require('core.adaptive_performance');
 
 local overlayEnabled = false;
 local detailEnabled = false;
@@ -466,6 +467,7 @@ function perfMeter.GetSummaryLines()
     local lines = {};
 
     lines[#lines + 1] = 'LibraPlates perf frame=' .. tostring(frameIndex) .. ' overlay=' .. tostring(overlayEnabled == true);
+    lines[#lines + 1] = adaptivePerformance.GetStatusText();
 
     for _, name in ipairs(displayOrder) do
         AddLine(lines, name);

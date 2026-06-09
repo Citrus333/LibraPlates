@@ -22,6 +22,7 @@ local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
 local canvas = require('core.canvas');
 local canvasTexture = require('core.canvas_texture');
+local adaptivePerformance = require('core.adaptive_performance');
 local barTextures = require('core.bar_textures');
 local barAnimations = require('core.bar_animations');
 local entities = require('core.entities');
@@ -110,6 +111,20 @@ local function BuildWorldCacheSignature(plateData, center, stateName, targetStat
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'debug=' .. tostring(worldMarkerProbe.GetClickDebug() == true),
         'plate=' .. StableTableKey(plateData),
+    }, '\n');
+end
+
+local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, stateName, targetStateName, layoutStateName)
+    return table.concat({
+        'index=' .. tostring(center ~= nil and center.index or ''),
+        'server=' .. tostring(center ~= nil and center.serverId or ''),
+        'status=' .. tostring(center ~= nil and center.status or ''),
+        'hp=' .. tostring(hpPercent or ''),
+        'mp=' .. tostring(mpPercent or ''),
+        'tp=' .. tostring(tpValue or ''),
+        'state=' .. tostring(stateName or ''),
+        'target=' .. tostring(targetStateName or ''),
+        'layout=' .. tostring(layoutStateName or ''),
     }, '\n');
 end
 
@@ -792,13 +807,38 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     local cacheEligible = state.GetConfigOpen() ~= true;
     local signature = nil;
+    local vitalSignature = nil;
 
     if (cacheEligible == true) then
         signature = BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName);
+        vitalSignature = BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, stateName, targetStateName, layoutStateName);
 
         if (cachedWorldPlate ~= nil and cachedWorldPlate.signature == signature) then
             canvasTexture.TouchKey(cachedWorldPlate.textureKey);
+            cachedWorldPlate.lastUsed = os.clock();
             perfMeter.Count('self.cache.hit', 1);
+            QueueRenderedWorldPlate(
+                center,
+                hpPercent,
+                targetStateName,
+                layoutStateName,
+                cachedWorldPlate.plateTextureId,
+                cachedWorldPlate.textureWidth,
+                cachedWorldPlate.textureHeight,
+                cachedWorldPlate.plateClickRects
+            );
+            return;
+        end
+
+        if (
+            adaptivePerformance.ShouldThrottleBackground() == true and
+            cachedWorldPlate ~= nil and
+            cachedWorldPlate.vitalSignature == vitalSignature and
+            (os.clock() - (tonumber(cachedWorldPlate.lastUsed) or 0)) < 0.75
+        ) then
+            canvasTexture.TouchKey(cachedWorldPlate.textureKey);
+            cachedWorldPlate.lastUsed = os.clock();
+            perfMeter.Count('self.cache.smooth', 1);
             QueueRenderedWorldPlate(
                 center,
                 hpPercent,
@@ -827,7 +867,9 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     if (cacheEligible == true and signature ~= nil) then
         cachedWorldPlate = {
             signature = signature,
+            vitalSignature = vitalSignature,
             textureKey = cachedWorldTextureKey,
+            lastUsed = os.clock(),
             plateTextureId = plateTextureId,
             textureWidth = textureWidth,
             textureHeight = textureHeight,

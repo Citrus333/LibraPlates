@@ -6,6 +6,7 @@ local subtargetModuleDefaults = require('config.widgets.subtarget_module');
 local perfMeter = require('core.perf_meter');
 local nativeUiPolicy = require('core.native_ui_policy');
 local targeting = require('core.targeting');
+local targetActionRange = require('core.target_action_range');
 
 local targetModuleMarker = {};
 local textureIds = {};
@@ -132,8 +133,29 @@ local function ResolveArrowDistanceColor(distance, settings, markerColor, target
         return CloneColor(nil, markerColor);
     end
 
-    if (targetStateName ~= 'Subtarget' and settings.arrowDistanceColoring ~= true) then
-        return CloneColor(settings.arrowColor, markerColor);
+    if (targetStateName ~= 'Subtarget') then
+        if (settings.arrowDistanceColoring ~= true) then
+            return CloneColor(settings.arrowColor, markerColor);
+        end
+
+        return CloneColor(settings.arrowInRangeColor, markerColor);
+    end
+
+    local actionRange = targetActionRange.GetCurrentRange();
+    local currentDistance = tonumber(distance);
+
+    if (actionRange == nil or currentDistance == nil) then
+        return CloneColor(settings.arrowInRangeColor, markerColor);
+    end
+
+    local warningRange = math.max(0, tonumber(actionRange) - 3.0);
+
+    if (currentDistance > tonumber(actionRange)) then
+        return CloneColor(settings.arrowOutOfRangeColor, markerColor);
+    end
+
+    if (currentDistance >= warningRange) then
+        return CloneColor(settings.arrowWarningColor, markerColor);
     end
 
     return CloneColor(settings.arrowInRangeColor, markerColor);

@@ -408,8 +408,6 @@ function engagedEnemies.HandlePacketIn(e)
         local partyIds = GetPartyServerIds();
         local userIsParty = partyIds[tonumber(packet.userId) or 0] == true;
         local userIsEnemy = IsValidTrackedEnemy(packet.userIndex) == true;
-        local userIsOther = userIsParty ~= true and userIsEnemy ~= true;
-
         DebugLog(
             'action userId=' .. tostring(packet.userId) ..
             ' userIndex=' .. tostring(packet.userIndex) ..
@@ -449,31 +447,17 @@ function engagedEnemies.HandlePacketIn(e)
 
             if (partyIds[tonumber(targetId) or 0] == true) then
                 if (userIsEnemy == true) then
-                    if (claimCategories[packet.userIndex] ~= 'other' and claimCategories[packet.userIndex] ~= 'call_for_help') then
-                        claimCategories[packet.userIndex] = 'party';
-                        DebugLog('set category index=' .. tostring(packet.userIndex) .. ' category=party reason=enemy-hit-party');
-                    else
-                        DebugLog('keep category index=' .. tostring(packet.userIndex) .. ' category=' .. tostring(claimCategories[packet.userIndex]) .. ' reason=enemy-hit-party-no-overwrite');
-                    end
+                    Track(packet.userIndex);
+                    DebugLog('track index=' .. tostring(packet.userIndex) .. ' reason=enemy-hit-party');
                 end
 
-                Track(packet.userIndex);
                 return;
             end
 
             if (targetIsEnemy == true) then
                 if (userIsParty == true) then
-                    claimCategories[targetIndex] = 'party';
-                    Track(targetIndex);
-                    DebugLog('set category index=' .. tostring(targetIndex) .. ' category=party reason=party-hit-enemy');
-                elseif (userIsOther == true) then
-                    claimCategories[targetIndex] = 'other';
-                    DebugLog('set category index=' .. tostring(targetIndex) .. ' category=other reason=other-hit-enemy');
+                    DebugLog('skip track index=' .. tostring(targetIndex) .. ' reason=party-action-target-enemy');
                 end
-            elseif (userIsEnemy == true and userIsOther ~= true) then
-                claimCategories[packet.userIndex] = userIsParty == true and 'party' or claimCategories[packet.userIndex];
-            elseif (userIsEnemy == true and partyIds[tonumber(targetId) or 0] ~= true) then
-                claimCategories[packet.userIndex] = claimCategories[packet.userIndex] or 'other';
             end
         end
     elseif (e.id == 0x000E) then

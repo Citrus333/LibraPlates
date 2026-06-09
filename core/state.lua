@@ -6,11 +6,16 @@ local state = {
     lastSave = 0,
     activeProfileName = nil,
     activeProfilePath = nil,
+    loadedFromDisk = false,
+    savedThisSession = false,
 };
 
 local settingsFileName = 'settings.lua';
+local backupSettingsFileName = 'settings.lua.bak';
 local legacyProfileFileName = 'rebuild_profile.lua';
 local globalProfileName = 'global';
+local suspiciousShrinkRatio = 0.50;
+local suspiciousShrinkMinBytes = 8192;
 
 -- ============================================================
 -- Lifecycle
@@ -65,6 +70,10 @@ local function GetSettingsPath(profileName)
     return GetProfileFolder(profileName) .. '\\' .. settingsFileName;
 end
 
+local function GetBackupSettingsPath(profileName)
+    return GetProfileFolder(profileName) .. '\\' .. backupSettingsFileName;
+end
+
 local function GetLegacyProfilePath()
     return GetConfigFolder() .. '\\' .. legacyProfileFileName;
 end
@@ -75,6 +84,12 @@ local function SetActiveProfileName(profileName)
     state.activeProfilePath = GetSettingsPath(profileName);
 
     return profileName;
+end
+
+local function IsCharacterProfileName(profileName)
+    profileName = tostring(profileName or '');
+
+    return profileName ~= '' and profileName ~= globalProfileName;
 end
 
 local function EnsureFolder(folder)
@@ -105,6 +120,41 @@ local function EnsureProfileFolder(profileName)
     return EnsureFolder(GetProfileFolder(profileName));
 end
 
+local function ReadFileSize(path)
+    local file = io.open(path, 'rb');
+
+    if (file == nil) then
+        return 0;
+    end
+
+    local size = file:seek('end') or 0;
+    file:close();
+
+    return tonumber(size) or 0;
+end
+
+local function CopyFile(sourcePath, targetPath)
+    local source = io.open(sourcePath, 'rb');
+
+    if (source == nil) then
+        return false;
+    end
+
+    local data = source:read('*a');
+    source:close();
+
+    local target = io.open(targetPath, 'wb');
+
+    if (target == nil) then
+        return false;
+    end
+
+    target:write(data or '');
+    target:close();
+
+    return true;
+end
+
 local function LoadLuaTableFile(path)
     if (path == nil or path == '') then
         return nil;
@@ -127,6 +177,46 @@ local function LoadLuaTableFile(path)
     end
 
     return nil;
+end
+
+local function ApplyLoadedWorldEnabled(profile)
+    if (type(profile) == 'table' and type(profile.global) == 'table' and profile.global.worldEnabled ~= nil) then
+        state.worldEnabled = profile.global.worldEnabled == true;
+    end
+end
+
+local function TryLoadActiveProfile()
+    local loaded = LoadLuaTableFile(state.activeProfilePath);
+
+    if (type(loaded) == 'table') then
+        state.profile = loaded;
+        ApplyLoadedWorldEnabled(state.profile);
+        return true;
+    end
+
+    return false;
+end
+
+local function RefreshCharacterProfile()
+    local profileName = GetCharacterProfileName();
+
+    if (profileName == nil or profileName == globalProfileName) then
+        return false;
+    end
+
+    if (state.activeProfileName == profileName and type(state.profile) == 'table') then
+        return true;
+    end
+
+    if (state.activeProfileName ~= profileName) then
+        SetActiveProfileName(profileName);
+
+        if (TryLoadActiveProfile() == true) then
+            return true;
+        end
+    end
+
+    return false;
 end
 
 local function SerializeValue(value, indent)
@@ -282,6 +372,8 @@ function state.Load()
     state.lastSave = 0;
     state.activeProfileName = nil;
     state.activeProfilePath = nil;
+    state.loadedFromDisk = false;
+    state.savedThisSession = false;
 
     local profileName = GetCharacterProfileName() or globalProfileName;
     SetActiveProfileName(profileName);
@@ -303,16 +395,13 @@ function state.Load()
 
         if (type(loaded) == 'table') then
             state.profile = loaded;
+            state.loadedFromDisk = true;
             loadedPath = path;
             break;
         end
     end
 
-    local profile = state.profile;
-
-    if (type(profile) == 'table' and type(profile.global) == 'table' and profile.global.worldEnabled ~= nil) then
-        state.worldEnabled = profile.global.worldEnabled == true;
-    end
+    ApplyLoadedWorldEnabled(state.profile);
 
     if (loadedPath ~= nil and loadedPath ~= state.activeProfilePath) then
         state.Save();
@@ -326,11 +415,36 @@ function state.Save()
         return false;
     end
 
-    local profileName = GetCharacterProfileName() or state.activeProfileName or globalProfileName;
+    local profileName = GetCharacterProfileName();
+
+    if (profileName == nil and IsCharacterProfileName(state.activeProfileName) == true) then
+        profileName = state.activeProfileName;
+    end
+
+    if (profileName == nil or IsCharacterProfileName(profileName) ~= true) then
+        return false;
+    end
+
     SetActiveProfileName(profileName);
 
     if (EnsureProfileFolder(profileName) ~= true) then
         return false;
+    end
+
+    local serialized = 'return ' .. SerializeValue(profile, 0) .. '\n';
+    local oldSize = ReadFileSize(state.activeProfilePath);
+    local newSize = string.len(serialized);
+
+    if (
+        oldSize >= suspiciousShrinkMinBytes and
+        newSize > 0 and
+        newSize < (oldSize * suspiciousShrinkRatio)
+    ) then
+        return false;
+    end
+
+    if (oldSize > 0) then
+        CopyFile(state.activeProfilePath, GetBackupSettingsPath(profileName));
     end
 
     local file = io.open(state.activeProfilePath, 'w');
@@ -339,13 +453,21 @@ function state.Save()
         return false;
     end
 
-    file:write('return ');
-    file:write(SerializeValue(profile, 0));
-    file:write('\n');
+    file:write(serialized);
     file:close();
     state.lastSave = os.clock();
+    state.loadedFromDisk = true;
+    state.savedThisSession = true;
 
     return true;
+end
+
+function state.SaveIfLoadedOrSaved()
+    if (state.loadedFromDisk ~= true and state.savedThisSession ~= true) then
+        return false;
+    end
+
+    return state.Save();
 end
 
 function state.SaveThrottled(interval)
@@ -414,6 +536,8 @@ local function EnsurePath(root, keys)
 end
 
 function state.GetProfile()
+    RefreshCharacterProfile();
+
     if (state.profile == nil) then
         state.profile = {
             global = {},

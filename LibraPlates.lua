@@ -14,6 +14,7 @@ local commands = require('handlers.commands');
 local log = require('core.log');
 local modules = require('modules.init');
 local nativeTargetArrow = require('core.native_target_arrow');
+local targetActionRange = require('core.target_action_range');
 local engagedEnemies = require('core.engaged_enemies');
 local enmity = require('core.enmity');
 local enemyCasts = require('core.enemy_casts');
@@ -27,6 +28,7 @@ local fishing = require('core.fishing');
 local crafting = require('core.crafting');
 local quickMenu = require('core.quick_menu');
 local diagnostics = require('core.diagnostics');
+local adaptivePerformance = require('core.adaptive_performance');
 local nativeDrawHooksRegistered = false;
 
 local function RegisterNativeDrawHooks()
@@ -87,7 +89,7 @@ end);
 ashita.events.register('unload', 'libraplates_unload', function()
     UnregisterNativeDrawHooks();
     diagnostics.Restore();
-    state.Save();
+    state.SaveIfLoadedOrSaved();
     modules.Unload();
     log.Info('Unloaded clean LibraPlates.');
 end);
@@ -97,6 +99,7 @@ end);
 -- ============================================================
 
 ashita.events.register('command', 'libraplates_command', function(e)
+    targetActionRange.HandleCommandText(e.command);
     commands.Handle(e);
 end);
 
@@ -128,6 +131,7 @@ end);
 
 ashita.events.register('d3d_present', 'libraplates_present', function()
     local ok, err = pcall(function()
+        adaptivePerformance.UpdateFrame();
         nativeTargetArrow.SetTraceCapturePaused(false);
         nativeTargetArrow.EndTraceFrame();
         nativeTargetArrow.SetTraceCapturePaused(true);

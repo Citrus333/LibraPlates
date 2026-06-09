@@ -33,6 +33,7 @@ return {
         performanceSafetySkipPet = false,
         performanceSafetyImportantEnemiesOnly = false,
         performanceSafetySkipPeer = false,
+        performanceMode = 'Auto',
         importantOverlayEnabled = true,
         importantOverlayEngagedEnemies = true,
     },

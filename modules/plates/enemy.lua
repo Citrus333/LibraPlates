@@ -20,6 +20,7 @@ local jobIconTextures = require('core.job_icon_textures');
 local entities = require('core.entities');
 local mobInfoData = require('core.mobinfo_data');
 local perfMeter = require('core.perf_meter');
+local adaptivePerformance = require('core.adaptive_performance');
 local state = require('core.state');
 local targeting = require('core.targeting');
 local engagedEnemies = require('core.engaged_enemies');
@@ -38,6 +39,7 @@ local enemyAnchorBone = 2;
 local enemyWorldOffsetY = 0.50;
 local user32 = nil;
 local mobInfoIconTextureIds = {};
+local catseyeIconTextureIds = {};
 local plateCache = {};
 local indexCache = {};
 local maxPlateCacheEntries = 64;
@@ -325,6 +327,50 @@ local function GetMobInfoIconTextureId(iconName, iconStyle)
 
     mobInfoIconTextureIds[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(GetMobInfoIconPath(iconName, iconStyle)));
     return mobInfoIconTextureIds[cacheKey];
+end
+
+local function GetCatseyeIconTextureId(iconName)
+    iconName = tostring(iconName or ''):gsub('^.*[\\/]', '');
+
+    if (iconName == '') then
+        return nil;
+    end
+
+    if (catseyeIconTextureIds[iconName] ~= nil) then
+        return catseyeIconTextureIds[iconName];
+    end
+
+    catseyeIconTextureIds[iconName] = textureLoader.ToTextureId(textureLoader.Load(
+        GetAddonPath() .. 'assets\\images\\catseye_icons\\' .. iconName
+    ));
+
+    return catseyeIconTextureIds[iconName];
+end
+
+local function AddActivityPointIconToPlate(plateData, enemyName, nameSettings)
+    if (mobInfoData.HasActivityPointMarker(enemyName) ~= true) then
+        return;
+    end
+
+    local textureId = GetCatseyeIconTextureId('AP.png');
+
+    if (textureId == nil) then
+        return;
+    end
+
+    local nameSize = tonumber(nameSettings.textSize) or tonumber(nameDefaults.textSize) or 24;
+    local iconSize = math.max(24, math.min(96, math.floor((nameSize * 2.2) + 0.5)));
+
+    plateData.icons = plateData.icons or {};
+    plateData.icons[#plateData.icons + 1] = {
+        kind = 'catseyeAp',
+        textureId = textureId,
+        size = iconSize,
+        offsetX = (tonumber(nameSettings.offsetX) or 0) - iconSize - 8,
+        offsetY = (tonumber(nameSettings.offsetY) or -54) + 1,
+        anchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
+        anchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+    };
 end
 
 local function AddJobToPlate(plateData, jobText, jobSettings, globalSettings)
@@ -1195,6 +1241,7 @@ local function QueueEnemy(enemy)
         and targetModuleMarker.Build('Enemy', layoutStateName, stateName, hpBarSettings, enemy.distance)
         or { enabled = false };
     local castBar, castPercent = BuildCastBar(hasActiveDetail == true and castData or nil, castBarSettings, globalSettings);
+    local displayName = mobInfoData.GetLookupName(enemy.name);
     local mobInfo = mobInfoData.GetMobInfo(enemy.name, enemy.index);
     local jobText = mobInfoData.GetJobString(mobInfo);
     local levelText = mobInfoData.GetLevelString(mobInfo);
@@ -1226,7 +1273,7 @@ local function QueueEnemy(enemy)
             'v=1',
             'policy=' .. canvasTexture.GetRenderPolicyKey(),
             'activeDetail=' .. tostring(hasActiveDetail),
-            'name=' .. tostring(enemy.name or ''),
+            'name=' .. tostring(displayName or ''),
             'server=' .. tostring(enemy.serverId or ''),
             'hp=' .. (hasActiveDetail == true and tostring(hpPercent) or ''),
             'dist=' .. tostring(distanceText or ''),
@@ -1235,6 +1282,7 @@ local function QueueEnemy(enemy)
             'id=' .. tostring(tonumber(enemy.serverId) or tonumber(enemy.index) or 0),
             'difficulty=' .. tostring(mobInfo ~= nil and mobInfo.Difficulty or ''),
             'claim=' .. tostring(claimCategory or ''),
+            'ap=' .. tostring(mobInfoData.HasActivityPointMarker(enemy.name) == true),
             'nm=' .. tostring(mobInfo ~= nil and mobInfo.IsNM or ''),
             'bg=' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'nameSettings=' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
@@ -1247,10 +1295,31 @@ local function QueueEnemy(enemy)
         }, '\n');
 
         local indexed = indexCache[tonumber(enemy.index) or 0];
-        local cached = indexed ~= nil and indexed.signature == signature and plateCache[indexed.cacheKey] or nil;
+        local staleCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
+        local cached = indexed ~= nil and indexed.signature == signature and staleCached or nil;
 
         if (QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, hpPercent) == true) then
             perfMeter.Count('enemy.cache.hit', 1);
+            perfMeter.EndDetail(settingsTimer);
+            return;
+        end
+
+        if (
+            adaptivePerformance.ShouldThrottleBackground() == true and
+            staleCached ~= nil and
+            (os.clock() - (tonumber(staleCached.lastUsed) or 0)) < 1.00 and
+            QueueCachedEnemy(enemy, staleCached, stateName, importantAlwaysOnTop, hpPercent) == true
+        ) then
+            perfMeter.Count('enemy.cache.smooth', 1);
+            perfMeter.EndDetail(settingsTimer);
+            return;
+        end
+
+        if (
+            adaptivePerformance.ShouldThrottleBackground() == true and
+            adaptivePerformance.AllowBackgroundBuild('enemy.idle.canvas', 1) ~= true
+        ) then
+            perfMeter.Count('enemy.cache.defer', 1);
             perfMeter.EndDetail(settingsTimer);
             return;
         end
@@ -1276,7 +1345,7 @@ local function QueueEnemy(enemy)
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
-        name = (nameSettings.enabled == true) and ShortenName(enemy.name, nameSettings.shortenName) or '',
+        name = (nameSettings.enabled == true) and ShortenName(displayName, nameSettings.shortenName) or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
         nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
@@ -1322,6 +1391,7 @@ local function QueueEnemy(enemy)
         },
         castBar = castBar,
     };
+    AddActivityPointIconToPlate(plateData, enemy.name, nameSettings);
     AddJobToPlate(plateData, jobText, jobSettings, globalSettings);
     AddLevelToPlate(plateData, levelText, levelSettings, mobInfo, globalSettings);
     AddIdToPlate(plateData, enemy, idSettings, mobInfo, globalSettings);

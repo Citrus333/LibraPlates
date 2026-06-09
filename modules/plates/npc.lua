@@ -8,6 +8,7 @@ local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
 local entities = require('core.entities');
+local adaptivePerformance = require('core.adaptive_performance');
 local npcObjectInfo = require('core.npc_object_info');
 local perfMeter = require('core.perf_meter');
 local state = require('core.state');
@@ -291,6 +292,9 @@ local function QueueNpcObject(entity)
     local targetStateName = targeting.GetTargetStateName(entity.index);
     perfMeter.EndDetail(resolveTimer);
 
+    local now = os.clock();
+    local throttleBackground = adaptivePerformance.ShouldThrottleBackground() == true;
+
     if (targetStateName == 'Idle' and state.GetConfigOpen() ~= true) then
         local fastCacheTimer = perfMeter.BeginDetail('npc.fastCache');
         local indexed = indexCache[tonumber(entity.index) or 0];
@@ -309,6 +313,15 @@ local function QueueNpcObject(entity)
             end
 
             local quickCached = distanceMatches == true and plateCache[indexed.cacheKey] or nil;
+
+            if (
+                quickCached == nil and
+                throttleBackground == true and
+                indexed.cacheKey ~= nil and
+                (now - (tonumber(indexed.clock) or 0)) < 1.00
+            ) then
+                quickCached = plateCache[indexed.cacheKey];
+            end
 
             if (quickCached ~= nil and quickCached.fastReusable == true) then
                 if (QueueCachedPlate(entity, quickCached, targetStateName, clickTargetType, displayName) == true) then
@@ -476,6 +489,21 @@ local function QueueNpcObject(entity)
         };
     end
 
+    if (
+        plateTexture == nil and
+        throttleBackground == true and
+        targetStateName == 'Idle' and
+        adaptivePerformance.AllowBackgroundBuild('npc.idle.canvas', 1) ~= true
+    ) then
+        local indexed = indexCache[tonumber(entity.index) or 0];
+        local deferredCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
+
+        if (deferredCached ~= nil and deferredCached.fastReusable == true) then
+            QueueCachedPlate(entity, deferredCached, targetStateName, clickTargetType, displayName);
+            return;
+        end
+    end
+
     if (plateTexture == nil) then
         local canvasTimer = perfMeter.BeginDetail('npc.canvas');
         plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'npc-cache-' .. cacheKey);
@@ -500,6 +528,7 @@ local function QueueNpcObject(entity)
             displayName = displayName,
             clickTargetType = clickTargetType,
             targetStateName = targetStateName,
+            clock = os.clock(),
             distanceEnabled = distanceText ~= nil,
             distancePrefix = distanceSettings.prefix or '',
             distanceText = distanceText,

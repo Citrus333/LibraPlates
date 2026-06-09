@@ -5,6 +5,7 @@ local targetModuleDefaults = require('config.widgets.target_module');
 local subtargetModuleDefaults = require('config.widgets.subtarget_module');
 local perfMeter = require('core.perf_meter');
 local nativeUiPolicy = require('core.native_ui_policy');
+local targeting = require('core.targeting');
 
 local targetModuleMarker = {};
 local textureIds = {};
@@ -223,9 +224,11 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
     local backgroundSpacing = math.max(0, Number(settings, 'backgroundSpacing', 7));
     local arrowAnimated = settings.arrowEnabled ~= false and settings.arrowSprite == true and arrowAnimation.HasSpriteFrames(settings.arrowFile) == true;
     local arrowTextureId = settings.arrowEnabled ~= false and arrowAnimation.GetTextureId(settings.arrowFile, arrowAnimated, Number(settings, 'arrowAnimationSpeed', 12)) or nil;
+    local lockTextureId = (tostring(entityName or '') == 'Enemy' and targetStateName == 'Target' and settings.lockEnabled ~= false and targeting.GetIsTargetLockedOn() == true) and GetTextureId('lock', settings.lockFile or 'lock.png') or nil;
     local backgroundTextureId = allowBackground == true and backgroundEnabled == true and GetTextureId('backgrounds', settings.backgroundFile) or nil;
     local chevronTextureId = settings.chevronEnabled ~= false and GetTextureId('chevrons', settings.chevronFile) or nil;
     local showArrow = arrowTextureId ~= nil;
+    local showLock = lockTextureId ~= nil;
     local showChevrons = chevronTextureId ~= nil;
     local targetWidth = ClampNumber(settings.width, 220, 1, 1000);
     local targetHeight = ClampNumber(settings.height, 74, 1, 450);
@@ -248,10 +251,11 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
     lastActiveDebug = lastDebug;
     PushActiveDebug(lastDebug);
 
-    return Finish({
+    local result = {
         enabled = true,
         showBackground = allowBackground == true and backgroundEnabled == true,
         showArrow = showArrow,
+        showLock = showLock,
         showChevrons = showChevrons,
         backgroundOffsetX = autoPlaceBackground == true and 0 or Number(settings, 'backgroundOffsetX', 0),
         backgroundOffsetY = autoPlaceBackground == true and 0 or Number(settings, 'backgroundOffsetY', 0),
@@ -261,6 +265,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         chevronOffsetY = settings.autoPlaceChevrons ~= false and 0 or Number(settings, 'chevronOffsetY', 0),
         backgroundTextureId = backgroundTextureId,
         arrowTextureId = arrowTextureId,
+        lockTextureId = lockTextureId,
         chevronTextureId = chevronTextureId,
         backgroundAnchorToPlate = autoPlaceBackground == true,
         backgroundAnchorKinds = GetAutoPlaceAnchorKinds(settings.backgroundAutoPlaceAnchor),
@@ -271,6 +276,10 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         backgroundHeight = autoPlaceBackground == true and math.max(1, hpHeight + (backgroundSpacing * 2)) or ClampNumber(settings.backgroundHeight, 90, 1, 450),
         arrowWidth = ClampNumber(settings.arrowWidth, 20, 1, 200),
         arrowHeight = ClampNumber(settings.arrowHeight, 20, 1, 200),
+        lockWidth = ClampNumber(settings.lockWidth, 18, 1, 200),
+        lockHeight = ClampNumber(settings.lockHeight, 18, 1, 200),
+        lockOffsetX = Number(settings, 'lockOffsetX', 0),
+        lockOffsetY = Number(settings, 'lockOffsetY', -24),
         arrowSpacing = ClampNumber(settings.arrowSpacing, 10, 0, 300),
         arrowScaleWithDistance = settings.arrowScaleWithDistance ~= false,
         arrowMinScale = Number(settings, 'arrowMinScale', 0.45),
@@ -291,6 +300,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         color = markerColor,
         backgroundColor = settings.backgroundColor or markerColor,
         arrowColor = arrowColor,
+        lockColor = settings.lockColor or markerColor,
         chevronColor = settings.chevronColor or markerColor,
         debugAutoPlaceRect = false,
         width = targetWidth,
@@ -299,7 +309,26 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         offsetY = -18,
         thickness = 2,
         cornerLength = 12,
-    });
+    };
+
+    if (targetStateName == 'Subtarget') then
+        local targetIndex = targeting.GetCurrentTargetIndex();
+        local subTargetIndex = targeting.GetCurrentSubTargetIndex();
+        local sameTargetSubtarget =
+            targeting.IsSubTargetModeActive() == true and
+            targetIndex ~= nil and
+            (subTargetIndex == nil or tonumber(subTargetIndex) == tonumber(targetIndex));
+
+        if (sameTargetSubtarget == true) then
+            local stackedTarget = targetModuleMarker.Build(entityName, layoutStateName, 'Target', hpBarSettings, distance);
+
+            if (stackedTarget ~= nil and stackedTarget.enabled == true) then
+                result.stackedMarkers = { stackedTarget };
+            end
+        end
+    end
+
+    return Finish(result);
 end
 
 function targetModuleMarker.GetDebugStatus()

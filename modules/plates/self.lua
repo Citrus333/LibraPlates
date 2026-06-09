@@ -159,6 +159,8 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
     local iconsPerRow = math.max(1, math.min(24, tonumber(iconSettings.iconsPerRow) or 6));
     local iconSize = math.max(6, math.min(160, tonumber(iconSettings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(iconSettings.iconSpacing) or 2));
+    local growLeft = tostring(iconSettings.growthDirection or 'Right') == 'Left';
+    local anchored = tostring(iconSettings.anchorTo or 'Plate') ~= 'Plate';
     local rowHeight = iconSize + spacing;
 
     if (iconSettings.showTimers == true) then
@@ -196,8 +198,15 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
             local col = (i - 1) % iconsPerRow;
             local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
             local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
             local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
             local timerText = nil;
+
+            if (anchored == true) then
+                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
+            elseif (growLeft == true) then
+                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+            end
 
             if (iconSettings.showTimers == true and timerSeconds ~= nil) then
                 timerText = statusTimerFormat.Format(timerSeconds);
@@ -207,7 +216,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 kind = kind or 'status',
                 textureId = textureId,
                 size = iconSize,
-                offsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing)),
+                offsetX = iconOffsetX,
                 offsetY = baseY + (row * rowHeight),
                 anchorTo = iconSettings.anchorTo,
                 anchorPoint = iconSettings.anchorPoint,
@@ -414,24 +423,8 @@ local function DrawBackground(drawList, bounds)
     );
 end
 
-local function GetTargetStateName(index)
-    local targetIndex = targeting.GetCurrentTargetIndex();
-    local subTargetIndex = targeting.GetCurrentSubTargetIndex();
-    local subTargetActive = targeting.IsSubTargetModeActive();
-
-    if (index == subTargetIndex) then
-        return 'Subtarget';
-    elseif (subTargetIndex == nil and subTargetActive == true and index == targetIndex) then
-        return 'Subtarget';
-    elseif (index == targetIndex) then
-        return 'Target';
-    end
-
-    return 'Idle';
-end
-
 local function QueueWorldMarker(center, nameSettings, stateName)
-    local targetStateName = GetTargetStateName(center.index);
+    local targetStateName = targeting.GetTargetStateName(center.index);
     local layoutStateName = GetLayoutStateName(stateName);
     nameSettings = state.GetWidgetSettings('Self', layoutStateName, 'Name', nameDefaults);
     local gameModeIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Game mode icon', gameModeIconDefaults);
@@ -747,16 +740,17 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         local currentMp = tonumber(center.mp);
         local maxMp = tonumber(center.maxMp) or 0;
         local mpIsFull = mpPercent >= 100 or (currentMp ~= nil and maxMp > 0 and currentMp >= maxMp);
+        local logoutActive = restingTick.IsLogoutActive(restingSettings);
         local hideAtFullHp = restingSettings.hideAtFullHp == true and hpPercent >= 100;
         local hideAtFullMp = restingSettings.hideAtFullMp == true and mpIsFull == true;
         local tick = nil;
-        if (hideAtFullHp ~= true and hideAtFullMp ~= true) then
+        if (logoutActive == true or (hideAtFullHp ~= true and hideAtFullMp ~= true)) then
             tick = restingTick.Get(center.status, center.hp, center.mp, center.maxMp, restingSettings);
         else
             restingTick.Reset();
         end
 
-        if (hideAtFullHp ~= true and hideAtFullMp ~= true and tick ~= nil) then
+        if ((logoutActive == true or (hideAtFullHp ~= true and hideAtFullMp ~= true)) and tick ~= nil) then
             plateData.extraBars = plateData.extraBars or {};
             plateData.extraBars[#plateData.extraBars + 1] = {
                 kind = 'resting',
@@ -789,7 +783,11 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             };
         end
     else
-        restingTick.Reset();
+        if (restingTick.ShouldPreserveLogoutTransition() == true) then
+            restingTick.Reset();
+        else
+            restingTick.ResetAll();
+        end
     end
 
     local cacheEligible = state.GetConfigOpen() ~= true;

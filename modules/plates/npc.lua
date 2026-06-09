@@ -288,16 +288,7 @@ local function QueueNpcObject(entity)
     local resolvedEntityName, npcInfo = npcObjectInfo.ResolveKind(displayName, entityName);
     local settingsEntityName = resolvedEntityName;
     local clickTargetType = string.lower(resolvedEntityName);
-    local targetIndex = targeting.GetCurrentTargetIndex();
-    local subTargetIndex = targeting.GetCurrentSubTargetIndex();
-    local subTargetActive = targeting.IsSubTargetModeActive();
-    local targetStateName = 'Idle';
-
-    if (entity.index == subTargetIndex or (subTargetActive == true and entity.index == targetIndex)) then
-        targetStateName = 'Subtarget';
-    elseif (entity.index == targetIndex) then
-        targetStateName = 'Target';
-    end
+    local targetStateName = targeting.GetTargetStateName(entity.index);
     perfMeter.EndDetail(resolveTimer);
 
     if (targetStateName == 'Idle' and state.GetConfigOpen() ~= true) then

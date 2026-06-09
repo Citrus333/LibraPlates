@@ -378,6 +378,11 @@ function commands.Handle(e)
     local args = SplitCommand(e.command);
     local command = tostring(args[1] or ''):lower();
 
+    if (command == '/help' or command == '/h') then
+        engagedEnemies.MarkCallForHelp(targeting.GetCurrentTargetIndex());
+        return;
+    end
+
     if (command ~= '/libraplates' and command ~= '/lp') then
         return;
     end
@@ -811,6 +816,12 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'lag') then
+        local path, phaseName, seconds = diagnostics.StartAuto(tonumber(args[3]) or 15);
+        log.Info('Lag diagnostics started. Play normally; I will say when done. file=' .. tostring(path) .. ' phase=' .. tostring(phaseName) .. ' seconds=' .. tostring(seconds));
+        return;
+    end
+
     if (subcommand == 'diag' or subcommand == 'diagnostics') then
         local action = tostring(args[3] or 'status'):lower();
 
@@ -863,6 +874,18 @@ function commands.Handle(e)
 
     if (subcommand == 'engaged') then
         log.Info(engagedEnemies.GetStatusText());
+        return;
+    end
+
+    if (subcommand == 'claimdebug') then
+        local action = tostring(args[3] or 'on'):lower();
+
+        if (action == 'off' or action == 'stop') then
+            engagedEnemies.DisableClaimDebug();
+        else
+            engagedEnemies.EnableClaimDebugForSeconds(tonumber(args[4]) or tonumber(args[3]) or 20);
+        end
+
         return;
     end
 

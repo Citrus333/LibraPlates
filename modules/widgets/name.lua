@@ -147,7 +147,11 @@ local function DrawSliderControl(id, value, minValue, maxValue, width, showButto
     local minimum = minValue or -1000;
     local maximum = maxValue or 1000;
 
-    if (imgui.SliderInt == nil) then
+    if (showButtons == false and imgui.SliderInt == nil) then
+        return DrawNumber('', value, minValue, maxValue, 1);
+    end
+
+    if (showButtons ~= false and imgui.InputText == nil and imgui.SliderInt == nil) then
         return DrawNumber('', value, minValue, maxValue, 1);
     end
 
@@ -164,7 +168,12 @@ local function DrawSliderControl(id, value, minValue, maxValue, width, showButto
     end
 
     local ref = { current };
-    imgui.SliderInt('##name_' .. id, ref, minimum, maximum);
+    if (showButtons ~= false and imgui.InputText ~= nil) then
+        ref = { tostring(current) };
+        imgui.InputText('##name_' .. id, ref, 16);
+    else
+        imgui.SliderInt('##name_' .. id, ref, minimum, maximum);
+    end
 
     if (imgui.PopItemWidth ~= nil) then
         imgui.PopItemWidth();
@@ -332,6 +341,12 @@ local function DrawColor(label, value)
     return color;
 end
 
+local function DrawLabeledColor(label, value)
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+    return DrawColor(label:gsub('%s+', '_'), value);
+end
+
 local function DrawColorCell(label, color)
     imgui.TextColored(labelColor, label);
     imgui.TableNextColumn();
@@ -339,19 +354,24 @@ local function DrawColorCell(label, color)
 end
 
 local function DrawFontRow(settings, context)
-    local maxFontSize = (context ~= nil and context.entity == 'PC') and 40 or textScale.GetMaxVisualSize();
+    local maxFontSize = 40;
+    local showColor = context == nil or context.entity ~= 'Enemy';
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##name_font_row', 4, tableFlags)) then
+        if (imgui.BeginTable('##name_font_row', showColor == true and 4 or 2, tableFlags)) then
             imgui.TableSetupColumn('##font_size_label', 0, 145);
             imgui.TableSetupColumn('##font_size_control', 0, 170);
-            imgui.TableSetupColumn('##font_color_label', 0, 145);
-            imgui.TableSetupColumn('##font_color_control', 0, 170);
+            if (showColor == true) then
+                imgui.TableSetupColumn('##font_color_label', 0, 145);
+                imgui.TableSetupColumn('##font_color_control', 0, 170);
+            end
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.textSize = DrawTableSlider('Font size', 'font_size', math.min(maxFontSize, textScale.NormalizeSetting(settings.textSize, defaults.textSize)), textScale.GetMinVisualSize(), maxFontSize);
-            imgui.TableNextColumn();
-            settings.color = DrawColorCell('Font color', settings.color);
+            if (showColor == true) then
+                imgui.TableNextColumn();
+                settings.color = DrawColorCell('Font color', settings.color);
+            end
             imgui.EndTable();
         end
 
@@ -359,7 +379,9 @@ local function DrawFontRow(settings, context)
     end
 
     settings.textSize = DrawNumber('Font size', math.min(maxFontSize, textScale.NormalizeSetting(settings.textSize, defaults.textSize)), textScale.GetMinVisualSize(), maxFontSize, 1);
-    settings.color = DrawColor('Font color', settings.color);
+    if (showColor == true) then
+        settings.color = DrawColor('Font color', settings.color);
+    end
 end
 
 local function DrawOutlineRow(settings)
@@ -591,7 +613,7 @@ function name.DrawSettings(settings, context)
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end
 
-    if (context ~= nil and context.entity == 'PC' and (tonumber(settings.textSize) or defaults.textSize) > 40) then
+    if ((tonumber(settings.textSize) or defaults.textSize) > 40) then
         settings.textSize = 40;
     end
 
@@ -615,6 +637,13 @@ function name.DrawSettings(settings, context)
     settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
 
     if (context ~= nil and context.entity == 'Enemy') then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Font colors');
+        settings.claimUnclaimedColor = DrawLabeledColor('Unclaimed', settings.claimUnclaimedColor);
+        settings.claimPartyColor = DrawLabeledColor('Claimed', settings.claimPartyColor);
+        settings.claimOtherColor = DrawLabeledColor('Claimed by others', settings.claimOtherColor);
+        settings.claimCallForHelpColor = DrawLabeledColor('Call for help', settings.claimCallForHelpColor);
+
         imgui.Separator();
         imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Difficulty font colors');
         settings.difficultyColorsEnabled = DrawToggle('Use difficulty font colors', settings.difficultyColorsEnabled);

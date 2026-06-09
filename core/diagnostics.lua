@@ -1,5 +1,6 @@
 local diagnostics = {};
 
+local log = require('core.log');
 local state = require('core.state');
 local targeting = require('core.targeting');
 local perfMeter = require('core.perf_meter');
@@ -60,6 +61,7 @@ end
 
 local function EnsureTempFolder()
     local folder = GetAddonRoot() .. 'TEMP WORK FOLDER';
+    local logFolder = folder .. '\\test-logs';
 
     pcall(function()
         if (ashita ~= nil and ashita.fs ~= nil and ashita.fs.exists ~= nil and ashita.fs.exists(folder) ~= true) then
@@ -69,9 +71,17 @@ local function EnsureTempFolder()
                 ashita.fs.create_directory(folder);
             end
         end
+
+        if (ashita ~= nil and ashita.fs ~= nil and ashita.fs.exists ~= nil and ashita.fs.exists(logFolder) ~= true) then
+            if (ashita.fs.create_dir ~= nil) then
+                ashita.fs.create_dir(logFolder);
+            elseif (ashita.fs.create_directory ~= nil) then
+                ashita.fs.create_directory(logFolder);
+            end
+        end
     end);
 
-    return folder;
+    return logFolder;
 end
 
 local function WriteLine(text)
@@ -213,10 +223,10 @@ function diagnostics.Restore()
 end
 
 function diagnostics.Start(label)
-    EnsureTempFolder();
+    local logFolder = EnsureTempFolder();
 
     local stamp = os.date('%Y%m%d-%H%M%S');
-    filePath = GetAddonRoot() .. 'TEMP WORK FOLDER\\diagnostics_' .. stamp .. '.txt';
+    filePath = logFolder .. '\\diagnostics_' .. stamp .. '.txt';
     running = true;
     startedClock = os.clock();
     lastWriteClock = 0;
@@ -377,6 +387,7 @@ function diagnostics.Update()
             autoRunning = false;
             WriteLine('auto complete');
             diagnostics.Stop();
+            log.Info('Lag diagnostics done. Say k and I will check the latest log.');
             return;
         end
     end

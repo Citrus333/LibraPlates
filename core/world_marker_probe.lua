@@ -155,6 +155,50 @@ local function SafeNumber(fn)
     return tonumber(value);
 end
 
+local function IsPlayerEngaged()
+    local party = nil;
+
+    pcall(function()
+        party = AshitaCore:GetMemoryManager():GetParty();
+    end);
+
+    if (party == nil) then
+        return false;
+    end
+
+    local status = SafeNumber(function()
+        if (party.GetMemberStatus ~= nil) then
+            return party:GetMemberStatus(0);
+        end
+
+        return nil;
+    end);
+
+    if (status == 1) then
+        return true;
+    end
+
+    local targetIndex = SafeNumber(function()
+        return party:GetMemberTargetIndex(0);
+    end);
+
+    if (targetIndex == nil or targetIndex == 0) then
+        return false;
+    end
+
+    status = SafeNumber(function()
+        local entityManager = AshitaCore:GetMemoryManager():GetEntity();
+
+        if (entityManager ~= nil and entityManager.GetStatus ~= nil) then
+            return entityManager:GetStatus(targetIndex);
+        end
+
+        return nil;
+    end);
+
+    return status == 1;
+end
+
 local function GetUser32()
     if (user32 ~= nil) then
         return user32;
@@ -2955,11 +2999,25 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
         return false;
     end
 
+    local isSubTargetMode = targeting.IsSubTargetModeActive() == true;
+
+    if (message == 513 and IsPlayerEngaged() == true and isSubTargetMode ~= true) then
+        suppressNextLeftRelease = true;
+        e.blocked = true;
+        lastClickStatus = 'engaged left blocked message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y) .. ' target=' .. tostring(entry.targetIndex);
+        return true;
+    end
+
     if (
         entry.targetType == 'object' and
         (message == 513 or message == 514)
     ) then
         lastClickStatus = 'object left native pass message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y) .. ' target=' .. tostring(entry.targetIndex);
+        return false;
+    end
+
+    if (message == 514) then
+        lastClickStatus = 'left release native pass message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y) .. ' target=' .. tostring(entry.targetIndex);
         return false;
     end
 
@@ -2985,6 +3043,23 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
             (entry.targetType == 'npc' or entry.targetType == 'object')
         ) then
             suppressNextLeftRelease = false;
+            e.blocked = false;
+            return false;
+        end
+    elseif (message == 516 and isSubTargetMode == true) then
+        local ok = false;
+
+        pcall(function ()
+            if (entry.targetType == 'enemy' and selectEnemyTarget ~= nil) then
+                ok = selectEnemyTarget(entry.targetIndex);
+            else
+                ok = selectTarget(entry.targetIndex, false);
+            end
+        end);
+
+        lastClickStatus = 'right subtarget select ' .. tostring(ok) .. ' ' .. tostring(entry.targetType) .. ' message=' .. tostring(message) .. ' target=' .. tostring(entry.targetIndex);
+
+        if (ok ~= true) then
             e.blocked = false;
             return false;
         end

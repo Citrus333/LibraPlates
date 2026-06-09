@@ -642,8 +642,6 @@ local function GetPlayerPeerData(index, peerSettings)
         return nil;
     end
 
-    result.linkshellName = tostring(GetEntityField(ent, T{ 'LinkshellName', 'Linkshell', 'LinkshellText' }) or '');
-    result.hasLinkshell = playerIndicators.GetLinkshellIconTextureId(index) ~= nil;
     result.modeText = BuildPlayerModeText(index);
     result.targetName = GetPlayerTargetName(index);
 
@@ -666,10 +664,9 @@ local function DrawPlayerInspector(player, peerSettings)
     local displayW, displayH = GetDisplaySize();
     local w = 330;
     local rowStep = 24;
-    local hasLinkshell = player.hasLinkshell == true;
     local hasMode = tostring(player.modeText or '') ~= '';
     local hasTarget = tostring(player.targetName or '') ~= '';
-    local h = 52 + (player.hpPercent ~= nil and rowStep or 0) + (hasLinkshell and rowStep or 0) + (hasMode and rowStep or 0) + (hasTarget and rowStep or 0);
+    local h = 52 + (player.hpPercent ~= nil and rowStep or 0) + (hasMode and rowStep or 0) + (hasTarget and rowStep or 0);
     local x = mouseX + 22;
     local y = mouseY + 18;
 
@@ -707,12 +704,6 @@ local function DrawPlayerInspector(player, peerSettings)
     if (player.hpPercent ~= nil) then
         DrawOutlinedText(drawList, labelX, rowY, heading, 'HP', outlineSize, outline);
         DrawOutlinedText(drawList, valueX, rowY, text, tostring(math.floor((tonumber(player.hpPercent) or 0) + 0.5)) .. '%', outlineSize, outline);
-        rowY = rowY + rowStep;
-    end
-
-    if (hasLinkshell == true) then
-        DrawOutlinedText(drawList, labelX, rowY, heading, 'Linkshell', outlineSize, outline);
-        DrawOutlinedText(drawList, valueX, rowY, text, player.linkshellName ~= '' and player.linkshellName or 'Pearl', outlineSize, outline);
         rowY = rowY + rowStep;
     end
 

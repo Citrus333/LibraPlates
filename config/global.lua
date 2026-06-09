@@ -61,6 +61,7 @@ return {
         firstTickOffset = 1,
         repeatTickOffset = 0,
         mpTickThreshold = 12,
+        enableLogoutCountdown = true,
         hideAtFullHp = false,
         hideAtFullMp = false,
         color = { 0.55, 0.95, 0.35, 1.0 },

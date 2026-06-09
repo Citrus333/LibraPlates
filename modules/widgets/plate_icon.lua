@@ -124,7 +124,7 @@ local function DrawSliderControl(id, value, minValue, maxValue, step, width)
     local current = math.floor((tonumber(value) or 0) + 0.5);
     local amount = tonumber(step) or 1;
 
-    if (imgui.SliderInt == nil) then
+    if (imgui.InputText == nil and imgui.SliderInt == nil) then
         return DrawNumber('', value, minValue, maxValue, amount);
     end
 
@@ -139,7 +139,12 @@ local function DrawSliderControl(id, value, minValue, maxValue, step, width)
     end
 
     local ref = { current };
-    imgui.SliderInt('##plate_icon_' .. id, ref, minValue or -1000, maxValue or 1000);
+    if (imgui.InputText ~= nil) then
+        ref = { tostring(current) };
+        imgui.InputText('##plate_icon_' .. id, ref, 16);
+    else
+        imgui.SliderInt('##plate_icon_' .. id, ref, minValue or -1000, maxValue or 1000);
+    end
 
     if (imgui.PopItemWidth ~= nil) then
         imgui.PopItemWidth();

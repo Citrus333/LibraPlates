@@ -1059,7 +1059,7 @@ function entities.GetPartyTrusts(maxDistance)
             ) then
                 results[#results + 1] = {
                     index = index,
-                    serverId = SafeCall(nil, function() return entityManager:GetServerId(index); end),
+                    serverId = SafeCall(nil, function() return party:GetMemberServerId(slot); end),
                     slot = slot,
                     name = ent.Name,
                     status = ent.Status,

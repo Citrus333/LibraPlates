@@ -183,7 +183,7 @@ DrawSliderControl = function(id, value, minValue, maxValue, width)
     local minimum = minValue or -1000;
     local maximum = maxValue or 1000;
 
-    if (imgui.SliderInt == nil) then
+    if (imgui.InputText == nil and imgui.SliderInt == nil) then
         return DrawNumberFallback('', value, minValue, maxValue, 1);
     end
 
@@ -200,7 +200,12 @@ DrawSliderControl = function(id, value, minValue, maxValue, width)
     end
 
     local ref = { current };
-    imgui.SliderInt('##background_' .. id, ref, minimum, maximum);
+    if (imgui.InputText ~= nil) then
+        ref = { tostring(current) };
+        imgui.InputText('##background_' .. id, ref, 16);
+    else
+        imgui.SliderInt('##background_' .. id, ref, minimum, maximum);
+    end
 
     if (imgui.PopItemWidth ~= nil) then
         imgui.PopItemWidth();

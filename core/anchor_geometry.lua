@@ -32,19 +32,23 @@ function anchorGeometry.RectFromAnchorPoint(anchorX, anchorY, width, height, poi
     return anchorX - math.floor(width / 2), anchorY - math.floor(height / 2);
 end
 
-function anchorGeometry.OppositeAnchorPoint(point)
+function anchorGeometry.AttachmentPointForTarget(point)
     point = tostring(point or 'Center');
 
-    if (point == 'Top Left') then return 'Bottom Right'; end
+    if (point == 'Top Left') then return 'Bottom Left'; end
     if (point == 'Top') then return 'Bottom'; end
-    if (point == 'Top Right') then return 'Bottom Left'; end
+    if (point == 'Top Right') then return 'Bottom Right'; end
     if (point == 'Left') then return 'Right'; end
     if (point == 'Right') then return 'Left'; end
-    if (point == 'Bottom Left') then return 'Top Right'; end
+    if (point == 'Bottom Left') then return 'Top Left'; end
     if (point == 'Bottom') then return 'Top'; end
-    if (point == 'Bottom Right') then return 'Top Left'; end
+    if (point == 'Bottom Right') then return 'Top Right'; end
 
     return 'Center';
+end
+
+function anchorGeometry.OppositeAnchorPoint(point)
+    return anchorGeometry.AttachmentPointForTarget(point);
 end
 
 function anchorGeometry.ResolveAnchoredRect(elementLayout, elementKey, defaultRect, bounds, anchorMap)
@@ -76,7 +80,7 @@ function anchorGeometry.ResolveAnchoredRect(elementLayout, elementKey, defaultRe
         anchorY + offsetY,
         defaultRect.width,
         defaultRect.height,
-        anchorGeometry.OppositeAnchorPoint(anchorPoint)
+        anchorGeometry.AttachmentPointForTarget(anchorPoint)
     );
 
     return { x = x, y = y, width = defaultRect.width, height = defaultRect.height };

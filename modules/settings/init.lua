@@ -494,6 +494,7 @@ local enemyCombatWidgets = T{
     'Job',
     'Level',
     'Distance',
+    'Lock-on icon',
     'HP Bar',
     'Buffs',
     'Debuffs',
@@ -553,6 +554,8 @@ local trustIdleWidgets = T{
     'HP Bar',
     'MP Bar',
     'TP Bar',
+    'Buffs',
+    'Debuffs',
     'Quick Menu (module)',
     'Target (module)',
     'Subtarget (module)',
@@ -563,6 +566,8 @@ local trustCombatWidgets = T{
     'HP Bar',
     'MP Bar',
     'TP Bar',
+    'Buffs',
+    'Debuffs',
     'Quick Menu (module)',
     'Enmity (module)',
     'Target (module)',
@@ -686,6 +691,7 @@ local widgetKeys = {
     ['Job'] = 'Job',
     ['Level'] = 'Level',
     ['Distance'] = 'Distance',
+    ['Lock-on icon'] = 'Target Module',
     ['ID'] = 'ID',
     ['Target arrow'] = 'Target arrow',
     ['Target Module'] = 'Target Module',
@@ -1103,6 +1109,7 @@ function GetWidgetDefaults(widget)
     if (widget == 'MP Bar') then return mpBarDefaults; end
     if (widget == 'TP Bar') then return tpBarDefaults; end
     if (widget == 'Cast bar') then return castBarDefaults; end
+    if (widget == 'Lock-on icon') then return targetModuleDefaults; end
     if (widget == 'Target' or widget == 'Target (module)') then return targetModuleDefaults; end
     if (widget == 'Subtarget' or widget == 'Subtarget (module)') then return subtargetModuleDefaults; end
     if (widget == 'Peer (module)') then return { enabled = true }; end
@@ -1986,7 +1993,14 @@ DrawPlacementControl = function(value, minValue, maxValue, step, id, sliderWidth
 
     imgui.SameLine();
 
-    if (amount < 1 and imgui.SliderFloat ~= nil) then
+    if (imgui.InputText ~= nil) then
+        local ref = { amount < 1 and tostring(current) or tostring(math.floor(current + 0.5)) };
+        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(tonumber(sliderWidth) or 70); end
+        if (imgui.InputText('##' .. itemId, ref, 16) == true) then
+            current = tonumber(ref[1]) or current;
+        end
+        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+    elseif (amount < 1 and imgui.SliderFloat ~= nil) then
         local ref = { current };
         if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(tonumber(sliderWidth) or 90); end
         if (imgui.SliderFloat('##' .. itemId, ref, minimum, maximum) == true) then
@@ -2834,6 +2848,52 @@ function DrawTargetModulePlacementSettings(settings, defaults, label, entityName
         imgui.Separator();
     end
 
+    if (tostring(label or '') ~= 'Subtarget (module)' and tostring(label or '') ~= 'Subtarget Module') then
+        DrawPlacementSectionHeader('Lock-on icon', settings.lockEnabled ~= false, function(nextValue)
+            settings.lockEnabled = nextValue;
+            state.Save();
+        end);
+
+        if (settings.lockEnabled ~= false) then
+            local nextX, xChanged, nextY, yChanged = DrawPlacementPair(
+                'Position X',
+                settings.lockOffsetX,
+                'TargetModuleLockX',
+                'Position Y',
+                settings.lockOffsetY,
+                'TargetModuleLockY',
+                -500,
+                500,
+                1
+            );
+
+            if (xChanged == true) then settings.lockOffsetX = math.max(-350, math.min(350, nextX)); state.Save(); end
+            if (yChanged == true) then settings.lockOffsetY = nextY; state.Save(); end
+
+            local nextWidth, widthChanged, nextHeight, heightChanged = DrawPlacementPair(
+                'Width',
+                settings.lockWidth,
+                'TargetModuleLockWidth',
+                'Height',
+                settings.lockHeight,
+                'TargetModuleLockHeight',
+                1,
+                200,
+                1
+            );
+
+            if (widthChanged == true) then settings.lockWidth = nextWidth; state.Save(); end
+            if (heightChanged == true) then settings.lockHeight = nextHeight; state.Save(); end
+
+            local lockColor, lockColorChanged = DrawSettingsColor('Lock-on tint', settings.lockColor, 'TargetModuleLockColor');
+            settings.lockColor = lockColor;
+            if (lockColorChanged == true) then state.Save(); end
+            uiTooltip.Info('Shown only while the current target is locked on.');
+        end
+
+        imgui.Separator();
+    end
+
     if (hasChevronImage == true) then
         DrawPlacementSectionHeader('Chevrons', settings.chevronEnabled ~= false, function(nextValue)
             settings.chevronEnabled = nextValue;
@@ -3416,7 +3476,7 @@ function GetPreviewSelection()
     local context = {};
 
     if (selectedTab == 'Plates') then
-        if (selectedWidget == 'Target' or selectedWidget == 'Target (module)') then
+        if (selectedWidget == 'Target' or selectedWidget == 'Target (module)' or selectedWidget == 'Lock-on icon') then
             context = {
                 entityName = GetStorageEntity(selectedEntity),
                 stateName = GetStorageState(selectedState),
@@ -4464,6 +4524,7 @@ function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
     if (settings.resting.firstTickOffset == nil) then settings.resting.firstTickOffset = 1; end
     if (settings.resting.repeatTickOffset == nil) then settings.resting.repeatTickOffset = 0; end
     if (settings.resting.mpTickThreshold == nil) then settings.resting.mpTickThreshold = 12; end
+    if (settings.resting.enableLogoutCountdown == nil) then settings.resting.enableLogoutCountdown = true; end
     if (settings.resting.color == nil) then settings.resting.color = { 0.55, 0.95, 0.35, 1.0 }; end
     if (settings.resting.backgroundColor == nil) then settings.resting.backgroundColor = { 0.10, 0.10, 0.10, 1.0 }; end
     if (settings.resting.borderColor == nil) then settings.resting.borderColor = { 1.0, 1.0, 1.0, 1.0 }; end
@@ -4553,6 +4614,11 @@ function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
         settings.resting.mpTickThreshold = mpThreshold;
         state.Save();
     end
+
+    DrawCheckbox('Enable logout countdown', settings.resting.enableLogoutCountdown ~= false, function(value)
+        settings.resting.enableLogoutCountdown = value == true;
+        state.Save();
+    end);
 
     DrawCheckbox('Hide at full HP', settings.resting.hideAtFullHp == true, function(value)
         settings.resting.hideAtFullHp = value == true;
@@ -4809,6 +4875,7 @@ end
 function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     settings.quickMenu = settings.quickMenu or {};
     local menu = settings.quickMenu;
+    local scopedEntity = nil;
 
     if (menu.enabled == nil) then menu.enabled = true; end
     if (menu.openOnRightClick == nil) then menu.openOnRightClick = true; end
@@ -4849,6 +4916,10 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     if (menu.npc.showType == nil) then menu.npc.showType = true; end
     if (menu.npc.showInfo == nil) then menu.npc.showInfo = true; end
     if (menu.npc.openLink == nil) then menu.npc.openLink = true; end
+
+    if (selectedTab == 'Plates') then
+        scopedEntity = GetStorageEntity(selectedEntity);
+    end
 
     if (hideActive ~= true) then
         DrawCheckbox('Active', menu.enabled == true, function(value)
@@ -4913,8 +4984,9 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
         state.Save();
     end
 
-    imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'PC actions');
+    if (scopedEntity == nil or scopedEntity == 'PC') then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'PC actions');
 
     DrawCheckbox('Examine', menu.pc.examine == true, function(value)
         menu.pc.examine = value == true;
@@ -4951,13 +5023,15 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
         state.Save();
     end);
 
-    DrawCheckbox('Pass Alliance Leader', menu.pc.passAllianceLeader == true, function(value)
-        menu.pc.passAllianceLeader = value == true;
-        state.Save();
-    end);
+        DrawCheckbox('Pass Alliance Leader', menu.pc.passAllianceLeader == true, function(value)
+            menu.pc.passAllianceLeader = value == true;
+            state.Save();
+        end);
+    end
 
-    imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Self actions');
+    if (scopedEntity == nil or scopedEntity == 'Self') then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Self actions');
 
     DrawCheckbox('Invite responses', menu.self.acceptInvite == true or menu.self.declineInvite == true, function(value)
         menu.self.acceptInvite = value == true;
@@ -4993,13 +5067,15 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
         state.Save();
     end);
 
-    DrawCheckbox('Emote Trust', menu.self.emoteTrust == true, function(value)
-        menu.self.emoteTrust = value == true;
-        state.Save();
-    end);
+        DrawCheckbox('Emote Trust', menu.self.emoteTrust == true, function(value)
+            menu.self.emoteTrust = value == true;
+            state.Save();
+        end);
+    end
 
-    imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Trust actions');
+    if (scopedEntity == nil or scopedEntity == 'Trust') then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Trust actions');
 
     DrawCheckbox('Dismiss This Trust', menu.trust.dismiss == true, function(value)
         menu.trust.dismiss = value == true;
@@ -5011,15 +5087,17 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
         state.Save();
     end);
 
-    if (menu.trust.dismissAll == true) then
-        DrawCheckbox('Confirm Dismiss All Trusts', menu.trust.confirmDismissAll == true, function(value)
-            menu.trust.confirmDismissAll = value == true;
-            state.Save();
-        end);
+        if (menu.trust.dismissAll == true) then
+            DrawCheckbox('Confirm Dismiss All Trusts', menu.trust.confirmDismissAll == true, function(value)
+                menu.trust.confirmDismissAll = value == true;
+                state.Save();
+            end);
+        end
     end
 
-    imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'NPC actions');
+    if (scopedEntity == nil or scopedEntity == 'NPC' or scopedEntity == 'Object') then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'NPC actions');
 
     DrawCheckbox('Show type', menu.npc.showType == true, function(value)
         menu.npc.showType = value == true;
@@ -5031,10 +5109,11 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
         state.Save();
     end);
 
-    DrawCheckbox('Open wiki link', menu.npc.openLink == true, function(value)
-        menu.npc.openLink = value == true;
-        state.Save();
-    end);
+        DrawCheckbox('Open wiki link', menu.npc.openLink == true, function(value)
+            menu.npc.openLink = value == true;
+            state.Save();
+        end);
+    end
 end
 
 local function LibraPlatesSettingsToStorageStateName(value)
@@ -5099,10 +5178,6 @@ if (selectedTab == 'Targeting') then
 
         DrawCheckbox('Left-click enemy target out of combat', settings.enableLeftClickEnemyTargetIdle == true, function(value)
             settings.enableLeftClickEnemyTargetIdle = value == true;
-        end);
-
-        DrawCheckbox('Left-click enemy target in combat', settings.enableLeftClickEnemyTargetCombat == true, function(value)
-            settings.enableLeftClickEnemyTargetCombat = value == true;
         end);
 
         DrawSliderTenths('Enemy plate range', settings.enemyPlateRange, 50, 644, function(value)
@@ -5314,12 +5389,13 @@ local function DrawSelectedEditorPlatesTargetWidgets()
         selectedWidget ~= 'Target' and
         selectedWidget ~= 'Subtarget' and
         selectedWidget ~= 'Target (module)' and
-        selectedWidget ~= 'Subtarget (module)'
+        selectedWidget ~= 'Subtarget (module)' and
+        selectedWidget ~= 'Lock-on icon'
     ) then
         return;
     end
 
-    local widgetKey = widgetKeys[selectedWidget];
+    local widgetKey = selectedWidget == 'Lock-on icon' and 'Target Module' or widgetKeys[selectedWidget];
     local defaults = (selectedWidget == 'Subtarget' or selectedWidget == 'Subtarget (module)') and subtargetModuleDefaults or targetModuleDefaults;
     local settings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), LibraPlatesSettingsToStorageStateName(selectedState), widgetKey, defaults);
 
@@ -5329,6 +5405,7 @@ local function DrawSelectedEditorPlatesTargetWidgets()
         state = LibraPlatesSettingsToStorageStateName(selectedState),
         widget = selectedWidget,
         defaults = defaults,
+        lockOnly = selectedWidget == 'Lock-on icon',
     });
 end
 

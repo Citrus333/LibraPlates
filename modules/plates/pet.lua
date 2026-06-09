@@ -358,20 +358,6 @@ local function BuildPercentFallbackResourceText(settings, label, value, maxValue
     return text;
 end
 
-local function GetTargetStateName(index)
-    local targetIndex = targeting.GetCurrentTargetIndex();
-    local subTargetIndex = targeting.GetCurrentSubTargetIndex();
-    local subTargetActive = targeting.IsSubTargetModeActive();
-
-    if (index == subTargetIndex or (subTargetActive == true and index == targetIndex)) then
-        return 'Subtarget';
-    elseif (index == targetIndex) then
-        return 'Target';
-    end
-
-    return 'Idle';
-end
-
 local function GetBstStateName(pet)
     if (pet ~= nil and petDurations.GetBstJugDurationMinutes(pet.name) ~= nil) then
         return 'Jug Pet';
@@ -789,7 +775,7 @@ end
 
 local function QueueBstPet(pet)
     local layoutStateName = GetBstStateName(pet);
-    local targetStateName = GetTargetStateName(pet.index);
+    local targetStateName = targeting.GetTargetStateName(pet.index);
     local nameSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Background', backgroundDefaults);
     local hpBarSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'HP Bar', barDefaults);
@@ -1003,7 +989,7 @@ end
 
 local function QueueSmnPet(pet)
     local layoutStateName = (pet.petType == 'spirit') and 'Spirit' or 'Avatar';
-    local targetStateName = GetTargetStateName(pet.index);
+    local targetStateName = targeting.GetTargetStateName(pet.index);
     local nameSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Background', backgroundDefaults);
     local hpBarSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'HP Bar', smnHpBarDefaults);
@@ -1247,7 +1233,7 @@ end
 
 local function QueueWyvernPet(pet)
     local layoutStateName = 'Wyvern';
-    local targetStateName = GetTargetStateName(pet.index);
+    local targetStateName = targeting.GetTargetStateName(pet.index);
     local nameSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'Background', backgroundDefaults);
     local hpBarSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'HP Bar', barDefaults);
@@ -1420,7 +1406,7 @@ end
 
 local function QueuePupPet(pet)
     local layoutStateName = 'Automaton';
-    local targetStateName = GetTargetStateName(pet.index);
+    local targetStateName = targeting.GetTargetStateName(pet.index);
     local nameSettings = state.GetWidgetSettings('Automaton', layoutStateName, 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('Automaton', layoutStateName, 'Background', backgroundDefaults);
     local hpBarSettings = state.GetWidgetSettings('Automaton', layoutStateName, 'HP Bar', barDefaults);

@@ -112,7 +112,7 @@ local function ConvertRawStatusTimerToSeconds(rawTimer)
     end
 
     if (rawTimer <= 86400) then
-        return rawTimer;
+        return rawTimer / 60;
     end
 
     local utcStamp = GetGameUtcStamp();
@@ -134,7 +134,7 @@ local function ConvertRawStatusTimerToSeconds(rawTimer)
         return 0;
     end
 
-    return realDuration;
+    return realDuration / 60;
 end
 
 local function GetTimerSeconds(statusTimers, index)

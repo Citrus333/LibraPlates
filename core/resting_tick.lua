@@ -7,6 +7,13 @@ local tickState = {
     displayLength = 20,
     lastMp = nil,
 };
+local logoutState = {
+    active = false,
+    startClock = nil,
+    endClock = nil,
+    duration = 30,
+    seenResting = false,
+};
 
 local function Reset()
     tickState.active = false;
@@ -18,6 +25,48 @@ end
 
 local function IsResting(status)
     return tonumber(status) == 33;
+end
+
+local function StripControlCodes(text)
+    return tostring(text or ''):gsub(string.char(0x1E) .. '.', ''):gsub('[%z\1-\31]', '');
+end
+
+local function ClearLogout()
+    logoutState.active = false;
+    logoutState.startClock = nil;
+    logoutState.endClock = nil;
+    logoutState.duration = 30;
+    logoutState.seenResting = false;
+end
+
+local function ShouldPreserveLogoutTransition()
+    if (logoutState.active ~= true or logoutState.startClock == nil) then
+        return false;
+    end
+
+    return logoutState.seenResting ~= true and (os.clock() - logoutState.startClock) < 2.50;
+end
+
+local function GetLogoutCountdown(settings)
+    settings = settings or {};
+
+    if (settings.enableLogoutCountdown == false or logoutState.active ~= true or logoutState.endClock == nil) then
+        return nil;
+    end
+
+    local now = os.clock();
+    local remaining = math.max(0, logoutState.endClock - now);
+    local duration = math.max(1, tonumber(logoutState.duration) or 30);
+
+    if (remaining <= 0) then
+        ClearLogout();
+        return nil;
+    end
+
+    return {
+        progress = (remaining / duration) * 100,
+        text = 'Logout ' .. tostring(math.ceil(remaining)) .. 's',
+    };
 end
 
 local function ResyncFromObservedMpTick(now, settings)
@@ -36,8 +85,48 @@ function restingTick.Reset()
     Reset();
 end
 
+function restingTick.ResetAll()
+    Reset();
+    ClearLogout();
+end
+
 function restingTick.IsResting(status)
     return IsResting(status);
+end
+
+function restingTick.IsLogoutActive(settings)
+    return GetLogoutCountdown(settings) ~= nil;
+end
+
+function restingTick.ShouldPreserveLogoutTransition()
+    return ShouldPreserveLogoutTransition();
+end
+
+function restingTick.HandleTextIn(e)
+    local message = StripControlCodes(
+        (e ~= nil and (e.message or e.text or e.original or e.modified or e.injected)) or ''
+    );
+
+    if (message == '') then
+        return;
+    end
+
+    local seconds = string.match(message, 'Executing logout in (%d+) seconds');
+
+    if (seconds ~= nil) then
+        local duration = math.max(1, tonumber(seconds) or 30);
+
+        logoutState.active = true;
+        logoutState.startClock = os.clock();
+        logoutState.endClock = logoutState.startClock + duration;
+        logoutState.duration = duration;
+        logoutState.seenResting = false;
+        return;
+    end
+
+    if (message:find('Cancel healing to remain logged in.', 1, true) ~= nil) then
+        ClearLogout();
+    end
 end
 
 function restingTick.Get(status, hp, mp, maxMp, settings)
@@ -48,9 +137,30 @@ function restingTick.Get(status, hp, mp, maxMp, settings)
 
     settings = settings or {};
 
-    if (settings.enabled == false or IsResting(status) ~= true) then
+    if (settings.enabled == false) then
         Reset();
+        ClearLogout();
         return nil;
+    end
+
+    if (IsResting(status) ~= true) then
+        Reset();
+
+        if (ShouldPreserveLogoutTransition() ~= true) then
+            ClearLogout();
+        end
+
+        return nil;
+    end
+
+    if (logoutState.active == true) then
+        logoutState.seenResting = true;
+    end
+
+    local logoutCountdown = GetLogoutCountdown(settings);
+
+    if (logoutCountdown ~= nil) then
+        return logoutCountdown;
     end
 
     local now = os.clock();

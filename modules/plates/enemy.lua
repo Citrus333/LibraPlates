@@ -796,6 +796,29 @@ local function GetDifficultyColor(settings, defaults, mobInfo)
 
     return settings.color or defaults.color;
 end
+local function GetClaimNameColor(nameSettings, nameDefaults, claimCategory)
+    if (nameSettings == nil) then
+        return nil;
+    end
+
+    if (claimCategory == 'unclaimed') then
+        return nameSettings.claimUnclaimedColor or nameDefaults.claimUnclaimedColor or nameDefaults.color;
+    end
+
+    if (claimCategory == 'party') then
+        return nameSettings.claimPartyColor or nameDefaults.claimPartyColor or nameDefaults.color;
+    end
+
+    if (claimCategory == 'other') then
+        return nameSettings.claimOtherColor or nameDefaults.claimOtherColor or nameDefaults.color;
+    end
+
+    if (claimCategory == 'call_for_help') then
+        return nameSettings.claimCallForHelpColor or nameDefaults.claimCallForHelpColor or nameDefaults.color;
+    end
+
+    return nameSettings.claimUnclaimedColor or nameDefaults.claimUnclaimedColor or nameDefaults.color;
+end
 
 local function GetIdBoxColor(idSettings, mobInfo)
     if (idSettings == nil or idSettings.boxDifficultyColorsEnabled ~= true) then
@@ -943,6 +966,8 @@ local function AddStatusIconsToPlate(plateData, statusIds, iconSettings, isEngag
     local iconsPerRow = math.max(1, math.min(24, tonumber(iconSettings.iconsPerRow) or 6));
     local iconSize = math.max(6, math.min(160, tonumber(iconSettings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(iconSettings.iconSpacing) or 2));
+    local growLeft = tostring(iconSettings.growthDirection or 'Right') == 'Left';
+    local anchored = tostring(iconSettings.anchorTo or 'Plate') ~= 'Plate';
     local rowHeight = iconSize + spacing;
 
     if (iconSettings.showTimers == true) then
@@ -980,8 +1005,15 @@ local function AddStatusIconsToPlate(plateData, statusIds, iconSettings, isEngag
             local col = (i - 1) % iconsPerRow;
             local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
             local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
             local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
             local timerText = nil;
+
+            if (anchored == true) then
+                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
+            elseif (growLeft == true) then
+                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+            end
 
             if (iconSettings.showTimers == true and timerSeconds ~= nil) then
                 timerText = statusTimerFormat.Format(timerSeconds);
@@ -991,7 +1023,7 @@ local function AddStatusIconsToPlate(plateData, statusIds, iconSettings, isEngag
                 kind = kind or 'status',
                 textureId = textureId,
                 size = iconSize,
-                offsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing)),
+                offsetX = iconOffsetX,
                 offsetY = baseY + (row * rowHeight),
                 anchorTo = iconSettings.anchorTo,
                 anchorPoint = iconSettings.anchorPoint,
@@ -1113,18 +1145,13 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
     return true;
 end
 
-local function QueueEnemy(enemy, targetIndex, subTargetIndex, subTargetActive)
+local function QueueEnemy(enemy)
     local settingsTimer = perfMeter.BeginDetail('enemy.settings');
-    local stateName = 'Idle';
-
-    if (enemy.index == subTargetIndex or (subTargetActive == true and enemy.index == targetIndex)) then
-        stateName = 'Subtarget';
-    elseif (enemy.index == targetIndex) then
-        stateName = 'Target';
-    end
+    local stateName = targeting.GetTargetStateName(enemy.index);
 
     local castData = enemyCasts.GetActiveCast(enemy.serverId);
     local isEngaged = engagedEnemies.IsEngaged(enemy.index) == true;
+    local claimCategory = engagedEnemies.GetClaimCategory(enemy.index);
     local layoutStateName = (stateName ~= 'Idle' or isEngaged == true or castData ~= nil) and 'Combat' or 'Idle';
     local nameSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Background', backgroundDefaults);
@@ -1207,9 +1234,10 @@ local function QueueEnemy(enemy, targetIndex, subTargetIndex, subTargetActive)
             'level=' .. tostring(levelText or ''),
             'id=' .. tostring(tonumber(enemy.serverId) or tonumber(enemy.index) or 0),
             'difficulty=' .. tostring(mobInfo ~= nil and mobInfo.Difficulty or ''),
+            'claim=' .. tostring(claimCategory or ''),
             'nm=' .. tostring(mobInfo ~= nil and mobInfo.IsNM or ''),
             'bg=' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
-            'nameSettings=' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
+            'nameSettings=' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'hpSettings=' .. (hasActiveDetail == true and SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor' }) or ''),
             'jobSettings=' .. SettingKey(jobSettings, { 'enabled', 'displayModeIndex', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'iconTheme', 'iconSize' }),
             'levelSettings=' .. SettingKey(levelSettings, { 'enabled', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
@@ -1252,7 +1280,7 @@ local function QueueEnemy(enemy, targetIndex, subTargetIndex, subTargetActive)
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
         nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
-        nameColor = GetDifficultyColor(nameSettings, nameDefaults, mobInfo),
+        nameColor = GetClaimNameColor(nameSettings, nameDefaults, claimCategory) or GetDifficultyColor(nameSettings, nameDefaults, mobInfo),
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
         nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
@@ -1495,7 +1523,7 @@ function enemyPlate.Render(importantOnly)
         end
 
         queued[index] = true;
-        QueueEnemy(enemy, currentTargetIndex, currentSubTargetIndex, subTargetActive);
+        QueueEnemy(enemy);
         return true;
     end
 
@@ -1528,7 +1556,7 @@ function enemyPlate.Render(importantOnly)
             -- Already queued target/subtarget above.
         else
             queued[enemy.index] = true;
-            QueueEnemy(enemy, currentTargetIndex, currentSubTargetIndex, subTargetActive);
+            QueueEnemy(enemy);
         end
     end
 end

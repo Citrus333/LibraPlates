@@ -1,9 +1,7 @@
-TEMP WORK FOLDER/Backups/
-TEMP WORK FOLDER/backup-source-20260603-005606/
-TEMP WORK FOLDER/Menus and Nameplates 2026-03-10/
-TEMP WORK FOLDER/Platynator-Assets/
-TEMP WORK FOLDER/Torkson_42057/
-TEMP WORK FOLDER/videos/
-TEMP WORK FOLDER/xiprime-download/
-TEMP WORK FOLDER/diagnostics_*/
-TEMP WORK FOLDER/LibraPlates.rar
+TEMP WORK FOLDER/
+*.rar
+*.zip
+*.7z
+*.psd
+*.DAT
+test-logs/

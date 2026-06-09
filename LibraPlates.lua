@@ -19,6 +19,8 @@ local enmity = require('core.enmity');
 local enemyCasts = require('core.enemy_casts');
 local enemyStatuses = require('core.enemy_statuses');
 local partyStatuses = require('core.party_statuses');
+local trustStatusIcons = require('core.trust_status_icons');
+local restingTick = require('core.resting_tick');
 local petState = require('core.pet_state');
 local bstCharmTimer = require('core.bst_charm_timer');
 local fishing = require('core.fishing');
@@ -108,6 +110,7 @@ ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
     enemyCasts.HandlePacketIn(e);
     enemyStatuses.HandlePacketIn(e);
     partyStatuses.HandlePacketIn(e);
+    trustStatusIcons.HandlePacketIn(e);
     bstCharmTimer.HandlePacketIn(e);
     crafting.HandlePacketIn(e);
 end);
@@ -119,6 +122,7 @@ end);
 
 ashita.events.register('text_in', 'libraplates_text_in', function(e)
     fishing.HandleTextIn(e);
+    restingTick.HandleTextIn(e);
     quickMenu.HandleTextIn(e);
 end);
 

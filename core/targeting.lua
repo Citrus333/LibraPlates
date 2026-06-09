@@ -192,9 +192,23 @@ function targeting.GetCurrentTargetIndex()
         return nil;
     end
 
-    local ok, targetIndex = pcall(function()
-        return targetManager:GetTargetIndex(0);
+    -- In FFXI subtarget mode, slot 0 is the moving subtarget cursor and
+    -- slot 1 keeps the original/main target. Outside subtarget mode, slot 0
+    -- is the main target.
+    local okActive, active = pcall(function()
+        return targetManager:GetIsSubTargetActive();
     end);
+
+    local slot = (okActive == true and (active == 1 or active == true)) and 1 or 0;
+    local ok, targetIndex = pcall(function()
+        return targetManager:GetTargetIndex(slot);
+    end);
+
+    if (ok ~= true or targetIndex == nil or targetIndex == 0) then
+        ok, targetIndex = pcall(function()
+            return targetManager:GetTargetIndex(0);
+        end);
+    end
 
     if (ok ~= true or targetIndex == nil or targetIndex == 0) then
         return nil;
@@ -225,12 +239,14 @@ function targeting.GetCurrentSubTargetIndex()
     local targetIndex0 = GetTargetIndex(0);
     local targetIndex1 = GetTargetIndex(1);
 
+    -- In subtarget mode, slot 0 is the moving subtarget cursor. Slot 1 is
+    -- the original/main target. If slot 0 is empty, fall back defensively.
     local ok, active = pcall(function()
         return targetManager:GetIsSubTargetActive();
     end);
 
-    if (ok == true and active == 1) then
-        return targetIndex1 or targetIndex0;
+    if (ok == true and (active == 1 or active == true)) then
+        return targetIndex0 or targetIndex1;
     end
 
     if (targetManager.GetSubTargetFlags == nil or targetIndex0 == nil) then
@@ -245,7 +261,7 @@ function targeting.GetCurrentSubTargetIndex()
     end);
 
     if (okFlags == true and tonumber(flags) ~= nil and tonumber(flags) ~= 0xFFFFFFFF) then
-        return targetIndex0;
+        return targetIndex0 or targetIndex1;
     end
 
     return nil;
@@ -266,6 +282,28 @@ function targeting.GetCurrentTargetAndSubTargetIndexes()
     end
 
     return targetIndex, subTargetIndex;
+end
+
+function targeting.GetTargetStateName(index)
+    index = tonumber(index);
+
+    if (index == nil or index == 0) then
+        return 'Idle';
+    end
+
+    local targetIndex = targeting.GetCurrentTargetIndex();
+    local subTargetIndex = targeting.GetCurrentSubTargetIndex();
+    local subTargetActive = targeting.IsSubTargetModeActive();
+
+    if (tonumber(subTargetIndex) == index or (subTargetIndex == nil and subTargetActive == true and tonumber(targetIndex) == index)) then
+        return 'Subtarget';
+    end
+
+    if (tonumber(targetIndex) == index) then
+        return 'Target';
+    end
+
+    return 'Idle';
 end
 
 function targeting.GetDebugStatus()
@@ -336,7 +374,7 @@ function targeting.IsSubTargetModeActive()
         return false;
     end
 
-    return active == 1;
+    return active == 1 or active == true;
 end
 
 function targeting.GetIsTargetLockedOn()

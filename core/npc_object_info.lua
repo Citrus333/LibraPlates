@@ -71,6 +71,16 @@ local function GetCurrentZoneName()
     return currentZoneName;
 end
 
+local function GetCurrentZoneId()
+    local zoneId = nil;
+
+    pcall(function()
+        zoneId = AshitaCore:GetMemoryManager():GetParty():GetMemberZone(0);
+    end);
+
+    return tonumber(zoneId) or 0;
+end
+
 local function GetEntryZones(entry)
     if (type(entry) ~= 'table') then
         return nil;
@@ -88,6 +98,26 @@ local function GetEntryZones(entry)
 end
 
 local function EntryMatchesCurrentZone(entry)
+    if (type(entry) ~= 'table') then
+        return false;
+    end
+
+    if (type(entry.zoneIds) == 'table' and next(entry.zoneIds) ~= nil) then
+        local currentId = GetCurrentZoneId();
+
+        if (currentId == 0) then
+            return true;
+        end
+
+        for _, zoneId in pairs(entry.zoneIds) do
+            if (tonumber(zoneId) == currentId) then
+                return true;
+            end
+        end
+
+        return false;
+    end
+
     local zones = GetEntryZones(entry);
 
     if (zones == nil) then

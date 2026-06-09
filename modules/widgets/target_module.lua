@@ -184,7 +184,14 @@ local function DrawNumberControl(value, minValue, maxValue, step, id, sliderWidt
 
     imgui.SameLine();
 
-    if (amount < 1 and imgui.SliderFloat ~= nil) then
+    if (imgui.InputText ~= nil) then
+        local ref = { amount < 1 and tostring(current) or tostring(math.floor(current + 0.5)) };
+        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(tonumber(sliderWidth) or 90); end
+        if (imgui.InputText('##target_module_' .. itemId, ref, 16) == true) then
+            current = tonumber(ref[1]) or current;
+        end
+        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+    elseif (amount < 1 and imgui.SliderFloat ~= nil) then
         local ref = { current };
         if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(tonumber(sliderWidth) or 90); end
         if (imgui.SliderFloat('##target_module_' .. itemId, ref, minimum, maximum) == true) then
@@ -312,7 +319,7 @@ local function ApplyDefaults(settings, defaults)
     for key, value in pairs(defaults or {}) do
         if (settings[key] == nil) then
             if (
-                (key == 'backgroundColor' or key == 'arrowColor' or key == 'chevronColor') and
+                (key == 'backgroundColor' or key == 'arrowColor' or key == 'lockColor' or key == 'chevronColor') and
                 type(settings.color) == 'table'
             ) then
                 settings[key] = { unpackTable(settings.color) };
@@ -464,6 +471,7 @@ function targetModule.DrawSettings(settings, context)
     local isNpcObject = tostring(context ~= nil and context.entity or '') == 'NPC';
     local entityName = tostring(context ~= nil and context.entity or '');
     local isSubtargetModule = tostring(label) == 'Subtarget (module)';
+    local lockOnly = context ~= nil and context.lockOnly == true;
     local isPet = (
         entityName == 'Pet (BST)' or
         entityName == 'Pet (SMN)' or
@@ -481,6 +489,41 @@ function targetModule.DrawSettings(settings, context)
     imgui.SameLine();
     imgui.TextColored((settings.enabled ~= false) and valueColor or { 0.20, 0.65, 0.67, 1.0 }, (settings.enabled ~= false) and 'ON' or 'OFF');
     uiTooltip.Info('This controls only the LibraPlates custom target/subtarget module. The native game target arrow is controlled globally in General > Targeting.');
+
+    if (lockOnly == true) then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Lock-on icon');
+        settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
+
+        if (settings.lockEnabled ~= false) then
+            settings.lockWidth, settings.lockHeight = DrawNumberPair(
+                'Width',
+                settings.lockWidth,
+                'Height',
+                settings.lockHeight,
+                1,
+                200,
+                1,
+                'TargetModuleLockWidth',
+                'TargetModuleLockHeight'
+            );
+            settings.lockOffsetX, settings.lockOffsetY = DrawNumberPair(
+                'Position X',
+                settings.lockOffsetX,
+                'Position Y',
+                settings.lockOffsetY,
+                -500,
+                500,
+                1,
+                'TargetModuleLockX',
+                'TargetModuleLockY'
+            );
+            settings.lockColor = DrawColor('Lock-on tint', settings.lockColor);
+            uiTooltip.Info('Shown on the target marker while lock-on is active.');
+        end
+
+        return;
+    end
 
     if (isPet == true and label ~= 'Subtarget Module') then
         local globalSettings = state.GetGlobalSettings(globalDefaults);
@@ -632,6 +675,39 @@ function targetModule.DrawSettings(settings, context)
         settings.arrowSprite = false;
     end
 
+    if (isSubtargetModule ~= true) then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Lock-on icon');
+        settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
+
+        if (settings.lockEnabled ~= false) then
+            settings.lockWidth, settings.lockHeight = DrawNumberPair(
+                'Width',
+                settings.lockWidth,
+                'Height',
+                settings.lockHeight,
+                1,
+                200,
+                1,
+                'TargetModuleLockWidth',
+                'TargetModuleLockHeight'
+            );
+            settings.lockOffsetX, settings.lockOffsetY = DrawNumberPair(
+                'Position X',
+                settings.lockOffsetX,
+                'Position Y',
+                settings.lockOffsetY,
+                -500,
+                500,
+                1,
+                'TargetModuleLockX',
+                'TargetModuleLockY'
+            );
+            settings.lockColor = DrawColor('Lock-on tint', settings.lockColor);
+            uiTooltip.Info('Shown on the target marker while lock-on is active.');
+        end
+    end
+
     imgui.Separator();
     imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Chevrons');
     settings.chevronEnabled = DrawToggle('Show chevrons', settings.chevronEnabled ~= false);
@@ -671,6 +747,8 @@ function targetModule.DrawSettings(settings, context)
         settings.backgroundOffsetY = defaults.backgroundOffsetY;
         settings.arrowOffsetX = defaults.arrowOffsetX;
         settings.arrowOffsetY = defaults.arrowOffsetY;
+        settings.lockOffsetX = defaults.lockOffsetX;
+        settings.lockOffsetY = defaults.lockOffsetY;
         settings.chevronOffsetX = defaults.chevronOffsetX;
         settings.chevronOffsetY = defaults.chevronOffsetY;
         settings.chevronSpacing = defaults.chevronSpacing;

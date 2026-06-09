@@ -1329,6 +1329,11 @@ function quickMenu.Render()
             local popupX = tonumber(pendingMenu.x) or 0;
             local popupY = tonumber(pendingMenu.y) or 0;
 
+            if (pendingMenu.targetType == 'self') then
+                popupX = popupX + 24;
+                popupY = popupY + 48;
+            end
+
             imgui.SetNextWindowPos({ popupX, popupY }, _G.ImGuiCond_Always or 2);
         end
 

@@ -55,6 +55,8 @@ local staffPlayers = {};
 local staffIconTextureIds = {};
 local mountedPlateLift = 1.05;
 local idleScanCacheSeconds = 0.20;
+local idleDirectDynamicCacheSeconds = 0.35;
+local idleDirectStaticCacheSeconds = 2.00;
 local jobAbbreviations = {
     [1] = 'WAR',
     [2] = 'MNK',
@@ -166,7 +168,7 @@ local function TrimPlateCache()
 end
 
 local function FormatDistanceText(settings, distance)
-    return tostring(settings ~= nil and settings.prefix or '') .. string.format('%.0f', tonumber(distance) or 0);
+    return tostring(settings ~= nil and settings.prefix or '') .. string.format('%.1f', tonumber(distance) or 0);
 end
 
 local function SettingKey(settings, fields)
@@ -409,6 +411,8 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
     local iconsPerRow = math.max(1, math.min(24, tonumber(iconSettings.iconsPerRow) or 6));
     local iconSize = math.max(6, math.min(160, tonumber(iconSettings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(iconSettings.iconSpacing) or 2));
+    local growLeft = tostring(iconSettings.growthDirection or 'Right') == 'Left';
+    local anchored = tostring(iconSettings.anchorTo or 'Plate') ~= 'Plate';
     local rowHeight = iconSize + spacing;
 
     if (iconSettings.showTimers == true) then
@@ -446,8 +450,15 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
             local col = (i - 1) % iconsPerRow;
             local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
             local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
             local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
             local timerText = nil;
+
+            if (anchored == true) then
+                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
+            elseif (growLeft == true) then
+                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+            end
 
             if (iconSettings.showTimers == true and timerSeconds ~= nil) then
                 timerText = statusTimerFormat.Format(timerSeconds);
@@ -457,7 +468,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 kind = kind or 'status',
                 textureId = textureId,
                 size = iconSize,
-                offsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing)),
+                offsetX = iconOffsetX,
                 offsetY = baseY + (row * rowHeight),
                 anchorTo = iconSettings.anchorTo,
                 anchorPoint = iconSettings.anchorPoint,
@@ -633,23 +644,58 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
     return true;
 end
 
-local function QueuePlayer(player)
-    local settingsTimer = perfMeter.BeginDetail('pc.settings');
-    local targetIndex = targeting.GetCurrentTargetIndex();
-    local subTargetIndex = targeting.GetCurrentSubTargetIndex();
-    local subTargetActive = targeting.IsSubTargetModeActive();
-    local targetStateName = 'Idle';
-
-    if (player.index == subTargetIndex or (subTargetActive == true and player.index == targetIndex)) then
-        targetStateName = 'Subtarget';
-    elseif (player.index == targetIndex) then
-        targetStateName = 'Target';
+local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue)
+    if (targetStateName ~= 'Idle' or useTargetOverlay == true or state.GetConfigOpen() == true) then
+        return false;
     end
+
+    local indexed = indexCache[tonumber(player.index) or 0];
+
+    if (indexed == nil) then
+        return false;
+    end
+
+    local cached = plateCache[indexed.cacheKey];
+
+    if (cached == nil or cached.texture == nil) then
+        return false;
+    end
+
+    local now = os.clock();
+    local lastRefresh = tonumber(cached.lastFullRefresh) or 0;
+    local maxAge = cached.hasDynamicVisuals == true and idleDirectDynamicCacheSeconds or idleDirectStaticCacheSeconds;
+
+    if ((now - lastRefresh) >= maxAge) then
+        return false;
+    end
+
+    if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true) then
+        perfMeter.Count('pc.cache.directHit', 1);
+        return true;
+    end
+
+    return false;
+end
+
+local function QueuePlayer(player)
+    local targetStateName = targeting.GetTargetStateName(player.index);
 
     local isPartyPlayer = tonumber(player.slot) ~= nil;
     local isTacticalPlayer = isPartyPlayer == true or tonumber(player.status) == 1;
     local useTargetOverlay = isTacticalPlayer == true or targetStateName ~= 'Idle';
     local layoutStateName = useTargetOverlay == true and 'Combat' or 'Idle';
+    local hasHp = player.hpPercent ~= nil or (player.hp ~= nil and player.maxHp ~= nil and tonumber(player.maxHp) > 0);
+    local hasMp = layoutStateName == 'Combat' and (player.mpPercent ~= nil or (player.mp ~= nil and player.maxMp ~= nil and tonumber(player.maxMp) > 0));
+    local hasTp = layoutStateName == 'Combat' and player.tp ~= nil;
+    local hpPercent = ClampPercent(player.hpPercent, 100);
+    local mpPercent = ClampPercent(player.mpPercent, 100);
+    local tpValue = ClampTp(player.tp);
+
+    if (QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true) then
+        return;
+    end
+
+    local settingsTimer = perfMeter.BeginDetail('pc.settings');
     local backgroundSettings = state.GetWidgetSettings('PC', layoutStateName, 'Background', backgroundDefaults);
     local nameSettings = state.GetWidgetSettings('PC', layoutStateName, 'Name', nameDefaults);
     local distanceSettings = state.GetWidgetSettings('PC', layoutStateName, 'Distance', distanceDefaults);
@@ -674,12 +720,6 @@ local function QueuePlayer(player)
         or { enabled = false };
 
     local globalSettings = state.GetGlobalSettings(globalDefaults);
-    local hasHp = player.hpPercent ~= nil or (player.hp ~= nil and player.maxHp ~= nil and tonumber(player.maxHp) > 0);
-    local hasMp = layoutStateName == 'Combat' and (player.mpPercent ~= nil or (player.mp ~= nil and player.maxMp ~= nil and tonumber(player.maxMp) > 0));
-    local hasTp = layoutStateName == 'Combat' and player.tp ~= nil;
-    local hpPercent = ClampPercent(player.hpPercent, 100);
-    local mpPercent = ClampPercent(player.mpPercent, 100);
-    local tpValue = ClampTp(player.tp);
     local tpPercent = tpValue / 10;
     local hpColor = hpBarSettings.color or { 0.90, 0.20, 0.20, 1.0 };
     local mpColor = mpBarSettings.color or { 0.20, 0.45, 0.95, 1.0 };
@@ -818,6 +858,7 @@ local function QueuePlayer(player)
         local cached = indexed ~= nil and indexed.signature == signature and plateCache[indexed.cacheKey] or nil;
 
         if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true) then
+            cached.lastFullRefresh = os.clock();
             perfMeter.Count('pc.cache.hit', 1);
             return;
         end
@@ -1030,6 +1071,8 @@ local function QueuePlayer(player)
             texture = plateTexture,
             textureKey = 'pc-' .. tostring(player.index),
             lastUsed = os.clock(),
+            lastFullRefresh = os.clock(),
+            hasDynamicVisuals = hpBarLoads == true or (distanceText ~= nil and distanceText ~= ''),
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = elementRects,

@@ -121,7 +121,11 @@ local function DrawSliderControl(id, value, minValue, maxValue, step, width, sho
     local current = math.floor((tonumber(value) or 0) + 0.5);
     local amount = tonumber(step) or 1;
 
-    if (imgui.SliderInt == nil) then
+    if (showButtons == false and imgui.SliderInt == nil) then
+        return DrawNumber('', value, minValue, maxValue, amount);
+    end
+
+    if (showButtons ~= false and imgui.InputText == nil and imgui.SliderInt == nil) then
         return DrawNumber('', value, minValue, maxValue, amount);
     end
 
@@ -138,7 +142,12 @@ local function DrawSliderControl(id, value, minValue, maxValue, step, width, sho
     end
 
     local ref = { current };
-    imgui.SliderInt('##status_' .. id, ref, minValue or -1000, maxValue or 1000);
+    if (showButtons ~= false and imgui.InputText ~= nil) then
+        ref = { tostring(current) };
+        imgui.InputText('##status_' .. id, ref, 16);
+    else
+        imgui.SliderInt('##status_' .. id, ref, minValue or -1000, maxValue or 1000);
+    end
 
     if (imgui.PopItemWidth ~= nil) then
         imgui.PopItemWidth();
@@ -869,6 +878,13 @@ function statusIcons.DrawSettings(settings, context)
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end
     DrawAnchorControls(settings, context, itemPlural);
+    settings.growthDirection = DrawComboRow(
+        'Growth direction',
+        { 'Right', 'Left' },
+        settings.growthDirection or defaults.growthDirection or 'Right',
+        nil,
+        'growth_direction_' .. tostring(label)
+    );
 
     settings.iconPack = statusIconTextures.ResolvePackName(settings.iconPack or defaults.iconPack);
     settings.iconPack, settings.iconSize = DrawComboAndSliderRow(

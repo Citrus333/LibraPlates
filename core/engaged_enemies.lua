@@ -1,8 +1,23 @@
 local bit = require('bit');
 local entities = require('core.entities');
+local log = require('core.log');
 
 local engagedEnemies = {};
 local tracked = {};
+local claimCategories = {};
+local debugUntil = 0;
+
+local function IsDebugEnabled()
+    return os.clock() < (tonumber(debugUntil) or 0);
+end
+
+local function DebugLog(text)
+    if (IsDebugEnabled() ~= true) then
+        return;
+    end
+
+    log.Info('Claim debug ' .. tostring(text or ''));
+end
 
 local function SafeCall(fallback, fn)
     local ok, result = pcall(fn);
@@ -114,6 +129,114 @@ local function GetPartyTargetIndexes()
     return indexes;
 end
 
+local function IsEntityValidTarget(index)
+    index = tonumber(index);
+
+    if (index == nil or index == 0) then
+        return false;
+    end
+
+    local entityManager = GetEntityManager();
+
+    if (entityManager ~= nil) then
+        local methods = {
+            'GetIsValidTarget',
+            'GetValidTarget',
+            'IsValidTarget',
+            'GetTargetable',
+            'IsTargetable',
+        };
+
+        for _, methodName in ipairs(methods) do
+            if (entityManager[methodName] ~= nil) then
+                local value = SafeCall(nil, function()
+                    return entityManager[methodName](entityManager, index);
+                end);
+
+                if (value == true or tonumber(value) == 1) then
+                    return true;
+                end
+            end
+        end
+    end
+
+    local ent = GetEntity(index);
+
+    if (ent ~= nil) then
+        local fields = {
+            'ValidTarget',
+            'validTarget',
+            'IsValidTarget',
+            'Targetable',
+            'IsTargetable',
+        };
+
+        for _, fieldName in ipairs(fields) do
+            local value = ent[fieldName];
+
+            if (value == true or tonumber(value) == 1) then
+                return true;
+            end
+        end
+    end
+
+    return false;
+end
+
+local function GetEntityClaimStatus(index)
+    index = tonumber(index);
+
+    if (index == nil or index == 0) then
+        return nil;
+    end
+
+    local entityManager = GetEntityManager();
+
+    if (entityManager == nil or entityManager.GetClaimStatus == nil) then
+        return nil;
+    end
+
+    return SafeCall(nil, function()
+        return entityManager:GetClaimStatus(index);
+    end);
+end
+
+local function IsCallForHelpEntity(index)
+    index = tonumber(index);
+
+    if (index == nil or index == 0) then
+        return false;
+    end
+
+    local ent = GetEntity(index);
+
+    if (
+        ent ~= nil and
+        ent.Render ~= nil and
+        ent.Render.Flags0 ~= nil and
+        ent.Render.Flags1 ~= nil and
+        bit.band(tonumber(ent.Render.Flags0) or 0, 0x2000) ~= 0 and
+        bit.band(tonumber(ent.Render.Flags1) or 0, 0x1000000) ~= 0
+    ) then
+        return true;
+    end
+
+    local entityManager = GetEntityManager();
+
+    if (entityManager == nil) then
+        return false;
+    end
+
+    local flags0 = SafeCall(0, function()
+        return entityManager:GetRenderFlags0(index);
+    end);
+    local flags1 = SafeCall(0, function()
+        return entityManager:GetRenderFlags1(index);
+    end);
+
+    return bit.band(tonumber(flags0) or 0, 0x2000) ~= 0 and bit.band(tonumber(flags1) or 0, 0x1000000) ~= 0;
+end
+
 local function IsValidTrackedEnemy(index)
     index = tonumber(index);
 
@@ -177,6 +300,7 @@ local function ParseActionPacket(e)
     local packet = {
         userId = unpackBits(32),
         targets = {},
+        callForHelpTargets = {},
     };
 
     packet.userIndex = GetIndexFromServerId(packet.userId);
@@ -210,19 +334,27 @@ local function ParseActionPacket(e)
             unpackBits(7);
             unpackBits(3);
             unpackBits(17);
-            unpackBits(10);
+            local message = unpackBits(10);
             unpackBits(31);
+
+            if (message == 19) then
+                packet.callForHelpTargets[#packet.callForHelpTargets + 1] = targetId;
+            end
 
             if (unpackBits(1) == 1) then
                 unpackBits(10);
                 unpackBits(17);
-                unpackBits(10);
+                if (unpackBits(10) == 19) then
+                    packet.callForHelpTargets[#packet.callForHelpTargets + 1] = targetId;
+                end
             end
 
             if (unpackBits(1) == 1) then
                 unpackBits(10);
                 unpackBits(14);
-                unpackBits(10);
+                if (unpackBits(10) == 19) then
+                    packet.callForHelpTargets[#packet.callForHelpTargets + 1] = targetId;
+                end
             end
         end
     end
@@ -262,6 +394,7 @@ function engagedEnemies.HandlePacketIn(e)
 
     if (e.id == 0x000A) then
         tracked = {};
+        claimCategories = {};
         return;
     end
 
@@ -273,20 +406,141 @@ function engagedEnemies.HandlePacketIn(e)
         end
 
         local partyIds = GetPartyServerIds();
+        local userIsParty = partyIds[tonumber(packet.userId) or 0] == true;
+        local userIsEnemy = IsValidTrackedEnemy(packet.userIndex) == true;
+        local userIsOther = userIsParty ~= true and userIsEnemy ~= true;
+
+        DebugLog(
+            'action userId=' .. tostring(packet.userId) ..
+            ' userIndex=' .. tostring(packet.userIndex) ..
+            ' userParty=' .. tostring(userIsParty) ..
+            ' userEnemy=' .. tostring(userIsEnemy) ..
+            ' targets=' .. tostring(#packet.targets) ..
+            ' cfhTargets=' .. tostring(#packet.callForHelpTargets)
+        );
+
+        if (userIsEnemy == true and #(packet.callForHelpTargets or {}) > 0) then
+            claimCategories[packet.userIndex] = 'call_for_help';
+            Track(packet.userIndex);
+            DebugLog('set category index=' .. tostring(packet.userIndex) .. ' category=call_for_help reason=action-message-19-actor');
+        end
+
+        for _, targetId in ipairs(packet.callForHelpTargets or {}) do
+            local targetIndex = GetIndexFromServerId(targetId);
+
+            if (IsValidTrackedEnemy(targetIndex) == true) then
+                claimCategories[targetIndex] = 'call_for_help';
+                Track(targetIndex);
+                DebugLog('set category index=' .. tostring(targetIndex) .. ' category=call_for_help reason=action-message-19-target');
+            end
+        end
 
         for _, targetId in ipairs(packet.targets) do
+            local targetIndex = GetIndexFromServerId(targetId);
+            local targetIsParty = partyIds[tonumber(targetId) or 0] == true;
+            local targetIsEnemy = IsValidTrackedEnemy(targetIndex) == true;
+
+            DebugLog(
+                'action targetId=' .. tostring(targetId) ..
+                ' targetIndex=' .. tostring(targetIndex) ..
+                ' targetParty=' .. tostring(targetIsParty) ..
+                ' targetEnemy=' .. tostring(targetIsEnemy)
+            );
+
             if (partyIds[tonumber(targetId) or 0] == true) then
+                if (userIsEnemy == true) then
+                    if (claimCategories[packet.userIndex] ~= 'other' and claimCategories[packet.userIndex] ~= 'call_for_help') then
+                        claimCategories[packet.userIndex] = 'party';
+                        DebugLog('set category index=' .. tostring(packet.userIndex) .. ' category=party reason=enemy-hit-party');
+                    else
+                        DebugLog('keep category index=' .. tostring(packet.userIndex) .. ' category=' .. tostring(claimCategories[packet.userIndex]) .. ' reason=enemy-hit-party-no-overwrite');
+                    end
+                end
+
                 Track(packet.userIndex);
                 return;
+            end
+
+            if (targetIsEnemy == true) then
+                if (userIsParty == true) then
+                    claimCategories[targetIndex] = 'party';
+                    Track(targetIndex);
+                    DebugLog('set category index=' .. tostring(targetIndex) .. ' category=party reason=party-hit-enemy');
+                elseif (userIsOther == true) then
+                    claimCategories[targetIndex] = 'other';
+                    DebugLog('set category index=' .. tostring(targetIndex) .. ' category=other reason=other-hit-enemy');
+                end
+            elseif (userIsEnemy == true and userIsOther ~= true) then
+                claimCategories[packet.userIndex] = userIsParty == true and 'party' or claimCategories[packet.userIndex];
+            elseif (userIsEnemy == true and partyIds[tonumber(targetId) or 0] ~= true) then
+                claimCategories[packet.userIndex] = claimCategories[packet.userIndex] or 'other';
             end
         end
     elseif (e.id == 0x000E) then
         local packet = ParseMobUpdatePacket(e);
 
-        if (packet ~= nil and GetPartyServerIds()[tonumber(packet.newClaimId) or 0] == true) then
-            Track(packet.monsterIndex);
+        if (packet ~= nil) then
+            local claimId = tonumber(packet.newClaimId) or 0;
+            local monsterIndex = tonumber(packet.monsterIndex) or 0;
+            local partyIds = GetPartyServerIds();
+
+            if (monsterIndex ~= 0) then
+                if (claimId == 0) then
+                    claimCategories[monsterIndex] = 'unclaimed';
+                    DebugLog('mobupdate index=' .. tostring(monsterIndex) .. ' claimId=' .. tostring(claimId) .. ' category=unclaimed');
+                elseif (partyIds[claimId] == true) then
+                    claimCategories[monsterIndex] = 'party';
+                    Track(monsterIndex);
+                    DebugLog('mobupdate index=' .. tostring(monsterIndex) .. ' claimId=' .. tostring(claimId) .. ' category=party');
+                elseif (
+                    bit.band(tonumber(GetEntityClaimStatus(monsterIndex)) or 0, 0xFFFF0000) ~= 0 or
+                    IsEntityValidTarget(monsterIndex) == true
+                ) then
+                    claimCategories[monsterIndex] = 'call_for_help';
+                    Track(monsterIndex);
+                    DebugLog('mobupdate index=' .. tostring(monsterIndex) .. ' claimId=' .. tostring(claimId) .. ' claimStatus=' .. tostring(GetEntityClaimStatus(monsterIndex)) .. ' category=call_for_help reason=other-claim-state');
+                else
+                    claimCategories[monsterIndex] = 'other';
+                    DebugLog('mobupdate index=' .. tostring(monsterIndex) .. ' claimId=' .. tostring(claimId) .. ' category=other');
+                end
+            end
         end
     end
+end
+
+function engagedEnemies.GetClaimCategory(index)
+    index = tonumber(index);
+
+    if (index == nil or index == 0) then
+        return nil;
+    end
+
+    if (IsValidTrackedEnemy(index) ~= true) then
+        claimCategories[index] = nil;
+        return nil;
+    end
+
+    if (IsCallForHelpEntity(index) == true) then
+        claimCategories[index] = 'call_for_help';
+        Track(index);
+        return 'call_for_help';
+    end
+
+    return claimCategories[index];
+end
+
+function engagedEnemies.MarkCallForHelp(index)
+    index = tonumber(index);
+
+    if (index == nil or index == 0 or IsValidTrackedEnemy(index) ~= true) then
+        return false;
+    end
+
+    claimCategories[index] = 'call_for_help';
+    Track(index);
+    DebugLog('set category index=' .. tostring(index) .. ' category=call_for_help reason=local-help-command');
+
+    return true;
 end
 
 function engagedEnemies.IsEngaged(index)
@@ -341,7 +595,7 @@ function engagedEnemies.GetStatusText()
     for index in pairs(tracked) do
         local ent = GetEntity(index);
 
-        parts[#parts + 1] = tostring(index) .. ':' .. tostring(ent ~= nil and ent.Name or '?') .. ':' .. tostring(ent ~= nil and ent.HPPercent or '?');
+        parts[#parts + 1] = tostring(index) .. ':' .. tostring(ent ~= nil and ent.Name or '?') .. ':' .. tostring(ent ~= nil and ent.HPPercent or '?') .. ':claim=' .. tostring(claimCategories[index]);
     end
 
     table.sort(parts);
@@ -351,6 +605,16 @@ function engagedEnemies.GetStatusText()
     end
 
     return 'engaged=' .. table.concat(parts, ', ');
+end
+
+function engagedEnemies.EnableClaimDebugForSeconds(seconds)
+    debugUntil = os.clock() + math.max(5, math.min(60, tonumber(seconds) or 20));
+    log.Info('Claim debug enabled for ' .. tostring(math.floor(math.max(5, math.min(60, tonumber(seconds) or 20)))) .. ' seconds.');
+end
+
+function engagedEnemies.DisableClaimDebug()
+    debugUntil = 0;
+    log.Info('Claim debug disabled.');
 end
 
 return engagedEnemies;

@@ -139,7 +139,11 @@ local function DrawSliderControl(id, value, minValue, maxValue, width, showButto
     local minimum = minValue or -1000;
     local maximum = maxValue or 1000;
 
-    if (imgui.SliderInt == nil) then
+    if (showButtons == false and imgui.SliderInt == nil) then
+        return DrawNumber('', value, minValue, maxValue, 1);
+    end
+
+    if (showButtons ~= false and imgui.InputText == nil and imgui.SliderInt == nil) then
         return DrawNumber('', value, minValue, maxValue, 1);
     end
 
@@ -156,7 +160,12 @@ local function DrawSliderControl(id, value, minValue, maxValue, width, showButto
     end
 
     local ref = { current };
-    imgui.SliderInt('##bar_' .. id, ref, minimum, maximum);
+    if (showButtons ~= false and imgui.InputText ~= nil) then
+        ref = { tostring(current) };
+        imgui.InputText('##bar_' .. id, ref, 16);
+    else
+        imgui.SliderInt('##bar_' .. id, ref, minimum, maximum);
+    end
 
     if (imgui.PopItemWidth ~= nil) then
         imgui.PopItemWidth();
@@ -457,16 +466,17 @@ local function DrawColorPair(rowId, leftLabel, leftId, leftValue, rightLabel, ri
     return leftResult, rightResult;
 end
 
-local function DrawFontRow(settings, defaults)
+local function DrawFontRow(settings, defaults, idPrefix)
+    idPrefix = tostring(idPrefix or '');
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##bar_font_row', 4, tableFlags)) then
+        if (imgui.BeginTable('##bar_' .. idPrefix .. 'font_row', 4, tableFlags)) then
             imgui.TableSetupColumn('##font_size_label', 0, 108);
             imgui.TableSetupColumn('##font_size_control', 0, 170);
             imgui.TableSetupColumn('##font_color_label', 0, 108);
             imgui.TableSetupColumn('##font_color_control', 0, 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            settings.fontSize = DrawTableSlider('Font size', 'font_size', textScale.NormalizeSetting(settings.fontSize, defaults.fontSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
+            settings.fontSize = DrawTableSlider('Font size', idPrefix .. 'font_size', textScale.NormalizeSetting(settings.fontSize, defaults.fontSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
             imgui.TableNextColumn();
             settings.textColor = DrawColorCell('Font color', 'font_color', settings.textColor);
             imgui.EndTable();
@@ -479,16 +489,17 @@ local function DrawFontRow(settings, defaults)
     settings.textColor = DrawColor('font_color', settings.textColor);
 end
 
-local function DrawOutlineRow(settings)
+local function DrawOutlineRow(settings, idPrefix)
+    idPrefix = tostring(idPrefix or '');
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##bar_outline_row', 4, tableFlags)) then
+        if (imgui.BeginTable('##bar_' .. idPrefix .. 'outline_row', 4, tableFlags)) then
             imgui.TableSetupColumn('##outline_size_label', 0, 108);
             imgui.TableSetupColumn('##outline_size_control', 0, 170);
             imgui.TableSetupColumn('##outline_color_label', 0, 108);
             imgui.TableSetupColumn('##outline_color_control', 0, 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            settings.textOutlineSize = DrawTableSlider('Outline size', 'outline_size', settings.textOutlineSize, 0, 12, false);
+            settings.textOutlineSize = DrawTableSlider('Outline size', idPrefix .. 'outline_size', settings.textOutlineSize, 0, 12, false);
             imgui.TableNextColumn();
             settings.textOutlineColor = DrawColorCell('Outline color', 'outline_color', settings.textOutlineColor);
             imgui.EndTable();
@@ -624,6 +635,7 @@ function bar.DrawSettings(settings, context)
 
     local label = tostring(context ~= nil and context.widget or 'Bar');
     local resourceName = tostring(context ~= nil and context.resourceName or 'HP');
+    local idPrefix = tostring(label .. '_' .. resourceName):gsub('[^%w_]', '_') .. '_';
     local defaults = context ~= nil and context.defaults or baseDefaults;
     local isSegmentedResource = (resourceName == 'TP' or resourceName == 'Ready');
     local showLowState = (
@@ -646,36 +658,36 @@ function bar.DrawSettings(settings, context)
 
     imgui.Separator();
     imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Bar Settings:');
-    settings.width, settings.height = DrawSliderPair('size', 'Width', 'width', settings.width, 20, 800, 'Height', 'height', settings.height, 1, 160);
-    settings.offsetX, settings.offsetY = DrawSliderPair('position', 'Position X', 'offset_x', settings.offsetX, -400, 400, 'Position Y', 'offset_y', settings.offsetY, -400, 400);
-    settings.color, settings.backgroundColor = DrawColorPair('colors', 'Fill color', 'fill_color', settings.color, 'BG color', 'bg_color', settings.backgroundColor);
-    settings.texture = DrawComboRow('Texture', settings.texture, barTextures.GetOptions(), 'texture');
+    settings.width, settings.height = DrawSliderPair(idPrefix .. 'size', 'Width', idPrefix .. 'width', settings.width, 20, 800, 'Height', idPrefix .. 'height', settings.height, 1, 160);
+    settings.offsetX, settings.offsetY = DrawSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
+    settings.color, settings.backgroundColor = DrawColorPair(idPrefix .. 'colors', 'Fill color', idPrefix .. 'fill_color', settings.color, 'BG color', idPrefix .. 'bg_color', settings.backgroundColor);
+    settings.texture = DrawComboRow('Texture', settings.texture, barTextures.GetOptions(), idPrefix .. 'texture');
 
     if (resourceName == 'HP') then
-        settings.showAtPercent = DrawSingleSlider('Show at HP %', 'show_at_percent', settings.showAtPercent, 1, 100, false);
+        settings.showAtPercent = DrawSingleSlider('Show at HP %', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, false);
     elseif (resourceName == 'MP') then
-        settings.showAtPercent = DrawSingleSlider('Show at MP %', 'show_at_percent', settings.showAtPercent, 1, 100, false);
+        settings.showAtPercent = DrawSingleSlider('Show at MP %', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, false);
     end
 
     if (isSegmentedResource == true) then
         imgui.Separator();
         imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, resourceName .. ' Sections:');
         settings.segmented = DrawToggle('Three sections', settings.segmented ~= false);
-        settings.segmentGap = DrawSingleSlider('Section gap', 'segment_gap', settings.segmentGap, 0, 24, false);
-        settings.color2, settings.color3 = DrawColorPair('tp_section_colors', 'Section 2 color', 'section_2_color', settings.color2 or defaults.color2 or settings.color, 'Section 3 color', 'section_3_color', settings.color3 or defaults.color3 or settings.color);
+        settings.segmentGap = DrawSingleSlider('Section gap', idPrefix .. 'segment_gap', settings.segmentGap, 0, 24, false);
+        settings.color2, settings.color3 = DrawColorPair(idPrefix .. 'tp_section_colors', 'Section 2 color', idPrefix .. 'section_2_color', settings.color2 or defaults.color2 or settings.color, 'Section 3 color', idPrefix .. 'section_3_color', settings.color3 or defaults.color3 or settings.color);
 
         if (resourceName == 'Ready') then
-            settings.chargeSeconds = DrawSingleSlider('Seconds per charge', 'charge_seconds', settings.chargeSeconds or defaults.chargeSeconds or 30, 10, 30, true);
+            settings.chargeSeconds = DrawSingleSlider('Seconds per charge', idPrefix .. 'charge_seconds', settings.chargeSeconds or defaults.chargeSeconds or 30, 10, 30, true);
         end
     end
 
     if (labelIconOptions ~= true) then
         imgui.Separator();
         imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Text Settings:');
-        DrawFontRow(settings, defaults);
-        DrawOutlineRow(settings);
+        DrawFontRow(settings, defaults, idPrefix);
+        DrawOutlineRow(settings, idPrefix);
         settings.textOutlineEnabled = (tonumber(settings.textOutlineSize) or 0) > 0;
-        settings.textOffsetX, settings.textOffsetY = DrawSliderPair('text_position', 'Position X', 'text_offset_x', settings.textOffsetX, -400, 400, 'Position Y', 'text_offset_y', settings.textOffsetY, -400, 400);
+        settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'text_position', 'Position X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Position Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
 
         if (context ~= nil and context.showValueControl == false) then
             settings.showValue = false;
@@ -696,8 +708,8 @@ function bar.DrawSettings(settings, context)
     end
 
     local function DrawLabelTextSettings()
-        DrawFontRow(settings, defaults);
-        DrawOutlineRow(settings);
+        DrawFontRow(settings, defaults, idPrefix);
+        DrawOutlineRow(settings, idPrefix);
         settings.textOutlineEnabled = (tonumber(settings.textOutlineSize) or 0) > 0;
         settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
     end
@@ -709,28 +721,28 @@ function bar.DrawSettings(settings, context)
             settings.labelDisplayMode = 'Text';
         end
         local labelDisplayOptions = (context ~= nil and context.labelDisplayOptions ~= nil) and context.labelDisplayOptions or { 'None', 'Text', 'Icon' };
-        settings.labelDisplayMode = DrawComboRow('Display', settings.labelDisplayMode or 'Text', labelDisplayOptions, 'label_display');
+        settings.labelDisplayMode = DrawComboRow('Display', settings.labelDisplayMode or 'Text', labelDisplayOptions, idPrefix .. 'label_display');
 
         if (settings.labelDisplayMode == 'Text' or settings.labelDisplayMode == 'Icon') then
             local positionLabel = (settings.labelDisplayMode == 'Icon') and 'Icon' or 'Label';
-            settings.labelIconOffsetX, settings.labelIconOffsetY = DrawSliderPair('label_position', positionLabel .. ' X', 'label_icon_offset_x', settings.labelIconOffsetX, -400, 400, positionLabel .. ' Y', 'label_icon_offset_y', settings.labelIconOffsetY, -400, 400);
+            settings.labelIconOffsetX, settings.labelIconOffsetY = DrawSliderPair(idPrefix .. 'label_position', positionLabel .. ' X', idPrefix .. 'label_icon_offset_x', settings.labelIconOffsetX, -400, 400, positionLabel .. ' Y', idPrefix .. 'label_icon_offset_y', settings.labelIconOffsetY, -400, 400);
         end
 
         if (settings.labelDisplayMode == 'Icon') then
-            settings.labelIconSize = DrawSingleSlider('Icon size', 'label_icon_size', settings.labelIconSize, 6, 128);
+            settings.labelIconSize = DrawSingleSlider('Icon size', idPrefix .. 'label_icon_size', settings.labelIconSize, 6, 128);
         end
 
         if (resourceName == 'Ready') then
             settings.showValue = false;
             settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' counter', settings.showPercent);
             if (settings.showPercent == true) then
-                settings.textOffsetX, settings.textOffsetY = DrawSliderPair('counter_position', 'Counter X', 'text_offset_x', settings.textOffsetX, -400, 400, 'Counter Y', 'text_offset_y', settings.textOffsetY, -400, 400);
+                settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'counter_position', 'Counter X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Counter Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
             end
         elseif (resourceName == 'Ward' or resourceName == 'Rage') then
             settings.showValue = false;
             settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' timer', settings.showPercent ~= false);
             if (settings.showPercent == true) then
-                settings.textOffsetX, settings.textOffsetY = DrawSliderPair('timer_position', 'Timer X', 'text_offset_x', settings.textOffsetX, -400, 400, 'Timer Y', 'text_offset_y', settings.textOffsetY, -400, 400);
+                settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'timer_position', 'Timer X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Timer Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
             end
         elseif (resourceName == 'Sic') then
             settings.showValue = false;
@@ -748,18 +760,18 @@ function bar.DrawSettings(settings, context)
         settings.lowColorEnabled = DrawToggle('Enable low ' .. resourceName .. ' state', settings.lowColorEnabled);
 
         if (settings.lowColorEnabled == true) then
-            settings.lowColorPercent = DrawSingleSlider('When HP is at or below %', 'low_percent', settings.lowColorPercent, 1, 100, false);
-            settings.lowColor = DrawColor('low_color', settings.lowColor);
+            settings.lowColorPercent = DrawSingleSlider('When HP is at or below %', idPrefix .. 'low_percent', settings.lowColorPercent, 1, 100, false);
+            settings.lowColor = DrawColor(idPrefix .. 'low_color', settings.lowColor);
 
             local animation = settings.lowAnimationEnabled == true and tostring(settings.lowAnimation or defaults.lowAnimation or 'Important') or 'None';
-            animation = DrawComboRow('Low ' .. resourceName .. ' animation', animation, GetAnimationOptions(), 'low_animation');
+            animation = DrawComboRow('Low ' .. resourceName .. ' animation', animation, GetAnimationOptions(), idPrefix .. 'low_animation');
 
             if (animation == 'None') then
                 settings.lowAnimationEnabled = false;
             else
                 settings.lowAnimationEnabled = true;
                 settings.lowAnimation = animation;
-                settings.lowAnimationSpeed = DrawSingleSlider('Animation speed', 'low_animation_speed', settings.lowAnimationSpeed, 0, 240, false);
+                settings.lowAnimationSpeed = DrawSingleSlider('Animation speed', idPrefix .. 'low_animation_speed', settings.lowAnimationSpeed, 0, 240, false);
             end
         end
     end

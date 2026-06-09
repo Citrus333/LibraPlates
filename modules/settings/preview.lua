@@ -309,6 +309,7 @@ local backgroundCache = {};
 local petIconCache = {};
 local quickMenuIconCache = {};
 local quickMenuMissingIcons = {};
+local trustBuffPreviewDefaults = {};
 local previewInfoIconTextureId = nil;
 local enmityIconTextureId = nil;
 local selectedBackground = 'Light';
@@ -323,6 +324,12 @@ local backgroundFiles = {
     ['Mid'] = 'bg_mid.png',
     ['Dark'] = 'bg_dark.png',
 };
+
+for key, value in pairs(buffsDefaults) do
+    trustBuffPreviewDefaults[key] = value;
+end
+
+trustBuffPreviewDefaults.enabled = true;
 
 local function GetPreviewDifficultyColor(settings, defaults)
     if (settings == nil or settings.difficultyColorsEnabled ~= true) then
@@ -1712,7 +1719,7 @@ local function BuildPlate(entityName, stateName, context)
     local distanceSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Distance', distanceDefaults);
     local typeLineSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Type line', typeLineDefaults);
     local iconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Icon', npcObjectIconDefaults);
-    local buffsSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Buffs', buffsDefaults);
+    local buffsSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Buffs', entityName == 'Trust' and trustBuffPreviewDefaults or buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Debuffs', debuffsDefaults);
     local mpBarSettings = state.GetWidgetSettings(storageEntityName, stateName, 'MP Bar', mpDefaults);
     local tpBarSettings = state.GetWidgetSettings(storageEntityName, stateName, 'TP Bar', tpDefaults);
@@ -1887,7 +1894,7 @@ local function BuildPlate(entityName, stateName, context)
         AddIcon(icons, newAdventurerIconSettings, LoadWidgetIcon('new_adventurer.png'), 24, -54, 'newAdventurerIcon');
     end
 
-    if ((entityName == 'Enemy' or entityName == 'Self' or (entityName == 'PC' and stateName == 'Combat')) and (context == nil or context.widgetKey ~= 'Peer')) then
+    if ((entityName == 'Enemy' or entityName == 'Self' or entityName == 'Trust' or (entityName == 'PC' and stateName == 'Combat')) and (context == nil or context.widgetKey ~= 'Peer')) then
         local buffRows = T{
             { id = 33, seconds = 148 },
             { id = 40, seconds = 82 },
@@ -1911,7 +1918,7 @@ local function BuildPlate(entityName, stateName, context)
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
         nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
-        nameColor = (entityName == 'Enemy') and GetPreviewDifficultyColor(nameSettings, nameDefaults) or (nameSettings.color or { 1.0, 1.0, 1.0, 1.0 }),
+        nameColor = (entityName == 'Enemy') and (nameSettings.claimUnclaimedColor or nameDefaults.claimUnclaimedColor or nameSettings.color or nameDefaults.color) or (nameSettings.color or { 1.0, 1.0, 1.0, 1.0 }),
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
         nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
@@ -2756,41 +2763,86 @@ local function ColorToU32(color, fallback)
     return (a * 0x1000000) + (b * 0x10000) + (g * 0x100) + r;
 end
 
-local function GetQuickMenuPreviewRows(entityName)
+local function QuickMenuColorLuma(color)
+    color = color or {};
+
+    return
+        (0.2126 * (tonumber(color[1]) or 0)) +
+        (0.7152 * (tonumber(color[2]) or 0)) +
+        (0.0722 * (tonumber(color[3]) or 0));
+end
+
+local function GetQuickMenuReadableTextColor(menu)
+    local textColor = menu ~= nil and menu.textColor or nil;
+    local backgroundColor = menu ~= nil and menu.backgroundColor or nil;
+
+    if (type(textColor) ~= 'table') then
+        return { 0.92, 0.92, 0.90, 1.0 };
+    end
+
+    local textAlpha = tonumber(textColor[4]) or 1.0;
+    local bgAlpha = tonumber(backgroundColor ~= nil and backgroundColor[4]) or 1.0;
+    local contrast = math.abs(QuickMenuColorLuma(textColor) - QuickMenuColorLuma(backgroundColor));
+
+    if (bgAlpha > 0.35 and (textAlpha < 0.65 or contrast < 0.28)) then
+        if (QuickMenuColorLuma(backgroundColor) < 0.5) then
+            return { 0.92, 0.92, 0.90, 1.0 };
+        end
+
+        return { 0.08, 0.08, 0.10, 1.0 };
+    end
+
+    return textColor;
+end
+
+local function GetQuickMenuPreviewRows(entityName, menu)
     local entity = tostring(entityName or '');
+    menu = menu or {};
+    menu.pc = menu.pc or {};
+    menu.self = menu.self or {};
+    menu.trust = menu.trust or {};
+    menu.npc = menu.npc or {};
 
     if (entity == 'Self') then
-        return 'Libra', 'Player.png', {
-            { 'Accept Invite', 'accept-invite.png' },
-            { 'Leave Party', 'LeaveParty.png' },
-            { 'Cancel Party Request', 'cancel-party-request.png' },
-            { 'Ignore Other Trusts: On', 'ignore-trust-on.png' },
-            { 'Hide Other Trusts: Off', 'hide-other-trusts-off.png' },
-            { 'Emote Trust: Off', 'emote-trusts-off.png' },
-        };
+        local rows = {};
+
+        if (menu.self.acceptInvite == true or menu.self.declineInvite == true) then rows[#rows + 1] = { 'Accept Invite', 'accept-invite.png' }; end
+        if (menu.self.leaveParty == true) then rows[#rows + 1] = { 'Leave Party', 'LeaveParty.png' }; end
+        if (menu.self.cancelPartyRequest == true) then rows[#rows + 1] = { 'Cancel Party Request', 'cancel-party-request.png' }; end
+        if (menu.self.ignoreTrust == true) then rows[#rows + 1] = { 'Ignore Other Trusts: On', 'ignore-trust-on.png' }; end
+        if (menu.self.hideTrust == true) then rows[#rows + 1] = { 'Hide Other Trusts: Off', 'hide-other-trusts-off.png' }; end
+        if (menu.self.emoteTrust == true) then rows[#rows + 1] = { 'Emote Trust: Off', 'emote-trusts-off.png' }; end
+
+        return 'Libra', 'Player.png', rows;
     end
 
     if (entity == 'Trust') then
-        return 'Curilla', 'Player.png', {
-            { 'Dismiss This Trust', 'DismissTrust.png' },
-            { 'Dismiss All Trusts', 'DismissAllTrusts.png' },
-        };
+        local rows = {};
+
+        if (menu.trust.dismiss == true) then rows[#rows + 1] = { 'Dismiss This Trust', 'DismissTrust.png' }; end
+        if (menu.trust.dismissAll == true) then rows[#rows + 1] = { 'Dismiss All Trusts', 'DismissAllTrusts.png' }; end
+
+        return 'Curilla', 'Player.png', rows;
     end
 
     if (entity == 'NPC' or entity == 'Object') then
-        return (entity == 'Object') and 'Mining Point' or 'Hunter', nil, {
-            { (entity == 'Object') and 'Mining Point' or 'Weekly Hunt', nil },
-            { 'Open Wiki Page', 'catseye.png' },
-        };
+        local rows = {};
+
+        if (menu.npc.showType == true) then rows[#rows + 1] = { (entity == 'Object') and 'Mining Point' or 'Weekly Hunt', nil }; end
+        if (menu.npc.openLink == true) then rows[#rows + 1] = { 'Open Wiki Page', 'catseye.png' }; end
+
+        return (entity == 'Object') and 'Mining Point' or 'Hunter', nil, rows;
     end
 
-    return 'Libranya', 'Player.png', {
-        { 'Examine', 'Examine.png' },
-        { 'Open Catseye Profile', 'catseye.png' },
-        { 'Follow', 'Follow.png' },
-        { 'Invite to Party', 'InviteToParty.png' },
-        { 'Pass Party Leader', 'PassPartyLeader.png' },
-    };
+    local rows = {};
+
+    if (menu.pc.examine == true) then rows[#rows + 1] = { 'Examine', 'Examine.png' }; end
+    if (menu.pc.catseyeProfile == true) then rows[#rows + 1] = { 'Open Catseye Profile', 'catseye.png' }; end
+    if (menu.pc.follow == true) then rows[#rows + 1] = { 'Follow', 'Follow.png' }; end
+    if (menu.pc.inviteToParty == true) then rows[#rows + 1] = { 'Invite to Party', 'InviteToParty.png' }; end
+    if (menu.pc.requestJoinParty == true) then rows[#rows + 1] = { 'Request to Join Party', 'request-to-join-party.png' }; end
+
+    return 'Libranya', 'Player.png', rows;
 end
 
 local function DrawQuickMenuPreview(drawList, x, y, previewWidth, previewHeight, entityName)
@@ -2800,7 +2852,7 @@ local function DrawQuickMenuPreview(drawList, x, y, previewWidth, previewHeight,
 
     local settings = state.GetGlobalSettings(globalDefaults);
     local menu = settings.quickMenu or {};
-    local title, titleIcon, rows = GetQuickMenuPreviewRows(entityName);
+    local title, titleIcon, rows = GetQuickMenuPreviewRows(entityName, menu);
     local iconSize = tonumber(menu.iconSize) or 22;
     local width = math.max(220, math.min(tonumber(menu.width) or 270, previewWidth - 28));
     local rowHeight = math.max(24, iconSize + 4);
@@ -2809,7 +2861,7 @@ local function DrawQuickMenuPreview(drawList, x, y, previewWidth, previewHeight,
     local menuY = y + math.max(32, math.floor((previewHeight - height) * 0.5));
     local bgColor = ColorToU32(menu.backgroundColor, { 0.02, 0.02, 0.07, 0.96 });
     local borderColor = ColorToU32(menu.borderColor, { 0.25, 0.25, 0.36, 1.0 });
-    local textColor = ColorToU32(menu.textColor, { 1.0, 1.0, 1.0, 1.0 });
+    local textColor = ColorToU32(GetQuickMenuReadableTextColor(menu), { 1.0, 1.0, 1.0, 1.0 });
     local headerColor = ColorToU32(menu.headerColor, { 1.0, 0.84, 0.0, 1.0 });
 
     drawList:AddRectFilled({ menuX, menuY }, { menuX + width, menuY + height }, bgColor);
@@ -3195,12 +3247,6 @@ local function DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight)
 
     DrawPreviewText(drawList, labelX, rowY, heading, 'HP', outlineSize, outlineColor);
     DrawPreviewText(drawList, valueX, rowY, textColor, '87%', outlineSize, outlineColor);
-    rowY = rowY + rowStep;
-
-    DrawPreviewText(drawList, labelX, rowY, heading, 'Linkshell', outlineSize, outlineColor);
-    DrawPreviewText(drawList, valueX, rowY, textColor, 'Star Onion Brigade', outlineSize, outlineColor);
-    rowY = rowY + rowStep;
-
     DrawPreviewText(drawList, labelX, rowY, heading, 'Mode', outlineSize, outlineColor);
     DrawPreviewText(drawList, valueX, rowY, textColor, 'ACE', outlineSize, outlineColor);
     rowY = rowY + rowStep;
@@ -3212,9 +3258,18 @@ end
 function preview.Draw(entityName, stateName, context)
     mouseInPreview = false;
 
-    local plate = BuildPlate(entityName, stateName, context);
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plate, 'settings-preview');
-    local plateTextureId = canvasTexture.GetTextureId(plateTexture);
+    local quickMenuOnlyPreview = context ~= nil and context.previewQuickMenu == true;
+    local plate = quickMenuOnlyPreview ~= true and BuildPlate(entityName, stateName, context) or nil;
+    local plateTexture = nil;
+    local textureWidth = 1024;
+    local textureHeight = 512;
+    local plateTextureId = nil;
+
+    if (quickMenuOnlyPreview ~= true) then
+        plateTexture, textureWidth, textureHeight = canvasTexture.Render(plate, 'settings-preview');
+        plateTextureId = canvasTexture.GetTextureId(plateTexture);
+    end
+
     local availWidth, availHeight = GetContentRegionAvail();
     local labelHeight = 42;
     local previewWidth = math.max(240, math.min(availWidth - 12, 720));
@@ -3229,7 +3284,7 @@ function preview.Draw(entityName, stateName, context)
 
     DrawStyledPreviewControls();
 
-    if (plateTextureId == nil) then
+    if (plateTextureId == nil and quickMenuOnlyPreview ~= true) then
         imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Preview unavailable.');
         return;
     end
@@ -3280,7 +3335,7 @@ function preview.Draw(entityName, stateName, context)
     local zoomX = x + ((previewWidth - zoomWidth) * 0.5);
     local zoomY = y + ((previewHeight - zoomHeight) * 0.5);
 
-    if (isPeerPreview ~= true) then
+    if (isPeerPreview ~= true and quickMenuOnlyPreview ~= true) then
         drawList:AddImage(plateTextureId, { zoomX, zoomY }, { zoomX + zoomWidth, zoomY + zoomHeight }, uv1, uv2, 0xFFFFFFFF);
     end
 
@@ -3302,7 +3357,7 @@ function preview.Draw(entityName, stateName, context)
 
     DrawPreviewInfoOverlay(drawList, x, y);
 
-    if (isPeerPreview ~= true) then
+    if (isPeerPreview ~= true and quickMenuOnlyPreview ~= true) then
         HandlePreviewElementDrag(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight, context);
         HandlePreviewElementClick(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight, context);
     end

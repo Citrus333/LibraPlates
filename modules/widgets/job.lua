@@ -339,7 +339,14 @@ local function DrawSliderControl(id, value, minValue, maxValue, step, width)
 
     imgui.SameLine();
 
-    if (imgui.SliderInt ~= nil) then
+    if (imgui.InputText ~= nil) then
+        local ref = { tostring(math.floor(current + 0.5)) };
+        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(tonumber(width) or 58); end
+        if (imgui.InputText('##job_' .. itemId, ref, 16) == true) then
+            current = tonumber(ref[1]) or current;
+        end
+        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+    elseif (imgui.SliderInt ~= nil) then
         local ref = { math.floor(current + 0.5) };
         if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(tonumber(width) or 58); end
         if (imgui.SliderInt('##job_' .. itemId, ref, minimum, maximum) == true) then

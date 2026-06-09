@@ -441,6 +441,7 @@ local function DrawTargetMarker(device, centerX, centerY, marker, pass)
     local color = ColorToD3D(marker.color, { 1.0, 0.82, 0.10, 0.90 });
     local backgroundColor = ColorToD3D(marker.backgroundColor or marker.color, { 1.0, 0.82, 0.10, 0.90 });
     local arrowColor = ColorToD3D(marker.arrowColor or marker.color, { 1.0, 0.82, 0.10, 0.90 });
+    local lockColor = ColorToD3D(marker.lockColor or marker.arrowColor or marker.color, { 1.0, 0.82, 0.10, 0.90 });
     local chevronColor = ColorToD3D(marker.chevronColor or marker.color, { 1.0, 0.82, 0.10, 0.90 });
     local thickness = math.max(1, tonumber(marker.thickness) or 3);
     local corner = math.max(8, tonumber(marker.cornerLength) or 18);
@@ -497,11 +498,13 @@ local function DrawTargetMarker(device, centerX, centerY, marker, pass)
         return;
     end
 
-    if (marker.showArrow == true) then
+    if (marker.showArrow == true or marker.showLock == true) then
         local arrowX = centerX + (tonumber(marker.arrowOffsetX) or 0);
         local arrowY = baseY - (tonumber(marker.arrowSpacing) or 10) + (tonumber(marker.arrowOffsetY) or 0);
         local arrowW = (tonumber(marker.arrowWidth) or 20) * distanceScale;
         local arrowH = (tonumber(marker.arrowHeight) or 20) * distanceScale;
+        local lockW = tonumber(marker.lockWidth) or 18;
+        local lockH = tonumber(marker.lockHeight) or 18;
         local arrowAnchorRect = marker.arrowAnchorRect;
 
         if (
@@ -522,7 +525,13 @@ local function DrawTargetMarker(device, centerX, centerY, marker, pass)
         local margin = 4;
         arrowY = math.max((arrowH * 0.5) + margin, math.min(canvasH - (arrowH * 0.5) - margin, arrowY));
 
-        if (marker.arrowTextureId ~= nil) then
+        if (marker.showLock == true and marker.lockTextureId ~= nil) then
+            local lockX = arrowX + (tonumber(marker.lockOffsetX) or 0);
+            local lockY = math.max((lockH * 0.5) + margin, arrowY - (arrowH * 0.5) - (lockH * 0.5) + (tonumber(marker.lockOffsetY) or -24));
+            DrawTexture(device, marker.lockTextureId, lockX - (lockW * 0.5), lockY - (lockH * 0.5), lockW, lockH, lockColor);
+        end
+
+        if (marker.showArrow == true and marker.arrowTextureId ~= nil) then
             DrawTexture(device, marker.arrowTextureId, arrowX - (arrowW * 0.5), arrowY - (arrowH * 0.5), arrowW, arrowH, arrowColor);
         end
     end
@@ -1690,10 +1699,12 @@ local function AddTargetMarkerForegroundRects(rects, centerX, centerY, marker)
     local targetH = tonumber(marker.height) or 74;
     local baseY = centerY - (targetH * 0.5) + (tonumber(marker.offsetY) or -20);
 
-    if (marker.showArrow == true and marker.arrowTextureId ~= nil) then
+    if ((marker.showArrow == true and marker.arrowTextureId ~= nil) or (marker.showLock == true and marker.lockTextureId ~= nil)) then
         local distanceScale = GetTargetMarkerDistanceScale(marker);
         local arrowW = (tonumber(marker.arrowWidth) or 20) * distanceScale;
         local arrowH = (tonumber(marker.arrowHeight) or 20) * distanceScale;
+        local lockW = tonumber(marker.lockWidth) or 18;
+        local lockH = tonumber(marker.lockHeight) or 18;
         local arrowX = centerX + (tonumber(marker.arrowOffsetX) or 0);
         local arrowY = baseY - (tonumber(marker.arrowSpacing) or 10) + (tonumber(marker.arrowOffsetY) or 0);
         local arrowAnchorRect = marker.arrowAnchorRect;
@@ -1716,7 +1727,15 @@ local function AddTargetMarkerForegroundRects(rects, centerX, centerY, marker)
         local margin = 4;
         arrowY = math.max((arrowH * 0.5) + margin, math.min(canvasH - (arrowH * 0.5) - margin, arrowY));
 
-        AddRect(rects, arrowX - (arrowW * 0.5), arrowY - (arrowH * 0.5), arrowW, arrowH, 4, 'targetModuleArrow');
+        if (marker.showLock == true and marker.lockTextureId ~= nil) then
+            local lockX = arrowX + (tonumber(marker.lockOffsetX) or 0);
+            local lockY = math.max((lockH * 0.5) + margin, arrowY - (arrowH * 0.5) - (lockH * 0.5) + (tonumber(marker.lockOffsetY) or -24));
+            AddRect(rects, lockX - (lockW * 0.5), lockY - (lockH * 0.5), lockW, lockH, 4, 'targetModuleLock');
+        end
+
+        if (marker.showArrow == true and marker.arrowTextureId ~= nil) then
+            AddRect(rects, arrowX - (arrowW * 0.5), arrowY - (arrowH * 0.5), arrowW, arrowH, 4, 'targetModuleArrow');
+        end
     end
 
     if (marker.showChevrons ~= false and marker.chevronTextureId ~= nil) then
@@ -1836,18 +1855,40 @@ function canvasTexture.Render(plate, key)
 
             plate._elementRects = elementRects;
 
-            if (plate.targetMarker ~= nil) then
-                plate.targetMarker.anchorRect = GetElementAnchorRect(elementRects, plate.targetMarker.anchorKinds);
-                plate.targetMarker.backgroundAnchorRect = GetElementAnchorRect(elementRects, plate.targetMarker.backgroundAnchorKinds or plate.targetMarker.anchorKinds);
-                plate.targetMarker.chevronAnchorRect = GetElementAnchorRect(elementRects, plate.targetMarker.chevronAnchorKinds or plate.targetMarker.anchorKinds);
-                plate.targetMarker.arrowAnchorRect = GetElementAnchorRect(elementRects, plate.targetMarker.arrowAnchorKinds);
-                AddTargetMarkerBackgroundRect(elementRects, centerX, centerY, plate.targetMarker);
-                AddTargetMarkerForegroundRects(elementRects, centerX, centerY, plate.targetMarker);
+            local function PrepareTargetMarker(marker)
+                if (marker == nil) then
+                    return;
+                end
+
+                marker.anchorRect = GetElementAnchorRect(elementRects, marker.anchorKinds);
+                marker.backgroundAnchorRect = GetElementAnchorRect(elementRects, marker.backgroundAnchorKinds or marker.anchorKinds);
+                marker.chevronAnchorRect = GetElementAnchorRect(elementRects, marker.chevronAnchorKinds or marker.anchorKinds);
+                marker.arrowAnchorRect = GetElementAnchorRect(elementRects, marker.arrowAnchorKinds);
+                AddTargetMarkerBackgroundRect(elementRects, centerX, centerY, marker);
+                AddTargetMarkerForegroundRects(elementRects, centerX, centerY, marker);
+
+                for _, stackedMarker in ipairs(marker.stackedMarkers or {}) do
+                    PrepareTargetMarker(stackedMarker);
+                end
             end
 
+            local function DrawTargetMarkerStack(marker, pass)
+                if (marker == nil) then
+                    return;
+                end
+
+                for _, stackedMarker in ipairs(marker.stackedMarkers or {}) do
+                    DrawTargetMarker(device, centerX, centerY, stackedMarker, pass);
+                end
+
+                DrawTargetMarker(device, centerX, centerY, marker, pass);
+            end
+
+            PrepareTargetMarker(plate.targetMarker);
+
             DrawPlateBackground(device, centerX, centerY, plate.background, FindRect(elementRects, 'background'));
-            DrawTargetMarker(device, centerX, centerY, plate.targetMarker, 'background');
-            DrawTargetMarker(device, centerX, centerY, plate.targetMarker, 'foreground');
+            DrawTargetMarkerStack(plate.targetMarker, 'background');
+            DrawTargetMarkerStack(plate.targetMarker, 'foreground');
             DrawBar(device, centerX, centerY, plate.hpBar, hp * 100, { 0.20, 0.95, 0.34, 0.95 }, FindRect(elementRects, 'hp'));
             DrawBar(device, centerX, centerY, plate.mpBar, mp, { 0.25, 0.45, 1.0, 0.95 }, FindRect(elementRects, 'mp'));
             DrawTpBar(device, centerX, centerY, plate.tpBar, tp, { 1.0, 0.70, 0.18, 0.95 }, FindRect(elementRects, 'tp'));

@@ -3,14 +3,18 @@ local nameDefaults = require('config.widgets.name');
 local barDefaults = require('config.widgets.bar');
 local mpBarDefaults = require('config.widgets.mp_bar');
 local tpBarDefaults = require('config.widgets.tp_bar');
+local buffsDefaults = require('config.widgets.buffs');
+local debuffsDefaults = require('config.widgets.debuffs');
 local globalDefaults = require('config.global');
 local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
 local barTextures = require('core.bar_textures');
 local barAnimations = require('core.bar_animations');
+local statusIconTextures = require('core.status_icon_textures');
 local entities = require('core.entities');
 local state = require('core.state');
+local trustStatusIcons = require('core.trust_status_icons');
 local targetModuleMarker = require('core.target_module_marker');
 local targeting = require('core.targeting');
 local enmity = require('core.enmity');
@@ -23,12 +27,19 @@ local plateCache = {};
 local indexCache = {};
 local maxPlateCacheEntries = 32;
 local lastPlateCacheTrim = 0;
+local trustBuffDefaults = {};
 local nearbyScanCache = {
     clock = 0,
     range = nil,
     trusts = nil,
 };
 local nearbyTrustScanCacheSeconds = 0.20;
+
+for key, value in pairs(buffsDefaults) do
+    trustBuffDefaults[key] = value;
+end
+
+trustBuffDefaults.enabled = true;
 
 local function ColorKey(color)
     color = color or {};
@@ -242,18 +253,77 @@ local function BuildResourceText(settings, label, value, maxValue, percent)
     return table.concat(parts, ' ');
 end
 
-local function GetTargetStateName(index)
-    local targetIndex = targeting.GetCurrentTargetIndex();
-    local subTargetIndex = targeting.GetCurrentSubTargetIndex();
-    local subTargetActive = targeting.IsSubTargetModeActive();
-
-    if (index == subTargetIndex or (subTargetActive == true and index == targetIndex)) then
-        return 'Subtarget';
-    elseif (index == targetIndex) then
-        return 'Target';
+local function BuildStatusRowsKey(rows)
+    if (rows == nil or #rows == 0) then
+        return 'none';
     end
 
-    return 'Idle';
+    local parts = {};
+
+    for _, row in ipairs(rows) do
+        parts[#parts + 1] = tostring(type(row) == 'table' and row.id or row);
+    end
+
+    return table.concat(parts, ',');
+end
+
+local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEngaged, globalSettings, kind)
+    if (
+        iconSettings == nil or
+        iconSettings.enabled ~= true or
+        (iconSettings.hideOutOfCombat == true and isEngaged ~= true) or
+        statusRows == nil or
+        #statusRows == 0
+    ) then
+        return;
+    end
+
+    local maxIcons = math.max(1, math.min(64, tonumber(iconSettings.maxIcons) or 12));
+    local iconsPerRow = math.max(1, math.min(24, tonumber(iconSettings.iconsPerRow) or 6));
+    local iconSize = math.max(6, math.min(160, tonumber(iconSettings.iconSize) or 18));
+    local spacing = math.max(0, math.min(24, tonumber(iconSettings.iconSpacing) or 2));
+    local growLeft = tostring(iconSettings.growthDirection or 'Right') == 'Left';
+    local anchored = tostring(iconSettings.anchorTo or 'Plate') ~= 'Plate';
+    local rowHeight = iconSize + spacing;
+    local baseX = tonumber(iconSettings.offsetX) or 0;
+    local baseY = tonumber(iconSettings.offsetY) or 0;
+    local total = math.min(maxIcons, #statusRows);
+
+    plateData.icons = plateData.icons or {};
+
+    for i = 1, total do
+        local rowData = statusRows[i];
+        local statusId = type(rowData) == 'table' and rowData.id or rowData;
+        local textureId = statusIconTextures.GetTextureId(statusId, iconSettings.iconPack);
+
+        if (textureId ~= nil) then
+            local row = math.floor((i - 1) / iconsPerRow);
+            local col = (i - 1) % iconsPerRow;
+            local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
+            local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
+
+            if (anchored == true) then
+                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
+            elseif (growLeft == true) then
+                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+            end
+
+            plateData.icons[#plateData.icons + 1] = {
+                kind = kind or 'status',
+                textureId = textureId,
+                size = iconSize,
+                offsetX = iconOffsetX,
+                offsetY = baseY + (row * rowHeight),
+                anchorTo = iconSettings.anchorTo,
+                anchorPoint = iconSettings.anchorPoint,
+                timerText = nil,
+                timerFontFamily = fonts.GetRole(globalSettings, iconSettings.timerUseSmallFont == true),
+                timerFontFlags = fonts.GetRoleFlags(globalSettings, iconSettings.timerUseSmallFont == true),
+                timerFontSize = textScale.ToTextureFontSize(iconSettings.timerFontSize, 8),
+            };
+        end
+    end
 end
 
 local function GetLayoutStateName(trust)
@@ -313,7 +383,7 @@ end
 
 local function QueueTrust(trust)
     local layoutStateName = GetLayoutStateName(trust);
-    local targetStateName = GetTargetStateName(trust.index);
+    local targetStateName = targeting.GetTargetStateName(trust.index);
     local useTargetOverlay = layoutStateName == 'Combat' or targetStateName ~= 'Idle';
     local settingsTimer = perfMeter.BeginDetail('trust.settings');
     local nameSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Name', nameDefaults);
@@ -321,6 +391,8 @@ local function QueueTrust(trust)
     local hpBarSettings = state.GetWidgetSettings('Trust', layoutStateName, 'HP Bar', barDefaults);
     local mpBarSettings = state.GetWidgetSettings('Trust', layoutStateName, 'MP Bar', mpBarDefaults);
     local tpBarSettings = state.GetWidgetSettings('Trust', layoutStateName, 'TP Bar', tpBarDefaults);
+    local buffsSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Buffs', trustBuffDefaults);
+    local debuffsSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Debuffs', debuffsDefaults);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
     local hpPercent = ClampPercent(trust.hpPercent, 100);
     local mpPercent = ClampPercent(trust.mpPercent, 100);
@@ -352,6 +424,8 @@ local function QueueTrust(trust)
         mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25);
     local targetMarker = targetModuleMarker.Build('Trust', layoutStateName, targetStateName, hpBarSettings, trust.distance);
     local enmityEnabled = enmity.ShouldDrawAlly(trust, globalSettings) == true;
+    local buffRows = trustStatusIcons.GetRows(trust.serverId, 'buff');
+    local debuffRows = trustStatusIcons.GetRows(trust.serverId, 'debuff');
     local cacheEligible = state.GetConfigOpen() ~= true;
     local cacheKey = nil;
     local signature = nil;
@@ -374,6 +448,8 @@ local function QueueTrust(trust)
             'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
             'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
             'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
+            'buffs:' .. SettingKey(buffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(buffRows),
+            'debuffs:' .. SettingKey(debuffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(debuffRows),
             'targetMarker:' .. BuildTargetMarkerKey(targetMarker),
         }, '\n');
 
@@ -515,6 +591,9 @@ local function QueueTrust(trust)
     if (enmityEnabled == true) then
         enmity.AddIcon(plateData, globalSettings.enmity);
     end
+
+    AddStatusIconsToPlate(plateData, buffRows, buffsSettings, layoutStateName == 'Combat', globalSettings, 'buffs');
+    AddStatusIconsToPlate(plateData, debuffRows, debuffsSettings, layoutStateName == 'Combat', globalSettings, 'debuffs');
     perfMeter.EndDetail(buildTimer);
 
     local canvasTimer = perfMeter.BeginDetail('trust.canvas');

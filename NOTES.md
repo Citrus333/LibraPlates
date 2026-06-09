@@ -26,31 +26,108 @@ Marked good after the engaged enemy overlay was tested as perfect.
 
 ## User Notes
 - replace native mouse
-- Bug: Self Quick Menu is drawing in the wrong layer behind the Self plate; it should appear above the plate.
-- Settings UI todo: add the copy-settings function back in, so settings can be copied from one entity/state/widget area to another instead of rebuilding them manually.
+- PC Peer linkshell name was removed for now. `entity.LinkshellColor` is enough for the normal PC Linkshell icon color/presence, but not the real linkshell name. Local inventory matching only identifies the player's own LS items and does not solve strangers' LS names. Future real solution would need inspect-window memory/packet/API research.
 - Performance bug report: while staying in the same area, lag feels like it gets worse over time, as if some bucket/state/cache is filling. Treat as possible accumulation/leak behavior rather than broad performance tuning; investigate only after the current Al'Taieu fish visibility issue is settled or if Lila explicitly shifts focus.
+- Runtime lag diagnostic: latest perf sample after reset showed total avg about `8.05ms`, plates avg about `7.88ms`, and PC plates dominated at about `5.15ms avg` while NPC/Object was about `1.31ms`. Earlier sample before reset was total about `4.18ms` with PC about `1.53ms`. Investigate PC plate path/caching first if lag remains bad.
+- DirectX wrapper clue: husband reports Atom0s DX9 wrapper z-fighting fix greatly reduces LibraPlates lag, but makes Ashita addons click-through. Treat this as a possible D3D depth/render-state interaction, not a recommended user workaround.
+  - Claim state color settings follow-up: add outline color controls for each Enemy claim state (Unclaimed, Claimed, Claimed by others, Call for help), so font color and outline can be tuned separately.
+- Release packaging cleanup: do not ship old debug depth probe plugins (`LibraDepthProbe` / `LibraDepthProbestatus`) with the release package. They are not needed for normal LibraPlates use and are confusing/risky if users load them accidentally.
+- Accessibility/testing workflow: use `/lp lag` as the short one-command lag diagnostic. It starts auto diagnostics with default 15s phases and writes logs under `TEMP WORK FOLDER\test-logs` so Lila only needs to type one command and then say "done".
 - Mob name settings: add/support separate name display settings for mobs claimed by self/party/alliance vs claimed by others.
 - Self Quick Menu idea: add party invite actions/state, including accepting an invite and showing/handling invite pending.
 - Debuff timers need a dedicated cleanup/test pass after Buffs: match the finished Buff timer behavior and UI style where it makes sense, verify live PC/Self debuff detection, timer sorting, warning stages, icon pack discovery, icon background/border, timer text sizing, and reset-confirm safety.
+- Trust status icons follow-up: decide whether Trust debuffs should remain supported/shown, or whether Trust plates should only show Trust buffs.
+- Bar defaults todo: set safer default bar background colors, such as dark gray `#414141F2`, for bars whose fill and background can accidentally match.
 - NPC/Object data direction: curated always-on NPC/Object lists are wired and working, and Lila is still editing the list/icons. Keep the curated lists (`catseye_npc_icons.lua`, `catseye_item_icons.lua`, `npc_icons.lua`, `item_icons.lua`) for special icons/types. Remaining future work is zone-scoped loading, but that should wait until the data has full zone coverage; then load by zone on zone change with exact-name lookup and cached results instead of scanning all entries every frame.
 - ??? object spoiler setting: add a setting for `???`/search objects to show or hide their names, so LibraPlates can avoid spoiling hidden-object searching when desired.
 - Add decision note: confirm if we still need the separate **`libra depth probe`** utility addon, or if this behavior can stay fully in LibraPlates once native hooks are stable.
-- Done: Sea object `Lumoarian Gleam` is supported. It is used to trade/pick up sea organs, and players can access Vision storage through Lumorian Gleams (Loxley).
-- Add screen "no-go zones" for LibraPlates click targeting: user-defined invisible rectangles over action bars, chat windows, menus, or other UI areas. If a mouse click is inside a no-go zone, LibraPlates should ignore plate click-targeting there while still letting the game/UI receive the click normally. This is safer than trying to block the game's mouse input.
 - Disable nameplate click-through: add a way to prevent LibraPlates/nameplate click targeting when clicking through/behind game UI such as action bars, chat windows, or menus, so UI clicks do not accidentally target a plate behind them.
-- Add an option in the Target Module to turn chevrons on/off for NPC/Object plates.
+- Target Module cleanup: the NPC/Object chevron on/off option was added, but it may be redundant because the chevron dropdown already has a `None` value. Consider removing the extra checkbox and relying on the dropdown.
 - Add controls for Target/Subtarget background opacity.
 - Target/Subtarget module needs outline settings.
 - Add toggles for native game names in the same areas where LibraPlates name settings live, such as Self, Enemy, PC, NPC, and Object name settings.
 - Need a lock-target text/icon option. Likely belongs with Target/Subtarget modules, but decide exact home later.
+- Lock-on icon anchoring/scoping note: first pass should be reviewed carefully before treating as done. User wants the lock icon when locked on an enemy, with settings in the Enemy plate. Because Target Module settings/rendering are shared, keep future cleanup focused on Enemy-only scope unless Lila explicitly approves broader entity behavior. Also review anchoring so the lock icon can be positioned relative to the target marker/arrow/name without clipping or drifting.
 - Fishing/gathering interaction first pass implemented under Fishing settings: right-click with a fishing rod equipped in the ranged slot queues `/fish` when the click does not hit a LibraPlates plate. Right-clicking known gathering object plates can target the object and use the matching tool. Current mappings are Mining Point -> Pickaxe, Excavation Point -> Pickaxe, Logging Point -> Hatchet, and Harvest/Harvesting Point -> Sickle. Still need test in the field and decide what, if anything, should happen for Clamming Point, Fish Trap, and other fishing-related objects.
 - DoH/DoL activity idea: add a ring timer for the cooldown before the player can fish, craft, or gather again.
 - Target/Subtarget module settings seem to be Enemy settings applying to all entity types. Need separate scoping or proper per-entity behavior.
-- When enemy HP reaches 0, remove target/subtarget markers from that enemy.
 - Target/Subtarget module ownership is not resolved. Do not remove Target/Subtarget from the Modules tab without Lila explicitly approving that direction. Need decide later how Plates > entity > state and Modules tab should coexist without feeling duplicated or confusing.
+- Self cast bar note: review whether Self needs its own cast bar support/settings in Self World/Tactical, including anchoring, width/height, color, and whether it should behave differently from PC/Enemy cast bars.
+- Settings reset bug: resetting widget settings/position does not appear to reset anchor settings (`anchorTo` / `anchorPoint`). Confirm and include anchors in the relevant reset paths.
+- Debuff growth direction follow-up: Buff growth direction was live-tested, but Debuff growth direction should still be tested in-game when practical to confirm the shared mirrored status-icon path behaves correctly for debuffs too.
 
 ## Done List
 
+- 2026-06-09 - Buff/Debuff growth direction added:
+  - Buffs and Debuffs now have a `Growth direction` setting under the anchor controls.
+  - `Right` and `Left` preserve timer/order sorting while changing which way the row grows.
+  - Buffs were live-tested; Debuffs use the same mirrored status-icon layout path and are considered covered unless a specific debuff-only issue appears.
+- 2026-06-08 - Settings copy-settings function restored:
+  - Settings can be copied from one entity/state/widget area to another instead of rebuilding them manually.
+- 2026-06-08 - Enemy HP 0 target/subtarget marker suppression confirmed:
+  - Target/Subtarget markers stop drawing on defeated enemies when enemy HP reaches 0.
+- 2026-06-08 - Sea object `Lumoarian Gleam` support note moved to completed:
+  - `Lumoarian Gleam` is supported for sea organ trade/pickup behavior.
+  - Lumorian Gleams can also provide access to Vision storage, per Loxley note.
+- 2026-06-08 - Name font size settings capped consistently:
+  - Name widget font size now caps at `40` for all entities, matching the existing PC cap.
+- 2026-06-08 - Quick Menu settings are scoped in Plates view:
+  - Self Quick Menu settings show Self actions/trust filters without PC, Trust, or NPC/Object groups.
+  - PC, Trust, NPC, and Object Quick Menu settings show only their relevant action/info groups when opened from Plates.
+  - Modules > Quick Menu still shows the full shared configuration.
+- 2026-06-08 - Quick Menu preview follows settings more closely:
+  - Preview rows now respect enabled/disabled Quick Menu action settings such as Follow.
+  - Preview row text uses the same readable color fallback as the live Quick Menu.
+  - Quick Menu preview no longer renders an unnecessary plate texture behind the menu every settings frame.
+- 2026-06-08 - PC Peer preview cleaned up after Linkshell removal:
+  - Removed the stale Linkshell row from the PC Peer preview to match live PC Peer.
+- 2026-06-08 - Screen no-go zones for click targeting completed:
+  - User-defined invisible rectangles can be placed over action bars, chat windows, menus, or other UI areas.
+  - Clicks inside a no-go zone are ignored by LibraPlates plate click-targeting while still letting the game/UI receive the click normally.
+- 2026-06-08 - NPC/Object Target Module chevron toggle completed:
+  - NPC/Object plates have an option to turn Target Module chevrons on/off.
+  - Follow-up cleanup remains active because the checkbox may be unnecessary when the chevron dropdown can be set to `None`.
+- 2026-06-08 - NPC/Object fallback behavior is covered:
+  - Unknown NPCs and objects still show name/target marker behavior without requiring curated icon/info data.
+- 2026-06-08 - Self Quick Menu trust toggles live-tested:
+  - `Ignore Other Trusts`, `Hide Other Trusts`, and `Emote Trust` command/state sync works correctly around other players' trusts.
+  - Temporary Self Quick Menu toggle chat spam was removed after stabilization.
+- 2026-06-08 - Name outline cleanup completed:
+  - Small world-plate name outlines no longer look like black drips/feet.
+  - Larger outline sizes now use clean text-shaped outline copies instead of a giant GDI outline.
+- 2026-06-08 - Enemy preview cropping fixed:
+  - Enemy preview no longer secretly adds extra zoom.
+  - Zoom now enlarges the rendered nameplate inside the preview instead of only zooming the background image or changing widget sizes.
+- 2026-06-08 - Target/Subtarget module preview positioning completed:
+  - Preview supports positioning arrows, chevrons, and background in settings.
+  - The old disabled-2D-arrow/chevron preview note is resolved.
+- 2026-06-08 - Native target-arrow first-target flash fixed:
+  - F-key and command first-target native flash was fixed by keeping the native hard-hide path active when native party/target UI hiding is enabled.
+  - Do not touch native arrow timing/hard-hide unless a new targeted bug requires it.
+- 2026-06-08 - Trust TP apparent 100% display cause resolved:
+  - The apparent full TP bar was caused by TP fill and background defaulting to the same color.
+  - Future default-color cleanup remains tracked separately.
+- 2026-06-08 - PC and Self Peer first passes completed:
+  - PC World/Tactical exposes `Peer (module)` with compact player preview and live hover behavior.
+  - Self World/Tactical exposes `Peer (module)` with a character-stat preview and live Shift-hover player data.
+- 2026-06-08 - PUP/Automaton Maneuvers first pass completed:
+  - Own PUP automaton is detected through `PetTargetIndex` and queued as a tactical `Automaton` plate.
+  - Maneuvers widget uses player status icons 299-307 with icons under `assets/images/maneuvers/default`.
+- 2026-06-08 - Crafting result module first rebuilt pass completed:
+  - Crafting result is packet-driven from incoming packet `0x0030`, with packet `0x006F` clearing the active result.
+  - Current addon overlays the result on the Self Idle layout as Icon or Text using `assets/images/crafting`.
+- 2026-06-08 - Peer preview interaction first passes completed:
+  - Clicking Peer preview elements selects the matching Peer component in the dropdown.
+  - Peer preview has a `Drag` toggle for directly updating Peer component X/Y settings.
+- 2026-06-08 - Peer module setup and Enemy Peer content completed:
+  - Modules > Peer exposes shared behavior settings, Enemy info components, preview wiring, and icon pack selection.
+  - Enemy Peer reads local icon packs from `assets/images/peer-icons`, and Enemy > Idle/Combat exposes `Peer (module)`.
+- 2026-06-08 - Cleared stale hardcoded-name fallback note:
+  - Confirmed `modules/widgets/name.lua` and nearby name render paths no longer contain the old `Lumenlee` fallback text.
+  - No runtime code change was needed.
+- 2026-06-08 — Self Quick Menu no longer opens directly under the Self plate:
+  - Added a self-only popup offset so the Self Quick Menu opens down/right from the click point instead of overlapping the Self world plate.
+  - This avoids changing plate rendering behavior or global quick-menu behavior.
 - 2026-06-07 — Quickmenu links are now `bg-wiki`:
   - `All quickmenu links now use https://www.bg-wiki.com`
   - `Catseye NPC quickmenu links now use https://www.bg-wiki.com/ffxi/CatsEyeXI_NPCs#...`
@@ -91,7 +168,6 @@ Add new notes below. Newest notes can go at the top.
 
 - Small/simple fixes selected first (for next pass, low risk):
   - Keep `/st` range queue/packet parsing disabled at runtime until we resume that feature intentionally (already controlled by `enableTargetActionRange = false` in `libraplates.lua`).
-  - Remove hardcoded player-name fallback text in `modules/widgets/name.lua` (fallback should remain a neutral placeholder, not `Lumenlee`).
   - Cut noisy duplicate queue logging noise and add one deterministic format before any future re-enable of action queue parsing.
   - Prefer "target-action behavior untouched" when stability tests are ongoing; no more experimental native arrow logic until current `/st`/target stability is stable for >20 minutes.
 
@@ -116,7 +192,7 @@ Add new notes below. Newest notes can go at the top.
 - Add a guard around any future command-parsing helpers that could re-run every packet/text event.
 - Keep `core.target_action_range.lua` untouched until we are ready to rework with a dedicated, narrow parser path.
 - Before re-enable: add one fixed test script for queue capture (`provoke`, `dia iii`, `sleep ii`) and one deterministic command log format, then re-enable only in debug sessions.
-- Next priority: fix remaining small UX note items only after `/st` is stable for multiple full minutes (e.g., preview-click selection, quick menu website corrections, and module copy button behavior).
+- Next priority: fix remaining small UX note items only after `/st` is stable for multiple full minutes (e.g., preview-click selection and module copy button behavior).
 
 ### 2026-06-06
 
@@ -135,13 +211,7 @@ Add new notes below. Newest notes can go at the top.
 
 - Performance checkpoint after combat-area diagnostics: active range slider is working and the remaining cost is active Enemy detail rendering, not NPC/Object. Latest sampled run averaged about `4.28ms` total, `1.91ms` Enemy, and `0.23ms` NPC/Object. Stop broad performance work for now unless a fresh diagnostic shows a new hotspot.
 - Trust recognition fix: `core.trust_names` now aliases generated trust names with parenthetical suffixes, such as `Trust: Sylvie (UC)`, to their plain live entity name, such as `Sylvie`. This fixes nearby other-player trusts that showed native green names but no Libra plate.
-- Native target arrow checkpoint: F-key and command first-target native flash was fixed by keeping the native hard-hide path active when native party/target UI hiding is enabled. Do not touch native arrow timing/hard-hide unless a new targeted bug requires it.
-- Object fallback fixed: unknown objects now follow the same rule as unknown NPCs. If no curated icon/data exists, still draw the object target/subtarget marker/name; do not invent icon/type/details.
-- Chat spam cleanup done: removed the temporary Self Quick Menu debug line like `[LibraPlates] Quick menu self toggle ... command=...`.
-- Trust TP note resolved for now: the apparent 100% TP issue was caused by TP fill and background defaulting to the same color, making an empty bar look full. Future pass should set safer default bar background colors, such as a dark gray `#414141F2`, for any bar whose fill and background can accidentally match.
 - Bar settings todo: check bar border settings. Some bars appear to have old-Libra borders, but border controls may be missing or inconsistent in current settings.
-- Fixed: Libra name outlines looked like black drips/feet on small world plates, especially green trust names such as Koru-Moru. The failed backing-box attempt was removed. Final fix: Name widgets with outline size `0-2` use the normal GDI outline path; Name widgets with outline size above `2`, such as Lila's `5`, draw text-shaped outline copies around the clean name instead of using a giant GDI outline. This keeps readability without brown boxes or dripping.
-- Bug: Self Quick Menu is drawing on the wrong layer/z-order and can appear behind the Self plate/name/bars. Seen on Self; not seen on Trusts so far. Need test whether PC/NPC/Object quick menus have the same layering issue before fixing broadly.
 - Self Buffs/Debuffs todo: live Self buffs/debuffs can appear and work, but the settings preview does not show them. Add them to Self World/Tactical preview like PC where appropriate.
 - Target/Subtarget placement bug: Plates > Self/PC/Trust/etc. > World/Tactical Target/Subtarget arrow Position X/Y still did not visibly affect live arrows in testing. Check whether modules/settings scoping is still coupled or overwritten by Target/Subtarget module placement logic.
 - Native targeting test note: if native targeting and Libra target modules are both forced visible during diagnostics, duplicate arrows are expected because native and Libra arrows are both visible. Normal settings should avoid this by switching between the native targeting system and Libra's replacement.
@@ -150,36 +220,23 @@ Add new notes below. Newest notes can go at the top.
 
 ### 2026-06-04
 
-- PC/Player Peer first pass: Plates > PC > World/Tactical now exposes `Peer (module)`. Preview uses the compact player layout: name + distance, HP, optional linkshell/mode rows, and optional target row. Runtime opens from PC plate hover and uses nearby-player data for name/distance/HP, linkshell color presence for the linkshell row, game mode (`CW`/`ACE`/`WEW`/`UCW`) for Mode, and a conservative target-name lookup that hides the row when unavailable.
-- Self Peer first pass: Plates > Self > World/Tactical now exposes `Peer (module)`. The preview uses a character-stat panel, and runtime Shift-hover on the Self plate reads live player job levels, stats/modifiers, attack/defense, and elemental resists from Ashita player/party memory. This is a Plates widget path, not a Modules-tab option.
 
 ### 2026-06-02
 
 - Background/highlight conditional display idea: add "show only on..." conditions for Background/Highlight style visuals, so a background or highlight can appear only for specific states/events such as Target, Subtarget, combat/tactical, aggro, low HP/MP, enmity warnings, or other alert conditions. This should be a reusable conditional system instead of hardcoding one-off background behavior into each widget.
 - PUP Maneuvers timer formatting: maneuver timer labels should stay as plain seconds numbers under each socket, with no suffix/background box; examples are `71`, `84`, `43`, `56`.
-- PUP/Automaton pet pass: old addon PUP source was checked. Current addon now detects own PUP automaton through `PetTargetIndex`, queues a tactical `Automaton` plate, and uses existing Automaton settings for Background, Name, Distance, HP Bar, MP Bar, TP Bar, Enmity, and Target. Added the `Maneuvers` widget using player status icons 299-307: Overload uses `overload.png`, active maneuvers use Fire/Ice/Wind/Earth/Thunder/Water/Light/Dark icons, and empty slots use `empty.png`. Maneuver icons live in `assets/images/maneuvers/default`; preview and settings are wired under Plates > Pet (PUP) > Automaton > Maneuvers.
 
 ### 2026-05-30
 
-- Crafting module first rebuilt pass: old-addon source was checked for `core\crafting_result.lua`. Crafting result is packet-driven, not chat-driven: incoming packet `0x0030` for the player maps animation `0` to Normal Quality, `1` to Break, and `2/3/4` to High-Quality; packet `0x006F` clears the active result. Current addon uses Self Idle layout as the base, overlays the result as Icon or Text, and stores icons in `assets/images/crafting` as `craft_01.png`, `craft_02.png`, and `craft_03.png`.
-- Peer module settings started: Modules > Peer now exposes shared behavior settings for modifier key, max range, and one simple fixed Zoom slider. The earlier min/max/per-yalm zoom settings were too confusing and removed from the UI. Existing Peer behavior reads these settings from `global.peer`. Enabled/disabled remains a per-plate concern, not a Peer module setting. Current Peer coverage is Self, PC, and Enemy; NPC/Object is intentionally skipped in favor of Quick Menu.
-- Done: NPC/Object fallback behavior is now covered. Unknown NPCs and objects should still show name/target marker behavior without requiring curated icon/info data.
-- Enemy Peer content options added in Modules > Peer: Job, Level, Range, Aggro/passive, Detection/link, Immunities, Damage modifiers, and Modifier values. Enemy Peer uses these to decide which mobdb info appears in the expanded inspect row and whether the distance badge remains visible while Peer is open; the normal plate still supplies name, HP bar/percent, and other current plate widgets. Modifier value text has Peer-specific font size, color, outline color, and outline size controls.
-- Peer enemy info UI direction changed from a long checkbox pile to a component dropdown. Modules > Peer > Enemy info component now selects Background, Name, HP bar, Job, Level, Range, ID, Aggro/passive, Detection/link, Immunities, or Damage modifiers; the selected component shows its Active toggle and its own X/Y plus font, background, bar, or icon-size controls. ID owns its optional box controls; HP bar owns HP percent controls; Damage modifiers owns the separate Modifier values controls under the same selected component.
 - Peer todo: add/show passive vs aggressive info clearly in Enemy Peer. Lila noticed this info is missing from the current Peer display.
-- Peer preview wiring: selecting Modules > Peer or Plates > Enemy > Idle/Combat > Peer (module) renders sample Enemy Peer info using the same global Peer settings as live Enemy Peer. Plates > Self > World/Tactical > Peer renders the Self stat panel preview, and Plates > PC > World/Tactical > Peer renders the compact Player Peer preview. NPC/Object Peer is intentionally skipped in favor of Quick Menu.
-- Peer preview click-through to settings: clicking Peer preview elements now selects the matching Peer component in the dropdown. Background -> Background, HP bar/percent -> HP bar, Job -> Job, Level -> Level, Range -> Range, aggro icon -> Aggro/passive, detection icons -> Detection/link, immunity icons -> Immunities, and modifier icons/values -> Damage modifiers.
 - Peer icon asset todo: upscale/clean Peer icon packs, especially the currently used `round`/mobdb-style enemy info icons, so they remain crisp at the in-game Peer display sizes. Target practical export size is likely 64x64 PNG with real alpha, consistent filenames, and simple high-contrast shapes.
 - Future preview interaction idea: look into different cursor pointers for preview interactions, such as hover/select/move cursors. This should pair with a possible drag-to-position prototype, first for Peer preview components and later for general preview widgets if it feels good.
-- Peer preview drag prototype: preview now has a `Drag` toggle beside the zoom selector. When enabled in Peer preview, dragging Peer elements updates that component's X/Y settings directly. Current scope is Peer only: Background, Name, HP bar, Job, Level, Range, Aggro/passive, Detection/link, Immunities, and Damage modifiers. If it feels good, generalize to normal preview widgets later.
 - Background settings layout direction: make one polished background editor pattern and reuse it everywhere. Desired order is Width/Height, Position X/Y, then Fill color + Opacity on one row, then Border color + Border size on one row. Applied to Peer > Background and the shared normal plate Background editor.
 - Peer Job component layout direction: Peer > Job uses compact paired rows. Display is a dropdown; Icon theme appears on the same row only when Icon display is selected; Position X/Y share one row; Icon mode shows Icon size and live/preview Peer renders the selected job icon; Text mode shows font size/color and outline settings. A similar shared normal Job editor pass was started too, but current testing focus remains Peer.
 - Peer Level component now includes difficulty font colors in the Peer style: Use difficulty font colors toggle plus TW/EP/DC/EM/T/VT/IT color rows. Live Enemy Peer colors Level from mob level versus viewer level; preview uses the T color as the sample.
 - Enmity module now follows the old addon Healer/Tank behavior while staying icon-only for now. The icon asset lives at `assets/images/enmity_icon.png`; Modules > Enmity exposes Active, Mode, Position X/Y, and Icon size. Healer mode marks the ally plate currently targeted by an enemy; Tank mode marks the enemy currently targeting self. Do not put background/highlight controls in Enmity yet; make those part of the future reusable highlight/effect system.
 - Resting module first rebuilt pass: live Self now treats entity `Status == 33` as Resting, keeps the regular Self layout sourced from Idle, and overlays a Resting tick bar from `global.resting`. Discord research says perfect accuracy is not possible from normal client state because rest gains are delivered on imperfect server update ticks. The tracker now syncs only from meaningful MP jumps (`mpTickThreshold`, default 12), not HP, because cures/regen can fake HP ticks. If the expected tick is late, the bar waits at `0s`; once the MP jump arrives, the next cycle is shortened by the overrun. At full MP it falls back to normal timer wrapping.
 - Fishing module first rebuilt pass: old addon only had an empty `ui/widgets/fishing.lua`; useful source was the old Self module mapping plus worksheet status IDs. Current module treats statuses 38-43, 50-53, and 56-62 as Fishing, reuses the Self Idle layout as the base, and listens for fishing gut-feeling chat lines. Result mapping: didn't catch anything -> `fishing_00.png` + `You didn't catch anything`; good feeling -> `fishing_01.png` + `Easy catch`; don't know enough skill -> `fishing_02.png` + `Moderate catch`; fairly sure -> `fishing_03.png` + `Hard catch`; positive not enough -> `fishing_04.png` + `Very difficult catch`; bad feeling -> `fishing_05.png` + `Extreme catch`; terrible feeling -> `fishing_06.png` + `Dangerous catch`. These images are separate result icons, not animation frames, and live in `assets/images/fishing`. Settings live in Modules > Fishing and Plates > Self > Idle > Fishing (module).
-- Enemy Peer icon packs live under `assets/images/peer-icons`: Lila's circular icon pack is named `round`, and the square/original mobdb pack is named `mobdb`. Modules > Peer exposes icon style, icon size, and icon X/Y controls for the enemy info row. Runtime now loads Peer icons from the selected local pack instead of any old-addon temp icon folder.
-- Enemy plate Peer setting added: Enemy > Idle/Combat now lists `Peer (module)` with an Active toggle. Enemy runtime checks the Peer plate setting before opening the existing Peer/old-Libra hover view.
 - Settings UI direction: reset actions should live at the bottom of each settings panel like the existing "Reset X position/settings" pattern, but Lila prefers actual buttons over yellow text links. Preserve the modal/dimmed confirmation behavior. First cleanup done in Plates > Target/Subtarget placement by removing the top "Reset placement nudges" button and adding bottom reset-position/settings buttons with confirmation. Follow-up pass should convert the remaining yellow reset links to bottom buttons without changing their behavior.
 - Focus pivot: prioritize getting all settings represented for all entities/states before continuing deep native-position investigations. First low-risk slice completed: PC settings now expose Background and Distance; NPC/Object settings now expose Subtarget module; live PC and NPC/Object plates now consume Background and Distance settings; settings preview shows Distance for PC/NPC/Object as well as Enemy.
 - Fixed likely cause of Avatar Target module not working: `modules.target_overlay` now recognizes the player's own SMN pet as `Pet (SMN)` and chooses `Avatar` or `Spirit` layout state before reading Target/Subtarget module settings. After reload, target Titan/avatar and use `/lp targetdebug`; expected debug should include `entity=Pet (SMN) layout=Avatar`.
@@ -187,8 +244,6 @@ Add new notes below. Newest notes can go at the top.
 - Future highlight/background system idea: look into making reusable highlight/background visuals that can be assigned to certain states or warnings, such as aggro, low HP, and other alert conditions. This should probably fit into the broader all-entities/all-states settings pass rather than being hardcoded per widget.
 - Current transition terminology: `World Context` means true 3D world-marker plates drawn in `core.world_marker_probe`; `Tactical Context` / `important overlay` / `always-visible plates` means the 2D overlay path drawn by `modules.target_overlay` from `worldMarkerProbe.GetAlwaysVisiblePlates()`. In code, tactical plates are generally marked with `plateAlwaysOnTop = true` and `plateTacticalOverlayOnly = true`.
 - Todo: add a setting to disable right-click enemy attack while mounted. Mounted right-clicks should not accidentally try to attack from LibraPlates when Lila is riding.
-- Done: live-tested Self quick menu trust toggles around other players' trusts. `Ignore Other Trusts`, `Hide Other Trusts`, and `Emote Trust` command/state sync works correctly.
-- Done: after stabilization, removed temporary Self Quick Menu toggle chat spam.
 - Todo: add out-of-range HP bar color settings for PC and Enemy plates so active-detail/range-limited plates can communicate that their HP display is out of live detail range instead of normal live HP.
 - Bug: Trust plate settings are not taking effect live. Settings UI exposes Trust > World and Trust > Tactical widget toggles such as Name, HP Bar, MP Bar, TP Bar, Quick Menu, Enmity, Target, and Subtarget, but in-game trust plates continue showing/hiding elements inconsistently with those settings. Need inspect trust render path and verify whether it reads Trust World/Tactical settings or uses PC/party defaults/hardcoded tactical layout.
 - Current tactical/overlay entities confirmed in code: Self tactical/overlay behavior is not controlled by the removed `importantOverlaySelf` setting; engaged enemies can use the extra engaged-enemy overlay path when `importantOverlayEnabled` and `importantOverlayEngagedEnemies` are enabled; Trust plates are tactical; BST pet plates are tactical; SMN pet plates are tactical. Pet tactical anchors currently use `anchorBone = 12` and `plateWorldOffsetY = 0.16` while the global/default world anchor remains bone `2`. Titan testing lined the tactical canvas center up with the native name at this value.
@@ -222,14 +277,12 @@ Add new notes below. Newest notes can go at the top.
 - Reverted timing test immediately: moving world plate queueing into `d3d_beginscene` corrupted the scene/water render state when the addon was disabled/reloaded. Keep queue/reset in `d3d_present`; do not repeat this approach without much stricter render-state isolation.
 - Reverted timing test 2: drawing world markers in `d3d_present` made the plate behave like a 2D overlay. Keep actual world-marker drawing in `d3d_beginscene`.
 - Leaving Self plate lag-behind alone for now. Current safe behavior is restored: `d3d_present` resets/queues plates and `d3d_beginscene` draws world markers. Tests that did not solve it: current-frame bone anchor pass-through, Self-only exact/nameplate-helper anchor, 2D foreground diagnostic, queueing in `d3d_beginscene`, and drawing world markers in `d3d_present`. Future work should inspect `world_marker_probe.DrawQueued()`/two-pass draw behavior without changing D3D event phase.
-- Completed: Target/Subtarget module preview now supports positioning arrows, chevrons, and background in settings, so the old note about disabled 2D arrows/chevrons needing a proper preview is resolved.
 - Modules tab now uses the same left selector plus preview/settings split as Plates, so Target/Subtarget module edits can be previewed for the selected entity/state before applying live.
 
 ### 2026-05-26
 
 - Enemy live castbar was wired from the old addon behavior instead of guessing: packet `0x0028`, action type `8` starts a spell cast from the first target action param, action types `4`/`11` clear it, and zoning clears all casts. The castbar uses Enemy > Combat > Cast bar settings.
 - Text size/font size settings were normalized. Settings now use visual-size numbers `6`-`24`, while rendering converts them to the larger texture font sizes needed for world plates. Old saved raw values above `24` still render at their old size and normalize when edited. Live enemy plates no longer switch the whole Name/HP layout to Combat while engaged; Combat currently owns the castbar only.
-- Fixed settings preview cropping: Enemy preview no longer secretly adds extra zoom. Zoom now enlarges the rendered nameplate inside the preview instead of only zooming the background image or changing widget sizes.
 - Enemy Job settings now mirror the old addon: Display Text/Icon, Icon theme FFXI/FFXIV/Classic, Icon size, Text size/color/outline, and X/Y position. Enemy plates read the mobdb Job value and render the job text/icon when enabled.
 - Removed the unrequested Enemy plate limit. Plate eligibility is controlled by range; active code no longer count-limits enemy, player, NPC, or object plates.
 - Added a model/skeleton readiness guard so character plates do not briefly draw names at floor level before the character model finishes loading.
@@ -251,3 +304,13 @@ Add new notes below. Newest notes can go at the top.
 - Corrected overlay suppression: Target/Subtarget overlay should hide for map/event/interface-hidden states, but not merely because the LibraPlates settings UI is open. While LibraPlates settings are open, broad event/interface-hidden flags are ignored and only the map menu still suppresses it. Added `/lp overlaystatus` for debugging this.
 - Added a settings preview path for Target/Subtarget module arrows, chevrons, and background. This is meant to let positioning be checked in the preview panel instead of disabling the live overlay while settings are open.
 - Shared notes file created.
+
+- Bug: Check Mog House moogle classification/data; it is currently being detected/rendered as a Trust instead of the correct NPC/Object type.
+
+- TODO: Investigate urgent performance issue: FPS 1 setting is very laggy.
+
+- TODO: PC World plates show range/distance on every plate and there is currently no way to turn it off.
+
+- TODO: Retest targeting matrix after next input fix: especially right-click during subtarget mode while not engaged/engaged should select subtarget and not open quick menu.
+
+- TODO: Check lock-on settings after target/subtarget marker updates; confirm placement, visibility, and whether settings location/labels are clear.

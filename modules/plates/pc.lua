@@ -681,7 +681,8 @@ local function QueuePlayer(player)
     local targetStateName = targeting.GetTargetStateName(player.index);
 
     local isPartyPlayer = tonumber(player.slot) ~= nil;
-    local isTacticalPlayer = isPartyPlayer == true or tonumber(player.status) == 1;
+    local isTargetContext = targetStateName ~= 'Idle';
+    local isTacticalPlayer = isPartyPlayer == true or isTargetContext == true;
     local useTargetOverlay = isTacticalPlayer == true or targetStateName ~= 'Idle';
     local layoutStateName = useTargetOverlay == true and 'Combat' or 'Idle';
     local hasHp = player.hpPercent ~= nil or (player.hp ~= nil and player.maxHp ~= nil and tonumber(player.maxHp) > 0);

@@ -283,6 +283,9 @@ local function NormalizeActionName(value)
     return text;
 end
 
+local ReadRecordDisplayName = nil;
+local NormalizeActionDisplayName = nil;
+
 local function ResolveActionIdByNameSlow(category, normalizedActionName)
     local function GetResourceManagerSafe()
         local accessor = GetResourceManager;
@@ -905,12 +908,12 @@ end
 
 local abilityNameLookupCache = {};
 
-local function NormalizeActionDisplayName(record)
+NormalizeActionDisplayName = function(record)
     local name = ReadRecordDisplayName(record);
     return NormalizeActionName(name);
 end
 
-local function ReadRecordDisplayName(record)
+ReadRecordDisplayName = function(record)
     if (record == nil) then
         return nil;
     end
@@ -935,6 +938,33 @@ local function ReadRecordDisplayName(record)
 
         local valueType = type(value);
         if (valueType == 'userdata') then
+            for index = 1, 20 do
+                local candidate = SafeCall(nil, function()
+                    return value[index];
+                end);
+                if (candidate ~= nil and tostring(candidate) ~= '' and tostring(candidate) ~= '.') then
+                    return tostring(candidate);
+                end
+            end
+
+            local userdataKeys = {
+                'Name',
+                'name',
+                'English',
+                'english',
+                'FullName',
+                'fullName',
+            };
+
+            for _, key in ipairs(userdataKeys) do
+                local candidate = SafeCall(nil, function()
+                    return value[key];
+                end);
+                if (candidate ~= nil and tostring(candidate) ~= '' and tostring(candidate) ~= '.') then
+                    return tostring(candidate);
+                end
+            end
+
             return nil;
         end
         if (valueType ~= 'string' and valueType ~= 'number') then
@@ -2158,6 +2188,91 @@ function targetActionRange.HandleActionCommand(commandText)
     end
 
     return ApplyQueuedAction(category, actionId, 'command', parsedActionDisplay);
+end
+
+function targetActionRange.ProbeCommandText(commandText)
+    local parsedCategory, parsedActionName, parsedActionDisplay = ParseActionCommand(commandText);
+
+    if (parsedCategory == nil or parsedActionName == nil) then
+        return 'cast range probe: could not parse action command=' .. tostring(commandText or '');
+    end
+
+    local ok, actionId, actionMethod = pcall(ResolveActionIdByName, parsedCategory, parsedActionName);
+    if (ok ~= true) then
+        return 'cast range probe: resolve error command=' .. tostring(commandText or '') .. ' err=' .. tostring(actionId);
+    end
+
+    if (actionId == nil) then
+        return
+            'cast range probe: action not found name=' .. tostring(parsedActionDisplay or parsedActionName) ..
+            ' category=' .. tostring(categoryNames[parsedCategory] or parsedCategory) ..
+            ' samples=' .. tostring(targetActionRange.GetResourceNameSamples(parsedCategory, 12));
+    end
+
+    local resource, resourceMethod, resolvedId = ResolveActionResource(parsedCategory, actionId);
+    local range = ResolveActionRange(parsedCategory, actionId);
+    local displayName = GetQueuedActionName(resource, parsedCategory, actionId, resolvedId) or parsedActionDisplay or parsedActionName;
+
+    return
+        'cast range probe: name=' .. tostring(displayName) ..
+        ' category=' .. tostring(categoryNames[parsedCategory] or parsedCategory) ..
+        ' id=' .. tostring(actionId) ..
+        ' commandMethod=' .. tostring(actionMethod or 'unknown') ..
+        ' resourceMethod=' .. tostring(resourceMethod or 'none') ..
+        ' resolvedId=' .. tostring(resolvedId or actionId) ..
+        ' range=' .. tostring(range or 'nil') ..
+        ' hints=' .. tostring(DescribeResourceRangeHints(resource));
+end
+
+function targetActionRange.GetResourceNameSamples(category, count)
+    local resourceManager = GetResourceManager();
+    local normalizedCategory = tonumber(category) or 0;
+    local maxCount = math.max(1, math.min(40, tonumber(count) or 12));
+
+    if (resourceManager == nil) then
+        return 'no resource manager';
+    end
+
+    local methodsByCategory = {
+        [2] = { 'GetAbilityById' },
+        [3] = { 'GetSpellById' },
+        [7] = { 'GetWeaponSkillById' },
+        [9] = { 'GetAbilityById' },
+        [16] = { 'GetAbilityById' },
+    };
+    local methods = methodsByCategory[normalizedCategory] or { 'GetSpellById', 'GetAbilityById' };
+    local samples = {};
+
+    for _, methodName in ipairs(methods) do
+        local method = resourceManager[methodName];
+        if (type(method) == 'function') then
+            local found = 0;
+
+            for id = 1, 256 do
+                local record = SafeCall(nil, function()
+                    return method(resourceManager, id);
+                end);
+                local name = ReadRecordDisplayName(record);
+
+                if (name ~= nil and tostring(name) ~= '') then
+                    samples[#samples + 1] = methodName .. '[' .. tostring(id) .. ']=' .. tostring(name);
+                    found = found + 1;
+
+                    if (found >= maxCount) then
+                        break;
+                    end
+                end
+            end
+        else
+            samples[#samples + 1] = methodName .. '=missing';
+        end
+    end
+
+    if (#samples == 0) then
+        return 'none';
+    end
+
+    return table.concat(samples, ' | ');
 end
 
 function targetActionRange.HandleCommandText(commandText)

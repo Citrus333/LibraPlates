@@ -1127,6 +1127,19 @@ function commands.Handle(e)
         local action = tostring(args[3] or 'on'):lower();
         local seconds = tonumber(args[4]);
 
+        if (action == 'check' or action == 'probe') then
+            local rawCommand = tostring(e.command or '');
+            local probeCommand = rawCommand:gsub('^%s*%S+%s+%S+%s+%S+%s*', '', 1);
+
+            if (probeCommand == '') then
+                log.Info('Usage: /lp castdebug check /ma "Cure" <stpc>');
+                return;
+            end
+
+            log.Info(targetActionRange.ProbeCommandText(probeCommand));
+            return;
+        end
+
         if (action == 'packets') then
             local packetAction = tostring(args[4] or 'on'):lower();
             local packetSeconds = tonumber(args[5]);
@@ -1171,7 +1184,7 @@ function commands.Handle(e)
             return;
         end
 
-        log.Info('Usage: /lp castdebug on [seconds] | off | status | packets on [seconds] | packets off | packets status');
+        log.Info('Usage: /lp castdebug on [seconds] | off | status | check /ma "Cure" <stpc> | packets on [seconds] | packets off | packets status');
         return;
     end
 

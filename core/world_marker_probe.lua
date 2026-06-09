@@ -416,6 +416,7 @@ local function AddPlateClickRects(targetIndex, targetType, rects, union, metadat
         serverId = metadata ~= nil and metadata.serverId or nil,
         name = metadata ~= nil and metadata.name or nil,
         layoutStateName = metadata ~= nil and metadata.layoutStateName or nil,
+        trustIsMine = metadata ~= nil and metadata.trustIsMine or nil,
         distance = metadata ~= nil and metadata.distance or nil,
         modelHitboxSize = metadata ~= nil and metadata.modelHitboxSize or nil,
         plateTextureId = metadata ~= nil and metadata.plateTextureId or nil,
@@ -534,6 +535,7 @@ local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, styl
         serverId = style.serverId,
         name = style.clickName,
         layoutStateName = style.layoutStateName,
+        trustIsMine = style.trustIsMine,
         distance = style.distance,
         modelHitboxSize = style.modelHitboxSize,
         plateTextureId = style.plateAlwaysOnTop == true and style.plateTextureId or nil,
@@ -2369,6 +2371,7 @@ function worldMarkerProbe.QueuePlate(plate)
         tp = (plate.vitals ~= nil and plate.vitals.tp or plate.petTp),
         vitals = plate.vitals,
         name = plate.name or '',
+        trustIsMine = plate.trustIsMine,
         jobText = plate.jobText or '',
         jobIconTextureId = plate.jobIconTextureId,
         distance = plate.distance,
@@ -2454,6 +2457,9 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         style.serverId = plate.serverId or style.serverId;
         style.distance = plate.distance or style.distance;
         style.modelHitboxSize = plate.modelHitboxSize or style.modelHitboxSize;
+        if (plate.trustIsMine ~= nil) then
+            style.trustIsMine = plate.trustIsMine == true;
+        end
 
         if (updateClickOnly == true) then
             if (SetSelfClickRectsFromCanvas(device, targetIndex, wx, plateY, wy, style, plateWorldWidth, plateWorldHeight) ~= true) then

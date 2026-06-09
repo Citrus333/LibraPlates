@@ -332,6 +332,133 @@ local function ApplyDefaults(settings, defaults)
     end
 end
 
+local pendingCopy = {};
+local selectedCopySourceKey = {};
+
+local function GetCopyContextKey(context, label)
+    local entity = tostring(context ~= nil and context.entity or '');
+    local stateName = tostring(context ~= nil and context.state or '');
+    local widget = tostring(context ~= nil and context.widget or label or 'Target Module');
+
+    return (entity .. '_' .. stateName .. '_' .. widget):gsub('[^%w_]+', '_');
+end
+
+local function DrawCopySettings(settings, context, label)
+    if (
+        settings == nil or
+        context == nil or
+        context.defaults == nil or
+        _G.LibraPlatesSettingsBuildWidgetCopySources == nil or
+        _G.LibraPlatesSettingsCopySettingsFromSource == nil
+    ) then
+        return;
+    end
+
+    local copySources = _G.LibraPlatesSettingsBuildWidgetCopySources(context.entity, context.state, context.widget);
+
+    if (copySources == nil or type(copySources) ~= 'table' or #copySources == 0) then
+        return;
+    end
+
+    local key = GetCopyContextKey(context, label);
+    local selectedSource = nil;
+    local selectedKey = tostring(selectedCopySourceKey[key] or '');
+
+    for _, source in ipairs(copySources) do
+        if (selectedKey == tostring(source.key or '')) then
+            selectedSource = source;
+            break;
+        end
+    end
+
+    if (selectedSource == nil) then
+        selectedSource = copySources[1];
+        selectedCopySourceKey[key] = tostring(selectedSource.key or '');
+    end
+
+    imgui.Separator();
+    imgui.TextColored(labelColor, 'Copy ' .. tostring(label or 'Target Module') .. ' settings from');
+    imgui.SameLine();
+
+    if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+        if (imgui.PushItemWidth ~= nil) then
+            imgui.PushItemWidth(220);
+        end
+
+        if (imgui.BeginCombo('##target_module_copy_' .. key, tostring(selectedSource.label or 'Unknown')) == true) then
+            for _, source in ipairs(copySources) do
+                local sourceKey = tostring(source.key or '');
+                local isSelected = selectedCopySourceKey[key] == sourceKey;
+
+                if (imgui.Selectable(tostring(source.label or sourceKey), isSelected) == true) then
+                    selectedCopySourceKey[key] = sourceKey;
+                    selectedSource = source;
+                end
+
+                if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                    imgui.SetItemDefaultFocus();
+                end
+            end
+
+            imgui.EndCombo();
+        end
+
+        if (imgui.PopItemWidth ~= nil) then
+            imgui.PopItemWidth();
+        end
+    else
+        imgui.TextColored(valueColor, tostring(selectedSource.label or 'Unknown'));
+    end
+
+    imgui.SameLine();
+
+    if (imgui.Button ~= nil and imgui.Button('Copy##target_module_copy_from_' .. key)) then
+        pendingCopy[key] = selectedSource;
+        if (imgui.OpenPopup ~= nil) then
+            imgui.OpenPopup('Copy settings confirm##target_module_copy_' .. key);
+        end
+    end
+
+    if (pendingCopy[key] == nil) then
+        return;
+    end
+
+    local popupName = 'Copy settings confirm##target_module_copy_' .. key;
+
+    if (imgui.BeginPopupModal ~= nil) then
+        if (imgui.BeginPopupModal(popupName) == true) then
+            imgui.Text('Copy ' .. tostring(label or 'Target Module') .. ' settings?');
+            imgui.Text('Source: ' .. tostring(pendingCopy[key].label or 'Unknown'));
+            imgui.Text('This will replace the current settings.');
+            imgui.Separator();
+
+            if (imgui.Button('Cancel##target_module_copy_cancel_' .. key)) then
+                pendingCopy[key] = nil;
+                imgui.CloseCurrentPopup();
+            end
+
+            imgui.SameLine();
+
+            if (imgui.Button('Copy##target_module_copy_confirm_' .. key)) then
+                _G.LibraPlatesSettingsCopySettingsFromSource(settings, pendingCopy[key], context.defaults);
+                pendingCopy[key] = nil;
+                imgui.CloseCurrentPopup();
+            end
+
+            imgui.EndPopup();
+        end
+    else
+        if (imgui.Button ~= nil and imgui.Button('Copy##target_module_copy_confirm_fallback_' .. key)) then
+            _G.LibraPlatesSettingsCopySettingsFromSource(settings, pendingCopy[key], context.defaults);
+            pendingCopy[key] = nil;
+        end
+
+        if (imgui.Button ~= nil and imgui.Button('Cancel##target_module_copy_cancel_fallback_' .. key)) then
+            pendingCopy[key] = nil;
+        end
+    end
+end
+
 local function DrawColor(label, color)
     color = color or { 1.0, 1.0, 1.0, 1.0 };
     color[1] = tonumber(color[1]) or 1.0;
@@ -490,6 +617,10 @@ function targetModule.DrawSettings(settings, context)
     imgui.TextColored((settings.enabled ~= false) and valueColor or { 0.20, 0.65, 0.67, 1.0 }, (settings.enabled ~= false) and 'ON' or 'OFF');
     uiTooltip.Info('This controls only the LibraPlates custom target/subtarget module. The native game target arrow is controlled globally in General > Targeting.');
 
+    if (lockOnly ~= true) then
+        DrawCopySettings(settings, context, label);
+    end
+
     if (lockOnly == true) then
         imgui.Separator();
         imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Lock-on icon');
@@ -643,33 +774,16 @@ function targetModule.DrawSettings(settings, context)
             'TargetModuleArrowX',
             'TargetModuleArrowY'
         );
-        settings.arrowColor = DrawColor('Arrow tint', settings.arrowColor);
-
         if (isSubtargetModule == true) then
-            settings.arrowDistanceColoring = DrawToggle('Distance colors', settings.arrowDistanceColoring == true);
-            uiTooltip.Info('When enabled, LibraPlates uses the last action you send (spells/abilities) to set warning/out-of-range bands. If no action was recently sent, the arrow uses only the base arrow tint.');
-
-            if (settings.arrowDistanceColoring == true) then
-                settings.arrowOutOfRangeDistance = DrawNumber(
-                    'Out of range',
-                    settings.arrowOutOfRangeDistance,
-                    1,
-                    64.4,
-                    0.1,
-                    'TargetModuleArrowOutOfRange'
-                );
-                settings.arrowWarningDistance = DrawNumber(
-                    'Warning range',
-                    settings.arrowWarningDistance,
-                    0,
-                    64.4,
-                    0.1,
-                    'TargetModuleArrowWarningRange'
-                );
-                settings.arrowOutOfRangeColor = DrawColor('Out-of-range tint', settings.arrowOutOfRangeColor);
-                settings.arrowWarningColor = DrawColor('Warning tint', settings.arrowWarningColor);
-                settings.arrowInRangeColor = DrawColor('In-range tint', settings.arrowInRangeColor);
-            end
+            imgui.Separator();
+            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Range colors');
+            settings.arrowDistanceColoring = true;
+            settings.arrowOutOfRangeColor = DrawColor('Out-of-range tint', settings.arrowOutOfRangeColor);
+            settings.arrowWarningColor = DrawColor('Warning tint', settings.arrowWarningColor);
+            settings.arrowInRangeColor = DrawColor('In-range tint', settings.arrowInRangeColor);
+            uiTooltip.Info('Used by the Subtarget arrow when LibraPlates has a queued spell, ability, or weapon skill range from Ashita resources.');
+        else
+            settings.arrowColor = DrawColor('Arrow tint', settings.arrowColor);
         end
     else
         settings.arrowSprite = false;

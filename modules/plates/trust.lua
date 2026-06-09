@@ -326,8 +326,12 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
     end
 end
 
-local function GetLayoutStateName(trust)
-    if (trust ~= nil and tonumber(trust.status) == 1) then
+local function GetLayoutStateName(trust, targetStateName)
+    if (
+        trust ~= nil and
+        (trust.slot ~= nil or targetStateName ~= 'Idle') and
+        tonumber(trust.status) == 1
+    ) then
         return 'Combat';
     end
 
@@ -358,6 +362,7 @@ local function QueueCachedTrust(trust, cached, targetStateName, layoutStateName,
         tp = tpValue,
         name = '',
         isSelf = false,
+        trustIsMine = trust.slot ~= nil,
         stateName = targetStateName,
         clickTargetType = 'trust',
         worldMarker = {
@@ -382,8 +387,8 @@ local function QueueCachedTrust(trust, cached, targetStateName, layoutStateName,
 end
 
 local function QueueTrust(trust)
-    local layoutStateName = GetLayoutStateName(trust);
     local targetStateName = targeting.GetTargetStateName(trust.index);
+    local layoutStateName = GetLayoutStateName(trust, targetStateName);
     local useTargetOverlay = layoutStateName == 'Combat' or targetStateName ~= 'Idle';
     local settingsTimer = perfMeter.BeginDetail('trust.settings');
     local nameSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Name', nameDefaults);
@@ -637,6 +642,7 @@ local function QueueTrust(trust)
         tp = tpValue,
         name = '',
         isSelf = false,
+        trustIsMine = trust.slot ~= nil,
         stateName = targetStateName,
         clickTargetType = 'trust',
         worldMarker = {

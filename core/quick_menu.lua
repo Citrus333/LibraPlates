@@ -1290,6 +1290,7 @@ function quickMenu.OpenForPlate(entry, x, y)
         targetIndex = entry.targetIndex,
         serverId = entry.serverId,
         layoutStateName = storageState,
+        trustIsMine = entry.trustIsMine == true,
         name = name,
         npcInfo = npcInfo,
         x = tonumber(x) or 0,
@@ -1525,20 +1526,34 @@ function quickMenu.Render()
                 end, menu, 'emote-trusts-off.png');
             end
         elseif (pendingMenu.targetType == 'trust') then
-            if (menu.trust.dismiss == true) then
-                MenuItem('Dismiss This Trust', 'DismissTrust.png', function()
-                    QueueCommand('/retr "' .. tostring(pendingMenu.name or '') .. '"');
-                end, menu);
-            end
+            if (pendingMenu.trustIsMine == true) then
+                if (menu.trust.dismiss == true) then
+                    MenuItem('Dismiss This Trust', 'DismissTrust.png', function()
+                        QueueCommand('/retr "' .. tostring(pendingMenu.name or '') .. '"');
+                    end, menu);
+                end
 
-            if (menu.trust.dismissAll == true) then
-                MenuItem('Dismiss All Trusts', 'DismissAllTrusts.png', function()
-                    if (menu.trust.confirmDismissAll == true) then
-                        RequestConfirm('Dismiss All Trusts', '/retr all');
-                    else
-                        QueueCommand('/retr all');
-                    end
-                end, menu);
+                if (menu.trust.dismissAll == true) then
+                    MenuItem('Dismiss All Trusts', 'DismissAllTrusts.png', function()
+                        if (menu.trust.confirmDismissAll == true) then
+                            RequestConfirm('Dismiss All Trusts', '/retr all');
+                        else
+                            QueueCommand('/retr all');
+                        end
+                    end, menu);
+                end
+            else
+                if (menu.self.ignoreTrust == true) then
+                    SelfToggleMenuItem('ignoreTrust', 'Ignore Other Trusts', 'ignore-trust-on.png', menu.self.ignoreTrustState == true, '/ignoretrust', function(value)
+                        menu.self.ignoreTrustState = value == true;
+                    end, menu, 'ignore-trust-off.png');
+                end
+
+                if (menu.self.hideTrust == true) then
+                    SelfToggleMenuItem('hideTrust', 'Hide Other Trusts', 'hide-other-trusts-on.png', menu.self.hideTrustState == true, '/hidetrust', function(value)
+                        menu.self.hideTrustState = value == true;
+                    end, menu, 'hide-other-trusts-off.png');
+                end
             end
         else
             local context = GetPartyContext(pendingMenu.targetIndex);

@@ -870,6 +870,18 @@ function LibraPlatesSettingsBuildWidgetCopySources(entity, stateName, widgetName
         return sources;
     end
 
+    if (storageWidget == 'Target Module' or storageWidget == 'Subtarget Module') then
+        for _, sourceEntity in ipairs(entities) do
+            local sourceStates = statesByEntity[sourceEntity] or states;
+
+            for _, sourceState in ipairs(sourceStates) do
+                LibraPlatesSettingsAddWidgetCopySource(sources, entity, stateName, sourceEntity, sourceState, storageWidget);
+            end
+        end
+
+        return sources;
+    end
+
     if (normalizedState == 'World') then
         LibraPlatesSettingsAddWidgetCopySource(sources, entity, stateName, entity, 'Tactical', storageWidget);
         LibraPlatesSettingsAddWidgetCopySource(sources, entity, stateName, 'Self', 'World', storageWidget);

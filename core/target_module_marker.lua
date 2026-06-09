@@ -127,12 +127,16 @@ local function CloneColor(source, fallback)
     };
 end
 
-local function ResolveArrowDistanceColor(distance, settings, markerColor)
-    -- TEMP: disable dynamic distance arrow coloring to avoid target-subtarget blink/lag.
-    if (settings == nil or settings.arrowColor == nil) then
-        return CloneColor(settings and settings.arrowColor, markerColor);
+local function ResolveArrowDistanceColor(distance, settings, markerColor, targetStateName)
+    if (settings == nil) then
+        return CloneColor(nil, markerColor);
     end
-    return CloneColor(settings.arrowColor, markerColor);
+
+    if (targetStateName ~= 'Subtarget' and settings.arrowDistanceColoring ~= true) then
+        return CloneColor(settings.arrowColor, markerColor);
+    end
+
+    return CloneColor(settings.arrowInRangeColor, markerColor);
 end
 
 local function GetAutoPlaceAnchorKinds(value)
@@ -197,7 +201,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
 
     local settings, defaults = targetModuleMarker.GetSettings(entityName, layoutStateName, targetStateName);
     local markerColor = settings.color or defaults.color;
-    local arrowColor = ResolveArrowDistanceColor(distance, settings, markerColor);
+    local arrowColor = ResolveArrowDistanceColor(distance, settings, markerColor, targetStateName);
 
     if (settings.enabled == false or markerColor == nil) then
         lastDebug = string.format(

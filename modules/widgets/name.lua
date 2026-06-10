@@ -10,6 +10,17 @@ local anchorPoints = T{ 'Top', 'Center', 'Bottom', 'Left', 'Right' };
 local labelColor = { 0.92, 0.92, 0.90, 1.0 };
 local valueColor = { 0.65, 0.90, 1.0, 1.0 };
 local actionColor = { 1.0, 0.84, 0.0, 1.0 };
+local function DrawSectionHeader(label)
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.18);
+    end
+
+    imgui.TextColored(actionColor, tostring(label or ''));
+
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.0);
+    end
+end
 local colorEditFlags = bit ~= nil and bit.bor ~= nil
     and bit.bor(_G.ImGuiColorEditFlags_NoAlpha or 0, _G.ImGuiColorEditFlags_NoInputs or 0)
     or ((_G.ImGuiColorEditFlags_NoAlpha or 0) + (_G.ImGuiColorEditFlags_NoInputs or 0));
@@ -638,14 +649,14 @@ function name.DrawSettings(settings, context)
 
     if (context ~= nil and context.entity == 'Enemy') then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Font colors');
+        DrawSectionHeader('Font colors');
         settings.claimUnclaimedColor = DrawLabeledColor('Unclaimed', settings.claimUnclaimedColor);
         settings.claimPartyColor = DrawLabeledColor('Claimed', settings.claimPartyColor);
         settings.claimOtherColor = DrawLabeledColor('Claimed by others', settings.claimOtherColor);
         settings.claimCallForHelpColor = DrawLabeledColor('Call for help', settings.claimCallForHelpColor);
 
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Difficulty font colors');
+        DrawSectionHeader('Difficulty font colors');
         settings.difficultyColorsEnabled = DrawToggle('Use difficulty font colors', settings.difficultyColorsEnabled);
 
         if (settings.difficultyColorsEnabled == true) then

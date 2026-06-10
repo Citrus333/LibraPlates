@@ -9,6 +9,17 @@ local unpackTable = table.unpack or unpack;
 local labelColor = { 0.92, 0.92, 0.90, 1.0 };
 local valueColor = { 0.65, 0.90, 1.0, 1.0 };
 local actionColor = { 1.0, 0.84, 0.0, 1.0 };
+local function DrawSectionHeader(label)
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.18);
+    end
+
+    imgui.TextColored(actionColor, tostring(label or ''));
+
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.0);
+    end
+end
 local colorEditFlags = bit ~= nil and bit.bor ~= nil
     and bit.bor(_G.ImGuiColorEditFlags_NoInputs or 0, _G.ImGuiColorEditFlags_NoAlpha or 0)
     or ((_G.ImGuiColorEditFlags_NoInputs or 0) + (_G.ImGuiColorEditFlags_NoAlpha or 0));
@@ -54,6 +65,40 @@ local function DrawCheckbox(label, value)
     end
 
     return DrawToggle(label, value);
+end
+
+local function DrawRadioChoice(label, selected)
+    if (imgui.RadioButton ~= nil) then
+        return imgui.RadioButton(label, selected == true) == true;
+    end
+
+    local text = ((selected == true) and '(*) ' or '( ) ') .. tostring(label or '');
+    return ClickText(text, (selected == true) and actionColor or labelColor);
+end
+
+local function DrawHideBuffsMode(settings)
+    settings.hideOutOfCombat = DrawCheckbox('Hide buffs', settings.hideOutOfCombat);
+
+    if (settings.hideOutOfCombat ~= true) then
+        return;
+    end
+
+    local mode = tostring(settings.hideCombatMode or 'Out of combat');
+    if (mode ~= 'In combat' and mode ~= 'Out of combat') then
+        mode = 'Out of combat';
+    end
+
+    imgui.SameLine();
+    if (DrawRadioChoice('In combat', mode == 'In combat') == true) then
+        mode = 'In combat';
+    end
+
+    imgui.SameLine();
+    if (DrawRadioChoice('Out of combat', mode == 'Out of combat') == true) then
+        mode = 'Out of combat';
+    end
+
+    settings.hideCombatMode = mode;
 end
 
 local function DrawNumber(label, value, minValue, maxValue, step)
@@ -443,22 +488,28 @@ end
 local function DrawStageTimeRow(rowId, settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##status_' .. rowId, 3, tableFlags)) then
-            imgui.TableSetupColumn('##stage1', 0, 235);
-            imgui.TableSetupColumn('##stage2', 0, 235);
-            imgui.TableSetupColumn('##stage3', 0, 235);
+            imgui.TableSetupColumn('##stage1', 0, 175);
+            imgui.TableSetupColumn('##stage2', 0, 175);
+            imgui.TableSetupColumn('##stage3', 0, 175);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Stage 1');
             imgui.SameLine();
-            settings.timerWarningStage1Seconds = DrawSliderControl('timer_warning_stage_1', settings.timerWarningStage1Seconds, 1, 300, 1, 112);
+            settings.timerWarningStage1Seconds = DrawSliderControl('timer_warning_stage_1', settings.timerWarningStage1Seconds, 1, 300, 1, 56);
+            imgui.SameLine();
+            imgui.TextColored(labelColor, 'sec');
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Stage 2');
             imgui.SameLine();
-            settings.timerWarningStage2Seconds = DrawSliderControl('timer_warning_stage_2', settings.timerWarningStage2Seconds, 1, settings.timerWarningStage1Seconds, 1, 112);
+            settings.timerWarningStage2Seconds = DrawSliderControl('timer_warning_stage_2', settings.timerWarningStage2Seconds, 1, settings.timerWarningStage1Seconds, 1, 56);
+            imgui.SameLine();
+            imgui.TextColored(labelColor, 'sec');
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Stage 3');
             imgui.SameLine();
-            settings.timerWarningStage3Seconds = DrawSliderControl('timer_warning_stage_3', settings.timerWarningStage3Seconds, 1, settings.timerWarningStage2Seconds, 1, 112);
+            settings.timerWarningStage3Seconds = DrawSliderControl('timer_warning_stage_3', settings.timerWarningStage3Seconds, 1, settings.timerWarningStage2Seconds, 1, 56);
+            imgui.SameLine();
+            imgui.TextColored(labelColor, 'sec');
             imgui.EndTable();
         end
 
@@ -477,7 +528,7 @@ local function DrawHeaderCheckbox(label, value)
         local ref = { value == true };
         imgui.Checkbox('##status_header_' .. tostring(label), ref);
         imgui.SameLine();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, tostring(label));
+        DrawSectionHeader(tostring(label));
         return ref[1] == true;
     end
 
@@ -491,11 +542,14 @@ local function DrawHeaderCheckboxPair(primaryLabel, primaryValue, secondaryLabel
 
         imgui.Checkbox('##status_header_' .. tostring(primaryLabel), primaryRef);
         imgui.SameLine();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, tostring(primaryLabel));
+        DrawSectionHeader(tostring(primaryLabel));
 
         if (primaryRef[1] == true) then
             imgui.SameLine();
             imgui.Checkbox(tostring(secondaryLabel), secondaryRef);
+            if (tostring(secondaryLabel) == 'Use small font') then
+                uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
+            end
         end
 
         return primaryRef[1] == true, secondaryRef[1] == true;
@@ -507,6 +561,9 @@ local function DrawHeaderCheckboxPair(primaryLabel, primaryValue, secondaryLabel
     if (primaryResult == true) then
         imgui.SameLine();
         secondaryResult = DrawCheckbox(secondaryLabel, secondaryResult);
+        if (tostring(secondaryLabel) == 'Use small font') then
+            uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
+        end
     end
 
     return primaryResult, secondaryResult;
@@ -846,46 +903,13 @@ function statusIcons.DrawSettings(settings, context)
 
     ApplyDefaults(settings, defaults);
 
-    if (label == 'Buffs') then
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Buff filtering');
-        settings.hideAboveDurationEnabled, settings.hideAboveDurationMinutes = DrawBuffFilterDurationRow(
-            'buff_filter_duration',
-            settings.hideAboveDurationEnabled,
-            settings.hideAboveDurationMinutes
-        );
-        settings.hideOutOfCombat = DrawCheckbox('Hide buffs out of combat', settings.hideOutOfCombat);
-        imgui.Separator();
-    elseif (label == 'Debuffs') then
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Debuff filtering');
-        settings.hideOutOfCombat = DrawCheckbox('Hide debuffs out of combat', settings.hideOutOfCombat);
-        imgui.Separator();
-    end
-
-    NormalizeTimerWarningSettings(settings, defaults);
-    settings.timerWarningEnabled = DrawCheckbox('Expiring warnings', settings.timerWarningEnabled);
-    uiTooltip.Info('Uses warning stages when seconds left is at or below the stage value.');
-
-    if (settings.timerWarningEnabled == true) then
-        DrawStageTimeRow('timer_warning_stages', settings);
-        settings.timerWarningStage2Seconds = math.min(settings.timerWarningStage1Seconds, settings.timerWarningStage2Seconds);
-        settings.timerWarningStage3Seconds = math.min(settings.timerWarningStage2Seconds, settings.timerWarningStage3Seconds);
-    end
-
-    imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, itemLabel .. ' settings');
-
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end
     DrawAnchorControls(settings, context, itemPlural);
-    settings.growthDirection = DrawComboRow(
-        'Growth direction',
-        { 'Right', 'Left' },
-        settings.growthDirection or defaults.growthDirection or 'Right',
-        nil,
-        'growth_direction_' .. tostring(label)
-    );
 
+    imgui.Separator();
+    DrawSectionHeader(itemLabel .. ' settings');
     settings.iconPack = statusIconTextures.ResolvePackName(settings.iconPack or defaults.iconPack);
     settings.iconPack, settings.iconSize = DrawComboAndSliderRow(
         'icon_pack_size',
@@ -899,6 +923,14 @@ function statusIcons.DrawSettings(settings, context)
         8,
         160,
         1
+    );
+
+    settings.growthDirection = DrawComboRow(
+        'Growth direction',
+        { 'Right', 'Left' },
+        settings.growthDirection or defaults.growthDirection or 'Right',
+        nil,
+        'growth_direction_' .. tostring(label)
     );
 
     settings.offsetX, settings.offsetY = DrawSliderPair(
@@ -943,9 +975,6 @@ function statusIcons.DrawSettings(settings, context)
         24
     );
 
-    DrawWarningColorSet('Background', 'timerWarningBackgroundEnabled', 'timerWarningIconBackground', settings);
-    DrawWarningColorSet(itemLabel .. ' border', 'timerWarningBorderEnabled', 'timerWarningIconBorder', settings);
-
     imgui.Separator();
     settings.showTimers, settings.timerUseSmallFont = DrawHeaderCheckboxPair('Timer text', settings.showTimers, 'Use small font', settings.timerUseSmallFont);
 
@@ -957,8 +986,6 @@ function statusIcons.DrawSettings(settings, context)
             settings.timerTextOutlineColor
         );
         settings.timerTextOutline = settings.timerTextOutlineSize > 0;
-
-        DrawWarningColorSet('Font', 'timerWarningTextColorEnabled', 'timerWarningFont', settings);
 
         imgui.Separator();
         settings.timerBackground = DrawHeaderCheckbox('Timer box', settings.timerBackground);
@@ -1003,10 +1030,42 @@ function statusIcons.DrawSettings(settings, context)
                 'timer_box_border_color',
                 settings.timerBackgroundBorderColor
             );
-
-            DrawWarningColorSet('Box color', 'timerWarningBoxColorEnabled', 'timerWarningBox', settings);
         end
 
+    end
+
+    imgui.Separator();
+
+    if (label == 'Buffs') then
+        DrawSectionHeader('Buff filtering');
+        settings.hideAboveDurationEnabled, settings.hideAboveDurationMinutes = DrawBuffFilterDurationRow(
+            'buff_filter_duration',
+            settings.hideAboveDurationEnabled,
+            settings.hideAboveDurationMinutes
+        );
+        DrawHideBuffsMode(settings);
+    elseif (label == 'Debuffs') then
+        DrawSectionHeader('Debuff filtering');
+        settings.hideOutOfCombat = DrawCheckbox('Hide debuffs out of combat', settings.hideOutOfCombat);
+    end
+
+    NormalizeTimerWarningSettings(settings, defaults);
+    settings.timerWarningEnabled = DrawCheckbox('Expiring warnings', settings.timerWarningEnabled);
+    uiTooltip.Info('Uses warning stages when seconds left is at or below the stage value.');
+
+    if (settings.timerWarningEnabled == true) then
+        DrawStageTimeRow('timer_warning_stages', settings);
+        settings.timerWarningStage2Seconds = math.min(settings.timerWarningStage1Seconds, settings.timerWarningStage2Seconds);
+        settings.timerWarningStage3Seconds = math.min(settings.timerWarningStage2Seconds, settings.timerWarningStage3Seconds);
+    end
+
+    imgui.Separator();
+    DrawSectionHeader('Duration warning colors:');
+    DrawWarningColorSet('Font', 'timerWarningTextColorEnabled', 'timerWarningFont', settings);
+    DrawWarningColorSet('Background', 'timerWarningBackgroundEnabled', 'timerWarningIconBackground', settings);
+    DrawWarningColorSet(itemLabel .. ' border', 'timerWarningBorderEnabled', 'timerWarningIconBorder', settings);
+    if (settings.timerBackground == true) then
+        DrawWarningColorSet('Box color', 'timerWarningBoxColorEnabled', 'timerWarningBox', settings);
     end
 
     imgui.Separator();

@@ -9,6 +9,17 @@ local unpackTable = table.unpack or unpack;
 local labelColor = { 0.92, 0.92, 0.90, 1.0 };
 local valueColor = { 0.65, 0.90, 1.0, 1.0 };
 local actionColor = { 1.0, 0.84, 0.0, 1.0 };
+local function DrawSectionHeader(label)
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.18);
+    end
+
+    imgui.TextColored(actionColor, tostring(label or ''));
+
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.0);
+    end
+end
 local fileCache = {};
 local heldButtonState = {};
 local targetModuleTableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
@@ -419,6 +430,9 @@ local function DrawCopySettings(settings, context, label)
         end
     end
 
+    imgui.SameLine();
+    uiTooltip.Info('Copies the selected source settings into this ' .. tostring(label or 'Target Module') .. ' module. You will get a confirmation before anything is replaced.');
+
     if (pendingCopy[key] == nil) then
         return;
     end
@@ -612,18 +626,22 @@ function targetModule.DrawSettings(settings, context)
         settings.arrowDistanceColoring = false;
     end
 
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, label .. ' settings');
+    DrawSectionHeader(label .. ' settings');
     imgui.SameLine();
     imgui.TextColored((settings.enabled ~= false) and valueColor or { 0.20, 0.65, 0.67, 1.0 }, (settings.enabled ~= false) and 'ON' or 'OFF');
     uiTooltip.Info('This controls only the LibraPlates custom target/subtarget module. The native game target arrow is controlled globally in General > Targeting.');
 
     if (lockOnly ~= true) then
         DrawCopySettings(settings, context, label);
+
+        if (_G.LibraPlatesSettingsDrawContextLoadMode ~= nil) then
+            _G.LibraPlatesSettingsDrawContextLoadMode(settings, context);
+        end
     end
 
     if (lockOnly == true) then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Lock-on icon');
+        DrawSectionHeader('Lock-on icon');
         settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
 
         if (settings.lockEnabled ~= false) then
@@ -681,7 +699,7 @@ function targetModule.DrawSettings(settings, context)
 
     if (isNpcObject ~= true) then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Highlight');
+        DrawSectionHeader('Highlight');
         settings.backgroundFile = DrawFile('Highlight image', 'backgrounds', settings.backgroundFile);
         if (tostring(settings.backgroundFile or 'None') == 'None') then
             settings.backgroundEnabled = false;
@@ -727,7 +745,7 @@ function targetModule.DrawSettings(settings, context)
     end
 
     imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Arrow');
+    DrawSectionHeader('Arrow');
     settings.arrowFile = DrawFile('Arrow image', 'arrows', settings.arrowFile);
     uiTooltip.Info('None disables the LibraPlates arrow. Still images use names like arrow_1.png and arrow_2.png. Sprite animations use two-digit frames like arrow_classic_01.png, arrow_classic_02.png, and arrow_classic_03.png; the dropdown shows the first frame and Animate cycles the rest.');
 
@@ -776,7 +794,7 @@ function targetModule.DrawSettings(settings, context)
         );
         if (isSubtargetModule == true) then
             imgui.Separator();
-            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Range colors');
+            DrawSectionHeader('Range colors');
             settings.arrowDistanceColoring = true;
             settings.arrowOutOfRangeColor = DrawColor('Out-of-range tint', settings.arrowOutOfRangeColor);
             settings.arrowWarningColor = DrawColor('Warning tint', settings.arrowWarningColor);
@@ -791,7 +809,7 @@ function targetModule.DrawSettings(settings, context)
 
     if (isSubtargetModule ~= true) then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Lock-on icon');
+        DrawSectionHeader('Lock-on icon');
         settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
 
         if (settings.lockEnabled ~= false) then
@@ -823,7 +841,7 @@ function targetModule.DrawSettings(settings, context)
     end
 
     imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Chevrons');
+    DrawSectionHeader('Chevrons');
     settings.chevronEnabled = DrawToggle('Show chevrons', settings.chevronEnabled ~= false);
     settings.chevronFile = DrawFile('Chevron image', 'chevrons', settings.chevronFile);
 

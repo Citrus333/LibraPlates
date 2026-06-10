@@ -10,6 +10,7 @@ return {
     offsetX = 0,
     offsetY = 34,
     hideOutOfCombat = false,
+    hideCombatMode = 'Out of combat',
     showTimers = true,
     timerUseSmallFont = true,
     timerFontSize = 6,

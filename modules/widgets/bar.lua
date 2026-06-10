@@ -4,6 +4,7 @@ local barAnimations = require('core.bar_animations');
 local textScale = require('core.text_scale');
 local imgui = require('imgui');
 local anchorControls = require('modules.widgets.anchor_controls');
+local uiTooltip = require('core.ui_tooltip');
 
 local bar = {};
 local unpackTable = table.unpack or unpack;
@@ -16,6 +17,18 @@ local colorEditFlags = bit ~= nil and bit.bor ~= nil
 local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local pendingReset = nil;
 local heldButtonState = {};
+
+local function DrawSectionHeader(label)
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.18);
+    end
+
+    imgui.TextColored(actionColor, tostring(label or ''));
+
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.0);
+    end
+end
 
 local function ClickText(label, color)
     imgui.TextColored(color or valueColor, label);
@@ -64,6 +77,25 @@ local function DrawToggle(label, value)
     end
 
     return value == true;
+end
+
+local function DrawInlineToggle(label, value)
+    local result = DrawToggle(label, value);
+    imgui.SameLine();
+    imgui.Spacing();
+    imgui.SameLine();
+    imgui.Spacing();
+    imgui.SameLine();
+    return result;
+end
+
+local function DrawRadio(label, selected)
+    if (imgui.RadioButton ~= nil) then
+        return imgui.RadioButton(tostring(label), selected == true) == true;
+    end
+
+    local marker = (selected == true) and '(*) ' or '( ) ';
+    return ClickText(marker .. tostring(label), selected == true and actionColor or labelColor) == true;
 end
 
 local function DrawNumber(label, value, minValue, maxValue, step)
@@ -193,18 +225,28 @@ local function DrawTableSlider(label, id, value, minValue, maxValue, showButtons
     return DrawSliderControl(id, value, minValue, maxValue, width or (showButtons == false and 140 or 95), showButtons);
 end
 
-local function DrawSingleSlider(label, id, value, minValue, maxValue, showButtons)
+local function DrawSingleSlider(label, id, value, minValue, maxValue, showButtons, labelWidth, controlWidth, suffix)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local result = value;
+        local hasSuffix = suffix ~= nil and tostring(suffix) ~= '';
+        local columnCount = hasSuffix and 3 or 2;
 
-        if (imgui.BeginTable('##bar_' .. id .. '_row', 2, tableFlags)) then
-            imgui.TableSetupColumn('##label', 0, 170);
-            imgui.TableSetupColumn('##control', 0, 170);
+        if (imgui.BeginTable('##bar_' .. id .. '_row', columnCount, tableFlags)) then
+            imgui.TableSetupColumn('##label', 0, labelWidth or 170);
+            imgui.TableSetupColumn('##control', 0, controlWidth or 170);
+            if (hasSuffix == true) then
+                imgui.TableSetupColumn('##suffix', 0, 82);
+            end
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, label);
             imgui.TableNextColumn();
-            result = DrawSliderControl(id, value, minValue, maxValue, showButtons == false and 140 or 95, showButtons);
+            local sliderWidth = (showButtons == false) and (hasSuffix and 95 or 140) or 95;
+            result = DrawSliderControl(id, value, minValue, maxValue, sliderWidth, showButtons);
+            if (hasSuffix == true) then
+                imgui.TableNextColumn();
+                imgui.TextColored(labelColor, tostring(suffix));
+            end
             imgui.EndTable();
         end
 
@@ -213,7 +255,13 @@ local function DrawSingleSlider(label, id, value, minValue, maxValue, showButton
 
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
-    return DrawSliderControl(id, value, minValue, maxValue, showButtons == false and 140 or 95, showButtons);
+    local sliderWidth = (showButtons == false) and ((suffix ~= nil and tostring(suffix) ~= '') and 95 or 140) or 95;
+    local result = DrawSliderControl(id, value, minValue, maxValue, sliderWidth, showButtons);
+    if (suffix ~= nil and tostring(suffix) ~= '') then
+        imgui.SameLine();
+        imgui.TextColored(labelColor, tostring(suffix));
+    end
+    return result;
 end
 
 local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax)
@@ -243,7 +291,7 @@ local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, left
     return leftResult, rightResult;
 end
 
-local function DrawChoice(label, value, options, id)
+local function DrawChoice(label, value, options, id, width)
     local current = tostring(value or options[1]);
     local comboId = '##bar_' .. tostring(id or label or 'choice');
     local currentAllowed = false;
@@ -261,7 +309,7 @@ local function DrawChoice(label, value, options, id)
 
     if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
         if (imgui.PushItemWidth ~= nil) then
-            imgui.PushItemWidth(230);
+            imgui.PushItemWidth(width or 230);
         end
 
         if (imgui.BeginCombo(comboId, current) == true) then
@@ -309,7 +357,7 @@ local function DrawChoice(label, value, options, id)
     return options[1];
 end
 
-local function DrawComboRow(label, value, options, id)
+local function DrawComboRow(label, value, options, id, comboWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local result = value;
 
@@ -320,7 +368,7 @@ local function DrawComboRow(label, value, options, id)
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, label);
             imgui.TableNextColumn();
-            result = DrawChoice(label, value, options, id);
+            result = DrawChoice(label, value, options, id, comboWidth);
             imgui.EndTable();
         end
 
@@ -464,6 +512,182 @@ local function DrawColorPair(rowId, leftLabel, leftId, leftValue, rightLabel, ri
     imgui.SameLine();
     local rightResult = DrawColor(rightId, rightValue);
     return leftResult, rightResult;
+end
+
+local function DrawColorTextureRow(rowId, fillColor, backgroundColor, texture)
+    local nextFillColor = fillColor;
+    local nextBackgroundColor = backgroundColor;
+    local nextTexture = texture;
+    local key = tostring(rowId or 'color_texture');
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##bar_' .. key, 6, tableFlags)) then
+            imgui.TableSetupColumn('##fill_label', 0, 108);
+            imgui.TableSetupColumn('##fill_control', 0, 34);
+            imgui.TableSetupColumn('##bg_label', 0, 90);
+            imgui.TableSetupColumn('##bg_control', 0, 34);
+            imgui.TableSetupColumn('##texture_label', 0, 90);
+            imgui.TableSetupColumn('##texture_control', 0, 180);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Fill color');
+            imgui.TableNextColumn();
+            nextFillColor = DrawColor(key .. '_fill_color', fillColor);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'BG color');
+            imgui.TableNextColumn();
+            nextBackgroundColor = DrawColor(key .. '_bg_color', backgroundColor);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Texture');
+            imgui.TableNextColumn();
+            nextTexture = DrawChoice('Texture', texture, barTextures.GetOptions(), key .. '_texture', 170);
+            imgui.EndTable();
+        end
+
+        return nextFillColor, nextBackgroundColor, nextTexture;
+    end
+
+    imgui.TextColored(labelColor, 'Fill color');
+    imgui.SameLine();
+    nextFillColor = DrawColor(key .. '_fill_color', fillColor);
+    imgui.SameLine();
+    imgui.TextColored(labelColor, 'BG color');
+    imgui.SameLine();
+    nextBackgroundColor = DrawColor(key .. '_bg_color', backgroundColor);
+    imgui.SameLine();
+    imgui.TextColored(labelColor, 'Texture');
+    imgui.SameLine();
+    nextTexture = DrawChoice('Texture', texture, barTextures.GetOptions(), key .. '_texture');
+
+    return nextFillColor, nextBackgroundColor, nextTexture;
+end
+
+local function DrawBorderRow(rowId, borderColor, borderSize)
+    local nextBorderColor = borderColor;
+    local nextBorderSize = borderSize;
+    local key = tostring(rowId or 'border');
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##bar_' .. key, 4, tableFlags)) then
+            imgui.TableSetupColumn('##color_label', 0, 118);
+            imgui.TableSetupColumn('##color_control', 0, 42);
+            imgui.TableSetupColumn('##size_label', 0, 104);
+            imgui.TableSetupColumn('##size_control', 0, 154);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Border color');
+            imgui.TableNextColumn();
+            nextBorderColor = DrawColor(key .. '_color', borderColor);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Border size');
+            imgui.TableNextColumn();
+            nextBorderSize = DrawSliderControl(key .. '_size', borderSize, 0, 24, 95, true);
+            imgui.EndTable();
+        end
+
+        return nextBorderColor, nextBorderSize;
+    end
+
+    imgui.TextColored(labelColor, 'Border color');
+    imgui.SameLine();
+    nextBorderColor = DrawColor(key .. '_color', borderColor);
+    imgui.SameLine();
+    imgui.TextColored(labelColor, 'Border size');
+    imgui.SameLine();
+    nextBorderSize = DrawSliderControl(key .. '_size', borderSize, 0, 24, 95, true);
+
+    return nextBorderColor, nextBorderSize;
+end
+
+local function DrawSectionOptionsRow(rowId, sectionGap, section2Color, section3Color, defaults, baseColor)
+    local nextGap = sectionGap;
+    local nextColor2 = section2Color;
+    local nextColor3 = section3Color;
+    local key = tostring(rowId or 'sections');
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##bar_' .. key, 6, tableFlags)) then
+            imgui.TableSetupColumn('##gap_label', 0, 42);
+            imgui.TableSetupColumn('##gap_control', 0, 154);
+            imgui.TableSetupColumn('##color2_label', 0, 82);
+            imgui.TableSetupColumn('##color2_control', 0, 42);
+            imgui.TableSetupColumn('##color3_label', 0, 82);
+            imgui.TableSetupColumn('##color3_control', 0, 42);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Gap');
+            imgui.TableNextColumn();
+            nextGap = DrawSliderControl(key .. '_gap', sectionGap, 0, 24, 95, true);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Section 2');
+            imgui.TableNextColumn();
+            nextColor2 = DrawColor(key .. '_color2', section2Color or defaults.color2 or baseColor);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Section 3');
+            imgui.TableNextColumn();
+            nextColor3 = DrawColor(key .. '_color3', section3Color or defaults.color3 or baseColor);
+            imgui.EndTable();
+        end
+
+        return nextGap, nextColor2, nextColor3;
+    end
+
+    imgui.TextColored(labelColor, 'Section gap');
+    imgui.SameLine();
+    nextGap = DrawSliderControl(key .. '_gap', sectionGap, 0, 24, 78, true);
+    imgui.SameLine();
+    imgui.TextColored(labelColor, 'Section 2');
+    imgui.SameLine();
+    nextColor2 = DrawColor(key .. '_color2', section2Color or defaults.color2 or baseColor);
+    imgui.SameLine();
+    imgui.TextColored(labelColor, 'Section 3');
+    imgui.SameLine();
+    nextColor3 = DrawColor(key .. '_color3', section3Color or defaults.color3 or baseColor);
+
+    return nextGap, nextColor2, nextColor3;
+end
+
+local function DrawLowWarningRow(rowId, percentValue, warningColor)
+    local nextPercent = percentValue;
+    local nextColor = warningColor;
+    local key = tostring(rowId or 'low_warning');
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##bar_' .. key, 6, tableFlags)) then
+            imgui.TableSetupColumn('##warn_label', 0, 70);
+            imgui.TableSetupColumn('##warn_control', 0, 128);
+            imgui.TableSetupColumn('##warn_suffix', 0, 78);
+            imgui.TableSetupColumn('##color_label', 0, 128);
+            imgui.TableSetupColumn('##color_control', 0, 34);
+            imgui.TableSetupColumn('##spacer', 0, 1);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Warn at');
+            imgui.TableNextColumn();
+            nextPercent = DrawSliderControl(key .. '_percent', percentValue, 1, 100, 68, true);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'percent');
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Warning color');
+            imgui.TableNextColumn();
+            nextColor = DrawColor(key .. '_color', warningColor);
+            imgui.EndTable();
+        end
+
+        return nextPercent, nextColor;
+    end
+
+    imgui.TextColored(labelColor, 'Warn at');
+    imgui.SameLine();
+    nextPercent = DrawSliderControl(key .. '_percent', percentValue, 1, 100, 95, true);
+    imgui.SameLine();
+    imgui.TextColored(labelColor, 'percent');
+    imgui.SameLine();
+    imgui.TextColored(labelColor, 'Warning color');
+    imgui.SameLine();
+    nextColor = DrawColor(key .. '_color', warningColor);
+
+    return nextPercent, nextColor;
 end
 
 local function DrawFontRow(settings, defaults, idPrefix)
@@ -656,25 +880,32 @@ function bar.DrawSettings(settings, context)
 
     DrawAnchorControls(settings, context, label);
 
-    imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Bar Settings:');
+    DrawSectionHeader('Bar Settings:');
     settings.width, settings.height = DrawSliderPair(idPrefix .. 'size', 'Width', idPrefix .. 'width', settings.width, 20, 800, 'Height', idPrefix .. 'height', settings.height, 1, 160);
     settings.offsetX, settings.offsetY = DrawSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
-    settings.color, settings.backgroundColor = DrawColorPair(idPrefix .. 'colors', 'Fill color', idPrefix .. 'fill_color', settings.color, 'BG color', idPrefix .. 'bg_color', settings.backgroundColor);
-    settings.texture = DrawComboRow('Texture', settings.texture, barTextures.GetOptions(), idPrefix .. 'texture');
+    settings.color, settings.backgroundColor, settings.texture = DrawColorTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture);
+    settings.borderColor, settings.borderSize = DrawBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
 
     if (resourceName == 'HP') then
-        settings.showAtPercent = DrawSingleSlider('Show at HP %', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, false);
+        settings.showAtPercent = DrawSingleSlider('Show at HP', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, 108, 150, 'percent');
     elseif (resourceName == 'MP') then
-        settings.showAtPercent = DrawSingleSlider('Show at MP %', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, false);
+        settings.showAtPercent = DrawSingleSlider('Show at MP', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, 108, 150, 'percent');
     end
 
     if (isSegmentedResource == true) then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, resourceName .. ' Sections:');
-        settings.segmented = DrawToggle('Three sections', settings.segmented ~= false);
-        settings.segmentGap = DrawSingleSlider('Section gap', idPrefix .. 'segment_gap', settings.segmentGap, 0, 24, false);
-        settings.color2, settings.color3 = DrawColorPair(idPrefix .. 'tp_section_colors', 'Section 2 color', idPrefix .. 'section_2_color', settings.color2 or defaults.color2 or settings.color, 'Section 3 color', idPrefix .. 'section_3_color', settings.color3 or defaults.color3 or settings.color);
+        DrawSectionHeader(resourceName .. ' Sections:');
+        if (DrawRadio('One section', settings.segmented == false) == true) then
+            settings.segmented = false;
+        end
+        imgui.SameLine();
+        if (DrawRadio('Three sections', settings.segmented ~= false) == true) then
+            settings.segmented = true;
+        end
+
+        if (settings.segmented ~= false) then
+            settings.segmentGap, settings.color2, settings.color3 = DrawSectionOptionsRow(idPrefix .. 'tp_sections', settings.segmentGap, settings.color2, settings.color3, defaults, settings.color);
+        end
 
         if (resourceName == 'Ready') then
             settings.chargeSeconds = DrawSingleSlider('Seconds per charge', idPrefix .. 'charge_seconds', settings.chargeSeconds or defaults.chargeSeconds or 30, 10, 30, true);
@@ -683,28 +914,41 @@ function bar.DrawSettings(settings, context)
 
     if (labelIconOptions ~= true) then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Text Settings:');
+        DrawSectionHeader('Text Settings:');
         DrawFontRow(settings, defaults, idPrefix);
         DrawOutlineRow(settings, idPrefix);
         settings.textOutlineEnabled = (tonumber(settings.textOutlineSize) or 0) > 0;
         settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'text_position', 'Position X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Position Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
 
+        local showValueLabel = nil;
+        local showPercentLabel = nil;
+
         if (context ~= nil and context.showValueControl == false) then
             settings.showValue = false;
         elseif (resourceName == 'Ready') then
-            settings.showValue = DrawToggle('Show ' .. resourceName .. ' text', settings.showValue);
+            showValueLabel = 'Show ' .. resourceName .. ' text';
         else
-            settings.showValue = DrawToggle('Show ' .. resourceName .. ' value', settings.showValue);
+            showValueLabel = 'Show ' .. resourceName .. ' value';
         end
 
         if (resourceName == 'Ready') then
-            settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' counter', settings.showPercent);
+            showPercentLabel = 'Show ' .. string.lower(resourceName) .. ' counter';
         elseif (resourceName == 'Sic') then
             settings.showPercent = false;
         else
-            settings.showPercent = DrawToggle('Show ' .. resourceName .. ' percent', settings.showPercent);
+            showPercentLabel = 'Show ' .. resourceName .. ' percent';
         end
+
+        if (showValueLabel ~= nil) then
+            settings.showValue = DrawInlineToggle(showValueLabel, settings.showValue);
+        end
+
+        if (showPercentLabel ~= nil) then
+            settings.showPercent = DrawInlineToggle(showPercentLabel, settings.showPercent);
+        end
+
         settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
+        uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
     end
 
     local function DrawLabelTextSettings()
@@ -712,11 +956,12 @@ function bar.DrawSettings(settings, context)
         DrawOutlineRow(settings, idPrefix);
         settings.textOutlineEnabled = (tonumber(settings.textOutlineSize) or 0) > 0;
         settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
+        uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
     end
 
     if (labelIconOptions == true) then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Labels:');
+        DrawSectionHeader('Labels:');
         if (settings.labelDisplayMode == 'Icon + text') then
             settings.labelDisplayMode = 'Text';
         end
@@ -756,15 +1001,14 @@ function bar.DrawSettings(settings, context)
 
     if (showLowState == true) then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Low ' .. resourceName);
+        DrawSectionHeader('Low ' .. resourceName .. ' warning:');
         settings.lowColorEnabled = DrawToggle('Enable low ' .. resourceName .. ' state', settings.lowColorEnabled);
 
         if (settings.lowColorEnabled == true) then
-            settings.lowColorPercent = DrawSingleSlider('When HP is at or below %', idPrefix .. 'low_percent', settings.lowColorPercent, 1, 100, false);
-            settings.lowColor = DrawColor(idPrefix .. 'low_color', settings.lowColor);
+            settings.lowColorPercent, settings.lowColor = DrawLowWarningRow(idPrefix .. 'low_warning', settings.lowColorPercent, settings.lowColor);
 
             local animation = settings.lowAnimationEnabled == true and tostring(settings.lowAnimation or defaults.lowAnimation or 'Important') or 'None';
-            animation = DrawComboRow('Low ' .. resourceName .. ' animation', animation, GetAnimationOptions(), idPrefix .. 'low_animation');
+            animation = DrawComboRow('Warning animation', animation, GetAnimationOptions(), idPrefix .. 'low_animation', 170);
 
             if (animation == 'None') then
                 settings.lowAnimationEnabled = false;

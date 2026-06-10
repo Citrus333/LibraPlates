@@ -166,6 +166,36 @@ local function DrawCopySettings(settings, context, label)
     end
 
     imgui.Separator();
+
+    if (imgui.GetWindowDrawList ~= nil and imgui.GetCursorScreenPos ~= nil and imgui.GetContentRegionAvail ~= nil and imgui.GetColorU32 ~= nil) then
+        local posA, posB = imgui.GetCursorScreenPos();
+        local availA = imgui.GetContentRegionAvail();
+        local x = 0;
+        local y = 0;
+        local width = 520;
+
+        if (type(posA) == 'table') then
+            x = tonumber(posA.x or posA[1]) or 0;
+            y = tonumber(posA.y or posA[2]) or 0;
+        else
+            x = tonumber(posA) or 0;
+            y = tonumber(posB) or 0;
+        end
+
+        if (type(availA) == 'table') then
+            width = tonumber(availA.x or availA[1]) or width;
+        else
+            width = tonumber(availA) or width;
+        end
+
+        imgui.GetWindowDrawList():AddRectFilled(
+            { x, y - 2 },
+            { x + math.max(1, width), y + 24 },
+            imgui.GetColorU32({ 0.25, 0.29, 0.36, 1.0 }),
+            0
+        );
+    end
+
     imgui.TextColored(labelColor, 'Copy ' .. labelText .. ' settings from');
     imgui.SameLine();
 
@@ -217,6 +247,9 @@ local function DrawCopySettings(settings, context, label)
             end
         end
     end
+
+    imgui.SameLine();
+    uiTooltip.Info('Copies the selected source settings into this ' .. labelText .. ' widget. You will get a confirmation before anything is replaced.');
 
     if (pendingCopy[key] == nil) then
         return;
@@ -272,6 +305,13 @@ function anchorControls.Draw(settings, context, label)
     local choices = context.anchorChoices or { 'None' };
     local points = context.anchorPoints or anchorPoints;
 
+    DrawCopySettings(settings, context, label);
+
+    if (_G.LibraPlatesSettingsDrawContextLoadMode ~= nil) then
+        _G.LibraPlatesSettingsDrawContextLoadMode(settings, context);
+    end
+    imgui.Separator();
+
     imgui.TextColored(labelColor, 'Anchor to');
     imgui.SameLine();
 
@@ -303,9 +343,8 @@ function anchorControls.Draw(settings, context, label)
         DrawReleaseConfirm(settings, key);
     end
 
-    DrawCopySettings(settings, context, label);
-
     uiTooltip.Info(GetAnchorTooltip(settings));
+    imgui.Separator();
 end
 
 return anchorControls;

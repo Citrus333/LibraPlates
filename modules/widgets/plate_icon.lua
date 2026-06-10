@@ -6,6 +6,17 @@ local unpackTable = table.unpack or unpack;
 local labelColor = { 0.92, 0.92, 0.90, 1.0 };
 local valueColor = { 0.65, 0.90, 1.0, 1.0 };
 local actionColor = { 1.0, 0.84, 0.0, 1.0 };
+local function DrawSectionHeader(label)
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.18);
+    end
+
+    imgui.TextColored(actionColor, tostring(label or ''));
+
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.0);
+    end
+end
 local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local heldButtonState = {};
 local pendingReset = nil;
@@ -400,7 +411,7 @@ function plateIcon.DrawSettings(settings, context)
 
     ApplyDefaults(settings, defaults);
 
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, label .. ' settings');
+    DrawSectionHeader(label .. ' settings');
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end

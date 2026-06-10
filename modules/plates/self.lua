@@ -16,6 +16,7 @@ local newAdventurerIconDefaults = require('config.widgets.new_adventurer_icon');
 local barDefaults = require('config.widgets.bar');
 local mpBarDefaults = require('config.widgets.mp_bar');
 local tpBarDefaults = require('config.widgets.tp_bar');
+local castBarDefaults = require('config.widgets.cast_bar');
 local globalDefaults = require('config.global');
 local perfMeter = require('core.perf_meter');
 local fonts = require('core.fonts');
@@ -31,6 +32,7 @@ local playerIndicators = require('core.player_indicators');
 local playerStatuses = require('core.player_statuses');
 local state = require('core.state');
 local statusIconTextures = require('core.status_icon_textures');
+local spellIconTextures = require('core.spell_icon_textures');
 local statusTimerFormat = require('core.status_timer_format');
 local targetModuleMarker = require('core.target_module_marker');
 local targeting = require('core.targeting');
@@ -39,6 +41,7 @@ local enmity = require('core.enmity');
 local restingTick = require('core.resting_tick');
 local fishing = require('core.fishing');
 local crafting = require('core.crafting');
+local enemyCasts = require('core.enemy_casts');
 local worldDepthPlate = require('core.world_depth_plate');
 local worldMarkerProbe = require('core.world_marker_probe');
 local widgets = require('modules.widgets.init');
@@ -114,7 +117,7 @@ local function BuildWorldCacheSignature(plateData, center, stateName, targetStat
     }, '\n');
 end
 
-local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, stateName, targetStateName, layoutStateName)
+local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, castPercent, castText, stateName, targetStateName, layoutStateName)
     return table.concat({
         'index=' .. tostring(center ~= nil and center.index or ''),
         'server=' .. tostring(center ~= nil and center.serverId or ''),
@@ -122,6 +125,8 @@ local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, s
         'hp=' .. tostring(hpPercent or ''),
         'mp=' .. tostring(mpPercent or ''),
         'tp=' .. tostring(tpValue or ''),
+        'cast=' .. tostring(castPercent or ''),
+        'castText=' .. tostring(castText or ''),
         'state=' .. tostring(stateName or ''),
         'target=' .. tostring(targetStateName or ''),
         'layout=' .. tostring(layoutStateName or ''),
@@ -163,7 +168,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
     if (
         iconSettings == nil or
         iconSettings.enabled ~= true or
-        (iconSettings.hideOutOfCombat == true and isEngaged ~= true) or
+        (iconSettings.hideOutOfCombat == true and ((tostring(iconSettings.hideCombatMode or 'Out of combat') == 'Out of combat' and isEngaged ~= true) or (tostring(iconSettings.hideCombatMode or 'Out of combat') == 'In combat' and isEngaged == true))) or
         statusRows == nil or
         #statusRows == 0
     ) then
@@ -290,7 +295,7 @@ local function ShouldLoadStatusRows(iconSettings, isEngaged)
         return false;
     end
 
-    if (iconSettings.hideOutOfCombat == true and isEngaged ~= true) then
+    if (iconSettings.hideOutOfCombat == true and ((tostring(iconSettings.hideCombatMode or 'Out of combat') == 'Out of combat' and isEngaged ~= true) or (tostring(iconSettings.hideCombatMode or 'Out of combat') == 'In combat' and isEngaged == true))) then
         return false;
     end
 
@@ -416,6 +421,52 @@ local function BuildResourceText(settings, label, value, maxValue, percent)
     return table.concat(parts, ' ');
 end
 
+local function BuildCastBar(castData, castBarSettings, globalSettings)
+    if (castData == nil or castBarSettings == nil or castBarSettings.enabled ~= true) then
+        return nil, 0;
+    end
+
+    local castTime = math.max(0.1, tonumber(castData.castTime) or 0.1);
+    local elapsed = math.max(0.0, os.clock() - (tonumber(castData.startTime) or os.clock()));
+    local castPercent = math.max(0, math.min(100, (elapsed / castTime) * 100));
+    local spellIconId = tonumber(castData.spellIconId);
+    local spellIconTextureId = castBarSettings.showSpellIcon == true
+        and spellIconTextures.GetTextureId(spellIconId)
+        or nil;
+
+    return {
+        enabled = true,
+        width = tonumber(castBarSettings.width) or castBarDefaults.width,
+        height = tonumber(castBarSettings.height) or castBarDefaults.height,
+        offsetX = tonumber(castBarSettings.offsetX) or castBarDefaults.offsetX,
+        offsetY = tonumber(castBarSettings.offsetY) or castBarDefaults.offsetY,
+        anchorTo = castBarSettings.anchorTo or castBarDefaults.anchorTo,
+        anchorPoint = castBarSettings.anchorPoint or castBarDefaults.anchorPoint,
+        color = castBarSettings.color or castBarDefaults.color,
+        backgroundColor = castBarSettings.backgroundColor or castBarDefaults.backgroundColor,
+        borderColor = castBarSettings.borderColor or castBarDefaults.borderColor,
+        borderSize = tonumber(castBarSettings.borderSize) or castBarDefaults.borderSize,
+        texture = castBarSettings.texture or castBarDefaults.texture,
+        textureId = barTextures.GetTextureId(castBarSettings.texture or castBarDefaults.texture),
+        text = (castBarSettings.showSpellName ~= false) and tostring(castData.spellName or '') or '',
+        textOffsetX = tonumber(castBarSettings.textOffsetX) or castBarDefaults.textOffsetX,
+        textOffsetY = tonumber(castBarSettings.textOffsetY) or castBarDefaults.textOffsetY,
+        fontFamily = fonts.GetRole(globalSettings, castBarSettings.useSmallFont == true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, castBarSettings.useSmallFont == true),
+        fontSize = textScale.ToTextureFontSize(castBarSettings.fontSize, castBarDefaults.fontSize),
+        textColor = castBarSettings.textColor or castBarDefaults.textColor,
+        textOutlineEnabled = castBarSettings.textOutlineEnabled == true,
+        textOutlineColor = castBarSettings.textOutlineColor or castBarDefaults.textOutlineColor,
+        textOutlineSize = tonumber(castBarSettings.textOutlineSize) or castBarDefaults.textOutlineSize,
+        separateLabelOffsets = true,
+        iconTextureId = spellIconTextureId,
+        iconSize = tonumber(castBarSettings.spellIconSize) or castBarDefaults.spellIconSize,
+        iconOffsetX = tonumber(castBarSettings.spellIconOffsetX) or castBarDefaults.spellIconOffsetX,
+        iconOffsetY = tonumber(castBarSettings.spellIconOffsetY) or castBarDefaults.spellIconOffsetY,
+        iconGap = 4,
+    }, castPercent;
+end
+
 local function DrawBackground(drawList, bounds)
     local background = canvasDefaults.background;
 
@@ -455,6 +506,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local hpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'HP Bar', barDefaults);
     local mpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'MP Bar', mpBarDefaults);
     local tpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'TP Bar', tpBarDefaults);
+    local castData = enemyCasts.GetActiveCast(center.serverId);
+    local castBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'Cast bar', castBarDefaults);
     local buffsSettings = state.GetWidgetSettings('Self', layoutStateName, 'Buffs', buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings('Self', layoutStateName, 'Debuffs', debuffsDefaults);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
@@ -506,10 +559,13 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (allianceLeaderIconSettings.enabled == true and allianceLeaderTextureId ~= nil) then
         table.insert(icons, {
+            kind = 'allianceLeaderIcon',
             textureId = allianceLeaderTextureId,
             size = tonumber(allianceLeaderIconSettings.iconSize) or 16,
             offsetX = tonumber(allianceLeaderIconSettings.offsetX) or -120,
             offsetY = tonumber(allianceLeaderIconSettings.offsetY) or -54,
+            anchorTo = allianceLeaderIconSettings.anchorTo,
+            anchorPoint = allianceLeaderIconSettings.anchorPoint,
         });
     end
 
@@ -517,19 +573,25 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (partyLeaderIconSettings.enabled == true and partyLeaderTextureId ~= nil) then
         table.insert(icons, {
+            kind = 'partyLeaderIcon',
             textureId = partyLeaderTextureId,
             size = tonumber(partyLeaderIconSettings.iconSize) or 16,
             offsetX = tonumber(partyLeaderIconSettings.offsetX) or -96,
             offsetY = tonumber(partyLeaderIconSettings.offsetY) or -54,
+            anchorTo = partyLeaderIconSettings.anchorTo,
+            anchorPoint = partyLeaderIconSettings.anchorPoint,
         });
     end
 
     if (gameModeIconSettings.enabled == true and modeIconTextureId ~= nil) then
         table.insert(icons, {
+            kind = 'gameModeIcon',
             textureId = modeIconTextureId,
             size = tonumber(gameModeIconSettings.iconSize) or 16,
             offsetX = tonumber(gameModeIconSettings.offsetX) or -72,
             offsetY = tonumber(gameModeIconSettings.offsetY) or -54,
+            anchorTo = gameModeIconSettings.anchorTo,
+            anchorPoint = gameModeIconSettings.anchorPoint,
         });
     end
 
@@ -537,10 +599,13 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (linkshellIconSettings.enabled == true and linkshellTextureId ~= nil) then
         table.insert(icons, {
+            kind = 'linkshellIcon',
             textureId = linkshellTextureId,
             size = tonumber(linkshellIconSettings.iconSize) or 16,
             offsetX = tonumber(linkshellIconSettings.offsetX) or 48,
             offsetY = tonumber(linkshellIconSettings.offsetY) or -54,
+            anchorTo = linkshellIconSettings.anchorTo,
+            anchorPoint = linkshellIconSettings.anchorPoint,
         });
     end
 
@@ -548,10 +613,13 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (bazaarIconSettings.enabled == true and bazaarTextureId ~= nil) then
         table.insert(icons, {
+            kind = 'bazaarIcon',
             textureId = bazaarTextureId,
             size = tonumber(bazaarIconSettings.iconSize) or 16,
             offsetX = tonumber(bazaarIconSettings.offsetX) or 72,
             offsetY = tonumber(bazaarIconSettings.offsetY) or -54,
+            anchorTo = bazaarIconSettings.anchorTo,
+            anchorPoint = bazaarIconSettings.anchorPoint,
         });
     end
 
@@ -559,10 +627,13 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (awayIconSettings.enabled == true and awayTextureId ~= nil) then
         table.insert(icons, {
+            kind = 'awayIcon',
             textureId = awayTextureId,
             size = tonumber(awayIconSettings.iconSize) or 16,
             offsetX = tonumber(awayIconSettings.offsetX) or 120,
             offsetY = tonumber(awayIconSettings.offsetY) or -54,
+            anchorTo = awayIconSettings.anchorTo,
+            anchorPoint = awayIconSettings.anchorPoint,
         });
     end
 
@@ -570,10 +641,13 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (disconnectIconSettings.enabled == true and disconnectTextureId ~= nil) then
         table.insert(icons, {
+            kind = 'disconnectIcon',
             textureId = disconnectTextureId,
             size = tonumber(disconnectIconSettings.iconSize) or 16,
             offsetX = tonumber(disconnectIconSettings.offsetX) or 144,
             offsetY = tonumber(disconnectIconSettings.offsetY) or -54,
+            anchorTo = disconnectIconSettings.anchorTo,
+            anchorPoint = disconnectIconSettings.anchorPoint,
         });
     end
 
@@ -581,10 +655,13 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (starsIconSettings.enabled == true and starsTextureId ~= nil) then
         table.insert(icons, {
+            kind = 'starsIcon',
             textureId = starsTextureId,
             size = tonumber(starsIconSettings.iconSize) or 16,
             offsetX = tonumber(starsIconSettings.offsetX) or -48,
             offsetY = tonumber(starsIconSettings.offsetY) or -54,
+            anchorTo = starsIconSettings.anchorTo,
+            anchorPoint = starsIconSettings.anchorPoint,
         });
     end
 
@@ -592,19 +669,24 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (newAdventurerIconSettings.enabled == true and newAdventurerTextureId ~= nil) then
         table.insert(icons, {
+            kind = 'newAdventurerIcon',
             textureId = newAdventurerTextureId,
             size = tonumber(newAdventurerIconSettings.iconSize) or 16,
             offsetX = tonumber(newAdventurerIconSettings.offsetX) or 24,
             offsetY = tonumber(newAdventurerIconSettings.offsetY) or -54,
+            anchorTo = newAdventurerIconSettings.anchorTo,
+            anchorPoint = newAdventurerIconSettings.anchorPoint,
         });
     end
 
     local targetMarker = targetModuleMarker.Build('Self', layoutStateName, targetStateName, hpBarSettings, 0);
+    local castBar, castPercent = BuildCastBar(castData, castBarSettings, globalSettings);
 
     local plateData = {
         hp = hpPercent,
         mp = mpPercent,
         tp = tpPercent,
+        cast = castPercent,
         targetMarker = targetMarker,
         background = {
             enabled = backgroundSettings.enabled == true,
@@ -720,6 +802,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             textOutlineColor = tpBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
             textOutlineSize = tonumber(tpBarSettings.textOutlineSize) or 1,
         },
+        castBar = castBar,
         icons = icons,
     };
     plateData.debugClickRects = worldMarkerProbe.GetClickDebug();
@@ -811,7 +894,17 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (cacheEligible == true) then
         signature = BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName);
-        vitalSignature = BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, stateName, targetStateName, layoutStateName);
+        vitalSignature = BuildWorldVitalSignature(
+            center,
+            hpPercent,
+            mpPercent,
+            tpValue,
+            castPercent,
+            castBar ~= nil and castBar.text or '',
+            stateName,
+            targetStateName,
+            layoutStateName
+        );
 
         if (cachedWorldPlate ~= nil and cachedWorldPlate.signature == signature) then
             canvasTexture.TouchKey(cachedWorldPlate.textureKey);

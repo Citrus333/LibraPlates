@@ -14,6 +14,8 @@ local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
 local barTextures = require('core.bar_textures');
 local barAnimations = require('core.bar_animations');
+local statusIconTextures = require('core.status_icon_textures');
+local spellIconTextures = require('core.spell_icon_textures');
 local textureLoader = require('core.texture_loader');
 local entities = require('core.entities');
 local state = require('core.state');
@@ -550,6 +552,10 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
     local castTime = math.max(0.1, tonumber(castData.castTime) or 0.1);
     local elapsed = math.max(0.0, os.clock() - (tonumber(castData.startTime) or os.clock()));
     local castPercent = math.max(0, math.min(100, (elapsed / castTime) * 100));
+    local spellIconId = tonumber(castData.spellIconId);
+    local spellIconTextureId = castBarSettings.showSpellIcon == true
+        and spellIconTextures.GetTextureId(spellIconId)
+        or nil;
 
     return {
         enabled = true,
@@ -575,6 +581,12 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
         textOutlineEnabled = castBarSettings.textOutlineEnabled == true,
         textOutlineColor = castBarSettings.textOutlineColor or castBarDefaults.textOutlineColor,
         textOutlineSize = tonumber(castBarSettings.textOutlineSize) or castBarDefaults.textOutlineSize,
+        separateLabelOffsets = true,
+        iconTextureId = spellIconTextureId,
+        iconSize = tonumber(castBarSettings.spellIconSize) or castBarDefaults.spellIconSize,
+        iconOffsetX = tonumber(castBarSettings.spellIconOffsetX) or castBarDefaults.spellIconOffsetX,
+        iconOffsetY = tonumber(castBarSettings.spellIconOffsetY) or castBarDefaults.spellIconOffsetY,
+        iconGap = 4,
     }, castPercent;
 end
 

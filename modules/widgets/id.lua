@@ -2,12 +2,24 @@ local imgui = require('imgui');
 local defaults = require('config.widgets.id');
 local textScale = require('core.text_scale');
 local anchorControls = require('modules.widgets.anchor_controls');
+local uiTooltip = require('core.ui_tooltip');
 
 local id = {};
 local unpackTable = table.unpack or unpack;
 local labelColor = { 0.92, 0.92, 0.90, 1.0 };
 local valueColor = { 0.65, 0.90, 1.0, 1.0 };
 local actionColor = { 1.0, 0.84, 0.0, 1.0 };
+local function DrawSectionHeader(label)
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.18);
+    end
+
+    imgui.TextColored(actionColor, tostring(label or ''));
+
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.0);
+    end
+end
 
 local function ClickText(label, color)
     imgui.TextColored(color or valueColor, label);
@@ -172,7 +184,7 @@ function id.DrawSettings(settings, context)
 
     ApplyDefaults(settings);
 
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'ID settings');
+    DrawSectionHeader('ID settings');
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawToggle('Active', settings.enabled);
     end
@@ -181,6 +193,7 @@ function id.DrawSettings(settings, context)
     settings.offsetY = DrawNumber('Position Y', settings.offsetY, -400, 400, 5);
     settings.textSize = DrawNumber('Text size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize(), 1);
     settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
+    uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
     settings.color = DrawColor('Text color', settings.color);
     settings.outlineEnabled = DrawToggle('Text outline', settings.outlineEnabled);
 
@@ -190,7 +203,7 @@ function id.DrawSettings(settings, context)
     end
 
     imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'ID box');
+    DrawSectionHeader('ID box');
     settings.boxEnabled = DrawToggle('Box', settings.boxEnabled);
 
     if (settings.boxEnabled == true) then

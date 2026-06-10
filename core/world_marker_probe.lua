@@ -594,49 +594,51 @@ local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, styl
     setOverlayRect();
 
     for _, rect in ipairs(style.plateClickRects) do
-        local points = {
-            { rect.x1, rect.y1 },
-            { rect.x2, rect.y1 },
-            { rect.x2, rect.y2 },
-            { rect.x1, rect.y2 },
-        };
-        local left = nil;
-        local top = nil;
-        local right = nil;
-        local bottom = nil;
-
-        for _, point in ipairs(points) do
-            local sx, sy = projectCanvasPixel(point[1], point[2]);
-
-            if (sx ~= nil and sy ~= nil) then
-                left = (left == nil) and sx or math.min(left, sx);
-                top = (top == nil) and sy or math.min(top, sy);
-                right = (right == nil) and sx or math.max(right, sx);
-                bottom = (bottom == nil) and sy or math.max(bottom, sy);
-            end
-        end
-
-        if (left ~= nil and top ~= nil and right ~= nil and bottom ~= nil) then
-            local padding = 3;
-            local screenRect = {
-                kind = rect.kind,
-                targetIndex = targetIndex,
-                targetType = targetType,
-                x1 = left - padding,
-                y1 = top - padding,
-                x2 = right + padding,
-                y2 = bottom + padding,
+        if (rect.anchorOnly ~= true) then
+            local points = {
+                { rect.x1, rect.y1 },
+                { rect.x2, rect.y1 },
+                { rect.x2, rect.y2 },
+                { rect.x1, rect.y2 },
             };
+            local left = nil;
+            local top = nil;
+            local right = nil;
+            local bottom = nil;
 
-            rects[#rects + 1] = screenRect;
+            for _, point in ipairs(points) do
+                local sx, sy = projectCanvasPixel(point[1], point[2]);
 
-            if (union == nil) then
-                union = { x1 = screenRect.x1, y1 = screenRect.y1, x2 = screenRect.x2, y2 = screenRect.y2 };
-            else
-                union.x1 = math.min(union.x1, screenRect.x1);
-                union.y1 = math.min(union.y1, screenRect.y1);
-                union.x2 = math.max(union.x2, screenRect.x2);
-                union.y2 = math.max(union.y2, screenRect.y2);
+                if (sx ~= nil and sy ~= nil) then
+                    left = (left == nil) and sx or math.min(left, sx);
+                    top = (top == nil) and sy or math.min(top, sy);
+                    right = (right == nil) and sx or math.max(right, sx);
+                    bottom = (bottom == nil) and sy or math.max(bottom, sy);
+                end
+            end
+
+            if (left ~= nil and top ~= nil and right ~= nil and bottom ~= nil) then
+                local padding = 3;
+                local screenRect = {
+                    kind = rect.kind,
+                    targetIndex = targetIndex,
+                    targetType = targetType,
+                    x1 = left - padding,
+                    y1 = top - padding,
+                    x2 = right + padding,
+                    y2 = bottom + padding,
+                };
+
+                rects[#rects + 1] = screenRect;
+
+                if (union == nil) then
+                    union = { x1 = screenRect.x1, y1 = screenRect.y1, x2 = screenRect.x2, y2 = screenRect.y2 };
+                else
+                    union.x1 = math.min(union.x1, screenRect.x1);
+                    union.y1 = math.min(union.y1, screenRect.y1);
+                    union.x2 = math.max(union.x2, screenRect.x2);
+                    union.y2 = math.max(union.y2, screenRect.y2);
+                end
             end
         end
     end
@@ -2903,7 +2905,7 @@ function worldMarkerProbe.GetWidestPlateRect(targetIndex, targetType, kinds)
             (targetType == nil or tostring(entry.targetType or '') == tostring(targetType))
         ) then
             for _, rect in ipairs(entry.rects or {}) do
-                if (allowed[tostring(rect.kind or '')] == true) then
+                if (rect.anchorOnly ~= true and allowed[tostring(rect.kind or '')] == true) then
                     local x1 = tonumber(rect.x1);
                     local y1 = tonumber(rect.y1);
                     local x2 = tonumber(rect.x2);

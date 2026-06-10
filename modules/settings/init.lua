@@ -42,6 +42,19 @@ local subtargetModuleDefaults = require('config.widgets.subtarget_module');
 local fishing = require('core.fishing');
 local crafting = require('core.crafting');
 local settingsLabelColor = { 0.92, 0.92, 0.90, 1.0 };
+local settingsHeaderColor = { 1.0, 0.84, 0.0, 1.0 };
+
+local function DrawYellowHeader(label)
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.18);
+    end
+
+    imgui.TextColored(settingsHeaderColor, tostring(label or ''));
+
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.0);
+    end
+end
 local settingsTableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local settingsWindowFlags = 0;
 local targetAutoPlaceAnchorOptions = T{ 'Widest element', 'Name', 'HP Bar' };
@@ -329,6 +342,7 @@ local uiAccentActive = { 0.16, 0.55, 0.57, 1.0 };
 local heldButtonState = {};
 local targetModulePendingReset = nil;
 local maneuverPendingReset = nil;
+local loadModeDrawn = false;
 
 local tabs = T{ 'General', 'Targeting', 'Plates', 'Modules' };
 local generalSections = T{ 'Font', 'Native UI', 'Mouse', 'Scaling' };
@@ -389,6 +403,7 @@ local selfIdleWidgets = T{
     'HP Bar',
     'MP Bar',
     'TP Bar',
+    'Cast bar',
     'Buffs',
     'Debuffs',
     'Party leader icon',
@@ -411,6 +426,7 @@ local selfCombatWidgets = T{
     'HP Bar',
     'MP Bar',
     'TP Bar',
+    'Cast bar',
     'Buffs',
     'Debuffs',
     'Party leader icon',
@@ -903,6 +919,9 @@ function LibraPlatesSettingsBuildWidgetCopySources(entity, stateName, widgetName
         LibraPlatesSettingsAddWidgetCopySource(sources, entity, stateName, 'Enemy', 'Tactical', storageWidget);
         LibraPlatesSettingsAddWidgetCopySource(sources, entity, stateName, 'NPC', 'Tactical', storageWidget);
         LibraPlatesSettingsAddWidgetCopySource(sources, entity, stateName, 'Object', 'Tactical', storageWidget);
+    elseif (normalizedState == 'Resting' or normalizedState == 'Fishing' or normalizedState == 'Crafting' or normalizedState == 'Gathering') then
+        LibraPlatesSettingsAddWidgetCopySource(sources, entity, stateName, 'Self', 'World', storageWidget);
+        LibraPlatesSettingsAddWidgetCopySource(sources, entity, stateName, 'Self', 'Tactical', storageWidget);
     end
 
     return sources;
@@ -1436,7 +1455,7 @@ function DrawSelectableRow(label, selected, color, id)
 end
 
 function DrawCombo(label, items, selected, onSelect)
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, label);
+    DrawYellowHeader(label);
     imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, '[' .. selected .. ' v]');
 
     if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
@@ -1468,7 +1487,7 @@ end
 function DrawInlineCombo(label, items, selected, onSelect)
     local current = tostring(selected or items[1] or 'Default');
 
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, label);
+    DrawYellowHeader(label);
 
     if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
         if (imgui.PushItemWidth ~= nil) then
@@ -1501,7 +1520,7 @@ function DrawInlineCombo(label, items, selected, onSelect)
     DrawCombo(label, items, current, onSelect);
 end
 
-function DrawInlineComboRow(label, items, selected, onSelect, id)
+function DrawInlineComboRow(label, items, selected, onSelect, id, labelColorOverride)
     local current = tostring(selected or items[1] or 'Default');
     local comboId = '##' .. tostring(id or label or 'combo');
 
@@ -1551,13 +1570,13 @@ function DrawControl()
             imgui.TableSetupColumn('##control', 0, 260);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, label);
+            imgui.TextColored(labelColorOverride or { 1.0, 0.84, 0.0, 1.0 }, label);
             imgui.TableNextColumn();
             DrawControl();
             imgui.EndTable();
         end
     else
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, label);
+        imgui.TextColored(labelColorOverride or { 1.0, 0.84, 0.0, 1.0 }, label);
         imgui.SameLine();
         DrawControl();
     end
@@ -2333,7 +2352,21 @@ function LibraPlatesSettingsDrawWidgetLoadMode(settings, entityName, stateName, 
     DrawInlineComboRow('Load', T{ 'Always', 'Out of combat', 'In combat', 'Never' }, settings.loadMode, function(value)
         settings.loadMode = LibraPlatesSettingsNormalizeLoadMode(value, 'Always');
         state.Save();
-    end, 'LoadMode' .. tostring(entityName) .. tostring(stateName) .. tostring(widgetName));
+    end, 'LoadMode' .. tostring(entityName) .. tostring(stateName) .. tostring(widgetName), { 1.0, 1.0, 1.0, 1.0 });
+
+    loadModeDrawn = true;
+end
+
+_G.LibraPlatesSettingsDrawContextLoadMode = function(settings, context)
+    if (settings == nil or context == nil) then
+        return;
+    end
+
+    if (loadModeDrawn == true) then
+        return;
+    end
+
+    LibraPlatesSettingsDrawWidgetLoadMode(settings, context.entity, context.state, context.widget);
 end
 
 function LibraPlatesSettingsDrawCurrentWidgetLoadMode()
@@ -2364,7 +2397,7 @@ function DrawPlacementSectionHeader(title, active, onChange)
     end
 
     imgui.SameLine();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, title .. ':');
+    DrawYellowHeader(title .. ':');
 end
 
 function ClampOffsetToVisibleEdge(value, size, canvasSize, minVisible)
@@ -2618,7 +2651,7 @@ function DrawPetStateExtraSettings(settings)
 end
 
 function DrawManeuverSettings(settings)
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Maneuver settings');
+    DrawYellowHeader('Maneuver settings');
 
     local x, xChanged, y, yChanged = DrawPlacementPair('Position X', settings.offsetX, 'ManeuverX', 'Position Y', settings.offsetY, 'ManeuverY', -500, 500, 1);
     if (xChanged == true) then settings.offsetX = x; state.Save(); end
@@ -2638,6 +2671,7 @@ function DrawManeuverSettings(settings)
             settings.timerUseSmallFont = value == true;
             state.Save();
         end);
+        uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
 
         local fontSize, fontSizeChanged, timerY, timerYChanged = DrawPlacementPair('Font size', textScale.NormalizeSetting(settings.timerFontSize, maneuverDefaults.timerFontSize), 'ManeuverTimerFontSize', 'Timer Y', settings.timerOffsetY, 'ManeuverTimerY', -100, 100, 1);
         if (fontSizeChanged == true) then settings.timerFontSize = fontSize; state.Save(); end
@@ -3260,6 +3294,8 @@ function SelectPreviewElement(kind, context)
         targetModuleBackground = ListContains(GetEditWidgets(), 'Target') == true and 'Target' or 'Target (module)',
         targetModuleArrow = ListContains(GetEditWidgets(), 'Target') == true and 'Target' or 'Target (module)',
         targetModuleChevron = ListContains(GetEditWidgets(), 'Target') == true and 'Target' or 'Target (module)',
+        allianceLeaderIcon = 'Alliance leader icon',
+        partyLeaderIcon = 'Party leader icon',
         gameModeIcon = 'Game mode icon',
         linkshellIcon = 'Linkshell icon',
         bazaarIcon = 'Bazaar icon',
@@ -3442,6 +3478,8 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         sic = 'Sic',
         ward = 'Ward timer',
         rage = 'Rage timer',
+        allianceLeaderIcon = 'Alliance leader icon',
+        partyLeaderIcon = 'Party leader icon',
         gameModeIcon = 'Game mode icon',
         linkshellIcon = 'Linkshell icon',
         bazaarIcon = 'Bazaar icon',
@@ -3469,11 +3507,33 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         return;
     end
 
-    local settings = state.GetWidgetSettings(storageEntity, storageState, widgetKey, GetWidgetDefaults(widget));
+    local rootWidget = widget;
+    local visited = {};
+
+    for _ = 1, 8 do
+        local rootKey = widgetKeys[rootWidget];
+
+        if (rootKey == nil or visited[rootWidget] == true) then
+            break;
+        end
+
+        visited[rootWidget] = true;
+
+        local rootSettings = state.GetWidgetSettings(storageEntity, storageState, rootKey, GetWidgetDefaults(rootWidget));
+        local anchorTo = tostring(rootSettings.anchorTo or 'Plate');
+
+        if (anchorTo == 'Plate' or widgetKeys[anchorTo] == nil or ListContains(GetEditWidgets(), anchorTo) ~= true) then
+            break;
+        end
+
+        rootWidget = anchorTo;
+    end
+
+    local settings = state.GetWidgetSettings(storageEntity, storageState, widgetKeys[rootWidget], GetWidgetDefaults(rootWidget));
 
     settings.offsetX = math.max(-500, math.min(500, (tonumber(settings.offsetX) or 0) + deltaX));
     settings.offsetY = math.max(-500, math.min(500, (tonumber(settings.offsetY) or 0) + deltaY));
-    selectedWidget = widget;
+    selectedWidget = rootWidget;
     EnsureSelectedWidgetAllowed();
     PersistUiSelection();
     state.Save();
@@ -3664,7 +3724,7 @@ function DrawPlatesSelector()
 
     EnsureSelectedWidgetAllowed();
     imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Widgets');
+    DrawYellowHeader('Widgets');
 
     for index, widget in ipairs(GetEditWidgets()) do
         local settings = GetChecklistActiveSettings(widget);
@@ -3763,6 +3823,18 @@ end
 
 function LibraPlatesSettingsDrawBreadcrumb(parts)
     local items = parts or {};
+    local bgX, bgY = GetCursorScreenPos();
+    local bgWidth = select(1, GetContentRegionAvail());
+    local drawList = imgui.GetWindowDrawList ~= nil and imgui.GetWindowDrawList() or nil;
+
+    if (drawList ~= nil and imgui.GetColorU32 ~= nil) then
+        drawList:AddRectFilled(
+            { bgX, bgY - 2 },
+            { bgX + math.max(1, bgWidth), bgY + 22 },
+            imgui.GetColorU32({ 0.0, 0.0, 0.0, 0.95 }),
+            0
+        );
+    end
 
     imgui.TextColored({ 1.0, 1.0, 1.0, 1.0 }, 'Selected: ');
 
@@ -3995,7 +4067,7 @@ function DrawPeerLevelComponentSettings(settings)
     end
 
     imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Difficulty font colors');
+    DrawYellowHeader('Difficulty font colors');
 
     DrawCheckbox('Use difficulty font colors', peer.levelDifficultyColorsEnabled == true, function(value)
         peer.levelDifficultyColorsEnabled = value == true;
@@ -4204,7 +4276,7 @@ function DrawPeerHpBarComponentSettings(settings)
     end
 
     imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'HP percent');
+    DrawYellowHeader('HP percent');
 
     DrawCheckbox('Active', peer.showHpPercent == true, function(value)
         peer.showHpPercent = value == true;
@@ -4296,7 +4368,7 @@ function DrawPeerIdComponentSettings(settings)
     DrawPeerOutlineRow(peer, 'id', 'Id');
 
     imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'ID box');
+    DrawYellowHeader('ID box');
 
     DrawCheckbox('Active', peer.idBoxEnabled == true, function(value)
         peer.idBoxEnabled = value == true;
@@ -4344,7 +4416,7 @@ function LibraPlatesSettingsEnsurePeerInspectorDefaults(peer)
 end
 
 function LibraPlatesSettingsDrawPeerInspectorBackgroundSettings(peer)
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Background');
+    DrawYellowHeader('Background');
 
     local fillColor, fillChanged, opacity, opacityChanged = DrawColorAndPlacementRow('Fill color', peer.backgroundColor, 'PeerInspectorBackgroundColor', 'Opacity', peer.backgroundOpacity, 'PeerInspectorBackgroundOpacity', 0, 100, 1);
     fillColor[4] = 1.0;
@@ -4370,7 +4442,7 @@ function LibraPlatesSettingsDrawPeerSectionCheckbox(peer, label, key)
 end
 
 function LibraPlatesSettingsDrawPeerSectionList(peer)
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Sections');
+    DrawYellowHeader('Sections');
 
     local rows = T{
         T{
@@ -4922,13 +4994,154 @@ function LibraPlatesSettingsDrawCraftingModuleSettings(settings, hideActive)
     end
 end
 
+local function DrawQuickMenuIconRow(menu)
+    DrawCheckbox('Show icons', menu.iconsEnabled == true, function(value)
+        menu.iconsEnabled = value == true;
+        state.Save();
+    end);
+
+    if (menu.iconsEnabled == true) then
+        imgui.SameLine();
+        imgui.TextColored(settingsLabelColor, 'Icon size');
+        imgui.SameLine();
+
+        local iconSize, iconSizeChanged = DrawPlacementControl(menu.iconSize, 8, 64, 1, 'QuickMenuIconSize', 58);
+        if (iconSizeChanged == true) then
+            menu.iconSize = iconSize;
+            state.Save();
+        end
+    end
+end
+
+local function DrawQuickMenuColorRow(menu)
+    local function GetOpacity(color)
+        color = color or {};
+        return math.floor(((tonumber(color[4]) or 1.0) * 100) + 0.5);
+    end
+
+    local function SetOpacity(color, value)
+        color = color or { 1.0, 1.0, 1.0, 1.0 };
+        color[4] = math.max(0, math.min(100, tonumber(value) or 100)) / 100;
+        return color;
+    end
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local changed = false;
+
+        if (imgui.BeginTable('##quick_menu_color_settings', 8, settingsTableFlags)) then
+            imgui.TableSetupColumn('##background_label', 0, 92);
+            imgui.TableSetupColumn('##background_control', 0, 62);
+            imgui.TableSetupColumn('##header_label', 0, 72);
+            imgui.TableSetupColumn('##header_control', 0, 62);
+            imgui.TableSetupColumn('##text_label', 0, 54);
+            imgui.TableSetupColumn('##text_control', 0, 62);
+            imgui.TableSetupColumn('##link_label', 0, 50);
+            imgui.TableSetupColumn('##link_control', 0, 62);
+            imgui.TableNextRow();
+
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Background');
+            imgui.TableNextColumn();
+            if (imgui.ColorEdit4 ~= nil) then
+                changed = (imgui.ColorEdit4('##QuickMenuBackground', menu.backgroundColor, settingsColorEditFlags) == true) or changed;
+            else
+                imgui.TextColored(menu.backgroundColor, 'sample');
+            end
+
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Header');
+            imgui.TableNextColumn();
+            if (imgui.ColorEdit4 ~= nil) then
+                changed = (imgui.ColorEdit4('##QuickMenuHeader', menu.headerColor, settingsColorEditFlags) == true) or changed;
+            else
+                imgui.TextColored(menu.headerColor, 'sample');
+            end
+
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Text');
+            imgui.TableNextColumn();
+            if (imgui.ColorEdit4 ~= nil) then
+                changed = (imgui.ColorEdit4('##QuickMenuText', menu.textColor, settingsColorEditFlags) == true) or changed;
+            else
+                imgui.TextColored(menu.textColor, 'sample');
+            end
+
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Link');
+            imgui.TableNextColumn();
+            if (imgui.ColorEdit4 ~= nil) then
+                changed = (imgui.ColorEdit4('##QuickMenuLink', menu.linkColor, settingsColorEditFlags) == true) or changed;
+            else
+                imgui.TextColored(menu.linkColor, 'sample');
+            end
+
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Opacity');
+            imgui.TableNextColumn();
+            local bgOpacity, bgOpacityChanged = DrawPlacementControl(GetOpacity(menu.backgroundColor), 0, 100, 1, 'QuickMenuBackgroundOpacity', 58);
+            if (bgOpacityChanged == true) then
+                menu.backgroundColor = SetOpacity(menu.backgroundColor, bgOpacity);
+                changed = true;
+            end
+
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Opacity');
+            imgui.TableNextColumn();
+            local headerOpacity, headerOpacityChanged = DrawPlacementControl(GetOpacity(menu.headerColor), 0, 100, 1, 'QuickMenuHeaderOpacity', 58);
+            if (headerOpacityChanged == true) then
+                menu.headerColor = SetOpacity(menu.headerColor, headerOpacity);
+                changed = true;
+            end
+
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Opacity');
+            imgui.TableNextColumn();
+            local textOpacity, textOpacityChanged = DrawPlacementControl(GetOpacity(menu.textColor), 0, 100, 1, 'QuickMenuTextOpacity', 58);
+            if (textOpacityChanged == true) then
+                menu.textColor = SetOpacity(menu.textColor, textOpacity);
+                changed = true;
+            end
+
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Opacity');
+            imgui.TableNextColumn();
+            local linkOpacity, linkOpacityChanged = DrawPlacementControl(GetOpacity(menu.linkColor), 0, 100, 1, 'QuickMenuLinkOpacity', 58);
+            if (linkOpacityChanged == true) then
+                menu.linkColor = SetOpacity(menu.linkColor, linkOpacity);
+                changed = true;
+            end
+
+            imgui.EndTable();
+        end
+
+        if (changed == true) then
+            state.Save();
+        end
+
+        return;
+    end
+
+    local bgColor, bgChanged = DrawSettingsColor('Background', menu.backgroundColor, 'QuickMenuBackground');
+    local headerColor, headerChanged = DrawSettingsColor('Header', menu.headerColor, 'QuickMenuHeader');
+    local textColor, textChanged = DrawSettingsColor('Text', menu.textColor, 'QuickMenuText');
+    local linkColor, linkChanged = DrawSettingsColor('Link', menu.linkColor, 'QuickMenuLink');
+    if (bgChanged == true or textChanged == true or headerChanged == true or linkChanged == true) then
+        menu.backgroundColor = bgColor;
+        menu.textColor = textColor;
+        menu.headerColor = headerColor;
+        menu.linkColor = linkColor;
+        state.Save();
+    end
+end
+
 function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     settings.quickMenu = settings.quickMenu or {};
     local menu = settings.quickMenu;
     local scopedEntity = nil;
 
     if (menu.enabled == nil) then menu.enabled = true; end
-    if (menu.openOnRightClick == nil) then menu.openOnRightClick = true; end
+    menu.openOnRightClick = true;
     if (menu.modifier == nil) then menu.modifier = 'None'; end
     if (menu.width == nil) then menu.width = 270; end
     if (menu.iconsEnabled == nil) then menu.iconsEnabled = true; end
@@ -4982,15 +5195,11 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
         return;
     end
 
-    DrawCheckbox('Open on plate right-click', menu.openOnRightClick == true, function(value)
-        menu.openOnRightClick = value == true;
-        state.Save();
-    end);
-
     DrawInlineComboRow('Modifier', T{ 'None', 'Shift', 'Ctrl', 'Alt' }, menu.modifier or 'None', function(value)
         menu.modifier = value;
         state.Save();
     end, 'QuickMenuModifier');
+    uiTooltip.Info('Controls whether right-click opens the quick menu. If a modifier is selected, hold that modifier and right-click. If the modifier is None, right-click opens the quick menu directly.');
 
     local width, widthChanged = DrawPlacementSingle('Menu width', menu.width, 'QuickMenuWidth', 160, 520, 1, 154, 124, 58);
     if (widthChanged == true) then
@@ -4998,45 +5207,22 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
         state.Save();
     end
 
-    DrawCheckbox('Show icons', menu.iconsEnabled == true, function(value)
-        menu.iconsEnabled = value == true;
-        state.Save();
-    end);
+    DrawQuickMenuIconRow(menu);
 
-    if (menu.iconsEnabled == true) then
-        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', menu.iconSize, 'QuickMenuIconSize', 8, 64, 1, 154, 124, 58);
-        if (iconSizeChanged == true) then
-            menu.iconSize = iconSize;
-            state.Save();
-        end
-    end
-
-    local bgColor, bgChanged = DrawSettingsColor('Background', menu.backgroundColor, 'QuickMenuBackground');
-    if (bgChanged == true) then
-        menu.backgroundColor = bgColor;
-        state.Save();
-    end
-
-    local borderColor, borderChanged, borderSize, borderSizeChanged = DrawColorAndPlacementRow('Border', menu.borderColor, 'QuickMenuBorder', 'Border size', menu.borderSize, 'QuickMenuBorderSize', 0, 12, 1);
+    local borderColor, borderChanged, borderSize, borderSizeChanged = DrawColorAndPlacementRow('Border color', menu.borderColor, 'QuickMenuBorder', 'Border size', menu.borderSize, 'QuickMenuBorderSize', 0, 12, 1);
     if (borderChanged == true or borderSizeChanged == true) then
         menu.borderColor = borderColor;
         menu.borderSize = borderSize;
         state.Save();
     end
 
-    local textColor, textChanged = DrawSettingsColor('Text', menu.textColor, 'QuickMenuText');
-    local headerColor, headerChanged = DrawSettingsColor('Header', menu.headerColor, 'QuickMenuHeader');
-    local linkColor, linkChanged = DrawSettingsColor('Link', menu.linkColor, 'QuickMenuLink');
-    if (textChanged == true or headerChanged == true or linkChanged == true) then
-        menu.textColor = textColor;
-        menu.headerColor = headerColor;
-        menu.linkColor = linkColor;
-        state.Save();
-    end
+    imgui.Separator();
+    DrawYellowHeader('Color settings');
+    DrawQuickMenuColorRow(menu);
 
     if (scopedEntity == nil or scopedEntity == 'PC') then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'PC actions');
+        DrawYellowHeader('PC actions');
 
     DrawCheckbox('Examine', menu.pc.examine == true, function(value)
         menu.pc.examine = value == true;
@@ -5081,7 +5267,7 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
 
     if (scopedEntity == nil or scopedEntity == 'Self') then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Self actions');
+        DrawYellowHeader('Self actions');
 
     DrawCheckbox('Invite responses', menu.self.acceptInvite == true or menu.self.declineInvite == true, function(value)
         menu.self.acceptInvite = value == true;
@@ -5105,7 +5291,7 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     end);
 
     imgui.Separator();
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Trust filters');
+    DrawYellowHeader('Trust filters');
 
     DrawCheckbox('Ignore other Trusts', menu.self.ignoreTrust == true, function(value)
         menu.self.ignoreTrust = value == true;
@@ -5125,7 +5311,7 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
 
     if (scopedEntity == nil or scopedEntity == 'Trust') then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Trust actions');
+        DrawYellowHeader('Trust actions');
 
     DrawCheckbox('Dismiss This Trust', menu.trust.dismiss == true, function(value)
         menu.trust.dismiss = value == true;
@@ -5147,7 +5333,7 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
 
     if (scopedEntity == nil or scopedEntity == 'NPC' or scopedEntity == 'Object') then
         imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'NPC actions');
+        DrawYellowHeader('NPC actions');
 
     DrawCheckbox('Show type', menu.npc.showType == true, function(value)
         menu.npc.showType = value == true;
@@ -5553,7 +5739,7 @@ if (selectedTab == 'Modules') then
             return;
         end
 
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, selectedModuleWidget .. ' module');
+        DrawYellowHeader(selectedModuleWidget .. ' module');
         imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Not built yet.');
         return;
     end
@@ -5726,10 +5912,10 @@ local function DrawSelectedEditorPlates()
         return;
     end
 
+    loadModeDrawn = false;
     LibraPlatesSettingsDrawBreadcrumb(T{ selectedTab, selectedEntity, selectedState, selectedWidget });
-    imgui.Separator();
-
     LibraPlatesSettingsDrawCurrentWidgetLoadMode();
+    imgui.Separator();
 
     DrawSelectedEditorPlatesTargetWidgets();
     DrawSelectedEditorPlatesModules();
@@ -5918,10 +6104,13 @@ local function DrawSelectedEditorPlates()
     end
 
     if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Quick Menu (module)') then
+        if (loadModeDrawn ~= true) then
+            LibraPlatesSettingsDrawCurrentWidgetLoadMode();
+        end
         return;
     end
 
-    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, selectedWidget .. ' settings');
+    DrawYellowHeader(selectedWidget .. ' settings');
     imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Not built yet.');
 end
 
@@ -6015,7 +6204,7 @@ function settingsUi.Render()
                 DrawSelectedEditor();
             end
 
-            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Close');
+            DrawYellowHeader('Close');
 
             if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
                 windowOpen[1] = false;

@@ -1005,7 +1005,7 @@ local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, 
     DrawBarLabel(device, barX, barY, barW, barH, bar);
 end
 
-local function AddRect(rects, x, y, w, h, padding, kind, layout)
+local function AddRect(rects, x, y, w, h, padding, kind, layout, anchorOnly)
     local pad = tonumber(padding) or 0;
 
     if ((tonumber(w) or 0) <= 0 or (tonumber(h) or 0) <= 0) then
@@ -1037,6 +1037,7 @@ local function AddRect(rects, x, y, w, h, padding, kind, layout)
         baseY2 = drawY2,
         padding = pad,
         anchorLayout = layout,
+        anchorOnly = anchorOnly == true,
     };
 end
 
@@ -1097,8 +1098,9 @@ local function ResolveAnchorRects(rects, plate)
         ['Distance'] = 'distance',
     };
 
-    for _ = 1, 3 do
+    for _ = 1, 12 do
         local bounds = BuildBoundsByKind(rects);
+        local changed = false;
 
         for _, rect in ipairs(rects or {}) do
             local layout = rect.anchorLayout;
@@ -1113,6 +1115,10 @@ local function ResolveAnchorRects(rects, plate)
                 local resolved = anchorGeometry.ResolveAnchoredRect(layout, tostring(rect.kind or ''), defaultRect, bounds, anchorMap);
 
                 local pad = tonumber(rect.padding) or 0;
+                local oldX1 = tonumber(rect.drawX1) or 0;
+                local oldY1 = tonumber(rect.drawY1) or 0;
+                local oldX2 = tonumber(rect.drawX2) or 0;
+                local oldY2 = tonumber(rect.drawY2) or 0;
 
                 rect.drawX1 = resolved.x;
                 rect.drawY1 = resolved.y;
@@ -1122,7 +1128,20 @@ local function ResolveAnchorRects(rects, plate)
                 rect.y1 = rect.drawY1 - pad;
                 rect.x2 = rect.drawX2 + pad;
                 rect.y2 = rect.drawY2 + pad;
+
+                if (
+                    math.abs((tonumber(rect.drawX1) or 0) - oldX1) > 0.01 or
+                    math.abs((tonumber(rect.drawY1) or 0) - oldY1) > 0.01 or
+                    math.abs((tonumber(rect.drawX2) or 0) - oldX2) > 0.01 or
+                    math.abs((tonumber(rect.drawY2) or 0) - oldY2) > 0.01
+                ) then
+                    changed = true;
+                end
             end
+        end
+
+        if (changed ~= true) then
+            break;
         end
     end
 end
@@ -1151,7 +1170,7 @@ local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
 
     local showAtPercent = math.max(1, math.min(100, tonumber(bar.showAtPercent) or 100));
 
-    if (bar.enabled ~= true or progress > showAtPercent) then
+    if (bar.enabled ~= true) then
         return;
     end
 
@@ -1161,8 +1180,13 @@ local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
     local barX = centerX - (barW * 0.5) + (tonumber(bar.offsetX) or 0);
     local barY = centerY - (barH * 0.5) + (tonumber(bar.offsetY) or 0);
     local borderSize = math.max(0, tonumber(bar.borderSize) or 0);
+    local hiddenByThreshold = progress > showAtPercent;
 
-    AddRect(rects, barX - borderSize, barY - borderSize, barW + (borderSize * 2), barH + (borderSize * 2), 4, kind, bar);
+    AddRect(rects, barX - borderSize, barY - borderSize, barW + (borderSize * 2), barH + (borderSize * 2), 4, kind, bar, hiddenByThreshold);
+
+    if (hiddenByThreshold == true) then
+        return;
+    end
 
     local barText = tostring(bar.text or '');
     local labelText = tostring(bar.labelText or '');

@@ -10,6 +10,7 @@ return {
     offsetX = 0,
     offsetY = -78,
     hideOutOfCombat = false,
+    hideCombatMode = 'Out of combat',
     hideAboveDurationEnabled = false,
     hideAboveDurationMinutes = 10,
     showTimers = false,

@@ -1685,6 +1685,14 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             textOutlineEnabled = castBarSettings.textOutlineEnabled == true,
             textOutlineColor = castBarSettings.textOutlineColor or castBarDefaults.textOutlineColor,
             textOutlineSize = tonumber(castBarSettings.textOutlineSize) or castBarDefaults.textOutlineSize,
+            separateLabelOffsets = true,
+            iconTextureId = castBarSettings.showSpellIcon == true
+                and require('core.spell_icon_textures').GetTextureId(145)
+                or nil,
+            iconSize = tonumber(castBarSettings.spellIconSize) or castBarDefaults.spellIconSize,
+            iconOffsetX = tonumber(castBarSettings.spellIconOffsetX) or castBarDefaults.spellIconOffsetX,
+            iconOffsetY = tonumber(castBarSettings.spellIconOffsetY) or castBarDefaults.spellIconOffsetY,
+            iconGap = 4,
         },
     };
 
@@ -1937,6 +1945,20 @@ local function BuildPlate(entityName, stateName, context)
             ['Level'] = 'level',
             ['ID'] = 'id',
             ['Icon'] = 'npc_object_icon',
+            ['Game mode icon'] = 'gameModeIcon',
+            ['Linkshell icon'] = 'linkshellIcon',
+            ['Bazaar icon'] = 'bazaarIcon',
+            ['Away icon'] = 'awayIcon',
+            ['Disconnect icon'] = 'disconnectIcon',
+            ['Anon icon'] = 'anonIcon',
+            ['Follow icon'] = 'followIcon',
+            ['Party leader icon'] = 'partyLeaderIcon',
+            ['Alliance leader icon'] = 'allianceLeaderIcon',
+            ['Stars icon'] = 'starsIcon',
+            ['Level sync icon'] = 'levelSyncIcon',
+            ['New adventurer icon'] = 'newAdventurerIcon',
+            ['Buffs'] = 'buffs',
+            ['Debuffs'] = 'debuffs',
             ['Type line'] = 'type',
             ['Distance'] = 'distance',
         },
@@ -2059,6 +2081,14 @@ local function BuildPlate(entityName, stateName, context)
             textOutlineEnabled = castBarSettings.textOutlineEnabled == true,
             textOutlineColor = castBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
             textOutlineSize = tonumber(castBarSettings.textOutlineSize) or 1,
+            separateLabelOffsets = true,
+            iconTextureId = castBarSettings.showSpellIcon == true
+                and require('core.spell_icon_textures').GetTextureId(145)
+                or nil,
+            iconSize = tonumber(castBarSettings.spellIconSize) or castBarDefaults.spellIconSize,
+            iconOffsetX = tonumber(castBarSettings.spellIconOffsetX) or castBarDefaults.spellIconOffsetX,
+            iconOffsetY = tonumber(castBarSettings.spellIconOffsetY) or castBarDefaults.spellIconOffsetY,
+            iconGap = 4,
         },
         icons = icons,
         targetMarker = BuildTargetMarker(context, hpBarSettings),
@@ -2308,13 +2338,15 @@ local function GetPreviewElementAtMouse(plate, textureWidth, textureHeight, zoom
 
     for index = #rects, 1, -1 do
         local rect = rects[index];
-        local x1 = zoomX + ((tonumber(rect.x1) or 0) / sourceW) * zoomWidth;
-        local y1 = zoomY + ((tonumber(rect.y1) or 0) / sourceH) * zoomHeight;
-        local x2 = zoomX + ((tonumber(rect.x2) or 0) / sourceW) * zoomWidth;
-        local y2 = zoomY + ((tonumber(rect.y2) or 0) / sourceH) * zoomHeight;
+        if (rect.anchorOnly ~= true) then
+            local x1 = zoomX + ((tonumber(rect.x1) or 0) / sourceW) * zoomWidth;
+            local y1 = zoomY + ((tonumber(rect.y1) or 0) / sourceH) * zoomHeight;
+            local x2 = zoomX + ((tonumber(rect.x2) or 0) / sourceW) * zoomWidth;
+            local y2 = zoomY + ((tonumber(rect.y2) or 0) / sourceH) * zoomHeight;
 
-        if (mouseX >= x1 and mouseX <= x2 and mouseY >= y1 and mouseY <= y2) then
-            return tostring(rect.kind or '');
+            if (mouseX >= x1 and mouseX <= x2 and mouseY >= y1 and mouseY <= y2) then
+                return tostring(rect.kind or '');
+            end
         end
     end
 

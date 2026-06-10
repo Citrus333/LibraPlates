@@ -52,6 +52,19 @@ function uiTooltip.Info(text, sameLine)
     end
 
     if (imgui.BeginTooltip ~= nil and imgui.EndTooltip ~= nil) then
+        local pushedStyleVar = false;
+        local pushedStyleColor = false;
+
+        if (imgui.PushStyleVar ~= nil and _G.ImGuiStyleVar_WindowBorderSize ~= nil) then
+            imgui.PushStyleVar(_G.ImGuiStyleVar_WindowBorderSize, 1.0);
+            pushedStyleVar = true;
+        end
+
+        if (imgui.PushStyleColor ~= nil and _G.ImGuiCol_Border ~= nil) then
+            imgui.PushStyleColor(_G.ImGuiCol_Border, { 1.0, 1.0, 1.0, 1.0 });
+            pushedStyleColor = true;
+        end
+
         imgui.BeginTooltip();
 
         if (imgui.PushTextWrapPos ~= nil) then
@@ -69,6 +82,14 @@ function uiTooltip.Info(text, sameLine)
         end
 
         imgui.EndTooltip();
+
+        if (pushedStyleColor == true and imgui.PopStyleColor ~= nil) then
+            imgui.PopStyleColor();
+        end
+
+        if (pushedStyleVar == true and imgui.PopStyleVar ~= nil) then
+            imgui.PopStyleVar();
+        end
     elseif (imgui.SetTooltip ~= nil) then
         imgui.SetTooltip(tostring(text or ''));
     end

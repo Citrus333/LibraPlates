@@ -28,6 +28,7 @@ local enmity = require('core.enmity');
 local enemyCasts = require('core.enemy_casts');
 local enemyStatuses = require('core.enemy_statuses');
 local statusIconTextures = require('core.status_icon_textures');
+local spellIconTextures = require('core.spell_icon_textures');
 local statusTimerFormat = require('core.status_timer_format');
 local targetModuleMarker = require('core.target_module_marker');
 local worldDepthPlate = require('core.world_depth_plate');
@@ -768,6 +769,10 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
     local castTime = math.max(0.1, tonumber(castData.castTime) or 0.1);
     local elapsed = math.max(0.0, os.clock() - (tonumber(castData.startTime) or os.clock()));
     local castPercent = math.max(0, math.min(100, (elapsed / castTime) * 100));
+    local spellIconId = tonumber(castData.spellIconId);
+    local spellIconTextureId = castBarSettings.showSpellIcon == true
+        and spellIconTextures.GetTextureId(spellIconId)
+        or nil;
 
     return {
         enabled = true,
@@ -793,6 +798,12 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
         textOutlineEnabled = castBarSettings.textOutlineEnabled == true,
         textOutlineColor = castBarSettings.textOutlineColor or castBarDefaults.textOutlineColor,
         textOutlineSize = tonumber(castBarSettings.textOutlineSize) or castBarDefaults.textOutlineSize,
+        separateLabelOffsets = true,
+        iconTextureId = spellIconTextureId,
+        iconSize = tonumber(castBarSettings.spellIconSize) or castBarDefaults.spellIconSize,
+        iconOffsetX = tonumber(castBarSettings.spellIconOffsetX) or castBarDefaults.spellIconOffsetX,
+        iconOffsetY = tonumber(castBarSettings.spellIconOffsetY) or castBarDefaults.spellIconOffsetY,
+        iconGap = 4,
     }, castPercent;
 end
 
@@ -1001,7 +1012,7 @@ local function AddStatusIconsToPlate(plateData, statusIds, iconSettings, isEngag
     if (
         iconSettings == nil or
         iconSettings.enabled ~= true or
-        (iconSettings.hideOutOfCombat == true and isEngaged ~= true) or
+        (iconSettings.hideOutOfCombat == true and ((tostring(iconSettings.hideCombatMode or 'Out of combat') == 'Out of combat' and isEngaged ~= true) or (tostring(iconSettings.hideCombatMode or 'Out of combat') == 'In combat' and isEngaged == true))) or
         statusIds == nil or
         #statusIds == 0
     ) then
@@ -1132,7 +1143,7 @@ local function ShouldLoadStatusRows(iconSettings, isEngaged, hasActiveDetail)
         return false;
     end
 
-    if (iconSettings.hideOutOfCombat == true and isEngaged ~= true) then
+    if (iconSettings.hideOutOfCombat == true and ((tostring(iconSettings.hideCombatMode or 'Out of combat') == 'Out of combat' and isEngaged ~= true) or (tostring(iconSettings.hideCombatMode or 'Out of combat') == 'In combat' and isEngaged == true))) then
         return false;
     end
 

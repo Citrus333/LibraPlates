@@ -401,7 +401,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
     if (
         iconSettings == nil or
         iconSettings.enabled ~= true or
-        (iconSettings.hideOutOfCombat == true and isEngaged ~= true) or
+        (iconSettings.hideOutOfCombat == true and ((tostring(iconSettings.hideCombatMode or 'Out of combat') == 'Out of combat' and isEngaged ~= true) or (tostring(iconSettings.hideCombatMode or 'Out of combat') == 'In combat' and isEngaged == true))) or
         statusRows == nil or
         #statusRows == 0
     ) then
@@ -586,7 +586,7 @@ local function ShouldLoadStatusRows(settings, widgetName, isEngaged)
         return false;
     end
 
-    if (settings.hideOutOfCombat == true and isEngaged ~= true) then
+    if (settings.hideOutOfCombat == true and ((tostring(settings.hideCombatMode or 'Out of combat') == 'Out of combat' and isEngaged ~= true) or (tostring(settings.hideCombatMode or 'Out of combat') == 'In combat' and isEngaged == true))) then
         return false;
     end
 

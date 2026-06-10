@@ -271,7 +271,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
     if (
         iconSettings == nil or
         iconSettings.enabled ~= true or
-        (iconSettings.hideOutOfCombat == true and isEngaged ~= true) or
+        (iconSettings.hideOutOfCombat == true and ((tostring(iconSettings.hideCombatMode or 'Out of combat') == 'Out of combat' and isEngaged ~= true) or (tostring(iconSettings.hideCombatMode or 'Out of combat') == 'In combat' and isEngaged == true))) or
         statusRows == nil or
         #statusRows == 0
     ) then
@@ -453,8 +453,8 @@ local function QueueTrust(trust)
             'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
             'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
             'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
-            'buffs:' .. SettingKey(buffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(buffRows),
-            'debuffs:' .. SettingKey(debuffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(debuffRows),
+            'buffs:' .. SettingKey(buffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'hideCombatMode', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(buffRows),
+            'debuffs:' .. SettingKey(debuffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'hideCombatMode', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(debuffRows),
             'targetMarker:' .. BuildTargetMarkerKey(targetMarker),
         }, '\n');
 

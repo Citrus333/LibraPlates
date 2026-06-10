@@ -1,5 +1,7 @@
 local ffi = require('ffi');
 
+local spellIconIds = require('data.spell_icon_ids');
+
 local enemyCasts = {};
 local casts = {};
 
@@ -119,6 +121,22 @@ local function GetSpellCastTimeByResource(spell)
     end
 
     return castTime;
+end
+
+local function GetSpellIconIdByResource(spell, spellId)
+    if (spell == nil) then
+        return spellIconIds[tonumber(spellId) or 0];
+    end
+
+    for _, key in ipairs({ 'icon_id', 'IconId', 'IconID', 'Icon', 'icon', 'iconId', 'iconID' }) do
+        local value = tonumber(spell[key]);
+
+        if (value ~= nil and value > 0) then
+            return value;
+        end
+    end
+
+    return spellIconIds[tonumber(spellId) or 0];
 end
 
 local function ResolveSpell(candidateIds)
@@ -252,6 +270,7 @@ local function HandleEnemyCastActionPacket(actionPacket)
 
         casts[actionPacket.UserId] = {
             spellId = spellId,
+            spellIconId = GetSpellIconIdByResource(spell, spellId),
             spellName = GetSpellNameByResource(spell, spellId),
             startTime = os.clock(),
             castTime = GetSpellCastTimeByResource(spell),

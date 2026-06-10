@@ -1218,11 +1218,7 @@ local function QueueEnemy(enemy)
     local isHovered = worldMarkerProbe.IsPlateHovered(enemy.index, 'enemy') == true;
     local importantAlwaysOnTop =
         isTacticalTarget == true or
-        (
-            targetingSettings.importantOverlayEnabled ~= false and
-            targetingSettings.importantOverlayEngagedEnemies ~= false and
-            isEngaged == true
-        );
+        isEngaged == true;
     local activeDetailRange = math.max(10.0, math.min(49.9, tonumber(targetingSettings.enemyActiveDetailRange) or 25.0));
     local hasActiveDetail =
         importantAlwaysOnTop == true or
@@ -1600,13 +1596,8 @@ function enemyPlate.Render(importantOnly)
     QueueByIndex(currentSubTargetIndex, true);
     QueueByIndex(currentTargetIndex, true);
 
-    if (
-        targetingSettings.importantOverlayEnabled ~= false and
-        targetingSettings.importantOverlayEngagedEnemies ~= false
-    ) then
-        for _, index in ipairs(engagedEnemies.GetTrackedIndexes()) do
-            QueueByIndex(index, true);
-        end
+    for _, index in ipairs(engagedEnemies.GetTrackedIndexes()) do
+        QueueByIndex(index, true);
     end
 
     if (importantOnly == true) then

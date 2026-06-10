@@ -21,6 +21,7 @@ local petState = require('core.pet_state');
 local abilityRecast = require('libs.abilityrecast');
 local targetActionRange = require('core.target_action_range');
 local adaptivePerformance = require('core.adaptive_performance');
+local cursorOverlay = require('core.cursor_overlay');
 local petPlate = require('modules.plates.pet');
 local globalDefaults = require('config.global');
 local jobDefaults = require('config.widgets.job');
@@ -1335,7 +1336,45 @@ function commands.Handle(e)
         return;
     end
 
-    log.Info('Commands: /lp config, /lp perf on, /lp perf detail on, /lp diag start, /lp diag scenario target-on, /lp diag restore, /lp world on, /lp world off, /lp mousemove on, /lp mousesteer on, /lp bridge status, /lp depthbridge, /lp depthtest, /lp castdebug on [seconds], /lp fpsstatus');
+    if (subcommand == 'imgui') then
+        local imguiApi = require('imgui');
+        local names = T{
+            'PushFont',
+            'PopFont',
+            'SetWindowFontScale',
+            'SetWindowFontSize',
+            'SetWindowScale',
+            'GetFont',
+            'GetFontBaked',
+            'GetFontSize',
+        };
+        local parts = T{};
+
+        for _, name in ipairs(names) do
+            parts:append(tostring(name) .. '=' .. tostring(type(imguiApi[name])));
+        end
+
+        log.Info('ImGui API: ' .. table.concat(parts, ' '));
+        return;
+    end
+
+    if (subcommand == 'cursor') then
+        local action = tostring(args[3] or 'toggle'):lower();
+
+        if (action == 'on') then
+            cursorOverlay.SetEnabled(true);
+        elseif (action == 'off') then
+            cursorOverlay.SetEnabled(false);
+        elseif (action == 'toggle') then
+            cursorOverlay.Toggle();
+        end
+
+        state.Save();
+        log.Info('Cursor overlay enabled=' .. tostring(cursorOverlay.GetEnabled()));
+        return;
+    end
+
+    log.Info('Commands: /lp config, /lp perf on, /lp perf detail on, /lp diag start, /lp diag scenario target-on, /lp diag restore, /lp world on, /lp world off, /lp mousemove on, /lp mousesteer on, /lp bridge status, /lp depthbridge, /lp depthtest, /lp castdebug on [seconds], /lp fpsstatus, /lp imgui, /lp cursor on');
 end
 
 return commands;

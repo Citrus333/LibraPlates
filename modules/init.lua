@@ -11,6 +11,7 @@ local peerInspector = require('modules.peer_inspector');
 local perfMeter = require('core.perf_meter');
 local diagnostics = require('core.diagnostics');
 local lagTest = require('core.lag_test');
+local cursorOverlay = require('core.cursor_overlay');
 local imgui = require('imgui');
 
 -- ============================================================
@@ -193,6 +194,8 @@ function modules.Render()
     quickMenu.Render();
     perfMeter.Stop('quick.menu', quickStart);
 
+    cursorOverlay.Render();
+
     perfMeter.Stop('total', totalStart);
     lagTest.Update();
     diagnostics.Update();
@@ -200,6 +203,7 @@ function modules.Render()
 end
 
 function modules.HandleMouse(e)
+    cursorOverlay.HandleMouse(e);
     worldMarkerProbe.UpdateFocusState();
 
     if (state.GetConfigOpen() == true) then

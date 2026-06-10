@@ -120,6 +120,7 @@ local lastError = nil;
 local lastClickStatus = 'none';
 local clickVersion = 'projection-20260525-1';
 local suppressNextLeftRelease = false;
+local rightDownPlate = nil;
 local lastSelfJobText = '';
 local lastSelfJobEnabled = false;
 local lastSelfJobMode = 0;
@@ -2995,6 +2996,29 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
         };
     end
 
+    if (message == 516) then
+        rightDownPlate = entry ~= nil and {
+            targetIndex = entry.targetIndex,
+            targetType = entry.targetType,
+        } or nil;
+    elseif (message == 517) then
+        local startedOnPlate = rightDownPlate ~= nil;
+        local startedTargetIndex = startedOnPlate == true and tonumber(rightDownPlate.targetIndex) or nil;
+        local startedTargetType = startedOnPlate == true and tostring(rightDownPlate.targetType or '') or '';
+        rightDownPlate = nil;
+
+        if (
+            startedOnPlate ~= true or
+            entry == nil or
+            tonumber(entry.targetIndex) ~= startedTargetIndex or
+            tostring(entry.targetType or '') ~= startedTargetType
+        ) then
+            lastClickStatus = 'right release native pass message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y);
+            e.blocked = startedOnPlate == true;
+            return startedOnPlate == true;
+        end
+    end
+
     if (entry == nil) then
         if (message == 513) then
             lastClickStatus = 'miss message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y);
@@ -3069,6 +3093,15 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
             e.blocked = false;
             return false;
         end
+    elseif (message == 517 and entry.targetType == 'enemy' and attackEnemyTarget ~= nil) then
+        local ok = false;
+
+        pcall(function ()
+            ok = attackEnemyTarget(entry.targetIndex, entry.serverId, entry.distance, entry.modelHitboxSize);
+        end);
+
+        lastClickStatus = 'right attack ' .. tostring(ok) .. ' message=' .. tostring(message) .. ' target=' .. tostring(entry.targetIndex) .. ' server=' .. tostring(entry.serverId) .. ' distance=' .. tostring(entry.distance);
+        return true;
     elseif (message == 516 and openQuickMenu ~= nil) then
         local ok = false;
 
@@ -3080,14 +3113,6 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
             lastClickStatus = 'right quickmenu true ' .. tostring(entry.targetType) .. ' message=' .. tostring(message) .. ' target=' .. tostring(entry.targetIndex);
             return true;
         end
-    elseif ((message == 516 or message == 517) and entry.targetType == 'enemy' and attackEnemyTarget ~= nil) then
-        local ok = false;
-
-        pcall(function ()
-            ok = attackEnemyTarget(entry.targetIndex, entry.serverId, entry.distance, entry.modelHitboxSize);
-        end);
-
-        lastClickStatus = 'right attack ' .. tostring(ok) .. ' message=' .. tostring(message) .. ' target=' .. tostring(entry.targetIndex) .. ' server=' .. tostring(entry.serverId) .. ' distance=' .. tostring(entry.distance);
     elseif (message == 516 and interactTarget ~= nil) then
         local ok = false;
 

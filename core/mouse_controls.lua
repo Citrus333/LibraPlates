@@ -24,6 +24,8 @@ local rightDown = false;
 local forwardDown = false;
 local turnLeftDown = false;
 local turnRightDown = false;
+local lastMouseX = nil;
+local lastMouseMoveClock = 0;
 
 local function GetSettings()
     local global = state.GetGlobalSettings(globalDefaults);
@@ -165,37 +167,7 @@ function mouseControls.Update()
         return;
     end
 
-    local io = nil;
-
-    pcall(function()
-        io = imgui.GetIO();
-    end);
-
-    local delta = io ~= nil and io.MouseDelta or nil;
-    local deltaX = nil;
-
-    if (type(delta) == 'table') then
-        deltaX = tonumber(delta.x or delta.X or delta[1]);
-    end
-
-    if (deltaX == nil) then
-        ReleaseTurn();
-        return;
-    end
-
-    local deadzone = tonumber(settings.steerDeadzone) or 1.5;
-
-    if (settings.invertSteer == true) then
-        deltaX = -deltaX;
-    end
-
-    if (deltaX <= -deadzone) then
-        SetTurnRightDown(false);
-        SetTurnLeftDown(true);
-    elseif (deltaX >= deadzone) then
-        SetTurnLeftDown(false);
-        SetTurnRightDown(true);
-    else
+    if ((os.clock() - (tonumber(lastMouseMoveClock) or 0)) > 0.08) then
         ReleaseTurn();
     end
 end
@@ -207,12 +179,59 @@ function mouseControls.HandleMouse(e)
 
     local message = tonumber(e.message);
 
-    if (message == 513) then
+    if (message == 512) then
+        local settings = GetSettings();
+        local x = tonumber(e.x);
+
+        if (x == nil) then
+            return false;
+        end
+
+        if (lastMouseX == nil) then
+            lastMouseX = x;
+            return false;
+        end
+
+        local deltaX = x - lastMouseX;
+        lastMouseX = x;
+        lastMouseMoveClock = os.clock();
+
+        if (
+            settings.enableBothButtonForward ~= true or
+            settings.enableBothButtonSteer ~= true or
+            leftDown ~= true or
+            rightDown ~= true
+        ) then
+            ReleaseTurn();
+            return false;
+        end
+
+        if (settings.invertSteer == true) then
+            deltaX = -deltaX;
+        end
+
+        local deadzone = tonumber(settings.steerDeadzone) or 1.5;
+
+        if (deltaX <= -deadzone) then
+            SetTurnRightDown(false);
+            SetTurnLeftDown(true);
+        elseif (deltaX >= deadzone) then
+            SetTurnLeftDown(false);
+            SetTurnRightDown(true);
+        else
+            ReleaseTurn();
+        end
+
+        e.blocked = true;
+        return forwardDown == true;
+    elseif (message == 513) then
         leftDown = true;
+        lastMouseX = tonumber(e.x) or lastMouseX;
     elseif (message == 514) then
         leftDown = false;
     elseif (message == 516) then
         rightDown = true;
+        lastMouseX = tonumber(e.x) or lastMouseX;
     elseif (message == 517) then
         rightDown = false;
     else
@@ -226,6 +245,8 @@ end
 function mouseControls.Release()
     leftDown = false;
     rightDown = false;
+    lastMouseX = nil;
+    lastMouseMoveClock = 0;
     SetForwardDown(false);
     ReleaseTurn();
 end

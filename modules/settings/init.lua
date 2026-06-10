@@ -12,6 +12,7 @@ local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
 local targeting = require('core.targeting');
 local mouseControls = require('core.mouse_controls');
+local cursorOverlay = require('core.cursor_overlay');
 local globalDefaults = require('config.global');
 local backgroundDefaults = require('config.widgets.background');
 local nameDefaults = require('config.widgets.name');
@@ -316,6 +317,8 @@ local selectedModuleEntity = 'Enemy';
 local selectedModuleState = 'World';
 local selectedModuleWidget = 'Target';
 local selectedPeerEnemyInfo = 'Job';
+local selectedGeneralSection = 'Font';
+local selectedTargetingSection = 'Left Click';
 local openDropdown = nil;
 local previewSplitRatio = 0.42;
 local splitterArrowTextureId = nil;
@@ -328,6 +331,8 @@ local targetModulePendingReset = nil;
 local maneuverPendingReset = nil;
 
 local tabs = T{ 'General', 'Targeting', 'Plates', 'Modules' };
+local generalSections = T{ 'Font', 'Native UI', 'Mouse', 'Scaling' };
+local targetingSections = T{ 'Left Click', 'Right Click', 'Click Blocking' };
 local entities = T{
     'Self',
     'Trust',
@@ -1215,6 +1220,8 @@ function PersistUiSelection()
     profile.settingsUi.selectedModuleEntity = selectedModuleEntity;
     profile.settingsUi.selectedModuleState = selectedModuleState;
     profile.settingsUi.selectedModuleWidget = selectedModuleWidget;
+    profile.settingsUi.selectedGeneralSection = selectedGeneralSection;
+    profile.settingsUi.selectedTargetingSection = selectedTargetingSection;
 end
 
 function RestoreUiSelection()
@@ -1227,6 +1234,14 @@ function RestoreUiSelection()
 
     if (ListContains(tabs, saved.selectedTab) == true) then
         selectedTab = saved.selectedTab;
+    end
+
+    if (ListContains(generalSections, saved.selectedGeneralSection) == true) then
+        selectedGeneralSection = saved.selectedGeneralSection;
+    end
+
+    if (ListContains(targetingSections, saved.selectedTargetingSection) == true) then
+        selectedTargetingSection = saved.selectedTargetingSection;
     end
 
     local savedEntity = NormalizeEntityName(saved.selectedEntity);
@@ -1313,6 +1328,11 @@ function push(name, color)
     push('Button', { uiAccent[1], uiAccent[2], uiAccent[3], 0.70 });
     push('ButtonHovered', { uiAccentHovered[1], uiAccentHovered[2], uiAccentHovered[3], 0.88 });
     push('ButtonActive', uiAccentActive);
+    push('Tab', { uiAccent[1], uiAccent[2], uiAccent[3], 0.46 });
+    push('TabHovered', { uiAccentHovered[1], uiAccentHovered[2], uiAccentHovered[3], 0.78 });
+    push('TabActive', { uiAccentActive[1], uiAccentActive[2], uiAccentActive[3], 0.95 });
+    push('TabUnfocused', { uiAccent[1], uiAccent[2], uiAccent[3], 0.28 });
+    push('TabUnfocusedActive', { uiAccentActive[1], uiAccentActive[2], uiAccentActive[3], 0.70 });
     push('CheckMark', uiAccent);
     push('SliderGrab', uiAccent);
     push('SliderGrabActive', uiAccentHovered);
@@ -1370,20 +1390,49 @@ end
 
 function DrawButtonList(items, selected, onSelect)
     for _, item in ipairs(items) do
-        local label = item;
+        local label = tostring(item or '');
         local color = { 0.92, 0.92, 0.90, 1.0 };
+        local isSelected = tostring(item or '') == tostring(selected or '');
 
-        if (item == selected) then
-            label = '> ' .. item;
-            color = { 1.0, 0.84, 0.0, 1.0 };
+        if (isSelected == true) then
+            color = { 1.0, 1.0, 1.0, 1.0 };
         end
 
-        imgui.TextColored(color, label);
-
-        if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+        if (DrawSelectableRow(label, isSelected, color, 'button_list_' .. label) == true) then
             onSelect(item);
         end
     end
+end
+
+function DrawSelectableRow(label, selected, color, id)
+    local display = tostring(label or '');
+    local itemId = tostring(id or display);
+    local textColor = color or { 0.92, 0.92, 0.90, 1.0 };
+    local pushed = 0;
+    local clicked = false;
+
+    if (imgui.Selectable ~= nil) then
+        if (imgui.PushStyleColor ~= nil and GetImguiColor ~= nil) then
+            local textIndex = GetImguiColor('Text');
+
+            if (textIndex ~= nil) then
+                imgui.PushStyleColor(textIndex, textColor);
+                pushed = pushed + 1;
+            end
+        end
+
+        clicked = imgui.Selectable(display .. '##' .. itemId, selected == true) == true;
+
+        if (pushed > 0 and imgui.PopStyleColor ~= nil) then
+            imgui.PopStyleColor(pushed);
+        end
+
+        return clicked;
+    end
+
+    imgui.TextColored(textColor, (selected == true and '> ' or '') .. display);
+
+    return imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true;
 end
 
 function DrawCombo(label, items, selected, onSelect)
@@ -1400,18 +1449,15 @@ function DrawCombo(label, items, selected, onSelect)
 
     if (openDropdown == label) then
         for _, item in ipairs(items) do
-            local isSelected = (item == selected);
-            local itemLabel = '  ' .. item;
+            local isSelected = tostring(item or '') == tostring(selected or '');
+            local itemLabel = tostring(item or '');
             local color = { 0.92, 0.92, 0.90, 1.0 };
 
             if (isSelected == true) then
-                itemLabel = '> ' .. item;
-                color = { 1.0, 0.84, 0.0, 1.0 };
+                color = { 1.0, 1.0, 1.0, 1.0 };
             end
 
-            imgui.TextColored(color, itemLabel);
-
-            if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+            if (DrawSelectableRow(itemLabel, isSelected, color, tostring(label) .. '_' .. itemLabel) == true) then
                 onSelect(item);
                 openDropdown = nil;
             end
@@ -1518,18 +1564,15 @@ function DrawControl()
 
     if (openDropdown == comboId) then
         for _, item in ipairs(items) do
-            local isSelected = (item == current);
-            local itemLabel = '  ' .. item;
+            local isSelected = tostring(item or '') == tostring(current or '');
+            local itemLabel = tostring(item or '');
             local color = { 0.92, 0.92, 0.90, 1.0 };
 
             if (isSelected == true) then
-                itemLabel = '> ' .. item;
-                color = { 1.0, 0.84, 0.0, 1.0 };
+                color = { 1.0, 1.0, 1.0, 1.0 };
             end
 
-            imgui.TextColored(color, itemLabel);
-
-            if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+            if (DrawSelectableRow(itemLabel, isSelected, color, tostring(comboId) .. '_' .. itemLabel) == true) then
                 onSelect(item);
                 openDropdown = nil;
             end
@@ -3676,20 +3719,15 @@ function DrawPlatesSelector()
         local loadColor = LibraPlatesSettingsGetLoadModeColor(loadMode);
         local labelColor = loadColor;
 
-        if (protectedTargetModule == true) then
+        if (selected == true) then
+            labelColor = { 1.0, 1.0, 1.0, 1.0 };
+        elseif (protectedTargetModule == true) then
             labelColor = { 0.65, 0.90, 1.0, 1.0 };
-        elseif (selected == true and loadMode == 'Always') then
-            labelColor = { 1.0, 0.84, 0.0, 1.0 };
         elseif (active ~= true) then
             labelColor = { 0.58, 0.60, 0.64, 1.0 };
         end
 
-        imgui.TextColored(
-            labelColor,
-            (selected == true and '> ' or '') .. widget
-        );
-
-        if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+        if (DrawSelectableRow(widget, selected, labelColor, 'plate_widget_select_' .. tostring(index) .. '_' .. tostring(widget)) == true) then
             selectedWidget = widget;
         end
 
@@ -5142,198 +5180,325 @@ local function LibraPlatesSettingsToStorageStateName(value)
     return name;
 end
 
-local function DrawSelectedEditorGeneral()
-if (selectedTab == 'General') then
-        local global = state.GetGlobalSettings(globalDefaults);
+local function DrawSectionSelector(sections, selected, setSelected)
+    for _, section in ipairs(sections) do
+        local isSelected = tostring(section) == tostring(selected);
 
-        LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Font' });
-        imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Global font');
-
-        if (global.font.largeFamily == nil) then
-            global.font.largeFamily = global.font.family or 'Default';
+        if (imgui.Selectable(tostring(section), isSelected) == true) then
+            setSelected(section);
+            PersistUiSelection();
         end
+    end
+end
 
-        if (global.font.smallFamily == nil) then
-            global.font.smallFamily = global.font.family or 'Default';
-        end
+local function DrawSettingsHeader(text)
+    imgui.Spacing();
+    imgui.Separator();
 
-        DrawInlineCombo('Large text font', fonts.GetChoices('large'), global.font.largeFamily, function(fontFamily)
-            global.font.largeFamily = fontFamily;
-        end);
-
-        DrawFontStatus('Large font', global.font.largeFamily);
-        DrawFontFolderButton('Open large font folder', 'large');
-
-        DrawInlineCombo('Small text font', fonts.GetChoices('small'), global.font.smallFamily, function(fontFamily)
-            global.font.smallFamily = fontFamily;
-        end);
-
-        DrawFontStatus('Small font', global.font.smallFamily);
-        DrawFontFolderButton('Open small font folder', 'small');
-
-        imgui.TextColored({ 1.0, 0.70, 0.25, 1.0 }, 'After installing new fonts, reload LibraPlates before checking status.');
-        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Large text is used for names. Small text is used by widgets with Use small font enabled.');
-        return;
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.30);
     end
 
-    
+    imgui.Text(tostring(text or ''));
+
+    if (imgui.SetWindowFontScale ~= nil) then
+        imgui.SetWindowFontScale(1.0);
+    end
+
+    imgui.Separator();
+    imgui.Spacing();
+end
+
+local function DrawGeneralFontSection(global)
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Font' });
+    DrawSettingsHeader('Global font');
+
+    if (global.font.largeFamily == nil) then
+        global.font.largeFamily = global.font.family or 'Default';
+    end
+
+    if (global.font.smallFamily == nil) then
+        global.font.smallFamily = global.font.family or 'Default';
+    end
+
+    DrawInlineCombo('Large text font', fonts.GetChoices('large'), global.font.largeFamily, function(fontFamily)
+        global.font.largeFamily = fontFamily;
+    end);
+
+    DrawFontStatus('Large font', global.font.largeFamily);
+    DrawFontFolderButton('Open large font folder', 'large');
+
+    DrawInlineCombo('Small text font', fonts.GetChoices('small'), global.font.smallFamily, function(fontFamily)
+        global.font.smallFamily = fontFamily;
+    end);
+
+    DrawFontStatus('Small font', global.font.smallFamily);
+    DrawFontFolderButton('Open small font folder', 'small');
+
+    imgui.TextColored({ 1.0, 0.70, 0.25, 1.0 }, 'After installing new fonts, reload LibraPlates before checking status.');
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Large text is used for names. Small text is used by widgets with Use small font enabled.');
+end
+
+local function DrawGeneralNativeUiSection(settings)
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Native UI' });
+    DrawSettingsHeader('Native game UI');
+
+    local nativeUiPolicy = require('core.native_ui_policy');
+    local nativeUiForced = nativeUiPolicy.IsNativeUiForced() == true;
+    local useNativePartyTargetUi =
+        settings.hideNativePartyTargetUi ~= true and
+        settings.hideNativeTargetArrow ~= true;
+    local useNativeNames = settings.hideNativeNamesOnLoad ~= true;
+
+    DrawCheckbox('Use native party/target UI', useNativePartyTargetUi == true, function(value)
+        local useNative = value == true;
+        settings.hideNativePartyTargetUi = useNative ~= true;
+        settings.hideNativeTargetArrow = useNative ~= true;
+    end);
+
+    uiTooltip.Info('When off, LibraPlates replaces the native party/target UI and target arrow with Libra target/subtarget modules.');
+
+    DrawCheckbox('Use native names', useNativeNames == true, function(value)
+        settings.hideNativeNamesOnLoad = value ~= true;
+        pcall(function()
+            AshitaCore:GetChatManager():QueueCommand(1, value == true and '/names on' or '/names off');
+        end);
+    end);
+
+    if (nativeUiForced == true) then
+        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Mog House forces native targeting at runtime.');
+    end
+
+    uiTooltip.Info('When off, LibraPlates applies /names off immediately and again when it loads. This does not change LibraPlates plates.');
+end
+
+local function DrawGeneralMouseSection()
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Mouse' });
+    DrawSettingsHeader('Mouse controls');
+
+    local cursorSettings = cursorOverlay.GetSettings();
+
+    DrawCheckbox('Enable mouse adornment', cursorSettings.enabled == true, function(value)
+        cursorOverlay.SetEnabled(value == true);
+        state.Save();
+    end);
+
+    imgui.Text('Mouse shape');
+    local cursorShapes = { 'Ring', 'Diamond', 'Corners', 'Dot Ring', 'Crosshair' };
+    for index, shape in ipairs(cursorShapes) do
+        if (index > 1) then
+            imgui.SameLine();
+        end
+
+        local isSelected = tostring(cursorSettings.shape or 'Ring') == shape;
+        local label = (isSelected == true and '[' .. shape .. ']' or shape) .. '##CursorShape' .. tostring(index);
+
+        if (imgui.Button(label) == true) then
+            cursorSettings.shape = shape;
+            state.Save();
+        end
+    end
+
+    local cursorRadius = { math.floor(tonumber(cursorSettings.radius) or 13) };
+    if (imgui.SliderInt ~= nil) then
+        if (imgui.SliderInt('Size', cursorRadius, 4, 48) == true) then
+            cursorSettings.radius = math.max(4, math.min(48, tonumber(cursorRadius[1]) or 13));
+            state.Save();
+        end
+    else
+        imgui.TextColored(settingsLabelColor, 'Size ' .. tostring(cursorSettings.radius or 13));
+    end
+
+    local trailLagReduction = { math.floor(tonumber(cursorSettings.trailLagReduction) or 0) };
+    if (imgui.SliderInt ~= nil) then
+        if (imgui.SliderInt('Trail lag reduction', trailLagReduction, 0, 100) == true) then
+            cursorSettings.trailLagReduction = math.max(0, math.min(100, tonumber(trailLagReduction[1]) or 0));
+            state.Save();
+        end
+    else
+        imgui.TextColored(settingsLabelColor, 'Trail lag reduction ' .. tostring(cursorSettings.trailLagReduction or 0));
+    end
+
+    imgui.Text('Elements');
+
+    DrawCheckbox('Outer element', cursorSettings.outerEnabled == true, function(value)
+        if (value ~= true and cursorSettings.innerEnabled ~= true and cursorSettings.centerEnabled ~= true) then
+            cursorSettings.outerEnabled = true;
+        else
+            cursorSettings.outerEnabled = value == true;
+        end
+        state.Save();
+    end);
+
+    local ringColor = { unpackTable(cursorSettings.ringColor or globalDefaults.cursorOverlay.ringColor) };
+    imgui.SameLine();
+    if (imgui.ColorEdit4('##CursorRingColor', ringColor, settingsColorEditFlags) == true) then
+        cursorSettings.ringColor = ringColor;
+        state.Save();
+    end
+
+    DrawCheckbox('Inner element', cursorSettings.innerEnabled == true, function(value)
+        if (value ~= true and cursorSettings.outerEnabled ~= true and cursorSettings.centerEnabled ~= true) then
+            cursorSettings.innerEnabled = true;
+        else
+            cursorSettings.innerEnabled = value == true;
+        end
+        state.Save();
+    end);
+
+    local accentColor = { unpackTable(cursorSettings.accentColor or globalDefaults.cursorOverlay.accentColor) };
+    imgui.SameLine();
+    if (imgui.ColorEdit4('##CursorAccentColor', accentColor, settingsColorEditFlags) == true) then
+        cursorSettings.accentColor = accentColor;
+        state.Save();
+    end
+
+    DrawCheckbox('Center element', cursorSettings.centerEnabled == true, function(value)
+        if (value ~= true and cursorSettings.outerEnabled ~= true and cursorSettings.innerEnabled ~= true) then
+            cursorSettings.centerEnabled = true;
+        else
+            cursorSettings.centerEnabled = value == true;
+            cursorSettings.showCenterMark = cursorSettings.centerEnabled == true;
+        end
+        state.Save();
+    end);
+
+    local centerColor = { unpackTable(cursorSettings.centerColor or globalDefaults.cursorOverlay.centerColor) };
+    imgui.SameLine();
+    if (imgui.ColorEdit4('##CursorCenterColor', centerColor, settingsColorEditFlags) == true) then
+        cursorSettings.centerColor = centerColor;
+        state.Save();
+    end
+
+    imgui.Separator();
+
+    DrawCheckbox('Hold both mouse buttons to move forward', mouseControls.GetBothButtonForwardEnabled(), function(value)
+        mouseControls.SetBothButtonForwardEnabled(value == true);
+    end);
+end
+
+local function DrawGeneralScalingSection(settings)
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Scaling' });
+    DrawSettingsHeader('Plate distance scaling');
+
+    DrawSliderTenths('Start distance', settings.pcDistanceScaleStart, 0, 200, function(value)
+        settings.pcDistanceScaleStart = math.max(0.0, math.min(20.0, tonumber(value) or 2.0));
+        if ((tonumber(settings.pcDistanceScaleEnd) or 8.0) <= settings.pcDistanceScaleStart) then
+            settings.pcDistanceScaleEnd = math.min(40.0, settings.pcDistanceScaleStart + 1.0);
+        end
+    end);
+
+    DrawSliderTenths('Max distance', settings.pcDistanceScaleEnd, 10, 400, function(value)
+        settings.pcDistanceScaleEnd = math.max(1.0, math.min(40.0, tonumber(value) or 8.0));
+        if (settings.pcDistanceScaleEnd <= (tonumber(settings.pcDistanceScaleStart) or 2.0)) then
+            settings.pcDistanceScaleStart = math.max(0.0, settings.pcDistanceScaleEnd - 1.0);
+        end
+    end);
+
+    LibraPlatesSettingsDrawTieredSliderTenths('Max scale', settings.pcDistanceScaleMax, 10, 60, {
+        { min = 10, max = 25, label = 'Normal', color = { 0.25, 0.85, 0.35, 0.55 } },
+        { min = 25, max = 35, label = 'Large', color = { 0.95, 0.84, 0.25, 0.55 } },
+        { min = 35, max = 45, label = 'Huge', color = { 1.0, 0.55, 0.20, 0.55 } },
+        { min = 45, max = 60, label = 'Extreme', color = { 1.0, 0.22, 0.18, 0.55 } },
+    }, function(value)
+        settings.pcDistanceScaleMax = math.max(1.0, math.min(6.0, tonumber(value) or 2.65));
+    end);
+end
+
+local function DrawTargetingLeftClickSection(settings)
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Targeting', 'Left Click' });
+    DrawSettingsHeader('Left click');
+
+    DrawCheckbox('Left-click enemy target out of combat', settings.enableLeftClickEnemyTargetIdle == true, function(value)
+        settings.enableLeftClickEnemyTargetIdle = value == true;
+    end);
+
+    DrawSettingsHeader('Enemy detail range');
+
+    DrawSliderTenths('Enemy plate range', settings.enemyPlateRange, 50, 644, function(value)
+        settings.enemyPlateRange = math.max(5.0, math.min(64.4, tonumber(value) or 49.9));
+    end);
+
+    DrawSliderTenths('Enemy active detail range', settings.enemyActiveDetailRange, 100, 499, function(value)
+        settings.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(value) or 25.0));
+    end);
+
+    local range = tonumber(settings.enemyActiveDetailRange) or 25.0;
+    local tierLabel = 'Balanced';
+    local tierColor = { 0.55, 0.85, 1.0, 1.0 };
+
+    if (range <= 15.0) then
+        tierLabel = 'Performance';
+        tierColor = { 0.35, 1.0, 0.55, 1.0 };
+    elseif (range <= 25.0) then
+        tierLabel = 'Balanced';
+        tierColor = { 0.55, 0.85, 1.0, 1.0 };
+    elseif (range <= 35.0) then
+        tierLabel = 'High';
+        tierColor = { 1.0, 0.84, 0.30, 1.0 };
+    else
+        tierLabel = 'Ultra';
+        tierColor = { 1.0, 0.48, 0.35, 1.0 };
+    end
+
+    imgui.TextColored(tierColor, 'Detail mode: ' .. tierLabel);
+    uiTooltip.Info('Idle enemies beyond this range keep static identity only. Target, subtarget, engaged, casting, and hovered enemies still use full detail.');
+end
+
+local function DrawTargetingRightClickSection(settings)
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Targeting', 'Right Click' });
+    DrawSettingsHeader('Right click');
+
+    DrawCheckbox('Right-click attack', settings.enableRightClickAttack == true, function(value)
+        settings.enableRightClickAttack = value == true;
+    end);
+
+    DrawSliderTenths('Right-click attack range', settings.rightClickAttackRange, 30, 299, function(value)
+        settings.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(value) or 4.5));
+    end);
+
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Range includes a small hitbox allowance, matching the old addon behavior.');
+end
+
+local function DrawTargetingClickBlockingSection(settings)
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Targeting', 'Click Blocking' });
+    DrawSettingsHeader('Plate click blocking');
+    LibraPlatesSettingsDrawPlateClickBlocking(settings);
+end
+
+local function DrawSelectedEditorGeneral()
+    if (selectedTab == 'General') then
+        local global = state.GetGlobalSettings(globalDefaults);
+        local settings = targeting.GetSettings();
+
+        if (selectedGeneralSection == 'Native UI') then
+            DrawGeneralNativeUiSection(settings);
+        elseif (selectedGeneralSection == 'Mouse') then
+            DrawGeneralMouseSection();
+        elseif (selectedGeneralSection == 'Scaling') then
+            DrawGeneralScalingSection(settings);
+        else
+            DrawGeneralFontSection(global);
+        end
+
+        return;
+    end
 end
 
 local function DrawSelectedEditorTargeting()
-if (selectedTab == 'Targeting') then
+    if (selectedTab == 'Targeting') then
         local settings = targeting.GetSettings();
 
-        LibraPlatesSettingsDrawBreadcrumb(T{ 'Targeting' });
-        imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Enemy plates');
-
-        DrawCheckbox('Left-click enemy target out of combat', settings.enableLeftClickEnemyTargetIdle == true, function(value)
-            settings.enableLeftClickEnemyTargetIdle = value == true;
-        end);
-
-        DrawSliderTenths('Enemy plate range', settings.enemyPlateRange, 50, 644, function(value)
-            settings.enemyPlateRange = math.max(5.0, math.min(64.4, tonumber(value) or 49.9));
-        end);
-
-        DrawSliderTenths('Enemy active detail range', settings.enemyActiveDetailRange, 100, 499, function(value)
-            settings.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(value) or 25.0));
-        end);
-
-        imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Plate distance scaling');
-
-        DrawSliderTenths('Start distance', settings.pcDistanceScaleStart, 0, 200, function(value)
-            settings.pcDistanceScaleStart = math.max(0.0, math.min(20.0, tonumber(value) or 2.0));
-            if ((tonumber(settings.pcDistanceScaleEnd) or 8.0) <= settings.pcDistanceScaleStart) then
-                settings.pcDistanceScaleEnd = math.min(40.0, settings.pcDistanceScaleStart + 1.0);
-            end
-        end);
-
-        DrawSliderTenths('Max distance', settings.pcDistanceScaleEnd, 10, 400, function(value)
-            settings.pcDistanceScaleEnd = math.max(1.0, math.min(40.0, tonumber(value) or 8.0));
-            if (settings.pcDistanceScaleEnd <= (tonumber(settings.pcDistanceScaleStart) or 2.0)) then
-                settings.pcDistanceScaleStart = math.max(0.0, settings.pcDistanceScaleEnd - 1.0);
-            end
-        end);
-
-        LibraPlatesSettingsDrawTieredSliderTenths('Max scale', settings.pcDistanceScaleMax, 10, 60, {
-            { min = 10, max = 25, label = 'Normal', color = { 0.25, 0.85, 0.35, 0.55 } },
-            { min = 25, max = 35, label = 'Large', color = { 0.95, 0.84, 0.25, 0.55 } },
-            { min = 35, max = 45, label = 'Huge', color = { 1.0, 0.55, 0.20, 0.55 } },
-            { min = 45, max = 60, label = 'Extreme', color = { 1.0, 0.22, 0.18, 0.55 } },
-        }, function(value)
-            settings.pcDistanceScaleMax = math.max(1.0, math.min(6.0, tonumber(value) or 2.65));
-        end);
-
-        do
-            local range = tonumber(settings.enemyActiveDetailRange) or 25.0;
-            local tierLabel = 'Balanced';
-            local tierColor = { 0.55, 0.85, 1.0, 1.0 };
-
-            if (range <= 15.0) then
-                tierLabel = 'Performance';
-                tierColor = { 0.35, 1.0, 0.55, 1.0 };
-            elseif (range <= 25.0) then
-                tierLabel = 'Balanced';
-                tierColor = { 0.55, 0.85, 1.0, 1.0 };
-            elseif (range <= 35.0) then
-                tierLabel = 'High';
-                tierColor = { 1.0, 0.84, 0.30, 1.0 };
-            else
-                tierLabel = 'Ultra';
-                tierColor = { 1.0, 0.48, 0.35, 1.0 };
-            end
-
-            imgui.TextColored(tierColor, 'Detail mode: ' .. tierLabel);
+        if (selectedTargetingSection == 'Right Click') then
+            DrawTargetingRightClickSection(settings);
+        elseif (selectedTargetingSection == 'Click Blocking') then
+            DrawTargetingClickBlockingSection(settings);
+        else
+            DrawTargetingLeftClickSection(settings);
         end
-        uiTooltip.Info('Idle enemies beyond this range keep static identity only. Target, subtarget, engaged, casting, and hovered enemies still use full detail.');
-
-        imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Native game UI');
-
-        local nativeUiPolicy = require('core.native_ui_policy');
-        local nativeUiForced = nativeUiPolicy.IsNativeUiForced() == true;
-        local useNativePartyTargetUi =
-            settings.hideNativePartyTargetUi ~= true and
-            settings.hideNativeTargetArrow ~= true;
-        local useNativeNames = settings.hideNativeNamesOnLoad ~= true;
-
-        DrawCheckbox('Use native party/target UI', useNativePartyTargetUi == true, function(value)
-            local useNative = value == true;
-            settings.hideNativePartyTargetUi = useNative ~= true;
-            settings.hideNativeTargetArrow = useNative ~= true;
-        end);
-
-        uiTooltip.Info('When off, LibraPlates replaces the native party/target UI and target arrow with Libra target/subtarget modules. The combined replacement uses the stable hideparty-style path to avoid target-arrow flicker.');
-
-        DrawCheckbox('Use native names', useNativeNames == true, function(value)
-            settings.hideNativeNamesOnLoad = value ~= true;
-            pcall(function()
-                AshitaCore:GetChatManager():QueueCommand(1, value == true and '/names on' or '/names off');
-            end);
-        end);
-
-        if (nativeUiForced == true) then
-            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Mog House forces native targeting at runtime.');
-        end
-
-        uiTooltip.Info('When off, LibraPlates applies /names off immediately and again when it loads. This does not change LibraPlates plates.');
-
-        imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Engaged enemy overlay');
-
-        local engagedEnemyOverlayEnabled =
-            settings.importantOverlayEnabled ~= false and
-            settings.importantOverlayEngagedEnemies ~= false;
-
-        DrawCheckbox('Show engaged enemies through walls', engagedEnemyOverlayEnabled == true, function(value)
-            settings.importantOverlayEnabled = value == true;
-            settings.importantOverlayEngagedEnemies = value == true;
-        end);
-
-        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'This only controls the extra engaged-enemy overlay path.');
-
-        imgui.Separator();
-        DrawCheckbox('Right-click attack', settings.enableRightClickAttack == true, function(value)
-            settings.enableRightClickAttack = value == true;
-        end);
-
-        DrawSliderTenths('Right-click attack range', settings.rightClickAttackRange, 30, 299, function(value)
-            settings.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(value) or 4.5));
-        end);
-
-        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Range includes a small hitbox allowance, matching the old addon behavior.');
-
-        imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Plate click blocking');
-        LibraPlatesSettingsDrawPlateClickBlocking(settings);
-
-        imgui.Separator();
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Mouse controls');
-
-        DrawCheckbox('Hold both mouse buttons to move forward', mouseControls.GetBothButtonForwardEnabled(), function(value)
-            mouseControls.SetBothButtonForwardEnabled(value == true);
-        end);
-
-        DrawCheckbox('Steer with mouse while both buttons are held', mouseControls.GetBothButtonSteerEnabled(), function(value)
-            mouseControls.SetBothButtonSteerEnabled(value == true);
-        end);
-
-        local mouseSettings = mouseControls.GetSettings();
-
-        DrawCheckbox('Invert mouse steer', mouseSettings.invertSteer == true, function(value)
-            mouseSettings.invertSteer = value == true;
-        end);
-
-        DrawSliderTenths('Steer deadzone', mouseSettings.steerDeadzone, 5, 200, function(value)
-            mouseSettings.steerDeadzone = math.max(0.5, math.min(20.0, tonumber(value) or 1.5));
-        end);
 
         return;
     end
-
-    
 end
 
 local function DrawSelectedEditorModules()
@@ -5817,13 +5982,21 @@ function settingsUi.Render()
             DrawTopTabs();
             imgui.Separator();
 
-            if (selectedTab == 'Plates' or selectedTab == 'Modules') then
+            if (selectedTab == 'General' or selectedTab == 'Targeting' or selectedTab == 'Plates' or selectedTab == 'Modules') then
                 local availWidth, availHeight = GetContentRegionAvail();
                 local selectorWidth = (selectedTab == 'Plates') and 260 or 190;
 
                 DrawChild('##selector_panel', { selectorWidth, math.max(260, availHeight - 24) }, true, function()
                     if (selectedTab == 'Modules') then
                         DrawModulesSelector();
+                    elseif (selectedTab == 'General') then
+                        DrawSectionSelector(generalSections, selectedGeneralSection, function(section)
+                            selectedGeneralSection = section;
+                        end);
+                    elseif (selectedTab == 'Targeting') then
+                        DrawSectionSelector(targetingSections, selectedTargetingSection, function(section)
+                            selectedTargetingSection = section;
+                        end);
                     else
                         DrawPlatesSelector();
                     end
@@ -5832,7 +6005,11 @@ function settingsUi.Render()
                 imgui.SameLine();
 
                 DrawChild('##right_panel', { math.max(420, availWidth - selectorWidth - 12), math.max(260, availHeight - 24) }, false, function()
-                    DrawRightPanel();
+                    if (selectedTab == 'General' or selectedTab == 'Targeting') then
+                        DrawSelectedEditor();
+                    else
+                        DrawRightPanel();
+                    end
                 end);
             else
                 DrawSelectedEditor();

@@ -185,6 +185,9 @@ end
 
 local DrawTextRow = nil;
 local DrawPeerPanelBox = nil;
+local GetPeerInspectorWidth = nil;
+local GetEnemyPeerTextInspectorHeight = nil;
+local GetEnemyPeerIconInspectorHeight = nil;
 
 local iconText = {
     AggroHQ = 'Aggro',
@@ -943,12 +946,12 @@ local function GetPeerBackgroundColor(peerSettings)
     return ColorU32({ color[1] or 0.015, color[2] or 0.018, color[3] or 0.024, opacity });
 end
 
-local function GetPeerInspectorWidth(peerSettings, fallback)
+GetPeerInspectorWidth = function(peerSettings, fallback)
     local width = tonumber(peerSettings ~= nil and peerSettings.inspectorWidth) or tonumber(fallback) or 430;
     return math.max(220, math.min(800, width));
 end
 
-local function GetEnemyPeerTextInspectorHeight(peerSettings)
+GetEnemyPeerTextInspectorHeight = function(peerSettings)
     local h = 56;
 
     if (peerSettings.showHpValue ~= false) then h = h + 28; end
@@ -962,7 +965,7 @@ local function GetEnemyPeerTextInspectorHeight(peerSettings)
     return math.max(84, h + 22);
 end
 
-local function GetEnemyPeerIconInspectorHeight(peerSettings)
+GetEnemyPeerIconInspectorHeight = function(peerSettings)
     local h = 56;
 
     if (peerSettings.showHpValue ~= false) then h = h + 30; end

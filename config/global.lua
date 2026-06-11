@@ -190,6 +190,7 @@ return {
     peer = {
         activationModifier = 'Shift',
         maxRange = 49.9,
+        inspectorWidth = 430,
         zoom = 3.0,
         displayMode = 'Text',
         iconStyle = 'round',
@@ -284,6 +285,10 @@ return {
         aggroOffsetX = -95,
         aggroOffsetY = -16,
         aggroIconSize = 18,
+        aggroFontSize = 12,
+        aggroColor = { 1.0, 1.0, 1.0, 1.0 },
+        aggroOutlineSize = 2,
+        aggroOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
         showDetection = true,
         showDetects = true,
         showLinks = true,

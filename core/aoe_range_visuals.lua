@@ -144,7 +144,6 @@ function aoeRangeVisuals.Apply(plateData, settings, hpBarSettings)
         return;
     end
 
-    aoeRangeVisuals.AddHighlight(plateData, settings, hpBarSettings);
     aoeRangeVisuals.AddIcon(plateData, settings);
 end
 

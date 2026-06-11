@@ -3,6 +3,8 @@ local state = {
     worldRuntimeDisabled = false,
     configOpen = false,
     profile = nil,
+    profileManifest = nil,
+    characterProfileName = nil,
     lastSave = 0,
     activeProfileName = nil,
     activeProfilePath = nil,
@@ -11,11 +13,17 @@ local state = {
 };
 
 local settingsFileName = 'settings.lua';
-local backupSettingsFileName = 'settings.lua.bak';
 local legacyProfileFileName = 'rebuild_profile.lua';
 local globalProfileName = 'global';
+local defaultUserProfileName = 'Default';
+local profilesFolderName = 'profiles';
+local backupsFolderName = 'backups';
+local profileSystemVersion = 1;
 local suspiciousShrinkRatio = 0.50;
 local suspiciousShrinkMinBytes = 8192;
+local SerializeValue = nil;
+local CopyTable = nil;
+local ApplyLoadedWorldEnabled = nil;
 
 -- ============================================================
 -- Lifecycle
@@ -70,18 +78,52 @@ local function GetSettingsPath(profileName)
     return GetProfileFolder(profileName) .. '\\' .. settingsFileName;
 end
 
-local function GetBackupSettingsPath(profileName)
-    return GetProfileFolder(profileName) .. '\\' .. backupSettingsFileName;
+local function GetProfilesFolder(profileName)
+    return GetProfileFolder(profileName) .. '\\' .. profilesFolderName;
+end
+
+local function GetProfileDataPath(characterProfileName, userProfileName)
+    return GetProfilesFolder(characterProfileName) .. '\\' .. (SanitizeProfilePart(userProfileName) or defaultUserProfileName) .. '.lua';
+end
+
+local function GetProfileRelativePath(userProfileName)
+    return profilesFolderName .. '\\' .. (SanitizeProfilePart(userProfileName) or defaultUserProfileName) .. '.lua';
+end
+
+local function GetBackupsFolder(profileName)
+    return GetProfileFolder(profileName) .. '\\' .. backupsFolderName;
+end
+
+local function GetTimestamp()
+    local ok, value = pcall(function()
+        return os.date('%Y%m%d-%H%M%S');
+    end);
+
+    if (ok == true and value ~= nil) then
+        return tostring(value);
+    end
+
+    return tostring(math.floor(os.clock() * 1000));
+end
+
+local function GetProfileBackupPath(characterProfileName, userProfileName)
+    local safeName = SanitizeProfilePart(userProfileName) or defaultUserProfileName;
+
+    return GetBackupsFolder(characterProfileName) .. '\\' .. safeName .. '-' .. GetTimestamp() .. '.lua';
+end
+
+local function GetManifestBackupPath(characterProfileName)
+    return GetBackupsFolder(characterProfileName) .. '\\settings-pre-profile-' .. GetTimestamp() .. '.lua';
 end
 
 local function GetLegacyProfilePath()
     return GetConfigFolder() .. '\\' .. legacyProfileFileName;
 end
 
-local function SetActiveProfileName(profileName)
-    profileName = SanitizeProfilePart(profileName) or globalProfileName;
+local function SetActiveUserProfileName(profileName)
+    profileName = SanitizeProfilePart(profileName) or defaultUserProfileName;
     state.activeProfileName = profileName;
-    state.activeProfilePath = GetSettingsPath(profileName);
+    state.activeProfilePath = GetProfileDataPath(state.characterProfileName, profileName);
 
     return profileName;
 end
@@ -118,6 +160,22 @@ local function EnsureProfileFolder(profileName)
     EnsureFolder(GetConfigFolder());
 
     return EnsureFolder(GetProfileFolder(profileName));
+end
+
+local function EnsureProfileSystemFolders(profileName)
+    if (EnsureProfileFolder(profileName) ~= true) then
+        return false;
+    end
+
+    if (EnsureFolder(GetProfilesFolder(profileName)) ~= true) then
+        return false;
+    end
+
+    if (EnsureFolder(GetBackupsFolder(profileName)) ~= true) then
+        return false;
+    end
+
+    return true;
 end
 
 local function ReadFileSize(path)
@@ -179,22 +237,204 @@ local function LoadLuaTableFile(path)
     return nil;
 end
 
-local function ApplyLoadedWorldEnabled(profile)
-    if (type(profile) == 'table' and type(profile.global) == 'table' and profile.global.worldEnabled ~= nil) then
-        state.worldEnabled = profile.global.worldEnabled == true;
+local function WriteLuaTableFile(path, value)
+    local file = io.open(path, 'w');
+
+    if (file == nil) then
+        return false;
     end
+
+    file:write('return ' .. SerializeValue(value, 0) .. '\n');
+    file:close();
+
+    return true;
 end
 
-local function TryLoadActiveProfile()
+local function IsSettingsProfile(value)
+    return type(value) == 'table' and (type(value.global) == 'table' or type(value.plates) == 'table');
+end
+
+local function IsProfileManifest(value)
+    return type(value) == 'table' and type(value.activeProfile) == 'string' and type(value.profiles) == 'table';
+end
+
+local function GetProfileMetadata(manifest, profileName)
+    if (type(manifest) ~= 'table') then
+        return nil;
+    end
+
+    if (type(manifest.profiles) ~= 'table') then
+        manifest.profiles = {};
+    end
+
+    profileName = SanitizeProfilePart(profileName) or defaultUserProfileName;
+
+    if (type(manifest.profiles[profileName]) ~= 'table') then
+        manifest.profiles[profileName] = {
+            name = profileName,
+            file = GetProfileRelativePath(profileName),
+            version = profileSystemVersion,
+            created = GetTimestamp(),
+            modified = GetTimestamp(),
+        };
+    end
+
+    local metadata = manifest.profiles[profileName];
+
+    if (metadata.name == nil) then metadata.name = profileName; end
+    if (metadata.file == nil) then metadata.file = GetProfileRelativePath(profileName); end
+    if (metadata.version == nil) then metadata.version = profileSystemVersion; end
+    if (metadata.created == nil) then metadata.created = GetTimestamp(); end
+    if (metadata.modified == nil) then metadata.modified = metadata.created; end
+
+    return metadata;
+end
+
+local function CreateDefaultManifest(profileName)
+    profileName = SanitizeProfilePart(profileName) or defaultUserProfileName;
+
+    local now = GetTimestamp();
+    local manifest = {
+        profileSystemVersion = profileSystemVersion,
+        activeProfile = profileName,
+        profiles = {},
+    };
+
+    manifest.profiles[profileName] = {
+        name = profileName,
+        file = GetProfileRelativePath(profileName),
+        version = profileSystemVersion,
+        created = now,
+        modified = now,
+    };
+
+    return manifest;
+end
+
+local function SaveProfileManifest()
+    if (state.characterProfileName == nil or type(state.profileManifest) ~= 'table') then
+        return false;
+    end
+
+    if (EnsureProfileSystemFolders(state.characterProfileName) ~= true) then
+        return false;
+    end
+
+    return WriteLuaTableFile(GetSettingsPath(state.characterProfileName), state.profileManifest);
+end
+
+local function GetProfileId(profileName)
+    return SanitizeProfilePart(profileName);
+end
+
+local function NormalizeJobCode(value, fallback)
+    value = tostring(value or fallback or 'Any');
+    value = value:gsub('%s+', '');
+    value = string.upper(value);
+
+    if (value == '' or value == 'NONE') then
+        return fallback or 'Any';
+    end
+
+    return value;
+end
+
+local function ProfileExists(manifest, profileName)
+    profileName = GetProfileId(profileName);
+
+    return profileName ~= nil and type(manifest) == 'table' and type(manifest.profiles) == 'table' and type(manifest.profiles[profileName]) == 'table';
+end
+
+local function CountProfiles(manifest)
+    local count = 0;
+
+    if (type(manifest) ~= 'table' or type(manifest.profiles) ~= 'table') then
+        return 0;
+    end
+
+    for _ in pairs(manifest.profiles) do
+        count = count + 1;
+    end
+
+    return count;
+end
+
+local function GetFallbackProfileName(manifest, excludeName)
+    excludeName = GetProfileId(excludeName);
+
+    if (type(manifest) ~= 'table' or type(manifest.profiles) ~= 'table') then
+        return nil;
+    end
+
+    for name in pairs(manifest.profiles) do
+        if (tostring(name) ~= tostring(excludeName)) then
+            return tostring(name);
+        end
+    end
+
+    return nil;
+end
+
+local function LoadActiveUserProfile()
+    if (state.characterProfileName == nil or type(state.profileManifest) ~= 'table') then
+        return false;
+    end
+
+    local profileName = SetActiveUserProfileName(state.profileManifest.activeProfile or defaultUserProfileName);
+    local metadata = GetProfileMetadata(state.profileManifest, profileName);
     local loaded = LoadLuaTableFile(state.activeProfilePath);
 
-    if (type(loaded) == 'table') then
+    if (IsSettingsProfile(loaded) == true) then
         state.profile = loaded;
         ApplyLoadedWorldEnabled(state.profile);
         return true;
     end
 
+    state.profile = {
+        global = {},
+        plates = {},
+    };
+    metadata.modified = GetTimestamp();
+
     return false;
+end
+
+local function InstallProfileSystem(characterProfileName, sourceProfile, sourcePath)
+    if (characterProfileName == nil or IsSettingsProfile(sourceProfile) ~= true) then
+        return false;
+    end
+
+    if (EnsureProfileSystemFolders(characterProfileName) ~= true) then
+        return false;
+    end
+
+    if (sourcePath ~= nil and ReadFileSize(sourcePath) > 0) then
+        CopyFile(sourcePath, GetManifestBackupPath(characterProfileName));
+    end
+
+    local profileName = defaultUserProfileName;
+    local profilePath = GetProfileDataPath(characterProfileName, profileName);
+
+    if (ReadFileSize(profilePath) <= 0 and WriteLuaTableFile(profilePath, sourceProfile) ~= true) then
+        return false;
+    end
+
+    state.characterProfileName = characterProfileName;
+    state.profileManifest = CreateDefaultManifest(profileName);
+    state.profileManifest.migratedAt = GetTimestamp();
+    state.profileManifest.migratedFrom = sourcePath ~= nil and tostring(sourcePath) or 'generated';
+    state.profile = CopyTable(sourceProfile);
+    SetActiveUserProfileName(profileName);
+    SaveProfileManifest();
+    ApplyLoadedWorldEnabled(state.profile);
+
+    return true;
+end
+
+ApplyLoadedWorldEnabled = function(profile)
+    if (type(profile) == 'table' and type(profile.global) == 'table' and profile.global.worldEnabled ~= nil) then
+        state.worldEnabled = profile.global.worldEnabled == true;
+    end
 end
 
 local function RefreshCharacterProfile()
@@ -204,22 +444,19 @@ local function RefreshCharacterProfile()
         return false;
     end
 
-    if (state.activeProfileName == profileName and type(state.profile) == 'table') then
+    if (state.characterProfileName == profileName and type(state.profile) == 'table') then
         return true;
     end
 
-    if (state.activeProfileName ~= profileName) then
-        SetActiveProfileName(profileName);
-
-        if (TryLoadActiveProfile() == true) then
-            return true;
-        end
+    if (state.characterProfileName ~= profileName) then
+        state.Load();
+        return type(state.profile) == 'table';
     end
 
     return false;
 end
 
-local function SerializeValue(value, indent)
+SerializeValue = function(value, indent)
     indent = indent or 0;
 
     if (type(value) == 'number' or type(value) == 'boolean') then
@@ -255,7 +492,7 @@ local function SerializeValue(value, indent)
     return table.concat(lines, '\n');
 end
 
-local function CopyTable(value)
+CopyTable = function(value)
     if (type(value) ~= 'table') then
         return value;
     end
@@ -369,6 +606,8 @@ function state.Load()
     state.worldRuntimeDisabled = false;
     state.configOpen = false;
     state.profile = nil;
+    state.profileManifest = nil;
+    state.characterProfileName = nil;
     state.lastSave = 0;
     state.activeProfileName = nil;
     state.activeProfilePath = nil;
@@ -376,10 +615,10 @@ function state.Load()
     state.savedThisSession = false;
 
     local profileName = GetCharacterProfileName() or globalProfileName;
-    SetActiveProfileName(profileName);
+    state.characterProfileName = profileName;
 
     local candidates = {
-        state.activeProfilePath,
+        GetSettingsPath(profileName),
     };
 
     if (profileName ~= globalProfileName) then
@@ -389,23 +628,32 @@ function state.Load()
     table.insert(candidates, GetLegacyProfilePath());
 
     local loadedPath = nil;
+    local loadedSettings = nil;
 
     for _, path in ipairs(candidates) do
         local loaded = LoadLuaTableFile(path);
 
         if (type(loaded) == 'table') then
-            state.profile = loaded;
+            loadedSettings = loaded;
             state.loadedFromDisk = true;
             loadedPath = path;
             break;
         end
     end
 
+    if (IsProfileManifest(loadedSettings) == true) then
+        state.profileManifest = loadedSettings;
+        LoadActiveUserProfile();
+    elseif (IsSettingsProfile(loadedSettings) == true) then
+        InstallProfileSystem(profileName, loadedSettings, loadedPath);
+    else
+        state.profileManifest = CreateDefaultManifest(defaultUserProfileName);
+        SetActiveUserProfileName(defaultUserProfileName);
+        state.profile = nil;
+    end
+
     ApplyLoadedWorldEnabled(state.profile);
 
-    if (loadedPath ~= nil and loadedPath ~= state.activeProfilePath) then
-        state.Save();
-    end
 end
 
 function state.Save()
@@ -417,17 +665,23 @@ function state.Save()
 
     local profileName = GetCharacterProfileName();
 
-    if (profileName == nil and IsCharacterProfileName(state.activeProfileName) == true) then
-        profileName = state.activeProfileName;
+    if (profileName == nil and IsCharacterProfileName(state.characterProfileName) == true) then
+        profileName = state.characterProfileName;
     end
 
     if (profileName == nil or IsCharacterProfileName(profileName) ~= true) then
         return false;
     end
 
-    SetActiveProfileName(profileName);
+    if (state.characterProfileName ~= profileName or state.activeProfilePath == nil) then
+        state.characterProfileName = profileName;
+        if (type(state.profileManifest) ~= 'table') then
+            state.profileManifest = CreateDefaultManifest(defaultUserProfileName);
+        end
+        SetActiveUserProfileName(state.profileManifest.activeProfile or defaultUserProfileName);
+    end
 
-    if (EnsureProfileFolder(profileName) ~= true) then
+    if (EnsureProfileSystemFolders(profileName) ~= true) then
         return false;
     end
 
@@ -444,7 +698,7 @@ function state.Save()
     end
 
     if (oldSize > 0) then
-        CopyFile(state.activeProfilePath, GetBackupSettingsPath(profileName));
+        CopyFile(state.activeProfilePath, GetProfileBackupPath(profileName, state.activeProfileName));
     end
 
     local file = io.open(state.activeProfilePath, 'w');
@@ -458,6 +712,15 @@ function state.Save()
     state.lastSave = os.clock();
     state.loadedFromDisk = true;
     state.savedThisSession = true;
+
+    if (type(state.profileManifest) ~= 'table') then
+        state.profileManifest = CreateDefaultManifest(state.activeProfileName or defaultUserProfileName);
+    end
+
+    state.profileManifest.activeProfile = state.activeProfileName or defaultUserProfileName;
+    local metadata = GetProfileMetadata(state.profileManifest, state.profileManifest.activeProfile);
+    metadata.modified = GetTimestamp();
+    SaveProfileManifest();
 
     return true;
 end
@@ -538,6 +801,14 @@ end
 function state.GetProfile()
     RefreshCharacterProfile();
 
+    if (type(state.profileManifest) ~= 'table') then
+        state.profileManifest = CreateDefaultManifest(defaultUserProfileName);
+    end
+
+    if (state.activeProfilePath == nil) then
+        SetActiveUserProfileName(state.profileManifest.activeProfile or defaultUserProfileName);
+    end
+
     if (state.profile == nil) then
         state.profile = {
             global = {},
@@ -554,6 +825,346 @@ function state.GetProfile()
     end
 
     return state.profile;
+end
+
+function state.GetActiveProfileName()
+    RefreshCharacterProfile();
+
+    return state.activeProfileName or defaultUserProfileName;
+end
+
+function state.GetProfileManifest()
+    RefreshCharacterProfile();
+
+    if (type(state.profileManifest) ~= 'table') then
+        state.profileManifest = CreateDefaultManifest(defaultUserProfileName);
+    end
+
+    return state.profileManifest;
+end
+
+function state.GetProfileNames()
+    local manifest = state.GetProfileManifest();
+    local names = {};
+
+    for name, metadata in pairs(manifest.profiles or {}) do
+        names[#names + 1] = tostring(metadata ~= nil and metadata.name or name);
+    end
+
+    table.sort(names, function(a, b)
+        return string.lower(tostring(a)) < string.lower(tostring(b));
+    end);
+
+    return names;
+end
+
+function state.GetProfileAutoSwitchEnabled()
+    local manifest = state.GetProfileManifest();
+
+    if (manifest.autoSwitchProfilesEnabled == nil) then
+        manifest.autoSwitchProfilesEnabled = false;
+    end
+
+    return manifest.autoSwitchProfilesEnabled == true;
+end
+
+function state.SetProfileAutoSwitchEnabled(enabled)
+    local manifest = state.GetProfileManifest();
+    manifest.autoSwitchProfilesEnabled = enabled == true;
+
+    return SaveProfileManifest();
+end
+
+function state.GetProfileAssignment(profileName)
+    local manifest = state.GetProfileManifest();
+    local profileId = GetProfileId(profileName or manifest.activeProfile);
+
+    if (profileId == nil or ProfileExists(manifest, profileId) ~= true) then
+        return {
+            enabled = false,
+            mainJob = 'WAR',
+            subJob = 'Any',
+        };
+    end
+
+    local metadata = GetProfileMetadata(manifest, profileId);
+
+    if (type(metadata.autoSwitch) ~= 'table') then
+        metadata.autoSwitch = {};
+    end
+
+    metadata.autoSwitch.enabled = metadata.autoSwitch.enabled == true;
+    metadata.autoSwitch.mainJob = NormalizeJobCode(metadata.autoSwitch.mainJob, 'WAR');
+    metadata.autoSwitch.subJob = NormalizeJobCode(metadata.autoSwitch.subJob, 'Any');
+    if (metadata.autoSwitch.subJob == metadata.autoSwitch.mainJob) then
+        metadata.autoSwitch.subJob = 'Any';
+    end
+
+    return metadata.autoSwitch;
+end
+
+function state.SetProfileAssignment(profileName, enabled, mainJob, subJob)
+    local manifest = state.GetProfileManifest();
+    local profileId = GetProfileId(profileName or manifest.activeProfile);
+
+    if (profileId == nil or ProfileExists(manifest, profileId) ~= true) then
+        return false;
+    end
+
+    local metadata = GetProfileMetadata(manifest, profileId);
+    mainJob = NormalizeJobCode(mainJob, 'WAR');
+    subJob = NormalizeJobCode(subJob, 'Any');
+
+    if (subJob == mainJob) then
+        subJob = 'Any';
+    end
+
+    metadata.autoSwitch = {
+        enabled = enabled == true,
+        mainJob = mainJob,
+        subJob = subJob,
+    };
+    metadata.modified = GetTimestamp();
+
+    return SaveProfileManifest();
+end
+
+function state.SetActiveProfile(profileName)
+    local manifest = state.GetProfileManifest();
+    profileName = SanitizeProfilePart(profileName);
+
+    if (profileName == nil or manifest.profiles == nil or manifest.profiles[profileName] == nil) then
+        return false;
+    end
+
+    state.Save();
+    manifest.activeProfile = profileName;
+    SetActiveUserProfileName(profileName);
+
+    if (LoadActiveUserProfile() ~= true) then
+        return false;
+    end
+
+    SaveProfileManifest();
+
+    return true;
+end
+
+function state.CreateProfile(profileName, copyCurrent)
+    local manifest = state.GetProfileManifest();
+    local profileId = GetProfileId(profileName);
+
+    if (profileId == nil) then
+        return false, 'Profile name is empty.';
+    end
+
+    if (ProfileExists(manifest, profileId) == true) then
+        return false, 'Profile name already exists.';
+    end
+
+    if (EnsureProfileSystemFolders(state.characterProfileName) ~= true) then
+        return false, 'Profile folder could not be created.';
+    end
+
+    local source = (copyCurrent ~= false) and CopyTable(state.GetProfile()) or { global = {}, plates = {} };
+    local profilePath = GetProfileDataPath(state.characterProfileName, profileId);
+
+    if (WriteLuaTableFile(profilePath, source) ~= true) then
+        return false, 'Profile could not be saved.';
+    end
+
+    local now = GetTimestamp();
+    manifest.profiles[profileId] = {
+        name = tostring(profileName or profileId),
+        file = GetProfileRelativePath(profileId),
+        version = profileSystemVersion,
+        created = now,
+        modified = now,
+    };
+    manifest.activeProfile = profileId;
+    SaveProfileManifest();
+    SetActiveUserProfileName(profileId);
+    state.profile = source;
+    state.loadedFromDisk = true;
+    state.savedThisSession = true;
+
+    return true;
+end
+
+function state.CopyProfile(sourceName, newName)
+    local manifest = state.GetProfileManifest();
+    local sourceId = GetProfileId(sourceName);
+    local newId = GetProfileId(newName);
+
+    if (sourceId == nil or ProfileExists(manifest, sourceId) ~= true) then
+        return false, 'Source profile is missing.';
+    end
+
+    if (newId == nil) then
+        return false, 'Profile name is empty.';
+    end
+
+    if (ProfileExists(manifest, newId) == true) then
+        return false, 'Profile name already exists.';
+    end
+
+    state.Save();
+
+    local sourcePath = GetProfileDataPath(state.characterProfileName, sourceId);
+    local targetPath = GetProfileDataPath(state.characterProfileName, newId);
+
+    if (CopyFile(sourcePath, targetPath) ~= true) then
+        return false, 'Profile copy failed.';
+    end
+
+    local now = GetTimestamp();
+    manifest.profiles[newId] = {
+        name = tostring(newName or newId),
+        file = GetProfileRelativePath(newId),
+        version = profileSystemVersion,
+        created = now,
+        modified = now,
+        copiedFrom = sourceId,
+        autoSwitch = {
+            enabled = false,
+            mainJob = 'WAR',
+            subJob = 'Any',
+        },
+    };
+    manifest.activeProfile = newId;
+    SaveProfileManifest();
+    SetActiveUserProfileName(newId);
+    LoadActiveUserProfile();
+
+    return true;
+end
+
+function state.RenameProfile(oldName, newName)
+    local manifest = state.GetProfileManifest();
+    local oldId = GetProfileId(oldName);
+    local newId = GetProfileId(newName);
+
+    if (oldId == nil or ProfileExists(manifest, oldId) ~= true) then
+        return false, 'Profile is missing.';
+    end
+
+    if (newId == nil) then
+        return false, 'Profile name is empty.';
+    end
+
+    if (oldId ~= newId and ProfileExists(manifest, newId) == true) then
+        return false, 'Profile name already exists.';
+    end
+
+    state.Save();
+
+    local oldPath = GetProfileDataPath(state.characterProfileName, oldId);
+    local newPath = GetProfileDataPath(state.characterProfileName, newId);
+
+    if (oldId ~= newId) then
+        CopyFile(oldPath, GetProfileBackupPath(state.characterProfileName, oldId));
+
+        local renameOk, renameResult = pcall(function()
+            return os.rename(oldPath, newPath);
+        end);
+
+        if ((renameOk ~= true or renameResult ~= true) and CopyFile(oldPath, newPath) ~= true) then
+            return false, 'Profile rename failed.';
+        end
+
+        if (renameOk ~= true or renameResult ~= true) then
+            pcall(function()
+                os.remove(oldPath);
+            end);
+        end
+    end
+
+    local metadata = manifest.profiles[oldId] or {};
+    manifest.profiles[oldId] = nil;
+    metadata.name = tostring(newName or newId);
+    metadata.file = GetProfileRelativePath(newId);
+    metadata.modified = GetTimestamp();
+    manifest.profiles[newId] = metadata;
+
+    if (manifest.activeProfile == oldId) then
+        manifest.activeProfile = newId;
+        SetActiveUserProfileName(newId);
+    end
+
+    SaveProfileManifest();
+
+    return true;
+end
+
+function state.DeleteProfile(profileName)
+    local manifest = state.GetProfileManifest();
+    local profileId = GetProfileId(profileName);
+
+    if (profileId == nil or ProfileExists(manifest, profileId) ~= true) then
+        return false, 'Profile is missing.';
+    end
+
+    if (CountProfiles(manifest) <= 1) then
+        return false, 'Cannot delete the last profile.';
+    end
+
+    state.Save();
+
+    local fallback = GetFallbackProfileName(manifest, profileId);
+
+    if (fallback == nil) then
+        return false, 'No fallback profile exists.';
+    end
+
+    local profilePath = GetProfileDataPath(state.characterProfileName, profileId);
+
+    CopyFile(profilePath, GetProfileBackupPath(state.characterProfileName, profileId));
+    pcall(function()
+        os.remove(profilePath);
+    end);
+
+    manifest.profiles[profileId] = nil;
+    manifest.activeProfile = fallback;
+    SetActiveUserProfileName(fallback);
+    LoadActiveUserProfile();
+    SaveProfileManifest();
+
+    return true;
+end
+
+function state.ResetProfile(profileName)
+    local manifest = state.GetProfileManifest();
+    local profileId = GetProfileId(profileName or manifest.activeProfile);
+
+    if (profileId == nil or ProfileExists(manifest, profileId) ~= true) then
+        return false, 'Profile is missing.';
+    end
+
+    local profilePath = GetProfileDataPath(state.characterProfileName, profileId);
+
+    CopyFile(profilePath, GetProfileBackupPath(state.characterProfileName, profileId));
+
+    local fresh = {
+        global = {},
+        plates = {},
+    };
+
+    if (WriteLuaTableFile(profilePath, fresh) ~= true) then
+        return false, 'Profile reset failed.';
+    end
+
+    local metadata = GetProfileMetadata(manifest, profileId);
+    metadata.modified = GetTimestamp();
+
+    if (manifest.activeProfile == profileId) then
+        state.profile = fresh;
+        SetActiveUserProfileName(profileId);
+        ApplyLoadedWorldEnabled(state.profile);
+    end
+
+    SaveProfileManifest();
+
+    return true;
 end
 
 function state.GetGlobalSettings(defaults)

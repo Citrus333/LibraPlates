@@ -2722,6 +2722,16 @@ AddPeerPreview = function(plateData, globalSettings)
 
     if (peerSettings.showAggro ~= false) then
         AddPeerPreviewIconRow(plateData, T{ 'AggroNQ' }, peerSettings, 'aggro');
+        AddPeerPreviewText(
+            plateData,
+            'Aggro',
+            (tonumber(peerSettings.aggroOffsetX) or -95) + math.max(6, math.min(64, tonumber(peerSettings.aggroIconSize) or tonumber(peerSettings.iconSize) or 18)) + 4,
+            tonumber(peerSettings.aggroOffsetY) or -16,
+            globalSettings,
+            peerSettings,
+            'aggro',
+            'peerAggroText'
+        );
     end
 
     if (peerSettings.showDetection ~= false) then
@@ -3000,6 +3010,39 @@ local function DrawPreviewPeerPanelBox(drawList, x, y, w, h, peerSettings)
     end
 end
 
+local function GetPreviewPeerInspectorWidth(peerSettings)
+    local width = tonumber(peerSettings ~= nil and peerSettings.inspectorWidth) or 430;
+    return math.max(220, math.min(800, width));
+end
+
+local function GetPreviewEnemyPeerTextInspectorHeight(peerSettings)
+    local h = 56;
+
+    if (peerSettings.showHpValue ~= false) then h = h + 28; end
+    if (peerSettings.showBehavior ~= false) then h = h + 28; end
+    if (peerSettings.showDetects ~= false) then h = h + 28; end
+    if (peerSettings.showLinks ~= false) then h = h + 32; end
+    if (peerSettings.showWeakTo ~= false) then h = h + 28; end
+    if (peerSettings.showResists ~= false) then h = h + 28; end
+    if (peerSettings.showImmunities ~= false) then h = h + 28; end
+
+    return math.max(84, h + 22);
+end
+
+local function GetPreviewEnemyPeerIconInspectorHeight(peerSettings)
+    local h = 56;
+
+    if (peerSettings.showHpValue ~= false) then h = h + 30; end
+    if (peerSettings.showBehavior ~= false) then h = h + 30; end
+    if (peerSettings.showDetects ~= false) then h = h + 30; end
+    if (peerSettings.showLinks ~= false) then h = h + 36; end
+    if (peerSettings.showWeakTo ~= false) then h = h + 56; end
+    if (peerSettings.showResists ~= false) then h = h + 56; end
+    if (peerSettings.showImmunities ~= false) then h = h + 34; end
+
+    return math.max(84, h + 22);
+end
+
 local function DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHeight)
     if (drawList == nil or drawList.AddText == nil or drawList.AddRectFilled == nil) then
         return;
@@ -3007,8 +3050,11 @@ local function DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHei
 
     local settings = state.GetGlobalSettings(globalDefaults);
     local peerSettings = settings.peer or {};
-    local panelW = math.max(320, math.min(430, previewWidth - 36));
-    local panelH = math.max(220, math.min(292, previewHeight - 36));
+    local panelW = math.max(320, math.min(GetPreviewPeerInspectorWidth(peerSettings), previewWidth - 36));
+    local panelH = math.min(
+        (tostring(peerSettings.displayMode or 'Text') == 'Text') and GetPreviewEnemyPeerTextInspectorHeight(peerSettings) or GetPreviewEnemyPeerIconInspectorHeight(peerSettings),
+        previewHeight - 36
+    );
     local panelX = x + math.floor((previewWidth - panelW) * 0.5);
     local panelY = y + math.floor((previewHeight - panelH) * 0.5);
     local textColor = ColorToU32(peerSettings.textColor, { 0.94, 0.94, 0.90, 1.0 });
@@ -3137,7 +3183,7 @@ local function DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight)
         (showAttackDefense and 26 or 0) +
         (showResists and 46 or 0) +
         12;
-    local panelW = math.min(292, previewWidth - 36);
+    local panelW = math.min(GetPreviewPeerInspectorWidth(peerSettings), previewWidth - 36);
     local panelH = math.min(math.max(52, panelHeight), previewHeight - 28);
     local panelX = x + math.floor((previewWidth - panelW) * 0.5);
     local panelY = y + math.floor((previewHeight - panelH) * 0.5);
@@ -3255,7 +3301,7 @@ local function DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight)
 
     local settings = state.GetGlobalSettings(globalDefaults);
     local peerSettings = settings.peer or {};
-    local panelW = math.min(330, previewWidth - 36);
+    local panelW = math.min(GetPreviewPeerInspectorWidth(peerSettings), previewWidth - 36);
     local panelH = math.min(136, previewHeight - 28);
     local panelX = x + math.floor((previewWidth - panelW) * 0.5);
     local panelY = y + math.floor((previewHeight - panelH) * 0.5);

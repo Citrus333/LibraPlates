@@ -114,7 +114,7 @@ local function BuildWorldCacheSignature(plateData, center, stateName, targetStat
         'state=' .. tostring(stateName or ''),
         'target=' .. tostring(targetStateName or ''),
         'layout=' .. tostring(layoutStateName or ''),
-        'aoe=' .. aoeNameHighlight.GetSignature(center ~= nil and center.index or 0),
+        'aoe=' .. aoeNameHighlight.GetSignature(center ~= nil and center.index or 0, 'self'),
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'debug=' .. tostring(worldMarkerProbe.GetClickDebug() == true),
         'plate=' .. StableTableKey(plateData),
@@ -157,7 +157,7 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
-            plateWorldWidth = 2.35 * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
+            plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = (tonumber(center.status) == 85) and (0.72 - mountedPlateLift) or 0.72,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
@@ -179,7 +179,7 @@ end
 local function BuildAoeNameSettings(layoutStateName, nameSettings, targetIndex)
     local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
 
-    if (aoeRangeSettings.enabled ~= true or aoeNameHighlight.IsHighlighted(targetIndex) ~= true) then
+    if (aoeRangeSettings.enabled ~= true or aoeNameHighlight.IsHighlighted(targetIndex, 'self') ~= true) then
         return nameSettings;
     end
 
@@ -711,7 +711,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     local targetMarker = targetModuleMarker.Build('Self', layoutStateName, targetStateName, hpBarSettings, 0);
     local castBar, castPercent = BuildCastBar(castData, castBarSettings, globalSettings);
-    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(center.index);
+    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(center.index, 'self');
     local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
     local nameStyleKey = table.concat({
         'aoe=' .. tostring(nameAoeActive == true),
@@ -848,7 +848,6 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (plateData.aoeNameActive == true) then
         aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
-        plateData.canvasWidth = 1536;
     end
     plateData.debugClickRects = worldMarkerProbe.GetClickDebug();
     plateData.debugClickRectColor = 0x01FFD400;

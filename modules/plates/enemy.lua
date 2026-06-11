@@ -40,7 +40,7 @@ local worldMarkerProbe = require('core.world_marker_probe');
 local enemyPlate = {};
 local targetOverlayEnabled = true;
 local enemyAnchorBone = 2;
-local enemyWorldOffsetY = 0.82;
+local enemyWorldOffsetY = 0.50;
 local user32 = nil;
 local mobInfoIconTextureIds = {};
 local catseyeIconTextureIds = {};
@@ -488,6 +488,41 @@ local function AddPeerIconRow(icons, iconNames, peerSettings, prefix, iconStyle)
     end
 end
 
+local function GetAggroText(iconNames)
+    if (iconNames == nil or #iconNames == 0) then
+        return nil;
+    end
+
+    for _, iconName in ipairs(iconNames) do
+        if (iconName == 'AggroHQ' or iconName == 'AggroNQ') then
+            return 'Aggro';
+        elseif (iconName == 'PassiveHQ' or iconName == 'PassiveNQ') then
+            return 'Passive';
+        end
+    end
+
+    return nil;
+end
+
+local function AddPeerAggroText(texts, iconNames, peerSettings, globalSettings)
+    local text = GetAggroText(iconNames);
+
+    if (text == nil) then
+        return;
+    end
+
+    local iconSize = math.max(6, math.min(64, tonumber(peerSettings.aggroIconSize) or tonumber(peerSettings.iconSize) or 18));
+    local x = (tonumber(peerSettings.aggroOffsetX) or -95) + iconSize + 4;
+    local y = tonumber(peerSettings.aggroOffsetY) or -16;
+    local options = GetPeerTextOptions(peerSettings, 'aggro');
+
+    if (options.color == nil) then
+        options.color = { 1.0, 1.0, 1.0, 1.0 };
+    end
+
+    AddMobInfoText(texts, text, x, y, globalSettings, options);
+end
+
 local function ApplyPeerHpBar(plateData, peerSettings, hpPercent, globalSettings)
     if (peerSettings.showHpBar == false) then
         plateData.hpBar.enabled = false;
@@ -726,6 +761,7 @@ local function BuildMobInfoRows(enemy, globalSettings, peerSettings)
 
     if (peerSettings.showAggro ~= false) then
         AddPeerIconRow(icons, aggroIcons, peerSettings, 'aggro', iconStyle);
+        AddPeerAggroText(texts, aggroIcons, peerSettings, globalSettings);
     end
 
     if (peerSettings.showDetection ~= false) then
@@ -1182,7 +1218,7 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = importantAlwaysOnTop,
-            plateTacticalOverlayOnly = false,
+            plateTacticalOverlayOnly = importantAlwaysOnTop,
             anchorBone = enemyAnchorBone,
             plateWorldWidth = cached.plateWorldWidth,
             plateWorldHeight = cached.plateWorldHeight,
@@ -1190,7 +1226,7 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = -0.12,
+            plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
             plateClickRects = cached.elementRects,
@@ -1234,12 +1270,10 @@ local function QueueEnemy(enemy)
     local importantAlwaysOnTop =
         isTacticalTarget == true or
         isEngaged == true;
-    local activeDetailRange = math.max(10.0, math.min(49.9, tonumber(targetingSettings.enemyActiveDetailRange) or 25.0));
     local hasActiveDetail =
         importantAlwaysOnTop == true or
         castData ~= nil or
-        isHovered == true or
-        ((tonumber(enemy.distance) or 0) <= activeDetailRange);
+        isHovered == true;
 
     if (
         hpBarSettings.lowColorEnabled == true and
@@ -1295,7 +1329,7 @@ local function QueueEnemy(enemy)
             'claim=' .. tostring(claimCategory or ''),
             'ap=' .. tostring(mobInfoData.HasActivityPointMarker(enemy.name) == true),
             'nm=' .. tostring(mobInfo ~= nil and mobInfo.IsNM or ''),
-            'aoe=' .. aoeNameHighlight.GetSignature(enemy.index),
+            'aoe=' .. aoeNameHighlight.GetSignature(enemy.index, 'enemy'),
             'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
             'bg=' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'nameSettings=' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
@@ -1319,9 +1353,9 @@ local function QueueEnemy(enemy)
 
         if (
             adaptivePerformance.ShouldThrottleBackground() == true and
-            staleCached ~= nil and
-            (os.clock() - (tonumber(staleCached.lastUsed) or 0)) < 1.00 and
-            QueueCachedEnemy(enemy, staleCached, stateName, importantAlwaysOnTop, hpPercent) == true
+            cached ~= nil and
+            (os.clock() - (tonumber(cached.lastUsed) or 0)) < 1.00 and
+            QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, hpPercent) == true
         ) then
             perfMeter.Count('enemy.cache.smooth', 1);
             perfMeter.EndDetail(settingsTimer);
@@ -1342,7 +1376,7 @@ local function QueueEnemy(enemy)
     perfMeter.EndDetail(settingsTimer);
 
     local buildTimer = perfMeter.BeginDetail('enemy.build');
-    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(enemy.index) == true;
+    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(enemy.index, 'enemy') == true;
     local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
     local plateData = {
         hp = hpPercent,
@@ -1428,7 +1462,6 @@ local function QueueEnemy(enemy)
     plateData.debugClickRectColor = 0x01FFD400;
     if (plateData.aoeNameActive == true) then
         aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
-        plateData.canvasWidth = 1536;
     end
 
     local canvasTimer = perfMeter.BeginDetail('enemy.canvas');
@@ -1485,7 +1518,7 @@ local function QueueEnemy(enemy)
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = plateClickRects,
-            plateWorldWidth = 2.35 * plateScale * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
+            plateWorldWidth = 2.35 * plateScale,
             plateWorldHeight = 1.18 * plateScale,
         };
         indexCache[tonumber(enemy.index) or 0] = {
@@ -1511,15 +1544,15 @@ local function QueueEnemy(enemy)
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = importantAlwaysOnTop,
-            plateTacticalOverlayOnly = false,
+            plateTacticalOverlayOnly = importantAlwaysOnTop,
             anchorBone = enemyAnchorBone,
-            plateWorldWidth = 2.35 * plateScale * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
+            plateWorldWidth = 2.35 * plateScale,
             plateWorldHeight = 1.18 * plateScale,
             plateWorldOffsetY = enemyWorldOffsetY,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = -0.12,
+            plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = plateClickRects,
@@ -1562,7 +1595,7 @@ end
 
 function enemyPlate.ResetPositionDebug()
     enemyAnchorBone = 2;
-    enemyWorldOffsetY = 0.82;
+    enemyWorldOffsetY = 0.50;
 end
 
 function enemyPlate.GetPositionDebugText()

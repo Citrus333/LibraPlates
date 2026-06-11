@@ -3,41 +3,6 @@ local enemyCasts = require('core.enemy_casts');
 local aoeNameHighlight = {};
 local automaticNameSize = 18;
 
-local function GetSpellNameValue(value)
-    if (value == nil) then
-        return nil;
-    end
-
-    if (type(value) == 'string') then
-        return value;
-    end
-
-    local ok, result = pcall(function()
-        return ffi.string(value);
-    end);
-
-    if (ok == true and result ~= nil and result ~= '') then
-        return result;
-    end
-
-    return nil;
-end
-
-local function IsDefensiveAoeName(actionName)
-    local name = tostring(actionName or ''):lower():gsub('[%s%-_]+', '');
-
-    if (name == '') then
-        return false;
-    end
-
-    return (
-        name:find('curaga', 1, true) ~= nil or
-        name:find('protectra', 1, true) ~= nil or
-        name:find('shellra', 1, true) ~= nil or
-        name:find('hastega', 1, true) ~= nil
-    );
-end
-
 local function SafeNumber(fn)
     local ok, value = pcall(fn);
 
@@ -114,7 +79,7 @@ local function GetCurrentActionTargetIndex()
     return GetSelfIndex();
 end
 
-local function GetActionNameById(actionId)
+local function GetSpellActionInfo(actionId)
     actionId = tonumber(actionId) or 0;
 
     if (actionId <= 0) then
@@ -136,14 +101,52 @@ local function GetActionNameById(actionId)
         return nil;
     end
 
-    if (spell.Name ~= nil) then
-        return GetSpellNameValue(spell.Name[1]) or GetSpellNameValue(spell.Name[2]);
-    end
-
-    return GetSpellNameValue(spell.En);
+    return {
+        spell = spell,
+        id = actionId,
+        type = tostring(spell.Type or spell.type or ''),
+        targets = tonumber(spell.Targets or spell.targets or spell.Target or spell.target),
+        range = tonumber(spell.Range or spell.range),
+    };
 end
 
-local function GetLiveDefensiveActionAoeRange()
+local function GetBlueMagicAoeKind(spellInfo)
+    if (spellInfo == nil or spellInfo.type ~= 'BlueMagic') then
+        return 'all';
+    end
+
+    if (spellInfo.targets == 32) then
+        return 'enemy';
+    elseif (spellInfo.targets == 1) then
+        return 'friendly';
+    end
+
+    if (tonumber(spellInfo.id) == 584) then
+        return 'enemy';
+    end
+
+    return 'friendly';
+end
+
+local function PlateMatchesAoeKind(plateKind, aoeKind)
+    if (aoeKind == nil or aoeKind == 'all') then
+        return true;
+    end
+
+    plateKind = tostring(plateKind or '');
+
+    if (aoeKind == 'enemy') then
+        return plateKind == 'enemy';
+    end
+
+    if (aoeKind == 'friendly') then
+        return plateKind == 'self' or plateKind == 'pc' or plateKind == 'trust' or plateKind == 'pet';
+    end
+
+    return true;
+end
+
+local function GetLiveActionAoe()
     local memory = AshitaCore:GetMemoryManager();
     local targetManager = memory ~= nil and memory:GetTarget() or nil;
 
@@ -162,9 +165,18 @@ local function GetLiveDefensiveActionAoeRange()
     end
 
     local actionId = SafeNumber(function() return targetManager:GetActionId(); end);
+    local spellInfo = GetSpellActionInfo(actionId);
 
-    if (actionId == nil or IsDefensiveAoeName(GetActionNameById(actionId)) ~= true) then
+    if (actionId == nil or spellInfo == nil) then
         return nil;
+    end
+
+    if (spellInfo.type == 'BlueMagic' and spellInfo.range ~= nil and spellInfo.range > 0) then
+        return {
+            range = spellInfo.range,
+            centerIndex = GetSelfIndex(),
+            kind = GetBlueMagicAoeKind(spellInfo),
+        };
     end
 
     local rawRange = nil;
@@ -174,13 +186,25 @@ local function GetLiveDefensiveActionAoeRange()
     end
 
     if (rawRange ~= nil and rawRange > 0) then
-        return rawRange;
+        return {
+            range = rawRange,
+            centerIndex = GetCurrentActionTargetIndex(),
+            kind = 'all',
+        };
     end
 
     local resourceManager = AshitaCore:GetResourceManager();
 
     if (resourceManager ~= nil and resourceManager.GetSpellRange ~= nil) then
-        return SafeNumber(function() return resourceManager:GetSpellRange(actionId, true); end);
+        local spellRange = SafeNumber(function() return resourceManager:GetSpellRange(actionId, true); end);
+
+        if (spellRange ~= nil and spellRange > 0) then
+            return {
+                range = spellRange,
+                centerIndex = GetCurrentActionTargetIndex(),
+                kind = 'all',
+            };
+        end
     end
 
     return nil;
@@ -197,17 +221,17 @@ local function Distance2D(a, b)
     return math.sqrt((dx * dx) + (dy * dy));
 end
 
-function aoeNameHighlight.IsHighlighted(index)
+function aoeNameHighlight.IsHighlighted(index, plateKind)
     index = tonumber(index) or 0;
 
     if (index <= 0) then
         return false;
     end
 
-    local liveRange = GetLiveDefensiveActionAoeRange();
+    local liveAoe = GetLiveActionAoe();
 
-    if (liveRange ~= nil and liveRange > 0) then
-        local centerIndex = GetCurrentActionTargetIndex();
+    if (liveAoe ~= nil and tonumber(liveAoe.range) ~= nil and tonumber(liveAoe.range) > 0 and PlateMatchesAoeKind(plateKind, liveAoe.kind) == true) then
+        local centerIndex = tonumber(liveAoe.centerIndex) or GetSelfIndex();
 
         if (index == centerIndex) then
             return true;
@@ -217,7 +241,7 @@ function aoeNameHighlight.IsHighlighted(index)
         local centerPosition = GetWorldPosition(centerIndex);
         local distance = Distance2D(subjectPosition, centerPosition);
 
-        if (distance ~= nil and distance <= liveRange) then
+        if (distance ~= nil and distance <= tonumber(liveAoe.range)) then
             return true;
         end
     end
@@ -226,9 +250,9 @@ function aoeNameHighlight.IsHighlighted(index)
 
     for _, castData in ipairs(enemyCasts.GetActiveAoeCasts()) do
         local radius = tonumber(castData.aoeRadius) or 0;
-        local targetIndex = tonumber(castData.targetIndex) or 0;
+        local targetIndex = tonumber(castData.aoeCenterIndex or castData.targetIndex) or 0;
 
-        if (radius > 0 and targetIndex > 0) then
+        if (radius > 0 and targetIndex > 0 and PlateMatchesAoeKind(plateKind, castData.aoeKind) == true) then
             if (targetIndex == index) then
                 return true;
             end
@@ -246,22 +270,22 @@ function aoeNameHighlight.IsHighlighted(index)
     return false;
 end
 
-function aoeNameHighlight.ApplyNameSize(textSize, index)
+function aoeNameHighlight.ApplyNameSize(textSize, index, plateKind)
     local size = tonumber(textSize);
 
     if (size == nil or size <= 0) then
         return textSize;
     end
 
-    if (aoeNameHighlight.IsHighlighted(index) ~= true) then
+    if (aoeNameHighlight.IsHighlighted(index, plateKind) ~= true) then
         return size;
     end
 
     return math.max(size, automaticNameSize);
 end
 
-function aoeNameHighlight.GetSignature(index)
-    return aoeNameHighlight.IsHighlighted(index) == true and 'aoe-name:1' or 'aoe-name:0';
+function aoeNameHighlight.GetSignature(index, plateKind)
+    return aoeNameHighlight.IsHighlighted(index, plateKind) == true and 'aoe-name:1' or 'aoe-name:0';
 end
 
 return aoeNameHighlight;

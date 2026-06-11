@@ -59,10 +59,25 @@ end
 local settingsTableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local settingsWindowFlags = 0;
 local targetAutoPlaceAnchorOptions = T{ 'Widest element', 'Name', 'HP Bar' };
+local profileMainJobOptions = T{ 'BLM', 'BLU', 'BRD', 'BST', 'COR', 'DNC', 'DRG', 'DRK', 'GEO', 'MNK', 'NIN', 'PLD', 'PUP', 'RDM', 'RNG', 'RUN', 'SAM', 'SCH', 'SMN', 'THF', 'WAR', 'WHM' };
+local profileSubJobOptions = T{ 'Any', 'BLM', 'BLU', 'BRD', 'BST', 'COR', 'DNC', 'DRG', 'DRK', 'GEO', 'MNK', 'NIN', 'PLD', 'PUP', 'RDM', 'RNG', 'RUN', 'SAM', 'SCH', 'SMN', 'THF', 'WAR', 'WHM' };
 local settingsWindowNoMoveFlag = _G.ImGuiWindowFlags_NoMove or 0;
 local settingsColorEditFlags = bit ~= nil and bit.bor ~= nil
     and bit.bor(_G.ImGuiColorEditFlags_NoAlpha or 0, _G.ImGuiColorEditFlags_NoInputs or 0)
     or ((_G.ImGuiColorEditFlags_NoAlpha or 0) + (_G.ImGuiColorEditFlags_NoInputs or 0));
+
+local function GetProfileSubJobOptions(mainJob)
+    local options = T{};
+    mainJob = tostring(mainJob or '');
+
+    for _, job in ipairs(profileSubJobOptions) do
+        if (job == 'Any' or tostring(job) ~= mainJob) then
+            options[#options + 1] = job;
+        end
+    end
+
+    return options;
+end
 
 local petTimerDefaults = {
     enabled = true,
@@ -333,6 +348,13 @@ local selectedModuleWidget = 'Target';
 local selectedPeerEnemyInfo = 'Job';
 local selectedGeneralSection = 'Font';
 local selectedTargetingSection = 'Left Click';
+local profileNewNameBuffer = { '' };
+local profileCopyNameBuffer = { '' };
+local profileRenameNameBuffer = { '' };
+local profilePendingDelete = nil;
+local profilePendingReset = nil;
+local profileStatusMessage = '';
+local profilePopupStatusMessage = '';
 local openDropdown = nil;
 local previewSplitRatio = 0.42;
 local splitterArrowTextureId = nil;
@@ -346,7 +368,7 @@ local maneuverPendingReset = nil;
 local loadModeDrawn = false;
 
 local tabs = T{ 'General', 'Targeting', 'Plates', 'Modules' };
-local generalSections = T{ 'Font', 'Native UI', 'Mouse', 'Scaling' };
+local generalSections = T{ 'Profiles', 'Font', 'Native UI', 'Mouse', 'Scaling' };
 local targetingSections = T{ 'Left Click', 'Right Click', 'Click Blocking' };
 local entities = T{
     'Self',
@@ -1529,7 +1551,7 @@ function DrawInlineCombo(label, items, selected, onSelect)
     DrawCombo(label, items, current, onSelect);
 end
 
-function DrawInlineComboRow(label, items, selected, onSelect, id, labelColorOverride)
+function DrawInlineComboRow(label, items, selected, onSelect, id, labelColorOverride, labelWidth)
     local current = tostring(selected or items[1] or 'Default');
     local comboId = '##' .. tostring(id or label or 'combo');
 
@@ -1575,7 +1597,7 @@ function DrawControl()
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##settings_combo_' .. tostring(id or label or 'combo'), 2, settingsTableFlags)) then
-            imgui.TableSetupColumn('##label', 0, 78);
+            imgui.TableSetupColumn('##label', 0, tonumber(labelWidth) or 78);
             imgui.TableSetupColumn('##control', 0, 260);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -2874,6 +2896,9 @@ function DrawTargetModulePlacementSettings(settings, defaults, label, entityName
             if (widthChanged == true) then settings.backgroundWidth = nextWidth; state.Save(); end
             if (heightChanged == true) then settings.backgroundHeight = math.max(8, math.min(450, nextHeight)); state.Save(); end
         end
+
+        local highlightColor, highlightColorChanged = DrawSettingsColor('Highlight tint', settings.backgroundColor, 'TargetModuleHighlightTint');
+        if (highlightColorChanged == true) then settings.backgroundColor = highlightColor; state.Save(); end
     end
 
     if (allowHighlight == true) then
@@ -3261,7 +3286,7 @@ function SelectPreviewElement(kind, context)
             peerLevel = 'Level',
             peerId = 'ID',
             peerRange = 'Range',
-            peerAggro = 'Aggro/passive',
+            peerAggro = 'Behavior',
             peerDetection = 'Detection/link',
             peerImmunity = 'Immunities',
             peerModifiers = 'Damage modifiers',
@@ -3386,7 +3411,7 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         peerLevel = { component = 'Level', prefix = 'level' },
         peerId = { component = 'ID', prefix = 'id' },
         peerRange = { component = 'Range', prefix = 'range' },
-        peerAggro = { component = 'Aggro/passive', prefix = 'aggro' },
+        peerAggro = { component = 'Behavior', prefix = 'aggro' },
         peerDetection = { component = 'Detection/link', prefix = 'detection' },
         peerImmunity = { component = 'Immunities', prefix = 'immunity' },
         peerModifiers = { component = 'Damage modifiers', prefix = 'modifier' },
@@ -3967,6 +3992,13 @@ function EnsurePeerIconDefaults(peer, prefix, offsetX, offsetY)
     if (peer[prefix .. 'OffsetX'] == nil) then peer[prefix .. 'OffsetX'] = offsetX; end
     if (peer[prefix .. 'OffsetY'] == nil) then peer[prefix .. 'OffsetY'] = offsetY; end
     if (peer[prefix .. 'IconSize'] == nil) then peer[prefix .. 'IconSize'] = peer.iconSize or 18; end
+
+    if (prefix == 'aggro') then
+        if (peer[prefix .. 'FontSize'] == nil) then peer[prefix .. 'FontSize'] = 12; end
+        if (peer[prefix .. 'Color'] == nil) then peer[prefix .. 'Color'] = { 1.0, 1.0, 1.0, 1.0 }; end
+        if (peer[prefix .. 'OutlineSize'] == nil) then peer[prefix .. 'OutlineSize'] = 2; end
+        if (peer[prefix .. 'OutlineColor'] == nil) then peer[prefix .. 'OutlineColor'] = { 0.0, 0.0, 0.0, 1.0 }; end
+    end
 end
 
 function EnsurePeerHpBarDefaults(peer)
@@ -4076,9 +4108,9 @@ function DrawPeerLevelComponentSettings(settings)
     end
 
     imgui.Separator();
-    DrawYellowHeader('Difficulty font colors');
+    DrawYellowHeader('Difficulty colors');
 
-    DrawCheckbox('Use difficulty font colors', peer.levelDifficultyColorsEnabled == true, function(value)
+    DrawCheckbox('Use difficulty colors', peer.levelDifficultyColorsEnabled == true, function(value)
         peer.levelDifficultyColorsEnabled = value == true;
         state.Save();
     end);
@@ -4240,6 +4272,11 @@ function DrawPeerIconComponentSettings(settings, activeKey, prefix, label)
     if (iconSizeChanged == true) then
         peer[prefix .. 'IconSize'] = iconSize;
         state.Save();
+    end
+
+    if (prefix == 'aggro') then
+        DrawPeerFontRow(peer, prefix, label);
+        DrawPeerOutlineRow(peer, prefix, label);
     end
 end
 
@@ -4409,6 +4446,7 @@ end
 
 function LibraPlatesSettingsEnsurePeerInspectorDefaults(peer)
     if (peer.displayMode == nil) then peer.displayMode = 'Text'; end
+    if (peer.inspectorWidth == nil) then peer.inspectorWidth = 430; end
     if (peer.textFontSize == nil) then peer.textFontSize = 14; end
     if (peer.textColor == nil) then peer.textColor = { 0.94, 0.94, 0.90, 1.0 }; end
     if (peer.textOutlineSize == nil) then peer.textOutlineSize = 1; end
@@ -4546,6 +4584,12 @@ function LibraPlatesSettingsDrawPeerModuleSettings(settings, options)
         state.Save();
     end, 'PeerModifier');
     uiTooltip.Info('Peer opens while hovering a plate and holding this modifier. None means hover alone can open Peer.');
+
+    local inspectorWidth, inspectorWidthChanged = DrawPlacementSingle('Window width', settings.peer.inspectorWidth, 'PeerInspectorWidth', 220, 800, 1, 104, 124, 58);
+    if (inspectorWidthChanged == true) then
+        settings.peer.inspectorWidth = inspectorWidth;
+        state.Save();
+    end
 
     if (options.hideDisplayMode ~= true) then
         DrawInlineComboRow('Display', T{ 'Text', 'Icons' }, settings.peer.displayMode, function(value)
@@ -5572,6 +5616,203 @@ local function DrawGeneralMouseSection()
     end);
 end
 
+local function DrawProfileNamePopup(popupName, inputLabel, buttonLabel, buffer, action)
+    if (imgui.BeginPopupModal == nil) then
+        return;
+    end
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ 430, 180 }, _G.ImGuiCond_Appearing or 8);
+    end
+
+    if (imgui.BeginPopupModal(popupName)) then
+        imgui.Text(inputLabel);
+
+        if (imgui.InputText ~= nil) then
+            if (imgui.PushItemWidth ~= nil) then
+                imgui.PushItemWidth(330);
+            end
+
+            imgui.InputText('##' .. popupName .. '_name', buffer, 64);
+
+            if (imgui.PopItemWidth ~= nil) then
+                imgui.PopItemWidth();
+            end
+        end
+
+        if (profilePopupStatusMessage ~= nil and profilePopupStatusMessage ~= '') then
+            imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, profilePopupStatusMessage);
+        end
+
+        if (imgui.Button('Cancel##' .. popupName .. '_cancel')) then
+            profilePopupStatusMessage = '';
+            imgui.CloseCurrentPopup();
+        end
+
+        imgui.SameLine();
+
+        if (imgui.Button(buttonLabel .. '##' .. popupName .. '_confirm')) then
+            local ok, message = action(tostring(buffer[1] or ''));
+            if (ok == true) then
+                profileStatusMessage = '';
+                profilePopupStatusMessage = '';
+                buffer[1] = '';
+                imgui.CloseCurrentPopup();
+            else
+                profilePopupStatusMessage = tostring(message or 'Profile action failed.');
+            end
+        end
+
+        imgui.EndPopup();
+    end
+end
+
+local function DrawGeneralProfilesSection()
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Profiles' });
+    DrawSettingsHeader('Profiles');
+
+    local names = state.GetProfileNames();
+    local activeName = state.GetActiveProfileName();
+
+    DrawInlineComboRow('Current profile', names, activeName, function(value)
+        local ok, message = state.SetActiveProfile(value);
+        profileStatusMessage = ok == true and '' or tostring(message or 'Profile switch failed.');
+    end, 'ProfileCurrent', nil, 118);
+
+    if (profileStatusMessage ~= nil and profileStatusMessage ~= '') then
+        imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, profileStatusMessage);
+    end
+
+    if (imgui.Button('New##ProfileNew')) then
+        profileNewNameBuffer[1] = '';
+        profilePopupStatusMessage = '';
+        if (imgui.OpenPopup ~= nil) then imgui.OpenPopup('New profile##libraplates_profile_new'); end
+    end
+
+    imgui.SameLine();
+    if (imgui.Button('Copy##ProfileCopy')) then
+        profileCopyNameBuffer[1] = tostring(activeName or 'Default') .. ' Copy';
+        profilePopupStatusMessage = '';
+        if (imgui.OpenPopup ~= nil) then imgui.OpenPopup('Copy profile##libraplates_profile_copy'); end
+    end
+
+    imgui.SameLine();
+    if (imgui.Button('Rename##ProfileRename')) then
+        profileRenameNameBuffer[1] = tostring(activeName or 'Default');
+        profilePopupStatusMessage = '';
+        if (imgui.OpenPopup ~= nil) then imgui.OpenPopup('Rename profile##libraplates_profile_rename'); end
+    end
+
+    imgui.SameLine();
+    if (imgui.Button('Delete##ProfileDelete')) then
+        profilePendingDelete = activeName;
+        if (imgui.OpenPopup ~= nil) then imgui.OpenPopup('Delete profile##libraplates_profile_delete'); end
+    end
+
+    imgui.SameLine();
+    if (imgui.Button('Reset##ProfileReset')) then
+        profilePendingReset = activeName;
+        if (imgui.OpenPopup ~= nil) then imgui.OpenPopup('Reset profile##libraplates_profile_reset'); end
+    end
+
+    uiTooltip.Info('Profiles are stored per character.\nNew profiles start from defaults.\nCopy duplicates the current profile.\nDelete and reset make backups first.');
+
+    DrawProfileNamePopup('New profile##libraplates_profile_new', 'Profile Name:', 'Create', profileNewNameBuffer, function(name)
+        return state.CreateProfile(name, false);
+    end);
+
+    DrawProfileNamePopup('Copy profile##libraplates_profile_copy', 'New Name:', 'Copy', profileCopyNameBuffer, function(name)
+        return state.CopyProfile(activeName, name);
+    end);
+
+    DrawProfileNamePopup('Rename profile##libraplates_profile_rename', 'New Name:', 'Rename', profileRenameNameBuffer, function(name)
+        return state.RenameProfile(activeName, name);
+    end);
+
+    imgui.Separator();
+    DrawYellowHeader('Auto switch');
+
+    local assignment = state.GetProfileAssignment(activeName);
+
+    DrawCheckbox('Auto switch profile', assignment.enabled == true, function(value)
+        state.SetProfileAssignment(activeName, value == true, assignment.mainJob or 'WAR', assignment.subJob or 'Any');
+    end);
+
+    if (assignment.enabled == true) then
+        local assignedMainJob = assignment.mainJob or 'WAR';
+        local assignedSubJob = assignment.subJob or 'Any';
+
+        if (assignedSubJob == assignedMainJob) then
+            assignedSubJob = 'Any';
+        end
+
+        DrawInlineComboRow('Main job', profileMainJobOptions, assignment.mainJob or 'WAR', function(value)
+            local subJob = assignment.subJob or 'Any';
+            if (subJob == value) then
+                subJob = 'Any';
+            end
+
+            state.SetProfileAssignment(activeName, true, value, subJob);
+        end, 'ProfileAutoMainJob', nil, 94);
+
+        DrawInlineComboRow('Sub job', GetProfileSubJobOptions(assignedMainJob), assignedSubJob, function(value)
+            state.SetProfileAssignment(activeName, true, assignedMainJob, value);
+        end, 'ProfileAutoSubJob', nil, 94);
+
+        uiTooltip.Info('Any sub job matches all subjobs and also matches when no subjob is set.');
+    end
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ 390, 145 }, _G.ImGuiCond_Appearing or 8);
+    end
+
+    if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal('Delete profile##libraplates_profile_delete')) then
+        imgui.Text('Delete profile "' .. tostring(profilePendingDelete or activeName or '') .. '"?');
+        imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, 'A backup will be created first.');
+
+        if (imgui.Button('Cancel##ProfileDeleteCancel')) then
+            profilePendingDelete = nil;
+            imgui.CloseCurrentPopup();
+        end
+
+        imgui.SameLine();
+
+        if (imgui.Button('Delete##ProfileDeleteConfirm')) then
+            local ok, message = state.DeleteProfile(profilePendingDelete);
+            profileStatusMessage = ok == true and '' or tostring(message or 'Profile delete failed.');
+            profilePendingDelete = nil;
+            if (ok == true) then imgui.CloseCurrentPopup(); end
+        end
+
+        imgui.EndPopup();
+    end
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ 390, 145 }, _G.ImGuiCond_Appearing or 8);
+    end
+
+    if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal('Reset profile##libraplates_profile_reset')) then
+        imgui.Text('Reset profile "' .. tostring(profilePendingReset or activeName or '') .. '" to defaults?');
+        imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, 'A backup will be created first.');
+
+        if (imgui.Button('Cancel##ProfileResetCancel')) then
+            profilePendingReset = nil;
+            imgui.CloseCurrentPopup();
+        end
+
+        imgui.SameLine();
+
+        if (imgui.Button('Reset##ProfileResetConfirm')) then
+            local ok, message = state.ResetProfile(profilePendingReset);
+            profileStatusMessage = ok == true and '' or tostring(message or 'Profile reset failed.');
+            profilePendingReset = nil;
+            if (ok == true) then imgui.CloseCurrentPopup(); end
+        end
+
+        imgui.EndPopup();
+    end
+end
+
 local function DrawGeneralScalingSection(settings)
     LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Scaling' });
     DrawSettingsHeader('Global distance scaling');
@@ -5772,7 +6013,9 @@ local function DrawSelectedEditorGeneral()
         local global = state.GetGlobalSettings(globalDefaults);
         local settings = targeting.GetSettings();
 
-        if (selectedGeneralSection == 'Native UI') then
+        if (selectedGeneralSection == 'Profiles') then
+            DrawGeneralProfilesSection();
+        elseif (selectedGeneralSection == 'Native UI') then
             DrawGeneralNativeUiSection(settings);
         elseif (selectedGeneralSection == 'Mouse') then
             DrawGeneralMouseSection();

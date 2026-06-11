@@ -29,6 +29,7 @@ local crafting = require('core.crafting');
 local quickMenu = require('core.quick_menu');
 local diagnostics = require('core.diagnostics');
 local adaptivePerformance = require('core.adaptive_performance');
+local profileAutoSwitch = require('core.profile_auto_switch');
 local nativeDrawHooksRegistered = false;
 
 local function RegisterNativeDrawHooks()
@@ -82,6 +83,7 @@ end
 
 ashita.events.register('load', 'libraplates_load', function()
     state.Load();
+    profileAutoSwitch.Reset();
     modules.Load();
     log.Info('Loaded clean LibraPlates.');
 end);
@@ -132,6 +134,7 @@ end);
 ashita.events.register('d3d_present', 'libraplates_present', function()
     local ok, err = pcall(function()
         adaptivePerformance.UpdateFrame();
+        profileAutoSwitch.Update();
         nativeTargetArrow.SetTraceCapturePaused(false);
         nativeTargetArrow.EndTraceFrame();
         nativeTargetArrow.SetTraceCapturePaused(true);

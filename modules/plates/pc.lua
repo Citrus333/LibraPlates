@@ -627,14 +627,14 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
-            plateTacticalOverlayOnly = false,
+            plateTacticalOverlayOnly = useTargetOverlay == true,
             plateWorldWidth = cached.plateWorldWidth or 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = cached.plateWorldOffsetY,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = -0.12,
+            plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
             plateClickRects = cached.elementRects,
@@ -854,7 +854,7 @@ local function QueuePlayer(player)
             'stars=' .. tostring(starsIconTextureId or ''),
             'new=' .. tostring(newAdventurerIconTextureId or ''),
             'staff=' .. tostring(staffIconTextureId or '') .. ':' .. tostring(staffInfo ~= nil and staffInfo.type or ''),
-            'aoe=' .. aoeNameHighlight.GetSignature(player.index),
+            'aoe=' .. aoeNameHighlight.GetSignature(player.index, 'pc'),
             'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
@@ -902,7 +902,7 @@ local function QueuePlayer(player)
     end
 
     local buildTimer = perfMeter.BeginDetail('pc.build');
-    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(player.index) == true;
+    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(player.index, 'pc') == true;
     local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
     local plateData = {
         hp = hpPercent,
@@ -1093,7 +1093,6 @@ local function QueuePlayer(player)
     end
     if (plateData.aoeNameActive == true) then
         aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
-        plateData.canvasWidth = 1536;
     end
     perfMeter.EndDetail(buildTimer);
 
@@ -1119,8 +1118,8 @@ local function QueuePlayer(player)
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = elementRects,
-            plateWorldWidth = 2.35 * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
-            plateWorldOffsetY = (tonumber(player.status) == 85) and (0.82 - mountedPlateLift) or 0.82,
+            plateWorldWidth = 2.35,
+            plateWorldOffsetY = (tonumber(player.status) == 85) and (0.50 - mountedPlateLift) or 0.50,
         };
         indexCache[tonumber(player.index) or 0] = {
             cacheKey = cacheKey,
@@ -1131,7 +1130,7 @@ local function QueuePlayer(player)
     end
 
     local queueTimer = perfMeter.BeginDetail('pc.queue');
-    local plateWorldOffsetY = (tonumber(player.status) == 85) and (0.82 - mountedPlateLift) or 0.82;
+    local plateWorldOffsetY = (tonumber(player.status) == 85) and (0.50 - mountedPlateLift) or 0.50;
     local targetingSettings = targeting.GetSettings();
 
     worldMarkerProbe.QueuePlate({
@@ -1149,14 +1148,14 @@ local function QueuePlayer(player)
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
-            plateTacticalOverlayOnly = false,
-            plateWorldWidth = 2.35 * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
+            plateTacticalOverlayOnly = useTargetOverlay == true,
+            plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = plateWorldOffsetY,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = -0.12,
+            plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = elementRects,

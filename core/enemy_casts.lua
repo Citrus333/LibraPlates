@@ -1,7 +1,5 @@
 local ffi = require('ffi');
 
-local spellIconIds = require('data.spell_icon_ids');
-
 local enemyCasts = {};
 local casts = {};
 local defaultAoeRadius = 10.0;
@@ -125,19 +123,9 @@ local function GetSpellCastTimeByResource(spell)
 end
 
 local function GetSpellIconIdByResource(spell, spellId)
-    if (spell == nil) then
-        return spellIconIds[tonumber(spellId) or 0];
-    end
+    spellId = tonumber(spellId) or 0;
 
-    for _, key in ipairs({ 'icon_id', 'IconId', 'IconID', 'Icon', 'icon', 'iconId', 'iconID' }) do
-        local value = tonumber(spell[key]);
-
-        if (value ~= nil and value > 0) then
-            return value;
-        end
-    end
-
-    return spellIconIds[tonumber(spellId) or 0];
+    return spellId > 0 and spellId or nil;
 end
 
 local function GetSpellTargetsByResource(spell)
@@ -146,6 +134,38 @@ local function GetSpellTargetsByResource(spell)
     end
 
     for _, key in ipairs({ 'Targets', 'targets', 'Target', 'target' }) do
+        local value = tonumber(spell[key]);
+
+        if (value ~= nil) then
+            return value;
+        end
+    end
+
+    return nil;
+end
+
+local function GetSpellTypeByResource(spell)
+    if (spell == nil) then
+        return nil;
+    end
+
+    for _, key in ipairs({ 'Type', 'type' }) do
+        local value = spell[key];
+
+        if (value ~= nil and tostring(value) ~= '') then
+            return tostring(value);
+        end
+    end
+
+    return nil;
+end
+
+local function GetSpellRangeByResource(spell)
+    if (spell == nil) then
+        return nil;
+    end
+
+    for _, key in ipairs({ 'Range', 'range' }) do
         local value = tonumber(spell[key]);
 
         if (value ~= nil) then
@@ -173,10 +193,50 @@ end
 
 local function GetAoeRadiusByResource(spell, spellName)
     if (IsDefensiveAoeSpellName(spellName) ~= true) then
+        local spellType = GetSpellTypeByResource(spell);
+        local spellRange = GetSpellRangeByResource(spell);
+
+        if (spellType == 'BlueMagic' and spellRange ~= nil and spellRange > 0) then
+            return spellRange;
+        end
+
         return nil;
     end
 
     return defaultAoeRadius;
+end
+
+local function GetAoeKindByResource(spell)
+    if (GetSpellTypeByResource(spell) ~= 'BlueMagic') then
+        return 'all';
+    end
+
+    local targets = GetSpellTargetsByResource(spell);
+    if (targets == 32) then
+        return 'enemy';
+    end
+
+    return 'friendly';
+end
+
+local function GetBlueMagicAoeKind(spell, spellId, spellName)
+    if (GetSpellTypeByResource(spell) ~= 'BlueMagic') then
+        return 'all';
+    end
+
+    local targets = GetSpellTargetsByResource(spell);
+    if (targets == 32) then
+        return 'enemy';
+    elseif (targets == 1) then
+        return 'friendly';
+    end
+
+    local normalizedName = tostring(spellName or ''):lower():gsub('[%s%-_]+', '');
+    if (tonumber(spellId) == 584 or normalizedName == 'sheepsong') then
+        return 'enemy';
+    end
+
+    return 'friendly';
 end
 
 local function ResolveSpell(candidateIds)
@@ -288,7 +348,7 @@ local function HandleEnemyCastActionPacket(actionPacket)
         return;
     end
 
-    if (actionPacket.Type == 8) then
+    if (actionPacket.Type == 8 or actionPacket.Type == 9) then
         if (
             actionPacket.Targets == nil or
             actionPacket.Targets[1] == nil or
@@ -310,6 +370,13 @@ local function HandleEnemyCastActionPacket(actionPacket)
 
         local spellName = GetSpellNameByResource(spell, spellId);
         local targetServerId = actionPacket.Targets[1].Id;
+        local spellType = GetSpellTypeByResource(spell);
+        local aoeRadius = GetAoeRadiusByResource(spell, spellName);
+        local aoeCenterIndex = GetIndexFromServerId(targetServerId);
+
+        if (spellType == 'BlueMagic' and aoeRadius ~= nil and aoeRadius > 0) then
+            aoeCenterIndex = actionPacket.UserIndex;
+        end
 
         casts[actionPacket.UserId] = {
             spellId = spellId,
@@ -318,7 +385,9 @@ local function HandleEnemyCastActionPacket(actionPacket)
             spellTargets = GetSpellTargetsByResource(spell),
             targetServerId = targetServerId,
             targetIndex = GetIndexFromServerId(targetServerId),
-            aoeRadius = GetAoeRadiusByResource(spell, spellName),
+            aoeCenterIndex = aoeCenterIndex,
+            aoeRadius = aoeRadius,
+            aoeKind = GetBlueMagicAoeKind(spell, spellId, spellName),
             startTime = os.clock(),
             castTime = GetSpellCastTimeByResource(spell),
         };
@@ -372,7 +441,7 @@ function enemyCasts.GetActiveAoeCasts()
     for serverId, castData in pairs(casts) do
         if ((now - (tonumber(castData.startTime) or now)) >= (tonumber(castData.castTime) or 0)) then
             casts[serverId] = nil;
-        elseif (tonumber(castData.aoeRadius) ~= nil and tonumber(castData.targetIndex) ~= nil and tonumber(castData.targetIndex) > 0) then
+        elseif (tonumber(castData.aoeRadius) ~= nil and tonumber(castData.aoeCenterIndex or castData.targetIndex) ~= nil and tonumber(castData.aoeCenterIndex or castData.targetIndex) > 0) then
             results[#results + 1] = castData;
         end
     end

@@ -9,6 +9,9 @@ local unpackTable = table.unpack or unpack;
 local labelColor = { 0.92, 0.92, 0.90, 1.0 };
 local valueColor = { 0.65, 0.90, 1.0, 1.0 };
 local actionColor = { 1.0, 0.84, 0.0, 1.0 };
+local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
+local colorEditFlags = (_G.ImGuiColorEditFlags_NoInputs or 0) + (_G.ImGuiColorEditFlags_AlphaPreviewHalf or 0);
+local heldButtonState = {};
 local function DrawSectionHeader(label)
     if (imgui.SetWindowFontScale ~= nil) then
         imgui.SetWindowFontScale(1.18);
@@ -44,6 +47,16 @@ local function DrawActionButton(label)
 end
 
 local function DrawToggle(label, value)
+    if (imgui.Checkbox ~= nil) then
+        local ref = { value == true };
+
+        if (imgui.Checkbox(label, ref) == true) then
+            return ref[1] == true;
+        end
+
+        return ref[1] == true;
+    end
+
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
 
@@ -54,29 +67,124 @@ local function DrawToggle(label, value)
     return value == true;
 end
 
-local function DrawNumber(label, value, minValue, maxValue, step)
+local function IsHeldButton(label)
+    if (imgui.Button == nil) then
+        return false;
+    end
+
+    local clicked = imgui.Button(label) == true;
+    local active = imgui.IsItemActive ~= nil and imgui.IsItemActive() == true;
+    local mouseDown = imgui.IsMouseDown == nil or imgui.IsMouseDown(0) == true;
+    local now = os.clock();
+    local key = tostring(label or '');
+
+    if (active == true and mouseDown == true) then
+        local itemClicked = (imgui.IsItemActivated ~= nil and imgui.IsItemActivated() == true)
+            or (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true);
+        local state = heldButtonState[key];
+
+        if (state == nil) then
+            state = { nextRepeat = now + 0.35, clicked = false };
+            heldButtonState[key] = state;
+        end
+
+        if ((clicked == true or itemClicked == true) and state.clicked ~= true) then
+            state.clicked = true;
+            return true;
+        end
+
+        if (now >= (tonumber(state.nextRepeat) or now + 0.35)) then
+            state.nextRepeat = now + 0.08;
+            return true;
+        end
+
+        return false;
+    end
+
+    if (heldButtonState[key] ~= nil) then
+        heldButtonState[key] = nil;
+        return false;
+    end
+
+    return clicked;
+end
+
+local function DrawNumberControl(idValue, value, minValue, maxValue, width)
     local current = tonumber(value) or 0;
-    local amount = tonumber(step) or 1;
 
-    imgui.TextColored(labelColor, label);
-    imgui.SameLine();
-    imgui.TextColored(valueColor, tostring(current));
-    imgui.SameLine();
-
-    if (ClickText('less', actionColor) == true) then
-        current = current - amount;
+    if (imgui.Button ~= nil and IsHeldButton('-##id_' .. idValue .. '_minus') == true) then
+        current = current - 1;
     end
 
     imgui.SameLine();
 
-    if (ClickText('more', actionColor) == true) then
-        current = current + amount;
+    if (imgui.InputText ~= nil) then
+        local ref = { tostring(math.floor(current + 0.5)) };
+
+        if (imgui.PushItemWidth ~= nil) then
+            imgui.PushItemWidth(width or 92);
+        end
+
+        imgui.InputText('##id_' .. idValue .. '_input', ref, 16);
+
+        if (imgui.PopItemWidth ~= nil) then
+            imgui.PopItemWidth();
+        end
+
+        current = tonumber(ref[1]) or current;
+    else
+        imgui.TextColored(valueColor, tostring(current));
+    end
+
+    imgui.SameLine();
+
+    if (imgui.Button ~= nil and IsHeldButton('+##id_' .. idValue .. '_plus') == true) then
+        current = current + 1;
     end
 
     if (minValue ~= nil and current < minValue) then current = minValue; end
     if (maxValue ~= nil and current > maxValue) then current = maxValue; end
 
     return current;
+end
+
+local function DrawNumber(label, value, minValue, maxValue, step)
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+    return DrawNumberControl(label:gsub('%s+', '_'), value, minValue, maxValue);
+end
+
+local function DrawTableNumber(label, idValue, value, minValue, maxValue)
+    imgui.TextColored(labelColor, label);
+    imgui.TableNextColumn();
+    return DrawNumberControl(idValue, value, minValue, maxValue);
+end
+
+local function DrawNumberPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local nextLeft = leftValue;
+        local nextRight = rightValue;
+
+        if (imgui.BeginTable('##id_' .. rowId, 4, tableFlags)) then
+            imgui.TableSetupColumn('##left_label', 0, 118);
+            imgui.TableSetupColumn('##left_control', 0, 170);
+            imgui.TableSetupColumn('##right_label', 0, 118);
+            imgui.TableSetupColumn('##right_control', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            nextLeft = DrawTableNumber(leftLabel, leftId, leftValue, leftMin, leftMax);
+            imgui.TableNextColumn();
+            nextRight = DrawTableNumber(rightLabel, rightId, rightValue, rightMin, rightMax);
+            imgui.EndTable();
+        end
+
+        return nextLeft, nextRight;
+    end
+
+    local nextLeft = DrawNumber(leftLabel, leftValue, leftMin, leftMax, 1);
+    imgui.SameLine();
+    local nextRight = DrawNumber(rightLabel, rightValue, rightMin, rightMax, 1);
+    return nextLeft, nextRight;
 end
 
 local function ClampChannel(value)
@@ -91,6 +199,11 @@ local function DrawColor(label, color)
     local red = math.floor(ClampChannel(color[1]) * 255);
     local green = math.floor(ClampChannel(color[2]) * 255);
     local blue = math.floor(ClampChannel(color[3]) * 255);
+
+    if (imgui.ColorEdit4 ~= nil) then
+        imgui.ColorEdit4('##id_' .. label, color, colorEditFlags);
+        return color;
+    end
 
     imgui.TextColored(color, label);
     imgui.SameLine();
@@ -115,6 +228,78 @@ local function DrawColor(label, color)
     color[4] = tonumber(color[4]) or 1.0;
 
     return color;
+end
+
+local function DrawColorCell(label, idValue, color)
+    imgui.TextColored(labelColor, label);
+    imgui.TableNextColumn();
+    return DrawColor(idValue, color);
+end
+
+local function DrawFontRow(settings)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##id_font_row', 4, tableFlags)) then
+            imgui.TableSetupColumn('##font_size_label', 0, 118);
+            imgui.TableSetupColumn('##font_size_control', 0, 170);
+            imgui.TableSetupColumn('##font_color_label', 0, 118);
+            imgui.TableSetupColumn('##font_color_control', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            settings.textSize = DrawTableNumber('Font size', 'font_size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
+            imgui.TableNextColumn();
+            settings.color = DrawColorCell('Font color', 'font_color', settings.color);
+            imgui.EndTable();
+        end
+
+        return;
+    end
+
+    settings.textSize = DrawNumber('Font size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize(), 1);
+    settings.color = DrawColor('font_color', settings.color);
+end
+
+local function DrawOutlineRow(settings)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##id_outline_row', 4, tableFlags)) then
+            imgui.TableSetupColumn('##outline_size_label', 0, 118);
+            imgui.TableSetupColumn('##outline_size_control', 0, 170);
+            imgui.TableSetupColumn('##outline_color_label', 0, 118);
+            imgui.TableSetupColumn('##outline_color_control', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            settings.outlineSize = DrawTableNumber('Outline size', 'outline_size', settings.outlineSize, 0, 8);
+            imgui.TableNextColumn();
+            settings.outlineColor = DrawColorCell('Outline color', 'outline_color', settings.outlineColor);
+            imgui.EndTable();
+        end
+
+        return;
+    end
+
+    settings.outlineSize = DrawNumber('Outline size', settings.outlineSize, 0, 8, 1);
+    settings.outlineColor = DrawColor('outline_color', settings.outlineColor);
+end
+
+local function DrawBoxColorRow(settings)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##id_box_color_row', 4, tableFlags)) then
+            imgui.TableSetupColumn('##box_color_label', 0, 118);
+            imgui.TableSetupColumn('##box_color_control', 0, 170);
+            imgui.TableSetupColumn('##border_color_label', 0, 118);
+            imgui.TableSetupColumn('##border_color_control', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            settings.boxBackgroundColor = DrawColorCell('Box color', 'box_color', settings.boxBackgroundColor);
+            imgui.TableNextColumn();
+            settings.boxBorderColor = DrawColorCell('Border color', 'border_color', settings.boxBorderColor);
+            imgui.EndTable();
+        end
+
+        return;
+    end
+
+    settings.boxBackgroundColor = DrawColor('box_color', settings.boxBackgroundColor);
+    settings.boxBorderColor = DrawColor('border_color', settings.boxBorderColor);
 end
 
 local function DrawAnchorCombo(idValue, current, choices)
@@ -188,44 +373,80 @@ function id.DrawSettings(settings, context)
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawToggle('Active', settings.enabled);
     end
+
     DrawAnchorControls(settings, context);
-    settings.offsetX = DrawNumber('Position X', settings.offsetX, -400, 400, 5);
-    settings.offsetY = DrawNumber('Position Y', settings.offsetY, -400, 400, 5);
-    settings.textSize = DrawNumber('Text size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize(), 1);
+
+    settings.offsetX, settings.offsetY = DrawNumberPair(
+        'position',
+        'Position X', 'position_x', settings.offsetX, -400, 400,
+        'Position Y', 'position_y', settings.offsetY, -400, 400
+    );
+
+    imgui.Separator();
+    DrawSectionHeader('Text settings');
+    DrawFontRow(settings);
     settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
     uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
-    settings.color = DrawColor('Text color', settings.color);
-    settings.outlineEnabled = DrawToggle('Text outline', settings.outlineEnabled);
+    settings.outlineEnabled = DrawToggle('Outline', settings.outlineEnabled);
 
     if (settings.outlineEnabled == true) then
-        settings.outlineSize = DrawNumber('Outline size', settings.outlineSize, 0, 8, 1);
-        settings.outlineColor = DrawColor('Outline color', settings.outlineColor);
+        DrawOutlineRow(settings);
     end
 
     imgui.Separator();
-    DrawSectionHeader('ID box');
+    DrawSectionHeader('Box settings');
     settings.boxEnabled = DrawToggle('Box', settings.boxEnabled);
 
     if (settings.boxEnabled == true) then
-        settings.boxBackgroundColor = DrawColor('Box color', settings.boxBackgroundColor);
+        DrawBoxColorRow(settings);
+        settings.boxSize, settings.cornerRadius = DrawNumberPair(
+            'box_size',
+            'Box size', 'box_size', settings.boxSize, 4, 160,
+            'Corner radius', 'corner_radius', settings.cornerRadius, 0, 40
+        );
+        settings.boxBorderSize = DrawNumber('Border size', settings.boxBorderSize, 0, 20, 1);
         settings.boxDifficultyColorsEnabled = DrawToggle('Use difficulty box colors', settings.boxDifficultyColorsEnabled);
 
         if (settings.boxDifficultyColorsEnabled == true) then
-            settings.boxTwColor = DrawColor('TW box', settings.boxTwColor);
-            settings.boxEpColor = DrawColor('EP box', settings.boxEpColor);
-            settings.boxDcColor = DrawColor('DC box', settings.boxDcColor);
-            settings.boxEmColor = DrawColor('EM box', settings.boxEmColor);
-            settings.boxTColor = DrawColor('T box', settings.boxTColor);
-            settings.boxVtColor = DrawColor('VT box', settings.boxVtColor);
-            settings.boxItColor = DrawColor('IT box', settings.boxItColor);
-        end
+            imgui.Separator();
+            DrawSectionHeader('Difficulty colors');
 
-        settings.boxSize = DrawNumber('Box size', settings.boxSize, 4, 160, 1);
-        settings.cornerRadius = DrawNumber('Corner radius', settings.cornerRadius, 0, 40, 1);
-        settings.boxBorderSize = DrawNumber('Border size', settings.boxBorderSize, 0, 20, 1);
-
-        if ((tonumber(settings.boxBorderSize) or 0) > 0) then
-            settings.boxBorderColor = DrawColor('Border color', settings.boxBorderColor);
+            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                if (imgui.BeginTable('##id_difficulty_colors', 6, tableFlags)) then
+                    imgui.TableSetupColumn('##tw_label', 0, 58);
+                    imgui.TableSetupColumn('##tw_control', 0, 96);
+                    imgui.TableSetupColumn('##ep_label', 0, 58);
+                    imgui.TableSetupColumn('##ep_control', 0, 96);
+                    imgui.TableSetupColumn('##dc_label', 0, 58);
+                    imgui.TableSetupColumn('##dc_control', 0, 96);
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    settings.boxTwColor = DrawColorCell('TW', 'tw_box', settings.boxTwColor);
+                    imgui.TableNextColumn();
+                    settings.boxEpColor = DrawColorCell('EP', 'ep_box', settings.boxEpColor);
+                    imgui.TableNextColumn();
+                    settings.boxDcColor = DrawColorCell('DC', 'dc_box', settings.boxDcColor);
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    settings.boxEmColor = DrawColorCell('EM', 'em_box', settings.boxEmColor);
+                    imgui.TableNextColumn();
+                    settings.boxTColor = DrawColorCell('T', 't_box', settings.boxTColor);
+                    imgui.TableNextColumn();
+                    settings.boxVtColor = DrawColorCell('VT', 'vt_box', settings.boxVtColor);
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    settings.boxItColor = DrawColorCell('IT', 'it_box', settings.boxItColor);
+                    imgui.EndTable();
+                end
+            else
+                settings.boxTwColor = DrawColor('tw_box', settings.boxTwColor);
+                settings.boxEpColor = DrawColor('ep_box', settings.boxEpColor);
+                settings.boxDcColor = DrawColor('dc_box', settings.boxDcColor);
+                settings.boxEmColor = DrawColor('em_box', settings.boxEmColor);
+                settings.boxTColor = DrawColor('t_box', settings.boxTColor);
+                settings.boxVtColor = DrawColor('vt_box', settings.boxVtColor);
+                settings.boxItColor = DrawColor('it_box', settings.boxItColor);
+            end
         end
     end
 

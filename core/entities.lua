@@ -706,6 +706,34 @@ function entities.GetPlayerMainJobId()
     return tonumber(job);
 end
 
+function entities.GetPlayerSubJobId()
+    local memory = AshitaCore:GetMemoryManager();
+    local party = memory:GetParty();
+    local job = nil;
+
+    if (party ~= nil) then
+        pcall(function()
+            if (party.GetMemberSubJob ~= nil) then
+                job = party:GetMemberSubJob(0);
+            elseif (party.GetMemberSubJobId ~= nil) then
+                job = party:GetMemberSubJobId(0);
+            end
+        end);
+    end
+
+    if (tonumber(job) == nil) then
+        pcall(function()
+            local player = memory:GetPlayer();
+
+            if (player ~= nil and player.GetSubJob ~= nil) then
+                job = player:GetSubJob();
+            end
+        end);
+    end
+
+    return tonumber(job);
+end
+
 function entities.GetOwnBstPet()
     if (entities.GetPlayerMainJobId() ~= bstMainJobId) then
         return nil;

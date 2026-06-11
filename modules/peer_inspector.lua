@@ -486,7 +486,7 @@ local function DrawSelfInspector(data, peerSettings)
     end
 
     local displayW, displayH = GetDisplaySize();
-    local w = 292;
+    local w = GetPeerInspectorWidth(peerSettings, 292);
     local h = GetSelfPeerPanelHeight(peerSettings);
     local x = mouseX + 22;
     local y = mouseY + 18;
@@ -668,7 +668,7 @@ local function DrawPlayerInspector(player, peerSettings)
     end
 
     local displayW, displayH = GetDisplaySize();
-    local w = 330;
+    local w = GetPeerInspectorWidth(peerSettings, 330);
     local rowStep = 24;
     local hasMode = tostring(player.modeText or '') ~= '';
     local hasTarget = tostring(player.targetName or '') ~= '';
@@ -844,6 +844,56 @@ local function BuildThreatRows(info)
     return aggro, detection, links;
 end
 
+local function GetPeerViewerLevel()
+    local level = 0;
+
+    pcall(function()
+        level = AshitaCore:GetMemoryManager():GetParty():GetMemberMainJobLevel(0);
+    end);
+
+    return tonumber(level) or 0;
+end
+
+local function GetPeerDifficultyKey(info)
+    local viewerLevel = GetPeerViewerLevel();
+    local mobLevel = info ~= nil and (info.MaxLevel or info.Level or info.MinLevel) or nil;
+
+    viewerLevel = tonumber(viewerLevel) or 0;
+    mobLevel = tonumber(mobLevel);
+
+    if (viewerLevel <= 0 or mobLevel == nil) then
+        return nil;
+    end
+
+    local delta = mobLevel - viewerLevel;
+
+    if (delta <= -21) then return 'tw'; end
+    if (delta <= -8) then return 'ep'; end
+    if (delta <= -1) then return 'dc'; end
+    if (delta == 0) then return 'em'; end
+    if (delta <= 6) then return 't'; end
+    if (delta == 7) then return 'vt'; end
+    return 'it';
+end
+
+local function GetPeerLevelColor(peerSettings, info)
+    if (peerSettings == nil or peerSettings.levelDifficultyColorsEnabled ~= true) then
+        return peerSettings ~= nil and peerSettings.levelColor or { 0.40, 0.70, 1.0, 1.0 };
+    end
+
+    local key = GetPeerDifficultyKey(info);
+
+    if (key == 'tw') then return peerSettings.levelTwColor or peerSettings.levelColor; end
+    if (key == 'ep') then return peerSettings.levelEpColor or peerSettings.levelColor; end
+    if (key == 'dc') then return peerSettings.levelDcColor or peerSettings.levelColor; end
+    if (key == 'em') then return peerSettings.levelEmColor or peerSettings.levelColor; end
+    if (key == 't') then return peerSettings.levelTColor or peerSettings.levelColor; end
+    if (key == 'vt') then return peerSettings.levelVtColor or peerSettings.levelColor; end
+    if (key == 'it') then return peerSettings.levelItColor or peerSettings.levelColor; end
+
+    return peerSettings.levelColor or { 0.40, 0.70, 1.0, 1.0 };
+end
+
 local function GetEnemyPeerDisplayName(enemy)
     local rawName = enemy ~= nil and enemy.name or '';
     local cleanName = mobInfoData.GetLookupName(rawName);
@@ -893,6 +943,39 @@ local function GetPeerBackgroundColor(peerSettings)
     return ColorU32({ color[1] or 0.015, color[2] or 0.018, color[3] or 0.024, opacity });
 end
 
+local function GetPeerInspectorWidth(peerSettings, fallback)
+    local width = tonumber(peerSettings ~= nil and peerSettings.inspectorWidth) or tonumber(fallback) or 430;
+    return math.max(220, math.min(800, width));
+end
+
+local function GetEnemyPeerTextInspectorHeight(peerSettings)
+    local h = 56;
+
+    if (peerSettings.showHpValue ~= false) then h = h + 28; end
+    if (peerSettings.showBehavior ~= false) then h = h + 28; end
+    if (peerSettings.showDetects ~= false) then h = h + 28; end
+    if (peerSettings.showLinks ~= false) then h = h + 32; end
+    if (peerSettings.showWeakTo ~= false) then h = h + 28; end
+    if (peerSettings.showResists ~= false) then h = h + 28; end
+    if (peerSettings.showImmunities ~= false) then h = h + 28; end
+
+    return math.max(84, h + 22);
+end
+
+local function GetEnemyPeerIconInspectorHeight(peerSettings)
+    local h = 56;
+
+    if (peerSettings.showHpValue ~= false) then h = h + 30; end
+    if (peerSettings.showBehavior ~= false) then h = h + 30; end
+    if (peerSettings.showDetects ~= false) then h = h + 30; end
+    if (peerSettings.showLinks ~= false) then h = h + 36; end
+    if (peerSettings.showWeakTo ~= false) then h = h + 56; end
+    if (peerSettings.showResists ~= false) then h = h + 56; end
+    if (peerSettings.showImmunities ~= false) then h = h + 34; end
+
+    return math.max(84, h + 22);
+end
+
 DrawPeerPanelBox = function(drawList, x, y, w, h, peerSettings)
     local bg = GetPeerBackgroundColor(peerSettings);
     local border = ColorU32(peerSettings.backgroundBorderColor or { 0.78, 0.12, 0.10, 0.88 });
@@ -921,8 +1004,8 @@ local function DrawEnemyTextInspector(enemy, info, peerSettings)
     end
 
     local displayW, displayH = GetDisplaySize();
-    local w = 430;
-    local h = 292;
+    local w = math.max(320, GetPeerInspectorWidth(peerSettings, 430));
+    local h = GetEnemyPeerTextInspectorHeight(peerSettings);
     local x = mouseX + 22;
     local y = mouseY + 18;
 
@@ -941,10 +1024,12 @@ local function DrawEnemyTextInspector(enemy, info, peerSettings)
     local outline = ColorU32(peerSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 });
     local outlineSize = tonumber(peerSettings.textOutlineSize) or 0;
     local muted = ColorU32({ 0.68, 0.72, 0.74, 1.0 });
-    local blue = ColorU32({ 0.40, 0.70, 1.0, 1.0 });
+    local levelColor = ColorU32(GetPeerLevelColor(peerSettings, info));
     local good = ColorU32({ 0.44, 0.95, 0.70, 1.0 });
     local bad = ColorU32({ 1.0, 0.58, 0.50, 1.0 });
     local heading = ColorU32({ 1.0, 0.84, 0.0, 1.0 });
+    local iconStyle = SanitizeIconStyle(peerSettings.iconStyle);
+    local behaviorIconSize = math.max(14, math.min(24, tonumber(peerSettings.iconSize) or 18));
     local labelX = x + 14;
     local valueX = x + 118;
     local rowStep = 28;
@@ -967,7 +1052,7 @@ local function DrawEnemyTextInspector(enemy, info, peerSettings)
     end
 
     if (levelJobText ~= '') then
-        DrawOutlinedText(drawList, labelX, y + 10, blue, levelJobText, outlineSize, outline);
+        DrawOutlinedText(drawList, labelX, y + 10, levelColor, levelJobText, outlineSize, outline);
     end
 
     if (peerSettings.showName ~= false) then
@@ -985,7 +1070,16 @@ local function DrawEnemyTextInspector(enemy, info, peerSettings)
     end
 
     if (peerSettings.showBehavior ~= false) then
-        DrawTextRow(drawList, labelX, valueX, rowY, heading, text, 'Behavior', IconsToText(aggroIcons, 'Unknown'), outlineSize, outline);
+        DrawOutlinedText(drawList, labelX, rowY, heading, 'Behavior', outlineSize, outline);
+
+        local iconCount = DrawIconRow(drawList, valueX, rowY - 2, aggroIcons, iconStyle, behaviorIconSize, 32);
+        local behaviorTextX = valueX;
+
+        if (iconCount > 0) then
+            behaviorTextX = valueX + behaviorIconSize + 8;
+        end
+
+        DrawOutlinedText(drawList, behaviorTextX, rowY, text, IconsToText(aggroIcons, 'Unknown'), outlineSize, outline);
         rowY = rowY + rowStep;
     end
     if (peerSettings.showDetects ~= false) then
@@ -1023,8 +1117,8 @@ local function DrawEnemyInspector(enemy, info, peerSettings)
     end
 
     local displayW, displayH = GetDisplaySize();
-    local w = 430;
-    local h = 292;
+    local w = math.max(320, GetPeerInspectorWidth(peerSettings, 430));
+    local h = GetEnemyPeerIconInspectorHeight(peerSettings);
     local x = mouseX + 22;
     local y = mouseY + 18;
 
@@ -1041,7 +1135,7 @@ local function DrawEnemyInspector(enemy, info, peerSettings)
 
     local text = ColorU32({ 0.94, 0.94, 0.90, 1.0 });
     local muted = ColorU32({ 0.68, 0.72, 0.74, 1.0 });
-    local blue = ColorU32({ 0.40, 0.70, 1.0, 1.0 });
+    local levelColor = ColorU32(GetPeerLevelColor(peerSettings, info));
     local good = ColorU32({ 0.44, 0.95, 0.70, 1.0 });
     local bad = ColorU32({ 1.0, 0.58, 0.50, 1.0 });
     local heading = ColorU32({ 1.0, 0.84, 0.0, 1.0 });
@@ -1069,7 +1163,7 @@ local function DrawEnemyInspector(enemy, info, peerSettings)
     end
 
     if (levelJobText ~= '') then
-        DrawText(drawList, labelX, y + 10, blue, levelJobText);
+        DrawText(drawList, labelX, y + 10, levelColor, levelJobText);
     end
 
     if (peerSettings.showName ~= false) then

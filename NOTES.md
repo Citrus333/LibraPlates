@@ -256,6 +256,40 @@ Add new notes below. Newest notes can go at the top.
 - Future tactical overlay setting idea: when an in-view tactical entity is still visible but its plate would be offscreen, optionally adjust/clamp the plate back into view. This should apply to tactical/important entities only and should not imply drawing plates for entities that are not visible/native-hidden.
 - Need to implement enmity support for pet plates later.
 
+### 2026-06-11
+
+- User backlog: game mode is not reading properly.
+- User backlog: NPC is missing target/subtarget highlight settings; check whether subtarget has range colors.
+- User backlog: Copy target/subtarget module is not working.
+- User backlog: Check all previews, especially text and growth direction display values such as HP vs `1200/2000`.
+- User backlog: Move aggro.
+- User backlog: Continue profile work.
+- User backlog: Quick menu needs size settings or flexible sizing depending on visible selections.
+- User backlog: Keep the current profile always visible in settings, possibly with a top bar.
+- User backlog: Add enemy cast bar settings.
+- User backlog: Linkshell color is wrong; compare against old addon where it worked.
+- User backlog: Make buff filtering input smarter for time values, possibly a 2-digit field plus S/M/H radio buttons.
+- User backlog: Enmity is currently in Enemy; find a better place, possibly profile-dependent for Enemy vs Self.
+- User backlog: Remove BST chat spam.
+- User backlog: Some widget-list names are blue.
+- User backlog: Distance meter should only show on target/subtarget.
+- User backlog: Move resting out of dropdown to its own setting and check its timer bug.
+- User backlog: Enemy preview needs long/short name examples.
+- User backlog: Blue magic is missing casting icons and is not showing AOE.
+- User backlog: Add stacking plate priority list so users can choose which plates show in which order.
+- User backlog: GEO and maybe other auras have `0` duration, which triggers buff time color warnings.
+- User backlog: Warning screen color scheme is still red.
+- User backlog: Range arrow color only works out of combat.
+- User backlog: Inside Mog House, add a different quick menu on the moogle with handy actions like job change.
+- User backlog: Profile auto-switch by main job and subjob, with subjob `Any` including no subjob.
+- User backlog: Set TP bar color when TP is full.
+- User backlog: HP bar color/alpha when out of range.
+- User backlog: Scaling settings cannot be set individually; changing one moves all.
+- User backlog: Add background textures.
+- User backlog: Husband still has to type `/names` after logging in to disable native nameplates, while Lila does not; both have the same Disable native names setting checked.
+- User backlog: Check Conquest War and Union Conquest War naming/colors; CW and UCW have orange names.
+- User backlog: Husband reports `[C]` subtarget causes stutter.
+
 ### 2026-05-28
 
 - BST pet old-addon source of truth checked in the old addon files `ui\plates\player.lua`, `ui\settings\player_settings.lua`, `LibraPlates.lua`, and `data\pet_durations.lua`. `Pet (BST)` states are `Charmed Pet` and `Jug Pet`; Charmed widgets: Background, Name, Distance, HP bar, TP bar, Sic; Jug widgets: Background, Name, Distance, HP bar, TP bar, Ready bar, Reward, Pet timer. Draw defaults include Name X -38/Y -34, Distance X 66/Y -52, HP X 0/Y -16, TP X 0/Y 4, Ready/Sic Y 28, Reward Y 52, Pet timer X -52/Y -52.

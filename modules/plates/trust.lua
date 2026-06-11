@@ -373,14 +373,14 @@ local function QueueCachedTrust(trust, cached, targetStateName, layoutStateName,
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
-            plateTacticalOverlayOnly = false,
+            plateTacticalOverlayOnly = useTargetOverlay == true,
             plateWorldWidth = cached.plateWorldWidth,
             plateWorldHeight = cached.plateWorldHeight,
             plateWorldOffsetY = cached.plateWorldOffsetY,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = -0.12,
+            plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
             plateClickRects = cached.elementRects,
@@ -457,7 +457,7 @@ local function QueueTrust(trust)
             'mp=' .. tostring(mpPercent),
             'tp=' .. tostring(tpValue),
             'enmity=' .. BoolKey(enmityEnabled),
-            'aoe=' .. aoeNameHighlight.GetSignature(trust.index),
+            'aoe=' .. aoeNameHighlight.GetSignature(trust.index, 'trust'),
             'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
@@ -483,7 +483,7 @@ local function QueueTrust(trust)
     perfMeter.EndDetail(settingsTimer);
 
     local buildTimer = perfMeter.BeginDetail('trust.build');
-    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(trust.index) == true;
+    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(trust.index, 'trust') == true;
     local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
     local plateData = {
         hp = hpPercent,
@@ -615,7 +615,6 @@ local function QueueTrust(trust)
     AddStatusIconsToPlate(plateData, debuffRows, debuffsSettings, layoutStateName == 'Combat', globalSettings, 'debuffs');
     if (plateData.aoeNameActive == true) then
         aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
-        plateData.canvasWidth = 1536;
     end
     perfMeter.EndDetail(buildTimer);
 
@@ -641,9 +640,9 @@ local function QueueTrust(trust)
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = plateClickRects,
-            plateWorldWidth = 2.35 * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
+            plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
-            plateWorldOffsetY = 0.82,
+            plateWorldOffsetY = 0.50,
         };
         indexCache[tonumber(trust.index) or 0] = {
             cacheKey = cacheKey,
@@ -669,14 +668,14 @@ local function QueueTrust(trust)
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
-            plateTacticalOverlayOnly = false,
-            plateWorldWidth = 2.35 * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
+            plateTacticalOverlayOnly = useTargetOverlay == true,
+            plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
-            plateWorldOffsetY = 0.82,
+            plateWorldOffsetY = 0.50,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = -0.12,
+            plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = plateClickRects,

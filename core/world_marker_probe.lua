@@ -2442,11 +2442,23 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
 
     -- FFXI actor memory uses x/y/z; D3D world uses x/z/y.
     if (style.plateTextureId ~= nil) then
+        local globalSettings = targeting.GetSettings();
+        local plateClickTargetType = tostring(plate.clickTargetType or style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy')):lower();
+        local platePositionOffsets = type(globalSettings.platePositionOffsets) == 'table' and globalSettings.platePositionOffsets or {};
+        local entityPositionOffsets = type(platePositionOffsets[plateClickTargetType]) == 'table' and platePositionOffsets[plateClickTargetType] or {};
+        local plateDistanceScales = type(globalSettings.plateDistanceScales) == 'table' and globalSettings.plateDistanceScales or {};
+        local entityDistanceScale = type(plateDistanceScales[plateClickTargetType]) == 'table' and plateDistanceScales[plateClickTargetType] or {};
+        local globalPlateOffsetX = ((tonumber(globalSettings.globalPlateOffsetX) or 0) + (tonumber(entityPositionOffsets.x) or 0)) / 100;
+        local globalPlateOffsetY = ((tonumber(globalSettings.globalPlateOffsetY) or 0) + (tonumber(entityPositionOffsets.y) or 0)) / 100;
+        style.plateDistanceScaleStart = tonumber(entityDistanceScale.start) or tonumber(style.plateDistanceScaleStart);
+        style.plateDistanceScaleEnd = tonumber(entityDistanceScale.finish) or tonumber(style.plateDistanceScaleEnd);
+        style.plateDistanceScaleMax = tonumber(entityDistanceScale.max) or tonumber(style.plateDistanceScaleMax);
         local plateScale = GetPlateDistanceScale(style, targetIndex, plate.distance or style.distance);
         local plateWorldOffsetY =
             (tonumber(style.plateWorldOffsetY) or tonumber(style.nameWorldOffsetY) or 0.78) +
             ((plateScale - 1.0) * (tonumber(style.plateDistanceScaleOffsetY) or 0));
-        local plateY = wz + verticalOffset + plateWorldOffsetY - nameVerticalOffset;
+        wx = wx + globalPlateOffsetX;
+        local plateY = wz + verticalOffset + plateWorldOffsetY - nameVerticalOffset + globalPlateOffsetY;
 
         if (ShouldHideProjectedBelowViewportPlate(device, entityManager, style, wx, plateY, wy) == true) then
             return;
@@ -2456,7 +2468,7 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         local plateWorldWidth = (tonumber(style.plateWorldWidth) or 0.84) * plateScale;
         local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
 
-        style.clickTargetType = plate.clickTargetType or style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy');
+        style.clickTargetType = plateClickTargetType;
         style.serverId = plate.serverId or style.serverId;
         style.distance = plate.distance or style.distance;
         style.modelHitboxSize = plate.modelHitboxSize or style.modelHitboxSize;

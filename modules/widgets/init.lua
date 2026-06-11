@@ -5,6 +5,7 @@ local widgets = {};
 -- ============================================================
 
 widgets.name = require('modules.widgets.name');
+widgets.aoeRange = require('modules.widgets.aoe_range');
 widgets.bar = require('modules.widgets.bar');
 widgets.castBar = require('modules.widgets.cast_bar');
 widgets.background = require('modules.widgets.background');

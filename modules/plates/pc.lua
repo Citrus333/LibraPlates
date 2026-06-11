@@ -7,6 +7,7 @@ local jobDefaults = require('config.widgets.job');
 local levelDefaults = require('config.widgets.level');
 local buffsDefaults = require('config.widgets.buffs');
 local debuffsDefaults = require('config.widgets.debuffs');
+local aoeRangeDefaults = require('config.widgets.aoe_range');
 local gameModeIconDefaults = require('config.widgets.game_mode_icon');
 local bazaarIconDefaults = require('config.widgets.bazaar_icon');
 local linkshellIconDefaults = require('config.widgets.linkshell_icon');
@@ -32,6 +33,8 @@ local gameMode = require('core.game_mode');
 local playerIndicators = require('core.player_indicators');
 local perfMeter = require('core.perf_meter');
 local adaptivePerformance = require('core.adaptive_performance');
+local aoeNameHighlight = require('core.aoe_name_highlight');
+local aoeRangeVisuals = require('core.aoe_range_visuals');
 local state = require('core.state');
 local targetModuleMarker = require('core.target_module_marker');
 local targeting = require('core.targeting');
@@ -624,14 +627,14 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
-            plateTacticalOverlayOnly = useTargetOverlay == true,
-            plateWorldWidth = 2.35,
+            plateTacticalOverlayOnly = false,
+            plateWorldWidth = cached.plateWorldWidth or 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = cached.plateWorldOffsetY,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = 0.28,
+            plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
             plateClickRects = cached.elementRects,
@@ -683,9 +686,9 @@ local function QueuePlayer(player)
 
     local isPartyPlayer = tonumber(player.slot) ~= nil;
     local isTargetContext = targetStateName ~= 'Idle';
-    local isTacticalPlayer = isPartyPlayer == true or isTargetContext == true;
-    local useTargetOverlay = isTacticalPlayer == true or targetStateName ~= 'Idle';
-    local layoutStateName = useTargetOverlay == true and 'Combat' or 'Idle';
+    local isTacticalPlayer = isPartyPlayer == true;
+    local useTargetOverlay = isTacticalPlayer == true or isTargetContext == true;
+    local layoutStateName = isTacticalPlayer == true and 'Combat' or 'Idle';
     local hasHp = player.hpPercent ~= nil or (player.hp ~= nil and player.maxHp ~= nil and tonumber(player.maxHp) > 0);
     local hasMp = layoutStateName == 'Combat' and (player.mpPercent ~= nil or (player.mp ~= nil and player.maxMp ~= nil and tonumber(player.maxMp) > 0));
     local hasTp = layoutStateName == 'Combat' and player.tp ~= nil;
@@ -708,6 +711,7 @@ local function QueuePlayer(player)
     local levelSettings = state.GetWidgetSettings('PC', layoutStateName, 'Level', levelDefaults);
     local buffsSettings = state.GetWidgetSettings('PC', layoutStateName, 'Buffs', buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings('PC', layoutStateName, 'Debuffs', debuffsDefaults);
+    local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
     local gameModeIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Game mode icon', gameModeIconDefaults);
     local partyLeaderIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Party leader icon', partyLeaderIconDefaults);
     local allianceLeaderIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Alliance leader icon', allianceLeaderIconDefaults);
@@ -850,6 +854,8 @@ local function QueuePlayer(player)
             'stars=' .. tostring(starsIconTextureId or ''),
             'new=' .. tostring(newAdventurerIconTextureId or ''),
             'staff=' .. tostring(staffIconTextureId or '') .. ':' .. tostring(staffInfo ~= nil and staffInfo.type or ''),
+            'aoe=' .. aoeNameHighlight.GetSignature(player.index),
+            'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'dist:' .. SettingKey(distanceSettings, { 'enabled', 'loadMode', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint' }),
@@ -896,15 +902,18 @@ local function QueuePlayer(player)
     end
 
     local buildTimer = perfMeter.BeginDetail('pc.build');
+    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(player.index) == true;
+    local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
     local plateData = {
         hp = hpPercent,
         mp = mpPercent,
         tp = tpPercent,
+        aoeNameActive = nameAoeActive == true,
         name = (nameLoads == true) and ShortenName(player.name, nameSettings.shortenName) or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
-        nameFontSize = textScale.ToTextureFontSize(math.min(40, tonumber(nameSettings.textSize) or nameDefaults.textSize), nameDefaults.textSize),
-        nameColor = nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
+        nameFontSize = textScale.ToNameTextureFontSize(nameTextSize, nameDefaults.textSize),
+        nameColor = (nameAoeActive == true and aoeRangeSettings.fontColor) or nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
         nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
@@ -1082,10 +1091,15 @@ local function QueuePlayer(player)
     if (layoutStateName == 'Combat' and enmity.ShouldDrawAlly(player, globalSettings) == true) then
         enmity.AddIcon(plateData, globalSettings.enmity);
     end
+    if (plateData.aoeNameActive == true) then
+        aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
+        plateData.canvasWidth = 1536;
+    end
     perfMeter.EndDetail(buildTimer);
 
     local canvasTimer = perfMeter.BeginDetail('pc.canvas');
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'pc-' .. tostring(player.index));
+    local textureKey = 'pc-' .. tostring(player.index) .. (plateData.canvasWidth ~= nil and '-aoe' or '');
+    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
     local elementRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
     perfMeter.EndDetail(canvasTimer);
@@ -1098,14 +1112,15 @@ local function QueuePlayer(player)
         plateCache[cacheKey] = {
             signature = signature,
             texture = plateTexture,
-            textureKey = 'pc-' .. tostring(player.index),
+            textureKey = textureKey,
             lastUsed = os.clock(),
             lastFullRefresh = os.clock(),
             hasDynamicVisuals = hpBarLoads == true or (distanceText ~= nil and distanceText ~= ''),
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = elementRects,
-            plateWorldOffsetY = (tonumber(player.status) == 85) and (0.50 - mountedPlateLift) or 0.50,
+            plateWorldWidth = 2.35 * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
+            plateWorldOffsetY = (tonumber(player.status) == 85) and (0.82 - mountedPlateLift) or 0.82,
         };
         indexCache[tonumber(player.index) or 0] = {
             cacheKey = cacheKey,
@@ -1116,7 +1131,7 @@ local function QueuePlayer(player)
     end
 
     local queueTimer = perfMeter.BeginDetail('pc.queue');
-    local plateWorldOffsetY = (tonumber(player.status) == 85) and (0.50 - mountedPlateLift) or 0.50;
+    local plateWorldOffsetY = (tonumber(player.status) == 85) and (0.82 - mountedPlateLift) or 0.82;
     local targetingSettings = targeting.GetSettings();
 
     worldMarkerProbe.QueuePlate({
@@ -1134,14 +1149,14 @@ local function QueuePlayer(player)
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
-            plateTacticalOverlayOnly = useTargetOverlay == true,
-            plateWorldWidth = 2.35,
+            plateTacticalOverlayOnly = false,
+            plateWorldWidth = 2.35 * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
             plateWorldHeight = 1.18,
             plateWorldOffsetY = plateWorldOffsetY,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = 0.28,
+            plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = elementRects,

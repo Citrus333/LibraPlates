@@ -16,6 +16,7 @@ local cursorOverlay = require('core.cursor_overlay');
 local globalDefaults = require('config.global');
 local backgroundDefaults = require('config.widgets.background');
 local nameDefaults = require('config.widgets.name');
+local aoeRangeDefaults = require('config.widgets.aoe_range');
 local jobDefaults = require('config.widgets.job');
 local levelDefaults = require('config.widgets.level');
 local distanceDefaults = require('config.widgets.distance');
@@ -419,6 +420,7 @@ local selfIdleWidgets = T{
     'Peer (module)',
     'Target (module)',
     'Subtarget (module)',
+    'AOE range (module)',
 };
 local selfCombatWidgets = T{
     'Background',
@@ -442,6 +444,7 @@ local selfCombatWidgets = T{
     'Peer (module)',
     'Target (module)',
     'Subtarget (module)',
+    'AOE range (module)',
 };
 local selfRestingWidgets = T{
     'Background',
@@ -455,6 +458,7 @@ local selfRestingWidgets = T{
     'Quick Menu (module)',
     'Target (module)',
     'Subtarget (module)',
+    'AOE range (module)',
 };
 local selfFishingWidgets = T{
     'Background',
@@ -468,6 +472,7 @@ local selfFishingWidgets = T{
     'Quick Menu (module)',
     'Target (module)',
     'Subtarget (module)',
+    'AOE range (module)',
 };
 local selfCraftingWidgets = T{
     'Background',
@@ -481,6 +486,7 @@ local selfCraftingWidgets = T{
     'Quick Menu (module)',
     'Target (module)',
     'Subtarget (module)',
+    'AOE range (module)',
 };
 local selfGatheringWidgets = T{
     'Background',
@@ -494,6 +500,7 @@ local selfGatheringWidgets = T{
     'Quick Menu (module)',
     'Target (module)',
     'Subtarget (module)',
+    'AOE range (module)',
 };
 local enemyIdleWidgets = T{
     'Background',
@@ -725,6 +732,7 @@ local widgetKeys = {
     ['Enmity (module)'] = 'Enmity',
     ['Resting (module)'] = 'Resting',
     ['Quick Menu (module)'] = 'Quick Menu',
+    ['AOE range (module)'] = 'AOE range',
     ['Mounted (module)'] = 'Mounted',
     ['Crafting (module)'] = 'Crafting',
     ['Fishing (module)'] = 'Fishing',
@@ -1120,6 +1128,7 @@ end
 
 function GetWidgetDefaults(widget)
     if (widget == 'Name') then return nameDefaults; end
+    if (widget == 'AOE range (module)') then return aoeRangeDefaults; end
     if (widget == 'Background') then return backgroundDefaults; end
     if (widget == 'Job') then return jobDefaults; end
     if (widget == 'Level') then return levelDefaults; end
@@ -1618,15 +1627,15 @@ function DrawCheckbox(label, value, onChange)
 end
 
 function DrawSliderTenths(label, value, minTenths, maxTenths, onChange)
-    local ref = { math.floor(((tonumber(value) or 0) * 10) + 0.5) };
+    local ref = { tonumber(value) or 0 };
 
-    if (imgui.SliderInt ~= nil) then
-        if (imgui.SliderInt(label, ref, minTenths, maxTenths) == true) then
-            onChange(ref[1] / 10);
+    if (imgui.SliderFloat ~= nil) then
+        if (imgui.SliderFloat(label, ref, (tonumber(minTenths) or 0) / 10, (tonumber(maxTenths) or 100) / 10, '%.1f') == true) then
+            onChange(math.floor(((tonumber(ref[1]) or 0) * 10) + 0.5) / 10);
         end
 
         imgui.SameLine();
-        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, string.format('%.1f', ref[1] / 10));
+        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, string.format('%.1f', tonumber(ref[1]) or 0));
         return;
     end
 
@@ -1653,10 +1662,10 @@ function LibraPlatesSettingsGetTieredSliderLabel(value, tiers)
 end
 
 function LibraPlatesSettingsDrawTieredSliderTenths(label, value, minTenths, maxTenths, tiers, onChange)
-    local ref = { math.floor(((tonumber(value) or 0) * 10) + 0.5) };
+    local ref = { tonumber(value) or 0 };
 
     if (
-        imgui.SliderInt == nil or
+        imgui.SliderFloat == nil or
         imgui.GetWindowDrawList == nil or
         imgui.GetColorU32 == nil
     ) then
@@ -1695,8 +1704,8 @@ function LibraPlatesSettingsDrawTieredSliderTenths(label, value, minTenths, maxT
         imgui.PushItemWidth(sliderWidth);
     end
 
-    if (imgui.SliderInt('##' .. tostring(label):gsub('%s+', '_') .. '_tiered', ref, minTenths, maxTenths) == true) then
-        onChange(ref[1] / 10);
+    if (imgui.SliderFloat('##' .. tostring(label):gsub('%s+', '_') .. '_tiered', ref, minValue / 10, maxValue / 10, '%.1f') == true) then
+        onChange(math.floor(((tonumber(ref[1]) or 0) * 10) + 0.5) / 10);
     end
 
     if (imgui.PopItemWidth ~= nil) then
@@ -1704,9 +1713,9 @@ function LibraPlatesSettingsDrawTieredSliderTenths(label, value, minTenths, maxT
     end
 
     imgui.SameLine();
-    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, string.format('%.1f', ref[1] / 10));
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, string.format('%.1f', tonumber(ref[1]) or 0));
 
-    local tierLabel, tierColor = LibraPlatesSettingsGetTieredSliderLabel(ref[1], tiers);
+    local tierLabel, tierColor = LibraPlatesSettingsGetTieredSliderLabel((tonumber(ref[1]) or 0) * 10, tiers);
 
     if (tierLabel ~= '') then
         imgui.SameLine();
@@ -5565,7 +5574,7 @@ end
 
 local function DrawGeneralScalingSection(settings)
     LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Scaling' });
-    DrawSettingsHeader('Plate distance scaling');
+    DrawSettingsHeader('Global distance scaling');
 
     DrawSliderTenths('Start distance', settings.pcDistanceScaleStart, 0, 200, function(value)
         settings.pcDistanceScaleStart = math.max(0.0, math.min(20.0, tonumber(value) or 2.0));
@@ -5589,6 +5598,112 @@ local function DrawGeneralScalingSection(settings)
     }, function(value)
         settings.pcDistanceScaleMax = math.max(1.0, math.min(6.0, tonumber(value) or 2.65));
     end);
+
+    DrawSettingsHeader('Entity distance scaling');
+
+    if (type(settings.plateDistanceScales) ~= 'table') then
+        settings.plateDistanceScales = {};
+    end
+
+    local function DrawEntityScale(label, key)
+        if (type(settings.plateDistanceScales[key]) ~= 'table') then
+            settings.plateDistanceScales[key] = {
+                start = tonumber(settings.pcDistanceScaleStart) or 2.0,
+                finish = tonumber(settings.pcDistanceScaleEnd) or 8.0,
+                max = tonumber(settings.pcDistanceScaleMax) or 2.65,
+            };
+        end
+
+        local scale = settings.plateDistanceScales[key];
+        DrawSettingsHeader(label);
+        DrawSliderTenths('Start distance', scale.start, 0, 200, function(value)
+            scale.start = math.max(0.0, math.min(20.0, tonumber(value) or 2.0));
+            if ((tonumber(scale.finish) or 8.0) <= scale.start) then
+                scale.finish = math.min(40.0, scale.start + 1.0);
+            end
+        end);
+
+        DrawSliderTenths('Max distance', scale.finish, 10, 400, function(value)
+            scale.finish = math.max(1.0, math.min(40.0, tonumber(value) or 8.0));
+            if (scale.finish <= (tonumber(scale.start) or 2.0)) then
+                scale.start = math.max(0.0, scale.finish - 1.0);
+            end
+        end);
+
+        LibraPlatesSettingsDrawTieredSliderTenths('Max scale', scale.max, 10, 60, {
+            { min = 10, max = 25, label = 'Normal', color = { 0.25, 0.85, 0.35, 0.55 } },
+            { min = 25, max = 35, label = 'Large', color = { 0.95, 0.84, 0.25, 0.55 } },
+            { min = 35, max = 45, label = 'Huge', color = { 1.0, 0.55, 0.20, 0.55 } },
+            { min = 45, max = 60, label = 'Extreme', color = { 1.0, 0.22, 0.18, 0.55 } },
+        }, function(value)
+            scale.max = math.max(1.0, math.min(6.0, tonumber(value) or 2.65));
+        end);
+    end
+
+    DrawEntityScale('Self', 'self');
+    DrawEntityScale('PC', 'pc');
+    DrawEntityScale('Trust', 'trust');
+    DrawEntityScale('Enemy', 'enemy');
+    DrawEntityScale('NPC', 'npc');
+    DrawEntityScale('Object', 'object');
+    DrawEntityScale('Pet', 'pet');
+
+    DrawSettingsHeader('Global plate position');
+    local globalOffsetX, globalOffsetXChanged, globalOffsetY, globalOffsetYChanged = DrawPlacementPair(
+        'Plate X',
+        settings.globalPlateOffsetX,
+        'GlobalPlateOffsetX',
+        'Plate Y',
+        settings.globalPlateOffsetY,
+        'GlobalPlateOffsetY',
+        -100,
+        100,
+        1
+    );
+    if (globalOffsetXChanged == true) then
+        settings.globalPlateOffsetX = math.max(-100, math.min(100, math.floor((tonumber(globalOffsetX) or 0) + 0.5)));
+    end
+    if (globalOffsetYChanged == true) then
+        settings.globalPlateOffsetY = math.max(-100, math.min(100, math.floor((tonumber(globalOffsetY) or 0) + 0.5)));
+    end
+
+    DrawSettingsHeader('Entity plate position');
+    if (type(settings.platePositionOffsets) ~= 'table') then
+        settings.platePositionOffsets = {};
+    end
+
+    local function DrawEntityOffset(label, key)
+        if (type(settings.platePositionOffsets[key]) ~= 'table') then
+            settings.platePositionOffsets[key] = { x = 0, y = 0 };
+        end
+
+        local offsets = settings.platePositionOffsets[key];
+        local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawPlacementPair(
+            label .. ' X',
+            offsets.x,
+            'PlateOffset' .. label .. 'X',
+            label .. ' Y',
+            offsets.y,
+            'PlateOffset' .. label .. 'Y',
+            -100,
+            100,
+            1
+        );
+        if (offsetXChanged == true) then
+            offsets.x = math.max(-100, math.min(100, math.floor((tonumber(offsetX) or 0) + 0.5)));
+        end
+        if (offsetYChanged == true) then
+            offsets.y = math.max(-100, math.min(100, math.floor((tonumber(offsetY) or 0) + 0.5)));
+        end
+    end
+
+    DrawEntityOffset('Self', 'self');
+    DrawEntityOffset('PC', 'pc');
+    DrawEntityOffset('Trust', 'trust');
+    DrawEntityOffset('Enemy', 'enemy');
+    DrawEntityOffset('NPC', 'npc');
+    DrawEntityOffset('Object', 'object');
+    DrawEntityOffset('Pet', 'pet');
 end
 
 local function DrawTargetingLeftClickSection(settings)
@@ -5804,6 +5919,19 @@ local function DrawSelectedEditorPlatesModules()
 
     if (selectedWidget == 'Quick Menu (module)') then
         LibraPlatesSettingsDrawQuickMenuModuleSettings(state.GetGlobalSettings(globalDefaults), true);
+        return;
+    end
+
+    if (selectedWidget == 'AOE range (module)') then
+        local settings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), LibraPlatesSettingsToStorageStateName(selectedState), widgetKeys[selectedWidget], aoeRangeDefaults);
+
+        widgets.aoeRange.DrawSettings(settings, {
+            tab = selectedTab,
+            entity = GetStorageEntity(selectedEntity),
+            state = LibraPlatesSettingsToStorageStateName(selectedState),
+            widget = selectedWidget,
+            defaults = aoeRangeDefaults,
+        });
         return;
     end
 end
@@ -6103,7 +6231,7 @@ local function DrawSelectedEditorPlates()
         DrawManeuverSettings(settings);
     end
 
-    if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Quick Menu (module)') then
+    if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Quick Menu (module)' or selectedWidget == 'AOE range (module)') then
         if (loadModeDrawn ~= true) then
             LibraPlatesSettingsDrawCurrentWidgetLoadMode();
         end

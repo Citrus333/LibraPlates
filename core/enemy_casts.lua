@@ -4,6 +4,7 @@ local spellIconIds = require('data.spell_icon_ids');
 
 local enemyCasts = {};
 local casts = {};
+local defaultAoeRadius = 10.0;
 
 local function SafeCall(fallback, fn)
     local ok, result = pcall(fn);
@@ -139,6 +140,45 @@ local function GetSpellIconIdByResource(spell, spellId)
     return spellIconIds[tonumber(spellId) or 0];
 end
 
+local function GetSpellTargetsByResource(spell)
+    if (spell == nil) then
+        return nil;
+    end
+
+    for _, key in ipairs({ 'Targets', 'targets', 'Target', 'target' }) do
+        local value = tonumber(spell[key]);
+
+        if (value ~= nil) then
+            return value;
+        end
+    end
+
+    return nil;
+end
+
+local function IsDefensiveAoeSpellName(spellName)
+    local name = tostring(spellName or ''):lower():gsub('[%s%-_]+', '');
+
+    if (name == '') then
+        return false;
+    end
+
+    return (
+        name:find('curaga', 1, true) ~= nil or
+        name:find('protectra', 1, true) ~= nil or
+        name:find('shellra', 1, true) ~= nil or
+        name:find('hastega', 1, true) ~= nil
+    );
+end
+
+local function GetAoeRadiusByResource(spell, spellName)
+    if (IsDefensiveAoeSpellName(spellName) ~= true) then
+        return nil;
+    end
+
+    return defaultAoeRadius;
+end
+
 local function ResolveSpell(candidateIds)
     for _, candidateId in ipairs(candidateIds) do
         local spellId = tonumber(candidateId) or 0;
@@ -268,10 +308,17 @@ local function HandleEnemyCastActionPacket(actionPacket)
             return;
         end
 
+        local spellName = GetSpellNameByResource(spell, spellId);
+        local targetServerId = actionPacket.Targets[1].Id;
+
         casts[actionPacket.UserId] = {
             spellId = spellId,
             spellIconId = GetSpellIconIdByResource(spell, spellId),
-            spellName = GetSpellNameByResource(spell, spellId),
+            spellName = spellName,
+            spellTargets = GetSpellTargetsByResource(spell),
+            targetServerId = targetServerId,
+            targetIndex = GetIndexFromServerId(targetServerId),
+            aoeRadius = GetAoeRadiusByResource(spell, spellName),
             startTime = os.clock(),
             castTime = GetSpellCastTimeByResource(spell),
         };
@@ -316,6 +363,21 @@ function enemyCasts.GetActiveCast(serverId)
     end
 
     return castData;
+end
+
+function enemyCasts.GetActiveAoeCasts()
+    local results = {};
+    local now = os.clock();
+
+    for serverId, castData in pairs(casts) do
+        if ((now - (tonumber(castData.startTime) or now)) >= (tonumber(castData.castTime) or 0)) then
+            casts[serverId] = nil;
+        elseif (tonumber(castData.aoeRadius) ~= nil and tonumber(castData.targetIndex) ~= nil and tonumber(castData.targetIndex) > 0) then
+            results[#results + 1] = castData;
+        end
+    end
+
+    return results;
 end
 
 return enemyCasts;

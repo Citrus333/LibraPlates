@@ -1248,7 +1248,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
         name = (nameSettings.enabled == true) and ((stateName == 'Charmed Pet') and 'Desert Beetle' or 'CourierCarrie') or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
-        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
         nameColor = nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
@@ -1410,7 +1410,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
         name = (nameSettings.enabled == true) and tostring(name or 'Lumiere') or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
-        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
         nameColor = nameSettings.color or nameDefaults.color,
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or nameDefaults.outlineColor,
@@ -1566,7 +1566,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
         name = (nameSettings.enabled == true) and (isSpirit and 'LightSpirit' or 'Carbuncle') or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
-        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
         nameColor = nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
@@ -1925,7 +1925,7 @@ local function BuildPlate(entityName, stateName, context)
         name = (nameSettings.enabled == true) and previewName or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
-        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
         nameColor = (entityName == 'Enemy') and (nameSettings.claimUnclaimedColor or nameDefaults.claimUnclaimedColor or nameSettings.color or nameDefaults.color) or (nameSettings.color or { 1.0, 1.0, 1.0, 1.0 }),
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
@@ -2608,7 +2608,7 @@ local function ApplyPeerPreviewName(plateData, peerSettings, globalSettings)
 
     plateData.nameFontFamily = fonts.GetRole(globalSettings, false);
     plateData.nameFontFlags = fonts.GetRoleFlags(globalSettings, false);
-    plateData.nameFontSize = textScale.ToTextureFontSize(peerSettings.nameFontSize, 32);
+    plateData.nameFontSize = textScale.ToNameTextureFontSize(peerSettings.nameFontSize, 32);
     plateData.nameColor = peerSettings.nameColor or { 1.0, 1.0, 1.0, 1.0 };
     plateData.nameOutlineEnabled = (tonumber(peerSettings.nameOutlineSize) or 0) > 0;
     plateData.nameOutlineColor = peerSettings.nameOutlineColor or { 0.0, 0.0, 0.0, 1.0 };

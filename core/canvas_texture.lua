@@ -32,6 +32,7 @@ local textureEvictions = 0;
 local maxTextures = 96;
 local width = 1024;
 local height = 512;
+local renderVersion = 4;
 
 local D3DPT_TRIANGLELIST = 4;
 local D3DFVF_XYZRHW_DIFFUSE = 0x044;
@@ -170,8 +171,22 @@ local function ResolveFontFamily(value)
     return fontName;
 end
 
+local function GetNameRenderFontSize(fontSize)
+    local size = math.max(1, tonumber(fontSize) or 16);
+
+    return math.min(44, math.floor(size + 0.5));
+end
+
+local function GetNameRenderScale(fontSize, renderFontSize)
+    local renderSize = math.max(1, tonumber(renderFontSize) or 16);
+
+    return math.max(1.0, (tonumber(fontSize) or renderSize) / renderSize);
+end
+
 local function GetNameFontSize(plate, plateName)
     local fontSize = math.max(1, tonumber(plate.nameFontSize) or 16);
+    local renderFontSize = GetNameRenderFontSize(fontSize);
+    local renderScale = GetNameRenderScale(fontSize, renderFontSize);
     local text = tostring(plateName or '');
 
     if (text == '') then
@@ -183,14 +198,14 @@ local function GetNameFontSize(plate, plateName)
     local _, nameW = gdiTextTexture.GetTexture(text, {
         fontFamily = ResolveFontFamily(plate.nameFontFamily),
         fontFlags = tonumber(plate.nameFontFlags) or 0,
-        fontSize = fontSize,
+        fontSize = renderFontSize,
         color = plate.nameColor or { 1.0, 1.0, 1.0, 1.0 },
         outlineEnabled = plate.nameOutlineEnabled == true and manualOutlineRadius <= 0,
         outlineColor = plate.nameOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
         outlineSize = tonumber(plate.nameOutlineSize) or 0,
     });
 
-    local neededWidth = (tonumber(nameW) or 0) + (manualOutlineRadius * 2);
+    local neededWidth = ((tonumber(nameW) or 0) * renderScale) + (manualOutlineRadius * 2 * renderScale);
 
     if (neededWidth <= safeWidth or neededWidth <= 0) then
         return fontSize;
@@ -664,8 +679,14 @@ local function EnsureTexture(device, key)
     key = tostring(key or 'world');
 
     if (textures[key] ~= nil) then
-        TouchTextureKey(key);
-        return textures[key];
+        local info = textureInfo[key] or {};
+
+        if (tonumber(info.width) == width and tonumber(info.height) == height) then
+            TouchTextureKey(key);
+            return textures[key];
+        end
+
+        ReleaseTextureKey(key);
     end
 
     local ok, hr, created = pcall(function()
@@ -680,6 +701,8 @@ local function EnsureTexture(device, key)
     textureInfo[key] = {
         createdAt = os.clock(),
         lastTouch = os.clock(),
+        width = width,
+        height = height,
     };
     textureCount = textureCount + 1;
 
@@ -1554,10 +1577,12 @@ function canvasTexture.GetElementRects(plate)
     if (plateName ~= '') then
         local manualOutlineRadius = GetManualNameOutlineRadius(plate.nameOutlineSize);
         local nameFontSize = GetNameFontSize(plate, plateName);
+        local renderFontSize = GetNameRenderFontSize(nameFontSize);
+        local renderScale = GetNameRenderScale(nameFontSize, renderFontSize);
         local _, nameW, nameH = gdiTextTexture.GetTexture(plateName, {
             fontFamily = ResolveFontFamily(plate.nameFontFamily),
             fontFlags = tonumber(plate.nameFontFlags) or 0,
-            fontSize = nameFontSize,
+            fontSize = renderFontSize,
             color = plate.nameColor or { 1.0, 1.0, 1.0, 1.0 },
             outlineEnabled = plate.nameOutlineEnabled == true and manualOutlineRadius <= 0,
             outlineColor = plate.nameOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
@@ -1565,12 +1590,16 @@ function canvasTexture.GetElementRects(plate)
         });
 
         if (nameW ~= nil and nameH ~= nil and nameW > 0 and nameH > 0) then
+            local drawW = nameW * renderScale;
+            local drawH = nameH * renderScale;
+            local outlineRadius = manualOutlineRadius * renderScale;
+
             AddRect(
                 rects,
-                centerX - (nameW * 0.5) + (tonumber(plate.nameOffsetX) or 0) - manualOutlineRadius,
-                centerY - (nameH * 0.5) + (tonumber(plate.nameOffsetY) or -54) - manualOutlineRadius,
-                nameW + (manualOutlineRadius * 2),
-                nameH + (manualOutlineRadius * 2),
+                centerX - (drawW * 0.5) + (tonumber(plate.nameOffsetX) or 0) - outlineRadius,
+                centerY - (drawH * 0.5) + (tonumber(plate.nameOffsetY) or -54) - outlineRadius,
+                drawW + (outlineRadius * 2),
+                drawH + (outlineRadius * 2),
                 4,
                 'name',
                 {
@@ -1818,16 +1847,27 @@ end
 function canvasTexture.Render(plate, key)
     perfMeter.CountCanvasRender(plate, key);
 
+    local oldWidth = width;
+    local oldHeight = height;
+    width = math.max(1024, tonumber(plate ~= nil and plate.canvasWidth) or oldWidth);
+    height = math.max(512, tonumber(plate ~= nil and plate.canvasHeight) or oldHeight);
+
+    local function Finish(resultTexture, resultWidth, resultHeight)
+        width = oldWidth;
+        height = oldHeight;
+        return resultTexture, resultWidth, resultHeight;
+    end
+
     local device = d3d.get_device();
 
     if (device == nil or device.CreateTexture == nil or plate == nil) then
-        return nil, width, height;
+        return Finish(nil, width, height);
     end
 
     local targetTexture = EnsureTexture(device, key);
 
     if (targetTexture == nil or targetTexture.GetSurfaceLevel == nil) then
-        return nil, width, height;
+        return Finish(nil, width, height);
     end
 
     local okSurface, hrSurface, surface = pcall(function()
@@ -1835,7 +1875,7 @@ function canvasTexture.Render(plate, key)
     end);
 
     if (okSurface ~= true or hrSurface ~= C.S_OK or surface == nil) then
-        return nil, width, height;
+        return Finish(nil, width, height);
     end
 
     local okTarget, hrTarget, oldTarget = pcall(function()
@@ -1844,7 +1884,7 @@ function canvasTexture.Render(plate, key)
 
     if (okTarget ~= true or hrTarget ~= C.S_OK or oldTarget == nil) then
         d3d.gc_safe_release(surface);
-        return nil, width, height;
+        return Finish(nil, width, height);
     end
 
     local _, saveZ = device:GetRenderState(D3DRS_ZENABLE);
@@ -2122,10 +2162,12 @@ function canvasTexture.Render(plate, key)
 
             local plateName = nativeUiPolicy.ShouldDrawLibraNames() == true and tostring(plate.name or '') or '';
             local nameFontSize = GetNameFontSize(plate, plateName);
+            local renderFontSize = GetNameRenderFontSize(nameFontSize);
+            local renderScale = GetNameRenderScale(nameFontSize, renderFontSize);
             local nameTextureId, nameW, nameH = gdiTextTexture.GetTexture(plateName, {
                 fontFamily = ResolveFontFamily(plate.nameFontFamily),
                 fontFlags = tonumber(plate.nameFontFlags) or 0,
-                fontSize = nameFontSize,
+                fontSize = renderFontSize,
                 color = plate.nameColor or { 1.0, 1.0, 1.0, 1.0 },
                 outlineEnabled = plate.nameOutlineEnabled == true and GetManualNameOutlineRadius(plate.nameOutlineSize) <= 0,
                 outlineColor = plate.nameOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
@@ -2134,20 +2176,23 @@ function canvasTexture.Render(plate, key)
 
             if (nameTextureId ~= nil and nameW ~= nil and nameH ~= nil and nameW > 0 and nameH > 0) then
                 local manualOutlineRadius = GetManualNameOutlineRadius(plate.nameOutlineSize);
-                local nameX = centerX - (nameW * 0.5) + (tonumber(plate.nameOffsetX) or 0);
-                local nameY = centerY - (nameH * 0.5) + (tonumber(plate.nameOffsetY) or -54);
+                local outlineRadius = manualOutlineRadius * renderScale;
+                local drawW = nameW * renderScale;
+                local drawH = nameH * renderScale;
+                local nameX = centerX - (drawW * 0.5) + (tonumber(plate.nameOffsetX) or 0);
+                local nameY = centerY - (drawH * 0.5) + (tonumber(plate.nameOffsetY) or -54);
                 local nameRect = FindRect(elementRects, 'name');
 
                 if (nameRect ~= nil) then
-                    nameX = (tonumber(nameRect.drawX1) or nameX) + manualOutlineRadius;
-                    nameY = (tonumber(nameRect.drawY1) or nameY) + manualOutlineRadius;
+                    nameX = (tonumber(nameRect.drawX1) or nameX) + outlineRadius;
+                    nameY = (tonumber(nameRect.drawY1) or nameY) + outlineRadius;
                 end
 
                 if (manualOutlineRadius > 0 and plate.nameOutlineEnabled == true) then
                     local outlineTextureId, outlineW, outlineH = gdiTextTexture.GetTexture(plateName, {
                         fontFamily = ResolveFontFamily(plate.nameFontFamily),
                         fontFlags = tonumber(plate.nameFontFlags) or 0,
-                        fontSize = nameFontSize,
+                        fontSize = renderFontSize,
                         color = plate.nameOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
                         outlineEnabled = false,
                         outlineColor = plate.nameOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
@@ -2159,10 +2204,10 @@ function canvasTexture.Render(plate, key)
                             DrawTexture(
                                 device,
                                 outlineTextureId,
-                                nameX + offset[1],
-                                nameY + offset[2],
-                                outlineW,
-                                outlineH,
+                                nameX + (offset[1] * renderScale),
+                                nameY + (offset[2] * renderScale),
+                                outlineW * renderScale,
+                                outlineH * renderScale,
                                 0xFFFFFFFF
                             );
                         end
@@ -2174,10 +2219,11 @@ function canvasTexture.Render(plate, key)
                     nameTextureId,
                     nameX,
                     nameY,
-                    nameW,
-                    nameH,
+                    drawW,
+                    drawH,
                     0xFFFFFFFF
                 );
+
             end
 
             local jobText = tostring(plate.jobText or '');
@@ -2252,7 +2298,7 @@ function canvasTexture.Render(plate, key)
     d3d.gc_safe_release(oldTarget);
     d3d.gc_safe_release(surface);
 
-    return targetTexture, width, height;
+    return Finish(targetTexture, width, height);
 end
 
 function canvasTexture.GetTextureId(value)
@@ -2267,7 +2313,8 @@ end
 
 function canvasTexture.GetRenderPolicyKey()
     return 'libraNames=' .. tostring(nativeUiPolicy.ShouldDrawLibraNames() == true) ..
-        '|libraTargeting=' .. tostring(nativeUiPolicy.ShouldDrawLibraTargetingSystem() == true);
+        '|libraTargeting=' .. tostring(nativeUiPolicy.ShouldDrawLibraTargetingSystem() == true) ..
+        '|renderVersion=' .. tostring(renderVersion);
 end
 
 function canvasTexture.TouchKey(key)

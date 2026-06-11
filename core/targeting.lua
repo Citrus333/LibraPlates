@@ -90,6 +90,22 @@ local function GetTargetingSettings()
         global.targeting.pcDistanceScaleMax = 2.65;
     end
 
+    if (global.targeting.globalPlateOffsetX == nil) then
+        global.targeting.globalPlateOffsetX = 0;
+    end
+
+    if (global.targeting.globalPlateOffsetY == nil) then
+        global.targeting.globalPlateOffsetY = 0;
+    end
+
+    if (type(global.targeting.platePositionOffsets) ~= 'table') then
+        global.targeting.platePositionOffsets = {};
+    end
+
+    if (type(global.targeting.plateDistanceScales) ~= 'table') then
+        global.targeting.plateDistanceScales = {};
+    end
+
     if (global.targeting.hideNativeTargetArrow == nil) then
         global.targeting.hideNativeTargetArrow = true;
     end
@@ -159,6 +175,26 @@ local function GetTargetingSettings()
         global.targeting.pcDistanceScaleEnd = math.min(40.0, global.targeting.pcDistanceScaleStart + 1.0);
     end
     global.targeting.pcDistanceScaleMax = math.max(1.0, math.min(6.0, tonumber(global.targeting.pcDistanceScaleMax) or 2.65));
+    global.targeting.globalPlateOffsetX = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.globalPlateOffsetX) or 0) + 0.5)));
+    global.targeting.globalPlateOffsetY = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.globalPlateOffsetY) or 0) + 0.5)));
+    for _, entityName in ipairs({ 'self', 'pc', 'trust', 'enemy', 'npc', 'object', 'pet' }) do
+        if (type(global.targeting.plateDistanceScales[entityName]) ~= 'table') then
+            global.targeting.plateDistanceScales[entityName] = {};
+        end
+        local scale = global.targeting.plateDistanceScales[entityName];
+        scale.start = math.max(0.0, math.min(20.0, tonumber(scale.start) or global.targeting.pcDistanceScaleStart));
+        scale.finish = math.max(1.0, math.min(40.0, tonumber(scale.finish) or global.targeting.pcDistanceScaleEnd));
+        if (scale.finish <= scale.start) then
+            scale.finish = math.min(40.0, scale.start + 1.0);
+        end
+        scale.max = math.max(1.0, math.min(6.0, tonumber(scale.max) or global.targeting.pcDistanceScaleMax));
+
+        if (type(global.targeting.platePositionOffsets[entityName]) ~= 'table') then
+            global.targeting.platePositionOffsets[entityName] = {};
+        end
+        global.targeting.platePositionOffsets[entityName].x = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.platePositionOffsets[entityName].x) or 0) + 0.5)));
+        global.targeting.platePositionOffsets[entityName].y = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.platePositionOffsets[entityName].y) or 0) + 0.5)));
+    end
     global.targeting.blockPlateClicksWhenImguiCapturesMouse = global.targeting.blockPlateClicksWhenImguiCapturesMouse == true;
     global.targeting.plateClickNoGoZonesEnabled = global.targeting.plateClickNoGoZonesEnabled == true;
     global.targeting.plateClickNoGoZonesVisible = global.targeting.plateClickNoGoZonesVisible == true;

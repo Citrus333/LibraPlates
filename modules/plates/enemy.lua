@@ -6,6 +6,7 @@ local barDefaults = require('config.widgets.bar');
 local buffsDefaults = require('config.widgets.buffs');
 local castBarDefaults = require('config.widgets.cast_bar');
 local debuffsDefaults = require('config.widgets.debuffs');
+local aoeRangeDefaults = require('config.widgets.aoe_range');
 local jobDefaults = require('config.widgets.job');
 local levelDefaults = require('config.widgets.level');
 local idDefaults = require('config.widgets.id');
@@ -21,6 +22,8 @@ local entities = require('core.entities');
 local mobInfoData = require('core.mobinfo_data');
 local perfMeter = require('core.perf_meter');
 local adaptivePerformance = require('core.adaptive_performance');
+local aoeNameHighlight = require('core.aoe_name_highlight');
+local aoeRangeVisuals = require('core.aoe_range_visuals');
 local state = require('core.state');
 local targeting = require('core.targeting');
 local engagedEnemies = require('core.engaged_enemies');
@@ -37,7 +40,7 @@ local worldMarkerProbe = require('core.world_marker_probe');
 local enemyPlate = {};
 local targetOverlayEnabled = true;
 local enemyAnchorBone = 2;
-local enemyWorldOffsetY = 0.50;
+local enemyWorldOffsetY = 0.82;
 local user32 = nil;
 local mobInfoIconTextureIds = {};
 local catseyeIconTextureIds = {};
@@ -540,7 +543,7 @@ local function ApplyPeerName(plateData, peerSettings, globalSettings)
 
     plateData.nameFontFamily = fonts.GetRole(globalSettings, false);
     plateData.nameFontFlags = fonts.GetRoleFlags(globalSettings, false);
-    plateData.nameFontSize = textScale.ToTextureFontSize(peerSettings.nameFontSize, 32);
+    plateData.nameFontSize = textScale.ToNameTextureFontSize(peerSettings.nameFontSize, 32);
     plateData.nameColor = peerSettings.nameColor or { 1.0, 1.0, 1.0, 1.0 };
     plateData.nameOutlineEnabled = (tonumber(peerSettings.nameOutlineSize) or 0) > 0;
     plateData.nameOutlineColor = peerSettings.nameOutlineColor or { 0.0, 0.0, 0.0, 1.0 };
@@ -1179,7 +1182,7 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = importantAlwaysOnTop,
-            plateTacticalOverlayOnly = importantAlwaysOnTop,
+            plateTacticalOverlayOnly = false,
             anchorBone = enemyAnchorBone,
             plateWorldWidth = cached.plateWorldWidth,
             plateWorldHeight = cached.plateWorldHeight,
@@ -1187,7 +1190,7 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = 0.28,
+            plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
             plateClickRects = cached.elementRects,
@@ -1219,6 +1222,7 @@ local function QueueEnemy(enemy)
     local distanceSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Distance', distanceDefaults);
     local buffsSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Buffs', buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Debuffs', debuffsDefaults);
+    local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
     local peerPlateSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Peer', { enabled = true });
     local castBarSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Cast bar', castBarDefaults);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
@@ -1291,6 +1295,8 @@ local function QueueEnemy(enemy)
             'claim=' .. tostring(claimCategory or ''),
             'ap=' .. tostring(mobInfoData.HasActivityPointMarker(enemy.name) == true),
             'nm=' .. tostring(mobInfo ~= nil and mobInfo.IsNM or ''),
+            'aoe=' .. aoeNameHighlight.GetSignature(enemy.index),
+            'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
             'bg=' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'nameSettings=' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'hpSettings=' .. (hasActiveDetail == true and SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor' }) or ''),
@@ -1336,6 +1342,8 @@ local function QueueEnemy(enemy)
     perfMeter.EndDetail(settingsTimer);
 
     local buildTimer = perfMeter.BeginDetail('enemy.build');
+    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(enemy.index) == true;
+    local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
     local plateData = {
         hp = hpPercent,
         cast = castPercent,
@@ -1353,10 +1361,11 @@ local function QueueEnemy(enemy)
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
         name = (nameSettings.enabled == true) and ShortenName(displayName, nameSettings.shortenName) or '',
+        aoeNameActive = nameAoeActive == true,
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
-        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
-        nameColor = GetClaimNameColor(nameSettings, nameDefaults, claimCategory) or GetDifficultyColor(nameSettings, nameDefaults, mobInfo),
+        nameFontSize = textScale.ToNameTextureFontSize(nameTextSize, nameDefaults.textSize),
+        nameColor = (nameAoeActive == true and aoeRangeSettings.fontColor) or GetClaimNameColor(nameSettings, nameDefaults, claimCategory) or GetDifficultyColor(nameSettings, nameDefaults, mobInfo),
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
         nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
@@ -1417,9 +1426,14 @@ local function QueueEnemy(enemy)
     end
     plateData.debugClickRects = worldMarkerProbe.GetClickDebug();
     plateData.debugClickRectColor = 0x01FFD400;
+    if (plateData.aoeNameActive == true) then
+        aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
+        plateData.canvasWidth = 1536;
+    end
 
     local canvasTimer = perfMeter.BeginDetail('enemy.canvas');
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'enemy-' .. tostring(enemy.index));
+    local textureKey = 'enemy-' .. tostring(enemy.index) .. (plateData.canvasWidth ~= nil and '-aoe' or '');
+    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
     local plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
     perfMeter.EndDetail(canvasTimer);
@@ -1466,12 +1480,12 @@ local function QueueEnemy(enemy)
         plateCache[cacheKey] = {
             signature = signature,
             texture = plateTexture,
-            textureKey = 'enemy-' .. tostring(enemy.index),
+            textureKey = textureKey,
             lastUsed = os.clock(),
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = plateClickRects,
-            plateWorldWidth = 2.35 * plateScale,
+            plateWorldWidth = 2.35 * plateScale * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
             plateWorldHeight = 1.18 * plateScale,
         };
         indexCache[tonumber(enemy.index) or 0] = {
@@ -1497,15 +1511,15 @@ local function QueueEnemy(enemy)
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = importantAlwaysOnTop,
-            plateTacticalOverlayOnly = importantAlwaysOnTop,
+            plateTacticalOverlayOnly = false,
             anchorBone = enemyAnchorBone,
-            plateWorldWidth = 2.35 * plateScale,
+            plateWorldWidth = 2.35 * plateScale * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
             plateWorldHeight = 1.18 * plateScale,
             plateWorldOffsetY = enemyWorldOffsetY,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = 0.28,
+            plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = plateClickRects,
@@ -1548,7 +1562,7 @@ end
 
 function enemyPlate.ResetPositionDebug()
     enemyAnchorBone = 2;
-    enemyWorldOffsetY = 0.50;
+    enemyWorldOffsetY = 0.82;
 end
 
 function enemyPlate.GetPositionDebugText()

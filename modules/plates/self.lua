@@ -2,6 +2,7 @@ local imgui = require('imgui');
 local canvasDefaults = require('config.canvas');
 local backgroundDefaults = require('config.widgets.background');
 local nameDefaults = require('config.widgets.name');
+local aoeRangeDefaults = require('config.widgets.aoe_range');
 local buffsDefaults = require('config.widgets.buffs');
 local debuffsDefaults = require('config.widgets.debuffs');
 local gameModeIconDefaults = require('config.widgets.game_mode_icon');
@@ -24,6 +25,8 @@ local textScale = require('core.text_scale');
 local canvas = require('core.canvas');
 local canvasTexture = require('core.canvas_texture');
 local adaptivePerformance = require('core.adaptive_performance');
+local aoeNameHighlight = require('core.aoe_name_highlight');
+local aoeRangeVisuals = require('core.aoe_range_visuals');
 local barTextures = require('core.bar_textures');
 local barAnimations = require('core.bar_animations');
 local entities = require('core.entities');
@@ -111,13 +114,14 @@ local function BuildWorldCacheSignature(plateData, center, stateName, targetStat
         'state=' .. tostring(stateName or ''),
         'target=' .. tostring(targetStateName or ''),
         'layout=' .. tostring(layoutStateName or ''),
+        'aoe=' .. aoeNameHighlight.GetSignature(center ~= nil and center.index or 0),
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'debug=' .. tostring(worldMarkerProbe.GetClickDebug() == true),
         'plate=' .. StableTableKey(plateData),
     }, '\n');
 end
 
-local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, castPercent, castText, stateName, targetStateName, layoutStateName)
+local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, castPercent, castText, stateName, targetStateName, layoutStateName, nameStyleKey)
     return table.concat({
         'index=' .. tostring(center ~= nil and center.index or ''),
         'server=' .. tostring(center ~= nil and center.serverId or ''),
@@ -130,13 +134,17 @@ local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, c
         'state=' .. tostring(stateName or ''),
         'target=' .. tostring(targetStateName or ''),
         'layout=' .. tostring(layoutStateName or ''),
+        'nameStyle=' .. tostring(nameStyleKey or ''),
     }, '\n');
 end
 
 local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layoutStateName, plateTextureId, textureWidth, textureHeight, plateClickRects)
+    local targetingSettings = targeting.GetSettings();
+
     worldMarkerProbe.QueuePlate({
         targetIndex = center.index,
         serverId = center.serverId,
+        distance = center.distance,
         hp = hpPercent,
         name = '',
         jobText = '',
@@ -149,9 +157,13 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
-            plateWorldWidth = 2.35,
+            plateWorldWidth = 2.35 * math.max(1.0, (tonumber(textureWidth) or 1024) / 1024),
             plateWorldHeight = 1.18,
-            plateWorldOffsetY = (tonumber(center.status) == 85) and (0.28 - mountedPlateLift) or 0.28,
+            plateWorldOffsetY = (tonumber(center.status) == 85) and (0.72 - mountedPlateLift) or 0.72,
+            plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
+            plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
+            plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
+            plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = plateClickRects,
@@ -162,6 +174,23 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
             layoutStateName = layoutStateName,
         },
     });
+end
+
+local function BuildAoeNameSettings(layoutStateName, nameSettings, targetIndex)
+    local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
+
+    if (aoeRangeSettings.enabled ~= true or aoeNameHighlight.IsHighlighted(targetIndex) ~= true) then
+        return nameSettings;
+    end
+
+    local merged = {};
+
+    for key, value in pairs(nameSettings or {}) do
+        merged[key] = value;
+    end
+
+    merged.textSize = tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize;
+    return merged;
 end
 
 local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEngaged, globalSettings, kind)
@@ -508,6 +537,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local tpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'TP Bar', tpBarDefaults);
     local castData = enemyCasts.GetActiveCast(center.serverId);
     local castBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'Cast bar', castBarDefaults);
+    local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
     local buffsSettings = state.GetWidgetSettings('Self', layoutStateName, 'Buffs', buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings('Self', layoutStateName, 'Debuffs', debuffsDefaults);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
@@ -681,6 +711,15 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     local targetMarker = targetModuleMarker.Build('Self', layoutStateName, targetStateName, hpBarSettings, 0);
     local castBar, castPercent = BuildCastBar(castData, castBarSettings, globalSettings);
+    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(center.index);
+    local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
+    local nameStyleKey = table.concat({
+        'aoe=' .. tostring(nameAoeActive == true),
+        'size=' .. tostring(nameTextSize or ''),
+        'color=' .. StableTableKey(nameAoeActive == true and aoeRangeSettings.fontColor or ''),
+        'icon=' .. tostring(aoeRangeSettings.iconEnabled == true) .. ':' .. tostring(aoeRangeSettings.iconSize or ''),
+        'highlight=' .. tostring(aoeRangeSettings.highlightEnabled == true) .. ':' .. tostring(aoeRangeSettings.backgroundFile or '') .. ':' .. tostring(aoeRangeSettings.backgroundSpacing or '') .. ':' .. StableTableKey(aoeRangeSettings.backgroundColor or ''),
+    }, ';');
 
     local plateData = {
         hp = hpPercent,
@@ -701,10 +740,11 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
         name = nameEnabled and center.name or '',
+        aoeNameActive = nameAoeActive == true,
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
-        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
-        nameColor = nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
+        nameFontSize = textScale.ToNameTextureFontSize(nameTextSize, nameDefaults.textSize),
+        nameColor = (nameAoeActive == true and aoeRangeSettings.fontColor) or nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
         nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
@@ -805,6 +845,11 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         castBar = castBar,
         icons = icons,
     };
+
+    if (plateData.aoeNameActive == true) then
+        aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
+        plateData.canvasWidth = 1536;
+    end
     plateData.debugClickRects = worldMarkerProbe.GetClickDebug();
     plateData.debugClickRectColor = 0x01FFD400;
 
@@ -903,7 +948,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             castBar ~= nil and castBar.text or '',
             stateName,
             targetStateName,
-            layoutStateName
+            layoutStateName,
+            nameStyleKey
         );
 
         if (cachedWorldPlate ~= nil and cachedWorldPlate.signature == signature) then
@@ -948,7 +994,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         perfMeter.Count('self.cache.miss', 1);
     end
 
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, cachedWorldTextureKey);
+    local renderTextureKey = cachedWorldTextureKey .. (plateData.canvasWidth ~= nil and '-aoe' or '');
+    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, renderTextureKey);
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
     local plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
@@ -961,7 +1008,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         cachedWorldPlate = {
             signature = signature,
             vitalSignature = vitalSignature,
-            textureKey = cachedWorldTextureKey,
+            textureKey = renderTextureKey,
             lastUsed = os.clock(),
             plateTextureId = plateTextureId,
             textureWidth = textureWidth,
@@ -1045,7 +1092,7 @@ function selfPlate.Render()
     DrawBackground(drawList, bounds);
 
     if (nativeUiPolicy.ShouldDrawLibraNames() == true) then
-        widgets.name.Draw({ name = center.name }, nameSettings, {
+        widgets.name.Draw({ name = center.name }, BuildAoeNameSettings(GetLayoutStateName(stateName), nameSettings, center.index), {
             drawList = drawList,
             bounds = bounds,
             canvas = canvas,

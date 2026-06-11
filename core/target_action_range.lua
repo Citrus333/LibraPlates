@@ -2115,6 +2115,9 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
         category = category,
         id = actionId,
         range = range,
+        name = queuedName,
+        resourceMethod = queuedMethod,
+        resolvedId = queuedResolvedId,
         updated = os.clock(),
     };
     lastQueuedPacketSignature = {

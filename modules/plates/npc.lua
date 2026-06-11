@@ -261,14 +261,14 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = isTacticalTarget == true,
-            plateTacticalOverlayOnly = isTacticalTarget == true,
+            plateTacticalOverlayOnly = false,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = cached.plateWorldOffsetY,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = 0.28,
+            plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
             plateClickRects = cached.elementRects,
@@ -395,7 +395,7 @@ local function QueueNpcObject(entity)
         name = (nameSettings.enabled == true and (targetStateName == 'Idle' or HasReadableDisplayName(displayName) == true)) and ShortenName(displayName, nameSettings.shortenName) or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
-        nameFontSize = textScale.ToTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
         nameColor = nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
@@ -516,7 +516,7 @@ local function QueueNpcObject(entity)
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = elementRects,
-            plateWorldOffsetY = tonumber(npcInfo ~= nil and npcInfo.worldOffsetY or nil) or ((resolvedEntityName == 'Object') and 0.95 or 0.50),
+            plateWorldOffsetY = tonumber(npcInfo ~= nil and npcInfo.worldOffsetY or nil) or ((resolvedEntityName == 'Object') and 0.95 or 0.62),
             fastReusable = targetStateName == 'Idle',
         };
         perfMeter.EndDetail(canvasTimer);
@@ -543,7 +543,7 @@ local function QueueNpcObject(entity)
         return;
     end
 
-    local plateWorldOffsetY = tonumber(npcInfo ~= nil and npcInfo.worldOffsetY or nil) or ((resolvedEntityName == 'Object') and 0.95 or 0.50);
+    local plateWorldOffsetY = tonumber(npcInfo ~= nil and npcInfo.worldOffsetY or nil) or ((resolvedEntityName == 'Object') and 0.95 or 0.62);
     local anchorBone = tonumber(npcInfo ~= nil and npcInfo.anchorBone or nil);
     local queueTimer = perfMeter.BeginDetail('npc.queue');
     local targetingSettings = targeting.GetSettings();
@@ -560,7 +560,7 @@ local function QueueNpcObject(entity)
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = isTacticalTarget == true,
-            plateTacticalOverlayOnly = isTacticalTarget == true,
+            plateTacticalOverlayOnly = false,
             anchorBone = anchorBone,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
@@ -568,7 +568,7 @@ local function QueueNpcObject(entity)
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
-            plateDistanceScaleOffsetY = 0.28,
+            plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = elementRects or plateData._elementRects or canvasTexture.GetElementRects(plateData),

@@ -48,10 +48,31 @@ function textScale.ToTextureFontSize(value, fallback)
     end
 
     if (current > maxVisualSize) then
-    return math.max(1, math.floor(current + 0.5));
+        return math.max(1, math.floor(current + 0.5));
     end
 
     return math.max(1, math.floor((Clamp(current, minVisualSize, maxVisualSize) * textureScale) + 0.5));
+end
+
+function textScale.ToNameTextureFontSize(value, fallback)
+    local current = tonumber(value);
+
+    if (current == nil) then
+        current = tonumber(fallback) or 10;
+    end
+
+    if (current > maxVisualSize) then
+        return math.max(1, math.floor(current + 0.5));
+    end
+
+    local size = Clamp(current, minVisualSize, maxVisualSize);
+    local scaledSize = size * textureScale;
+
+    if (size > 18) then
+        scaledSize = (18 * textureScale) + (size - 18);
+    end
+
+    return math.max(1, math.floor(scaledSize + 0.5));
 end
 
 return textScale;

@@ -940,7 +940,12 @@ local function DrawPlateBackground(device, centerX, centerY, background, resolve
         bgH = math.max(1, (tonumber(resolvedRect.drawY2) or (bgY + bgH)) - bgY);
     end
 
-    DrawRect(device, bgX, bgY, bgW, bgH, ColorToD3D(background.color, { 0.0, 0.0, 0.0, 0.45 }));
+    if (background.textureId ~= nil) then
+        local textureAlpha = tonumber(background.color ~= nil and background.color[4] or nil);
+        DrawTexture(device, background.textureId, bgX, bgY, bgW, bgH, ColorToD3D({ 1.0, 1.0, 1.0, textureAlpha }, { 1.0, 1.0, 1.0, 0.45 }));
+    else
+        DrawRect(device, bgX, bgY, bgW, bgH, ColorToD3D(background.color, { 0.0, 0.0, 0.0, 0.45 }));
+    end
 
     if (borderSize > 0) then
         local borderColor = ColorToD3D(background.borderColor, { 0.0, 0.0, 0.0, 0.80 });
@@ -1031,7 +1036,7 @@ end
 local function AddRect(rects, x, y, w, h, padding, kind, layout, anchorOnly)
     local pad = tonumber(padding) or 0;
 
-    if ((tonumber(w) or 0) <= 0 or (tonumber(h) or 0) <= 0) then
+    if (((tonumber(w) or 0) <= 0 or (tonumber(h) or 0) <= 0) and anchorOnly ~= true) then
         return;
     end
 
@@ -1062,6 +1067,22 @@ local function AddRect(rects, x, y, w, h, padding, kind, layout, anchorOnly)
         anchorLayout = layout,
         anchorOnly = anchorOnly == true,
     };
+end
+
+local function HasRectKind(rects, kind)
+    local wanted = tostring(kind or '');
+
+    if (wanted == '') then
+        return false;
+    end
+
+    for _, rect in ipairs(rects or {}) do
+        if (tostring(rect.kind or '') == wanted) then
+            return true;
+        end
+    end
+
+    return false;
 end
 
 local function RectToBounds(rect)
@@ -1120,10 +1141,108 @@ local function ResolveAnchorRects(rects, plate)
         ['Type line'] = 'type',
         ['Distance'] = 'distance',
     };
+    local hasFallbacks = plate ~= nil and type(plate.anchorFallbackRects) == 'table' and #plate.anchorFallbackRects > 0;
+    local fallbackDefs = {};
+
+    for _, fallbackRect in ipairs((plate ~= nil and plate.anchorFallbackRects) or {}) do
+        local key = tostring(fallbackRect ~= nil and fallbackRect.kind or '');
+
+        if (key ~= '' and fallbackDefs[key] == nil) then
+            fallbackDefs[key] = {
+                x = tonumber(fallbackRect.x) or 0,
+                y = tonumber(fallbackRect.y) or 0,
+                width = tonumber(fallbackRect.w) or 0,
+                height = tonumber(fallbackRect.h) or 0,
+                layout = fallbackRect.layout,
+            };
+        end
+    end
+    local fallbackResolvedCache = {};
+
+    local function ResolveMissingAnchorSlot(anchorName, bounds, stack)
+        anchorName = tostring(anchorName or '');
+
+        if (anchorName == '') then
+            return nil;
+        end
+
+        if (fallbackResolvedCache[anchorName] ~= nil) then
+            return fallbackResolvedCache[anchorName];
+        end
+
+        local targetKey = anchorMap[anchorName];
+
+        if (targetKey ~= nil and bounds[targetKey] ~= nil) then
+            fallbackResolvedCache[anchorName] = bounds[targetKey];
+            return bounds[targetKey];
+        end
+
+        local fallback = fallbackDefs[anchorName];
+
+        if (fallback == nil) then
+            return nil;
+        end
+
+        stack = stack or {};
+
+        if (stack[anchorName] == true) then
+            local result = {
+                x = fallback.x,
+                y = fallback.y,
+                width = fallback.width,
+                height = fallback.height,
+            };
+            fallbackResolvedCache[anchorName] = result;
+            return result;
+        end
+
+        stack[anchorName] = true;
+
+        local defaultRect = {
+            x = fallback.x,
+            y = fallback.y,
+            width = fallback.width,
+            height = fallback.height,
+        };
+        local layout = fallback.layout;
+
+        if (layout == nil or tostring(layout.anchorTo or 'Plate') == 'Plate') then
+            stack[anchorName] = nil;
+            fallbackResolvedCache[anchorName] = defaultRect;
+            return defaultRect;
+        end
+
+        local parentAnchorName = tostring(layout.anchorTo or 'Plate');
+        local parentRect = ResolveMissingAnchorSlot(parentAnchorName, bounds, stack);
+
+        if (parentRect == nil) then
+            stack[anchorName] = nil;
+            fallbackResolvedCache[anchorName] = defaultRect;
+            return defaultRect;
+        end
+
+        local tempBounds = {};
+
+        for key, value in pairs(bounds or {}) do
+            tempBounds[key] = value;
+        end
+
+        local parentTargetKey = anchorMap[parentAnchorName];
+
+        if (parentTargetKey ~= nil) then
+            tempBounds[parentTargetKey] = parentRect;
+        end
+
+        local resolved = anchorGeometry.ResolveAnchoredRect(layout, anchorName, defaultRect, tempBounds, anchorMap);
+        stack[anchorName] = nil;
+        fallbackResolvedCache[anchorName] = resolved;
+        return resolved;
+    end
 
     for _ = 1, 12 do
         local bounds = BuildBoundsByKind(rects);
         local changed = false;
+        fallbackResolvedCache = {};
 
         for _, rect in ipairs(rects or {}) do
             local layout = rect.anchorLayout;
@@ -1135,7 +1254,21 @@ local function ResolveAnchorRects(rects, plate)
                     width = (tonumber(rect.baseX2) or tonumber(rect.x2) or 0) - (tonumber(rect.baseX1) or tonumber(rect.x1) or 0),
                     height = (tonumber(rect.baseY2) or tonumber(rect.y2) or 0) - (tonumber(rect.baseY1) or tonumber(rect.y1) or 0),
                 };
-                local resolved = anchorGeometry.ResolveAnchoredRect(layout, tostring(rect.kind or ''), defaultRect, bounds, anchorMap);
+                local anchorTo = tostring(layout.anchorTo or 'Plate');
+                local targetKey = anchorMap[anchorTo];
+                local fallbackTarget = (hasFallbacks == true and targetKey ~= nil and bounds[targetKey] == nil) and ResolveMissingAnchorSlot(anchorTo, bounds) or nil;
+                local resolved = nil;
+
+                if (fallbackTarget ~= nil) then
+                    resolved = {
+                        x = tonumber(fallbackTarget.x) or 0,
+                        y = tonumber(fallbackTarget.y) or 0,
+                        width = defaultRect.width,
+                        height = defaultRect.height,
+                    };
+                else
+                    resolved = anchorGeometry.ResolveAnchoredRect(layout, tostring(rect.kind or ''), defaultRect, bounds, anchorMap);
+                end
 
                 local pad = tonumber(rect.padding) or 0;
                 local oldX1 = tonumber(rect.drawX1) or 0;

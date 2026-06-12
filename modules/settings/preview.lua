@@ -8,6 +8,7 @@ local statusIconTextures = require('core.status_icon_textures');
 local statusTimerFormat = require('core.status_timer_format');
 local jobIconTextures = require('core.job_icon_textures');
 local textureLoader = require('core.texture_loader');
+local backgroundTextures = require('core.background_textures');
 local targetModuleMarker = require('core.target_module_marker');
 local npcObjectInfo = require('core.npc_object_info');
 local fishing = require('core.fishing');
@@ -36,6 +37,9 @@ local maneuverDefaults = require('config.widgets.maneuvers');
 local gameModeIconDefaults = require('config.widgets.game_mode_icon');
 local bazaarIconDefaults = require('config.widgets.bazaar_icon');
 local linkshellIconDefaults = require('config.widgets.linkshell_icon');
+local enemyBehaviorIconDefaults = require('config.widgets.enemy_behavior_icon');
+local enemyDetectsIconDefaults = require('config.widgets.enemy_detects_icon');
+local enemyLinksIconDefaults = require('config.widgets.enemy_links_icon');
 local awayIconDefaults = require('config.widgets.away_icon');
 local disconnectIconDefaults = require('config.widgets.disconnect_icon');
 local anonIconDefaults = require('config.widgets.anon_icon');
@@ -337,6 +341,14 @@ local function GetPreviewDifficultyColor(settings, defaults)
     end
 
     return settings.tColor or defaults.tColor or settings.color or defaults.color;
+end
+
+local function GetPreviewDifficultyOutlineColor(settings, defaults)
+    if (settings == nil or settings.difficultyColorsEnabled ~= true) then
+        return settings ~= nil and (settings.outlineColor or defaults.outlineColor) or defaults.outlineColor;
+    end
+
+    return settings.tOutlineColor or defaults.tOutlineColor or settings.outlineColor or defaults.outlineColor;
 end
 
 local function GetPreviewIdBoxColor(settings, defaults)
@@ -803,6 +815,103 @@ local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind)
     });
 end
 
+local function BuildForcedPreviewIconSettings(settings)
+    local previewSettings = {};
+
+    if (type(settings) == 'table') then
+        for key, value in pairs(settings) do
+            previewSettings[key] = value;
+        end
+    end
+
+    previewSettings.enabled = true;
+    return previewSettings;
+end
+
+local function GetEnemyMobInfoPreviewIconSettings(storageEntityName, stateName)
+    return {
+        behavior = state.GetWidgetSettings(storageEntityName, stateName, 'Behavior icon', enemyBehaviorIconDefaults),
+        detects = state.GetWidgetSettings(storageEntityName, stateName, 'Detects icon', enemyDetectsIconDefaults),
+        links = state.GetWidgetSettings(storageEntityName, stateName, 'Links icon', enemyLinksIconDefaults),
+    };
+end
+
+local function GetPlayerPreviewIconSettings(storageEntityName, stateName)
+    return {
+        allianceLeader = state.GetWidgetSettings(storageEntityName, stateName, 'Alliance leader icon', allianceLeaderIconDefaults),
+        partyLeader = state.GetWidgetSettings(storageEntityName, stateName, 'Party leader icon', partyLeaderIconDefaults),
+        gameMode = state.GetWidgetSettings(storageEntityName, stateName, 'Game mode icon', gameModeIconDefaults),
+        linkshell = state.GetWidgetSettings(storageEntityName, stateName, 'Linkshell icon', linkshellIconDefaults),
+        bazaar = state.GetWidgetSettings(storageEntityName, stateName, 'Bazaar icon', bazaarIconDefaults),
+        away = state.GetWidgetSettings(storageEntityName, stateName, 'Away icon', awayIconDefaults),
+        disconnect = state.GetWidgetSettings(storageEntityName, stateName, 'Disconnect icon', disconnectIconDefaults),
+        stars = state.GetWidgetSettings(storageEntityName, stateName, 'Stars icon', starsIconDefaults),
+        newAdventurer = state.GetWidgetSettings(storageEntityName, stateName, 'New adventurer icon', newAdventurerIconDefaults),
+    };
+end
+
+local function AddPlayerPreviewIcons(icons, playerIconSettings)
+    AddIcon(icons, playerIconSettings.allianceLeader, LoadWidgetIcon('alliance_leader.png'), -120, -54, 'allianceLeaderIcon');
+    AddIcon(icons, playerIconSettings.partyLeader, LoadWidgetIcon('party_leader.png'), -96, -54, 'partyLeaderIcon');
+    AddIcon(icons, playerIconSettings.gameMode, gameMode.GetIconTextureId('ACE'), -72, -54, 'gameModeIcon');
+    AddIcon(icons, playerIconSettings.linkshell, LoadWidgetIcon('linkshell.png'), 48, -54, 'linkshellIcon');
+    AddIcon(icons, playerIconSettings.bazaar, LoadWidgetIcon('bazaar.png'), 72, -54, 'bazaarIcon');
+    AddIcon(icons, playerIconSettings.away, LoadWidgetIcon('away.png'), 120, -54, 'awayIcon');
+    AddIcon(icons, playerIconSettings.disconnect, LoadWidgetIcon('dc.png'), 144, -54, 'disconnectIcon');
+    AddIcon(icons, playerIconSettings.stars, LoadWidgetIcon('stars.png'), -48, -54, 'starsIcon');
+    AddIcon(icons, playerIconSettings.newAdventurer, LoadWidgetIcon('new_adventurer.png'), 24, -54, 'newAdventurerIcon');
+end
+
+local function AddEnemyWorldMobInfoPreviewIcons(icons, globalSettings, widgetSettings, context)
+    widgetSettings = widgetSettings or {};
+    local iconStyle = SanitizePeerIconStyle(globalSettings.peer ~= nil and globalSettings.peer.iconStyle or 'round');
+    local selectedWidget = context ~= nil and tostring(context.selectedWidget or '') or '';
+    local behaviorSettings = widgetSettings.behavior;
+    local detectsSettings = widgetSettings.detects;
+    local linksSettings = widgetSettings.links;
+
+    if (selectedWidget == 'Behavior icon') then
+        behaviorSettings = BuildForcedPreviewIconSettings(behaviorSettings);
+    elseif (selectedWidget == 'Detects icon') then
+        detectsSettings = BuildForcedPreviewIconSettings(detectsSettings);
+    elseif (selectedWidget == 'Links icon') then
+        linksSettings = BuildForcedPreviewIconSettings(linksSettings);
+    end
+
+    AddIcon(icons, behaviorSettings, LoadPeerIcon('AggroNQ', iconStyle), -96, -34, 'Behavior icon');
+    AddIcon(icons, detectsSettings, LoadPeerIcon('Sound', iconStyle), -72, -34, 'Detects icon');
+    AddIcon(icons, linksSettings, LoadPeerIcon('Link', iconStyle), -48, -34, 'Links icon');
+end
+
+local function BuildPreviewAnchorFallbackRects(definitions)
+    local fallbacks = {};
+
+    for _, definition in ipairs(definitions or {}) do
+        local settings = definition.settings or {};
+        local defaults = definition.defaults or {};
+        local size = math.max(6, math.min(160, tonumber(settings.iconSize) or tonumber(defaults.iconSize) or 16));
+        local offsetX = tonumber(settings.offsetX) or tonumber(definition.defaultX) or tonumber(defaults.offsetX) or 0;
+        local offsetY = tonumber(settings.offsetY) or tonumber(definition.defaultY) or tonumber(defaults.offsetY) or 0;
+
+        fallbacks[#fallbacks + 1] = {
+            kind = definition.kind,
+            x = 512 - (size * 0.5) + offsetX,
+            y = 256 - (size * 0.5) + offsetY,
+            w = size,
+            h = size,
+            padding = 4,
+            layout = {
+                anchorTo = settings.anchorTo or defaults.anchorTo,
+                anchorPoint = settings.anchorPoint or defaults.anchorPoint,
+                offsetX = offsetX,
+                offsetY = offsetY,
+            },
+        };
+    end
+
+    return fallbacks;
+end
+
 local function AddEnmityPreviewIcon(plateData, globalSettings, context)
     if (plateData == nil or context == nil or context.widgetKey ~= 'Enmity') then
         return;
@@ -1242,6 +1351,8 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
             color = backgroundSettings.color or backgroundDefaults.color,
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
@@ -1404,6 +1515,8 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
             color = backgroundSettings.color or backgroundDefaults.color,
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
@@ -1419,6 +1532,20 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
         nameOffsetY = ClampTextureOffset(tonumber(nameSettings.offsetY) or nameDefaults.offsetY, 512, 24),
         nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        anchorFallbackRects = BuildPreviewAnchorFallbackRects({
+            { kind = 'allianceLeaderIcon', settings = playerIconSettings.allianceLeader, defaults = allianceLeaderIconDefaults, defaultX = -120, defaultY = -54 },
+            { kind = 'partyLeaderIcon', settings = playerIconSettings.partyLeader, defaults = partyLeaderIconDefaults, defaultX = -96, defaultY = -54 },
+            { kind = 'gameModeIcon', settings = playerIconSettings.gameMode, defaults = gameModeIconDefaults, defaultX = -72, defaultY = -54 },
+            { kind = 'linkshellIcon', settings = playerIconSettings.linkshell, defaults = linkshellIconDefaults, defaultX = 48, defaultY = -54 },
+            { kind = 'bazaarIcon', settings = playerIconSettings.bazaar, defaults = bazaarIconDefaults, defaultX = 72, defaultY = -54 },
+            { kind = 'awayIcon', settings = playerIconSettings.away, defaults = awayIconDefaults, defaultX = 120, defaultY = -54 },
+            { kind = 'disconnectIcon', settings = playerIconSettings.disconnect, defaults = disconnectIconDefaults, defaultX = 144, defaultY = -54 },
+            { kind = 'starsIcon', settings = playerIconSettings.stars, defaults = starsIconDefaults, defaultX = -48, defaultY = -54 },
+            { kind = 'newAdventurerIcon', settings = playerIconSettings.newAdventurer, defaults = newAdventurerIconDefaults, defaultX = 24, defaultY = -54 },
+            { kind = 'Behavior icon', settings = enemyMobInfoIconSettings.behavior, defaults = enemyBehaviorIconDefaults, defaultX = -96, defaultY = -34 },
+            { kind = 'Detects icon', settings = enemyMobInfoIconSettings.detects, defaults = enemyDetectsIconDefaults, defaultX = -72, defaultY = -34 },
+            { kind = 'Links icon', settings = enemyMobInfoIconSettings.links, defaults = enemyLinksIconDefaults, defaultX = -48, defaultY = -34 },
+        }),
         hpBar = {
             enabled = hpBarSettings.enabled == true,
             width = tonumber(hpBarSettings.width) or barDefaults.width,
@@ -1560,6 +1687,8 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             color = backgroundSettings.color or backgroundDefaults.color,
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
@@ -1733,18 +1862,11 @@ local function BuildPlate(entityName, stateName, context)
     local tpBarSettings = state.GetWidgetSettings(storageEntityName, stateName, 'TP Bar', tpDefaults);
     local castBarSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Cast bar', castDefaults);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
-    local gameModeIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Game mode icon', gameModeIconDefaults);
-    local partyLeaderIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Party leader icon', partyLeaderIconDefaults);
-    local allianceLeaderIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Alliance leader icon', allianceLeaderIconDefaults);
-    local linkshellIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Linkshell icon', linkshellIconDefaults);
-    local bazaarIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Bazaar icon', bazaarIconDefaults);
-    local awayIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Away icon', awayIconDefaults);
-    local disconnectIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Disconnect icon', disconnectIconDefaults);
+    local playerIconSettings = GetPlayerPreviewIconSettings(storageEntityName, stateName);
+    local enemyMobInfoIconSettings = GetEnemyMobInfoPreviewIconSettings(storageEntityName, stateName);
     local anonIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Anon icon', anonIconDefaults);
     local followIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Follow icon', followIconDefaults);
-    local starsIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Stars icon', starsIconDefaults);
     local levelSyncIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Level sync icon', levelSyncIconDefaults);
-    local newAdventurerIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'New adventurer icon', newAdventurerIconDefaults);
     local maneuverSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Maneuvers', maneuverDefaults);
 
     if (entityName == 'NPC' or entityName == 'Object' or entityName == 'NPC/Object') then
@@ -1891,15 +2013,7 @@ local function BuildPlate(entityName, stateName, context)
     end
 
     if (entityName == 'Self' or entityName == 'PC' or entityName == 'Trust') then
-        AddIcon(icons, allianceLeaderIconSettings, LoadWidgetIcon('alliance_leader.png'), -120, -54, 'allianceLeaderIcon');
-        AddIcon(icons, partyLeaderIconSettings, LoadWidgetIcon('party_leader.png'), -96, -54, 'partyLeaderIcon');
-        AddIcon(icons, gameModeIconSettings, gameMode.GetIconTextureId('ACE'), -72, -54, 'gameModeIcon');
-        AddIcon(icons, linkshellIconSettings, LoadWidgetIcon('linkshell.png'), 48, -54, 'linkshellIcon');
-        AddIcon(icons, bazaarIconSettings, LoadWidgetIcon('bazaar.png'), 72, -54, 'bazaarIcon');
-        AddIcon(icons, awayIconSettings, LoadWidgetIcon('away.png'), 120, -54, 'awayIcon');
-        AddIcon(icons, disconnectIconSettings, LoadWidgetIcon('dc.png'), 144, -54, 'disconnectIcon');
-        AddIcon(icons, starsIconSettings, LoadWidgetIcon('stars.png'), -48, -54, 'starsIcon');
-        AddIcon(icons, newAdventurerIconSettings, LoadWidgetIcon('new_adventurer.png'), 24, -54, 'newAdventurerIcon');
+        AddPlayerPreviewIcons(icons, playerIconSettings);
     end
 
     if ((entityName == 'Enemy' or entityName == 'Self' or entityName == 'Trust' or (entityName == 'PC' and stateName == 'Combat')) and (context == nil or context.widgetKey ~= 'Peer')) then
@@ -1916,6 +2030,10 @@ local function BuildPlate(entityName, stateName, context)
 
         AddStatusPreviewIcons(icons, buffsSettings, buffRows, 'buffs');
         AddStatusPreviewIcons(icons, debuffsSettings, debuffRows, 'debuffs');
+    end
+
+    if (entityName == 'Enemy' and (stateName == 'Idle' or stateName == 'World')) then
+        AddEnemyWorldMobInfoPreviewIcons(icons, globalSettings, enemyMobInfoIconSettings, context);
     end
 
     local plateData = {
@@ -1947,6 +2065,9 @@ local function BuildPlate(entityName, stateName, context)
             ['Icon'] = 'npc_object_icon',
             ['Game mode icon'] = 'gameModeIcon',
             ['Linkshell icon'] = 'linkshellIcon',
+            ['Behavior icon'] = 'Behavior icon',
+            ['Detects icon'] = 'Detects icon',
+            ['Links icon'] = 'Links icon',
             ['Bazaar icon'] = 'bazaarIcon',
             ['Away icon'] = 'awayIcon',
             ['Disconnect icon'] = 'disconnectIcon',
@@ -2101,6 +2222,8 @@ local function BuildPlate(entityName, stateName, context)
             color = backgroundSettings.color or backgroundDefaults.color,
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
@@ -2149,7 +2272,7 @@ local function BuildPlate(entityName, stateName, context)
     end
 
     if ((entityName == 'Enemy' or (entityName == 'PC' and stateName == 'Combat')) and levelSettings ~= nil and levelSettings.enabled == true) then
-        local levelText = '75';
+        local levelText = '72-75';
 
         plateData.badges = plateData.badges or {};
         plateData.badges[#plateData.badges + 1] = {
@@ -2162,7 +2285,7 @@ local function BuildPlate(entityName, stateName, context)
             fontSize = textScale.ToTextureFontSize(levelSettings.textSize, levelDefaults.textSize),
             textColor = GetPreviewDifficultyColor(levelSettings, levelDefaults),
             textOutlineEnabled = levelSettings.outlineEnabled == true,
-            textOutlineColor = levelSettings.outlineColor or levelDefaults.outlineColor,
+            textOutlineColor = GetPreviewDifficultyOutlineColor(levelSettings, levelDefaults),
             textOutlineSize = tonumber(levelSettings.outlineSize) or levelDefaults.outlineSize,
             anchorTo = levelSettings.anchorTo or levelDefaults.anchorTo,
             anchorPoint = levelSettings.anchorPoint or levelDefaults.anchorPoint,
@@ -2844,6 +2967,9 @@ local function GetQuickMenuPreviewRows(entityName, menu)
     menu.self = menu.self or {};
     menu.trust = menu.trust or {};
     menu.npc = menu.npc or {};
+    menu.presets = menu.presets or {};
+    menu.presets.entries = menu.presets.entries or {};
+    if (menu.presets.iconTheme == nil) then menu.presets.iconTheme = 'FFXI'; end
 
     if (entity == 'Self') then
         local rows = {};
@@ -2872,6 +2998,21 @@ local function GetQuickMenuPreviewRows(entityName, menu)
 
         if (menu.npc.showType == true) then rows[#rows + 1] = { (entity == 'Object') and 'Mining Point' or 'Weekly Hunt', nil }; end
         if (menu.npc.openLink == true) then rows[#rows + 1] = { 'Open Wiki Page', 'catseye.png' }; end
+
+        if (entity == 'NPC') then
+            for _, entry in ipairs(menu.presets.entries) do
+                local mainJob = tostring(entry.mainJob or 'None');
+                local subJob = tostring(entry.subJob or 'None');
+
+                if (mainJob ~= 'None' and subJob ~= 'None' and mainJob ~= subJob) then
+                    rows[#rows + 1] = {
+                        mainJob .. '/' .. subJob,
+                        nil,
+                        jobIconTextures.GetTextureId(mainJob, menu.presets.iconTheme),
+                    };
+                end
+            end
+        end
 
         return (entity == 'Object') and 'Mining Point' or 'Hunter', nil, rows;
     end
@@ -2935,10 +3076,11 @@ local function DrawQuickMenuPreview(drawList, x, y, previewWidth, previewHeight,
     for _, row in ipairs(rows) do
         local label = row[1];
         local iconFile = row[2];
+        local textureId = row[3];
         local labelX = menuX + 12;
 
-        if (menu.iconsEnabled ~= false and iconFile ~= nil and drawList.AddImage ~= nil) then
-            local textureId = LoadQuickMenuIcon(iconFile);
+        if (menu.iconsEnabled ~= false and drawList.AddImage ~= nil and (iconFile ~= nil or textureId ~= nil)) then
+            textureId = textureId or LoadQuickMenuIcon(iconFile);
 
             if (textureId ~= nil) then
                 drawList:AddImage(textureId, { labelX, rowY }, { labelX + iconSize, rowY + iconSize }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);

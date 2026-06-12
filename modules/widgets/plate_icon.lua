@@ -431,7 +431,7 @@ function plateIcon.DrawSettings(settings, context)
         settings.offsetY,
         -400,
         400,
-        5
+        1
     );
 
     imgui.Separator();

@@ -298,16 +298,12 @@ end
 
 local function DrawOutlineRow(settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##level_outline_row', 4, tableFlags)) then
+        if (imgui.BeginTable('##level_outline_row', 2, tableFlags)) then
             imgui.TableSetupColumn('##outline_size_label', 0, 145);
             imgui.TableSetupColumn('##outline_size_control', 0, 170);
-            imgui.TableSetupColumn('##outline_color_label', 0, 145);
-            imgui.TableSetupColumn('##outline_color_control', 0, 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.outlineSize = DrawTableSlider('Outline size', 'outline_size', settings.outlineSize, 0, 12, false);
-            imgui.TableNextColumn();
-            settings.outlineColor = DrawColorCell('Outline color', settings.outlineColor);
             imgui.EndTable();
         end
 
@@ -315,13 +311,24 @@ local function DrawOutlineRow(settings)
     end
 
     settings.outlineSize = DrawNumber('Outline size', settings.outlineSize, 0, 12, 1);
-    settings.outlineColor = DrawColor('Outline color', settings.outlineColor);
 end
 
 local function DrawDifficultyColor(label, color, continueLine)
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
     color = DrawColor('difficulty_' .. label, color);
+
+    if (continueLine == true) then
+        imgui.SameLine();
+    end
+
+    return color;
+end
+
+local function DrawDifficultyOutlineColor(label, color, continueLine)
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+    color = DrawColor('difficulty_outline_' .. label, color);
 
     if (continueLine == true) then
         imgui.SameLine();
@@ -432,6 +439,16 @@ function level.DrawSettings(settings, context)
             settings.tColor = DrawDifficultyColor('T', settings.tColor, true);
             settings.vtColor = DrawDifficultyColor('VT', settings.vtColor, true);
             settings.itColor = DrawDifficultyColor('IT', settings.itColor, false);
+
+            imgui.Separator();
+            DrawSectionHeader('Difficulty outline colors');
+            settings.twOutlineColor = DrawDifficultyOutlineColor('TW', settings.twOutlineColor, true);
+            settings.epOutlineColor = DrawDifficultyOutlineColor('EP', settings.epOutlineColor, true);
+            settings.dcOutlineColor = DrawDifficultyOutlineColor('DC', settings.dcOutlineColor, true);
+            settings.emOutlineColor = DrawDifficultyOutlineColor('EM', settings.emOutlineColor, true);
+            settings.tOutlineColor = DrawDifficultyOutlineColor('T', settings.tOutlineColor, true);
+            settings.vtOutlineColor = DrawDifficultyOutlineColor('VT', settings.vtOutlineColor, true);
+            settings.itOutlineColor = DrawDifficultyOutlineColor('IT', settings.itOutlineColor, false);
         end
     end
 

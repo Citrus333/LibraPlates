@@ -23,6 +23,8 @@ local targetActionRange = require('core.target_action_range');
 local adaptivePerformance = require('core.adaptive_performance');
 local cursorOverlay = require('core.cursor_overlay');
 local petPlate = require('modules.plates.pet');
+local mogJobDebug = require('core.mog_job_debug');
+local jobChange = require('core.job_change');
 local globalDefaults = require('config.global');
 local jobDefaults = require('config.widgets.job');
 local levelDefaults = require('config.widgets.level');
@@ -1196,6 +1198,78 @@ function commands.Handle(e)
         end
 
         log.Info('Usage: /lp castdebug on [seconds] | off | status | check /ma "Cure" <stpc> | packets on [seconds] | packets off | packets status');
+        return;
+    end
+
+    if (subcommand == 'mogjobdebug' or subcommand == 'mogdebug') then
+        local action = tostring(args[3] or 'status'):lower();
+        local seconds = tonumber(args[4]);
+
+        if (action == 'on') then
+            mogJobDebug.EnableForSeconds(seconds or 20);
+            return;
+        end
+
+        if (action == 'off') then
+            mogJobDebug.SetEnabled(false);
+            log.Info('Mog job debug off.');
+            return;
+        end
+
+        if (action == 'status') then
+            log.Info(mogJobDebug.GetDebugText());
+            return;
+        end
+
+        log.Info('Usage: /lp mogjobdebug on [seconds] | off | status');
+        return;
+    end
+
+    if (subcommand == 'jobchange' or subcommand == 'job') then
+        local action = tostring(args[3] or 'status');
+        local actionLower = action:lower();
+
+        if (actionLower == 'status') then
+            log.Info(jobChange.GetStatusText());
+            return;
+        end
+
+        if (actionLower == 'cancel' or actionLower == 'off') then
+            jobChange.Cancel();
+            log.Info('Queued job change cancelled.');
+            return;
+        end
+
+        local success = false;
+        local err = nil;
+
+        if (actionLower == 'main') then
+            success, err = jobChange.ChangeJobs(args[4], nil);
+        elseif (actionLower == 'sub') then
+            success, err = jobChange.ChangeJobs(nil, args[4]);
+        else
+            local pair = tostring(args[3] or ''):gsub('\\', '/');
+            local slashIndex = pair:find('/', 1, true);
+
+            if (slashIndex ~= nil) then
+                local mainJob = pair:sub(1, slashIndex - 1);
+                local subJob = pair:sub(slashIndex + 1);
+                success, err = jobChange.ChangeJobs(mainJob ~= '' and mainJob or nil, subJob ~= '' and subJob or nil);
+            else
+                success, err = jobChange.ChangeJobs(action, nil);
+            end
+        end
+
+        if (success ~= true) then
+            local message = tostring(err or 'Job change failed.');
+
+            if (message == 'No change required.') then
+                log.Info(message);
+            else
+                log.Warn(message);
+                log.Info('Usage: /lp jobchange WAR | main WAR | sub NIN | PUP/COR | status | cancel');
+            end
+        end
         return;
     end
 

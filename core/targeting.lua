@@ -605,11 +605,11 @@ function targeting.AttackEnemyTarget(targetIndex, serverId, distance, modelHitbo
 end
 
 local gatheringActions = {
-    ['Mining Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe' },
-    ['Excavation Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe' },
-    ['Logging Point'] = { command = '/item "Hatchet" <t>', tool = 'Hatchet' },
-    ['Harvest Point'] = { command = '/item "Sickle" <t>', tool = 'Sickle' },
-    ['Harvesting Point'] = { command = '/item "Sickle" <t>', tool = 'Sickle' },
+    ['Mining Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickMining' },
+    ['Excavation Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickExcavation' },
+    ['Logging Point'] = { command = '/item "Hatchet" <t>', tool = 'Hatchet', settingKey = 'enableRightClickLogging' },
+    ['Harvest Point'] = { command = '/item "Sickle" <t>', tool = 'Sickle', settingKey = 'enableRightClickHarvesting' },
+    ['Harvesting Point'] = { command = '/item "Sickle" <t>', tool = 'Sickle', settingKey = 'enableRightClickHarvesting' },
 };
 
 local function NormalizeObjectName(name)
@@ -812,6 +812,17 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
 
     if (action == nil) then
         lastGatheringInteractStatus = 'no mapping name=' .. tostring(name) .. ' type=' .. normalizedType;
+        return false;
+    end
+
+    local actionEnabled = fishingSettings[action.settingKey];
+
+    if (actionEnabled == nil) then
+        actionEnabled = true;
+    end
+
+    if (actionEnabled ~= true) then
+        lastGatheringInteractStatus = 'disabled action=' .. tostring(action.settingKey) .. ' name=' .. tostring(name);
         return false;
     end
 

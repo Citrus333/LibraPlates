@@ -30,6 +30,7 @@ local quickMenu = require('core.quick_menu');
 local diagnostics = require('core.diagnostics');
 local adaptivePerformance = require('core.adaptive_performance');
 local profileAutoSwitch = require('core.profile_auto_switch');
+local mogJobDebug = require('core.mog_job_debug');
 local nativeDrawHooksRegistered = false;
 
 local function RegisterNativeDrawHooks()
@@ -109,7 +110,12 @@ ashita.events.register('mouse', 'libraplates_mouse', function(e)
     modules.HandleMouse(e);
 end);
 
+ashita.events.register('login', 'libraplates_login', function()
+    modules.HandleLogin();
+end);
+
 ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
+    mogJobDebug.HandlePacketIn(e);
     engagedEnemies.HandlePacketIn(e);
     enmity.HandlePacketIn(e);
     enemyCasts.HandlePacketIn(e);
@@ -121,6 +127,7 @@ ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
 end);
 
 ashita.events.register('packet_out', 'libraplates_packet_out', function(e)
+    mogJobDebug.HandlePacketOut(e);
     petState.HandlePacketOut(e);
     bstCharmTimer.HandlePacketOut(e);
 end);

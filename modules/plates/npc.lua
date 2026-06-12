@@ -7,6 +7,7 @@ local globalDefaults = require('config.global');
 local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
+local backgroundTextures = require('core.background_textures');
 local entities = require('core.entities');
 local adaptivePerformance = require('core.adaptive_performance');
 local npcObjectInfo = require('core.npc_object_info');
@@ -218,11 +219,14 @@ local function BuildPlateSignature(displayName, resolvedEntityName, targetStateN
         'entity=' .. tostring(resolvedEntityName or ''),
         'targetState=' .. tostring(targetStateName or 'Idle'),
         'infoType=' .. tostring(npcInfo ~= nil and npcInfo.type or ''),
+        'infoWorldOffsetX=' .. tostring(npcInfo ~= nil and npcInfo.worldOffsetX or ''),
+        'infoWorldOffsetY=' .. tostring(npcInfo ~= nil and npcInfo.worldOffsetY or ''),
+        'infoWorldOffsetZ=' .. tostring(npcInfo ~= nil and npcInfo.worldOffsetZ or ''),
         'iconTex=' .. tostring(values.iconTextureId or ''),
         'typeText=' .. tostring(values.typeText or ''),
         'distanceText=' .. tostring(values.distanceText or ''),
         BuildTargetMarkerKey(values.targetMarker),
-        'bg:' .. SettingKey(settings.background, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
+        'bg:' .. SettingKey(settings.background, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
         'name:' .. SettingKey(settings.name, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
         'dist:' .. SettingKey(settings.distance, { 'enabled', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint' }),
         'type:' .. SettingKey(settings.typeLine, { 'enabled', 'useSmallFont', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
@@ -264,7 +268,9 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
             plateTacticalOverlayOnly = false,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
+            plateWorldOffsetX = cached.plateWorldOffsetX,
             plateWorldOffsetY = cached.plateWorldOffsetY,
+            plateWorldOffsetZ = cached.plateWorldOffsetZ,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
@@ -431,6 +437,8 @@ local function QueueNpcObject(entity)
             color = backgroundSettings.color or backgroundDefaults.color,
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
@@ -516,7 +524,9 @@ local function QueueNpcObject(entity)
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = elementRects,
+            plateWorldOffsetX = tonumber(npcInfo ~= nil and npcInfo.worldOffsetX or nil) or 0,
             plateWorldOffsetY = tonumber(npcInfo ~= nil and npcInfo.worldOffsetY or nil) or ((resolvedEntityName == 'Object') and 0.95 or 0.62),
+            plateWorldOffsetZ = tonumber(npcInfo ~= nil and npcInfo.worldOffsetZ or nil) or 0,
             fastReusable = targetStateName == 'Idle',
         };
         perfMeter.EndDetail(canvasTimer);
@@ -543,7 +553,9 @@ local function QueueNpcObject(entity)
         return;
     end
 
+    local plateWorldOffsetX = tonumber(npcInfo ~= nil and npcInfo.worldOffsetX or nil) or 0;
     local plateWorldOffsetY = tonumber(npcInfo ~= nil and npcInfo.worldOffsetY or nil) or ((resolvedEntityName == 'Object') and 0.95 or 0.62);
+    local plateWorldOffsetZ = tonumber(npcInfo ~= nil and npcInfo.worldOffsetZ or nil) or 0;
     local anchorBone = tonumber(npcInfo ~= nil and npcInfo.anchorBone or nil);
     local queueTimer = perfMeter.BeginDetail('npc.queue');
     local targetingSettings = targeting.GetSettings();
@@ -564,7 +576,9 @@ local function QueueNpcObject(entity)
             anchorBone = anchorBone,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
+            plateWorldOffsetX = plateWorldOffsetX,
             plateWorldOffsetY = plateWorldOffsetY,
+            plateWorldOffsetZ = plateWorldOffsetZ,
             plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
             plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
             plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,

@@ -4,6 +4,7 @@ return {
     height = 74,
     offsetX = 0,
     offsetY = 0,
+    texture = 'None',
     color = { 0.0, 0.0, 0.0, 0.45 },
     borderColor = { 0.0, 0.0, 0.0, 0.80 },
     borderSize = 0,

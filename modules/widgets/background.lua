@@ -1,5 +1,6 @@
 local imgui = require('imgui');
 local anchorControls = require('modules.widgets.anchor_controls');
+local backgroundTextures = require('core.background_textures');
 
 local background = {};
 local unpackTable = table.unpack or unpack;
@@ -54,6 +55,37 @@ local function DrawCheckbox(label, value)
     end
 
     return value == true;
+end
+
+local function DrawTextureFile(label, current)
+    local files = backgroundTextures.GetFiles();
+    local value = tostring(current or files[1] or 'None');
+
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+
+    if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+        if (imgui.BeginCombo('##background_texture_' .. tostring(label), value) == true) then
+            for _, file in ipairs(files) do
+                local selected = (file == value);
+
+                if (imgui.Selectable(tostring(file), selected) == true) then
+                    value = file;
+                end
+
+                if (selected == true and imgui.SetItemDefaultFocus ~= nil) then
+                    imgui.SetItemDefaultFocus();
+                end
+            end
+
+            imgui.EndCombo();
+        end
+
+        return value;
+    end
+
+    imgui.TextColored(valueColor, '[' .. value .. ' v]');
+    return value;
 end
 
 local function DrawNumberFallback(label, value, minValue, maxValue, step)
@@ -473,6 +505,8 @@ function background.DrawSettings(settings, context)
         -400,
         400
     );
+
+    settings.texture = DrawTextureFile('Background image', settings.texture or defaults.texture or 'None');
 
     settings.color = settings.color or { 0.0, 0.0, 0.0, 0.45 };
     settings.color[4] = ClampChannel(settings.color[4] or 1.0);

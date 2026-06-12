@@ -92,6 +92,14 @@ local function ClampNumber(value, fallback, minValue, maxValue)
     return number;
 end
 
+local function GetChevronFile(settings)
+    if (settings == nil or settings.chevronEnabled == false) then
+        return 'None';
+    end
+
+    return tostring(settings.chevronFile or 'None');
+end
+
 local function IsBackgroundEnabled(settings)
     if (settings == nil) then
         return false;
@@ -181,7 +189,7 @@ function targetModuleMarker.HasDrawableSettings(entityName, settings)
     local allowBackground = tostring(entityName or '') ~= 'NPC';
     local hasBackground = allowBackground == true and IsBackgroundEnabled(settings) == true;
     local hasArrow = settings.arrowEnabled ~= false and tostring(settings.arrowFile or 'None') ~= 'None';
-    local hasChevrons = settings.chevronEnabled ~= false and tostring(settings.chevronFile or 'None') ~= 'None';
+    local hasChevrons = GetChevronFile(settings) ~= 'None';
 
     return hasBackground == true or hasArrow == true or hasChevrons == true;
 end
@@ -252,7 +260,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
     local arrowTextureId = settings.arrowEnabled ~= false and arrowAnimation.GetTextureId(settings.arrowFile, arrowAnimated, Number(settings, 'arrowAnimationSpeed', 12)) or nil;
     local lockTextureId = (tostring(entityName or '') == 'Enemy' and targetStateName == 'Target' and settings.lockEnabled ~= false and targeting.GetIsTargetLockedOn() == true) and GetTextureId('lock', settings.lockFile or 'lock.png') or nil;
     local backgroundTextureId = allowBackground == true and backgroundEnabled == true and GetTextureId('backgrounds', settings.backgroundFile) or nil;
-    local chevronTextureId = settings.chevronEnabled ~= false and GetTextureId('chevrons', settings.chevronFile) or nil;
+    local chevronTextureId = GetTextureId('chevrons', GetChevronFile(settings));
     local showArrow = arrowTextureId ~= nil;
     local showLock = lockTextureId ~= nil;
     local showChevrons = chevronTextureId ~= nil;

@@ -11,11 +11,15 @@ local jobDefaults = require('config.widgets.job');
 local levelDefaults = require('config.widgets.level');
 local idDefaults = require('config.widgets.id');
 local distanceDefaults = require('config.widgets.distance');
+local enemyBehaviorIconDefaults = require('config.widgets.enemy_behavior_icon');
+local enemyDetectsIconDefaults = require('config.widgets.enemy_detects_icon');
+local enemyLinksIconDefaults = require('config.widgets.enemy_links_icon');
 local globalDefaults = require('config.global');
 local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
 local barTextures = require('core.bar_textures');
+local backgroundTextures = require('core.background_textures');
 local textureLoader = require('core.texture_loader');
 local jobIconTextures = require('core.job_icon_textures');
 local entities = require('core.entities');
@@ -460,6 +464,153 @@ local function AddMobInfoText(texts, text, offsetX, offsetY, globalSettings, opt
     };
 end
 
+local function AddEnemyMobInfoWidgetIcons(plateData, iconNames, iconSettings, defaultSettings, iconStyle, kind)
+    if (plateData == nil or iconSettings == nil or iconSettings.enabled ~= true or iconNames == nil or #iconNames == 0) then
+        return;
+    end
+
+    local size = math.max(6, math.min(96, tonumber(iconSettings.iconSize) or tonumber(defaultSettings.iconSize) or 18));
+    local x = tonumber(iconSettings.offsetX);
+    local y = tonumber(iconSettings.offsetY);
+
+    if (x == nil) then x = tonumber(defaultSettings.offsetX) or 0; end
+    if (y == nil) then y = tonumber(defaultSettings.offsetY) or 0; end
+
+    plateData.icons = plateData.icons or {};
+
+    for _, iconName in ipairs(iconNames) do
+        local textureId = GetMobInfoIconTextureId(iconName, iconStyle);
+
+        if (textureId ~= nil) then
+            plateData.icons[#plateData.icons + 1] = {
+                kind = tostring(kind or 'icon'),
+                textureId = textureId,
+                size = size,
+                offsetX = x,
+                offsetY = y,
+                anchorTo = iconSettings.anchorTo or defaultSettings.anchorTo,
+                anchorPoint = iconSettings.anchorPoint or defaultSettings.anchorPoint,
+            };
+            x = x + size + 3;
+        end
+    end
+end
+
+local function GetEnemyMobInfoIconWidgetSettings(layoutStateName)
+    return {
+        behavior = state.GetWidgetSettings('Enemy', layoutStateName, 'Behavior icon', enemyBehaviorIconDefaults),
+        detects = state.GetWidgetSettings('Enemy', layoutStateName, 'Detects icon', enemyDetectsIconDefaults),
+        links = state.GetWidgetSettings('Enemy', layoutStateName, 'Links icon', enemyLinksIconDefaults),
+    };
+end
+
+local function GetEnemyMobInfoIconWidgetSignature(widgetSettings)
+    widgetSettings = widgetSettings or {};
+
+    return table.concat({
+        'behaviorIconSettings=' .. SettingKey(widgetSettings.behavior, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
+        'detectsIconSettings=' .. SettingKey(widgetSettings.detects, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
+        'linksIconSettings=' .. SettingKey(widgetSettings.links, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
+    }, '\n');
+end
+
+local function IsEnemyMobInfoWidgetEnabled(settings)
+    return settings ~= nil and settings.enabled == true;
+end
+
+local function UsesEnemyMobInfoAnchor(settings)
+    local anchorTo = tostring(settings ~= nil and settings.anchorTo or 'Plate');
+    return anchorTo == 'Behavior icon' or anchorTo == 'Detects icon' or anchorTo == 'Links icon';
+end
+
+local function ShouldProcessEnemyMobInfoWidgets(widgetSettings)
+    widgetSettings = widgetSettings or {};
+
+    return
+        IsEnemyMobInfoWidgetEnabled(widgetSettings.behavior) or
+        IsEnemyMobInfoWidgetEnabled(widgetSettings.detects) or
+        IsEnemyMobInfoWidgetEnabled(widgetSettings.links);
+end
+
+local function BuildMissingEnemyMobInfoAnchorRects(widgetSettings)
+    widgetSettings = widgetSettings or {};
+    local fallbacks = {};
+    local definitions = {
+        {
+            kind = 'Behavior icon',
+            settings = widgetSettings.behavior,
+            defaults = enemyBehaviorIconDefaults,
+        },
+        {
+            kind = 'Detects icon',
+            settings = widgetSettings.detects,
+            defaults = enemyDetectsIconDefaults,
+        },
+        {
+            kind = 'Links icon',
+            settings = widgetSettings.links,
+            defaults = enemyLinksIconDefaults,
+        },
+    };
+
+    local anyAnchored =
+        UsesEnemyMobInfoAnchor(widgetSettings.behavior) or
+        UsesEnemyMobInfoAnchor(widgetSettings.detects) or
+        UsesEnemyMobInfoAnchor(widgetSettings.links);
+
+    for _, definition in ipairs(definitions) do
+        local settings = definition.settings or {};
+        local defaults = definition.defaults or {};
+        if (IsEnemyMobInfoWidgetEnabled(settings) == true or anyAnchored == true) then
+            local size = math.max(6, math.min(96, tonumber(settings.iconSize) or tonumber(defaults.iconSize) or 18));
+
+            fallbacks[#fallbacks + 1] = {
+                kind = definition.kind,
+                x = 512 - (size * 0.5) + (tonumber(settings.offsetX) or tonumber(defaults.offsetX) or 0),
+                y = 256 - (size * 0.5) + (tonumber(settings.offsetY) or tonumber(defaults.offsetY) or 0),
+                w = size,
+                h = size,
+                padding = 4,
+                layout = {
+                    anchorTo = settings.anchorTo or defaults.anchorTo,
+                    anchorPoint = settings.anchorPoint or defaults.anchorPoint,
+                    offsetX = tonumber(settings.offsetX) or tonumber(defaults.offsetX) or 0,
+                    offsetY = tonumber(settings.offsetY) or tonumber(defaults.offsetY) or 0,
+                },
+            };
+        end
+    end
+
+    return (#fallbacks > 0) and fallbacks or nil;
+end
+
+local function AddEnemyMobInfoIconWidgetsToPlate(plateData, layoutStateName, mobInfo, globalSettings, widgetSettings)
+    if (layoutStateName ~= 'Idle' or mobInfo == nil or ShouldProcessEnemyMobInfoWidgets(widgetSettings) ~= true) then
+        return;
+    end
+
+    widgetSettings = widgetSettings or {};
+
+    local iconStyle = SanitizeIconStyle((globalSettings.peer or {}).iconStyle);
+    local behaviorIcons = {};
+    local detectionIcons = {};
+    local linkIcons = {};
+
+    for _, iconName in ipairs(mobInfoData.GetFlags(mobInfo)) do
+        if (iconName == 'AggroHQ' or iconName == 'AggroNQ' or iconName == 'PassiveHQ' or iconName == 'PassiveNQ') then
+            behaviorIcons[#behaviorIcons + 1] = iconName;
+        elseif (iconName == 'Link') then
+            linkIcons[#linkIcons + 1] = iconName;
+        else
+            detectionIcons[#detectionIcons + 1] = iconName;
+        end
+    end
+
+    AddEnemyMobInfoWidgetIcons(plateData, behaviorIcons, widgetSettings.behavior, enemyBehaviorIconDefaults, iconStyle, 'Behavior icon');
+    AddEnemyMobInfoWidgetIcons(plateData, detectionIcons, widgetSettings.detects, enemyDetectsIconDefaults, iconStyle, 'Detects icon');
+    AddEnemyMobInfoWidgetIcons(plateData, linkIcons, widgetSettings.links, enemyLinksIconDefaults, iconStyle, 'Links icon');
+end
+
 local function GetPeerTextOptions(peerSettings, prefix)
     return {
         fontSize = textScale.ToTextureFontSize(peerSettings[prefix .. 'FontSize'], 12),
@@ -597,7 +748,27 @@ local function GetPeerViewerLevel()
     return tonumber(level) or 0;
 end
 
+local function NormalizeDifficultyKey(value)
+    local key = string.lower(tostring(value or '')):gsub('[%s%p]+', '');
+
+    if (key == 'tw' or key == 'tooweak' or key == 'liketooweak') then return 'tw'; end
+    if (key == 'ep' or key == 'easyprey' or key == 'likeeasyprey') then return 'ep'; end
+    if (key == 'dc' or key == 'decentchallenge' or key == 'likedecentchallenge') then return 'dc'; end
+    if (key == 'em' or key == 'evenmatch' or key == 'likeevenmatch') then return 'em'; end
+    if (key == 't' or key == 'tough' or key == 'liketough') then return 't'; end
+    if (key == 'vt' or key == 'verytough' or key == 'likeverytough') then return 'vt'; end
+    if (key == 'it' or key == 'incrediblytough' or key == 'likeincrediblytough') then return 'it'; end
+
+    return nil;
+end
+
 local function GetPeerDifficultyKey(mobInfo)
+    local infoKey = NormalizeDifficultyKey(mobInfo ~= nil and mobInfo.Difficulty or nil);
+
+    if (infoKey ~= nil) then
+        return infoKey;
+    end
+
     local viewerLevel = GetPeerViewerLevel();
     local mobLevel = mobInfo ~= nil and (mobInfo.MaxLevel or mobInfo.Level or mobInfo.MinLevel) or nil;
 
@@ -866,12 +1037,15 @@ local function GetDifficultyKey(viewerLevel, mobLevel)
 
     local delta = mobLevel - viewerLevel;
 
-    if (delta <= -21) then return 'tw'; end
-    if (delta <= -8) then return 'ep'; end
-    if (delta <= -1) then return 'dc'; end
-    if (delta == 0) then return 'em'; end
-    if (delta <= 6) then return 't'; end
-    if (delta == 7) then return 'vt'; end
+    -- CatsEye / retail-style fallback brackets:
+    -- TW: 8+ below, EP: 5-7 below, DC: 3-4 below,
+    -- EM: 2 below to 2 above, T: 3-5 above, VT: 6-8 above, IT: 9+ above.
+    if (delta <= -8) then return 'tw'; end
+    if (delta <= -5) then return 'ep'; end
+    if (delta <= -3) then return 'dc'; end
+    if (delta <= 2) then return 'em'; end
+    if (delta <= 5) then return 't'; end
+    if (delta <= 8) then return 'vt'; end
     return 'it';
 end
 
@@ -880,7 +1054,8 @@ local function GetDifficultyColor(settings, defaults, mobInfo)
         return settings ~= nil and settings.color or defaults.color;
     end
 
-    local key = GetDifficultyKey(GetViewerLevel(), mobInfo ~= nil and (mobInfo.MaxLevel or mobInfo.Level or mobInfo.MinLevel));
+    local key = NormalizeDifficultyKey(mobInfo ~= nil and mobInfo.Difficulty or nil)
+        or GetDifficultyKey(GetViewerLevel(), mobInfo ~= nil and (mobInfo.MaxLevel or mobInfo.Level or mobInfo.MinLevel));
 
     if (key == 'tw') then return settings.twColor or defaults.twColor; end
     if (key == 'ep') then return settings.epColor or defaults.epColor; end
@@ -891,6 +1066,25 @@ local function GetDifficultyColor(settings, defaults, mobInfo)
     if (key == 'it') then return settings.itColor or defaults.itColor; end
 
     return settings.color or defaults.color;
+end
+
+local function GetDifficultyOutlineColor(settings, defaults, mobInfo)
+    if (settings == nil or settings.difficultyColorsEnabled ~= true) then
+        return settings ~= nil and (settings.outlineColor or defaults.outlineColor) or defaults.outlineColor;
+    end
+
+    local key = NormalizeDifficultyKey(mobInfo ~= nil and mobInfo.Difficulty or nil)
+        or GetDifficultyKey(GetViewerLevel(), mobInfo ~= nil and (mobInfo.MaxLevel or mobInfo.Level or mobInfo.MinLevel));
+
+    if (key == 'tw') then return settings.twOutlineColor or defaults.twOutlineColor or settings.outlineColor or defaults.outlineColor; end
+    if (key == 'ep') then return settings.epOutlineColor or defaults.epOutlineColor or settings.outlineColor or defaults.outlineColor; end
+    if (key == 'dc') then return settings.dcOutlineColor or defaults.dcOutlineColor or settings.outlineColor or defaults.outlineColor; end
+    if (key == 'em') then return settings.emOutlineColor or defaults.emOutlineColor or settings.outlineColor or defaults.outlineColor; end
+    if (key == 't') then return settings.tOutlineColor or defaults.tOutlineColor or settings.outlineColor or defaults.outlineColor; end
+    if (key == 'vt') then return settings.vtOutlineColor or defaults.vtOutlineColor or settings.outlineColor or defaults.outlineColor; end
+    if (key == 'it') then return settings.itOutlineColor or defaults.itOutlineColor or settings.outlineColor or defaults.outlineColor; end
+
+    return settings.outlineColor or defaults.outlineColor;
 end
 local function GetClaimNameColor(nameSettings, nameDefaults, claimCategory)
     if (nameSettings == nil) then
@@ -921,7 +1115,8 @@ local function GetIdBoxColor(idSettings, mobInfo)
         return idSettings ~= nil and idSettings.boxBackgroundColor or idDefaults.boxBackgroundColor;
     end
 
-    local key = GetDifficultyKey(GetViewerLevel(), mobInfo ~= nil and (mobInfo.MaxLevel or mobInfo.Level or mobInfo.MinLevel));
+    local key = NormalizeDifficultyKey(mobInfo ~= nil and mobInfo.Difficulty or nil)
+        or GetDifficultyKey(GetViewerLevel(), mobInfo ~= nil and (mobInfo.MaxLevel or mobInfo.Level or mobInfo.MinLevel));
 
     if (key == 'tw') then return idSettings.boxTwColor or idDefaults.boxTwColor; end
     if (key == 'ep') then return idSettings.boxEpColor or idDefaults.boxEpColor; end
@@ -952,7 +1147,7 @@ local function AddLevelToPlate(plateData, levelText, levelSettings, mobInfo, glo
         fontSize = textScale.ToTextureFontSize(levelSettings.textSize, levelDefaults.textSize),
         textColor = GetDifficultyColor(levelSettings, levelDefaults, mobInfo),
         textOutlineEnabled = levelSettings.outlineEnabled == true,
-        textOutlineColor = levelSettings.outlineColor or levelDefaults.outlineColor,
+        textOutlineColor = GetDifficultyOutlineColor(levelSettings, levelDefaults, mobInfo),
         textOutlineSize = tonumber(levelSettings.outlineSize) or levelDefaults.outlineSize,
         anchorTo = levelSettings.anchorTo or levelDefaults.anchorTo,
         anchorPoint = levelSettings.anchorPoint or levelDefaults.anchorPoint,
@@ -1241,10 +1436,8 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
     return true;
 end
 
-local function QueueEnemy(enemy)
-    local settingsTimer = perfMeter.BeginDetail('enemy.settings');
+local function BuildEnemyQueueContext(enemy)
     local stateName = targeting.GetTargetStateName(enemy.index);
-
     local castData = enemyCasts.GetActiveCast(enemy.serverId);
     local isEngaged = engagedEnemies.IsEngaged(enemy.index) == true;
     local claimCategory = engagedEnemies.GetClaimCategory(enemy.index);
@@ -1256,6 +1449,7 @@ local function QueueEnemy(enemy)
     local levelSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Level', levelDefaults);
     local idSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'ID', idDefaults);
     local distanceSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Distance', distanceDefaults);
+    local mobInfoIconWidgetSettings = GetEnemyMobInfoIconWidgetSettings(layoutStateName);
     local buffsSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Buffs', buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Debuffs', debuffsDefaults);
     local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
@@ -1302,50 +1496,191 @@ local function QueueEnemy(enemy)
         distanceText = tostring(distanceSettings.prefix or '') .. string.format('%.1f', tonumber(enemy.distance) or 0);
     end
 
-    local cacheEligible = stateName == 'Idle'
-        and isEngaged ~= true
-        and castData == nil
-        and #buffRows == 0
-        and #debuffRows == 0
+    return {
+        enemy = enemy,
+        stateName = stateName,
+        castData = castData,
+        isEngaged = isEngaged,
+        claimCategory = claimCategory,
+        layoutStateName = layoutStateName,
+        nameSettings = nameSettings,
+        backgroundSettings = backgroundSettings,
+        hpBarSettings = hpBarSettings,
+        jobSettings = jobSettings,
+        levelSettings = levelSettings,
+        idSettings = idSettings,
+        distanceSettings = distanceSettings,
+        mobInfoIconWidgetSettings = mobInfoIconWidgetSettings,
+        buffsSettings = buffsSettings,
+        debuffsSettings = debuffsSettings,
+        aoeRangeSettings = aoeRangeSettings,
+        peerPlateSettings = peerPlateSettings,
+        castBarSettings = castBarSettings,
+        globalSettings = globalSettings,
+        targetingSettings = targeting.GetSettings(),
+        hpPercent = hpPercent,
+        hpColor = hpColor,
+        isTacticalTarget = isTacticalTarget,
+        isHovered = isHovered,
+        importantAlwaysOnTop = importantAlwaysOnTop,
+        hasActiveDetail = hasActiveDetail,
+        targetMarker = targetMarker,
+        castBar = castBar,
+        castPercent = castPercent,
+        displayName = displayName,
+        mobInfo = mobInfo,
+        jobText = jobText,
+        levelText = levelText,
+        buffRows = buffRows,
+        debuffRows = debuffRows,
+        distanceText = distanceText,
+    };
+end
+
+local function BuildEnemyCacheSignature(context)
+    local enemy = context.enemy;
+
+    return table.concat({
+        'v=1',
+        'policy=' .. canvasTexture.GetRenderPolicyKey(),
+        'activeDetail=' .. tostring(context.hasActiveDetail),
+        'name=' .. tostring(context.displayName or ''),
+        'server=' .. tostring(enemy.serverId or ''),
+        'hp=' .. (context.hasActiveDetail == true and tostring(context.hpPercent) or ''),
+        'dist=' .. tostring(context.distanceText or ''),
+        'job=' .. tostring(context.jobText or ''),
+        'level=' .. tostring(context.levelText or ''),
+        'id=' .. tostring(tonumber(enemy.serverId) or tonumber(enemy.index) or 0),
+        'difficulty=' .. tostring(context.mobInfo ~= nil and context.mobInfo.Difficulty or ''),
+        'claim=' .. tostring(context.claimCategory or ''),
+        'ap=' .. tostring(mobInfoData.HasActivityPointMarker(enemy.name) == true),
+        'nm=' .. tostring(context.mobInfo ~= nil and context.mobInfo.IsNM or ''),
+        'aoe=' .. aoeNameHighlight.GetSignature(enemy.index, 'enemy'),
+        'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
+        'bg=' .. SettingKey(context.backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
+        'nameSettings=' .. SettingKey(context.nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
+        'hpSettings=' .. (context.hasActiveDetail == true and SettingKey(context.hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor' }) or ''),
+        'jobSettings=' .. SettingKey(context.jobSettings, { 'enabled', 'displayModeIndex', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'iconTheme', 'iconSize' }),
+        'levelSettings=' .. SettingKey(context.levelSettings, { 'enabled', 'textSize', 'color', 'difficultyColorsEnabled', 'twColor', 'epColor', 'dcColor', 'emColor', 'tColor', 'vtColor', 'itColor', 'outlineSize', 'outlineColor', 'twOutlineColor', 'epOutlineColor', 'dcOutlineColor', 'emOutlineColor', 'tOutlineColor', 'vtOutlineColor', 'itOutlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
+        'idSettings=' .. SettingKey(context.idSettings, { 'enabled', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'prefix' }),
+        'distanceSettings=' .. SettingKey(context.distanceSettings, { 'enabled', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint' }),
+        GetEnemyMobInfoIconWidgetSignature(context.mobInfoIconWidgetSettings),
+        'debug=' .. tostring(worldMarkerProbe.GetClickDebug()),
+    }, '\n');
+end
+
+local function BuildEnemyPlateData(context)
+    local enemy = context.enemy;
+    local nameAoeActive = context.aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(enemy.index, 'enemy') == true;
+    local nameTextSize = nameAoeActive == true and math.max(tonumber(context.nameSettings.textSize) or nameDefaults.textSize, tonumber(context.aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or context.nameSettings.textSize;
+    local plateData = {
+        hp = context.hpPercent,
+        cast = context.castPercent,
+        targetMarker = context.targetMarker,
+        background = {
+            enabled = context.backgroundSettings.enabled == true,
+            width = tonumber(context.backgroundSettings.width) or backgroundDefaults.width,
+            height = tonumber(context.backgroundSettings.height) or backgroundDefaults.height,
+            offsetX = tonumber(context.backgroundSettings.offsetX) or backgroundDefaults.offsetX,
+            offsetY = tonumber(context.backgroundSettings.offsetY) or backgroundDefaults.offsetY,
+            color = context.backgroundSettings.color or backgroundDefaults.color,
+            borderColor = context.backgroundSettings.borderColor or backgroundDefaults.borderColor,
+            borderSize = tonumber(context.backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = context.backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(context.backgroundSettings.texture or backgroundDefaults.texture),
+            anchorTo = context.backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
+            anchorPoint = context.backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+        },
+        name = (context.nameSettings.enabled == true) and ShortenName(context.displayName, context.nameSettings.shortenName) or '',
+        aoeNameActive = nameAoeActive == true,
+        nameFontFamily = fonts.GetRole(context.globalSettings, false),
+        nameFontFlags = fonts.GetRoleFlags(context.globalSettings, false),
+        nameFontSize = textScale.ToNameTextureFontSize(nameTextSize, nameDefaults.textSize),
+        nameColor = (nameAoeActive == true and context.aoeRangeSettings.fontColor) or GetClaimNameColor(context.nameSettings, nameDefaults, context.claimCategory) or GetDifficultyColor(context.nameSettings, nameDefaults, context.mobInfo),
+        nameOutlineEnabled = (tonumber(context.nameSettings.outlineSize) or 0) > 0,
+        nameOutlineColor = context.nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        nameOutlineSize = tonumber(context.nameSettings.outlineSize) or 0,
+        nameOffsetX = tonumber(context.nameSettings.offsetX) or 0,
+        nameOffsetY = tonumber(context.nameSettings.offsetY) or -54,
+        nameAnchorTo = context.nameSettings.anchorTo or nameDefaults.anchorTo,
+        nameAnchorPoint = context.nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        anchorMap = {
+            ['Background'] = 'background', ['Name'] = 'name', ['HP Bar'] = 'hp', ['MP Bar'] = 'mp', ['TP Bar'] = 'tp', ['Cast bar'] = 'cast',
+            ['Job'] = 'job', ['Level'] = 'level', ['ID'] = 'id', ['Game mode icon'] = 'gameModeIcon', ['Linkshell icon'] = 'linkshellIcon',
+            ['Behavior icon'] = 'Behavior icon', ['Detects icon'] = 'Detects icon', ['Links icon'] = 'Links icon', ['Bazaar icon'] = 'bazaarIcon',
+            ['Away icon'] = 'awayIcon', ['Disconnect icon'] = 'disconnectIcon', ['Anon icon'] = 'anonIcon', ['Follow icon'] = 'followIcon',
+            ['Party leader icon'] = 'partyLeaderIcon', ['Alliance leader icon'] = 'allianceLeaderIcon', ['Stars icon'] = 'starsIcon',
+            ['Level sync icon'] = 'levelSyncIcon', ['New adventurer icon'] = 'newAdventurerIcon', ['Buffs'] = 'buffs', ['Debuffs'] = 'debuffs', ['Distance'] = 'distance',
+        },
+        hpBar = {
+            enabled = context.hasActiveDetail == true and context.hpBarSettings.enabled == true,
+            width = tonumber(context.hpBarSettings.width) or 180,
+            height = tonumber(context.hpBarSettings.height) or 12,
+            offsetX = tonumber(context.hpBarSettings.offsetX) or 0,
+            offsetY = tonumber(context.hpBarSettings.offsetY) or 0,
+            color = context.hpColor,
+            backgroundColor = context.hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
+            borderColor = context.hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = tonumber(context.hpBarSettings.borderSize) or 0,
+            anchorTo = context.hpBarSettings.anchorTo or barDefaults.anchorTo,
+            anchorPoint = context.hpBarSettings.anchorPoint or barDefaults.anchorPoint,
+            texture = context.hpBarSettings.texture or 'Solid',
+            textureId = barTextures.GetTextureId(context.hpBarSettings.texture),
+            showAtPercent = tonumber(context.hpBarSettings.showAtPercent) or 100,
+            text = (context.hpBarSettings.showPercent == true) and (tostring(math.floor(context.hpPercent + 0.5)) .. '%') or '',
+            textOffsetX = tonumber(context.hpBarSettings.textOffsetX) or 0,
+            textOffsetY = tonumber(context.hpBarSettings.textOffsetY) or 0,
+            fontFamily = fonts.GetRole(context.globalSettings, context.hpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(context.globalSettings, context.hpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(context.hpBarSettings.fontSize, barDefaults.fontSize),
+            textColor = context.hpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = context.hpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = context.hpBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = tonumber(context.hpBarSettings.textOutlineSize) or 1,
+        },
+        mpBar = { enabled = false },
+        tpBar = { enabled = false },
+        castBar = context.castBar,
+    };
+    AddActivityPointIconToPlate(plateData, enemy.name, context.nameSettings);
+    AddJobToPlate(plateData, context.jobText, context.jobSettings, context.globalSettings);
+    AddLevelToPlate(plateData, context.levelText, context.levelSettings, context.mobInfo, context.globalSettings);
+    AddIdToPlate(plateData, enemy, context.idSettings, context.mobInfo, context.globalSettings);
+    if (context.hasActiveDetail == true) then
+        AddDistanceToPlate(plateData, enemy, context.distanceSettings, context.globalSettings);
+    end
+    return plateData;
+end
+
+local function ApplyEnemyStatusWidgets(context, plateData)
+    AddStatusIconsToPlate(plateData, context.buffRows, context.buffsSettings, context.isEngaged, context.globalSettings, 'buffs');
+    AddStatusIconsToPlate(plateData, context.debuffRows, context.debuffsSettings, context.isEngaged, context.globalSettings, 'debuffs');
+    plateData.anchorFallbackRects = BuildMissingEnemyMobInfoAnchorRects(context.mobInfoIconWidgetSettings);
+    AddEnemyMobInfoIconWidgetsToPlate(plateData, context.layoutStateName, context.mobInfo, context.globalSettings, context.mobInfoIconWidgetSettings);
+end
+
+local function QueueEnemy(enemy)
+    local settingsTimer = perfMeter.BeginDetail('enemy.settings');
+    local context = BuildEnemyQueueContext(enemy);
+    local cacheEligible = context.stateName == 'Idle'
+        and context.isEngaged ~= true
+        and context.castData == nil
+        and #context.buffRows == 0
+        and #context.debuffRows == 0
         and state.GetConfigOpen() ~= true
-        and isHovered ~= true;
+        and context.isHovered ~= true;
     local cacheKey = nil;
     local signature = nil;
 
     if (cacheEligible == true) then
         cacheKey = 'enemy:' .. tostring(enemy.index);
-        signature = table.concat({
-            'v=1',
-            'policy=' .. canvasTexture.GetRenderPolicyKey(),
-            'activeDetail=' .. tostring(hasActiveDetail),
-            'name=' .. tostring(displayName or ''),
-            'server=' .. tostring(enemy.serverId or ''),
-            'hp=' .. (hasActiveDetail == true and tostring(hpPercent) or ''),
-            'dist=' .. tostring(distanceText or ''),
-            'job=' .. tostring(jobText or ''),
-            'level=' .. tostring(levelText or ''),
-            'id=' .. tostring(tonumber(enemy.serverId) or tonumber(enemy.index) or 0),
-            'difficulty=' .. tostring(mobInfo ~= nil and mobInfo.Difficulty or ''),
-            'claim=' .. tostring(claimCategory or ''),
-            'ap=' .. tostring(mobInfoData.HasActivityPointMarker(enemy.name) == true),
-            'nm=' .. tostring(mobInfo ~= nil and mobInfo.IsNM or ''),
-            'aoe=' .. aoeNameHighlight.GetSignature(enemy.index, 'enemy'),
-            'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
-            'bg=' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
-            'nameSettings=' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
-            'hpSettings=' .. (hasActiveDetail == true and SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor' }) or ''),
-            'jobSettings=' .. SettingKey(jobSettings, { 'enabled', 'displayModeIndex', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'iconTheme', 'iconSize' }),
-            'levelSettings=' .. SettingKey(levelSettings, { 'enabled', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
-            'idSettings=' .. SettingKey(idSettings, { 'enabled', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'prefix' }),
-            'distanceSettings=' .. SettingKey(distanceSettings, { 'enabled', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint' }),
-            'debug=' .. tostring(worldMarkerProbe.GetClickDebug()),
-        }, '\n');
+        signature = BuildEnemyCacheSignature(context);
 
         local indexed = indexCache[tonumber(enemy.index) or 0];
         local staleCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
         local cached = indexed ~= nil and indexed.signature == signature and staleCached or nil;
 
-        if (QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, hpPercent) == true) then
+        if (QueueCachedEnemy(enemy, cached, context.stateName, context.importantAlwaysOnTop, context.hpPercent) == true) then
             perfMeter.Count('enemy.cache.hit', 1);
             perfMeter.EndDetail(settingsTimer);
             return;
@@ -1355,7 +1690,7 @@ local function QueueEnemy(enemy)
             adaptivePerformance.ShouldThrottleBackground() == true and
             cached ~= nil and
             (os.clock() - (tonumber(cached.lastUsed) or 0)) < 1.00 and
-            QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, hpPercent) == true
+            QueueCachedEnemy(enemy, cached, context.stateName, context.importantAlwaysOnTop, context.hpPercent) == true
         ) then
             perfMeter.Count('enemy.cache.smooth', 1);
             perfMeter.EndDetail(settingsTimer);
@@ -1376,92 +1711,20 @@ local function QueueEnemy(enemy)
     perfMeter.EndDetail(settingsTimer);
 
     local buildTimer = perfMeter.BeginDetail('enemy.build');
-    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(enemy.index, 'enemy') == true;
-    local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
-    local plateData = {
-        hp = hpPercent,
-        cast = castPercent,
-        targetMarker = targetMarker,
-        background = {
-            enabled = backgroundSettings.enabled == true,
-            width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
-            height = tonumber(backgroundSettings.height) or backgroundDefaults.height,
-            offsetX = tonumber(backgroundSettings.offsetX) or backgroundDefaults.offsetX,
-            offsetY = tonumber(backgroundSettings.offsetY) or backgroundDefaults.offsetY,
-            color = backgroundSettings.color or backgroundDefaults.color,
-            borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
-            borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
-            anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
-            anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
-        },
-        name = (nameSettings.enabled == true) and ShortenName(displayName, nameSettings.shortenName) or '',
-        aoeNameActive = nameAoeActive == true,
-        nameFontFamily = fonts.GetRole(globalSettings, false),
-        nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
-        nameFontSize = textScale.ToNameTextureFontSize(nameTextSize, nameDefaults.textSize),
-        nameColor = (nameAoeActive == true and aoeRangeSettings.fontColor) or GetClaimNameColor(nameSettings, nameDefaults, claimCategory) or GetDifficultyColor(nameSettings, nameDefaults, mobInfo),
-        nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
-        nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
-        nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
-        nameOffsetX = tonumber(nameSettings.offsetX) or 0,
-        nameOffsetY = tonumber(nameSettings.offsetY) or -54,
-        nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
-        nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
-        hpBar = {
-            enabled = hasActiveDetail == true and hpBarSettings.enabled == true,
-            width = tonumber(hpBarSettings.width) or 180,
-            height = tonumber(hpBarSettings.height) or 12,
-            offsetX = tonumber(hpBarSettings.offsetX) or 0,
-            offsetY = tonumber(hpBarSettings.offsetY) or 0,
-            color = hpColor,
-            backgroundColor = hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
-            borderColor = hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
-            borderSize = tonumber(hpBarSettings.borderSize) or 0,
-            anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
-            anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
-            texture = hpBarSettings.texture or 'Solid',
-            textureId = barTextures.GetTextureId(hpBarSettings.texture),
-            showAtPercent = tonumber(hpBarSettings.showAtPercent) or 100,
-            text = (hpBarSettings.showPercent == true) and (tostring(math.floor(hpPercent + 0.5)) .. '%') or '',
-            textOffsetX = tonumber(hpBarSettings.textOffsetX) or 0,
-            textOffsetY = tonumber(hpBarSettings.textOffsetY) or 0,
-            fontFamily = fonts.GetRole(globalSettings, hpBarSettings.useSmallFont == true),
-            fontFlags = fonts.GetRoleFlags(globalSettings, hpBarSettings.useSmallFont == true),
-            fontSize = textScale.ToTextureFontSize(hpBarSettings.fontSize, barDefaults.fontSize),
-            textColor = hpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
-            textOutlineEnabled = hpBarSettings.textOutlineEnabled == true,
-            textOutlineColor = hpBarSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
-            textOutlineSize = tonumber(hpBarSettings.textOutlineSize) or 1,
-        },
-        mpBar = {
-            enabled = false,
-        },
-        tpBar = {
-            enabled = false,
-        },
-        castBar = castBar,
-    };
-    AddActivityPointIconToPlate(plateData, enemy.name, nameSettings);
-    AddJobToPlate(plateData, jobText, jobSettings, globalSettings);
-    AddLevelToPlate(plateData, levelText, levelSettings, mobInfo, globalSettings);
-    AddIdToPlate(plateData, enemy, idSettings, mobInfo, globalSettings);
-    if (hasActiveDetail == true) then
-        AddDistanceToPlate(plateData, enemy, distanceSettings, globalSettings);
-    end
+    local plateData = BuildEnemyPlateData(context);
     perfMeter.EndDetail(buildTimer);
 
     local statusTimer = perfMeter.BeginDetail('enemy.status');
-    AddStatusIconsToPlate(plateData, buffRows, buffsSettings, isEngaged, globalSettings, 'buffs');
-    AddStatusIconsToPlate(plateData, debuffRows, debuffsSettings, isEngaged, globalSettings, 'debuffs');
+    ApplyEnemyStatusWidgets(context, plateData);
     perfMeter.EndDetail(statusTimer);
 
-    if (hasActiveDetail == true and enmity.ShouldDrawEnemy(enemy, globalSettings) == true) then
-        enmity.AddIcon(plateData, globalSettings.enmity);
+    if (context.hasActiveDetail == true and enmity.ShouldDrawEnemy(enemy, context.globalSettings) == true) then
+        enmity.AddIcon(plateData, context.globalSettings.enmity);
     end
     plateData.debugClickRects = worldMarkerProbe.GetClickDebug();
     plateData.debugClickRectColor = 0x01FFD400;
     if (plateData.aoeNameActive == true) then
-        aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
+        aoeRangeVisuals.Apply(plateData, context.aoeRangeSettings, context.hpBarSettings);
     end
 
     local canvasTimer = perfMeter.BeginDetail('enemy.canvas');
@@ -1472,16 +1735,16 @@ local function QueueEnemy(enemy)
     perfMeter.EndDetail(canvasTimer);
     local plateScale = 1.0;
 
-    local peerSettings = globalSettings.peer or {};
+    local peerSettings = context.globalSettings.peer or {};
     local peerModifierActive = IsPeerModifierActive(peerSettings) == true;
     local useWorldPeer = false;
 
     if (
         useWorldPeer == true and
-        peerPlateSettings.enabled ~= false and
+        context.peerPlateSettings.enabled ~= false and
         (tonumber(enemy.distance) or 0) <= math.max(0.0, math.min(49.9, tonumber(peerSettings.maxRange) or 49.9)) and
         peerModifierActive == true and
-        isHovered == true
+        context.isHovered == true
     ) then
         plateScale = GetPeerHoverScale(peerSettings);
         plateData.jobText = '';
@@ -1490,12 +1753,12 @@ local function QueueEnemy(enemy)
         RemoveBadgeKind(plateData, 'level');
         RemoveBadgeKind(plateData, 'distance');
         ApplyPeerBackground(plateData, peerSettings);
-        ApplyPeerName(plateData, peerSettings, globalSettings);
-        ApplyPeerHpBar(plateData, peerSettings, hpPercent, globalSettings);
-        AddPeerIdToPlate(plateData, enemy, peerSettings, globalSettings);
-        plateData.icons, plateData.texts = BuildMobInfoRows(enemy, globalSettings, peerSettings);
-        if (hasActiveDetail == true and enmity.ShouldDrawEnemy(enemy, globalSettings) == true) then
-            enmity.AddIcon(plateData, globalSettings.enmity);
+        ApplyPeerName(plateData, peerSettings, context.globalSettings);
+        ApplyPeerHpBar(plateData, peerSettings, context.hpPercent, context.globalSettings);
+        AddPeerIdToPlate(plateData, enemy, peerSettings, context.globalSettings);
+        plateData.icons, plateData.texts = BuildMobInfoRows(enemy, context.globalSettings, peerSettings);
+        if (context.hasActiveDetail == true and enmity.ShouldDrawEnemy(enemy, context.globalSettings) == true) then
+            enmity.AddIcon(plateData, context.globalSettings.enmity);
         end
         canvasTimer = perfMeter.BeginDetail('enemy.canvas');
         plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'enemy-libra-' .. tostring(enemy.index));
@@ -1535,16 +1798,16 @@ local function QueueEnemy(enemy)
         targetIndex = enemy.index,
         serverId = enemy.serverId,
         distance = enemy.distance,
-        hp = hpPercent,
+        hp = context.hpPercent,
         name = '',
         isSelf = false,
-        stateName = stateName,
+        stateName = context.stateName,
         clickTargetType = 'enemy',
         worldMarker = {
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
-            plateAlwaysOnTop = importantAlwaysOnTop,
-            plateTacticalOverlayOnly = importantAlwaysOnTop,
+            plateAlwaysOnTop = context.importantAlwaysOnTop,
+            plateTacticalOverlayOnly = context.importantAlwaysOnTop,
             anchorBone = enemyAnchorBone,
             plateWorldWidth = 2.35 * plateScale,
             plateWorldHeight = 1.18 * plateScale,
@@ -1557,7 +1820,7 @@ local function QueueEnemy(enemy)
             plateTextureHeight = textureHeight,
             plateClickRects = plateClickRects,
             clickTargetType = 'enemy',
-            hideWhenProjectedBelowViewport = importantAlwaysOnTop ~= true and IsAlTaieuFish(enemy.name) == true,
+            hideWhenProjectedBelowViewport = context.importantAlwaysOnTop ~= true and IsAlTaieuFish(enemy.name) == true,
             belowViewportHideMargin = 96,
             belowPlayerViewHideDelta = 1.50,
         },

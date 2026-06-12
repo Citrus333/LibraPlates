@@ -153,7 +153,9 @@ local function ReadEntry(sourceName, entry)
     local link = tostring(entry.link or '');
     local note = tostring(entry.note or '');
     local info = tostring(entry.info or '');
+    local worldOffsetX = tonumber(entry.worldOffsetX);
     local worldOffsetY = tonumber(entry.worldOffsetY);
+    local worldOffsetZ = tonumber(entry.worldOffsetZ);
     local anchorBone = tonumber(entry.anchorBone);
     local zones = GetEntryZones(entry);
 
@@ -161,7 +163,7 @@ local function ReadEntry(sourceName, entry)
         info = note;
     end
 
-    if (infoType == '' and icon == '' and link == '' and note == '' and info == '' and worldOffsetY == nil and anchorBone == nil) then
+    if (infoType == '' and icon == '' and link == '' and note == '' and info == '' and worldOffsetX == nil and worldOffsetY == nil and worldOffsetZ == nil and anchorBone == nil) then
         return nil;
     end
 
@@ -173,7 +175,9 @@ local function ReadEntry(sourceName, entry)
         info = info,
         note = note,
         zones = zones,
+        worldOffsetX = worldOffsetX,
         worldOffsetY = worldOffsetY,
+        worldOffsetZ = worldOffsetZ,
         anchorBone = anchorBone,
     };
 end
@@ -229,7 +233,8 @@ function npcInfo.Find(name, entityType)
 
     if (kind == 'object') then
         local item = FindIn(name, 'catseye_item', catseyeItemIcons)
-            or FindScopedIn(name, 'item', itemIcons);
+            or FindScopedIn(name, 'item', itemIcons)
+            or FindIn(name, 'item', itemIcons);
         local npc = FindIn(name, 'catseye_npc', catseyeNpcIcons)
             or FindScopedIn(name, 'npc', npcIcons)
             or FindIn(name, 'npc', npcIcons);

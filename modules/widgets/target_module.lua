@@ -136,6 +136,14 @@ local function DrawToggle(label, value)
     return value == true;
 end
 
+local function ResolveChevronFile(settings, defaults)
+    if (settings ~= nil and settings.chevronEnabled == false) then
+        return 'None';
+    end
+
+    return tostring((settings ~= nil and settings.chevronFile) or (defaults ~= nil and defaults.chevronFile) or 'None');
+end
+
 local function IsHeldButton(label)
     if (imgui.Button == nil) then
         return false;
@@ -498,6 +506,17 @@ local function DrawColor(label, color)
     return color;
 end
 
+local function GetOpacityPercent(color, fallback)
+    color = color or {};
+    return math.max(0, math.min(100, math.floor((((tonumber(color[4]) or fallback or 1.0) * 100) + 0.5))));
+end
+
+local function SetOpacityPercent(color, value)
+    color = color or { 1.0, 1.0, 1.0, 1.0 };
+    color[4] = math.max(0, math.min(100, tonumber(value) or 100)) / 100;
+    return color;
+end
+
 local function DrawFile(label, category, current)
     local files = GetFiles(category);
     local value = tostring(current or files[1] or 'None');
@@ -741,6 +760,9 @@ function targetModule.DrawSettings(settings, context)
                 settings.backgroundOffsetY = ClampOffsetToVisibleEdge(settings.backgroundOffsetY, backgroundHeight, 512, 24);
             end
             settings.backgroundColor = DrawColor('Highlight tint', settings.backgroundColor);
+            settings.backgroundColor = SetOpacityPercent(settings.backgroundColor, GetOpacityPercent(settings.backgroundColor, 0.95));
+            local backgroundOpacity = DrawNumber('Opacity', GetOpacityPercent(settings.backgroundColor, 0.95), 0, 100, 1, 'TargetModuleBackgroundOpacity');
+            settings.backgroundColor = SetOpacityPercent(settings.backgroundColor, backgroundOpacity);
         end
     end
 
@@ -842,10 +864,10 @@ function targetModule.DrawSettings(settings, context)
 
     imgui.Separator();
     DrawSectionHeader('Chevrons');
-    settings.chevronEnabled = DrawToggle('Show chevrons', settings.chevronEnabled ~= false);
-    settings.chevronFile = DrawFile('Chevron image', 'chevrons', settings.chevronFile);
+    settings.chevronFile = DrawFile('Chevron image', 'chevrons', ResolveChevronFile(settings, defaults));
+    settings.chevronEnabled = nil;
 
-    if (settings.chevronEnabled ~= false and tostring(settings.chevronFile or 'None') ~= 'None') then
+    if (tostring(settings.chevronFile or 'None') ~= 'None') then
         settings.chevronWidth, settings.chevronHeight = DrawNumberPair(
             'Width',
             settings.chevronWidth,

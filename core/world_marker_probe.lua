@@ -2443,12 +2443,16 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
     -- FFXI actor memory uses x/y/z; D3D world uses x/z/y.
     if (style.plateTextureId ~= nil) then
         local plateScale = GetPlateDistanceScale(style, targetIndex, plate.distance or style.distance);
+        local plateWorldOffsetX = tonumber(style.plateWorldOffsetX) or 0;
         local plateWorldOffsetY =
             (tonumber(style.plateWorldOffsetY) or tonumber(style.nameWorldOffsetY) or 0.78) +
             ((plateScale - 1.0) * (tonumber(style.plateDistanceScaleOffsetY) or 0));
+        local plateWorldOffsetZ = tonumber(style.plateWorldOffsetZ) or 0;
+        local plateX = wx + plateWorldOffsetX;
         local plateY = wz + verticalOffset + plateWorldOffsetY - nameVerticalOffset;
+        local plateZ = wy + plateWorldOffsetZ;
 
-        if (ShouldHideProjectedBelowViewportPlate(device, entityManager, style, wx, plateY, wy) == true) then
+        if (ShouldHideProjectedBelowViewportPlate(device, entityManager, style, plateX, plateY, plateZ) == true) then
             return;
         end
 
@@ -2465,9 +2469,9 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         end
 
         if (updateClickOnly == true) then
-            if (SetSelfClickRectsFromCanvas(device, targetIndex, wx, plateY, wy, style, plateWorldWidth, plateWorldHeight) ~= true) then
+            if (SetSelfClickRectsFromCanvas(device, targetIndex, plateX, plateY, plateZ, style, plateWorldWidth, plateWorldHeight) ~= true) then
                 if (plate.isSelf == true) then
-                    SetSelfClickRectFromBillboard(device, targetIndex, wx, plateY, wy, plateWorldWidth, plateWorldHeight);
+                    SetSelfClickRectFromBillboard(device, targetIndex, plateX, plateY, plateZ, plateWorldWidth, plateWorldHeight);
                 end
             end
 
@@ -2475,7 +2479,7 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         end
 
         if (showCanvasCenter == true) then
-            DrawCanvasDebugWithState(device, wx, plateY, wy, plateWorldWidth, plateWorldHeight, 0.035);
+            DrawCanvasDebugWithState(device, plateX, plateY, plateZ, plateWorldWidth, plateWorldHeight, 0.035);
         end
 
         if (style.plateTacticalOverlayOnly == true) then
@@ -2487,9 +2491,9 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         DrawTextureWithState(
             device,
             style.plateTextureId,
-            wx,
+            plateX,
             plateY,
-            wy,
+            plateZ,
             plateWorldWidth,
             0,
             0,

@@ -4,7 +4,10 @@ local globalDefaults = require('config.global');
 local textureLoader = require('core.texture_loader');
 local npcObjectInfo = require('core.npc_object_info');
 local log = require('core.log');
+local jobChange = require('core.job_change');
+local jobIconTextures = require('core.job_icon_textures');
 local widgetDefaults = { enabled = true };
+local quickMenuPresetCount = 10;
 
 local quickMenu = {};
 local pendingMenu = nil;
@@ -24,6 +27,7 @@ local invisibleTextColor = { 0.0, 0.0, 0.0, 0.0 };
 local npcInfoBullet = '*';
 local npcInfoMoreText = 'More on wiki...';
 local OpenUrl = nil;
+local EnsurePresetSettings = nil;
 
 local function ColorToU32(color, fallback)
     local c = color or fallback or { 1.0, 1.0, 1.0, 1.0 };
@@ -512,6 +516,7 @@ local function EnsureSettings()
     if (menu.npc.maxInfoChars == nil) then menu.npc.maxInfoChars = 420; end
     if (menu.npc.maxInfoLines == nil) then menu.npc.maxInfoLines = 10; end
     if (menu.npc.maxQuestLinks == nil) then menu.npc.maxQuestLinks = 4; end
+    EnsurePresetSettings(menu);
 
     return menu;
 end
@@ -567,6 +572,44 @@ local function QueueCommand(command, mode)
     end
 
     AshitaCore:GetChatManager():QueueCommand(tonumber(mode) or 1, tostring(command or ''));
+end
+
+EnsurePresetSettings = function(menu)
+    menu.presets = menu.presets or {};
+    if (menu.presets.iconTheme == nil) then menu.presets.iconTheme = 'FFXI'; end
+    menu.presets.entries = menu.presets.entries or {};
+
+    for index = 1, quickMenuPresetCount do
+        menu.presets.entries[index] = menu.presets.entries[index] or {};
+        if (menu.presets.entries[index].mainJob == nil) then menu.presets.entries[index].mainJob = 'None'; end
+        if (menu.presets.entries[index].subJob == nil) then menu.presets.entries[index].subJob = 'None'; end
+    end
+end
+
+local function GetPresetRows(menu)
+    local rows = {};
+    local entries = menu ~= nil and menu.presets ~= nil and menu.presets.entries or nil;
+    local theme = menu ~= nil and menu.presets ~= nil and menu.presets.iconTheme or 'FFXI';
+
+    if (type(entries) ~= 'table') then
+        return rows;
+    end
+
+    for _, entry in ipairs(entries) do
+        local mainJob = tostring(entry.mainJob or 'None');
+        local subJob = tostring(entry.subJob or 'None');
+
+        if (mainJob ~= 'None' and subJob ~= 'None' and mainJob ~= subJob) then
+            rows[#rows + 1] = {
+                label = mainJob .. '/' .. subJob,
+                mainJob = mainJob,
+                subJob = subJob,
+                textureId = jobIconTextures.GetTextureId(mainJob, theme),
+            };
+        end
+    end
+
+    return rows;
 end
 
 OpenUrl = function(url)
@@ -874,7 +917,7 @@ local function GetPartyContext(targetIndex)
     };
 end
 
-local function MenuItem(label, iconFile, action, menu, keepOpen)
+local function MenuItem(label, iconFile, action, menu, keepOpen, textureIdOverride)
     local rowStartX = imgui.GetCursorPosX ~= nil and imgui.GetCursorPosX() or nil;
     local rowStartY = imgui.GetCursorPosY ~= nil and imgui.GetCursorPosY() or nil;
     local iconSize = tonumber(menu.iconSize) or 22;
@@ -882,7 +925,7 @@ local function MenuItem(label, iconFile, action, menu, keepOpen)
     local rowWidth = math.max(160, (tonumber(menu.width) or 270) - 26);
 
     if (imgui.InvisibleButton ~= nil) then
-        local clicked = imgui.InvisibleButton('##quick_menu_' .. tostring(iconFile or '') .. '_' .. tostring(label or ''), { rowWidth, rowHeight }) == true;
+        local clicked = imgui.InvisibleButton('##quick_menu_' .. tostring(iconFile or '') .. '_' .. tostring(label or '') .. '_' .. tostring(textureIdOverride or ''), { rowWidth, rowHeight }) == true;
         local afterX = imgui.GetCursorPosX ~= nil and imgui.GetCursorPosX() or nil;
         local afterY = imgui.GetCursorPosY ~= nil and imgui.GetCursorPosY() or nil;
 
@@ -892,7 +935,7 @@ local function MenuItem(label, iconFile, action, menu, keepOpen)
         end
 
         if (menu.iconsEnabled ~= false and imgui.Image ~= nil) then
-            local textureId = GetIcon(iconFile);
+            local textureId = textureIdOverride or GetIcon(iconFile);
 
             if (textureId ~= nil) then
                 imgui.Image(textureId, { iconSize, iconSize }, { 0, 0 }, { 1, 1 });
@@ -926,6 +969,7 @@ local function MenuItem(label, iconFile, action, menu, keepOpen)
                 y = windowY + rowStartY,
                 label = tostring(label or ''),
                 iconFile = iconFile,
+                textureId = textureIdOverride,
                 rowHeight = rowHeight,
                 iconSize = iconSize,
             };
@@ -1104,8 +1148,8 @@ local function DrawForegroundMenu(menu)
         local rowY = tonumber(row.y) or (y + 36);
         local labelX = rowX;
 
-        if (menu.iconsEnabled ~= false and drawList.AddImage ~= nil and row.iconFile ~= nil) then
-            local textureId = GetIcon(row.iconFile);
+        if (menu.iconsEnabled ~= false and drawList.AddImage ~= nil and (row.textureId ~= nil or row.iconFile ~= nil)) then
+            local textureId = row.textureId or GetIcon(row.iconFile);
             local size = tonumber(row.iconSize) or iconSize;
 
             if (textureId ~= nil) then
@@ -1258,6 +1302,16 @@ function quickMenu.OpenForPlate(entry, x, y)
         return false;
     end
 
+    local name = tostring(entry.clickName or '');
+
+    if (name == '') then
+        name = GetEntityName(entry.targetIndex, entry.name);
+    end
+
+    if (targetType == 'trust' and jobChange.IsJobChangeNpcName(name) == true) then
+        targetType = 'npc';
+    end
+
     local storageEntity = 'PC';
     if (targetType == 'npc') then
         storageEntity = 'NPC';
@@ -1274,11 +1328,6 @@ function quickMenu.OpenForPlate(entry, x, y)
         return false;
     end
 
-    local name = tostring(entry.clickName or '');
-
-    if (name == '') then
-        name = GetEntityName(entry.targetIndex, entry.name);
-    end
     local npcInfo = nil;
 
     if (targetType == 'npc' or targetType == 'object') then
@@ -1443,6 +1492,7 @@ function quickMenu.Render()
             local typeText = NormalizeNpcInfoText(info.type or '');
             local infoText = LimitNpcInfoText(info.info or '', menu.npc.maxInfoChars, menu.npc.maxInfoLines);
             local link = BuildNpcLink(pendingMenu.name, info);
+            local canUseJobPresets = pendingMenu.targetType == 'npc' and jobChange.CanUseTarget(pendingMenu.name, pendingMenu.targetIndex) == true;
             local bodyTextColor = GetReadableTextColor(menu);
             local sectionTextColor = menu.headerColor or npcSectionTextColor;
             local linkTextColor = menu.linkColor or npcLinkTextColor;
@@ -1461,7 +1511,7 @@ function quickMenu.Render()
                 ReserveTextBlockHeight(QueueForegroundTextBlock(infoText, bodyTextColor, bodyWidth, questLineLinkResolver, sectionTextColor, linkTextColor), infoText);
             end
 
-            if (menu.npc.openLink == true and link ~= '') then
+            if (menu.npc.openLink == true and link ~= '' and canUseJobPresets ~= true) then
                 if (typeText ~= '' or infoText ~= '') then
                     imgui.Separator();
                 end
@@ -1469,6 +1519,30 @@ function quickMenu.Render()
                 MenuItem('Open Wiki Page', 'catseye.png', function()
                     OpenUrl(link);
                 end, menu);
+            end
+
+            if (canUseJobPresets == true) then
+                local presetRows = GetPresetRows(menu);
+                local hadContentAbove = (typeText ~= '' or infoText ~= '' or link ~= '');
+
+                if (hadContentAbove == true) then
+                    imgui.Separator();
+                end
+
+                imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Mog House job presets');
+
+                if (#presetRows > 0) then
+                    for _, row in ipairs(presetRows) do
+                        MenuItem(row.label, nil, function()
+                            local ok, err = jobChange.ChangeJobs(row.mainJob, row.subJob);
+                            if (ok ~= true) then
+                                log.Warn(tostring(err or 'Job preset failed.'));
+                            end
+                        end, menu, false, row.textureId);
+                    end
+                else
+                    imgui.TextColored(GetReadableTextColor(menu), 'No presets configured in Settings > Quick Menu.');
+                end
             end
         elseif (pendingMenu.targetType == 'self') then
             local context = GetPartyContext(pendingMenu.targetIndex);

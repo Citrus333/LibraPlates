@@ -33,6 +33,9 @@ local followIconDefaults = require('config.widgets.follow_icon');
 local starsIconDefaults = require('config.widgets.stars_icon');
 local levelSyncIconDefaults = require('config.widgets.level_sync_icon');
 local newAdventurerIconDefaults = require('config.widgets.new_adventurer_icon');
+local enemyBehaviorIconDefaults = require('config.widgets.enemy_behavior_icon');
+local enemyDetectsIconDefaults = require('config.widgets.enemy_detects_icon');
+local enemyLinksIconDefaults = require('config.widgets.enemy_links_icon');
 local barDefaults = require('config.widgets.bar');
 local mpBarDefaults = require('config.widgets.mp_bar');
 local tpBarDefaults = require('config.widgets.tp_bar');
@@ -57,10 +60,14 @@ local function DrawYellowHeader(label)
     end
 end
 local settingsTableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
+local settingsTableFlagsNoBorders = (_G.ImGuiTableFlags_SizingFixedFit or 0);
 local settingsWindowFlags = 0;
 local targetAutoPlaceAnchorOptions = T{ 'Widest element', 'Name', 'HP Bar' };
 local profileMainJobOptions = T{ 'BLM', 'BLU', 'BRD', 'BST', 'COR', 'DNC', 'DRG', 'DRK', 'GEO', 'MNK', 'NIN', 'PLD', 'PUP', 'RDM', 'RNG', 'RUN', 'SAM', 'SCH', 'SMN', 'THF', 'WAR', 'WHM' };
 local profileSubJobOptions = T{ 'Any', 'BLM', 'BLU', 'BRD', 'BST', 'COR', 'DNC', 'DRG', 'DRK', 'GEO', 'MNK', 'NIN', 'PLD', 'PUP', 'RDM', 'RNG', 'RUN', 'SAM', 'SCH', 'SMN', 'THF', 'WAR', 'WHM' };
+local quickMenuPresetMainJobOptions = T{ 'None', 'BLM', 'BLU', 'BRD', 'BST', 'COR', 'DNC', 'DRG', 'DRK', 'GEO', 'MNK', 'NIN', 'PLD', 'PUP', 'RDM', 'RNG', 'RUN', 'SAM', 'SCH', 'SMN', 'THF', 'WAR', 'WHM' };
+local quickMenuPresetSubJobOptions = T{ 'None', 'BLM', 'BLU', 'BRD', 'BST', 'COR', 'DNC', 'DRG', 'DRK', 'GEO', 'MNK', 'NIN', 'PLD', 'PUP', 'RDM', 'RNG', 'RUN', 'SAM', 'SCH', 'SMN', 'THF', 'WAR', 'WHM' };
+local quickMenuPresetCount = 10;
 local settingsWindowNoMoveFlag = _G.ImGuiWindowFlags_NoMove or 0;
 local settingsColorEditFlags = bit ~= nil and bit.bor ~= nil
     and bit.bor(_G.ImGuiColorEditFlags_NoAlpha or 0, _G.ImGuiColorEditFlags_NoInputs or 0)
@@ -77,6 +84,126 @@ local function GetProfileSubJobOptions(mainJob)
     end
 
     return options;
+end
+
+local function GetQuickMenuPresetSubJobOptions(mainJob)
+    local selectedMain = tostring(mainJob or 'None');
+    local options = T{ 'None' };
+
+    for _, job in ipairs(quickMenuPresetSubJobOptions) do
+        if (job ~= 'None' and job ~= selectedMain) then
+            options:append(job);
+        end
+    end
+
+    return options;
+end
+
+local function EnsureQuickMenuPresets(menu)
+    menu.presets = menu.presets or {};
+
+    if (menu.presets.iconTheme == nil) then
+        menu.presets.iconTheme = 'FFXI';
+    end
+
+    menu.presets.entries = menu.presets.entries or {};
+
+    for index = 1, quickMenuPresetCount do
+        local entry = menu.presets.entries[index] or {};
+
+        if (entry.mainJob == nil) then entry.mainJob = 'None'; end
+        if (entry.subJob == nil) then entry.subJob = 'None'; end
+
+        menu.presets.entries[index] = entry;
+    end
+end
+
+local function DrawQuickMenuPresetRows(menu)
+    EnsureQuickMenuPresets(menu);
+
+    DrawInlineComboRow('Icon theme', jobIconTextures.GetThemeNames(), menu.presets.iconTheme or 'FFXI', function(value)
+        menu.presets.iconTheme = value;
+        state.Save();
+    end, 'QuickMenuPresetTheme');
+
+    imgui.TextWrapped('Quick change job favorites:');
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##quick_menu_presets', 5, settingsTableFlagsNoBorders)) then
+            imgui.TableSetupColumn('##slot', 0, 32);
+            imgui.TableSetupColumn('##icon', 0, 34);
+            imgui.TableSetupColumn('##main', 0, 132);
+            imgui.TableSetupColumn('##sub', 0, 132);
+            imgui.TableSetupColumn('##spacer', 0, 1);
+
+            for index = 1, quickMenuPresetCount do
+                local entry = menu.presets.entries[index];
+                local mainJob = tostring(entry.mainJob or 'None');
+                local subJob = tostring(entry.subJob or 'None');
+                local textureId = nil;
+
+                if (mainJob ~= 'None') then
+                    textureId = jobIconTextures.GetTextureId(mainJob, menu.presets.iconTheme or 'FFXI');
+                end
+
+                imgui.TableNextRow();
+
+                imgui.TableNextColumn();
+                imgui.TextColored(settingsLabelColor, '#' .. tostring(index));
+
+                imgui.TableNextColumn();
+                if (textureId ~= nil and imgui.Image ~= nil) then
+                    imgui.Image(textureId, { 20, 20 }, { 0, 0 }, { 1, 1 });
+                else
+                    imgui.Dummy({ 20, 20 });
+                end
+
+                imgui.TableNextColumn();
+                DrawSmallComboControl('QuickMenuPresetMain' .. tostring(index), quickMenuPresetMainJobOptions, mainJob, function(value)
+                    entry.mainJob = value;
+
+                    if (value == 'None') then
+                        entry.subJob = 'None';
+                    elseif (tostring(entry.subJob or 'None') == value) then
+                        entry.subJob = 'None';
+                    end
+
+                    state.Save();
+                end);
+
+                imgui.TableNextColumn();
+                DrawSmallComboControl('QuickMenuPresetSub' .. tostring(index), GetQuickMenuPresetSubJobOptions(entry.mainJob), subJob, function(value)
+                    entry.subJob = value;
+                    state.Save();
+                end);
+
+                imgui.TableNextColumn();
+                imgui.Dummy({ 1, 1 });
+            end
+
+            imgui.EndTable();
+            return;
+        end
+    end
+
+    for index = 1, quickMenuPresetCount do
+        local entry = menu.presets.entries[index];
+
+        DrawInlineComboRow('#' .. tostring(index) .. ' Main job', quickMenuPresetMainJobOptions, entry.mainJob or 'None', function(value)
+            entry.mainJob = value;
+
+            if (value == 'None' or tostring(entry.subJob or 'None') == value) then
+                entry.subJob = 'None';
+            end
+
+            state.Save();
+        end, 'QuickMenuPresetMainFallback' .. tostring(index));
+
+        DrawInlineComboRow('#' .. tostring(index) .. ' Sub job', GetQuickMenuPresetSubJobOptions(entry.mainJob), entry.subJob or 'None', function(value)
+            entry.subJob = value;
+            state.Save();
+        end, 'QuickMenuPresetSubFallback' .. tostring(index));
+    end
 end
 
 local petTimerDefaults = {
@@ -347,7 +474,6 @@ local selectedModuleState = 'World';
 local selectedModuleWidget = 'Target';
 local selectedPeerEnemyInfo = 'Job';
 local selectedGeneralSection = 'Font';
-local selectedTargetingSection = 'Left Click';
 local profileNewNameBuffer = { '' };
 local profileCopyNameBuffer = { '' };
 local profileRenameNameBuffer = { '' };
@@ -367,9 +493,8 @@ local targetModulePendingReset = nil;
 local maneuverPendingReset = nil;
 local loadModeDrawn = false;
 
-local tabs = T{ 'General', 'Targeting', 'Plates', 'Modules' };
+local tabs = T{ 'Settings', 'Plates', 'Modules' };
 local generalSections = T{ 'Profiles', 'Font', 'Native UI', 'Mouse', 'Scaling' };
-local targetingSections = T{ 'Left Click', 'Right Click', 'Click Blocking' };
 local entities = T{
     'Self',
     'Trust',
@@ -530,6 +655,9 @@ local enemyIdleWidgets = T{
     'Job',
     'Level',
     'Distance',
+    'Behavior icon',
+    'Detects icon',
+    'Links icon',
     'HP Bar',
     'Buffs',
     'Debuffs',
@@ -725,6 +853,9 @@ local widgetKeys = {
     ['Game mode icon'] = 'Game mode icon',
     ['Bazaar icon'] = 'Bazaar icon',
     ['Linkshell icon'] = 'Linkshell icon',
+    ['Behavior icon'] = 'Behavior icon',
+    ['Detects icon'] = 'Detects icon',
+    ['Links icon'] = 'Links icon',
     ['Away icon'] = 'Away icon',
     ['Disconnect icon'] = 'Disconnect icon',
     ['Anon icon'] = 'Anon icon',
@@ -1163,6 +1294,9 @@ function GetWidgetDefaults(widget)
     if (widget == 'Game mode icon') then return gameModeIconDefaults; end
     if (widget == 'Bazaar icon') then return bazaarIconDefaults; end
     if (widget == 'Linkshell icon') then return linkshellIconDefaults; end
+    if (widget == 'Behavior icon') then return enemyBehaviorIconDefaults; end
+    if (widget == 'Detects icon') then return enemyDetectsIconDefaults; end
+    if (widget == 'Links icon') then return enemyLinksIconDefaults; end
     if (widget == 'Away icon') then return awayIconDefaults; end
     if (widget == 'Disconnect icon') then return disconnectIconDefaults; end
     if (widget == 'Anon icon') then return anonIconDefaults; end
@@ -1271,7 +1405,6 @@ function PersistUiSelection()
     profile.settingsUi.selectedModuleState = selectedModuleState;
     profile.settingsUi.selectedModuleWidget = selectedModuleWidget;
     profile.settingsUi.selectedGeneralSection = selectedGeneralSection;
-    profile.settingsUi.selectedTargetingSection = selectedTargetingSection;
 end
 
 function RestoreUiSelection()
@@ -1282,16 +1415,14 @@ function RestoreUiSelection()
         return;
     end
 
-    if (ListContains(tabs, saved.selectedTab) == true) then
+    if (saved.selectedTab == 'General' or saved.selectedTab == 'Mouse & Targeting') then
+        selectedTab = 'Settings';
+    elseif (ListContains(tabs, saved.selectedTab) == true) then
         selectedTab = saved.selectedTab;
     end
 
     if (ListContains(generalSections, saved.selectedGeneralSection) == true) then
         selectedGeneralSection = saved.selectedGeneralSection;
-    end
-
-    if (ListContains(targetingSections, saved.selectedTargetingSection) == true) then
-        selectedTargetingSection = saved.selectedTargetingSection;
     end
 
     local savedEntity = NormalizeEntityName(saved.selectedEntity);
@@ -1355,19 +1486,44 @@ function GetImguiColor(name)
 end
 
 function PushSettingsAccentStyle()
-    if (imgui.PushStyleColor == nil) then
-        return 0;
+    local pushedColors = 0;
+    local pushedVars = 0;
+
+    if (imgui.PushStyleVar ~= nil) then
+        local framePaddingVar = rawget(_G, 'ImGuiStyleVar_FramePadding') or (imgui.StyleVar ~= nil and imgui.StyleVar.FramePadding) or imgui.StyleVar_FramePadding;
+        local frameBorderSizeVar = rawget(_G, 'ImGuiStyleVar_FrameBorderSize') or (imgui.StyleVar ~= nil and imgui.StyleVar.FrameBorderSize) or imgui.StyleVar_FrameBorderSize;
+        local itemSpacingVar = rawget(_G, 'ImGuiStyleVar_ItemSpacing') or (imgui.StyleVar ~= nil and imgui.StyleVar.ItemSpacing) or imgui.StyleVar_ItemSpacing;
+        local buttonTextAlignVar = rawget(_G, 'ImGuiStyleVar_ButtonTextAlign') or (imgui.StyleVar ~= nil and imgui.StyleVar.ButtonTextAlign) or imgui.StyleVar_ButtonTextAlign;
+
+        local function pushVar(styleVar, value)
+            if (styleVar == nil) then
+                return;
+            end
+
+            local ok = pcall(imgui.PushStyleVar, styleVar, value);
+            if (ok == true) then
+                pushedVars = pushedVars + 1;
+            end
+        end
+
+        pushVar(framePaddingVar, { 5, 3 });
+        pushVar(frameBorderSizeVar, 1);
+        pushVar(itemSpacingVar, { 6, 4 });
+        pushVar(buttonTextAlignVar, { 0.5, 0.5 });
     end
 
-    local count = 0;
-function push(name, color)
+    if (imgui.PushStyleColor == nil) then
+        return { colors = pushedColors, vars = pushedVars };
+    end
+
+    local function push(name, color)
         local colorId = GetImguiColor(name);
 
         if (colorId ~= nil) then
             local ok = pcall(imgui.PushStyleColor, colorId, color);
 
             if (ok == true) then
-                count = count + 1;
+                pushedColors = pushedColors + 1;
             end
         end
     end
@@ -1375,9 +1531,11 @@ function push(name, color)
     push('TitleBg', { uiAccent[1], uiAccent[2], uiAccent[3], 0.75 });
     push('TitleBgActive', { uiAccent[1], uiAccent[2], uiAccent[3], 0.95 });
     push('TitleBgCollapsed', { uiAccent[1], uiAccent[2], uiAccent[3], 0.60 });
-    push('Button', { uiAccent[1], uiAccent[2], uiAccent[3], 0.70 });
-    push('ButtonHovered', { uiAccentHovered[1], uiAccentHovered[2], uiAccentHovered[3], 0.88 });
-    push('ButtonActive', uiAccentActive);
+    push('Button', { uiAccent[1], uiAccent[2], uiAccent[3], 0.54 });
+    push('ButtonHovered', { uiAccentHovered[1], uiAccentHovered[2], uiAccentHovered[3], 0.74 });
+    push('ButtonActive', { uiAccentActive[1], uiAccentActive[2], uiAccentActive[3], 0.66 });
+    push('Border', { 0.76, 0.82, 0.84, 0.42 });
+    push('BorderShadow', { 0.05, 0.06, 0.08, 0.22 });
     push('Tab', { uiAccent[1], uiAccent[2], uiAccent[3], 0.46 });
     push('TabHovered', { uiAccentHovered[1], uiAccentHovered[2], uiAccentHovered[3], 0.78 });
     push('TabActive', { uiAccentActive[1], uiAccentActive[2], uiAccentActive[3], 0.95 });
@@ -1400,10 +1558,28 @@ function push(name, color)
     push('SeparatorHovered', uiAccentHovered);
     push('SeparatorActive', uiAccentActive);
 
-    return count;
+    return {
+        colors = pushedColors,
+        vars = pushedVars,
+    };
 end
 
 function PopSettingsAccentStyle(count)
+    if (type(count) == 'table') then
+        local colorCount = tonumber(count.colors) or 0;
+        local varCount = tonumber(count.vars) or 0;
+
+        if (colorCount > 0 and imgui.PopStyleColor ~= nil) then
+            pcall(imgui.PopStyleColor, colorCount);
+        end
+
+        if (varCount > 0 and imgui.PopStyleVar ~= nil) then
+            pcall(imgui.PopStyleVar, varCount);
+        end
+
+        return;
+    end
+
     count = tonumber(count) or 0;
 
     if (count > 0 and imgui.PopStyleColor ~= nil) then
@@ -1518,7 +1694,9 @@ end
 function DrawInlineCombo(label, items, selected, onSelect)
     local current = tostring(selected or items[1] or 'Default');
 
-    DrawYellowHeader(label);
+    if (tostring(label or '') ~= '') then
+        DrawYellowHeader(label);
+    end
 
     if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
         if (imgui.PushItemWidth ~= nil) then
@@ -1551,7 +1729,7 @@ function DrawInlineCombo(label, items, selected, onSelect)
     DrawCombo(label, items, current, onSelect);
 end
 
-function DrawInlineComboRow(label, items, selected, onSelect, id, labelColorOverride, labelWidth)
+function DrawInlineComboRow(label, items, selected, onSelect, id, labelColorOverride, labelWidth, tableFlagsOverride)
     local current = tostring(selected or items[1] or 'Default');
     local comboId = '##' .. tostring(id or label or 'combo');
 
@@ -1596,7 +1774,7 @@ function DrawControl()
     end
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##settings_combo_' .. tostring(id or label or 'combo'), 2, settingsTableFlags)) then
+        if (imgui.BeginTable('##settings_combo_' .. tostring(id or label or 'combo'), 2, tableFlagsOverride or settingsTableFlags)) then
             imgui.TableSetupColumn('##label', 0, tonumber(labelWidth) or 78);
             imgui.TableSetupColumn('##control', 0, 260);
             imgui.TableNextRow();
@@ -1794,6 +1972,17 @@ function CopyColor(value, fallback)
         tonumber(source[3]) or 1.0,
         tonumber(source[4]) or 1.0,
     };
+end
+
+local function GetColorOpacity(value, fallback)
+    value = value or {};
+    return math.max(0, math.min(100, math.floor((((tonumber(value[4]) or fallback or 1.0) * 100) + 0.5))));
+end
+
+local function SetColorOpacity(value, opacity)
+    local color = CopyColor(value);
+    color[4] = math.max(0, math.min(100, tonumber(opacity) or 100)) / 100;
+    return color;
 end
 
 function DrawInlineColorControl(value, id)
@@ -2316,6 +2505,9 @@ function LibraPlatesSettingsDefaultLoadMode(entityName, stateName, widgetName)
             ['Distance'] = true,
             ['Game mode icon'] = true,
             ['Linkshell icon'] = true,
+            ['Behavior icon'] = true,
+            ['Detects icon'] = true,
+            ['Links icon'] = true,
             ['Bazaar icon'] = true,
             ['Away icon'] = true,
             ['Disconnect icon'] = true,
@@ -2897,8 +3089,19 @@ function DrawTargetModulePlacementSettings(settings, defaults, label, entityName
             if (heightChanged == true) then settings.backgroundHeight = math.max(8, math.min(450, nextHeight)); state.Save(); end
         end
 
-        local highlightColor, highlightColorChanged = DrawSettingsColor('Highlight tint', settings.backgroundColor, 'TargetModuleHighlightTint');
-        if (highlightColorChanged == true) then settings.backgroundColor = highlightColor; state.Save(); end
+        local highlightColor, highlightColorChanged, highlightOpacity, highlightOpacityChanged = DrawColorAndPlacementRow(
+            'Highlight tint',
+            settings.backgroundColor,
+            'TargetModuleHighlightTint',
+            'Opacity',
+            GetColorOpacity(settings.backgroundColor, 0.95),
+            'TargetModuleHighlightOpacity',
+            0,
+            100,
+            1
+        );
+        settings.backgroundColor = SetColorOpacity(highlightColor, highlightOpacity);
+        if (highlightColorChanged == true or highlightOpacityChanged == true) then state.Save(); end
     end
 
     if (allowHighlight == true) then
@@ -3017,14 +3220,18 @@ function DrawTargetModulePlacementSettings(settings, defaults, label, entityName
         imgui.Separator();
     end
 
-    if (hasChevronImage == true) then
-        DrawPlacementSectionHeader('Chevrons', settings.chevronEnabled ~= false, function(nextValue)
-            settings.chevronEnabled = nextValue;
-            state.Save();
-        end);
+    if (settings.chevronEnabled == false) then
+        settings.chevronFile = 'None';
+        settings.chevronEnabled = nil;
+        hasChevronImage = false;
+        state.Save();
     end
 
-    if (hasChevronImage == true and settings.chevronEnabled ~= false) then
+    if (hasChevronImage == true) then
+        DrawPlacementSectionHeader('Chevrons');
+    end
+
+    if (hasChevronImage == true) then
         local nextX, xChanged, nextY, yChanged = DrawPlacementPair(
             'Position X',
             settings.chevronOffsetX,
@@ -3093,11 +3300,11 @@ function DrawFontStatus(label, selected)
     end
 
     if (available == true) then
-        imgui.TextColored({ 0.55, 1.0, 0.55, 1.0 }, label .. ': OK - ' .. familyText);
+        imgui.TextColored({ 0.55, 1.0, 0.55, 1.0 }, selectedText .. ' installed and loaded successfully.');
         return;
     end
 
-    imgui.TextColored({ 0.20, 0.65, 0.67, 1.0 }, label .. ': not installed/available - ' .. familyText);
+    imgui.TextColored({ 1.0, 0.40, 0.32, 1.0 }, selectedText .. ' is missing or not installed.');
 end
 
 function DrawFontFolderButton(label, kind)
@@ -3113,6 +3320,32 @@ function DrawFontFolderButton(label, kind)
 
     if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
         fonts.OpenFolder(kind);
+    end
+end
+
+function DrawFontFolderLink(label, detailText)
+    imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, label);
+
+    if (GetItemRectMin ~= nil and GetItemRectMax ~= nil and imgui.GetWindowDrawList ~= nil) then
+        local minX, minY = GetItemRectMin();
+        local maxX, maxY = GetItemRectMax();
+        local drawList = imgui.GetWindowDrawList();
+
+        if (drawList ~= nil and drawList.AddLine ~= nil) then
+            drawList:AddLine({ minX, maxY }, { maxX, maxY }, { 0.65, 0.90, 1.0, 1.0 }, 1);
+        end
+    end
+
+    if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+        fonts.OpenRootFolder();
+    end
+
+    if (tostring(detailText or '') ~= '') then
+        if (imgui.TextWrapped ~= nil) then
+            imgui.TextWrapped(detailText);
+        else
+            imgui.Text(detailText);
+        end
     end
 end
 
@@ -3332,6 +3565,12 @@ function SelectPreviewElement(kind, context)
         partyLeaderIcon = 'Party leader icon',
         gameModeIcon = 'Game mode icon',
         linkshellIcon = 'Linkshell icon',
+        behaviorIcon = 'Behavior icon',
+        detectsIcon = 'Detects icon',
+        linksIcon = 'Links icon',
+        ['Behavior icon'] = 'Behavior icon',
+        ['Detects icon'] = 'Detects icon',
+        ['Links icon'] = 'Links icon',
         bazaarIcon = 'Bazaar icon',
         awayIcon = 'Away icon',
         disconnectIcon = 'Disconnect icon',
@@ -3394,6 +3633,11 @@ function DragPeerPreviewElement(kind, dx, dy, context)
     local normalizedKind = tostring(kind or '');
     local deltaX = RoundDragDelta(dx);
     local deltaY = RoundDragDelta(dy);
+    local directDragWidgets = {
+        ['Behavior icon'] = true,
+        ['Detects icon'] = true,
+        ['Links icon'] = true,
+    };
 
     if (deltaX == 0 and deltaY == 0) then
         return;
@@ -3516,6 +3760,12 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         partyLeaderIcon = 'Party leader icon',
         gameModeIcon = 'Game mode icon',
         linkshellIcon = 'Linkshell icon',
+        behaviorIcon = 'Behavior icon',
+        detectsIcon = 'Detects icon',
+        linksIcon = 'Links icon',
+        ['Behavior icon'] = 'Behavior icon',
+        ['Detects icon'] = 'Detects icon',
+        ['Links icon'] = 'Links icon',
         bazaarIcon = 'Bazaar icon',
         awayIcon = 'Away icon',
         disconnectIcon = 'Disconnect icon',
@@ -3542,25 +3792,28 @@ function DragPeerPreviewElement(kind, dx, dy, context)
     end
 
     local rootWidget = widget;
-    local visited = {};
 
-    for _ = 1, 8 do
-        local rootKey = widgetKeys[rootWidget];
+    if (directDragWidgets[widget] ~= true) then
+        local visited = {};
 
-        if (rootKey == nil or visited[rootWidget] == true) then
-            break;
+        for _ = 1, 8 do
+            local rootKey = widgetKeys[rootWidget];
+
+            if (rootKey == nil or visited[rootWidget] == true) then
+                break;
+            end
+
+            visited[rootWidget] = true;
+
+            local rootSettings = state.GetWidgetSettings(storageEntity, storageState, rootKey, GetWidgetDefaults(rootWidget));
+            local anchorTo = tostring(rootSettings.anchorTo or 'Plate');
+
+            if (anchorTo == 'Plate' or widgetKeys[anchorTo] == nil or ListContains(GetEditWidgets(), anchorTo) ~= true) then
+                break;
+            end
+
+            rootWidget = anchorTo;
         end
-
-        visited[rootWidget] = true;
-
-        local rootSettings = state.GetWidgetSettings(storageEntity, storageState, rootKey, GetWidgetDefaults(rootWidget));
-        local anchorTo = tostring(rootSettings.anchorTo or 'Plate');
-
-        if (anchorTo == 'Plate' or widgetKeys[anchorTo] == nil or ListContains(GetEditWidgets(), anchorTo) ~= true) then
-            break;
-        end
-
-        rootWidget = anchorTo;
     end
 
     local settings = state.GetWidgetSettings(storageEntity, storageState, widgetKeys[rootWidget], GetWidgetDefaults(rootWidget));
@@ -3707,6 +3960,7 @@ function GetPreviewSelection()
 
     context.sourceEntity = selectedEntity;
     context.sourceState = selectedState;
+    context.selectedWidget = selectedWidget;
 
     return selectedEntity, GetStorageState(selectedState), AttachPreviewClickHandler(context);
 end
@@ -4847,6 +5101,10 @@ function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive)
     if (settings.fishing.enabled == nil) then settings.fishing.enabled = true; end
     if (settings.fishing.enableRightClickFish == nil) then settings.fishing.enableRightClickFish = true; end
     if (settings.fishing.enableRightClickGathering == nil) then settings.fishing.enableRightClickGathering = true; end
+    if (settings.fishing.enableRightClickMining == nil) then settings.fishing.enableRightClickMining = true; end
+    if (settings.fishing.enableRightClickHarvesting == nil) then settings.fishing.enableRightClickHarvesting = true; end
+    if (settings.fishing.enableRightClickLogging == nil) then settings.fishing.enableRightClickLogging = true; end
+    if (settings.fishing.enableRightClickExcavation == nil) then settings.fishing.enableRightClickExcavation = true; end
     if (settings.fishing.iconFile == nil) then settings.fishing.iconFile = 'fishing_01.png'; end
     if (settings.fishing.offsetX == nil) then settings.fishing.offsetX = 0; end
     if (settings.fishing.offsetY == nil) then settings.fishing.offsetY = 38; end
@@ -4879,7 +5137,37 @@ function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive)
         settings.fishing.enableRightClickGathering = value == true;
         state.Save();
     end);
-    uiTooltip.Info('Right-clicking known gathering object plates targets the object and uses the matching tool: Pickaxe, Hatchet, or Sickle.');
+    uiTooltip.Info('Master switch for right-click gathering on known object plates.');
+
+    if (settings.fishing.enableRightClickGathering == true) then
+        imgui.Indent();
+
+        imgui.TextColored(settingsLabelColor, 'Right-click gathering if the tool is equipped:');
+
+        DrawCheckbox('Pickaxe: start mining', settings.fishing.enableRightClickMining == true, function(value)
+            settings.fishing.enableRightClickMining = value == true;
+            state.Save();
+        end);
+
+        DrawCheckbox('Sickle: start harvesting', settings.fishing.enableRightClickHarvesting == true, function(value)
+            settings.fishing.enableRightClickHarvesting = value == true;
+            state.Save();
+        end);
+
+        DrawCheckbox('Hatchet: start logging', settings.fishing.enableRightClickLogging == true, function(value)
+            settings.fishing.enableRightClickLogging = value == true;
+            state.Save();
+        end);
+
+        DrawCheckbox('Pickaxe: start excavation', settings.fishing.enableRightClickExcavation == true, function(value)
+            settings.fishing.enableRightClickExcavation = value == true;
+            state.Save();
+        end);
+
+        uiTooltip.Info('Known mappings: Mining Point -> Pickaxe, Harvest Point -> Sickle, Logging Point -> Hatchet, Excavation Point -> Pickaxe.');
+
+        imgui.Unindent();
+    end
 
     DrawInlineComboRow('Icon', fishing.GetIconFiles(), settings.fishing.iconFile or 'fishing_01.png', function(value)
         settings.fishing.iconFile = value;
@@ -5193,6 +5481,8 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     local menu = settings.quickMenu;
     local scopedEntity = nil;
 
+    EnsureQuickMenuPresets(menu);
+
     if (menu.enabled == nil) then menu.enabled = true; end
     menu.openOnRightClick = true;
     if (menu.modifier == nil) then menu.modifier = 'None'; end
@@ -5360,6 +5650,14 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
             menu.self.emoteTrust = value == true;
             state.Save();
         end);
+
+        if (selectedTab == 'Plates' and scopedEntity == 'Self' and tostring(selectedState or '') == 'World') then
+            imgui.Separator();
+            DrawYellowHeader('Mog House job presets');
+            imgui.TextWrapped('Quick change job favorites for the Mog House Moogle.');
+            imgui.Spacing();
+            DrawQuickMenuPresetRows(menu);
+        end
     end
 
     if (scopedEntity == nil or scopedEntity == 'Trust') then
@@ -5402,6 +5700,7 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
             menu.npc.openLink = value == true;
             state.Save();
         end);
+
     end
 end
 
@@ -5432,13 +5731,14 @@ end
 
 local function DrawSettingsHeader(text)
     imgui.Spacing();
+    imgui.Spacing();
     imgui.Separator();
 
     if (imgui.SetWindowFontScale ~= nil) then
         imgui.SetWindowFontScale(1.30);
     end
 
-    imgui.Text(tostring(text or ''));
+    imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, tostring(text or ''));
 
     if (imgui.SetWindowFontScale ~= nil) then
         imgui.SetWindowFontScale(1.0);
@@ -5449,8 +5749,19 @@ local function DrawSettingsHeader(text)
 end
 
 local function DrawGeneralFontSection(global)
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Font' });
-    DrawSettingsHeader('Global font');
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Font' });
+    DrawSettingsHeader('Global font settings');
+    imgui.TextWrapped('LibraPlates includes its default fonts, but they still need to be installed in Windows before they can be used. If a selected font is missing, a warning will appear below.');
+    imgui.Spacing();
+    imgui.TextWrapped('Large text is used for names. Small text is used by widgets with Use small font enabled. After installing new fonts, reload LibraPlates before checking status.');
+    imgui.Spacing();
+    imgui.Spacing();
+    DrawFontFolderLink(
+        'Click here to open the LibraPlates font folder.',
+        'Double-click a font file to open it, then click Install. Additional fonts can be added to this folder and installed the same way.'
+    );
+    imgui.Spacing();
+    imgui.Spacing();
 
     if (global.font.largeFamily == nil) then
         global.font.largeFamily = global.font.family or 'Default';
@@ -5460,26 +5771,34 @@ local function DrawGeneralFontSection(global)
         global.font.smallFamily = global.font.family or 'Default';
     end
 
-    DrawInlineCombo('Large text font', fonts.GetChoices('large'), global.font.largeFamily, function(fontFamily)
+    imgui.Separator();
+    imgui.Spacing();
+    DrawYellowHeader('Large text font');
+    imgui.Spacing();
+    DrawInlineCombo('', fonts.GetChoices('large'), global.font.largeFamily, function(fontFamily)
         global.font.largeFamily = fontFamily;
     end);
 
     DrawFontStatus('Large font', global.font.largeFamily);
     DrawFontFolderButton('Open large font folder', 'large');
 
-    DrawInlineCombo('Small text font', fonts.GetChoices('small'), global.font.smallFamily, function(fontFamily)
+    imgui.Spacing();
+    imgui.Separator();
+    imgui.Spacing();
+    DrawYellowHeader('Small text font');
+    imgui.Spacing();
+    DrawInlineCombo('', fonts.GetChoices('small'), global.font.smallFamily, function(fontFamily)
         global.font.smallFamily = fontFamily;
     end);
 
     DrawFontStatus('Small font', global.font.smallFamily);
     DrawFontFolderButton('Open small font folder', 'small');
-
-    imgui.TextColored({ 1.0, 0.70, 0.25, 1.0 }, 'After installing new fonts, reload LibraPlates before checking status.');
-    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Large text is used for names. Small text is used by widgets with Use small font enabled.');
+    imgui.Spacing();
+    imgui.Separator();
 end
 
 local function DrawGeneralNativeUiSection(settings)
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Native UI' });
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Native UI' });
     DrawSettingsHeader('Native game UI');
 
     local nativeUiPolicy = require('core.native_ui_policy');
@@ -5512,8 +5831,8 @@ local function DrawGeneralNativeUiSection(settings)
 end
 
 local function DrawGeneralMouseSection()
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Mouse' });
-    DrawSettingsHeader('Mouse controls');
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Mouse' });
+    DrawSettingsHeader('Cursor');
 
     local cursorSettings = cursorOverlay.GetSettings();
 
@@ -5611,9 +5930,67 @@ local function DrawGeneralMouseSection()
 
     imgui.Separator();
 
+    DrawSettingsHeader('Movement');
     DrawCheckbox('Hold both mouse buttons to move forward', mouseControls.GetBothButtonForwardEnabled(), function(value)
         mouseControls.SetBothButtonForwardEnabled(value == true);
     end);
+
+    local settings = targeting.GetSettings();
+
+    imgui.Separator();
+    DrawSettingsHeader('Left click');
+    DrawCheckbox('Left-click enemy target out of combat', settings.enableLeftClickEnemyTargetIdle == true, function(value)
+        settings.enableLeftClickEnemyTargetIdle = value == true;
+    end);
+
+    imgui.Separator();
+    DrawSettingsHeader('Enemy detail range');
+
+    DrawSliderTenths('Enemy plate range', settings.enemyPlateRange, 50, 644, function(value)
+        settings.enemyPlateRange = math.max(5.0, math.min(64.4, tonumber(value) or 49.9));
+    end);
+
+    DrawSliderTenths('Enemy active detail range', settings.enemyActiveDetailRange, 100, 499, function(value)
+        settings.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(value) or 25.0));
+    end);
+
+    local range = tonumber(settings.enemyActiveDetailRange) or 25.0;
+    local tierLabel = 'Balanced';
+    local tierColor = { 0.55, 0.85, 1.0, 1.0 };
+
+    if (range <= 15.0) then
+        tierLabel = 'Performance';
+        tierColor = { 0.35, 1.0, 0.55, 1.0 };
+    elseif (range <= 25.0) then
+        tierLabel = 'Balanced';
+        tierColor = { 0.55, 0.85, 1.0, 1.0 };
+    elseif (range <= 35.0) then
+        tierLabel = 'High';
+        tierColor = { 1.0, 0.84, 0.30, 1.0 };
+    else
+        tierLabel = 'Ultra';
+        tierColor = { 1.0, 0.48, 0.35, 1.0 };
+    end
+
+    imgui.TextColored(tierColor, 'Detail mode: ' .. tierLabel);
+    uiTooltip.Info('Idle enemies beyond this range keep static identity only. Target, subtarget, engaged, casting, and hovered enemies still use full detail.');
+
+    imgui.Separator();
+    DrawSettingsHeader('Right click');
+
+    DrawCheckbox('Right-click attack', settings.enableRightClickAttack == true, function(value)
+        settings.enableRightClickAttack = value == true;
+    end);
+
+    DrawSliderTenths('Right-click attack range', settings.rightClickAttackRange, 30, 299, function(value)
+        settings.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(value) or 4.5));
+    end);
+
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Range includes a small hitbox allowance, matching the old addon behavior.');
+
+    imgui.Separator();
+    DrawSettingsHeader('Plate click blocking');
+    LibraPlatesSettingsDrawPlateClickBlocking(settings);
 end
 
 local function DrawProfileNamePopup(popupName, inputLabel, buttonLabel, buffer, action)
@@ -5668,16 +6045,24 @@ local function DrawProfileNamePopup(popupName, inputLabel, buttonLabel, buffer, 
 end
 
 local function DrawGeneralProfilesSection()
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Profiles' });
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Profiles' });
     DrawSettingsHeader('Profiles');
+    imgui.TextWrapped('LibraPlates offers a lot of customization, which can feel overwhelming at first. Several profiles are included to help you get started.');
+    imgui.Spacing();
+    imgui.TextWrapped('A good approach is to make a copy of one of the included profiles that suits you best, then customize it to make it your own.');
+    imgui.Spacing();
+    imgui.Separator();
+    imgui.Spacing();
 
     local names = state.GetProfileNames();
     local activeName = state.GetActiveProfileName();
 
-    DrawInlineComboRow('Current profile', names, activeName, function(value)
+    DrawYellowHeader('Current profile');
+    imgui.Spacing();
+    DrawInlineCombo('', names, activeName, function(value)
         local ok, message = state.SetActiveProfile(value);
         profileStatusMessage = ok == true and '' or tostring(message or 'Profile switch failed.');
-    end, 'ProfileCurrent', nil, 118);
+    end);
 
     if (profileStatusMessage ~= nil and profileStatusMessage ~= '') then
         imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, profileStatusMessage);
@@ -5729,8 +6114,12 @@ local function DrawGeneralProfilesSection()
         return state.RenameProfile(activeName, name);
     end);
 
+    imgui.Spacing();
+    imgui.Spacing();
     imgui.Separator();
+    imgui.Spacing();
     DrawYellowHeader('Auto switch');
+    imgui.Spacing();
 
     local assignment = state.GetProfileAssignment(activeName);
 
@@ -5753,14 +6142,17 @@ local function DrawGeneralProfilesSection()
             end
 
             state.SetProfileAssignment(activeName, true, value, subJob);
-        end, 'ProfileAutoMainJob', nil, 94);
+        end, 'ProfileAutoMainJob', nil, 94, settingsTableFlagsNoBorders);
 
         DrawInlineComboRow('Sub job', GetProfileSubJobOptions(assignedMainJob), assignedSubJob, function(value)
             state.SetProfileAssignment(activeName, true, assignedMainJob, value);
-        end, 'ProfileAutoSubJob', nil, 94);
+        end, 'ProfileAutoSubJob', nil, 94, settingsTableFlagsNoBorders);
 
         uiTooltip.Info('Any sub job matches all subjobs and also matches when no subjob is set.');
     end
+
+    imgui.Spacing();
+    imgui.Separator();
 
     if (imgui.SetNextWindowSize ~= nil) then
         imgui.SetNextWindowSize({ 390, 145 }, _G.ImGuiCond_Appearing or 8);
@@ -5814,7 +6206,7 @@ local function DrawGeneralProfilesSection()
 end
 
 local function DrawGeneralScalingSection(settings)
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'General', 'Scaling' });
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Scaling' });
     DrawSettingsHeader('Global distance scaling');
 
     DrawSliderTenths('Start distance', settings.pcDistanceScaleStart, 0, 200, function(value)
@@ -5947,69 +6339,8 @@ local function DrawGeneralScalingSection(settings)
     DrawEntityOffset('Pet', 'pet');
 end
 
-local function DrawTargetingLeftClickSection(settings)
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'Targeting', 'Left Click' });
-    DrawSettingsHeader('Left click');
-
-    DrawCheckbox('Left-click enemy target out of combat', settings.enableLeftClickEnemyTargetIdle == true, function(value)
-        settings.enableLeftClickEnemyTargetIdle = value == true;
-    end);
-
-    DrawSettingsHeader('Enemy detail range');
-
-    DrawSliderTenths('Enemy plate range', settings.enemyPlateRange, 50, 644, function(value)
-        settings.enemyPlateRange = math.max(5.0, math.min(64.4, tonumber(value) or 49.9));
-    end);
-
-    DrawSliderTenths('Enemy active detail range', settings.enemyActiveDetailRange, 100, 499, function(value)
-        settings.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(value) or 25.0));
-    end);
-
-    local range = tonumber(settings.enemyActiveDetailRange) or 25.0;
-    local tierLabel = 'Balanced';
-    local tierColor = { 0.55, 0.85, 1.0, 1.0 };
-
-    if (range <= 15.0) then
-        tierLabel = 'Performance';
-        tierColor = { 0.35, 1.0, 0.55, 1.0 };
-    elseif (range <= 25.0) then
-        tierLabel = 'Balanced';
-        tierColor = { 0.55, 0.85, 1.0, 1.0 };
-    elseif (range <= 35.0) then
-        tierLabel = 'High';
-        tierColor = { 1.0, 0.84, 0.30, 1.0 };
-    else
-        tierLabel = 'Ultra';
-        tierColor = { 1.0, 0.48, 0.35, 1.0 };
-    end
-
-    imgui.TextColored(tierColor, 'Detail mode: ' .. tierLabel);
-    uiTooltip.Info('Idle enemies beyond this range keep static identity only. Target, subtarget, engaged, casting, and hovered enemies still use full detail.');
-end
-
-local function DrawTargetingRightClickSection(settings)
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'Targeting', 'Right Click' });
-    DrawSettingsHeader('Right click');
-
-    DrawCheckbox('Right-click attack', settings.enableRightClickAttack == true, function(value)
-        settings.enableRightClickAttack = value == true;
-    end);
-
-    DrawSliderTenths('Right-click attack range', settings.rightClickAttackRange, 30, 299, function(value)
-        settings.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(value) or 4.5));
-    end);
-
-    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Range includes a small hitbox allowance, matching the old addon behavior.');
-end
-
-local function DrawTargetingClickBlockingSection(settings)
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'Targeting', 'Click Blocking' });
-    DrawSettingsHeader('Plate click blocking');
-    LibraPlatesSettingsDrawPlateClickBlocking(settings);
-end
-
 local function DrawSelectedEditorGeneral()
-    if (selectedTab == 'General') then
+    if (selectedTab == 'Settings') then
         local global = state.GetGlobalSettings(globalDefaults);
         local settings = targeting.GetSettings();
 
@@ -6023,22 +6354,6 @@ local function DrawSelectedEditorGeneral()
             DrawGeneralScalingSection(settings);
         else
             DrawGeneralFontSection(global);
-        end
-
-        return;
-    end
-end
-
-local function DrawSelectedEditorTargeting()
-    if (selectedTab == 'Targeting') then
-        local settings = targeting.GetSettings();
-
-        if (selectedTargetingSection == 'Right Click') then
-            DrawTargetingRightClickSection(settings);
-        elseif (selectedTargetingSection == 'Click Blocking') then
-            DrawTargetingClickBlockingSection(settings);
-        else
-            DrawTargetingLeftClickSection(settings);
         end
 
         return;
@@ -6313,6 +6628,9 @@ local function DrawSelectedEditorPlates()
     if (
         selectedWidget == 'Bazaar icon' or
         selectedWidget == 'Linkshell icon' or
+        selectedWidget == 'Behavior icon' or
+        selectedWidget == 'Detects icon' or
+        selectedWidget == 'Links icon' or
         selectedWidget == 'Away icon' or
         selectedWidget == 'Disconnect icon' or
         selectedWidget == 'Anon icon' or
@@ -6326,6 +6644,12 @@ local function DrawSelectedEditorPlates()
         local defaults = bazaarIconDefaults;
         if (selectedWidget == 'Linkshell icon') then
             defaults = linkshellIconDefaults;
+        elseif (selectedWidget == 'Behavior icon') then
+            defaults = enemyBehaviorIconDefaults;
+        elseif (selectedWidget == 'Detects icon') then
+            defaults = enemyDetectsIconDefaults;
+        elseif (selectedWidget == 'Links icon') then
+            defaults = enemyLinksIconDefaults;
         elseif (selectedWidget == 'Away icon') then
             defaults = awayIconDefaults;
         elseif (selectedWidget == 'Disconnect icon') then
@@ -6474,7 +6798,7 @@ local function DrawSelectedEditorPlates()
         DrawManeuverSettings(settings);
     end
 
-    if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Quick Menu (module)' or selectedWidget == 'AOE range (module)') then
+    if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Behavior icon' or selectedWidget == 'Detects icon' or selectedWidget == 'Links icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Quick Menu (module)' or selectedWidget == 'AOE range (module)') then
         if (loadModeDrawn ~= true) then
             LibraPlatesSettingsDrawCurrentWidgetLoadMode();
         end
@@ -6486,13 +6810,8 @@ local function DrawSelectedEditorPlates()
 end
 
 DrawSelectedEditor = function()
-    if (selectedTab == 'General') then
+    if (selectedTab == 'Settings') then
         DrawSelectedEditorGeneral();
-        return;
-    end
-
-    if (selectedTab == 'Targeting') then
-        DrawSelectedEditorTargeting();
         return;
     end
 
@@ -6542,20 +6861,16 @@ function settingsUi.Render()
             DrawTopTabs();
             imgui.Separator();
 
-            if (selectedTab == 'General' or selectedTab == 'Targeting' or selectedTab == 'Plates' or selectedTab == 'Modules') then
+            if (selectedTab == 'Settings' or selectedTab == 'Plates' or selectedTab == 'Modules') then
                 local availWidth, availHeight = GetContentRegionAvail();
                 local selectorWidth = (selectedTab == 'Plates') and 260 or 190;
 
                 DrawChild('##selector_panel', { selectorWidth, math.max(260, availHeight - 24) }, true, function()
                     if (selectedTab == 'Modules') then
                         DrawModulesSelector();
-                    elseif (selectedTab == 'General') then
+                    elseif (selectedTab == 'Settings') then
                         DrawSectionSelector(generalSections, selectedGeneralSection, function(section)
                             selectedGeneralSection = section;
-                        end);
-                    elseif (selectedTab == 'Targeting') then
-                        DrawSectionSelector(targetingSections, selectedTargetingSection, function(section)
-                            selectedTargetingSection = section;
                         end);
                     else
                         DrawPlatesSelector();
@@ -6564,8 +6879,8 @@ function settingsUi.Render()
 
                 imgui.SameLine();
 
-                DrawChild('##right_panel', { math.max(420, availWidth - selectorWidth - 12), math.max(260, availHeight - 24) }, false, function()
-                    if (selectedTab == 'General' or selectedTab == 'Targeting') then
+                DrawChild('##right_panel', { math.max(280, availWidth - selectorWidth - 12), math.max(260, availHeight - 24) }, false, function()
+                    if (selectedTab == 'Settings') then
                         DrawSelectedEditor();
                     else
                         DrawRightPanel();

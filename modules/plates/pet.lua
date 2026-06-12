@@ -14,6 +14,7 @@ local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
 local barTextures = require('core.bar_textures');
 local barAnimations = require('core.bar_animations');
+local backgroundTextures = require('core.background_textures');
 local statusIconTextures = require('core.status_icon_textures');
 local spellIconTextures = require('core.spell_icon_textures');
 local textureLoader = require('core.texture_loader');
@@ -829,6 +830,8 @@ local function QueueBstPet(pet)
             color = backgroundSettings.color or backgroundDefaults.color,
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
@@ -1068,6 +1071,8 @@ local function QueueSmnPet(pet)
             color = backgroundSettings.color or backgroundDefaults.color,
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
@@ -1290,6 +1295,8 @@ local function QueueWyvernPet(pet)
             color = backgroundSettings.color or backgroundDefaults.color,
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
@@ -1476,6 +1483,8 @@ local function QueuePupPet(pet)
             color = backgroundSettings.color or backgroundDefaults.color,
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },

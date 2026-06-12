@@ -12,6 +12,7 @@ local perfMeter = require('core.perf_meter');
 local diagnostics = require('core.diagnostics');
 local lagTest = require('core.lag_test');
 local cursorOverlay = require('core.cursor_overlay');
+local jobChange = require('core.job_change');
 local imgui = require('imgui');
 
 -- ============================================================
@@ -30,6 +31,26 @@ local nativeTargetStartupTransitions = 0;
 local nativeTargetLastTransitionClock = 0;
 local nativeTargetStartupBurstApplied = 0;
 local nativeNamesLastHidden = nil;
+local nativeNamesPendingHidden = nil;
+local nativeNamesRetryFrames = 0;
+local nativeNamesRetryIntervalFrames = 120;
+local nativeNamesNextRetryFrame = 0;
+local nativeNamesFrameCounter = 0;
+local nativeNamesPeriodicIntervalFrames = 600;
+local nativeNamesNextPeriodicFrame = 0;
+
+local function GetLoginStatus()
+    local status = nil;
+
+    pcall(function()
+        local player = AshitaCore:GetMemoryManager():GetPlayer();
+        if (player ~= nil) then
+            status = player:GetLoginStatus();
+        end
+    end);
+
+    return tonumber(status) or 0;
+end
 
 local function HasAnyTarget()
     local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
@@ -99,19 +120,56 @@ local function UpdateNativeTargetArrowVisibility()
 end
 
 local function QueueNativeNamesCommand(hidden)
+    if (GetLoginStatus() ~= 2) then
+        return false;
+    end
+
     pcall(function()
-        AshitaCore:GetChatManager():QueueCommand(1, hidden == true and '/names off' or '/names on');
+        AshitaCore:GetChatManager():QueueCommand(-1, hidden == true and '/names off' or '/names on');
     end);
+
+    return true;
+end
+
+local function ScheduleNativeNamesSync(hidden, retryCount, retryIntervalFrames)
+    nativeNamesPendingHidden = hidden == true;
+    nativeNamesRetryFrames = math.max(0, tonumber(retryCount) or 0);
+    nativeNamesRetryIntervalFrames = math.max(1, tonumber(retryIntervalFrames) or 120);
+    nativeNamesNextRetryFrame = nativeNamesFrameCounter + nativeNamesRetryIntervalFrames;
+    nativeNamesNextPeriodicFrame = nativeNamesFrameCounter + nativeNamesPeriodicIntervalFrames;
+    QueueNativeNamesCommand(nativeNamesPendingHidden);
+end
+
+local function UpdateNativeNamesRetry()
+    if (nativeNamesPendingHidden ~= nil and nativeNamesRetryFrames > 0 and nativeNamesFrameCounter >= nativeNamesNextRetryFrame) then
+        QueueNativeNamesCommand(nativeNamesPendingHidden);
+        nativeNamesRetryFrames = nativeNamesRetryFrames - 1;
+        nativeNamesNextRetryFrame = nativeNamesFrameCounter + nativeNamesRetryIntervalFrames;
+
+        if (nativeNamesRetryFrames <= 0) then
+            nativeNamesPendingHidden = nil;
+        end
+    end
+
+    if (nativeNamesLastHidden ~= nil and nativeNamesFrameCounter >= nativeNamesNextPeriodicFrame) then
+        QueueNativeNamesCommand(nativeNamesLastHidden);
+        nativeNamesNextPeriodicFrame = nativeNamesFrameCounter + nativeNamesPeriodicIntervalFrames;
+    end
 end
 
 local function UpdateNativeNamesVisibility(force)
     local targetingSettings = targeting.GetSettings();
-    local shouldHide = true;
+    local shouldHide = targetingSettings.hideNativeNamesOnLoad == true;
 
     if (force == true or nativeNamesLastHidden ~= shouldHide) then
         nativeNamesLastHidden = shouldHide;
-        QueueNativeNamesCommand(shouldHide);
+        ScheduleNativeNamesSync(shouldHide, 8, 90);
     end
+end
+
+function modules.HandleLogin()
+    nativeNamesLastHidden = nil;
+    UpdateNativeNamesVisibility(true);
 end
 
 -- ============================================================
@@ -119,6 +177,7 @@ end
 -- ============================================================
 
 function modules.Load()
+    jobChange.Cancel();
     worldMarkerProbe.SetImgui(imgui);
     worldMarkerProbe.SetEnabled(true);
     worldMarkerProbe.SetReplacePlates(true);
@@ -136,6 +195,7 @@ function modules.Load()
 end
 
 function modules.Unload()
+    jobChange.Cancel();
     nativeTargetArrow.RestoreAll();
     mouseControls.Release();
     modules.settings.Unload();
@@ -143,6 +203,7 @@ function modules.Unload()
 end
 
 function modules.Render()
+    nativeNamesFrameCounter = nativeNamesFrameCounter + 1;
     perfMeter.BeginFrame();
     local totalStart = perfMeter.Start();
 
@@ -163,6 +224,8 @@ function modules.Render()
     local nativeStart = perfMeter.Start();
     UpdateNativeTargetArrowVisibility();
     UpdateNativeNamesVisibility(false);
+    UpdateNativeNamesRetry();
+    jobChange.Update();
     perfMeter.Stop('native', nativeStart);
 
     if (state.GetConfigOpen() ~= true) then

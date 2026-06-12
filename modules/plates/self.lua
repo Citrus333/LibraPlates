@@ -27,6 +27,7 @@ local canvasTexture = require('core.canvas_texture');
 local adaptivePerformance = require('core.adaptive_performance');
 local aoeNameHighlight = require('core.aoe_name_highlight');
 local aoeRangeVisuals = require('core.aoe_range_visuals');
+local backgroundTextures = require('core.background_textures');
 local barTextures = require('core.bar_textures');
 local barAnimations = require('core.bar_animations');
 local entities = require('core.entities');
@@ -191,6 +192,35 @@ local function BuildAoeNameSettings(layoutStateName, nameSettings, targetIndex)
 
     merged.textSize = tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize;
     return merged;
+end
+
+local function BuildPlayerIndicatorAnchorFallbackRects(definitions)
+    local fallbacks = {};
+
+    for _, definition in ipairs(definitions or {}) do
+        local settings = definition.settings or {};
+        local defaults = definition.defaults or {};
+        local size = math.max(6, math.min(160, tonumber(settings.iconSize) or tonumber(defaults.iconSize) or 16));
+        local offsetX = tonumber(settings.offsetX) or tonumber(definition.defaultX) or tonumber(defaults.offsetX) or 0;
+        local offsetY = tonumber(settings.offsetY) or tonumber(definition.defaultY) or tonumber(defaults.offsetY) or 0;
+
+        fallbacks[#fallbacks + 1] = {
+            kind = definition.kind,
+            x = 512 - (size * 0.5) + offsetX,
+            y = 256 - (size * 0.5) + offsetY,
+            w = size,
+            h = size,
+            padding = 4,
+            layout = {
+                anchorTo = settings.anchorTo or defaults.anchorTo,
+                anchorPoint = settings.anchorPoint or defaults.anchorPoint,
+                offsetX = offsetX,
+                offsetY = offsetY,
+            },
+        };
+    end
+
+    return fallbacks;
 end
 
 local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEngaged, globalSettings, kind)
@@ -505,11 +535,16 @@ local function DrawBackground(drawList, bounds)
 
     local rect = canvas.GetLocalRect(bounds, background);
 
-    drawList:AddRectFilled(
-        { rect.left, rect.top },
-        { rect.left + rect.width, rect.top + rect.height },
-        ColorToU32(background.color)
-    );
+    if (background.textureId ~= nil) then
+        local textureAlpha = tonumber(background.color ~= nil and background.color[4] or nil) or 0.45;
+        drawList:AddImage(background.textureId, { rect.left, rect.top }, { rect.left + rect.width, rect.top + rect.height }, { 0, 0 }, { 1, 1 }, ColorToU32({ 1.0, 1.0, 1.0, textureAlpha }));
+    else
+        drawList:AddRectFilled(
+            { rect.left, rect.top },
+            { rect.left + rect.width, rect.top + rect.height },
+            ColorToU32(background.color)
+        );
+    end
 
     drawList:AddRect(
         { rect.left, rect.top },
@@ -736,6 +771,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             color = backgroundSettings.color or backgroundDefaults.color,
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
@@ -844,6 +881,17 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         },
         castBar = castBar,
         icons = icons,
+        anchorFallbackRects = BuildPlayerIndicatorAnchorFallbackRects({
+            { kind = 'allianceLeaderIcon', settings = allianceLeaderIconSettings, defaults = allianceLeaderIconDefaults, defaultX = -120, defaultY = -54 },
+            { kind = 'partyLeaderIcon', settings = partyLeaderIconSettings, defaults = partyLeaderIconDefaults, defaultX = -96, defaultY = -54 },
+            { kind = 'gameModeIcon', settings = gameModeIconSettings, defaults = gameModeIconDefaults, defaultX = -72, defaultY = -54 },
+            { kind = 'linkshellIcon', settings = linkshellIconSettings, defaults = linkshellIconDefaults, defaultX = 48, defaultY = -54 },
+            { kind = 'bazaarIcon', settings = bazaarIconSettings, defaults = bazaarIconDefaults, defaultX = 72, defaultY = -54 },
+            { kind = 'awayIcon', settings = awayIconSettings, defaults = awayIconDefaults, defaultX = 120, defaultY = -54 },
+            { kind = 'disconnectIcon', settings = disconnectIconSettings, defaults = disconnectIconDefaults, defaultX = 144, defaultY = -54 },
+            { kind = 'starsIcon', settings = starsIconSettings, defaults = starsIconDefaults, defaultX = -48, defaultY = -54 },
+            { kind = 'newAdventurerIcon', settings = newAdventurerIconSettings, defaults = newAdventurerIconDefaults, defaultX = 24, defaultY = -54 },
+        }),
     };
 
     if (plateData.aoeNameActive == true) then

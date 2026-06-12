@@ -379,8 +379,22 @@ function fonts.GetFolderPath(kind)
     return root .. '\\addons\\LibraPlates\\assets\\fonts\\' .. tostring(kind or 'large');
 end
 
+function fonts.GetRootFolderPath()
+    local root = AshitaCore:GetInstallPath();
+
+    root = tostring(root or ''):gsub('[\\/]+$', '');
+
+    return root .. '\\addons\\LibraPlates\\assets\\fonts';
+end
+
 function fonts.OpenFolder(kind)
     local path = fonts.GetFolderPath(kind);
+
+    os.execute('start "" "' .. path .. '"');
+end
+
+function fonts.OpenRootFolder()
+    local path = fonts.GetRootFolderPath();
 
     os.execute('start "" "' .. path .. '"');
 end

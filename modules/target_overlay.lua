@@ -832,7 +832,8 @@ local function DrawOne(drawList, index, stateName, offsetY, drawHighlight)
         DrawImage(drawList, arrowTextureId, arrowX, arrowY, arrowW, arrowH, arrowTint);
     end
 
-    local textureId = settings.chevronEnabled ~= false and GetTextureId('chevrons', settings.chevronFile) or nil;
+    local chevronFile = settings.chevronEnabled == false and 'None' or settings.chevronFile;
+    local textureId = GetTextureId('chevrons', chevronFile);
     local showChevrons = textureId ~= nil;
     local chevW = Clamp(settings.chevronWidth, 24, 1, 200) * scale;
     local chevH = Clamp(settings.chevronHeight, 32, 1, 200) * scale;

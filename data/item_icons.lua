@@ -64,7 +64,13 @@ local itemIcons = T{
     ['Home Point #4']            = { type = 'Home Point', icon = 'HomePoint4.png', offsetY = -210, offsetX = 55 },
     ['Home Point #5']            = { type = 'Home Point', icon = 'HomePoint5.png', offsetY = -210, offsetX = 55 },
     ['Home Point #6']            = { type = 'Home Point', icon = 'HomePoint6.png', offsetY = -210, offsetX = 55 },
-    ['Logging Point']            = { type = 'Logging Point', icon = 'LoggingPoint.png' },
+['Logging Point'] = {
+    type = 'Logging Point',
+    icon = 'LoggingPoint.png',
+    zones = { 'Bibiki Bay' },
+    zoneIds = { 4 },
+    worldOffsetY = 1.2,
+}
     ['Mining Point']             = { type = 'Mining Point', icon = 'MiningPoint.png' },
     ['Monument']                 = { type = 'Monument', icon = 'Monument.png' },
     ['Nyzul Isle Staging Point'] = { type = 'Nyzul Isle Staging Point', icon = 'NyzulIsleStagingPoint.png' },

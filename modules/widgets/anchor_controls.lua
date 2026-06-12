@@ -77,10 +77,27 @@ end
 
 local function GetAnchorTooltip(settings)
     if (tostring(settings.anchorTo or 'Plate') == 'Plate') then
-        return 'Not anchored.';
+        return table.concat({
+            'Anchor',
+            'Choose a target widget to attach this one to.',
+        }, '\n');
     end
 
-    return 'Currently anchored to ' .. tostring(settings.anchorTo) .. ' ' .. tostring(settings.anchorPoint or 'Center') .. '.';
+    return table.concat({
+        'Anchor',
+        'Anchored to ' .. tostring(settings.anchorTo) .. ' at ' .. tostring(settings.anchorPoint or 'Center') .. '.',
+        '',
+        'Direction',
+        'Left: attach to the target\'s left edge.',
+        'Right: attach to the target\'s right edge.',
+        'Top / Bottom: attach to that side of the target.',
+        '',
+        'Result',
+        'This widget appears on the outside of that side.',
+        '',
+        'Missing parent',
+        'If the parent widget is missing, anchored children use that parent\'s position slot so rows can collapse cleanly.',
+    }, '\n');
 end
 
 local function DrawReleaseConfirm(settings, key)
@@ -316,6 +333,8 @@ function anchorControls.Draw(settings, context, label)
     imgui.SameLine();
 
     local anchorTo = DrawCombo(key .. '_to', settings.anchorTo or 'Plate', choices, 230);
+    imgui.SameLine();
+    uiTooltip.Info(GetAnchorTooltip(settings));
 
     if (anchorTo ~= settings.anchorTo) then
         settings.anchorTo = anchorTo;
@@ -342,8 +361,6 @@ function anchorControls.Draw(settings, context, label)
 
         DrawReleaseConfirm(settings, key);
     end
-
-    uiTooltip.Info(GetAnchorTooltip(settings));
     imgui.Separator();
 end
 

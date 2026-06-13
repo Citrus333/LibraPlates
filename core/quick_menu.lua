@@ -1190,6 +1190,11 @@ function quickMenu.HasPendingInvite()
     return os.clock() < (tonumber(pendingInviteUntil) or 0);
 end
 
+function quickMenu.ClearTextureCache()
+    iconCache = {};
+    missingIcon = {};
+end
+
 local function HasPendingPartyRequest()
     return os.clock() < (tonumber(pendingPartyRequestUntil) or 0);
 end

@@ -4,12 +4,16 @@ local imgui = require('imgui');
 local adaptivePerformance = require('core.adaptive_performance');
 
 local overlayEnabled = false;
+local compactOverlay = true;
 local detailEnabled = false;
+local timingSortColumn = 'avg';
+local timingSortAscending = false;
 local samples = {};
 local counters = {};
 local lastCounters = {};
 local frameIndex = 0;
 local smoothing = 0.10;
+local GetCounter = nil;
 
 local displayOrder = {
     'total',
@@ -65,12 +69,12 @@ local labels = {
     ['targeting'] = 'Targeting',
     ['native'] = 'Native hide',
     ['plates.total'] = 'Plates',
-    ['plates.self'] = '  Self',
-    ['plates.enemy'] = '  Enemy',
-    ['plates.pc'] = '  PC',
-    ['plates.trust'] = '  Trust',
-    ['plates.pet'] = '  Pet',
-    ['plates.npc'] = '  NPC/Object',
+    ['plates.self'] = 'Plate Self',
+    ['plates.enemy'] = 'Plate Enemy',
+    ['plates.pc'] = 'Plate PC',
+    ['plates.trust'] = 'Plate Trust',
+    ['plates.pet'] = 'Plate Pet',
+    ['plates.npc'] = 'Plate NPC/Object',
     ['world.draw'] = 'World draw',
     ['target.overlay'] = 'Target overlay',
     ['peer'] = 'Peer',
@@ -106,6 +110,50 @@ local labels = {
 
 local function FormatMs(value)
     return string.format('%.2f', tonumber(value) or 0);
+end
+
+local function GetTierColor(tier)
+    local value = tostring(tier or ''):lower();
+
+    if (value == 'stressed') then
+        return { 1.0, 0.72, 0.34, 1.0 };
+    end
+
+    if (value == 'low') then
+        return { 1.0, 0.84, 0.30, 1.0 };
+    end
+
+    if (value == 'fps2_stable' or value == 'highfps_under_load') then
+        return { 0.86, 0.92, 0.72, 1.0 };
+    end
+
+    if (value == 'fps1_stable') then
+        return { 0.56, 0.96, 0.70, 1.0 };
+    end
+
+    return { 0.92, 0.92, 0.90, 1.0 };
+end
+
+local function GetPlateCostColor(value)
+    local ms = tonumber(value) or 0;
+
+    if (ms >= 16.0) then
+        return { 1.0, 0.42, 0.32, 1.0 };
+    end
+
+    if (ms >= 10.0) then
+        return { 1.0, 0.72, 0.34, 1.0 };
+    end
+
+    if (ms >= 6.0) then
+        return { 1.0, 0.84, 0.30, 1.0 };
+    end
+
+    if (ms >= 3.0) then
+        return { 0.86, 0.92, 0.72, 1.0 };
+    end
+
+    return { 0.56, 0.96, 0.70, 1.0 };
 end
 
 local function Record(name, elapsedMs)
@@ -148,6 +196,280 @@ local function AddLine(lines, name)
     );
 end
 
+local function BuildTimingRows()
+    local rows = {};
+    local order = {};
+
+    for _, name in ipairs(displayOrder) do
+        order[#order + 1] = name;
+    end
+
+    if (detailEnabled == true) then
+        for _, name in ipairs(detailOrder) do
+            order[#order + 1] = name;
+        end
+    end
+
+    for index, name in ipairs(order) do
+        local entry = samples[name];
+
+        if (entry ~= nil and name ~= 'total') then
+            rows[#rows + 1] = {
+                name = name,
+                label = labels[name] or name,
+                avg = tonumber(entry.avg) or 0,
+                peak = tonumber(entry.peak) or 0,
+                last = tonumber(entry.last) or 0,
+                order = index,
+            };
+        end
+    end
+
+    table.sort(rows, function(left, right)
+        local column = tostring(timingSortColumn or 'avg');
+
+        if (column == 'name') then
+            if (timingSortAscending == true) then
+                return tostring(left.label) < tostring(right.label);
+            end
+
+            return tostring(left.label) > tostring(right.label);
+        end
+
+        if (column == 'order') then
+            return (tonumber(left.order) or 0) < (tonumber(right.order) or 0);
+        end
+
+        local leftValue = tonumber(left[column]) or 0;
+        local rightValue = tonumber(right[column]) or 0;
+
+        if (leftValue == rightValue) then
+            return (tonumber(left.order) or 0) < (tonumber(right.order) or 0);
+        end
+
+        if (timingSortAscending == true) then
+            return leftValue < rightValue;
+        end
+
+        return leftValue > rightValue;
+    end);
+
+    return rows;
+end
+
+local function DrawSortHeader(label, column, tooltip)
+    local selected = tostring(timingSortColumn or '') == tostring(column or '');
+    local arrow = selected and (timingSortAscending == true and ' ^' or ' v') or '';
+
+    if (imgui.Button(tostring(label or '') .. arrow .. '##PerfSort' .. tostring(column or ''))) then
+        if (selected == true) then
+            timingSortAscending = timingSortAscending ~= true;
+        else
+            timingSortColumn = tostring(column or 'avg');
+            timingSortAscending = false;
+        end
+    end
+
+    if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true) then
+        if (imgui.SetTooltip ~= nil) then
+            imgui.SetTooltip(tostring(tooltip));
+        elseif (imgui.BeginTooltip ~= nil) then
+            imgui.BeginTooltip();
+            imgui.Text(tostring(tooltip));
+            imgui.EndTooltip();
+        end
+    end
+end
+
+local function DrawTimingSortHeader()
+    if (imgui.BeginTable == nil or imgui.TableSetupColumn == nil) then
+        DrawSortHeader('Process', 'name', 'Part of LibraPlates being measured.');
+        imgui.SameLine();
+        DrawSortHeader('Avg', 'avg', 'Time the process is taking.');
+        imgui.SameLine();
+        DrawSortHeader('Peak', 'peak', 'Highest spike seen so far.');
+        imgui.SameLine();
+        DrawSortHeader('Last', 'last', 'Time from the most recent frame.');
+        return;
+    end
+
+    if (imgui.BeginTable('##libraplates_perf_timing_header', 4, 0)) then
+        imgui.TableSetupColumn('Process', 0, 168);
+        imgui.TableSetupColumn('Avg', 0, 76);
+        imgui.TableSetupColumn('Peak', 0, 76);
+        imgui.TableSetupColumn('Last', 0, 76);
+        imgui.TableNextRow();
+        imgui.TableNextColumn();
+        DrawSortHeader('Process', 'name', 'Part of LibraPlates being measured.');
+        imgui.TableNextColumn();
+        DrawSortHeader('Avg', 'avg', 'Time the process is taking.');
+        imgui.TableNextColumn();
+        DrawSortHeader('Peak', 'peak', 'Highest spike seen so far.');
+        imgui.TableNextColumn();
+        DrawSortHeader('Last', 'last', 'Time from the most recent frame.');
+        imgui.EndTable();
+    end
+end
+
+local function DrawTimingTable()
+    if (imgui.BeginTable == nil or imgui.TableSetupColumn == nil) then
+        return false;
+    end
+
+    if (imgui.BeginTable('##libraplates_perf_timing_table', 4, 0)) then
+        imgui.TableSetupColumn('Process', 0, 168);
+        imgui.TableSetupColumn('Avg', 0, 76);
+        imgui.TableSetupColumn('Peak', 0, 76);
+        imgui.TableSetupColumn('Last', 0, 76);
+
+        for _, row in ipairs(BuildTimingRows()) do
+            local rowColor = { 0.92, 0.92, 0.90, 1.0 };
+
+            if (row.name == 'plates.total') then
+                rowColor = GetPlateCostColor(row.avg);
+            end
+
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(rowColor, tostring(row.label or ''));
+            imgui.TableNextColumn();
+            imgui.TextColored(rowColor, FormatMs(row.avg));
+            imgui.TableNextColumn();
+            imgui.TextColored(rowColor, FormatMs(row.peak));
+            imgui.TableNextColumn();
+            imgui.TextColored(rowColor, FormatMs(row.last));
+        end
+
+        imgui.EndTable();
+    end
+
+    return true;
+end
+
+local function DrawTotalSummaryLine()
+    local total = samples.total or {};
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##libraplates_perf_total_footer', 4, 0)) then
+            imgui.TableSetupColumn('Process', 0, 168);
+            imgui.TableSetupColumn('Avg', 0, 76);
+            imgui.TableSetupColumn('Peak', 0, 76);
+            imgui.TableSetupColumn('Last', 0, 76);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Total');
+            imgui.TableNextColumn();
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, FormatMs(total.avg));
+            imgui.TableNextColumn();
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, FormatMs(total.peak));
+            imgui.TableNextColumn();
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, FormatMs(total.last));
+            imgui.EndTable();
+        end
+        return;
+    end
+
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, string.format('Total %s  peak %s  last %s', FormatMs(total.avg), FormatMs(total.peak), FormatMs(total.last)));
+end
+
+local function DrawAdaptiveStatusLine()
+    local mode = tostring(adaptivePerformance.GetEffectiveMode());
+    local fps = tonumber(adaptivePerformance.GetEstimatedFps()) or 0;
+    local frameMs = tonumber(adaptivePerformance.GetAverageFrameMs()) or 0;
+    local color = GetTierColor(adaptivePerformance.GetTier());
+
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Adaptive Mode: ');
+    imgui.SameLine();
+    imgui.TextColored(color, mode);
+    imgui.SameLine();
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, string.format('- FPS: %.1f  Frames: %.1fms', fps, frameMs));
+end
+
+local function DrawCountsLine()
+    imgui.TextColored(
+        { 1.0, 0.84, 0.30, 1.0 },
+        string.format(
+            'Counts: Qued=%s | Drawn=%s | ClickRects=%s | Canvas =%s',
+            tostring(GetCounter('queued')),
+            tostring(GetCounter('drawn')),
+            tostring(GetCounter('clickRects')),
+            tostring(GetCounter('canvasRenders'))
+        )
+    );
+end
+
+local function DrawTextureCacheLine()
+    local cacheStats = nil;
+    local cacheOk, canvasTexture = pcall(require, 'core.canvas_texture');
+    if (cacheOk == true and canvasTexture ~= nil and canvasTexture.GetCacheStats ~= nil) then
+        cacheStats = canvasTexture.GetCacheStats();
+    end
+
+    cacheStats = cacheStats or { count = 0, max = 0, evictionsPerMinute = 0, evictions = 0 };
+    imgui.TextColored(
+        { 0.92, 0.92, 0.90, 1.0 },
+        string.format(
+            'Texture Cache: Used=%s/%s | Evictions/min=%.1f | Total=%s',
+            tostring(cacheStats.count),
+            tostring(cacheStats.max),
+            tonumber(cacheStats.evictionsPerMinute) or 0,
+            tostring(cacheStats.evictions)
+        )
+    );
+end
+
+local function DrawTimingTableScrollArea()
+    if (imgui.BeginChild ~= nil and imgui.EndChild ~= nil) then
+        imgui.BeginChild('##libraplates_perf_timing_scroll', { 0, -92 }, false);
+        DrawTimingTable();
+        imgui.EndChild();
+        return;
+    end
+
+    DrawTimingTable();
+end
+
+local function PushMonitorStyle()
+    if (imgui.PushStyleColor == nil) then
+        return 0;
+    end
+
+    local pushed = 0;
+    local function Push(colorId, color)
+        if (colorId ~= nil) then
+            imgui.PushStyleColor(colorId, color);
+            pushed = pushed + 1;
+        end
+    end
+
+    local panelColor = { 0.075, 0.085, 0.105, 0.86 };
+    local titleColor = { 0.075, 0.085, 0.105, 0.92 };
+    local titleActiveColor = { 0.10, 0.15, 0.16, 0.96 };
+    local buttonColor = { 0.16, 0.48, 0.50, 0.70 };
+    local buttonHoverColor = { 0.22, 0.62, 0.64, 0.85 };
+    local scrollbarColor = { 0.16, 0.48, 0.50, 0.65 };
+    local scrollbarHoverColor = { 0.22, 0.62, 0.64, 0.82 };
+
+    Push(_G.ImGuiCol_WindowBg, panelColor);
+    Push(_G.ImGuiCol_TitleBg, titleColor);
+    Push(_G.ImGuiCol_TitleBgActive, titleActiveColor);
+    Push(_G.ImGuiCol_TitleBgCollapsed, titleColor);
+    Push(_G.ImGuiCol_Button, buttonColor);
+    Push(_G.ImGuiCol_ButtonHovered, buttonHoverColor);
+    Push(_G.ImGuiCol_ButtonActive, buttonColor);
+    Push(_G.ImGuiCol_ScrollbarGrab, scrollbarColor);
+    Push(_G.ImGuiCol_ScrollbarGrabHovered, scrollbarHoverColor);
+    Push(_G.ImGuiCol_ScrollbarGrabActive, scrollbarHoverColor);
+
+    return pushed;
+end
+
+local function PopMonitorStyle(count)
+    if (imgui.PopStyleColor ~= nil and tonumber(count) ~= nil and count > 0) then
+        imgui.PopStyleColor(count);
+    end
+end
+
 function perfMeter.BeginFrame()
     frameIndex = frameIndex + 1;
     lastCounters = counters;
@@ -175,7 +497,7 @@ function perfMeter.Count(name, amount)
     counters[key] = (tonumber(counters[key]) or 0) + (tonumber(amount) or 1);
 end
 
-local function GetCounter(name)
+GetCounter = function(name)
     local key = tostring(name or '');
     local current = counters[key];
 
@@ -251,6 +573,14 @@ end
 
 function perfMeter.GetOverlayEnabled()
     return overlayEnabled == true;
+end
+
+function perfMeter.SetCompactOverlayEnabled(value)
+    compactOverlay = value ~= false;
+end
+
+function perfMeter.GetCompactOverlayEnabled()
+    return compactOverlay ~= false;
 end
 
 function perfMeter.SetDetailEnabled(value)
@@ -467,7 +797,12 @@ function perfMeter.GetSummaryLines()
     local lines = {};
 
     lines[#lines + 1] = 'LibraPlates perf frame=' .. tostring(frameIndex) .. ' overlay=' .. tostring(overlayEnabled == true);
-    lines[#lines + 1] = adaptivePerformance.GetStatusText();
+    lines[#lines + 1] = string.format(
+        'Adaptive mode=%s fps=%.1f frame=%.1fms',
+        tostring(adaptivePerformance.GetEffectiveMode()),
+        tonumber(adaptivePerformance.GetEstimatedFps()) or 0,
+        tonumber(adaptivePerformance.GetAverageFrameMs()) or 0
+    );
 
     for _, name in ipairs(displayOrder) do
         AddLine(lines, name);
@@ -488,21 +823,43 @@ function perfMeter.GetSummaryLines()
     );
 
     if (detailEnabled == true) then
+        local cacheStats = nil;
+        local ok, canvasTexture = pcall(require, 'core.canvas_texture');
+        if (ok == true and canvasTexture ~= nil and canvasTexture.GetCacheStats ~= nil) then
+            cacheStats = canvasTexture.GetCacheStats();
+        end
+        cacheStats = cacheStats or { count = 0, max = 0, evictionsPerMinute = 0, evictions = 0 };
         lines[#lines + 1] = string.format(
-            'Detail counts  nativeCalls=%s targetBuilds=%s npcScan=%s npcResolve=%s npcFast=%s npcSettings=%s npcSignature=%s npcCanvas=%s npcQueue=%s self=%s enemy=%s pc=%s trust=%s pet=%s npc=%s targeted=%s',
+            'Texture Cache: Used=%s/%s | Evictions/min=%.1f | Total=%s',
+            tostring(cacheStats.count),
+            tostring(cacheStats.max),
+            tonumber(cacheStats.evictionsPerMinute) or 0,
+            tostring(cacheStats.evictions)
+        );
+        lines[#lines + 1] = string.format(
+            'Detail native=%s target=%s npcScan=%s npcResolve=%s npcFast=%s',
             tostring(GetCounter('native.hook.calls')),
             tostring(GetCounter('target.marker.build.calls')),
             tostring(GetCounter('npc.scan.calls')),
             tostring(GetCounter('npc.resolve.calls')),
-            tostring(GetCounter('npc.fastCache.calls')),
+            tostring(GetCounter('npc.fastCache.calls'))
+        );
+        lines[#lines + 1] = string.format(
+            'Detail npcSettings=%s npcSignature=%s npcCanvas=%s npcQueue=%s',
             tostring(GetCounter('npc.settings.calls')),
             tostring(GetCounter('npc.signature.calls')),
             tostring(GetCounter('npc.canvas.calls')),
-            tostring(GetCounter('npc.queue.calls')),
+            tostring(GetCounter('npc.queue.calls'))
+        );
+        lines[#lines + 1] = string.format(
+            'Detail canvas self=%s enemy=%s pc=%s trust=%s',
             tostring(GetCounter('canvasSelf')),
             tostring(GetCounter('canvasEnemy')),
             tostring(GetCounter('canvasPc')),
-            tostring(GetCounter('canvasTrust')),
+            tostring(GetCounter('canvasTrust'))
+        );
+        lines[#lines + 1] = string.format(
+            'Detail canvas pet=%s npc=%s targeted=%s',
             tostring(GetCounter('canvasPet')),
             tostring(GetCounter('canvasNpcObject')),
             tostring(GetCounter('canvasTargeted'))
@@ -521,31 +878,103 @@ function perfMeter.RenderOverlay()
         return;
     end
 
-    local drawList = (imgui.GetForegroundDrawList ~= nil) and imgui.GetForegroundDrawList() or nil;
-
-    if (drawList == nil or drawList.AddText == nil or drawList.AddRectFilled == nil) then
+    if (imgui.Begin == nil) then
         return;
     end
 
-    local lines = perfMeter.GetSummaryLines();
-    local x = 18;
-    local y = 148;
-    local lineHeight = 15;
-    local width = 430;
-    local height = (#lines * lineHeight) + 12;
+    local lines = nil;
 
-    drawList:AddRectFilled({ x - 8, y - 7 }, { x + width, y + height }, 0xD8191F26);
+    if (compactOverlay ~= false) then
+        local total = perfMeter.GetMetric('total');
+        local plates = perfMeter.GetMetric('plates.total');
+        local worldDraw = perfMeter.GetMetric('world.draw');
+        local mode = adaptivePerformance.GetEffectiveMode();
+        local fps = adaptivePerformance.GetEstimatedFps();
+        local frameMs = adaptivePerformance.GetAverageFrameMs();
 
-    for index, line in ipairs(lines) do
-        local color = 0xFFFFFFFF;
+        lines = {
+            string.format('LibraPlates %.2fms  peak %.2fms', total.avg, total.peak),
+            string.format('Plates %.2fms  World %.2fms', plates.avg, worldDraw.avg),
+            string.format('Counts: Qued=%s | Drawn=%s | Canvas =%s',
+                tostring(GetCounter('queued')),
+                tostring(GetCounter('drawn')),
+                tostring(GetCounter('canvasRenders'))
+            ),
+            string.format('Mode %s  FPS %.1f  Frame %.1fms', tostring(mode), tonumber(fps) or 0, tonumber(frameMs) or 0),
+        };
+    else
+        lines = perfMeter.GetSummaryLines();
+    end
 
-        if (index == 1) then
-            color = 0xFF6FE8F0;
-        elseif (line:find('Counts', 1, true) ~= nil) then
-            color = 0xFFFFD84D;
+    local windowOpen = { true };
+    local flags = (_G.ImGuiWindowFlags_NoCollapse or 0) +
+        (_G.ImGuiWindowFlags_NoSavedSettings or 0) +
+        (_G.ImGuiWindowFlags_NoResize or 0) +
+        (_G.ImGuiWindowFlags_NoScrollbar or 0);
+
+    local width = compactOverlay ~= false and 410 or 560;
+    local height = compactOverlay ~= false and math.max(138, (#lines * 18) + 46) or 430;
+
+    if (imgui.SetNextWindowPos ~= nil) then
+        imgui.SetNextWindowPos({ 18, 148 }, _G.ImGuiCond_FirstUseEver or 4);
+    end
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ width, height }, _G.ImGuiCond_Always or 2);
+    end
+
+    local styleCount = PushMonitorStyle();
+    local began = false;
+    local ok = pcall(function()
+        began = imgui.Begin('LibraPlates Performance Monitor', windowOpen, flags);
+
+        if (windowOpen[1] ~= true) then
+            overlayEnabled = false;
         end
 
-        drawList:AddText({ x, y + ((index - 1) * lineHeight) }, color, line);
+        if (began ~= true) then
+            return;
+        end
+
+        if (compactOverlay == false and imgui.BeginTable ~= nil) then
+            DrawAdaptiveStatusLine();
+            imgui.Separator();
+            DrawTimingSortHeader();
+            DrawTimingTableScrollArea();
+            imgui.Separator();
+            DrawTotalSummaryLine();
+            DrawCountsLine();
+            DrawTextureCacheLine();
+
+            return;
+        end
+
+        for index, line in ipairs(lines) do
+            local color = { 0.92, 0.92, 0.90, 1.0 };
+
+            if (index == 1) then
+                color = { 0.42, 0.91, 0.94, 1.0 };
+            elseif (compactOverlay == false and string.find(tostring(line or ''), 'Plates', 1, true) ~= nil and string.find(tostring(line or ''), 'avg', 1, true) ~= nil) then
+                color = GetPlateCostColor(perfMeter.GetMetric('plates.total').avg);
+            elseif (compactOverlay ~= false and index == 2) then
+                color = GetPlateCostColor(perfMeter.GetMetric('plates.total').avg);
+            elseif (string.find(tostring(line or ''), 'Counts', 1, true) ~= nil) then
+                color = { 1.0, 0.84, 0.30, 1.0 };
+            elseif (string.find(tostring(line or ''), 'FPS', 1, true) ~= nil or string.find(tostring(line or ''), 'Adaptive mode=', 1, true) ~= nil) then
+                color = GetTierColor(adaptivePerformance.GetTier());
+            end
+
+            imgui.TextColored(color, line);
+        end
+    end);
+
+    if (began == true) then
+        imgui.End();
+    end
+    PopMonitorStyle(styleCount);
+
+    if (ok ~= true) then
+        overlayEnabled = false;
     end
 end
 

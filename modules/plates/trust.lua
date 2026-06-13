@@ -370,7 +370,7 @@ local function QueueCachedTrust(trust, cached, targetStateName, layoutStateName,
         trustIsMine = trust.slot ~= nil,
         stateName = targetStateName,
         clickTargetType = 'trust',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
@@ -378,9 +378,6 @@ local function QueueCachedTrust(trust, cached, targetStateName, layoutStateName,
             plateWorldWidth = cached.plateWorldWidth,
             plateWorldHeight = cached.plateWorldHeight,
             plateWorldOffsetY = cached.plateWorldOffsetY,
-            plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
-            plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
-            plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
@@ -388,7 +385,7 @@ local function QueueCachedTrust(trust, cached, targetStateName, layoutStateName,
             clickTargetType = 'trust',
             clickName = trust.name,
             layoutStateName = layoutStateName,
-        },
+        }, 'trust', 0, cached.plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 
@@ -667,7 +664,7 @@ local function QueueTrust(trust)
         trustIsMine = trust.slot ~= nil,
         stateName = targetStateName,
         clickTargetType = 'trust',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
@@ -675,9 +672,6 @@ local function QueueTrust(trust)
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = 0.50,
-            plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
-            plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
-            plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
@@ -685,7 +679,7 @@ local function QueueTrust(trust)
             clickTargetType = 'trust',
             clickName = trust.name,
             layoutStateName = layoutStateName,
-        },
+        }, 'trust', 0, 0.50),
     });
     perfMeter.EndDetail(queueTimer);
 end
@@ -713,8 +707,7 @@ function trustPlate.Render()
         return;
     end
 
-    local targetingSettings = targeting.GetSettings();
-    local range = tonumber(targetingSettings.enemyPlateRange) or 49.9;
+    local range = targeting.GetWorldPlateRange();
     local now = os.clock();
     local nearbyTrusts = nil;
     local scanTimer = perfMeter.BeginDetail('trust.scan');

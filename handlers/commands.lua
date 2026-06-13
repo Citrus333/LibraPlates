@@ -1011,6 +1011,8 @@ function commands.Handle(e)
         local jobSettings = state.GetWidgetSettings('PC', layoutStateName, 'Job', jobDefaults);
         local levelSettings = state.GetWidgetSettings('PC', layoutStateName, 'Level', levelDefaults);
         local debug = entities.GetEntityDebugInfo(found.index, targeting.GetSettings().enemyPlateRange);
+        local entity = GetEntity(found.index);
+        local linkshellColor = tonumber(entity ~= nil and entity.LinkshellColor) or 0;
 
         log.Info(
             'PC debug target=' .. tostring(found.index) ..
@@ -1028,6 +1030,7 @@ function commands.Handle(e)
             ' tp=' .. tostring(found.tp) ..
             ' job=' .. tostring(found.mainJob) ..
             ' lvl=' .. tostring(found.mainJobLevel) ..
+            ' linkshellColor=0x' .. string.format('%06X', linkshellColor) ..
             ' jobEnabled=' .. tostring(jobSettings.enabled == true) ..
             ' jobXY=' .. tostring(jobSettings.offsetX) .. ',' .. tostring(jobSettings.offsetY) ..
             ' jobMode=' .. tostring(jobSettings.displayModeIndex) ..
@@ -1122,10 +1125,19 @@ function commands.Handle(e)
         return;
     end
 
-    if (subcommand == 'fishingdebug' or subcommand == 'gatheringdebug') then
+    if (subcommand == 'fishingdebug' or subcommand == 'gatheringdebug' or subcommand == 'gathering') then
+        local action = tostring(args[3] or 'status'):lower();
+
+        if (action == 'test' or action == 'show') then
+            targeting.ForceGatheringDisplay(args[4] or 'hatchet', tonumber(args[5]) or 8);
+            log.Info('Gathering test display: ' .. targeting.GetGatheringDebugStatus());
+            return;
+        end
+
         log.Info(
             'Fishing/gathering debug interact=' .. tostring(targeting.GetGatheringInteractStatus()) ..
             ' equip=' .. tostring(targeting.GetFishingEquipmentStatus()) ..
+            ' gather=' .. tostring(targeting.GetGatheringDebugStatus()) ..
             ' ' .. worldMarkerProbe.GetStatusText()
         );
         return;

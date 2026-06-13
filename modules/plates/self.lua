@@ -28,6 +28,7 @@ local adaptivePerformance = require('core.adaptive_performance');
 local aoeNameHighlight = require('core.aoe_name_highlight');
 local aoeRangeVisuals = require('core.aoe_range_visuals');
 local backgroundTextures = require('core.background_textures');
+local gathering = require('core.gathering');
 local barTextures = require('core.bar_textures');
 local barAnimations = require('core.bar_animations');
 local entities = require('core.entities');
@@ -122,7 +123,7 @@ local function BuildWorldCacheSignature(plateData, center, stateName, targetStat
     }, '\n');
 end
 
-local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, castPercent, castText, stateName, targetStateName, layoutStateName, nameStyleKey)
+local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, castPercent, castText, stateName, targetStateName, layoutStateName, nameStyleKey, gatheringSignature)
     return table.concat({
         'index=' .. tostring(center ~= nil and center.index or ''),
         'server=' .. tostring(center ~= nil and center.serverId or ''),
@@ -136,6 +137,7 @@ local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, c
         'target=' .. tostring(targetStateName or ''),
         'layout=' .. tostring(layoutStateName or ''),
         'nameStyle=' .. tostring(nameStyleKey or ''),
+        'gathering=' .. tostring(gatheringSignature or 'none'),
     }, '\n');
 end
 
@@ -153,7 +155,7 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
         isSelf = true,
         stateName = targetStateName,
         clickTargetType = 'self',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = true,
@@ -161,9 +163,6 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = (tonumber(center.status) == 85) and (0.72 - mountedPlateLift) or 0.72,
-            plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
-            plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
-            plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
             plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
@@ -173,7 +172,7 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
             clickTargetType = 'self',
             clickName = center.name,
             layoutStateName = layoutStateName,
-        },
+        }, 'self', 0, (tonumber(center.status) == 85) and (0.72 - mountedPlateLift) or 0.72),
     });
 end
 
@@ -661,6 +660,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     end
 
     local linkshellTextureId = playerIndicators.GetLinkshellIconTextureId(center.index);
+    local linkshellTint = playerIndicators.GetLinkshellIconTint(center.index);
 
     if (linkshellIconSettings.enabled == true and linkshellTextureId ~= nil) then
         table.insert(icons, {
@@ -671,6 +671,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             offsetY = tonumber(linkshellIconSettings.offsetY) or -54,
             anchorTo = linkshellIconSettings.anchorTo,
             anchorPoint = linkshellIconSettings.anchorPoint,
+            tint = linkshellTint,
         });
     end
 
@@ -920,6 +921,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         fishing.ClearResult();
     end
 
+    gathering.AddWidget(plateData, globalSettings.gathering or globalDefaults.gathering);
+
     if (stateName == 'Crafting') then
         crafting.AddWidget(plateData, globalSettings.crafting);
     elseif (crafting.IsCraftingStatus(center.status) ~= true) then
@@ -996,7 +999,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             stateName,
             targetStateName,
             layoutStateName,
-            nameStyleKey
+            nameStyleKey,
+            targeting.GetGatheringDisplaySignature()
         );
 
         if (cachedWorldPlate ~= nil and cachedWorldPlate.signature == signature) then

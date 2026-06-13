@@ -2,21 +2,9 @@
 
 This file is for shared testing notes between Lila, her husband, and Codex.
 
-### Quick Priority (latest)
+## Reference
 
-- Start here first:
-  - Clean action queue logging format and remove duplicate spam before any logic changes.
-  - Keep `/st` range queue/packet parsing disabled until stability checks are green.
-  - Only next: rework action-range parsing (if still needed).
-
-## Current Good Restore Point
-
-`C:\catseyexi\catseyexi-client\Ashita\addons\LibraPlates\_rollback_safety_20260526-141407-perfect-engaged-overlay`
-
-Marked good after the engaged enemy overlay was tested as perfect.
-
-## Rules While Testing
-
+- Good restore point: `C:\catseyexi\catseyexi-client\Ashita\addons\LibraPlates\_rollback_safety_20260526-141407-perfect-engaged-overlay`.
 - Do not broad rollback.
 - Do not copy a whole old addon over the current one.
 - Keep code changes small.
@@ -24,34 +12,166 @@ Marked good after the engaged enemy overlay was tested as perfect.
 - Do not mutate `C:\catseyexi\catseyexi-client\Ashita\config\addons\LibraPlates\rebuild_profile.lua` unless Lila explicitly approves it.
 - If two people are testing, only one person should edit addon code at a time.
 
-## User Notes
-- replace native mouse
-- Performance bug report: while staying in the same area, lag feels like it gets worse over time, as if some bucket/state/cache is filling. Treat as possible accumulation/leak behavior rather than broad performance tuning; investigate only after the current Al'Taieu fish visibility issue is settled or if Lila explicitly shifts focus.
-- Runtime lag diagnostic: latest perf sample after reset showed total avg about `8.05ms`, plates avg about `7.88ms`, and PC plates dominated at about `5.15ms avg` while NPC/Object was about `1.31ms`. Earlier sample before reset was total about `4.18ms` with PC about `1.53ms`. Investigate PC plate path/caching first if lag remains bad.
-- DirectX wrapper clue: husband reports Atom0s DX9 wrapper z-fighting fix greatly reduces LibraPlates lag, but makes Ashita addons click-through. Treat this as a possible D3D depth/render-state interaction, not a recommended user workaround.
-  - Claim state color settings follow-up: add outline color controls for each Enemy claim state (Unclaimed, Claimed, Claimed by others, Call for help), so font color and outline can be tuned separately.
-- Release packaging cleanup: do not ship old debug depth probe plugins (`LibraDepthProbe` / `LibraDepthProbestatus`) with the release package. They are not needed for normal LibraPlates use and are confusing/risky if users load them accidentally.
-- Accessibility/testing workflow: use `/lp lag` as the short one-command lag diagnostic. It starts auto diagnostics with default 15s phases and writes logs under `TEMP WORK FOLDER\test-logs` so Lila only needs to type one command and then say "done".
+## To DO
+
+### Priority
+
+- Clean action queue logging format and remove duplicate spam before any logic changes.
+- Keep `/st` range queue/packet parsing disabled until stability checks are green.
+- Only next: rework action-range parsing if still needed.
+
+### General / Settings
+
+- Replace native mouse.
+- Game mode is not reading properly.
+- Warning screen color scheme is still red.
+- Some widget-list names are blue.
+- Settings reset bug: resetting widget settings/position does not appear to reset anchor settings (`anchorTo` / `anchorPoint`).
+- Disable nameplate click-through when clicking game UI such as action bars, chat windows, or menus.
+- Release packaging cleanup: do not ship old debug depth probe plugins (`LibraDepthProbe` / `LibraDepthProbestatus`) with the release package.
+
+### Enemy
+
+- Add Enemy cast bar settings.
+- Cast bar bug: when a spell cast is interrupted, the cast bar restarts instead of stopping/clearing.
+- Enemy preview needs long/short name examples.
+- Enemy level/difficulty follow-up: decide what level text/color should show for mobs that are effectively impossible to gauge normally.
+- Claim state color settings follow-up: add outline color controls for each Enemy claim state.
+- Enmity is currently in Enemy; find a better spot, possibly profile-dependent for Enemy vs Self.
+- Move aggro.
+- Blue magic is missing casting icons and is not showing AOE.
+
+### NPC / Object
+
+- NPC needs target/subtarget highlight settings; check whether Subtarget has range colors.
+- NPC/Object data direction: future zone-scoped loading should wait until data has full zone coverage, then load by zone on zone change with exact-name lookup and cached results.
+- Add a setting for `???`/search objects to show or hide names.
+- Fishing/gathering interaction needs field testing and a decision on Clamming Point, Fish Trap, and other fishing-related objects.
+
+### PC / Player
+
+- Level sync icon is missing, and player HP/MP values are not updating after sync/resync.
+- Peer level should be color-correct to level.
+
+### Self
+
+- Move Resting out of the dropdown to its own setting and check the timer bug.
 - Self Quick Menu idea: add party invite actions/state, including accepting an invite and showing/handling invite pending.
-- Debuff timers need a dedicated cleanup/test pass after Buffs: match the finished Buff timer behavior and UI style where it makes sense, verify live PC/Self debuff detection, timer sorting, warning stages, icon pack discovery, icon background/border, timer text sizing, and reset-confirm safety.
-- Mounted buff follow-up: the mounted status/buff with timer appears during zoning but then disappears afterward. Check whether the buff/timer is being dropped after zone transition and make sure mounted can stay visible with its timer when appropriate.
-- Bar text values note: HP / MP / TP bars should have a free-form text option in settings/preview so value display formats can be checked without relying on live data.
-- Trust status icons follow-up: decide whether Trust debuffs should remain supported/shown, or whether Trust plates should only show Trust buffs.
-- Enemy Peer / MobDB icon follow-up: check whether any MobDB-style enemy info icons are still missing, such as NM-related indicators or other special mob flags, and confirm which of those should be exposed in Peer or plate widgets.
-- Enemy level/difficulty follow-up: decide what level text/color should show for mobs that are effectively impossible to gauge normally, so the plate does not imply false precision.
-- NPC/Object data direction: curated always-on NPC/Object lists are wired and working, and Lila is still editing the list/icons. Keep the curated lists (`catseye_npc_icons.lua`, `catseye_item_icons.lua`, `npc_icons.lua`, `item_icons.lua`) for special icons/types. Remaining future work is zone-scoped loading, but that should wait until the data has full zone coverage; then load by zone on zone change with exact-name lookup and cached results instead of scanning all entries every frame.
-- ??? object spoiler setting: add a setting for `???`/search objects to show or hide their names, so LibraPlates can avoid spoiling hidden-object searching when desired.
-- Disable nameplate click-through: add a way to prevent LibraPlates/nameplate click targeting when clicking through/behind game UI such as action bars, chat windows, or menus, so UI clicks do not accidentally target a plate behind them.
-- Lock-on icon anchoring/scoping note: first pass should be reviewed carefully before treating as done. User wants the lock icon when locked on an enemy, with settings in the Enemy plate. Because Target Module settings/rendering are shared, keep future cleanup focused on Enemy-only scope unless Lila explicitly approves broader entity behavior. Also review anchoring so the lock icon can be positioned relative to the target marker/arrow/name without clipping or drifting.
-- Fishing/gathering interaction first pass implemented under Fishing settings: right-click with a fishing rod equipped in the ranged slot queues `/fish` when the click does not hit a LibraPlates plate. Right-clicking known gathering object plates can target the object and use the matching tool. Current mappings are Mining Point -> Pickaxe, Excavation Point -> Pickaxe, Logging Point -> Hatchet, and Harvest/Harvesting Point -> Sickle. Per-action right-click toggles now exist for fishing, mining, harvesting, logging, and excavation. Still need field testing and a decision on Clamming Point, Fish Trap, and other fishing-related objects.
 - DoH/DoL activity idea: add a ring timer for the cooldown before the player can fish, craft, or gather again.
-- Target/Subtarget module settings seem to be Enemy settings applying to all entity types. Need separate scoping or proper per-entity behavior.
-- Target/Subtarget module ownership is not resolved. Do not remove Target/Subtarget from the Modules tab without Lila explicitly approving that direction. Need decide later how Plates > entity > state and Modules tab should coexist without feeling duplicated or confusing.
-- Settings reset bug: resetting widget settings/position does not appear to reset anchor settings (`anchorTo` / `anchorPoint`). Confirm and include anchors in the relevant reset paths.
-- Debuff growth direction follow-up: Buff growth direction was live-tested, but Debuff growth direction should still be tested in-game when practical to confirm the shared mirrored status-icon path behaves correctly for debuffs too.
 
-## Done List
+### Pet / Trust
 
+- Remove BST chat spam.
+- Trust status icons follow-up: decide whether Trust debuffs should remain supported/shown, or whether Trust plates should only show Trust buffs.
+
+### Buffs / Debuffs
+
+- Make buff filtering input smarter for time values, possibly a two-digit field plus S/M/H selectors.
+- Debuff timers need a dedicated cleanup/test pass after Buffs.
+- Debuff growth direction should still be tested in-game.
+- Mounted buff timer appears during zoning but disappears afterward.
+- GEO and maybe other auras have `0` duration, which triggers buff time color warnings.
+
+### Bars / Text / Preview
+
+- Check all previews, especially text and growth direction display values such as HP vs `1200/2000`.
+- HP / MP / TP bars should have a free-form text option in settings/preview so value display formats can be checked without relying on live data.
+- Set TP bar color when TP is full.
+- HP bar color/alpha when out of range.
+
+### Targeting / Tactical
+
+- Copy target/subtarget module is not working.
+- Distance meter should only show on Target/Subtarget.
+- Range arrow color only works out of combat.
+- AOE range/highlight visuals should only trigger from the player's own AOE actions/casts, and should not false-trigger on queued single-target heals.
+- Target/Subtarget module settings seem to be Enemy settings applying to all entity types.
+- Target/Subtarget module ownership is not resolved. Do not remove Target/Subtarget from the Modules tab without Lila explicitly approving that direction.
+- Lock-on icon anchoring/scoping needs review; keep future cleanup focused on Enemy-only scope unless Lila approves broader entity behavior.
+
+### Profiles
+
+- Continue profile work.
+
+### Quick Menu / Mog House
+
+- Quick Menu needs size settings or flexible sizing depending on visible selections.
+- Mog House should have a different Quick Menu on the Moogle with handy actions such as job change.
+
+### Peer
+
+- Enemy Peer / MobDB icon follow-up: check whether any MobDB-style enemy info icons are still missing.
+- Peer follow-up: consider whether Peer should also support Objects, not only Self / PC / Enemy.
+
+### Performance / Debug
+
+- Performance bug report: lag feels like it gets worse over time while staying in the same area; investigate as possible accumulation/leak behavior.
+- Runtime lag diagnostic: PC plates dominated latest sample; investigate PC plate path/caching first if lag remains bad.
+- DirectX wrapper clue: Atom0s DX9 wrapper z-fighting fix greatly reduces LibraPlates lag, but makes Ashita addons click-through.
+- Accessibility/testing workflow: use `/lp lag` as the short one-command lag diagnostic.
+- FPS mode setting follow-up: direct FPS divisor memory write caused an Ashita crash when it was attempted during load, so FPS mode must only be applied from an explicit user action.
+- FPS mode UI now gives a short chat confirmation when the saved FPS setting is changed, and Check only updates the Current mode text without changing the selected setting.
+- Performance settings follow-up: wire `World plate update rate` and `Disable expensive widgets on world plates` to actual world-only throttling/preset behavior after in-game testing confirms the new Performance page layout.
+
+## Done
+
+- 2026-06-13 - Performance settings page added:
+  - Settings now has a dedicated Performance page after Scaling.
+  - Performance monitor can be shown/hidden from settings and now has a compact overlay mode plus optional detailed timing.
+  - Performance page now starts with user-facing presets: Performance, Mid, High, Ultra, and Custom.
+  - Performance page now includes a game FPS mode selector for `Keep current`, `FPS1 (60 FPS)`, and `FPS2 (30 FPS)`; when set, LibraPlates applies the FPS divisor on load without needing the separate fps addon.
+  - Non-Custom performance presets apply the grouped world plate count, distance limit, update rate, adaptive mode, expensive-widget, and texture-cache settings; Custom reveals the individual controls.
+  - World plate performance controls were added for max world plate count, update rate, distant world plate hiding, expensive world widget preset, and texture cache limit.
+  - Max world plate count is wired at draw time with priority for Self, target, subtarget, and tactical plates before nearby world plates.
+  - Hide distant world plates is wired into PC, Trust, Enemy, and NPC/Object world scans through an effective world plate range.
+  - Texture cache limit is wired to the canvas texture cache and trims the cache when lowered.
+  - Performance monitor now opens as a draggable ImGui window with a title-bar close button instead of a fixed foreground text block.
+  - Texture cache display now shows current eviction pressure as `Evictions/min`; lifetime total evictions are only shown in detailed performance monitor mode.
+  - Detailed performance monitor timing rows now use a sortable table; clicking Name, Avg, Peak, or Last changes the sort column and clicking again flips direction.
+- 2026-06-13 - Scaling settings wired per entity:
+  - Settings > Scaling per-entity distance scale rows now feed live Self, PC, Trust, Enemy, NPC, Object, and Pet plate queues instead of every live plate using the global PC distance scale.
+  - Global plate position plus per-entity plate position rows now apply to live world marker offsets with small one-step nudges.
+  - Global distance scaling now asks before applying to all entity distance rows, because applying global values overwrites individual entity distance scaling.
+  - Entity distance rows are hidden behind `Custom entity distance scaling`; when custom mode is off, live plates use the global distance scaling values.
+  - Scaling entity sections use the normal yellow section header style and order entity rows by practical importance: PC, Enemy, Trust, Pet, NPC, Object.
+  - Scaling sliders now use compact label-first rows with `-`/`+` buttons, shorter bars, and value text drawn inside the bar; distance values use dot decimals.
+  - Entity plate position rows are condensed to one line per entity: label plus X and Y controls on the same row.
+- 2026-06-13 - Linkshell icon color restored:
+  - Player and Self linkshell icons now read the live entity `LinkshellColor`, unpack it as BGR, expand XI-style low shell color channels, and pass that tint into canvas icon rendering using the old-addon linkshell mask behavior.
+  - PC plate caching now includes the linkshell tint so color changes redraw instead of reusing an old white icon.
+  - Plate render policy version was bumped so already-rendered dark linkshell plate textures are forced to refresh after reload.
+  - Linkshell icon tint is brightened only for the linkshell icon render path because the gray shell PNG is multiplied by the tint in the render-target pipeline.
+  - Linkshell mask is kept at 64x64 from the old addon so it stays smooth without adding unnecessary texture size.
+- 2026-06-13 - Profile visibility and auto-switch cleanup:
+  - Settings now always shows the current profile in a compact top row, with direct profile switching available from any Settings/Plates/Modules view.
+  - Confirmed profile auto-switch support already exists for main job plus sub job, including `Any` subjob matching any or no subjob.
+- 2026-06-13 - Item icon data sorted by zone:
+  - Reorganized `data/item_icons.lua` so single-zone object entries are grouped under their zone headers, making zone cleanup easier.
+  - Verified the file still loads with 615 entries and no duplicate top-level keys.
+- 2026-06-13 - Door object item icon cleanup:
+  - Updated Door-like entries in `data/item_icons.lua` so generic generated `type = 'Object'` labels become readable door/shop labels derived from the key.
+  - Updated those Door-like entries to use `Door.png`; verified no Door entry remains with generic Object type.
+- 2026-06-13 - NPC/Object Quick Menu right-click restored:
+  - Fixed right-click flow so NPC and icon NPC plates can open Quick Menu again.
+  - Object gathering/tool right-click still runs first for known gathering points, then falls through to Quick Menu when it is not a gathering action.
+  - Corrected gathering right-click scope: it is only for known gathering Object nodes, not NPC plates.
+- 2026-06-13 - Reload crash guard for NPC/Object icons:
+  - Cleared shared texture caches, NPC/Object icon texture ids, and Quick Menu icon caches on addon load/unload.
+  - NPC/Object icon loading now fails closed to no icon if a texture load fails, instead of reusing bad/stale texture ids after reload.
+- 2026-06-13 - NPC/Object icon merged data promoted:
+  - Validated and promoted `tools/item_icons_merged.lua` into `data/item_icons.lua`.
+  - Validated and promoted `tools/npc_icons_merged.lua` into `data/npc_icons.lua`.
+  - Fixed generated Lua table issues before promotion: bad quote escaping, misplaced NPC table return, duplicate keys, and one blank Logging Point type.
+- 2026-06-13 - BST pet Distance removed:
+  - Pet (BST) Charmed Pet and Jug Pet settings no longer list Distance.
+  - Live BST pet plates and BST pet settings preview no longer build a Distance badge.
+- 2026-06-13 - Pet (DRG) settings preview crash fixed:
+  - Clicking Pet (DRG)/Wyvern settings no longer crashes the config renderer from missing preview icon fallback locals.
+- 2026-06-13 - Distance/range badges limited to targeted plates:
+  - PC, Enemy, NPC/Object, BST pet, Wyvern, and Automaton distance badges now render only when the entity is the current Target or Subtarget.
+  - Target/subtarget marker distance behavior still receives live distance internally, but normal world plates no longer build visible distance text for every entity at once.
+  - Settings now present the widget as `Distance (/t -/st)` with target/subtarget-only tooltip text, while preserving the existing saved `Distance` profile keys.
+  - Enemy and PC World widget lists no longer show Distance; their target/subtarget distance settings live under Tactical. Settings preview now only shows the distance badge while editing Distance.
 - 2026-06-12 - Mog House job-change backend first pass completed:
   - LibraPlates now has an internal job-change backend modeled after Windower `JobChange`.
   - It can queue direct `0x100` main/sub job packets while near a valid job-change Moogle, with a `0x01A` poke for Nomad/Pilgrim Moogles.
@@ -291,7 +411,6 @@ Add new notes below. Newest notes can go at the top.
 - User backlog: Quick menu needs size settings or flexible sizing depending on visible selections.
 - User backlog: Keep the current profile always visible in settings, possibly with a top bar.
 - User backlog: Add enemy cast bar settings.
-- User backlog: Linkshell color is wrong; compare against old addon where it worked.
 - User backlog: Make buff filtering input smarter for time values, possibly a 2-digit field plus S/M/H radio buttons.
 - User backlog: Enmity is currently in Enemy; find a better place, possibly profile-dependent for Enemy vs Self.
 - User backlog: Remove BST chat spam.
@@ -310,10 +429,11 @@ Add new notes below. Newest notes can go at the top.
   - Non-Ru'Lude `Nomad Moogle` locations now use the same job-change preset behavior.
   - `Ru'Lude Gardens` `Nomad Moogle` keeps its special quest/info identity instead of using the generic preset menu.
   - Backend `/lp jobchange ...` support remains valid for Mog House / Nomad / Pilgrim job-change paths.
+  - Follow-up idea: add Lockstyle access/action into the Moogle job-change / preset flow.
 - User backlog: Profile auto-switch by main job and subjob, with subjob `Any` including no subjob.
 - User backlog: Set TP bar color when TP is full.
 - User backlog: HP bar color/alpha when out of range.
-- User backlog: Scaling settings cannot be set individually; changing one moves all.
+- User backlog: Peer level should be color-correct to level.
 - User backlog: Check Conquest War and Union Conquest War naming/colors; CW and UCW have orange names.
 - User backlog: Husband reports `[C]` subtarget causes stutter.
 

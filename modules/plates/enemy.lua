@@ -1409,7 +1409,7 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
         isSelf = false,
         stateName = stateName,
         clickTargetType = 'enemy',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = importantAlwaysOnTop,
@@ -1418,9 +1418,6 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
             plateWorldWidth = cached.plateWorldWidth,
             plateWorldHeight = cached.plateWorldHeight,
             plateWorldOffsetY = enemyWorldOffsetY,
-            plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
-            plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
-            plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
@@ -1429,7 +1426,7 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
             hideWhenProjectedBelowViewport = importantAlwaysOnTop ~= true and IsAlTaieuFish(enemy.name) == true,
             belowViewportHideMargin = 96,
             belowPlayerViewHideDelta = 1.50,
-        },
+        }, 'enemy', 0, enemyWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 
@@ -1460,6 +1457,7 @@ local function BuildEnemyQueueContext(enemy)
     local hpPercent = ClampPercent(enemy.hpPercent, 100);
     local hpColor = hpBarSettings.color or { 0.90, 0.20, 0.20, 1.0 };
     local isTacticalTarget = stateName ~= 'Idle';
+    local showDistanceBadge = stateName == 'Target' or stateName == 'Subtarget';
     local isHovered = worldMarkerProbe.IsPlateHovered(enemy.index, 'enemy') == true;
     local importantAlwaysOnTop =
         isTacticalTarget == true or
@@ -1492,7 +1490,7 @@ local function BuildEnemyQueueContext(enemy)
         or {};
     local distanceText = nil;
 
-    if (hasActiveDetail == true and distanceSettings ~= nil and distanceSettings.enabled == true and enemy.distance ~= nil) then
+    if (showDistanceBadge == true and distanceSettings ~= nil and distanceSettings.enabled == true and enemy.distance ~= nil) then
         distanceText = tostring(distanceSettings.prefix or '') .. string.format('%.1f', tonumber(enemy.distance) or 0);
     end
 
@@ -1521,6 +1519,7 @@ local function BuildEnemyQueueContext(enemy)
         hpPercent = hpPercent,
         hpColor = hpColor,
         isTacticalTarget = isTacticalTarget,
+        showDistanceBadge = showDistanceBadge,
         isHovered = isHovered,
         importantAlwaysOnTop = importantAlwaysOnTop,
         hasActiveDetail = hasActiveDetail,
@@ -1646,7 +1645,7 @@ local function BuildEnemyPlateData(context)
     AddJobToPlate(plateData, context.jobText, context.jobSettings, context.globalSettings);
     AddLevelToPlate(plateData, context.levelText, context.levelSettings, context.mobInfo, context.globalSettings);
     AddIdToPlate(plateData, enemy, context.idSettings, context.mobInfo, context.globalSettings);
-    if (context.hasActiveDetail == true) then
+    if (context.showDistanceBadge == true) then
         AddDistanceToPlate(plateData, enemy, context.distanceSettings, context.globalSettings);
     end
     return plateData;
@@ -1803,7 +1802,7 @@ local function QueueEnemy(enemy)
         isSelf = false,
         stateName = context.stateName,
         clickTargetType = 'enemy',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = context.importantAlwaysOnTop,
@@ -1812,9 +1811,6 @@ local function QueueEnemy(enemy)
             plateWorldWidth = 2.35 * plateScale,
             plateWorldHeight = 1.18 * plateScale,
             plateWorldOffsetY = enemyWorldOffsetY,
-            plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
-            plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
-            plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
@@ -1823,7 +1819,7 @@ local function QueueEnemy(enemy)
             hideWhenProjectedBelowViewport = context.importantAlwaysOnTop ~= true and IsAlTaieuFish(enemy.name) == true,
             belowViewportHideMargin = 96,
             belowPlayerViewHideDelta = 1.50,
-        },
+        }, 'enemy', 0, enemyWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 end
@@ -1930,7 +1926,7 @@ function enemyPlate.Render(importantOnly)
     end
 
     local scanTimer = perfMeter.BeginDetail('enemy.scan');
-    local enemies = entities.GetNearbyEnemies(targetingSettings.enemyPlateRange);
+    local enemies = entities.GetNearbyEnemies(targeting.GetWorldPlateRange());
     perfMeter.EndDetail(scanTimer);
 
     for _, enemy in ipairs(enemies) do

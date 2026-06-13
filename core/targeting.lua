@@ -3,7 +3,12 @@ local bit = require('bit');
 local state = require('core.state');
 local globalDefaults = require('config.global');
 local pendingGatheringCommand = nil;
+local pendingGatheringWatch = nil;
 local lastGatheringInteractStatus = 'none';
+local lastGatheringDisplay = nil;
+local lastGatheringDisplayUntil = 0;
+local gatheringToolCounts = nil;
+local lastGatheringToolPoll = 0;
 local lastFishCommandTime = 0;
 local suppressFishRightMouse = false;
 
@@ -90,6 +95,10 @@ local function GetTargetingSettings()
         global.targeting.pcDistanceScaleMax = 2.65;
     end
 
+    if (global.targeting.customEntityDistanceScaling == nil) then
+        global.targeting.customEntityDistanceScaling = false;
+    end
+
     if (global.targeting.globalPlateOffsetX == nil) then
         global.targeting.globalPlateOffsetX = 0;
     end
@@ -166,6 +175,46 @@ local function GetTargetingSettings()
         global.targeting.performanceSafetySkipPeer = false;
     end
 
+    if (global.targeting.performanceMode == nil) then
+        global.targeting.performanceMode = 'Auto';
+    end
+
+    if (global.targeting.performancePreset == nil) then
+        global.targeting.performancePreset = 'Custom';
+    end
+
+    if (global.targeting.gameFpsMode == nil) then
+        global.targeting.gameFpsMode = 'Keep current';
+    end
+
+    if (global.targeting.performanceMonitorCompact == nil) then
+        global.targeting.performanceMonitorCompact = true;
+    end
+
+    if (global.targeting.maxWorldPlateCount == nil) then
+        global.targeting.maxWorldPlateCount = 0;
+    end
+
+    if (global.targeting.worldPlateUpdateRate == nil) then
+        global.targeting.worldPlateUpdateRate = 'Full';
+    end
+
+    if (global.targeting.hideDistantWorldPlates == nil) then
+        global.targeting.hideDistantWorldPlates = false;
+    end
+
+    if (global.targeting.worldPlateDistanceLimit == nil) then
+        global.targeting.worldPlateDistanceLimit = 49.9;
+    end
+
+    if (global.targeting.disableExpensiveWorldWidgets == nil) then
+        global.targeting.disableExpensiveWorldWidgets = false;
+    end
+
+    if (global.targeting.textureCacheLimit == nil) then
+        global.targeting.textureCacheLimit = 96;
+    end
+
     global.targeting.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(global.targeting.rightClickAttackRange) or 4.5));
     global.targeting.enemyPlateRange = math.max(5.0, math.min(64.4, tonumber(global.targeting.enemyPlateRange) or 49.9));
     global.targeting.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(global.targeting.enemyActiveDetailRange) or 25.0));
@@ -175,6 +224,7 @@ local function GetTargetingSettings()
         global.targeting.pcDistanceScaleEnd = math.min(40.0, global.targeting.pcDistanceScaleStart + 1.0);
     end
     global.targeting.pcDistanceScaleMax = math.max(1.0, math.min(6.0, tonumber(global.targeting.pcDistanceScaleMax) or 2.65));
+    global.targeting.customEntityDistanceScaling = global.targeting.customEntityDistanceScaling == true;
     global.targeting.globalPlateOffsetX = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.globalPlateOffsetX) or 0) + 0.5)));
     global.targeting.globalPlateOffsetY = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.globalPlateOffsetY) or 0) + 0.5)));
     for _, entityName in ipairs({ 'self', 'pc', 'trust', 'enemy', 'npc', 'object', 'pet' }) do
@@ -198,17 +248,134 @@ local function GetTargetingSettings()
     global.targeting.blockPlateClicksWhenImguiCapturesMouse = global.targeting.blockPlateClicksWhenImguiCapturesMouse == true;
     global.targeting.plateClickNoGoZonesEnabled = global.targeting.plateClickNoGoZonesEnabled == true;
     global.targeting.plateClickNoGoZonesVisible = global.targeting.plateClickNoGoZonesVisible == true;
-    global.targeting.performanceSafetyMode = false;
+    global.targeting.performanceSafetyMode = global.targeting.performanceSafetyMode == true;
     global.targeting.performanceSafetyCombatOnly = global.targeting.performanceSafetyCombatOnly ~= false;
-    global.targeting.performanceSafetySkipPc = false;
-    global.targeting.performanceSafetySkipTrust = false;
-    global.targeting.performanceSafetySkipNpc = false;
-    global.targeting.performanceSafetySkipPet = false;
-    global.targeting.performanceSafetyImportantEnemiesOnly = false;
-    global.targeting.performanceSafetySkipPeer = false;
+    global.targeting.performanceSafetySkipPc = global.targeting.performanceSafetySkipPc == true;
+    global.targeting.performanceSafetySkipTrust = global.targeting.performanceSafetySkipTrust == true;
+    global.targeting.performanceSafetySkipNpc = global.targeting.performanceSafetySkipNpc == true;
+    global.targeting.performanceSafetySkipPet = global.targeting.performanceSafetySkipPet == true;
+    global.targeting.performanceSafetyImportantEnemiesOnly = global.targeting.performanceSafetyImportantEnemiesOnly == true;
+    global.targeting.performanceSafetySkipPeer = global.targeting.performanceSafetySkipPeer == true;
+    local performancePreset = tostring(global.targeting.performancePreset or 'Custom');
+    if (
+        performancePreset ~= 'Performance' and
+        performancePreset ~= 'Mid' and
+        performancePreset ~= 'High' and
+        performancePreset ~= 'Ultra' and
+        performancePreset ~= 'Custom'
+    ) then
+        performancePreset = 'Custom';
+    end
+    global.targeting.performancePreset = performancePreset;
+    local gameFpsMode = tostring(global.targeting.gameFpsMode or 'Keep current');
+    if (
+        gameFpsMode ~= 'Keep current' and
+        gameFpsMode ~= 'Do not change' and
+        gameFpsMode ~= 'FPS1 (60 FPS)' and
+        gameFpsMode ~= 'FPS2 (30 FPS)'
+    ) then
+        if (gameFpsMode == 'FPS1' or gameFpsMode == '1') then
+            gameFpsMode = 'FPS1 (60 FPS)';
+        elseif (gameFpsMode == 'FPS2' or gameFpsMode == '2') then
+            gameFpsMode = 'FPS2 (30 FPS)';
+        else
+            gameFpsMode = 'Keep current';
+        end
+    end
+    if (gameFpsMode == 'Do not change') then
+        gameFpsMode = 'Keep current';
+    end
+    global.targeting.gameFpsMode = gameFpsMode;
+    global.targeting.performanceMonitorCompact = global.targeting.performanceMonitorCompact ~= false;
+    global.targeting.maxWorldPlateCount = math.max(0, math.min(300, math.floor((tonumber(global.targeting.maxWorldPlateCount) or 0) + 0.5)));
+    local updateRate = tostring(global.targeting.worldPlateUpdateRate or 'Full');
+    if (updateRate ~= 'Full' and updateRate ~= 'Balanced' and updateRate ~= 'Low') then
+        updateRate = 'Full';
+    end
+    global.targeting.worldPlateUpdateRate = updateRate;
+    global.targeting.hideDistantWorldPlates = global.targeting.hideDistantWorldPlates == true;
+    global.targeting.worldPlateDistanceLimit = math.max(5.0, math.min(64.4, tonumber(global.targeting.worldPlateDistanceLimit) or 49.9));
+    global.targeting.disableExpensiveWorldWidgets = global.targeting.disableExpensiveWorldWidgets == true;
+    global.targeting.textureCacheLimit = math.max(32, math.min(256, math.floor((tonumber(global.targeting.textureCacheLimit) or 96) + 0.5)));
     NormalizePlateClickNoGoZones(global.targeting);
 
     return global.targeting;
+end
+
+function targeting.GetWorldPlateRange()
+    local settings = targeting.GetSettings();
+    local range = tonumber(settings.enemyPlateRange) or 49.9;
+
+    if (settings.hideDistantWorldPlates == true) then
+        range = math.min(range, tonumber(settings.worldPlateDistanceLimit) or range);
+    end
+
+    return math.max(5.0, math.min(64.4, range));
+end
+
+function targeting.GetPlateDistanceScaleSettings(entityName)
+    local settings = targeting.GetSettings();
+
+    if (settings.customEntityDistanceScaling ~= true) then
+        return {
+            start = tonumber(settings.pcDistanceScaleStart) or 2.0,
+            finish = tonumber(settings.pcDistanceScaleEnd) or 8.0,
+            max = tonumber(settings.pcDistanceScaleMax) or 2.65,
+        };
+    end
+
+    local key = tostring(entityName or ''):lower();
+    local scale = type(settings.plateDistanceScales) == 'table' and settings.plateDistanceScales[key] or nil;
+
+    if (type(scale) ~= 'table') then
+        scale = {};
+    end
+
+    local start = math.max(0.0, math.min(20.0, tonumber(scale.start) or tonumber(settings.pcDistanceScaleStart) or 2.0));
+    local finish = math.max(1.0, math.min(40.0, tonumber(scale.finish) or tonumber(settings.pcDistanceScaleEnd) or 8.0));
+
+    if (finish <= start) then
+        finish = math.min(40.0, start + 1.0);
+    end
+
+    return {
+        start = start,
+        finish = finish,
+        max = math.max(1.0, math.min(6.0, tonumber(scale.max) or tonumber(settings.pcDistanceScaleMax) or 2.65)),
+    };
+end
+
+function targeting.GetPlatePositionOffset(entityName)
+    local settings = targeting.GetSettings();
+    local key = tostring(entityName or ''):lower();
+    local offsets = type(settings.platePositionOffsets) == 'table' and settings.platePositionOffsets[key] or nil;
+
+    if (type(offsets) ~= 'table') then
+        offsets = {};
+    end
+
+    return {
+        x = (tonumber(settings.globalPlateOffsetX) or 0) + (tonumber(offsets.x) or 0),
+        y = (tonumber(settings.globalPlateOffsetY) or 0) + (tonumber(offsets.y) or 0),
+    };
+end
+
+function targeting.ApplyPlateScalingSettings(worldMarker, entityName, baseOffsetX, baseOffsetY)
+    if (type(worldMarker) ~= 'table') then
+        return worldMarker;
+    end
+
+    local scale = targeting.GetPlateDistanceScaleSettings(entityName);
+    local offset = targeting.GetPlatePositionOffset(entityName);
+    local offsetUnit = 0.01;
+
+    worldMarker.plateWorldOffsetX = (tonumber(baseOffsetX) or tonumber(worldMarker.plateWorldOffsetX) or 0) + ((tonumber(offset.x) or 0) * offsetUnit);
+    worldMarker.plateWorldOffsetY = (tonumber(baseOffsetY) or tonumber(worldMarker.plateWorldOffsetY) or 0.78) + ((tonumber(offset.y) or 0) * offsetUnit);
+    worldMarker.plateDistanceScaleStart = scale.start;
+    worldMarker.plateDistanceScaleEnd = scale.finish;
+    worldMarker.plateDistanceScaleMax = scale.max;
+
+    return worldMarker;
 end
 
 local function GetTargetManager()
@@ -616,6 +783,24 @@ local function NormalizeObjectName(name)
     return tostring(name or ''):gsub(string.char(0x1E) .. '.', ''):gsub('[%z\1-\31]', ''):gsub('^%s+', ''):gsub('%s+$', '');
 end
 
+local function GetGatheringAction(name)
+    return gatheringActions[NormalizeObjectName(name)];
+end
+
+local function GetGatheringToolIconFile(toolName)
+    local normalized = NormalizeObjectName(toolName);
+
+    if (normalized == 'Hatchet') then
+        return 'hatchet.png';
+    end
+
+    if (normalized == 'Sickle') then
+        return 'sickle.png';
+    end
+
+    return 'pickaxe.png';
+end
+
 local function GetResourceItemName(itemId)
     local resource = nil;
 
@@ -657,6 +842,9 @@ end
 local function HasInventoryItem(itemName)
     local inventory = AshitaCore:GetMemoryManager():GetInventory();
     local wanted = NormalizeObjectName(itemName):lower();
+    local totalCount = 0;
+    local firstContainer = nil;
+    local firstIndex = nil;
 
     if (inventory == nil or wanted == '') then
         return false;
@@ -674,13 +862,89 @@ local function HasInventoryItem(itemName)
                 local name = NormalizeObjectName(GetResourceItemName(item.Id)):lower();
 
                 if (name == wanted) then
-                    return true, container, index, tonumber(item.Count) or 1;
+                    if (firstContainer == nil) then
+                        firstContainer = container;
+                        firstIndex = index;
+                    end
+
+                    totalCount = totalCount + (tonumber(item.Count) or 1);
                 end
             end
         end
     end
 
+    if (totalCount > 0) then
+        return true, firstContainer, firstIndex, totalCount;
+    end
+
     return false;
+end
+
+local function GetGatheringToolCount(toolName)
+    local _, _, _, count = HasInventoryItem(toolName);
+    return tonumber(count) or 0;
+end
+
+local function UpdateGatheringToolCounts()
+    local now = os.clock();
+
+    if ((now - lastGatheringToolPoll) < 0.35) then
+        return;
+    end
+
+    lastGatheringToolPoll = now;
+
+    local tools = { 'Hatchet', 'Sickle', 'Pickaxe' };
+
+    if (gatheringToolCounts == nil) then
+        gatheringToolCounts = {};
+
+        for _, toolName in ipairs(tools) do
+            gatheringToolCounts[toolName] = GetGatheringToolCount(toolName);
+        end
+
+        return;
+    end
+
+    for _, toolName in ipairs(tools) do
+        local previous = tonumber(gatheringToolCounts[toolName]) or 0;
+        local current = GetGatheringToolCount(toolName);
+        gatheringToolCounts[toolName] = current;
+
+        if (current < previous) then
+            lastGatheringDisplay = {
+                targetName = nil,
+                toolName = toolName,
+                iconFile = GetGatheringToolIconFile(toolName),
+                count = current,
+                hasTool = current > 0,
+            };
+            lastGatheringDisplayUntil = now + 8.0;
+            lastGatheringInteractStatus =
+                'tool count dropped ' ..
+                tostring(toolName) ..
+                ' ' .. tostring(previous) ..
+                ' -> ' .. tostring(current);
+        end
+    end
+end
+
+local function NormalizeGatheringToolName(toolName)
+    local value = NormalizeObjectName(toolName):lower();
+
+    if (value == 'hatchet' or value == 'log' or value == 'logging') then
+        return 'Hatchet';
+    end
+
+    if (value == 'sickle' or value == 'harvest' or value == 'harvesting') then
+        return 'Sickle';
+    end
+
+    if (value == 'pickaxe' or value == 'pick' or value == 'mine' or value == 'mining' or value == 'excavation') then
+        return 'Pickaxe';
+    end
+
+    return nil;
 end
 
 local function GetEquippedItemName(slot)
@@ -801,14 +1065,14 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
 
     local normalizedType = tostring(targetType or '');
 
-    if (normalizedType ~= 'object' and normalizedType ~= 'npc') then
+    if (normalizedType ~= 'object') then
         lastGatheringInteractStatus = 'ignored type=' .. normalizedType;
         return false;
     end
 
     local entity = GetEntity(targetIndex);
     local name = NormalizeObjectName(entity ~= nil and entity.Name or '');
-    local action = gatheringActions[name];
+    local action = GetGatheringAction(name);
 
     if (action == nil) then
         lastGatheringInteractStatus = 'no mapping name=' .. tostring(name) .. ' type=' .. normalizedType;
@@ -842,6 +1106,13 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
             targetIndex = targetIndex,
             name = name,
         };
+        pendingGatheringWatch = {
+            targetName = name,
+            toolName = action.tool,
+            iconFile = GetGatheringToolIconFile(action.tool),
+            previousCount = tonumber(count) or 0,
+            started = os.clock(),
+        };
         lastGatheringInteractStatus =
             'queued ' .. action.command ..
             ' name=' .. name ..
@@ -857,7 +1128,129 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
     return selected == true;
 end
 
+function targeting.IsGatheringPointName(name)
+    return GetGatheringAction(name) ~= nil;
+end
+
+function targeting.GetGatheringDisplayInfo()
+    if (lastGatheringDisplay ~= nil and os.clock() <= (tonumber(lastGatheringDisplayUntil) or 0)) then
+        return lastGatheringDisplay;
+    end
+
+    lastGatheringDisplay = nil;
+    lastGatheringDisplayUntil = 0;
+    return nil;
+end
+
+function targeting.ForceGatheringDisplay(toolName, seconds)
+    local normalizedTool = NormalizeGatheringToolName(toolName) or 'Hatchet';
+    local count = GetGatheringToolCount(normalizedTool);
+
+    lastGatheringDisplay = {
+        targetName = 'debug',
+        toolName = normalizedTool,
+        iconFile = GetGatheringToolIconFile(normalizedTool),
+        count = count,
+        hasTool = count > 0,
+    };
+    lastGatheringDisplayUntil = os.clock() + math.max(1, math.min(30, tonumber(seconds) or 8));
+    lastGatheringInteractStatus = 'forced display tool=' .. tostring(normalizedTool) .. ' count=' .. tostring(count);
+end
+
+function targeting.GetGatheringDebugStatus()
+    local hatchet = GetGatheringToolCount('Hatchet');
+    local sickle = GetGatheringToolCount('Sickle');
+    local pickaxe = GetGatheringToolCount('Pickaxe');
+    local displayActive = lastGatheringDisplay ~= nil and os.clock() <= (tonumber(lastGatheringDisplayUntil) or 0);
+    local displayLeft = displayActive == true and math.max(0, (tonumber(lastGatheringDisplayUntil) or 0) - os.clock()) or 0;
+    local watched = {};
+
+    if (gatheringToolCounts ~= nil) then
+        watched[#watched + 1] = 'Hatchet=' .. tostring(gatheringToolCounts.Hatchet);
+        watched[#watched + 1] = 'Sickle=' .. tostring(gatheringToolCounts.Sickle);
+        watched[#watched + 1] = 'Pickaxe=' .. tostring(gatheringToolCounts.Pickaxe);
+    else
+        watched[#watched + 1] = 'not initialized';
+    end
+
+    return
+        'counts Hatchet=' .. tostring(hatchet) ..
+        ' Sickle=' .. tostring(sickle) ..
+        ' Pickaxe=' .. tostring(pickaxe) ..
+        ' watched[' .. table.concat(watched, ' ') .. ']' ..
+        ' displayActive=' .. tostring(displayActive) ..
+        ' displayTool=' .. tostring(lastGatheringDisplay ~= nil and lastGatheringDisplay.toolName or nil) ..
+        ' displayCount=' .. tostring(lastGatheringDisplay ~= nil and lastGatheringDisplay.count or nil) ..
+        ' displayLeft=' .. string.format('%.1f', displayLeft) ..
+        ' pending=' .. tostring(pendingGatheringWatch ~= nil and pendingGatheringWatch.toolName or nil) ..
+        ' status=' .. tostring(lastGatheringInteractStatus);
+end
+
+function targeting.GetGatheringDisplaySignature()
+    local display = targeting.GetGatheringDisplayInfo();
+
+    if (display == nil) then
+        return 'none';
+    end
+
+    return table.concat({
+        tostring(display.toolName or ''),
+        tostring(display.iconFile or ''),
+        tostring(display.count or ''),
+        tostring(math.floor((tonumber(lastGatheringDisplayUntil) or 0) * 10)),
+    }, ':');
+end
+
+function targeting.ShouldShowGatheringPoint(name)
+    local global = state.GetGlobalSettings(globalDefaults);
+    local fishingSettings = global.fishing or {};
+
+    if (fishingSettings.enabled == false or fishingSettings.showGatheringPoints == false) then
+        return false;
+    end
+
+    local action = GetGatheringAction(name);
+
+    if (action == nil) then
+        return false;
+    end
+
+    if (fishingSettings.showGatheringPointsOnlyWithTool ~= true) then
+        return true;
+    end
+
+    local hasTool = HasInventoryItem(action.tool);
+    return hasTool == true;
+end
+
 function targeting.Update()
+    UpdateGatheringToolCounts();
+
+    if (pendingGatheringWatch ~= nil) then
+        local hasTool, _, _, count = HasInventoryItem(pendingGatheringWatch.toolName);
+        local currentCount = tonumber(count) or 0;
+        local previousCount = tonumber(pendingGatheringWatch.previousCount) or 0;
+
+        if (currentCount ~= previousCount) then
+            lastGatheringDisplay = {
+                targetName = pendingGatheringWatch.targetName,
+                toolName = pendingGatheringWatch.toolName,
+                iconFile = pendingGatheringWatch.iconFile,
+                count = currentCount,
+                hasTool = hasTool == true,
+            };
+            lastGatheringDisplayUntil = os.clock() + 8.0;
+            lastGatheringInteractStatus =
+                'tool count changed ' ..
+                tostring(pendingGatheringWatch.toolName) ..
+                ' ' .. tostring(previousCount) ..
+                ' -> ' .. tostring(currentCount);
+            pendingGatheringWatch = nil;
+        elseif ((os.clock() - (pendingGatheringWatch.started or os.clock())) > 20.0) then
+            pendingGatheringWatch = nil;
+        end
+    end
+
     if (pendingGatheringCommand == nil) then
         return;
     end

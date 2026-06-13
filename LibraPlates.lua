@@ -26,6 +26,8 @@ local petState = require('core.pet_state');
 local bstCharmTimer = require('core.bst_charm_timer');
 local fishing = require('core.fishing');
 local crafting = require('core.crafting');
+local textureLoader = require('core.texture_loader');
+local npcObjectInfo = require('core.npc_object_info');
 local quickMenu = require('core.quick_menu');
 local diagnostics = require('core.diagnostics');
 local adaptivePerformance = require('core.adaptive_performance');
@@ -83,6 +85,9 @@ end
 -- ============================================================
 
 ashita.events.register('load', 'libraplates_load', function()
+    textureLoader.ClearCache();
+    npcObjectInfo.ClearTextureCache();
+    quickMenu.ClearTextureCache();
     state.Load();
     profileAutoSwitch.Reset();
     modules.Load();
@@ -94,6 +99,9 @@ ashita.events.register('unload', 'libraplates_unload', function()
     diagnostics.Restore();
     state.SaveIfLoadedOrSaved();
     modules.Unload();
+    textureLoader.ClearCache();
+    npcObjectInfo.ClearTextureCache();
+    quickMenu.ClearTextureCache();
     log.Info('Unloaded clean LibraPlates.');
 end);
 

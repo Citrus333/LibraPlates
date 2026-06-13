@@ -303,7 +303,7 @@ local function AddJobToPlate(plateData, jobText, jobSettings, globalSettings)
     plateData.jobAnchorPoint = jobSettings.anchorPoint or jobDefaults.anchorPoint;
 end
 
-local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind)
+local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind, tint)
     if (settings == nil or settings.enabled ~= true or textureId == nil) then
         return;
     end
@@ -316,6 +316,7 @@ local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind)
         offsetY = tonumber(settings.offsetY) or defaultY,
         anchorTo = settings.anchorTo,
         anchorPoint = settings.anchorPoint,
+        tint = tint,
     };
 end
 
@@ -653,7 +654,7 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
         isSelf = false,
         stateName = targetStateName,
         clickTargetType = 'pc',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
@@ -661,9 +662,6 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             plateWorldWidth = cached.plateWorldWidth or 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = cached.plateWorldOffsetY,
-            plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
-            plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
-            plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
@@ -671,7 +669,7 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             clickTargetType = 'pc',
             clickName = player.name,
             layoutStateName = layoutStateName,
-        },
+        }, 'pc', 0, cached.plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 
@@ -846,9 +844,10 @@ local function QueuePlayer(player)
 
     local isPartyPlayer = tonumber(player.slot) ~= nil;
     local isTargetContext = targetStateName ~= 'Idle';
+    local showDistanceBadge = targetStateName == 'Target' or targetStateName == 'Subtarget';
     local isTacticalPlayer = isPartyPlayer == true;
     local useTargetOverlay = isTacticalPlayer == true or isTargetContext == true;
-    local layoutStateName = isTacticalPlayer == true and 'Combat' or 'Idle';
+    local layoutStateName = (isTacticalPlayer == true or isTargetContext == true) and 'Combat' or 'Idle';
     local hasHp = player.hpPercent ~= nil or (player.hp ~= nil and player.maxHp ~= nil and tonumber(player.maxHp) > 0);
     local hasMp = layoutStateName == 'Combat' and (player.mpPercent ~= nil or (player.mp ~= nil and player.maxMp ~= nil and tonumber(player.maxMp) > 0));
     local hasTp = layoutStateName == 'Combat' and player.tp ~= nil;
@@ -915,6 +914,7 @@ local function QueuePlayer(player)
     local iconsTimer = perfMeter.BeginDetail('pc.icons');
     local gameModeIconTextureId = nil;
     local linkshellIconTextureId = nil;
+    local linkshellIconTint = nil;
     local bazaarIconTextureId = nil;
     local awayIconTextureId = nil;
     local disconnectIconTextureId = nil;
@@ -937,7 +937,8 @@ local function QueuePlayer(player)
 
     if (WidgetLoads(linkshellIconSettings, 'Linkshell icon') == true) then
         linkshellIconTextureId = playerIndicators.GetLinkshellIconTextureId(player.index);
-        AddIcon(icons, linkshellIconSettings, linkshellIconTextureId, 48, -54, 'linkshellIcon');
+        linkshellIconTint = playerIndicators.GetLinkshellIconTint(player.index);
+        AddIcon(icons, linkshellIconSettings, linkshellIconTextureId, 48, -54, 'linkshellIcon', linkshellIconTint);
     end
 
     if (WidgetLoads(bazaarIconSettings, 'Bazaar icon') == true) then
@@ -980,7 +981,7 @@ local function QueuePlayer(player)
 
     local distanceText = nil;
 
-    if (WidgetLoads(distanceSettings, 'Distance') == true and player.distance ~= nil) then
+    if (showDistanceBadge == true and WidgetLoads(distanceSettings, 'Distance') == true and player.distance ~= nil) then
         distanceText = FormatDistanceText(distanceSettings, player.distance);
     end
 
@@ -1008,6 +1009,7 @@ local function QueuePlayer(player)
             'distance=' .. tostring(distanceText or ''),
             'game=' .. tostring(gameModeIconTextureId or ''),
             'linkshell=' .. tostring(linkshellIconTextureId or ''),
+            'linkshellTint=' .. ColorKey(linkshellIconTint),
             'bazaar=' .. tostring(bazaarIconTextureId or ''),
             'away=' .. tostring(awayIconTextureId or ''),
             'disconnect=' .. tostring(disconnectIconTextureId or ''),
@@ -1221,7 +1223,7 @@ local function QueuePlayer(player)
         isSelf = false,
         stateName = targetStateName,
         clickTargetType = 'pc',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
@@ -1229,9 +1231,6 @@ local function QueuePlayer(player)
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = plateWorldOffsetY,
-            plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
-            plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
-            plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
@@ -1239,7 +1238,7 @@ local function QueuePlayer(player)
             clickTargetType = 'pc',
             clickName = player.name,
             layoutStateName = layoutStateName,
-        },
+        }, 'pc', 0, plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 end
@@ -1268,8 +1267,7 @@ function pcPlate.Render()
     end
 
     currentPlayerEngaged = targeting.IsPlayerEngaged() == true;
-    local targetingSettings = targeting.GetSettings();
-    local range = tonumber(targetingSettings.enemyPlateRange) or 49.9;
+    local range = targeting.GetWorldPlateRange();
     local now = os.clock();
     local canUseScanCache = currentPlayerEngaged ~= true
         and state.GetConfigOpen() ~= true;

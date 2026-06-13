@@ -11,6 +11,18 @@ local function Band(left, right)
     return 0;
 end
 
+local function RShift(value, count)
+    if (bit ~= nil and bit.rshift ~= nil) then
+        return bit.rshift(value, count);
+    end
+
+    return math.floor((tonumber(value) or 0) / (2 ^ (tonumber(count) or 0)));
+end
+
+local function ExpandLinkshellChannel(value)
+    return math.max(0, math.min(255, ((tonumber(value) or 0) * 0x0D) + 0x38));
+end
+
 local function ReadRenderFlag(targetIndex, flagIndex)
     local entityManager = AshitaCore:GetMemoryManager():GetEntity();
 
@@ -46,7 +58,8 @@ local function LoadIcon(name)
         return textureCache[key];
     end
 
-    local path = AshitaCore:GetInstallPath() .. '\\addons\\LibraPlates\\assets\\images\\widget-icons\\' .. key .. '.png';
+    local filePath = (key == 'linkshell') and 'assets\\images\\linkshell.png' or ('assets\\images\\widget-icons\\' .. key .. '.png');
+    local path = AshitaCore:GetInstallPath() .. '\\addons\\LibraPlates\\' .. filePath;
     textureCache[key] = textureLoader.ToTextureId(textureLoader.Load(path));
 
     return textureCache[key];
@@ -217,6 +230,32 @@ function indicators.GetLinkshellIconTextureId(targetIndex)
     end
 
     return LoadIcon('linkshell');
+end
+
+function indicators.GetLinkshellIconTint(targetIndex)
+    local entity = GetEntity(targetIndex);
+    local bgr = tonumber(entity ~= nil and entity.LinkshellColor) or 0;
+
+    if (bgr == 0) then
+        return nil;
+    end
+
+    local r = Band(bgr, 0xFF);
+    local g = Band(RShift(bgr, 8), 0xFF);
+    local b = Band(RShift(bgr, 16), 0xFF);
+
+    if (math.max(r, g, b) <= 0x0F) then
+        r = ExpandLinkshellChannel(r);
+        g = ExpandLinkshellChannel(g);
+        b = ExpandLinkshellChannel(b);
+    end
+
+    return {
+        r / 255,
+        g / 255,
+        b / 255,
+        0.80,
+    };
 end
 
 function indicators.GetAwayIconTextureId(targetIndex)

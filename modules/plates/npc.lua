@@ -236,6 +236,18 @@ local function BuildPlateSignature(displayName, resolvedEntityName, targetStateN
     return table.concat(parts, '\n');
 end
 
+local function IsAlwaysReadableGatheringPoint(clickTargetType, displayName)
+    if (clickTargetType ~= 'object') then
+        return false;
+    end
+
+    return
+        displayName == 'Logging Point' or
+        displayName == 'Harvest Point' or
+        displayName == 'Mining Point' or
+        displayName == 'Excavation Point';
+end
+
 local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType, displayName)
     if (cached == nil or cached.texture == nil) then
         return false;
@@ -250,6 +262,7 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
     end
 
     local isTacticalTarget = targetStateName ~= 'Idle';
+    local isAlwaysReadableGatheringPoint = IsAlwaysReadableGatheringPoint(clickTargetType, displayName);
     local queueTimer = perfMeter.BeginDetail('npc.queue');
     local targetingSettings = targeting.GetSettings();
 
@@ -261,19 +274,16 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
         isSelf = false,
         stateName = targetStateName,
         clickTargetType = clickTargetType,
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
-            plateAlwaysOnTop = isTacticalTarget == true,
+            plateAlwaysOnTop = isTacticalTarget == true or isAlwaysReadableGatheringPoint == true,
             plateTacticalOverlayOnly = false,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetX = cached.plateWorldOffsetX,
             plateWorldOffsetY = cached.plateWorldOffsetY,
             plateWorldOffsetZ = cached.plateWorldOffsetZ,
-            plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
-            plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
-            plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
             plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
@@ -281,7 +291,7 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
             clickTargetType = clickTargetType,
             clickName = displayName,
             layoutStateName = 'Idle',
-        },
+        }, clickTargetType == 'object' and 'object' or 'npc', cached.plateWorldOffsetX, cached.plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 
@@ -313,7 +323,7 @@ local function QueueNpcObject(entity)
         ) then
             local distanceMatches = true;
 
-            if (indexed.distanceEnabled == true) then
+            if (indexed.distanceEnabled == true and targetStateName ~= 'Idle') then
                 local distanceText = FormatDistanceText({ prefix = indexed.distancePrefix or '' }, entity.distance);
                 distanceMatches = distanceText == indexed.distanceText;
             end
@@ -341,6 +351,7 @@ local function QueueNpcObject(entity)
 
     local settingsTimer = perfMeter.BeginDetail('npc.settings');
     local isTacticalTarget = targetStateName ~= 'Idle';
+    local showDistanceBadge = targetStateName == 'Target' or targetStateName == 'Subtarget';
     local backgroundSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Background', backgroundDefaults);
     local nameSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Name', nameDefaults);
     local distanceSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Distance', distanceDefaults);
@@ -358,7 +369,7 @@ local function QueueNpcObject(entity)
     local typeText = typeLineSettings.enabled == true and npcObjectInfo.GetType(displayName, resolvedEntityName) or nil;
     local distanceText = nil;
 
-    if (distanceSettings.enabled == true and entity.distance ~= nil) then
+    if (showDistanceBadge == true and distanceSettings.enabled == true and entity.distance ~= nil) then
         distanceText = FormatDistanceText(distanceSettings, entity.distance);
     end
     perfMeter.EndDetail(settingsTimer);
@@ -557,6 +568,7 @@ local function QueueNpcObject(entity)
     local plateWorldOffsetY = tonumber(npcInfo ~= nil and npcInfo.worldOffsetY or nil) or ((resolvedEntityName == 'Object') and 0.95 or 0.62);
     local plateWorldOffsetZ = tonumber(npcInfo ~= nil and npcInfo.worldOffsetZ or nil) or 0;
     local anchorBone = tonumber(npcInfo ~= nil and npcInfo.anchorBone or nil);
+    local isAlwaysReadableGatheringPoint = IsAlwaysReadableGatheringPoint(clickTargetType, displayName);
     local queueTimer = perfMeter.BeginDetail('npc.queue');
     local targetingSettings = targeting.GetSettings();
 
@@ -568,10 +580,10 @@ local function QueueNpcObject(entity)
         isSelf = false,
         stateName = targetStateName,
         clickTargetType = clickTargetType,
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
-            plateAlwaysOnTop = isTacticalTarget == true,
+            plateAlwaysOnTop = isTacticalTarget == true or isAlwaysReadableGatheringPoint == true,
             plateTacticalOverlayOnly = false,
             anchorBone = anchorBone,
             plateWorldWidth = 2.35,
@@ -579,9 +591,6 @@ local function QueueNpcObject(entity)
             plateWorldOffsetX = plateWorldOffsetX,
             plateWorldOffsetY = plateWorldOffsetY,
             plateWorldOffsetZ = plateWorldOffsetZ,
-            plateDistanceScaleStart = tonumber(targetingSettings.pcDistanceScaleStart) or 2.0,
-            plateDistanceScaleEnd = tonumber(targetingSettings.pcDistanceScaleEnd) or 8.0,
-            plateDistanceScaleMax = tonumber(targetingSettings.pcDistanceScaleMax) or 2.65,
             plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
@@ -589,7 +598,7 @@ local function QueueNpcObject(entity)
             clickTargetType = clickTargetType,
             clickName = displayName,
             layoutStateName = 'Idle',
-        },
+        }, clickTargetType == 'object' and 'object' or 'npc', plateWorldOffsetX, plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 end
@@ -621,9 +630,8 @@ function npcPlate.Render()
         return;
     end
 
-    local targetingSettings = targeting.GetSettings();
     local playerEngaged = targeting.IsPlayerEngaged() == true;
-    local range = tonumber(targetingSettings.enemyPlateRange) or 49.9;
+    local range = targeting.GetWorldPlateRange();
     local now = os.clock();
     local canUseScanCache = playerEngaged ~= true
         and state.GetConfigOpen() ~= true;

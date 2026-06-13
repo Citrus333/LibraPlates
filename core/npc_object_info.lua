@@ -346,12 +346,29 @@ function npcInfo.GetTextureId(name, entityType)
         return nil;
     end
 
+    if (textureIds[path] == false) then
+        return nil;
+    end
+
     if (textureIds[path] ~= nil) then
         return textureIds[path];
     end
 
-    textureIds[path] = textureLoader.ToTextureId(textureLoader.Load(path));
+    local ok, texture = pcall(function()
+        return textureLoader.Load(path);
+    end);
+
+    if (ok ~= true or texture == nil) then
+        textureIds[path] = false;
+        return nil;
+    end
+
+    textureIds[path] = textureLoader.ToTextureId(texture);
     return textureIds[path];
+end
+
+function npcInfo.ClearTextureCache()
+    textureIds = {};
 end
 
 return npcInfo;

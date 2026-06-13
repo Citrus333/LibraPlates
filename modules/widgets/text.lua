@@ -1,6 +1,7 @@
 local imgui = require('imgui');
 local textScale = require('core.text_scale');
 local anchorControls = require('modules.widgets.anchor_controls');
+local uiTooltip = require('core.ui_tooltip');
 
 local textWidget = {};
 local unpackTable = table.unpack or unpack;
@@ -491,13 +492,18 @@ function textWidget.DrawSettings(settings, context)
     end
 
     local defaults = context ~= nil and context.defaults or {};
-    local label = tostring(context ~= nil and context.widget or 'Text');
+    local label = tostring(context ~= nil and (context.displayLabel or context.widget) or 'Text');
 
     ApplyDefaults(settings, defaults);
 
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end
+
+    if (context ~= nil and context.infoTooltip ~= nil) then
+        uiTooltip.Info(context.infoTooltip, false);
+    end
+
     local showSmallFontToggle = (context ~= nil and context.showSmallFontToggle == true) or label == 'Distance';
 
     DrawAnchorControls(settings, context, label);

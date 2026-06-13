@@ -66,6 +66,10 @@ local petStateDefaults = {
     offsetY = -52,
 };
 
+local function IsTargetOrSubtarget(targetStateName)
+    return targetStateName == 'Target' or targetStateName == 'Subtarget';
+end
+
 local function GetJugIconTextureId()
     if (jugIconTextureId ~= nil) then
         return jugIconTextureId;
@@ -793,7 +797,6 @@ local function QueueBstPet(pet)
     local backgroundSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Background', backgroundDefaults);
     local hpBarSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'HP Bar', barDefaults);
     local tpBarSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'TP Bar', tpBarDefaults);
-    local distanceSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Distance', distanceDefaults);
     local petTimerSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Pet timer', petTimerDefaults);
     local petStateSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Pet state', petStateDefaults);
     local sicSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Sic', readyBarDefaults);
@@ -912,7 +915,6 @@ local function QueueBstPet(pet)
         },
     };
 
-    AddDistanceToPlate(plateData, pet, distanceSettings, globalSettings);
     if (petTimerSettings.enabled == true) then
         AddPetTimerBadge(
             plateData,
@@ -984,7 +986,7 @@ local function QueueBstPet(pet)
         isSelf = false,
         stateName = targetStateName,
         clickTargetType = 'pet',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = true,
@@ -998,7 +1000,7 @@ local function QueueBstPet(pet)
             plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData),
             plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
             clickTargetType = 'pet',
-        },
+        }, 'pet', 0, petWorldOffsetY),
     });
 end
 
@@ -1230,7 +1232,7 @@ local function QueueSmnPet(pet)
         isSelf = false,
         stateName = targetStateName,
         clickTargetType = 'pet',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = true,
@@ -1244,7 +1246,7 @@ local function QueueSmnPet(pet)
             plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData),
             plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
             clickTargetType = 'pet',
-        },
+        }, 'pet', 0, petWorldOffsetY),
     });
 end
 
@@ -1381,7 +1383,9 @@ local function QueueWyvernPet(pet)
         },
     };
 
-    AddDistanceToPlate(plateData, pet, distanceSettings, globalSettings);
+    if (IsTargetOrSubtarget(targetStateName) == true) then
+        AddDistanceToPlate(plateData, pet, distanceSettings, globalSettings);
+    end
 
     if (enmity.ShouldDrawAlly(pet, globalSettings) == true) then
         enmity.AddIcon(plateData, globalSettings.enmity);
@@ -1404,7 +1408,7 @@ local function QueueWyvernPet(pet)
         isSelf = false,
         stateName = targetStateName,
         clickTargetType = 'pet',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = true,
@@ -1419,7 +1423,7 @@ local function QueueWyvernPet(pet)
             plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
             clickTargetType = 'pet',
             layoutStateName = layoutStateName,
-        },
+        }, 'pet', 0, petWorldOffsetY),
     });
 end
 
@@ -1596,7 +1600,9 @@ local function QueuePupPet(pet)
         },
     };
 
-    AddDistanceToPlate(plateData, pet, distanceSettings, globalSettings);
+    if (IsTargetOrSubtarget(targetStateName) == true) then
+        AddDistanceToPlate(plateData, pet, distanceSettings, globalSettings);
+    end
     pupManeuvers.AddIcons(plateData, maneuverSettings, globalSettings);
 
     if (enmity.ShouldDrawAlly(pet, globalSettings) == true) then
@@ -1621,7 +1627,7 @@ local function QueuePupPet(pet)
         isSelf = false,
         stateName = targetStateName,
         clickTargetType = 'pet',
-        worldMarker = {
+        worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = true,
@@ -1636,7 +1642,7 @@ local function QueuePupPet(pet)
             plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
             clickTargetType = 'pet',
             layoutStateName = layoutStateName,
-        },
+        }, 'pet', 0, petWorldOffsetY),
     });
 end
 

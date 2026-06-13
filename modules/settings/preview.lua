@@ -12,6 +12,7 @@ local backgroundTextures = require('core.background_textures');
 local targetModuleMarker = require('core.target_module_marker');
 local npcObjectInfo = require('core.npc_object_info');
 local fishing = require('core.fishing');
+local gathering = require('core.gathering');
 local crafting = require('core.crafting');
 local pupManeuvers = require('core.pup_maneuvers');
 local fonts = require('core.fonts');
@@ -981,6 +982,36 @@ local function AddCraftingPreviewWidget(plateData, globalSettings, context)
     crafting.AddWidget(plateData, previewSettings);
 end
 
+local function AddGatheringPreviewWidget(plateData, globalSettings, context)
+    if (plateData == nil or context == nil or context.widgetKey ~= 'Gathering') then
+        return;
+    end
+
+    globalSettings.gathering = globalSettings.gathering or {};
+
+    if (globalSettings.gathering.enabled == false) then
+        return;
+    end
+
+    local previewSettings = {};
+
+    for key, value in pairs(globalSettings.gathering) do
+        previewSettings[key] = value;
+    end
+
+    if (context.previewGatheringResult == true) then
+        previewSettings.previewResult = true;
+        previewSettings.previewDisplay = {
+            iconFile = 'hatchet.png',
+            count = 12,
+        };
+        previewSettings.displayMode = previewSettings.displayMode or 'Tool + count';
+        previewSettings.showCount = true;
+    end
+
+    gathering.AddWidget(plateData, previewSettings);
+end
+
 local function AddRestingPreviewBar(plateData, globalSettings, context)
     if (plateData == nil or context == nil or context.widgetKey ~= 'Resting') then
         return;
@@ -1312,7 +1343,11 @@ local function CopySettingsWith(settings, overrides)
     return copy;
 end
 
-local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings, hpBarSettings, tpBarSettings, distanceSettings, globalSettings, context)
+local function ShouldShowDistancePreview(context)
+    return context ~= nil and context.widgetKey == 'Distance';
+end
+
+local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings, hpBarSettings, tpBarSettings, globalSettings, context)
     local petTimerSettings = state.GetWidgetSettings('Pet (BST)', stateName, 'Pet timer', petTimerDefaults);
     local petStateSettings = state.GetWidgetSettings('Pet (BST)', stateName, 'Pet state', petStateDefaults);
     local sicSettings = state.GetWidgetSettings('Pet (BST)', stateName, 'Sic', petReadyBarDefaults);
@@ -1429,26 +1464,6 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
         },
     };
 
-    if (distanceSettings ~= nil and distanceSettings.enabled == true) then
-        plateData.badges = plateData.badges or {};
-        plateData.badges[#plateData.badges + 1] = {
-            kind = 'distance',
-            text = tostring(distanceSettings.prefix or '') .. '12.4',
-            offsetX = tonumber(distanceSettings.offsetX) or 66,
-            offsetY = tonumber(distanceSettings.offsetY) or -52,
-            fontFamily = fonts.GetRole(globalSettings, distanceSettings.useSmallFont == true),
-            fontFlags = fonts.GetRoleFlags(globalSettings, distanceSettings.useSmallFont == true),
-            fontSize = textScale.ToTextureFontSize(distanceSettings.textSize, distanceDefaults.textSize),
-            textColor = distanceSettings.color or distanceDefaults.color,
-            textOutlineEnabled = distanceSettings.outlineEnabled == true,
-            textOutlineColor = distanceSettings.outlineColor or distanceDefaults.outlineColor,
-            textOutlineSize = tonumber(distanceSettings.outlineSize) or distanceDefaults.outlineSize,
-            anchorTo = distanceSettings.anchorTo or distanceDefaults.anchorTo,
-            anchorPoint = distanceSettings.anchorPoint or distanceDefaults.anchorPoint,
-            backgroundEnabled = false,
-        };
-    end
-
     if (stateName == 'Jug Pet') then
         AddPreviewPetTimerBadge(plateData, 'Jug 90m', petTimerSettings, globalSettings, 'Jug', 'jug');
         AddPreviewPetStateBadge(plateData, 'Fight', petStateSettings, globalSettings);
@@ -1484,6 +1499,9 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
     local tpPercent = tpValue / 10;
     local hpColor = hpBarSettings.color or barDefaults.color;
     local tpColor = tpBarSettings.color or tpBarDefaults.color;
+    local previewStateName = context ~= nil and context.stateName or 'Wyvern';
+    local playerIconSettings = GetPlayerPreviewIconSettings('Wyvern', previewStateName);
+    local enemyMobInfoIconSettings = GetEnemyMobInfoPreviewIconSettings('Wyvern', previewStateName);
 
     local hpLowActive = (
         hpBarSettings.lowColorEnabled == true and
@@ -1615,7 +1633,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
         },
     };
 
-    if (distanceSettings ~= nil and distanceSettings.enabled == true) then
+    if (ShouldShowDistancePreview(context) == true and distanceSettings ~= nil and distanceSettings.enabled == true) then
         plateData.badges = plateData.badges or {};
         plateData.badges[#plateData.badges + 1] = {
             kind = 'distance',
@@ -1979,7 +1997,6 @@ local function BuildPlate(entityName, stateName, context)
             backgroundSettings,
             hpBarSettings,
             tpBarSettings,
-            distanceSettings,
             globalSettings,
             context
         );
@@ -2006,7 +2023,6 @@ local function BuildPlate(entityName, stateName, context)
             backgroundSettings,
             hpBarSettings,
             tpBarSettings,
-            distanceSettings,
             globalSettings,
             context
         );
@@ -2232,6 +2248,7 @@ local function BuildPlate(entityName, stateName, context)
     AddEnmityPreviewIcon(plateData, globalSettings, context);
     AddFishingPreviewIcon(plateData, globalSettings, context);
     AddCraftingPreviewWidget(plateData, globalSettings, context);
+    AddGatheringPreviewWidget(plateData, globalSettings, context);
     AddRestingPreviewBar(plateData, globalSettings, context);
 
     if (entityName == 'Pet (PUP)') then
@@ -2324,6 +2341,7 @@ local function BuildPlate(entityName, stateName, context)
     end
 
     if (
+        ShouldShowDistancePreview(context) == true and
         (entityName == 'Enemy' or entityName == 'PC' or entityName == 'NPC' or entityName == 'Object' or entityName == 'NPC/Object') and
         distanceSettings ~= nil and
         distanceSettings.enabled == true

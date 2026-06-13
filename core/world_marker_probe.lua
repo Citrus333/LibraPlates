@@ -2553,6 +2553,53 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
     end
 end
 
+local function GetDrawableQueuedPlates()
+    local settings = targeting.GetSettings();
+    local maxCount = math.floor((tonumber(settings.maxWorldPlateCount) or 0) + 0.5);
+
+    if (maxCount <= 0 or #queuedPlates <= maxCount) then
+        return queuedPlates;
+    end
+
+    local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
+    local list = {};
+
+    for _, plate in ipairs(queuedPlates) do
+        local index = tonumber(plate.targetIndex) or 0;
+        local marker = plate.worldMarker ~= nil and plate.worldMarker.targetMarker or nil;
+        local priority = 3;
+
+        if (plate.isSelf == true) then
+            priority = 0;
+        elseif (index ~= 0 and (index == tonumber(targetIndex) or index == tonumber(subTargetIndex))) then
+            priority = 1;
+        elseif (marker ~= nil and marker.enabled == true) then
+            priority = 2;
+        end
+
+        list[#list + 1] = {
+            plate = plate,
+            priority = priority,
+            distance = tonumber(plate.distance) or 9999,
+        };
+    end
+
+    table.sort(list, function(left, right)
+        if (left.priority ~= right.priority) then
+            return left.priority < right.priority;
+        end
+
+        return left.distance < right.distance;
+    end);
+
+    local out = {};
+    for index = 1, math.min(maxCount, #list) do
+        out[#out + 1] = list[index].plate;
+    end
+
+    return out;
+end
+
 function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
     pass = pass + 1;
 
@@ -2576,7 +2623,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         pendingSelfClickRects = nil;
         pendingClickRects = {};
 
-        for _, plate in ipairs(queuedPlates) do
+        for _, plate in ipairs(GetDrawableQueuedPlates()) do
             if (plate.worldMarker ~= nil and plate.worldMarker.plateTextureId ~= nil) then
                 pcall(function ()
                     DrawOne(plate, entityManager, getBone, device, true);
@@ -2597,7 +2644,9 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
 
     lastDrawCount = 0;
 
-    for _, plate in ipairs(queuedPlates) do
+    local drawablePlates = GetDrawableQueuedPlates();
+
+    for _, plate in ipairs(drawablePlates) do
         local ok, err = pcall(function ()
             DrawOne(plate, entityManager, getBone, device, false);
         end);
@@ -2936,6 +2985,7 @@ function worldMarkerProbe.GetAlwaysVisiblePlates()
             results[#results + 1] = {
                 targetIndex = entry.targetIndex,
                 targetType = entry.targetType,
+                clickName = entry.name,
                 textureId = entry.plateTextureId,
                 rect = entry.plateOverlayRect,
             };
@@ -3108,6 +3158,33 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
 
         lastClickStatus = 'right attack ' .. tostring(ok) .. ' message=' .. tostring(message) .. ' target=' .. tostring(entry.targetIndex) .. ' server=' .. tostring(entry.serverId) .. ' distance=' .. tostring(entry.distance);
         return true;
+    elseif (
+        message == 516 and
+        interactTarget ~= nil and
+        entry.targetType == 'object'
+    ) then
+        local ok = false;
+
+        pcall(function ()
+            ok = interactTarget(entry.targetIndex, entry.targetType, entry.distance);
+        end);
+
+        lastClickStatus = 'right interact ' .. tostring(ok) .. ' ' .. tostring(entry.targetType) .. ' message=' .. tostring(message) .. ' target=' .. tostring(entry.targetIndex) .. ' distance=' .. tostring(entry.distance);
+
+        if (ok == true) then
+            return true;
+        end
+
+        if (openQuickMenu ~= nil) then
+            pcall(function ()
+                ok = openQuickMenu(entry, e.x, e.y);
+            end);
+
+            if (ok == true) then
+                lastClickStatus = 'right quickmenu true ' .. tostring(entry.targetType) .. ' message=' .. tostring(message) .. ' target=' .. tostring(entry.targetIndex);
+                return true;
+            end
+        end
     elseif (message == 516 and openQuickMenu ~= nil) then
         local ok = false;
 

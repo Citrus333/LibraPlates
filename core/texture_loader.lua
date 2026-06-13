@@ -27,12 +27,14 @@ pcall(ffi.cdef, [[
 
 local textureLoader = {};
 local cache = {};
-local device = d3d.get_device();
-
 local D3DFMT_A8R8G8B8 = 21;
 local D3DPOOL_MANAGED = 1;
 local D3DX_DEFAULT = 0xFFFFFFFF;
 local S_OK = 0;
+
+function textureLoader.ClearCache()
+    cache = {};
+end
 
 function textureLoader.Load(path)
     path = tostring(path or '');
@@ -56,6 +58,12 @@ function textureLoader.Load(path)
     end
 
     local texturePointer = ffi.new('IDirect3DTexture8*[1]');
+    local device = d3d.get_device();
+
+    if (device == nil) then
+        return nil;
+    end
+
     local result = C.D3DXCreateTextureFromFileExA(
         device,
         path,

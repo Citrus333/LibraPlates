@@ -45,8 +45,8 @@ local function NormalizeMode(mode)
     local text = tostring(mode or 'Auto'):lower();
 
     if (text == 'quality') then return 'Quality'; end
-    if (text == 'smooth' or text == 'fps1') then return 'Smooth'; end
-    if (text == 'light') then return 'Light'; end
+    if (text == 'balanced' or text == 'smooth' or text == 'fps1') then return 'Balanced'; end
+    if (text == 'performance' or text == 'light') then return 'Performance'; end
 
     return 'Auto';
 end
@@ -66,11 +66,11 @@ local function GetEffectiveMode()
     end
 
     if (tier == 'highfps_under_load' or tier == 'fps2_stable') then
-        return 'Smooth';
+        return 'Balanced';
     end
 
     if (tier == 'stressed' or tier == 'low') then
-        return 'Light';
+        return 'Performance';
     end
 
     return 'Quality';
@@ -168,7 +168,7 @@ function adaptivePerformance.ShouldThrottleBackground()
         return false;
     end
 
-    return effective == 'Smooth' or effective == 'Light';
+    return effective == 'Balanced' or effective == 'Performance';
 end
 
 function adaptivePerformance.AllowBackgroundBuild(key, limit)

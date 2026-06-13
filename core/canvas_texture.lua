@@ -29,10 +29,13 @@ local textureOrder = {};
 local textureIdToKey = {};
 local textureCount = 0;
 local textureEvictions = 0;
+local evictionWindowStart = os.clock();
+local evictionWindowCount = 0;
+local evictionRatePerMinute = 0;
 local maxTextures = 96;
 local width = 1024;
 local height = 512;
-local renderVersion = 4;
+local renderVersion = 6;
 
 local D3DPT_TRIANGLELIST = 4;
 local D3DFVF_XYZRHW_DIFFUSE = 0x044;
@@ -72,6 +75,21 @@ local function ColorToD3D(color, fallback)
     local a = ClampColorChannel(color[4] or 1);
 
     return (a * 0x1000000) + (r * 0x10000) + (g * 0x100) + b;
+end
+
+local function BoostColor(color, boost, alpha)
+    if (type(color) ~= 'table') then
+        return color;
+    end
+
+    boost = tonumber(boost) or 1.0;
+
+    return {
+        math.min(1.0, (tonumber(color[1]) or 1.0) * boost),
+        math.min(1.0, (tonumber(color[2]) or 1.0) * boost),
+        math.min(1.0, (tonumber(color[3]) or 1.0) * boost),
+        tonumber(alpha) or tonumber(color[4]) or 1.0,
+    };
 end
 
 local function TextureId(value)
@@ -124,6 +142,16 @@ local function ReleaseTextureKey(key)
     RemoveTextureOrderKey(key);
     textureCount = math.max(0, textureCount - 1);
     textureEvictions = textureEvictions + 1;
+    evictionWindowCount = evictionWindowCount + 1;
+    local now = os.clock();
+    local elapsed = math.max(0.01, now - (tonumber(evictionWindowStart) or now));
+    if (elapsed >= 10.0) then
+        evictionRatePerMinute = (evictionWindowCount / elapsed) * 60.0;
+        evictionWindowStart = now;
+        evictionWindowCount = 0;
+    elseif (evictionRatePerMinute <= 0 and evictionWindowCount > 0) then
+        evictionRatePerMinute = (evictionWindowCount / elapsed) * 60.0;
+    end
     collectgarbage('step', 32);
     return true;
 end
@@ -2160,6 +2188,12 @@ function canvasTexture.Render(plate, key)
                     );
                 end
 
+                local iconTint = icon.tint;
+
+                if (iconKind == 'linkshellIcon') then
+                    iconTint = BoostColor(icon.tint, 1.65, 1.0);
+                end
+
                 DrawTexture(
                     device,
                     icon.textureId,
@@ -2167,7 +2201,7 @@ function canvasTexture.Render(plate, key)
                     iconY,
                     iconSize,
                     iconSize,
-                    0xFFFFFFFF
+                    ColorToD3D(iconTint, { 1.0, 1.0, 1.0, 1.0 })
                 );
 
                 if (iconBorderWarningColor ~= nil and icon.timerWarningBorderEnabled == true) then
@@ -2209,7 +2243,7 @@ function canvasTexture.Render(plate, key)
                     if (timerTextureId ~= nil and timerW ~= nil and timerH ~= nil and timerW > 0 and timerH > 0) then
                         local timerBoxW = timerW;
                         local timerBoxH = timerH;
-                        local timerBoxX = iconX + ((iconSize - timerBoxW) * 0.5);
+                        local timerBoxX = iconX + ((iconSize - timerBoxW) * 0.5) + (tonumber(icon.timerOffsetX) or 0);
                         local timerY = iconY + iconSize + 1 + (tonumber(icon.timerOffsetY) or 0);
 
                         if (icon.timerBackground == true) then
@@ -2217,7 +2251,7 @@ function canvasTexture.Render(plate, key)
                             local _, sampleW = gdiTextTexture.GetTexture(sampleText, timerFontOptions);
 
                             timerBoxW = math.max(timerW, tonumber(sampleW) or 0);
-                            timerBoxX = iconX + ((iconSize - timerBoxW) * 0.5);
+                            timerBoxX = iconX + ((iconSize - timerBoxW) * 0.5) + (tonumber(icon.timerOffsetX) or 0);
 
                             local padX = tonumber(icon.timerBackgroundPaddingX) or 2;
                             local padY = tonumber(icon.timerBackgroundPaddingY) or 1;
@@ -2459,11 +2493,23 @@ function canvasTexture.ReleaseKey(key)
 end
 
 function canvasTexture.GetCacheStats()
+    local now = os.clock();
+    local elapsed = math.max(0.01, now - (tonumber(evictionWindowStart) or now));
+    local currentRate = evictionWindowCount > 0 and ((evictionWindowCount / elapsed) * 60.0) or evictionRatePerMinute;
+
     return {
         count = textureCount,
         max = maxTextures,
         evictions = textureEvictions,
+        evictionsPerMinute = currentRate,
     };
+end
+
+function canvasTexture.SetCacheLimit(value)
+    maxTextures = math.max(32, math.min(256, math.floor((tonumber(value) or maxTextures) + 0.5)));
+    TrimTextureCache();
+
+    return maxTextures;
 end
 
 return canvasTexture;

@@ -451,12 +451,17 @@ function entities.GetEnemy(index, allowHidden)
         serverId = entityManager:GetServerId(index);
     end);
 
+    local renderFlags0 = SafeCall(nil, function()
+        return entityManager:GetRenderFlags0(index);
+    end);
+
     return {
         index = index,
         serverId = serverId,
         name = ent.Name or 'Enemy',
         hpPercent = ent.HPPercent or 100,
         distance = ent.Distance ~= nil and math.sqrt(ent.Distance) or nil,
+        renderFlags0 = renderFlags0,
     };
 end
 
@@ -498,6 +503,7 @@ function entities.GetNearbyEnemies(maxDistance)
                     name = ent.Name or 'Enemy',
                     hpPercent = ent.HPPercent or 100,
                     distance = math.sqrt(ent.Distance),
+                    renderFlags0 = SafeCall(nil, function() return entityManager:GetRenderFlags0(index); end),
                 };
             end
         end

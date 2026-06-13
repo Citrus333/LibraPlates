@@ -37,6 +37,7 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Enemy preview needs long/short name examples.
 - Enemy level/difficulty follow-up: decide what level text/color should show for mobs that are effectively impossible to gauge normally.
 - Claim state color settings follow-up: add outline color controls for each Enemy claim state.
+- Blood aggro icon is not showing; likely hidden underneath the links icon due to an anchoring/overlap issue.
 - Enmity is currently in Enemy; find a better spot, possibly profile-dependent for Enemy vs Self.
 - Move aggro.
 - Blue magic is missing casting icons and is not showing AOE.
@@ -44,6 +45,8 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 ### NPC / Object
 
 - NPC needs target/subtarget highlight settings; check whether Subtarget has range colors.
+- NPC/Object targeting bug: husband saw a black billboard flashing over targeted NPCs while Settings was open; likely related to target marker background/canvas state or preview/settings interaction.
+- NPC nameplate height idea: investigate race/model-family based plate height adjustment so short NPCs and tall NPCs do not need one blunt global NPC Y offset.
 - NPC/Object data direction: future zone-scoped loading should wait until data has full zone coverage, then load by zone on zone change with exact-name lookup and cached results.
 - Add a setting for `???`/search objects to show or hide names.
 - Fishing/gathering interaction needs field testing and a decision on Clamming Point, Fish Trap, and other fishing-related objects.
@@ -112,6 +115,7 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - FPS mode setting follow-up: direct FPS divisor memory write caused an Ashita crash when it was attempted during load, so FPS mode must only be applied from an explicit user action.
 - FPS mode UI now gives a short chat confirmation when the saved FPS setting is changed, and Check only updates the Current mode text without changing the selected setting.
 - Performance settings follow-up: wire `World plate update rate` and `Disable expensive widgets on world plates` to actual world-only throttling/preset behavior after in-game testing confirms the new Performance page layout.
+- Plate stacking follow-up: stacking now uses the old-addon local overlap resolver again. Test crowded PC plates first, then tune priority/target behavior if clicking a plate still feels too jumpy.
 
 ## Done
 
@@ -138,6 +142,15 @@ This file is for shared testing notes between Lila, her husband, and Codex.
   - Entity plate position rows are condensed to one line per entity: label plus X and Y controls on the same row.
 - 2026-06-13 - Linkshell icon color restored:
   - Player and Self linkshell icons now read the live entity `LinkshellColor`, unpack it as BGR, expand XI-style low shell color channels, and pass that tint into canvas icon rendering using the old-addon linkshell mask behavior.
+- 2026-06-13 - NPC/Object double target arrows fixed:
+  - Unknown raw Objects that fall back to NPC behavior no longer draw a second target overlay arrow when a world plate already exists.
+  - This keeps incomplete NPC/Object data rows from causing duplicate Libra target arrows while data entry is still in progress.
+- 2026-06-13 - First-pass world plate stacking added:
+  - Overlapping selected texture world plates now get a temporary upward lift before both click-rect generation and drawing, so mouse targeting should stay aligned with the moved plate.
+  - Loading priority now has a practical fallback order after Self/target/subtarget/tactical: PC, Enemy, Trust, Pet, NPC, Object.
+  - Settings > Visibility now has Plate stacking controls for enabling stacking, per-type participation, priority order, closest-on-top range stacking, tactical fixed behavior, stack gap, max stack lift, and overlap sensitivity.
+  - Settings > Visibility also has Tactical screen limits as an off-by-default option to keep Target/Subtarget/tactical marker plates from going above the top edge of the screen.
+  - Stacking was reworked back toward the old-addon behavior: plates are placed by screen position and only move when their actual rectangles overlap already placed plates.
   - PC plate caching now includes the linkshell tint so color changes redraw instead of reusing an old white icon.
   - Plate render policy version was bumped so already-rendered dark linkshell plate textures are forced to refresh after reload.
   - Linkshell icon tint is brightened only for the linkshell icon render path because the gray shell PNG is multiplied by the tint in the render-target pipeline.
@@ -155,6 +168,7 @@ This file is for shared testing notes between Lila, her husband, and Codex.
   - Fixed right-click flow so NPC and icon NPC plates can open Quick Menu again.
   - Object gathering/tool right-click still runs first for known gathering points, then falls through to Quick Menu when it is not a gathering action.
   - Corrected gathering right-click scope: it is only for known gathering Object nodes, not NPC plates.
+  - Added the live short name `Excav. Point` as an Excavation Point alias so right-click excavation uses Pickaxe like the full-name node.
 - 2026-06-13 - Reload crash guard for NPC/Object icons:
   - Cleared shared texture caches, NPC/Object icon texture ids, and Quick Menu icon caches on addon load/unload.
   - NPC/Object icon loading now fails closed to no icon if a texture load fails, instead of reusing bad/stale texture ids after reload.

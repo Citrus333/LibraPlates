@@ -511,7 +511,7 @@ local maneuverPendingReset = nil;
 local loadModeDrawn = false;
 
 local tabs = T{ 'Settings', 'Plates', 'Modules' };
-local generalSections = T{ 'Profiles', 'Font', 'Native UI', 'Mouse', 'Scaling', 'Performance' };
+local generalSections = T{ 'Profiles', 'Font', 'Native UI', 'Mouse', 'Visibility', 'Scaling', 'Performance' };
 local entities = T{
     'Self',
     'Trust',
@@ -6640,6 +6640,153 @@ local function DrawGeneralPerformanceSection(settings)
     DrawPerformanceInfo('Shows how many cached plate textures are in use and whether old textures are being evicted from the cache.');
 end
 
+local function DrawGeneralVisibilitySection(settings)
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Visibility' });
+
+    local visibilityLabelWidth = 270;
+    local visibilityControlWidth = 280;
+    local visibilityInfoWidth = 34;
+    local visibilitySliderWidth = 72;
+
+    local function DrawVisibilityInfo(text, sameLine)
+        uiTooltip.Info(text, sameLine);
+    end
+
+    local function DrawVisibilityRow(label, id, drawControl, tooltip)
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            if (imgui.BeginTable('##visibility_row_' .. tostring(id or label), 3, settingsTableFlags)) then
+                imgui.TableSetupColumn('##label', 0, visibilityLabelWidth);
+                imgui.TableSetupColumn('##control', 0, visibilityControlWidth);
+                imgui.TableSetupColumn('##info', 0, visibilityInfoWidth);
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+                imgui.TextColored(settingsLabelColor, label);
+                imgui.TableNextColumn();
+                drawControl();
+                imgui.TableNextColumn();
+                DrawVisibilityInfo(tooltip or '', false);
+                imgui.EndTable();
+                return;
+            end
+        end
+
+        imgui.TextColored(settingsLabelColor, label);
+        imgui.SameLine();
+        drawControl();
+        DrawVisibilityInfo(tooltip or '');
+    end
+
+    local function DrawVisibilityNumber(label, value, id, minValue, maxValue, step, tooltip)
+        local result = value;
+        local changed = false;
+
+        DrawVisibilityRow(label, id, function()
+            result, changed = DrawPlacementControl(value, minValue, maxValue, step, id, visibilitySliderWidth);
+        end, tooltip);
+
+        return result, changed;
+    end
+
+    local function DrawVisibilityCheckbox(label, value, onChange, tooltip, id)
+        DrawVisibilityRow(label, id, function()
+            local ref = { value == true };
+            if (imgui.Checkbox ~= nil) then
+                if (imgui.Checkbox('##' .. tostring(id or label), ref) == true) then
+                    onChange(ref[1] == true);
+                end
+            else
+                DrawCheckbox('##' .. tostring(id or label), value, onChange);
+            end
+        end, tooltip);
+    end
+
+    DrawSettingsHeader('Plate stacking');
+    DrawVisibilityCheckbox('Stack overlapping plates', settings.plateStackingEnabled ~= false, function(value)
+        settings.plateStackingEnabled = value == true;
+    end, 'Moves lower-priority world plates upward when they overlap another plate.', 'PlateStackingEnabled');
+
+    if (settings.plateStackingEnabled ~= false) then
+        local stackTypeLabels = {
+            pc = 'PC',
+            enemy = 'Enemy',
+            trust = 'Trust',
+            pet = 'Pet',
+            npc = 'NPC',
+            object = 'Object',
+        };
+        local stackTypeOrder = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
+
+        if (type(settings.plateStackingTypes) ~= 'table') then
+            settings.plateStackingTypes = {};
+        end
+        if (type(settings.plateStackingPriority) ~= 'table') then
+            settings.plateStackingPriority = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
+        end
+
+        for _, key in ipairs(stackTypeOrder) do
+            DrawVisibilityCheckbox('Stack ' .. stackTypeLabels[key], settings.plateStackingTypes[key] == true, function(value)
+                settings.plateStackingTypes[key] = value == true;
+            end, stackTypeLabels[key] .. ' plates can be moved by stacking when enabled. NPC/Object are available for testing but are off by default.', 'PlateStackType' .. key);
+        end
+
+        DrawVisibilityCheckbox('Closest plates on top', settings.plateStackClosestOnTop == true, function(value)
+            settings.plateStackClosestOnTop = value == true;
+        end, 'Within the same priority group, closer plates stay in front and farther plates move first.', 'PlateStackClosestOnTop');
+
+        DrawVisibilityCheckbox('Keep target fixed', settings.plateStackKeepTacticalFixed ~= false, function(value)
+            settings.plateStackKeepTacticalFixed = value == true;
+        end, 'Keeps Self, Target, Subtarget, and tactical marker plates anchored while other stackable plates move around them.', 'PlateStackKeepTacticalFixed');
+
+        DrawVisibilityRow('Priority order', 'PlateStackingPriority', function()
+            for index, key in ipairs(settings.plateStackingPriority) do
+                local keyText = tostring(key or '');
+                local label = stackTypeLabels[keyText] or keyText;
+                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(index) .. '. ' .. label);
+                imgui.SameLine(110);
+                if (imgui.Button('Up##PlateStackPriorityUp' .. keyText) and index > 1) then
+                    settings.plateStackingPriority[index], settings.plateStackingPriority[index - 1] = settings.plateStackingPriority[index - 1], settings.plateStackingPriority[index];
+                end
+                imgui.SameLine();
+                if (imgui.Button('Down##PlateStackPriorityDown' .. keyText) and index < #settings.plateStackingPriority) then
+                    settings.plateStackingPriority[index], settings.plateStackingPriority[index + 1] = settings.plateStackingPriority[index + 1], settings.plateStackingPriority[index];
+                end
+            end
+        end, 'Controls which stackable plate types stay anchored first. Self, Target, Subtarget, and tactical marker plates are handled separately by Keep target fixed.');
+
+        local stackGap, stackGapChanged = DrawVisibilityNumber('Stack gap', settings.plateStackGap or 4, 'PlateStackGap', 0, 40, 1, 'Space between plates after stacking.');
+        if (stackGapChanged == true) then
+            settings.plateStackGap = math.max(0, math.min(40, math.floor((tonumber(stackGap) or 4) + 0.5)));
+        end
+
+        local stackMaxLift, stackMaxLiftChanged = DrawVisibilityNumber('Max stack lift', settings.plateStackMaxLift or 72, 'PlateStackMaxLift', 0, 240, 1, 'Maximum screen distance a plate may move upward while avoiding overlap.');
+        if (stackMaxLiftChanged == true) then
+            settings.plateStackMaxLift = math.max(0, math.min(240, math.floor((tonumber(stackMaxLift) or 72) + 0.5)));
+        end
+
+        local horizontalOverlap, horizontalOverlapChanged = DrawVisibilityNumber('Horizontal overlap', math.floor(((tonumber(settings.plateStackHorizontalOverlap) or 0.30) * 100) + 0.5), 'PlateStackHorizontalOverlap', 5, 100, 1, 'How much horizontal overlap is allowed before stacking reacts.');
+        if (horizontalOverlapChanged == true) then
+            settings.plateStackHorizontalOverlap = math.max(0.05, math.min(1.0, (tonumber(horizontalOverlap) or 30) / 100));
+        end
+
+        local verticalOverlap, verticalOverlapChanged = DrawVisibilityNumber('Vertical overlap', math.floor(((tonumber(settings.plateStackVerticalOverlap) or 0.50) * 100) + 0.5), 'PlateStackVerticalOverlap', 5, 100, 1, 'How much vertical overlap is allowed before stacking reacts.');
+        if (verticalOverlapChanged == true) then
+            settings.plateStackVerticalOverlap = math.max(0.05, math.min(1.0, (tonumber(verticalOverlap) or 50) / 100));
+        end
+    end
+
+    DrawSettingsHeader('Tactical screen limits');
+    DrawVisibilityCheckbox('Keep tactical plates on screen', settings.tacticalScreenClampEnabled == true, function(value)
+        settings.tacticalScreenClampEnabled = value == true;
+    end, 'Only affects Target, Subtarget, and tactical marker plates. If a plate would go above the top edge, it is pushed down enough to stay visible.', 'TacticalScreenClampEnabled');
+
+    if (settings.tacticalScreenClampEnabled == true) then
+        local topPadding, topPaddingChanged = DrawVisibilityNumber('Top padding', settings.tacticalScreenClampTopPadding or 24, 'TacticalScreenClampTopPadding', 0, 200, 1, 'Screen-space padding kept above tactical plates.');
+        if (topPaddingChanged == true) then
+            settings.tacticalScreenClampTopPadding = math.max(0, math.min(200, math.floor((tonumber(topPadding) or 24) + 0.5)));
+        end
+    end
+end
+
 local function DrawProfileNamePopup(popupName, inputLabel, buttonLabel, buffer, action)
     if (imgui.BeginPopupModal == nil) then
         return;
@@ -7282,6 +7429,8 @@ local function DrawSelectedEditorGeneral()
             DrawGeneralNativeUiSection(settings);
         elseif (selectedGeneralSection == 'Mouse') then
             DrawGeneralMouseSection();
+        elseif (selectedGeneralSection == 'Visibility') then
+            DrawGeneralVisibilitySection(settings);
         elseif (selectedGeneralSection == 'Scaling') then
             DrawGeneralScalingSection(settings);
         elseif (selectedGeneralSection == 'Performance') then

@@ -386,6 +386,12 @@ local function IsUnknownRawObjectNpcContext(context)
         context.resolvedInfo == nil;
 end
 
+local function HasNpcObjectWorldPlateRect(index)
+    return
+        worldMarkerProbe.GetWidestPlateRect(index, 'npc', { 'name', 'type' }) ~= nil or
+        worldMarkerProbe.GetWidestPlateRect(index, 'object', { 'name', 'type' }) ~= nil;
+end
+
 local function DrawFallbackTargetName(drawList, index, context, stateName, cx, cy, scale)
     local ent = GetEntity(index);
     local displayName = CleanDisplayName(ent ~= nil and ent.Name or '');
@@ -394,10 +400,7 @@ local function DrawFallbackTargetName(drawList, index, context, stateName, cx, c
         return;
     end
 
-    if (
-        worldMarkerProbe.GetWidestPlateRect(index, 'npc', { 'name', 'type' }) ~= nil or
-        worldMarkerProbe.GetWidestPlateRect(index, 'object', { 'name', 'type' }) ~= nil
-    ) then
+    if (HasNpcObjectWorldPlateRect(index) == true) then
         return;
     end
 
@@ -1037,8 +1040,9 @@ function targetOverlay.Render()
 
     if (mainIndex ~= nil) then
         local context = ResolveEntityContext(mainIndex);
+        local unknownRawObjectNeedsFallback = IsUnknownRawObjectNpcContext(context) == true and HasNpcObjectWorldPlateRect(mainIndex) ~= true;
 
-        if (context.valid == true and (context.targetType == 'object' or IsUnknownRawObjectNpcContext(context) == true)) then
+        if (context.valid == true and (context.targetType == 'object' or unknownRawObjectNeedsFallback == true)) then
             DrawOne(drawList, mainIndex, 'Target', 0, true);
         end
 
@@ -1047,8 +1051,9 @@ function targetOverlay.Render()
 
     if (mainIndex ~= nil and subIndex ~= nil and subIndex ~= mainIndex) then
         local context = ResolveEntityContext(subIndex);
+        local unknownRawObjectNeedsFallback = IsUnknownRawObjectNpcContext(context) == true and HasNpcObjectWorldPlateRect(subIndex) ~= true;
 
-        if (context.valid == true and (context.targetType == 'object' or IsUnknownRawObjectNpcContext(context) == true)) then
+        if (context.valid == true and (context.targetType == 'object' or unknownRawObjectNeedsFallback == true)) then
             DrawOne(drawList, subIndex, 'Subtarget', -18, true);
         end
 

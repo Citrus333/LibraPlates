@@ -4800,6 +4800,7 @@ local itemIcons = T{
     ['Ethereal Junction']        = { type = 'Ethereal Junction', icon = 'EtherealJunction.png' },
 
     ['Excavation Point']         = { type = 'Excavation Point', icon = 'ExcavationPoint.png' },
+    ['Excav. Point']             = { type = 'Excavation Point', icon = 'ExcavationPoint.png' },
 
     ['Faded Footprint']          = { type = 'Faded Footprint', icon = 'Footprint.png' },
 

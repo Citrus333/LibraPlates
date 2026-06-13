@@ -381,6 +381,32 @@ local function AddActivityPointIconToPlate(plateData, enemyName, nameSettings)
     };
 end
 
+local function AddCatseyeSpecialEnemyIconToPlate(plateData, enemy, nameSettings)
+    if (bit.band(tonumber(enemy ~= nil and enemy.renderFlags0) or 0, 0x80000000) == 0) then
+        return;
+    end
+
+    local textureId = GetCatseyeIconTextureId('star.png');
+
+    if (textureId == nil) then
+        return;
+    end
+
+    local nameSize = tonumber(nameSettings.textSize) or tonumber(nameDefaults.textSize) or 24;
+    local iconSize = math.max(14, math.min(40, math.floor((nameSize * 0.95) + 0.5)));
+
+    plateData.icons = plateData.icons or {};
+    plateData.icons[#plateData.icons + 1] = {
+        kind = 'catseyeSpecialEnemy',
+        textureId = textureId,
+        size = iconSize,
+        offsetX = (tonumber(nameSettings.offsetX) or 0) - iconSize - 4,
+        offsetY = (tonumber(nameSettings.offsetY) or -54) + 2,
+        anchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
+        anchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+    };
+end
+
 local function AddJobToPlate(plateData, jobText, jobSettings, globalSettings)
     if (jobSettings == nil or jobSettings.enabled ~= true or jobText == nil or tostring(jobText) == '') then
         return;
@@ -1553,6 +1579,7 @@ local function BuildEnemyCacheSignature(context)
         'difficulty=' .. tostring(context.mobInfo ~= nil and context.mobInfo.Difficulty or ''),
         'claim=' .. tostring(context.claimCategory or ''),
         'ap=' .. tostring(mobInfoData.HasActivityPointMarker(enemy.name) == true),
+        'catseyeStar=' .. tostring(bit.band(tonumber(enemy.renderFlags0) or 0, 0x80000000) ~= 0),
         'nm=' .. tostring(context.mobInfo ~= nil and context.mobInfo.IsNM or ''),
         'aoe=' .. aoeNameHighlight.GetSignature(enemy.index, 'enemy'),
         'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
@@ -1642,6 +1669,7 @@ local function BuildEnemyPlateData(context)
         castBar = context.castBar,
     };
     AddActivityPointIconToPlate(plateData, enemy.name, context.nameSettings);
+    AddCatseyeSpecialEnemyIconToPlate(plateData, enemy, context.nameSettings);
     AddJobToPlate(plateData, context.jobText, context.jobSettings, context.globalSettings);
     AddLevelToPlate(plateData, context.levelText, context.levelSettings, context.mobInfo, context.globalSettings);
     AddIdToPlate(plateData, enemy, context.idSettings, context.mobInfo, context.globalSettings);

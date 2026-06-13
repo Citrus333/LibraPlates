@@ -106,6 +106,8 @@ local verticalOffset = 0.16;
 local nameVerticalOffset = 0.54;
 local queuedPlates = {};
 local queuedPlateSet = {};
+local stackOffsetCache = {};
+local stackOffsetFrame = 0;
 local selfClickRect = nil;
 local selfClickRects = nil;
 local clickRects = {};
@@ -2449,16 +2451,60 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
             ((plateScale - 1.0) * (tonumber(style.plateDistanceScaleOffsetY) or 0));
         local plateWorldOffsetZ = tonumber(style.plateWorldOffsetZ) or 0;
         local plateX = wx + plateWorldOffsetX;
-        local plateY = wz + verticalOffset + plateWorldOffsetY - nameVerticalOffset;
+        local plateY = wz + verticalOffset + plateWorldOffsetY - nameVerticalOffset + (tonumber(plate._stackOffsetY) or 0);
         local plateZ = wy + plateWorldOffsetZ;
+        local plateWorldWidth = (tonumber(style.plateWorldWidth) or 0.84) * plateScale;
+        local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
+
+        do
+            local settings = targeting.GetSettings();
+            local marker = style.targetMarker;
+            local isTacticalPlate =
+                tostring(plate.stateName or '') ~= 'Idle' or
+                (marker ~= nil and marker.enabled == true);
+
+            if (settings.tacticalScreenClampEnabled == true and isTacticalPlate == true) then
+                local _, view = device:GetTransform(2);
+                local _, proj = device:GetTransform(3);
+                local _, viewport = device:GetViewport();
+
+                if (view ~= nil and proj ~= nil and viewport ~= nil and viewport.Width ~= nil and viewport.Height ~= nil) then
+                    local rx, ry, rz, ux, uy, uz = GetBillboardVectors(device);
+                    local top = nil;
+                    local points = {
+                        { plateWorldWidth * -0.5, plateWorldHeight * -0.5 },
+                        { plateWorldWidth * 0.5, plateWorldHeight * -0.5 },
+                        { plateWorldWidth * 0.5, plateWorldHeight * 0.5 },
+                        { plateWorldWidth * -0.5, plateWorldHeight * 0.5 },
+                    };
+
+                    for _, point in ipairs(points) do
+                        local sx, sy = ProjectBillboardPoint(view, proj, viewport, plateX, plateY, plateZ, rx, ry, rz, ux, uy, uz, point[1], point[2]);
+
+                        if (sx ~= nil and sy ~= nil) then
+                            top = (top == nil) and sy or math.min(top, sy);
+                        end
+                    end
+
+                    local padding = math.max(0, tonumber(settings.tacticalScreenClampTopPadding) or 24);
+
+                    if (top ~= nil and top < padding) then
+                        local centerX, centerY = ProjectWithZ(view, proj, viewport.Width, viewport.Height, plateX, plateY, plateZ);
+                        local raisedX, raisedY = ProjectWithZ(view, proj, viewport.Width, viewport.Height, plateX, plateY + 0.10, plateZ);
+
+                        if (centerX ~= nil and centerY ~= nil and raisedX ~= nil and raisedY ~= nil and raisedY ~= centerY) then
+                            plateY = plateY + ((padding - top) / ((raisedY - centerY) / 0.10));
+                        end
+                    end
+                end
+            end
+        end
+
+        local _, savePlateZFunc = device:GetRenderState(D3DRS_ZFUNC);
 
         if (ShouldHideProjectedBelowViewportPlate(device, entityManager, style, plateX, plateY, plateZ) == true) then
             return;
         end
-
-        local _, savePlateZFunc = device:GetRenderState(D3DRS_ZFUNC);
-        local plateWorldWidth = (tonumber(style.plateWorldWidth) or 0.84) * plateScale;
-        local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
 
         style.clickTargetType = plate.clickTargetType or style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy');
         style.serverId = plate.serverId or style.serverId;
@@ -2553,6 +2599,75 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
     end
 end
 
+local function GetPlateQueuePriority(plate, targetIndex, subTargetIndex)
+    local index = tonumber(plate ~= nil and plate.targetIndex) or 0;
+    local marker = plate ~= nil and plate.worldMarker ~= nil and plate.worldMarker.targetMarker or nil;
+    local targetType = tostring(plate ~= nil and plate.clickTargetType or ''):lower();
+
+    if (plate ~= nil and plate.isSelf == true) then
+        return 0;
+    end
+
+    if (index ~= 0 and (index == tonumber(targetIndex) or index == tonumber(subTargetIndex))) then
+        return 1;
+    end
+
+    if (marker ~= nil and marker.enabled == true) then
+        return 2;
+    end
+
+    if (targetType == 'pc') then return 10; end
+    if (targetType == 'enemy') then return 20; end
+    if (targetType == 'trust') then return 30; end
+    if (targetType == 'pet') then return 40; end
+    if (targetType == 'npc') then return 50; end
+    if (targetType == 'object') then return 60; end
+
+    return 70;
+end
+
+local function IsImportantPlate(plate, targetIndex, subTargetIndex)
+    local index = tonumber(plate ~= nil and plate.targetIndex) or 0;
+    local marker = plate ~= nil and plate.worldMarker ~= nil and plate.worldMarker.targetMarker or nil;
+
+    return
+        (plate ~= nil and plate.isSelf == true) or
+        (index ~= 0 and (index == tonumber(targetIndex) or index == tonumber(subTargetIndex))) or
+        (marker ~= nil and marker.enabled == true);
+end
+
+local function CanStackPlateType(plate, settings, targetIndex, subTargetIndex)
+    if (
+        settings ~= nil and
+        settings.plateStackKeepTacticalFixed ~= false and
+        IsImportantPlate(plate, targetIndex, subTargetIndex) == true
+    ) then
+        return true;
+    end
+
+    local targetType = tostring(plate ~= nil and plate.clickTargetType or ''):lower();
+    local types = type(settings ~= nil and settings.plateStackingTypes) == 'table' and settings.plateStackingTypes or nil;
+
+    return types ~= nil and types[targetType] == true;
+end
+
+local function GetPlateStackPriority(plate, settings, targetIndex, subTargetIndex)
+    if (IsImportantPlate(plate, targetIndex, subTargetIndex) == true) then
+        return 0;
+    end
+
+    local targetType = tostring(plate ~= nil and plate.clickTargetType or ''):lower();
+    local order = type(settings ~= nil and settings.plateStackingPriority) == 'table' and settings.plateStackingPriority or {};
+
+    for index, key in ipairs(order) do
+        if (tostring(key or ''):lower() == targetType) then
+            return index * 10;
+        end
+    end
+
+    return 999;
+end
+
 local function GetDrawableQueuedPlates()
     local settings = targeting.GetSettings();
     local maxCount = math.floor((tonumber(settings.maxWorldPlateCount) or 0) + 0.5);
@@ -2565,21 +2680,9 @@ local function GetDrawableQueuedPlates()
     local list = {};
 
     for _, plate in ipairs(queuedPlates) do
-        local index = tonumber(plate.targetIndex) or 0;
-        local marker = plate.worldMarker ~= nil and plate.worldMarker.targetMarker or nil;
-        local priority = 3;
-
-        if (plate.isSelf == true) then
-            priority = 0;
-        elseif (index ~= 0 and (index == tonumber(targetIndex) or index == tonumber(subTargetIndex))) then
-            priority = 1;
-        elseif (marker ~= nil and marker.enabled == true) then
-            priority = 2;
-        end
-
         list[#list + 1] = {
             plate = plate,
-            priority = priority,
+            priority = GetPlateQueuePriority(plate, targetIndex, subTargetIndex),
             distance = tonumber(plate.distance) or 9999,
         };
     end
@@ -2598,6 +2701,239 @@ local function GetDrawableQueuedPlates()
     end
 
     return out;
+end
+
+local function BuildPlateStackEntry(plate, entityManager, getBone, device, targetIndex, subTargetIndex, settings)
+    if (plate == nil or plate.worldMarker == nil or plate.worldMarker.plateTextureId == nil or entityManager == nil or getBone == nil or device == nil) then
+        return nil;
+    end
+
+    if (CanStackPlateType(plate, settings, targetIndex, subTargetIndex) ~= true) then
+        return nil;
+    end
+
+    local index = tonumber(plate.targetIndex);
+
+    if (index == nil or index == 0) then
+        return nil;
+    end
+
+    local actorPointer = entityManager:GetActorPointer(index);
+
+    if (actorPointer == nil or actorPointer == 0) then
+        return nil;
+    end
+
+    local style = plate.worldMarker or {};
+    local wx, wy, wz = GetAnchor(actorPointer, getBone, style);
+
+    if (wx == nil or wy == nil or wz == nil) then
+        return nil;
+    end
+
+    local plateScale = GetPlateDistanceScale(style, index, plate.distance or style.distance);
+    local plateWorldOffsetX = tonumber(style.plateWorldOffsetX) or 0;
+    local plateWorldOffsetY =
+        (tonumber(style.plateWorldOffsetY) or tonumber(style.nameWorldOffsetY) or 0.78) +
+        ((plateScale - 1.0) * (tonumber(style.plateDistanceScaleOffsetY) or 0));
+    local plateWorldOffsetZ = tonumber(style.plateWorldOffsetZ) or 0;
+    local plateX = wx + plateWorldOffsetX;
+    local plateY = wz + verticalOffset + plateWorldOffsetY - nameVerticalOffset;
+    local plateZ = wy + plateWorldOffsetZ;
+
+    local _, view = device:GetTransform(2);
+    local _, proj = device:GetTransform(3);
+    local _, viewport = device:GetViewport();
+
+    if (view == nil or proj == nil or viewport == nil or viewport.Width == nil or viewport.Height == nil) then
+        return nil;
+    end
+
+    local plateWorldWidth = (tonumber(style.plateWorldWidth) or 0.84) * plateScale;
+    local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
+    local rx, ry, rz, ux, uy, uz = GetBillboardVectors(device);
+    local points = {
+        { plateWorldWidth * -0.5, plateWorldHeight * -0.5 },
+        { plateWorldWidth * 0.5, plateWorldHeight * -0.5 },
+        { plateWorldWidth * 0.5, plateWorldHeight * 0.5 },
+        { plateWorldWidth * -0.5, plateWorldHeight * 0.5 },
+    };
+    local left = nil;
+    local top = nil;
+    local right = nil;
+    local bottom = nil;
+
+    for _, point in ipairs(points) do
+        local sx, sy = ProjectBillboardPoint(view, proj, viewport, plateX, plateY, plateZ, rx, ry, rz, ux, uy, uz, point[1], point[2]);
+
+        if (sx ~= nil and sy ~= nil) then
+            left = (left == nil) and sx or math.min(left, sx);
+            top = (top == nil) and sy or math.min(top, sy);
+            right = (right == nil) and sx or math.max(right, sx);
+            bottom = (bottom == nil) and sy or math.max(bottom, sy);
+        end
+    end
+
+    if (left == nil or top == nil or right == nil or bottom == nil or right <= left or bottom <= top) then
+        return nil;
+    end
+
+    local centerX, centerY = ProjectWithZ(view, proj, viewport.Width, viewport.Height, plateX, plateY, plateZ);
+    local raisedX, raisedY = ProjectWithZ(view, proj, viewport.Width, viewport.Height, plateX, plateY + 0.10, plateZ);
+    local screenDeltaPerUnit = nil;
+
+    if (centerX ~= nil and centerY ~= nil and raisedX ~= nil and raisedY ~= nil and raisedY ~= centerY) then
+        screenDeltaPerUnit = (raisedY - centerY) / 0.10;
+    end
+
+    return {
+        plate = plate,
+        priority = GetPlateStackPriority(plate, settings, targetIndex, subTargetIndex),
+        distance = tonumber(plate.distance) or 9999,
+        locked = settings ~= nil and settings.plateStackKeepTacticalFixed ~= false and IsImportantPlate(plate, targetIndex, subTargetIndex) == true,
+        x1 = left,
+        y1 = top,
+        x2 = right,
+        y2 = bottom,
+        height = bottom - top,
+        screenDeltaPerUnit = screenDeltaPerUnit,
+    };
+end
+
+local function ApplyPlateStacking(plates, entityManager, getBone, device)
+    local settings = targeting.GetSettings();
+
+    stackOffsetFrame = stackOffsetFrame + 1;
+
+    for _, plate in ipairs(plates or {}) do
+        plate._stackOffsetY = nil;
+    end
+
+    if (settings.plateStackingEnabled ~= true) then
+        stackOffsetCache = {};
+        return;
+    end
+
+    local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
+    local entries = {};
+
+    for _, plate in ipairs(plates or {}) do
+        local entry = BuildPlateStackEntry(plate, entityManager, getBone, device, targetIndex, subTargetIndex, settings);
+
+        if (entry ~= nil and entry.screenDeltaPerUnit ~= nil and entry.screenDeltaPerUnit ~= 0) then
+            entries[#entries + 1] = entry;
+        end
+    end
+
+    if (#entries <= 1) then
+        return;
+    end
+
+    local gap = math.max(0, tonumber(settings.plateStackGap) or 4);
+    local maxLift = tonumber(settings.plateStackMaxLift) or 72;
+    if (maxLift <= 0) then
+        maxLift = 240;
+    else
+        maxLift = math.max(0, maxLift);
+    end
+    local horizontalOverlap = math.max(0.05, math.min(1.0, tonumber(settings.plateStackHorizontalOverlap) or 0.30));
+    local verticalOverlap = math.max(0.05, math.min(1.0, tonumber(settings.plateStackVerticalOverlap) or 0.50));
+
+    table.sort(entries, function(left, right)
+        if (left.locked ~= right.locked) then
+            return left.locked == true;
+        end
+
+        if (left.y2 ~= right.y2) then
+            return left.y2 > right.y2;
+        end
+
+        if (left.x1 ~= right.x1) then
+            return left.x1 < right.x1;
+        end
+
+        if (left.priority ~= right.priority) then
+            return left.priority < right.priority;
+        end
+
+        if (settings.plateStackClosestOnTop == true and left.distance ~= right.distance) then
+            return left.distance < right.distance;
+        end
+
+        return (tonumber(left.plate ~= nil and left.plate.targetIndex) or 0) < (tonumber(right.plate ~= nil and right.plate.targetIndex) or 0);
+    end);
+
+    local placed = {};
+
+    for _, entry in ipairs(entries) do
+        local finalTop = entry.y1;
+        local minTop = entry.y1 - maxLift;
+        local changed = true;
+        local loops = 0;
+
+        if (entry.locked ~= true) then
+            while (changed == true and loops < 20) do
+                changed = false;
+                loops = loops + 1;
+
+                for _, other in ipairs(placed) do
+                    local overlapLeft = math.max(entry.x1, other.x1);
+                    local overlapRight = math.min(entry.x2, other.x2);
+                    local overlapWidth = overlapRight - overlapLeft;
+                    local xOverlap = overlapWidth > (math.min(entry.x2 - entry.x1, other.x2 - other.x1) * horizontalOverlap);
+
+                    local overlapTop = math.max(finalTop, other.y1);
+                    local overlapBottom = math.min(finalTop + entry.height + gap, other.y2 + gap);
+                    local overlapHeight = overlapBottom - overlapTop;
+                    local yOverlap = overlapHeight > (math.min(entry.height, other.y2 - other.y1) * verticalOverlap);
+
+                    if (xOverlap == true and yOverlap == true) then
+                        local nextTop = math.max(minTop, other.y1 - entry.height - gap);
+
+                        if (nextTop ~= finalTop) then
+                            finalTop = nextTop;
+                            changed = true;
+                        end
+                    end
+                end
+            end
+        end
+
+        local screenDelta = finalTop - entry.y1;
+        local targetKey = tonumber(entry.plate ~= nil and entry.plate.targetIndex) or 0;
+
+        if (targetKey ~= 0) then
+            local desiredOffset = 0;
+
+            if (screenDelta ~= 0) then
+                desiredOffset = screenDelta / entry.screenDeltaPerUnit;
+            end
+
+            stackOffsetCache[targetKey] = {
+                offset = desiredOffset,
+                frame = stackOffsetFrame,
+            };
+
+            if (desiredOffset ~= 0) then
+                entry.plate._stackOffsetY = desiredOffset;
+            end
+        end
+
+        placed[#placed + 1] = {
+            x1 = entry.x1,
+            x2 = entry.x2,
+            y1 = finalTop,
+            y2 = finalTop + entry.height,
+        };
+    end
+
+    if ((stackOffsetFrame % 120) == 0) then
+        for targetKey, cached in pairs(stackOffsetCache) do
+            if (cached == nil or (stackOffsetFrame - (tonumber(cached.frame) or 0)) > 180) then
+                stackOffsetCache[targetKey] = nil;
+            end
+        end
+    end
 end
 
 function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
@@ -2623,7 +2959,10 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         pendingSelfClickRects = nil;
         pendingClickRects = {};
 
-        for _, plate in ipairs(GetDrawableQueuedPlates()) do
+        local drawablePlates = GetDrawableQueuedPlates();
+        ApplyPlateStacking(drawablePlates, entityManager, getBone, device);
+
+        for _, plate in ipairs(drawablePlates) do
             if (plate.worldMarker ~= nil and plate.worldMarker.plateTextureId ~= nil) then
                 pcall(function ()
                     DrawOne(plate, entityManager, getBone, device, true);
@@ -2645,6 +2984,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
     lastDrawCount = 0;
 
     local drawablePlates = GetDrawableQueuedPlates();
+    ApplyPlateStacking(drawablePlates, entityManager, getBone, device);
 
     for _, plate in ipairs(drawablePlates) do
         local ok, err = pcall(function ()

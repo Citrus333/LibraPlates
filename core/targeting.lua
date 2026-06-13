@@ -19,6 +19,16 @@ local defaultPlateClickNoGoZones = {
     { name = 'Left UI', enabled = false, x = 0, y = 0, width = 360, height = 960, color = { 0.40, 1.0, 0.25, 1.0 } },
 };
 
+local defaultPlateStackingPriority = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
+local defaultPlateStackingTypes = {
+    pc = true,
+    enemy = true,
+    trust = false,
+    pet = false,
+    npc = false,
+    object = false,
+};
+
 local function NormalizePlateClickNoGoZones(settings)
     if (type(settings.plateClickNoGoZones) ~= 'table') then
         settings.plateClickNoGoZones = {};
@@ -211,6 +221,69 @@ local function GetTargetingSettings()
         global.targeting.disableExpensiveWorldWidgets = false;
     end
 
+    if (global.targeting.plateStackingEnabled == nil) then
+        global.targeting.plateStackingEnabled = true;
+    end
+
+    if (global.targeting.plateStackingScope == nil) then
+        global.targeting.plateStackingScope = 'PC + Enemy';
+    end
+
+    if (type(global.targeting.plateStackingTypes) ~= 'table') then
+        global.targeting.plateStackingTypes = {};
+
+        local scope = tostring(global.targeting.plateStackingScope or 'PC + Enemy');
+        if (scope == 'PC only') then
+            global.targeting.plateStackingTypes.pc = true;
+        elseif (scope == 'Enemy only') then
+            global.targeting.plateStackingTypes.enemy = true;
+        elseif (scope == 'All except NPC/Object') then
+            global.targeting.plateStackingTypes.pc = true;
+            global.targeting.plateStackingTypes.enemy = true;
+            global.targeting.plateStackingTypes.trust = true;
+            global.targeting.plateStackingTypes.pet = true;
+        else
+            global.targeting.plateStackingTypes.pc = true;
+            global.targeting.plateStackingTypes.enemy = true;
+        end
+    end
+
+    if (type(global.targeting.plateStackingPriority) ~= 'table') then
+        global.targeting.plateStackingPriority = {};
+    end
+
+    if (global.targeting.plateStackClosestOnTop == nil) then
+        global.targeting.plateStackClosestOnTop = true;
+    end
+
+    if (global.targeting.plateStackKeepTacticalFixed == nil) then
+        global.targeting.plateStackKeepTacticalFixed = true;
+    end
+
+    if (global.targeting.plateStackGap == nil) then
+        global.targeting.plateStackGap = 4;
+    end
+
+    if (global.targeting.plateStackMaxLift == nil) then
+        global.targeting.plateStackMaxLift = 72;
+    end
+
+    if (global.targeting.plateStackHorizontalOverlap == nil) then
+        global.targeting.plateStackHorizontalOverlap = 0.30;
+    end
+
+    if (global.targeting.plateStackVerticalOverlap == nil) then
+        global.targeting.plateStackVerticalOverlap = 0.50;
+    end
+
+    if (global.targeting.tacticalScreenClampEnabled == nil) then
+        global.targeting.tacticalScreenClampEnabled = false;
+    end
+
+    if (global.targeting.tacticalScreenClampTopPadding == nil) then
+        global.targeting.tacticalScreenClampTopPadding = 24;
+    end
+
     if (global.targeting.textureCacheLimit == nil) then
         global.targeting.textureCacheLimit = 96;
     end
@@ -296,6 +369,50 @@ local function GetTargetingSettings()
     global.targeting.hideDistantWorldPlates = global.targeting.hideDistantWorldPlates == true;
     global.targeting.worldPlateDistanceLimit = math.max(5.0, math.min(64.4, tonumber(global.targeting.worldPlateDistanceLimit) or 49.9));
     global.targeting.disableExpensiveWorldWidgets = global.targeting.disableExpensiveWorldWidgets == true;
+    global.targeting.plateStackingEnabled = global.targeting.plateStackingEnabled ~= false;
+    local plateStackingScope = tostring(global.targeting.plateStackingScope or 'PC + Enemy');
+    if (
+        plateStackingScope ~= 'PC + Enemy' and
+        plateStackingScope ~= 'PC only' and
+        plateStackingScope ~= 'Enemy only' and
+        plateStackingScope ~= 'All except NPC/Object'
+    ) then
+        plateStackingScope = 'PC + Enemy';
+    end
+    global.targeting.plateStackingScope = plateStackingScope;
+    local stackingTypes = global.targeting.plateStackingTypes;
+    for _, key in ipairs(defaultPlateStackingPriority) do
+        if (stackingTypes[key] == nil) then
+            stackingTypes[key] = defaultPlateStackingTypes[key] == true;
+        else
+            stackingTypes[key] = stackingTypes[key] == true;
+        end
+    end
+
+    local seenPriority = {};
+    local normalizedPriority = {};
+    for _, key in ipairs(global.targeting.plateStackingPriority) do
+        key = tostring(key or ''):lower();
+        if (defaultPlateStackingTypes[key] ~= nil and seenPriority[key] ~= true) then
+            normalizedPriority[#normalizedPriority + 1] = key;
+            seenPriority[key] = true;
+        end
+    end
+    for _, key in ipairs(defaultPlateStackingPriority) do
+        if (seenPriority[key] ~= true) then
+            normalizedPriority[#normalizedPriority + 1] = key;
+            seenPriority[key] = true;
+        end
+    end
+    global.targeting.plateStackingPriority = normalizedPriority;
+    global.targeting.plateStackClosestOnTop = global.targeting.plateStackClosestOnTop == true;
+    global.targeting.plateStackKeepTacticalFixed = global.targeting.plateStackKeepTacticalFixed ~= false;
+    global.targeting.plateStackGap = math.max(0, math.min(40, math.floor((tonumber(global.targeting.plateStackGap) or 4) + 0.5)));
+    global.targeting.plateStackMaxLift = math.max(0, math.min(240, math.floor((tonumber(global.targeting.plateStackMaxLift) or 72) + 0.5)));
+    global.targeting.plateStackHorizontalOverlap = math.max(0.05, math.min(1.0, tonumber(global.targeting.plateStackHorizontalOverlap) or 0.30));
+    global.targeting.plateStackVerticalOverlap = math.max(0.05, math.min(1.0, tonumber(global.targeting.plateStackVerticalOverlap) or 0.50));
+    global.targeting.tacticalScreenClampEnabled = global.targeting.tacticalScreenClampEnabled == true;
+    global.targeting.tacticalScreenClampTopPadding = math.max(0, math.min(200, math.floor((tonumber(global.targeting.tacticalScreenClampTopPadding) or 24) + 0.5)));
     global.targeting.textureCacheLimit = math.max(32, math.min(256, math.floor((tonumber(global.targeting.textureCacheLimit) or 96) + 0.5)));
     NormalizePlateClickNoGoZones(global.targeting);
 
@@ -774,6 +891,7 @@ end
 local gatheringActions = {
     ['Mining Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickMining' },
     ['Excavation Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickExcavation' },
+    ['Excav. Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickExcavation' },
     ['Logging Point'] = { command = '/item "Hatchet" <t>', tool = 'Hatchet', settingKey = 'enableRightClickLogging' },
     ['Harvest Point'] = { command = '/item "Sickle" <t>', tool = 'Sickle', settingKey = 'enableRightClickHarvesting' },
     ['Harvesting Point'] = { command = '/item "Sickle" <t>', tool = 'Sickle', settingKey = 'enableRightClickHarvesting' },

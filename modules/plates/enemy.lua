@@ -386,7 +386,7 @@ local function IsCatseyeSpecialNameIcon(enemy)
 end
 
 local function AddCatseyeSpecialNameIconToPlate(plateData, context)
-    if (context == nil or context.stateName ~= 'Idle' or IsCatseyeSpecialNameIcon(context.enemy) ~= true) then
+    if (context == nil or IsCatseyeSpecialNameIcon(context.enemy) ~= true) then
         return;
     end
 
@@ -1584,7 +1584,7 @@ local function BuildEnemyCacheSignature(context)
         'difficulty=' .. tostring(context.mobInfo ~= nil and context.mobInfo.Difficulty or ''),
         'claim=' .. tostring(context.claimCategory or ''),
         'ap=' .. tostring(mobInfoData.HasActivityPointMarker(enemy.name) == true),
-        'catseyeSpecialNameIcon=' .. tostring(context.stateName == 'Idle' and IsCatseyeSpecialNameIcon(enemy) == true),
+        'catseyeSpecialNameIcon=' .. tostring(IsCatseyeSpecialNameIcon(enemy) == true),
         'nm=' .. tostring(context.mobInfo ~= nil and context.mobInfo.IsNM or ''),
         'aoe=' .. aoeNameHighlight.GetSignature(enemy.index, 'enemy'),
         'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
@@ -1760,7 +1760,7 @@ local function QueueEnemy(enemy)
     end
 
     local canvasTimer = perfMeter.BeginDetail('enemy.canvas');
-    local hasCatseyeSpecialNameIcon = context.stateName == 'Idle' and IsCatseyeSpecialNameIcon(enemy) == true;
+    local hasCatseyeSpecialNameIcon = IsCatseyeSpecialNameIcon(enemy) == true;
     local textureKey = 'enemy-' .. tostring(enemy.index) .. (hasCatseyeSpecialNameIcon == true and '-catseye-star' or '') .. (plateData.canvasWidth ~= nil and '-aoe' or '');
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);

@@ -1,5 +1,6 @@
 local state = require('core.state');
 local log = require('core.log');
+local bit = require('bit');
 local occlusion = require('core.occlusion');
 local canvasDefaults = require('config.canvas');
 local canvasTexture = require('core.canvas_texture');
@@ -39,6 +40,28 @@ local commands = {};
 local visDebugCaptures = {};
 local npcCapturePath = 'TEMP WORK FOLDER\\missing_npcs.txt';
 local staffCapturePath = 'TEMP WORK FOLDER\\staff_players.txt';
+
+local function HasFlag(value, flag)
+    return bit.band(tonumber(value) or 0, flag) ~= 0;
+end
+
+local function DebugFlagList(value, flags)
+    local parts = {};
+
+    value = tonumber(value) or 0;
+
+    for _, flag in ipairs(flags) do
+        if (HasFlag(value, flag) == true) then
+            parts[#parts + 1] = string.format('0x%X', flag);
+        end
+    end
+
+    if (#parts == 0) then
+        return '-';
+    end
+
+    return table.concat(parts, ',');
+end
 
 -- ============================================================
 -- Parsing
@@ -957,6 +980,8 @@ function commands.Handle(e)
         local cleanName = tostring(debug.name or ''):gsub('\170', '');
         local resolvedEntityName, info = npcObjectInfo.ResolveKind(cleanName, rawEntityName);
         local typeLineSettings = state.GetWidgetSettings(resolvedEntityName, 'Idle', 'Type line', typeLineDefaults);
+        local render0 = tonumber(debug.renderFlags0) or 0;
+        local render1 = tonumber(debug.renderFlags1) or 0;
 
         log.Info(
             'Entity debug target=' .. tostring(debug.index) ..
@@ -969,8 +994,11 @@ function commands.Handle(e)
             ' nameLen=' .. tostring(string.len(tostring(debug.name or ''))) ..
             ' cleanLen=' .. tostring(string.len(cleanName)) ..
             ' spawn=0x' .. string.format('%X', tonumber(debug.spawnFlags) or 0) ..
-            ' render0=0x' .. string.format('%X', tonumber(debug.renderFlags0) or 0) ..
-            ' render1=0x' .. string.format('%X', tonumber(debug.renderFlags1) or 0) ..
+            ' render0=0x' .. string.format('%X', render0) ..
+            ' render1=0x' .. string.format('%X', render1) ..
+            ' specialNameBit=' .. tostring(HasFlag(render1, 0x800)) ..
+            ' r0hi=' .. tostring(HasFlag(render0, 0x80000000)) ..
+            ' r0mid=' .. tostring(HasFlag(render0, 0x40000000)) ..
             ' indexAllowed=' .. tostring(debug.indexAllowed) ..
             ' isMob=' .. tostring(debug.isMob) ..
             ' isParty=' .. tostring(debug.isParty) ..
@@ -986,6 +1014,14 @@ function commands.Handle(e)
             ' infoSource=' .. tostring(info ~= nil and info.source or nil) ..
             ' infoType=' .. tostring(info ~= nil and info.type or nil) ..
             ' typeLineEnabled=' .. tostring(typeLineSettings ~= nil and typeLineSettings.enabled == true)
+        );
+        log.Info(
+            'Entity icon probe target=' .. tostring(debug.index) ..
+            ' name=' .. tostring(cleanName) ..
+            ' nativeSpecial=' .. tostring(HasFlag(render1, 0x800)) ..
+            ' r0Bits=' .. DebugFlagList(render0, { 0x200, 0x2000, 0x400000, 0x800000, 0x40000000, 0x80000000 }) ..
+            ' r1Bits=' .. DebugFlagList(render1, { 0x8, 0x40, 0x400, 0x800, 0x8000, 0x2000000 }) ..
+            ' expectedStar=' .. tostring(HasFlag(render1, 0x800))
         );
         return;
     end

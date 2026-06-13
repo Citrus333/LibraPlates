@@ -454,6 +454,9 @@ function entities.GetEnemy(index, allowHidden)
     local renderFlags0 = SafeCall(nil, function()
         return entityManager:GetRenderFlags0(index);
     end);
+    local renderFlags1 = SafeCall(nil, function()
+        return entityManager:GetRenderFlags1(index);
+    end);
 
     return {
         index = index,
@@ -462,6 +465,7 @@ function entities.GetEnemy(index, allowHidden)
         hpPercent = ent.HPPercent or 100,
         distance = ent.Distance ~= nil and math.sqrt(ent.Distance) or nil,
         renderFlags0 = renderFlags0,
+        renderFlags1 = renderFlags1,
     };
 end
 
@@ -504,6 +508,7 @@ function entities.GetNearbyEnemies(maxDistance)
                     hpPercent = ent.HPPercent or 100,
                     distance = math.sqrt(ent.Distance),
                     renderFlags0 = SafeCall(nil, function() return entityManager:GetRenderFlags0(index); end),
+                    renderFlags1 = SafeCall(nil, function() return entityManager:GetRenderFlags1(index); end),
                 };
             end
         end

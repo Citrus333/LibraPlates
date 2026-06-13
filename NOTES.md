@@ -38,6 +38,7 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Enemy level/difficulty follow-up: decide what level text/color should show for mobs that are effectively impossible to gauge normally.
 - Claim state color settings follow-up: add outline color controls for each Enemy claim state.
 - Blood aggro icon is not showing; likely hidden underneath the links icon due to an anchoring/overlap issue.
+- Catseye special enemy star icon follow-up: Enemy World plates now test the native special-name-icon bit (`renderFlags1 & 0x800`) and draw the Catseye star. Later add proper Enemy plate settings for this star icon.
 - Enmity is currently in Enemy; find a better spot, possibly profile-dependent for Enemy vs Self.
 - Move aggro.
 - Blue magic is missing casting icons and is not showing AOE.

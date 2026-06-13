@@ -381,8 +381,12 @@ local function AddActivityPointIconToPlate(plateData, enemyName, nameSettings)
     };
 end
 
-local function AddCatseyeSpecialEnemyIconToPlate(plateData, enemy, nameSettings)
-    if (bit.band(tonumber(enemy ~= nil and enemy.renderFlags0) or 0, 0x80000000) == 0) then
+local function IsCatseyeSpecialNameIcon(enemy)
+    return bit.band(tonumber(enemy ~= nil and enemy.renderFlags1) or 0, 0x800) ~= 0;
+end
+
+local function AddCatseyeSpecialNameIconToPlate(plateData, context)
+    if (context == nil or context.stateName ~= 'Idle' or IsCatseyeSpecialNameIcon(context.enemy) ~= true) then
         return;
     end
 
@@ -392,16 +396,17 @@ local function AddCatseyeSpecialEnemyIconToPlate(plateData, enemy, nameSettings)
         return;
     end
 
+    local nameSettings = context.nameSettings or nameDefaults;
     local nameSize = tonumber(nameSettings.textSize) or tonumber(nameDefaults.textSize) or 24;
     local iconSize = math.max(14, math.min(40, math.floor((nameSize * 0.95) + 0.5)));
 
     plateData.icons = plateData.icons or {};
     plateData.icons[#plateData.icons + 1] = {
-        kind = 'catseyeSpecialEnemy',
+        kind = 'catseyeSpecialNameIcon',
         textureId = textureId,
         size = iconSize,
-        offsetX = (tonumber(nameSettings.offsetX) or 0) - iconSize - 4,
-        offsetY = (tonumber(nameSettings.offsetY) or -54) + 2,
+        offsetX = (tonumber(nameSettings.offsetX) or 0) - iconSize - 8,
+        offsetY = (tonumber(nameSettings.offsetY) or -54) + 1,
         anchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         anchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
     };
@@ -1566,7 +1571,7 @@ local function BuildEnemyCacheSignature(context)
     local enemy = context.enemy;
 
     return table.concat({
-        'v=1',
+        'v=2',
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'activeDetail=' .. tostring(context.hasActiveDetail),
         'name=' .. tostring(context.displayName or ''),
@@ -1579,7 +1584,7 @@ local function BuildEnemyCacheSignature(context)
         'difficulty=' .. tostring(context.mobInfo ~= nil and context.mobInfo.Difficulty or ''),
         'claim=' .. tostring(context.claimCategory or ''),
         'ap=' .. tostring(mobInfoData.HasActivityPointMarker(enemy.name) == true),
-        'catseyeStar=' .. tostring(bit.band(tonumber(enemy.renderFlags0) or 0, 0x80000000) ~= 0),
+        'catseyeSpecialNameIcon=' .. tostring(context.stateName == 'Idle' and IsCatseyeSpecialNameIcon(enemy) == true),
         'nm=' .. tostring(context.mobInfo ~= nil and context.mobInfo.IsNM or ''),
         'aoe=' .. aoeNameHighlight.GetSignature(enemy.index, 'enemy'),
         'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
@@ -1669,7 +1674,7 @@ local function BuildEnemyPlateData(context)
         castBar = context.castBar,
     };
     AddActivityPointIconToPlate(plateData, enemy.name, context.nameSettings);
-    AddCatseyeSpecialEnemyIconToPlate(plateData, enemy, context.nameSettings);
+    AddCatseyeSpecialNameIconToPlate(plateData, context);
     AddJobToPlate(plateData, context.jobText, context.jobSettings, context.globalSettings);
     AddLevelToPlate(plateData, context.levelText, context.levelSettings, context.mobInfo, context.globalSettings);
     AddIdToPlate(plateData, enemy, context.idSettings, context.mobInfo, context.globalSettings);
@@ -1755,7 +1760,8 @@ local function QueueEnemy(enemy)
     end
 
     local canvasTimer = perfMeter.BeginDetail('enemy.canvas');
-    local textureKey = 'enemy-' .. tostring(enemy.index) .. (plateData.canvasWidth ~= nil and '-aoe' or '');
+    local hasCatseyeSpecialNameIcon = context.stateName == 'Idle' and IsCatseyeSpecialNameIcon(enemy) == true;
+    local textureKey = 'enemy-' .. tostring(enemy.index) .. (hasCatseyeSpecialNameIcon == true and '-catseye-star' or '') .. (plateData.canvasWidth ~= nil and '-aoe' or '');
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
     local plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);

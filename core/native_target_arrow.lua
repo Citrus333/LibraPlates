@@ -612,8 +612,7 @@ local function HardHidePrimitivesForDraw(allowAutomaticBurst)
     local hideTargetForDraw =
         targetPrimitiveHideAllowed == true and
         (uiPrimitiveEnabled == true or hideAllPrimitiveEnabled == true);
-    local hidePartyForDraw = hideAllPrimitiveEnabled == true and
-        (hardHideManualEnabled == true or hardHideFrameWritten ~= true);
+    local hidePartyForDraw = false;
 
     if (hideTargetForDraw ~= true and hidePartyForDraw ~= true) then
         return;

@@ -6,6 +6,7 @@ local targeting = require('core.targeting');
 local mouseControls = require('core.mouse_controls');
 local worldMarkerProbe = require('core.world_marker_probe');
 local nativeTargetArrow = require('core.native_target_arrow');
+local targetModuleMarker = require('core.target_module_marker');
 local quickMenu = require('core.quick_menu');
 local peerInspector = require('modules.peer_inspector');
 local perfMeter = require('core.perf_meter');
@@ -38,6 +39,8 @@ local nativeNamesNextRetryFrame = 0;
 local nativeNamesFrameCounter = 0;
 local nativeNamesPeriodicIntervalFrames = 600;
 local nativeNamesNextPeriodicFrame = 0;
+local targetModulePrewarmQueue = {};
+local targetModulePrewarmWarned = false;
 
 local function GetLoginStatus()
     local status = nil;
@@ -85,8 +88,7 @@ local function UpdateNativeTargetArrowVisibility()
         (
             targetingSettings.hideNativePartyTargetUi == true or
             targetingSettings.hideNativeTargetArrow == true
-        ) and hasAnyTarget == true and
-        mogHouseNativePassthrough ~= true;
+        ) and mogHouseNativePassthrough ~= true;
     local hideNativeTargetArrow =
         nativeHideSettingEnabled == true and
         hasAnyTarget == true and
@@ -108,11 +110,7 @@ local function UpdateNativeTargetArrowVisibility()
     nativeTargetArrow.Update();
 
     if (startupBurstActive == true) then
-        if (hideNativePartyTargetUi == true) then
-            nativeTargetArrow.HideAllPrimitivesOnce();
-        else
-            nativeTargetArrow.HideTargetPrimitiveOnce();
-        end
+        nativeTargetArrow.HideTargetPrimitiveOnce();
 
         nativeTargetStartupBurstApplied = nativeTargetStartupBurstApplied + 1;
         nativeTargetStartupBurstFrames = nativeTargetStartupBurstFrames - 1;
@@ -167,9 +165,36 @@ local function UpdateNativeNamesVisibility(force)
     end
 end
 
+local function ResetTargetModulePrewarmQueue()
+    targetModulePrewarmQueue = {};
+    targetModulePrewarmWarned = false;
+
+    for _, entityName in ipairs({ 'Self', 'Trust', 'PC', 'Enemy', 'NPC', 'Object' }) do
+        targetModulePrewarmQueue[#targetModulePrewarmQueue + 1] = { entity = entityName, target = 'Target' };
+        targetModulePrewarmQueue[#targetModulePrewarmQueue + 1] = { entity = entityName, target = 'Subtarget' };
+    end
+end
+
+local function UpdateTargetModulePrewarm()
+    if (#targetModulePrewarmQueue == 0) then
+        return;
+    end
+
+    local item = table.remove(targetModulePrewarmQueue, 1);
+    local ok, err = pcall(function()
+        targetModuleMarker.Build(item.entity, 'Combat', item.target, { enabled = true, width = 180, height = 12, offsetX = 0, offsetY = 0 }, 0);
+    end);
+
+    if (ok ~= true and targetModulePrewarmWarned ~= true) then
+        targetModulePrewarmWarned = true;
+        log.Warn('Target module prewarm failed: ' .. tostring(err));
+    end
+end
+
 function modules.HandleLogin()
     nativeNamesLastHidden = nil;
     UpdateNativeNamesVisibility(true);
+    ResetTargetModulePrewarmQueue();
 end
 
 -- ============================================================
@@ -192,6 +217,7 @@ function modules.Load()
     modules.settings.Load();
 
     UpdateNativeNamesVisibility(true);
+    ResetTargetModulePrewarmQueue();
 end
 
 function modules.Unload()
@@ -225,6 +251,7 @@ function modules.Render()
     UpdateNativeTargetArrowVisibility();
     UpdateNativeNamesVisibility(false);
     UpdateNativeNamesRetry();
+    UpdateTargetModulePrewarm();
     jobChange.Update();
     perfMeter.Stop('native', nativeStart);
 
@@ -332,8 +359,7 @@ function modules.UpdateNativeTargetArrow()
         (
             targetingSettings.hideNativePartyTargetUi == true or
             targetingSettings.hideNativeTargetArrow == true
-        ) and hasAnyTarget == true and
-        mogHouseNativePassthrough ~= true;
+        ) and mogHouseNativePassthrough ~= true;
     local nativeHideSettingEnabled =
         targetingSettings.hideNativeTargetArrow == true and
         mogHouseNativePassthrough ~= true;

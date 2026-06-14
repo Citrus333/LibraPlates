@@ -38,8 +38,8 @@ local typeLineDefaults = require('config.widgets.type_line');
 
 local commands = {};
 local visDebugCaptures = {};
-local npcCapturePath = 'TEMP WORK FOLDER\\missing_npcs.txt';
-local staffCapturePath = 'TEMP WORK FOLDER\\staff_players.txt';
+local npcCapturePath = 'C:\\Users\\Lila\\Documents\\ffxi Addon Work\\WORK\\missing_npcs.txt';
+local staffCapturePath = 'C:\\Users\\Lila\\Documents\\ffxi Addon Work\\WORK\\staff_players.txt';
 
 local function HasFlag(value, flag)
     return bit.band(tonumber(value) or 0, flag) ~= 0;
@@ -310,7 +310,7 @@ local function AppendMissingNpc()
 
     local zoneName = GetCurrentZoneName();
     local line = name .. ' | ' .. zoneName;
-    local path = GetAddonRoot() .. npcCapturePath;
+    local path = npcCapturePath;
     local file = io.open(path, 'a');
 
     if (file == nil) then
@@ -382,7 +382,7 @@ local function AppendStaffPlayer(label)
         ' | ' .. BuildRenderFlagText(debug) ..
         ' | distance=' .. tostring(debug ~= nil and debug.distance or nil) ..
         ' | zone=' .. zoneName;
-    local path = GetAddonRoot() .. staffCapturePath;
+    local path = staffCapturePath;
     local file = io.open(path, 'a');
 
     if (file == nil) then

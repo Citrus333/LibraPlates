@@ -116,6 +116,7 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - DirectX wrapper clue: Atom0s DX9 wrapper z-fighting fix greatly reduces LibraPlates lag, but makes Ashita addons click-through.
 - Accessibility/testing workflow: use `/lp lag` as the short one-command lag diagnostic.
 - Idle texture eviction follow-up: if `Evictions/min` climbs with low `Used` count, check for same-key canvas size churn or repeated plate-cache clears before chasing visible plate count.
+- Husband subtarget report `20260614-142652` showed `canvasRenders=0` but high `Evictions/min` with only `33/96` textures used; this was cleanup accounting from released plate-cache keys, not real cache pressure. `canvasTexture.ReleaseKey()` no longer counts manual plate-cache releases as texture evictions; only cache-limit trims do.
 - FPS mode setting follow-up: direct FPS divisor memory write caused an Ashita crash when it was attempted during load, so FPS mode must only be applied from an explicit user action.
 - FPS mode UI now gives a short chat confirmation when the saved FPS setting is changed, and Check only updates the Current mode text without changing the selected setting.
 - Performance settings follow-up: wire `World plate update rate` and `Disable expensive widgets on world plates` to actual world-only throttling/preset behavior after in-game testing confirms the new Performance page layout.
@@ -123,6 +124,20 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 ## Done
 
+- 2026-06-14 - Target/Subtarget ownership moved out of World:
+  - Self, PC, Enemy, and Trust World settings no longer list Target/Subtarget module rows.
+  - NPC/Object keep Target/Subtarget module rows inside the single visible World plate list, but those rows edit hidden Combat/Tactical storage.
+  - NPC/Object do not expose a Tactical or Targeted plate dropdown state.
+  - Target/Subtarget module lookup is forced through Tactical/Combat for those normal entity types, so targeting an idle/world plate no longer reads World target settings.
+  - Removed the temporary Self target-module fallback between World and Tactical because it could crosswire settings.
+  - Native target UI hide hooks are primed again when native target hiding is enabled so the old first-target native arrow flash should stay suppressed.
+- 2026-06-14 - NPC/staff capture output moved out of the live addon folder:
+  - `/lp` NPC missing capture and staff capture now write to `C:\Users\Lila\Documents\ffxi Addon Work\WORK` instead of the removed `TEMP WORK FOLDER`.
+- 2026-06-14 - Reduced no-target to target/subtarget native-hide freeze risk:
+  - The native target startup burst no longer hard-hides party primitives through the draw hook; the burst is target-primitive only.
+  - The hard-hide draw hook is enabled while Libra replaces native party/target UI so keyboard targeting cannot show the native arrow for the first few milliseconds, but the hook now writes only the target primitive.
+  - Target/Subtarget module markers are prewarmed one per frame after load/login so the first real `/st` should not pay every arrow/background/chevron texture setup cost at once.
+  - Self Subtarget no longer uses or shows Subtarget range colors; Self distance is always 0, so runtime now skips action-range lookup for Self and uses the normal arrow tint.
 - 2026-06-14 - Other-player pet plate filter added:
   - PC and NPC/Object scans now skip non-owned known pet names when `hideOtherPlayerPetPlates` is enabled, covering SMN avatars/spirits, observed wyvern names, and known BST jug pet names while leaving the player's own pet path intact.
   - Settings > Visibility now exposes this as `Hide other players' pet plates`, default on.
@@ -170,6 +185,13 @@ This file is for shared testing notes between Lila, her husband, and Codex.
   - The attempted projected-rectangle-to-world-Y stack resolver was removed from `core/world_marker_probe.lua`; enabling stacking no longer applies `_stackOffsetY` or moves world plates.
   - Settings > Visibility no longer shows `Max stack lift`.
   - The old `Nameplates` stacking behavior was inspected: it sorts screen-space plates by `baseY`, checks simple rectangle overlap, and changes only `drawY` for 2D ImGui plate windows. A real replacement should use that same 2D final-draw model instead of moving world anchors.
+- 2026-06-14 - Screen-space plate stacking restored:
+  - Plate stacking now uses the pass-1 click rectangle/invisible-box data, resolves overlaps in 2D screen pixels, shifts the matching click rects, then draws moved plates with a screen-space texture offset.
+  - The resolver now tries left/right horizontal lanes before raising a plate vertically, so tight packs should spread more like WoW-style nameplate stacks instead of forming a tall column first.
+  - World actor anchors are not moved; this avoids the old failure where enabling stacking lifted every world plate upward.
+  - `Stack spacing` and `Allowed overlap` are normalized as pixels, so values like spacing `20` and overlap `2` map directly to about 20 px gap and 2 px allowed overlap.
+  - Target/subtarget/tactical plates stay fixed when `Keep target fixed` is enabled, but still act as blockers for regular world plates.
+  - Settings now expose `Horizontal spread` and `Target blocker width` so users can choose between tighter vertical stacks, wider WoW-style fanning, and softer/harder fixed target blockers.
 - 2026-06-14 - Reduced idle canvas texture cache churn:
   - Canvas render textures now include their render size in the internal cache key, so a plate key changing between canvas sizes no longer releases and recreates the same cache entry every frame.
   - PC, NPC/Object, Enemy, and Trust plate caches now clear once when Settings opens instead of clearing every rendered frame while the config window is open.

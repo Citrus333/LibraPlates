@@ -136,9 +136,13 @@ local function CloneColor(source, fallback)
     };
 end
 
-local function ResolveArrowDistanceColor(distance, settings, markerColor, targetStateName)
+local function ResolveArrowDistanceColor(distance, settings, markerColor, targetStateName, entityName)
     if (settings == nil) then
         return CloneColor(nil, markerColor);
+    end
+
+    if (tostring(entityName or '') == 'Self') then
+        return CloneColor(settings.arrowColor, markerColor);
     end
 
     if (targetStateName ~= 'Subtarget') then
@@ -181,6 +185,26 @@ local function GetAutoPlaceAnchorKinds(value)
     return { 'name', 'hp' };
 end
 
+local tacticalTargetEntities = {
+    Self = true,
+    Enemy = true,
+    PC = true,
+    Trust = true,
+    NPC = true,
+    Object = true,
+};
+
+local function ResolveTargetModuleState(entityName, layoutStateName, targetStateName)
+    if (
+        (targetStateName == 'Target' or targetStateName == 'Subtarget') and
+        tacticalTargetEntities[tostring(entityName or '')] == true
+    ) then
+        return 'Combat';
+    end
+
+    return layoutStateName or 'Idle';
+end
+
 function targetModuleMarker.HasDrawableSettings(entityName, settings)
     if (settings == nil or settings.enabled ~= true) then
         return false;
@@ -197,8 +221,12 @@ end
 function targetModuleMarker.GetSettings(entityName, layoutStateName, targetStateName)
     local defaults = (targetStateName == 'Subtarget') and subtargetModuleDefaults or targetModuleDefaults;
     local widgetName = tostring(targetStateName or 'Target') .. ' Module';
+    local resolvedStateName = ResolveTargetModuleState(entityName or 'Enemy', layoutStateName or 'Idle', targetStateName);
+    local settings = state.GetWidgetSettings(entityName or 'Enemy', resolvedStateName, widgetName, defaults);
 
-    return state.GetWidgetSettings(entityName or 'Enemy', layoutStateName or 'Idle', widgetName, defaults), defaults;
+    arrowAnimation.UpgradeLegacySettings(settings);
+
+    return settings, defaults;
 end
 
 function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, hpBarSettings, distance)
@@ -231,7 +259,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
 
     local settings, defaults = targetModuleMarker.GetSettings(entityName, layoutStateName, targetStateName);
     local markerColor = settings.color or defaults.color;
-    local arrowColor = ResolveArrowDistanceColor(distance, settings, markerColor, targetStateName);
+    local arrowColor = ResolveArrowDistanceColor(distance, settings, markerColor, targetStateName, entityName);
 
     if (settings.enabled == false or markerColor == nil) then
         lastDebug = string.format(

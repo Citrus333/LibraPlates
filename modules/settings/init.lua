@@ -538,6 +538,14 @@ local statesByEntity = {
     ['NPC'] = T{ 'World' },
     ['Object'] = T{ 'World' },
 };
+local tacticalTargetModuleEntities = {
+    ['Self'] = true,
+    ['Enemy'] = true,
+    ['PC'] = true,
+    ['Trust'] = true,
+    ['NPC'] = true,
+    ['Object'] = true,
+};
 local editWidgets = T{
     'Background',
     'Name',
@@ -584,8 +592,6 @@ local selfIdleWidgets = T{
     'Gathering (module)',
     'Quick Menu (module)',
     'Peer (module)',
-    'Target (module)',
-    'Subtarget (module)',
     'AOE range (module)',
 };
 local selfCombatWidgets = T{
@@ -622,8 +628,6 @@ local selfRestingWidgets = T{
     'Debuffs',
     'Resting (module)',
     'Quick Menu (module)',
-    'Target (module)',
-    'Subtarget (module)',
     'AOE range (module)',
 };
 local selfFishingWidgets = T{
@@ -636,8 +640,6 @@ local selfFishingWidgets = T{
     'Debuffs',
     'Fishing (module)',
     'Quick Menu (module)',
-    'Target (module)',
-    'Subtarget (module)',
     'AOE range (module)',
 };
 local selfCraftingWidgets = T{
@@ -650,8 +652,6 @@ local selfCraftingWidgets = T{
     'Debuffs',
     'Crafting (module)',
     'Quick Menu (module)',
-    'Target (module)',
-    'Subtarget (module)',
     'AOE range (module)',
 };
 local enemyIdleWidgets = T{
@@ -667,8 +667,6 @@ local enemyIdleWidgets = T{
     'Debuffs',
     'ID',
     'Peer (module)',
-    'Target (module)',
-    'Subtarget (module)',
     'Special icon',
 };
 local enemyCombatWidgets = T{
@@ -702,8 +700,6 @@ local pcIdleWidgets = T{
     'New adventurer icon',
     'Quick Menu (module)',
     'Peer (module)',
-    'Subtarget',
-    'Target',
 };
 local pcCombatWidgets = T{
     'Background',
@@ -740,8 +736,6 @@ local trustIdleWidgets = T{
     'Buffs',
     'Debuffs',
     'Quick Menu (module)',
-    'Target (module)',
-    'Subtarget (module)',
 };
 local trustCombatWidgets = T{
     'Background',
@@ -975,6 +969,31 @@ function GetStorageState(stateName)
     return name;
 end
 
+local function IsNpcObjectTargetModuleWidget(entityName, widgetName)
+    local entity = NormalizeEntityName(entityName);
+    local widget = tostring(widgetName or '');
+
+    return
+        (entity == 'NPC' or entity == 'Object') and
+        (
+            widget == 'Target' or
+            widget == 'Subtarget' or
+            widget == 'Target (module)' or
+            widget == 'Subtarget (module)' or
+            widget == 'Target Module' or
+            widget == 'Subtarget Module' or
+            widget == 'Lock-on icon'
+        );
+end
+
+local function GetWidgetStorageState(entityName, stateName, widgetName)
+    if (IsNpcObjectTargetModuleWidget(entityName, widgetName) == true) then
+        return 'Combat';
+    end
+
+    return GetStorageState(stateName);
+end
+
 local GetEditWidgetsFor = nil;
 
 function LibraPlatesSettingsCopyTable(value)
@@ -1060,7 +1079,12 @@ function LibraPlatesSettingsBuildWidgetCopySources(entity, stateName, widgetName
             local sourceStates = statesByEntity[sourceEntity] or states;
 
             for _, sourceState in ipairs(sourceStates) do
-                LibraPlatesSettingsAddWidgetCopySource(sources, entity, stateName, sourceEntity, sourceState, storageWidget);
+                if (
+                    tacticalTargetModuleEntities[NormalizeEntityName(sourceEntity)] ~= true or
+                    NormalizeStateName(sourceState) == 'Tactical'
+                ) then
+                    LibraPlatesSettingsAddWidgetCopySource(sources, entity, stateName, sourceEntity, sourceState, storageWidget);
+                end
             end
         end
 
@@ -1375,10 +1399,10 @@ function GetChecklistActiveSettings(widget)
     end
 
     if (widget == 'Quick Menu (module)') then
-        return state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetStorageState(selectedState), key, GetWidgetDefaults(widget));
+        return state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, widget), key, GetWidgetDefaults(widget));
     end
 
-    return state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetStorageState(selectedState), key, GetWidgetDefaults(widget));
+    return state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, widget), key, GetWidgetDefaults(widget));
 end
 
 function EnsureSelectedStateAllowed()
@@ -2756,7 +2780,7 @@ function LibraPlatesSettingsDrawCurrentWidgetLoadMode()
         return;
     end
 
-    local loadSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetStorageState(selectedState), loadWidgetKey, GetWidgetDefaults(selectedWidget));
+    local loadSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, selectedWidget), loadWidgetKey, GetWidgetDefaults(selectedWidget));
     LibraPlatesSettingsDrawWidgetLoadMode(loadSettings, selectedEntity, selectedState, selectedWidget);
     imgui.Separator();
 end
@@ -3303,11 +3327,7 @@ function DrawTargetModulePlacementSettings(settings, defaults, label, entityName
         if (widthChanged == true) then settings.arrowWidth = nextWidth; state.Save(); end
         if (heightChanged == true) then settings.arrowHeight = nextHeight; state.Save(); end
 
-        if (settings.arrowAnimation == 'Classic' or settings.arrowAnimation == 'Native shimmer') then
-            settings.arrowSprite = true;
-            settings.arrowAnimationSpeed = tonumber(settings.arrowAnimationSpeed) or 12;
-        end
-        settings.arrowAnimation = nil;
+        arrowAnimation.UpgradeLegacySettings(settings);
 
         if (arrowAnimation.HasSpriteFrames(settings.arrowFile) == true) then
             DrawCheckbox('Animate', settings.arrowSprite == true, function(nextValue)
@@ -4056,14 +4076,14 @@ function GetPreviewSelection()
         if (selectedWidget == 'Target' or selectedWidget == 'Target (module)' or selectedWidget == 'Lock-on icon') then
             context = {
                 entityName = GetStorageEntity(selectedEntity),
-                stateName = GetStorageState(selectedState),
+                stateName = GetWidgetStorageState(selectedEntity, selectedState, selectedWidget),
                 widgetKey = 'Target Module',
                 defaults = targetModuleDefaults,
             };
         elseif (selectedWidget == 'Subtarget' or selectedWidget == 'Subtarget (module)') then
             context = {
                 entityName = GetStorageEntity(selectedEntity),
-                stateName = GetStorageState(selectedState),
+                stateName = GetWidgetStorageState(selectedEntity, selectedState, selectedWidget),
                 widgetKey = 'Subtarget Module',
                 defaults = subtargetModuleDefaults,
             };
@@ -6783,6 +6803,18 @@ local function DrawGeneralVisibilitySection(settings)
             settings.plateStackHorizontalOverlap = value;
             settings.plateStackVerticalOverlap = value;
         end
+
+        local spreadValue = tonumber(settings.plateStackHorizontalSpreadPct) or 125;
+        local spread, spreadChanged = DrawVisibilityNumber('Horizontal spread', math.floor(spreadValue + 0.5), 'PlateStackHorizontalSpreadPct', 0, 250, 5, 'How far stacked plates may fan left or right before they stack upward. 0 means mostly vertical; 125 means about one plate width.');
+        if (spreadChanged == true) then
+            settings.plateStackHorizontalSpreadPct = math.max(0, math.min(250, math.floor((tonumber(spread) or 125) + 0.5)));
+        end
+
+        local blockerValue = tonumber(settings.plateStackFixedBlockerWidthPct) or 72;
+        local blockerWidth, blockerChanged = DrawVisibilityNumber('Target blocker width', math.floor(blockerValue + 0.5), 'PlateStackFixedBlockerWidthPct', 25, 100, 1, 'How wide fixed Target/Subtarget plates feel to the stacker. Lower values let nearby plates sit closer.');
+        if (blockerChanged == true) then
+            settings.plateStackFixedBlockerWidthPct = math.max(25, math.min(100, math.floor((tonumber(blockerWidth) or 72) + 0.5)));
+        end
     end
 
     DrawSettingsHeader('Tactical screen limits');
@@ -7532,12 +7564,13 @@ local function DrawSelectedEditorPlatesTargetWidgets()
 
     local widgetKey = selectedWidget == 'Lock-on icon' and 'Target Module' or widgetKeys[selectedWidget];
     local defaults = (selectedWidget == 'Subtarget' or selectedWidget == 'Subtarget (module)') and subtargetModuleDefaults or targetModuleDefaults;
-    local settings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), LibraPlatesSettingsToStorageStateName(selectedState), widgetKey, defaults);
+    local storageState = GetWidgetStorageState(selectedEntity, selectedState, selectedWidget);
+    local settings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), storageState, widgetKey, defaults);
 
     widgets.targetModule.DrawSettings(settings, {
         tab = selectedTab,
         entity = GetStorageEntity(selectedEntity),
-        state = LibraPlatesSettingsToStorageStateName(selectedState),
+        state = storageState,
         widget = selectedWidget,
         defaults = defaults,
         lockOnly = selectedWidget == 'Lock-on icon',

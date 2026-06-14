@@ -1592,7 +1592,7 @@ local function DrawCanvasIconWithState(device, wx, wy, wz, style)
     end
 end
 
-local function DrawPlateOverlayScreen(device, textureId, wx, wy, wz, worldWidth, worldHeight, alwaysOnTop)
+local function DrawPlateOverlayScreen(device, textureId, wx, wy, wz, worldWidth, worldHeight, alwaysOnTop, offsetX, offsetY)
     local _, view = device:GetTransform(2);
     local _, proj = device:GetTransform(3);
     local _, viewport = device:GetViewport();
@@ -1636,8 +1636,8 @@ local function DrawPlateOverlayScreen(device, textureId, wx, wy, wz, worldWidth,
         wx,
         wy,
         wz,
-        0,
-        0,
+        tonumber(offsetX) or 0,
+        tonumber(offsetY) or 0,
         math.max(1, right - left),
         math.max(1, bottom - top),
         alwaysOnTop == true
@@ -2399,6 +2399,293 @@ function worldMarkerProbe.ResetPass()
     queuedPlateSet = {};
 end
 
+local function GetStackType(plate)
+    local targetType = tostring(plate ~= nil and plate.clickTargetType or ''):lower();
+
+    if (
+        targetType == 'pc' or
+        targetType == 'enemy' or
+        targetType == 'trust' or
+        targetType == 'pet' or
+        targetType == 'npc' or
+        targetType == 'object'
+    ) then
+        return targetType;
+    end
+
+    return nil;
+end
+
+local function GetStackPriority(settings, stackType)
+    local priority = settings ~= nil and settings.plateStackingPriority or nil;
+
+    if (type(priority) == 'table') then
+        for index, key in ipairs(priority) do
+            if (tostring(key or ''):lower() == stackType) then
+                return index;
+            end
+        end
+    end
+
+    if (stackType == 'pc') then return 1; end
+    if (stackType == 'enemy') then return 2; end
+    if (stackType == 'trust') then return 3; end
+    if (stackType == 'pet') then return 4; end
+    if (stackType == 'npc') then return 5; end
+    if (stackType == 'object') then return 6; end
+
+    return 99;
+end
+
+local function IsTacticalStackPlate(plate, targetIndex, subTargetIndex)
+    local index = tonumber(plate ~= nil and plate.targetIndex) or 0;
+    local marker = plate ~= nil and plate.worldMarker ~= nil and plate.worldMarker.targetMarker or nil;
+
+    if (plate ~= nil and plate.isSelf == true) then
+        return true;
+    end
+
+    if (index ~= 0 and (index == tonumber(targetIndex) or index == tonumber(subTargetIndex))) then
+        return true;
+    end
+
+    if (tostring(plate ~= nil and plate.stateName or 'Idle') ~= 'Idle') then
+        return true;
+    end
+
+    return marker ~= nil and marker.enabled == true;
+end
+
+local function StackRectsOverlap(left, right, horizontalAllowance, verticalAllowance)
+    return
+        math.min(left.drawX + left.width, right.drawX + right.width) - math.max(left.drawX, right.drawX) > horizontalAllowance and
+        math.min(left.drawY + left.height, right.drawY + right.height) - math.max(left.drawY, right.drawY) > verticalAllowance;
+end
+
+local function FindBestHorizontalStackX(entry, placed, gap, horizontalAllowance, verticalAllowance, maxSpread)
+    local bestX = nil;
+    local bestScore = nil;
+
+    local function collidesAt(candidateX)
+        local saveX = entry.drawX;
+        entry.drawX = candidateX;
+
+        for _, other in ipairs(placed) do
+            if (StackRectsOverlap(entry, other, horizontalAllowance, verticalAllowance) == true) then
+                entry.drawX = saveX;
+                return true;
+            end
+        end
+
+        entry.drawX = saveX;
+        return false;
+    end
+
+    local function testCandidate(candidateX)
+        if (candidateX == nil or collidesAt(candidateX) == true) then
+            return;
+        end
+
+        local score = math.abs(candidateX - entry.baseX);
+
+        if (score > maxSpread) then
+            return;
+        end
+
+        if (bestScore == nil or score < bestScore) then
+            bestX = candidateX;
+            bestScore = score;
+        end
+    end
+
+    for _, other in ipairs(placed) do
+        local verticalOverlap =
+            math.min(entry.drawY + entry.height, other.drawY + other.height) -
+            math.max(entry.drawY, other.drawY);
+
+        if (verticalOverlap > verticalAllowance) then
+            testCandidate(other.drawX - entry.width - gap);
+            testCandidate(other.drawX + other.width + gap);
+        end
+    end
+
+    return bestX;
+end
+
+local function ShiftStackRect(rect, dx, dy)
+    if (rect == nil) then
+        return;
+    end
+
+    rect.x1 = (tonumber(rect.x1) or 0) + dx;
+    rect.x2 = (tonumber(rect.x2) or 0) + dx;
+    rect.y1 = (tonumber(rect.y1) or 0) + dy;
+    rect.y2 = (tonumber(rect.y2) or 0) + dy;
+end
+
+local function ShiftStackClickEntry(entry, dx, dy)
+    if (entry == nil or (dx == 0 and dy == 0)) then
+        return;
+    end
+
+    ShiftStackRect(entry.union, dx, dy);
+    ShiftStackRect(entry.plateOverlayRect, dx, dy);
+
+    for _, rect in ipairs(entry.rects or {}) do
+        ShiftStackRect(rect, dx, dy);
+    end
+end
+
+local function ApplyScreenPlateStacking(drawablePlates)
+    local settings = targeting.GetSettings();
+
+    for _, plate in ipairs(drawablePlates or {}) do
+        plate._stackScreenOffsetX = 0;
+        plate._stackScreenOffsetY = 0;
+    end
+
+    if (settings.plateStackingEnabled ~= true or #pendingClickRects <= 1) then
+        return;
+    end
+
+    local entriesByIndex = {};
+    for _, entry in ipairs(pendingClickRects) do
+        local targetIndex = tonumber(entry.targetIndex);
+        local union = entry.union;
+
+        if (
+            targetIndex ~= nil and
+            union ~= nil and
+            tonumber(union.x1) ~= nil and
+            tonumber(union.y1) ~= nil and
+            tonumber(union.x2) ~= nil and
+            tonumber(union.y2) ~= nil and
+            tonumber(union.x2) > tonumber(union.x1) and
+            tonumber(union.y2) > tonumber(union.y1)
+        ) then
+            entriesByIndex[targetIndex] = entry;
+        end
+    end
+
+    local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
+    local stackTypes = type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes or {};
+    local horizontalAllowance = math.max(0, math.floor((tonumber(settings.plateStackHorizontalOverlap) or 2) + 0.5));
+    local verticalAllowance = math.max(0, math.floor((tonumber(settings.plateStackVerticalOverlap) or horizontalAllowance) + 0.5));
+    local gap = math.max(0, math.floor((tonumber(settings.plateStackGap) or 4) + 0.5));
+    local stackEntries = {};
+
+    for order, plate in ipairs(drawablePlates or {}) do
+        local stackType = GetStackType(plate);
+        local entry = entriesByIndex[tonumber(plate.targetIndex) or 0];
+
+        if (stackType ~= nil and entry ~= nil and entry.union ~= nil and stackTypes[stackType] == true) then
+            local union = entry.union;
+            local x1 = tonumber(union.x1);
+            local y1 = tonumber(union.y1);
+            local x2 = tonumber(union.x2);
+            local y2 = tonumber(union.y2);
+            local isFixed = settings.plateStackKeepTacticalFixed ~= false and IsTacticalStackPlate(plate, targetIndex, subTargetIndex);
+            local stackX1 = x1;
+            local stackX2 = x2;
+
+            if (isFixed == true) then
+                local blockerWidthPct = math.max(25, math.min(100, tonumber(settings.plateStackFixedBlockerWidthPct) or 72)) / 100;
+                local centerX = (x1 + x2) * 0.5;
+                local halfWidth = ((x2 - x1) * 0.5) * blockerWidthPct;
+                stackX1 = centerX - halfWidth;
+                stackX2 = centerX + halfWidth;
+            end
+
+            stackEntries[#stackEntries + 1] = {
+                plate = plate,
+                clickEntry = entry,
+                stackType = stackType,
+                priority = GetStackPriority(settings, stackType),
+                order = order,
+                fixed = isFixed,
+                distance = tonumber(plate.distance) or 9999,
+                x1 = stackX1,
+                x2 = stackX2,
+                baseX = stackX1,
+                drawX = stackX1,
+                baseY = y1,
+                drawY = y1,
+                width = stackX2 - stackX1,
+                height = y2 - y1,
+            };
+        end
+    end
+
+    if (#stackEntries <= 1) then
+        return;
+    end
+
+    table.sort(stackEntries, function(left, right)
+        if (left.fixed ~= right.fixed) then
+            return left.fixed == true;
+        end
+
+        if (left.priority ~= right.priority) then
+            return left.priority < right.priority;
+        end
+
+        if (settings.plateStackClosestOnTop == true and left.distance ~= right.distance) then
+            return left.distance < right.distance;
+        end
+
+        if (left.baseY ~= right.baseY) then
+            return left.baseY > right.baseY;
+        end
+
+        return left.order < right.order;
+    end);
+
+    local placed = {};
+    for _, entry in ipairs(stackEntries) do
+        if (entry.fixed ~= true) then
+            local changed = true;
+            local guard = 0;
+
+            while (changed == true and guard < 30) do
+                changed = false;
+                guard = guard + 1;
+
+                for _, other in ipairs(placed) do
+                    if (StackRectsOverlap(entry, other, horizontalAllowance, verticalAllowance) == true) then
+                        local spreadPct = math.max(0, math.min(250, tonumber(settings.plateStackHorizontalSpreadPct) or 125)) / 100;
+                        local maxSpread = entry.width * spreadPct;
+                        if (spreadPct > 0) then
+                            maxSpread = math.max(maxSpread, entry.width + gap);
+                        end
+                        local nextX = FindBestHorizontalStackX(entry, placed, gap, horizontalAllowance, verticalAllowance, maxSpread);
+
+                        if (nextX ~= nil) then
+                            entry.drawX = nextX;
+                            changed = true;
+                            break;
+                        end
+
+                        local nextY = other.drawY - entry.height - gap;
+
+                        if (nextY < entry.drawY) then
+                            entry.drawX = entry.baseX;
+                            entry.drawY = nextY;
+                            changed = true;
+                        end
+                    end
+                end
+            end
+        end
+
+        local offsetX = entry.drawX - entry.baseX;
+        local offsetY = entry.drawY - entry.baseY;
+        entry.plate._stackScreenOffsetX = offsetX;
+        entry.plate._stackScreenOffsetY = offsetY;
+        ShiftStackClickEntry(entry.clickEntry, offsetX, offsetY);
+        placed[#placed + 1] = entry;
+    end
+end
+
 local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
     local targetIndex = plate.targetIndex;
     local hpPercent = plate.hp;
@@ -2533,20 +2820,38 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
 
         device:SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
 
-        DrawTextureWithState(
-            device,
-            style.plateTextureId,
-            plateX,
-            plateY,
-            plateZ,
-            plateWorldWidth,
-            0,
-            0,
-            0.00175,
-            false,
-            plateWorldHeight,
-            false
-        );
+        local stackScreenOffsetX = tonumber(plate._stackScreenOffsetX) or 0;
+        local stackScreenOffsetY = tonumber(plate._stackScreenOffsetY) or 0;
+
+        if (stackScreenOffsetX ~= 0 or stackScreenOffsetY ~= 0) then
+            DrawPlateOverlayScreen(
+                device,
+                style.plateTextureId,
+                plateX,
+                plateY,
+                plateZ,
+                plateWorldWidth,
+                plateWorldHeight,
+                false,
+                stackScreenOffsetX,
+                stackScreenOffsetY
+            );
+        else
+            DrawTextureWithState(
+                device,
+                style.plateTextureId,
+                plateX,
+                plateY,
+                plateZ,
+                plateWorldWidth,
+                0,
+                0,
+                0.00175,
+                false,
+                plateWorldHeight,
+                false
+            );
+        end
 
         device:SetRenderState(D3DRS_ZFUNC, savePlateZFunc);
 
@@ -2692,6 +2997,8 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
                 end);
             end
         end
+
+        ApplyScreenPlateStacking(drawablePlates);
 
         clickRects = pendingClickRects;
         selfClickRect = pendingSelfClickRect;

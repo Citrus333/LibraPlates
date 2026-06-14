@@ -269,16 +269,20 @@ local function GetTargetingSettings()
         global.targeting.plateStackGap = 4;
     end
 
-    if (global.targeting.plateStackMaxLift == nil) then
-        global.targeting.plateStackMaxLift = 72;
-    end
-
     if (global.targeting.plateStackHorizontalOverlap == nil) then
-        global.targeting.plateStackHorizontalOverlap = 0.30;
+        global.targeting.plateStackHorizontalOverlap = 2;
     end
 
     if (global.targeting.plateStackVerticalOverlap == nil) then
-        global.targeting.plateStackVerticalOverlap = 0.50;
+        global.targeting.plateStackVerticalOverlap = 2;
+    end
+
+    if (global.targeting.plateStackHorizontalSpreadPct == nil) then
+        global.targeting.plateStackHorizontalSpreadPct = 125;
+    end
+
+    if (global.targeting.plateStackFixedBlockerWidthPct == nil) then
+        global.targeting.plateStackFixedBlockerWidthPct = 72;
     end
 
     if (global.targeting.tacticalScreenClampEnabled == nil) then
@@ -413,10 +417,19 @@ local function GetTargetingSettings()
     global.targeting.plateStackingPriority = normalizedPriority;
     global.targeting.plateStackClosestOnTop = global.targeting.plateStackClosestOnTop == true;
     global.targeting.plateStackKeepTacticalFixed = global.targeting.plateStackKeepTacticalFixed ~= false;
-    global.targeting.plateStackGap = math.max(0, math.min(40, math.floor((tonumber(global.targeting.plateStackGap) or 4) + 0.5)));
-    global.targeting.plateStackMaxLift = math.max(0, math.min(240, math.floor((tonumber(global.targeting.plateStackMaxLift) or 72) + 0.5)));
-    global.targeting.plateStackHorizontalOverlap = math.max(0.05, math.min(1.0, tonumber(global.targeting.plateStackHorizontalOverlap) or 0.30));
-    global.targeting.plateStackVerticalOverlap = math.max(0.05, math.min(1.0, tonumber(global.targeting.plateStackVerticalOverlap) or 0.50));
+    global.targeting.plateStackGap = math.max(0, math.min(160, math.floor((tonumber(global.targeting.plateStackGap) or 4) + 0.5)));
+    local horizontalOverlap = tonumber(global.targeting.plateStackHorizontalOverlap);
+    local verticalOverlap = tonumber(global.targeting.plateStackVerticalOverlap);
+    if (horizontalOverlap == nil or horizontalOverlap < 1) then
+        horizontalOverlap = 2;
+    end
+    if (verticalOverlap == nil or verticalOverlap < 1) then
+        verticalOverlap = horizontalOverlap;
+    end
+    global.targeting.plateStackHorizontalOverlap = math.max(0, math.min(80, math.floor(horizontalOverlap + 0.5)));
+    global.targeting.plateStackVerticalOverlap = math.max(0, math.min(80, math.floor(verticalOverlap + 0.5)));
+    global.targeting.plateStackHorizontalSpreadPct = math.max(0, math.min(250, math.floor((tonumber(global.targeting.plateStackHorizontalSpreadPct) or 125) + 0.5)));
+    global.targeting.plateStackFixedBlockerWidthPct = math.max(25, math.min(100, math.floor((tonumber(global.targeting.plateStackFixedBlockerWidthPct) or 72) + 0.5)));
     global.targeting.tacticalScreenClampEnabled = global.targeting.tacticalScreenClampEnabled == true;
     global.targeting.tacticalScreenClampTopPadding = math.max(0, math.min(200, math.floor((tonumber(global.targeting.tacticalScreenClampTopPadding) or 24) + 0.5)));
     global.targeting.textureCacheLimit = math.max(32, math.min(256, math.floor((tonumber(global.targeting.textureCacheLimit) or 96) + 0.5)));

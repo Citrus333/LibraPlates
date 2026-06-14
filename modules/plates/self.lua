@@ -54,7 +54,8 @@ local widgets = require('modules.widgets.init');
 local selfPlate = {};
 local mountedPlateLift = 1.05;
 local lagTestSuppressed = false;
-local cachedWorldPlate = nil;
+local cachedWorldPlates = {};
+local cachedWorldPlateLimit = 4;
 local cachedWorldTextureKey = 'self-world';
 
 local function ScalarKey(value)
@@ -105,6 +106,46 @@ local function StableTableKey(value, depth)
     end
 
     return '{' .. table.concat(parts, ';') .. '}';
+end
+
+local function GetWorldCacheKey(stateName, targetStateName, layoutStateName, hasAoeCanvas)
+    return table.concat({
+        tostring(stateName or 'Idle'),
+        tostring(targetStateName or 'Idle'),
+        tostring(layoutStateName or 'Idle'),
+        hasAoeCanvas == true and 'aoe' or 'plain',
+    }, ':');
+end
+
+local function GetWorldTextureKey(cacheKey)
+    return cachedWorldTextureKey .. '-' .. tostring(cacheKey or 'idle'):gsub('[^%w%-_]', '-');
+end
+
+local function TrimWorldPlateCache()
+    local count = 0;
+    local oldestKey = nil;
+    local oldestTime = nil;
+
+    for key, cached in pairs(cachedWorldPlates) do
+        count = count + 1;
+
+        local used = tonumber(cached ~= nil and cached.lastUsed) or 0;
+        if (oldestTime == nil or used < oldestTime) then
+            oldestTime = used;
+            oldestKey = key;
+        end
+    end
+
+    if (count <= cachedWorldPlateLimit or oldestKey == nil) then
+        return;
+    end
+
+    local cached = cachedWorldPlates[oldestKey];
+    if (cached ~= nil and cached.textureKey ~= nil) then
+        canvasTexture.ReleaseKey(cached.textureKey);
+    end
+
+    cachedWorldPlates[oldestKey] = nil;
 end
 
 local function BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName)
@@ -554,7 +595,7 @@ end
 
 local function QueueWorldMarker(center, nameSettings, stateName)
     local targetStateName = targeting.GetTargetStateName(center.index);
-    local layoutStateName = GetLayoutStateName(stateName);
+    local layoutStateName = (targetStateName == 'Target' or targetStateName == 'Subtarget') and 'Combat' or GetLayoutStateName(stateName);
     nameSettings = state.GetWidgetSettings('Self', layoutStateName, 'Name', nameDefaults);
     local gameModeIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Game mode icon', gameModeIconDefaults);
     local partyLeaderIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Party leader icon', partyLeaderIconDefaults);
@@ -986,6 +1027,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local cacheEligible = true;
     local signature = nil;
     local vitalSignature = nil;
+    local cacheKey = GetWorldCacheKey(stateName, targetStateName, layoutStateName, plateData.canvasWidth ~= nil);
+    local cachedWorldPlate = cachedWorldPlates[cacheKey];
 
     if (cacheEligible == true) then
         signature = BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName);
@@ -1047,18 +1090,18 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         perfMeter.Count('self.cache.skip', 1);
     end
 
-    local renderTextureKey = cachedWorldTextureKey .. (plateData.canvasWidth ~= nil and '-aoe' or '');
+    local renderTextureKey = GetWorldTextureKey(cacheKey);
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, renderTextureKey);
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
     local plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (plateTextureId == nil) then
-        cachedWorldPlate = nil;
+        cachedWorldPlates[cacheKey] = nil;
         return;
     end
 
     if (cacheEligible == true and signature ~= nil) then
-        cachedWorldPlate = {
+        cachedWorldPlates[cacheKey] = {
             signature = signature,
             vitalSignature = vitalSignature,
             textureKey = renderTextureKey,
@@ -1068,8 +1111,9 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             textureHeight = textureHeight,
             plateClickRects = plateClickRects,
         };
+        TrimWorldPlateCache();
     else
-        cachedWorldPlate = nil;
+        cachedWorldPlates[cacheKey] = nil;
     end
 
     QueueRenderedWorldPlate(

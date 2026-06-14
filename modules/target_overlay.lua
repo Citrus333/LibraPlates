@@ -739,6 +739,7 @@ local function DrawOne(drawList, index, stateName, offsetY, drawHighlight)
     end
 
     local settings, defaults = targetModuleMarker.GetSettings(context.entityName, context.layoutStateName, stateName);
+    arrowAnimation.UpgradeLegacySettings(settings);
 
     if (settings.enabled ~= true) then
         lastDebug = string.format(
@@ -938,6 +939,7 @@ local function CanDrawOne(index, stateName)
     end
 
     local settings = targetModuleMarker.GetSettings(context.entityName, context.layoutStateName, stateName);
+    arrowAnimation.UpgradeLegacySettings(settings);
 
     return targetModuleMarker.HasDrawableSettings(context.entityName, settings) == true;
 end
@@ -963,6 +965,7 @@ local function DescribeCanDrawOne(index, stateName)
     end
 
     local settings = targetModuleMarker.GetSettings(context.entityName, context.layoutStateName, stateName);
+    arrowAnimation.UpgradeLegacySettings(settings);
     local drawable = targetModuleMarker.HasDrawableSettings(context.entityName, settings) == true;
 
     return drawable, string.format(

@@ -368,6 +368,7 @@ local function QueueNpcObject(entity)
 
     local settingsTimer = perfMeter.BeginDetail('npc.settings');
     local isTacticalTarget = targetStateName ~= 'Idle';
+    local targetModuleStateName = isTacticalTarget == true and 'Combat' or 'Idle';
     local showDistanceBadge = targetStateName == 'Target' or targetStateName == 'Subtarget';
     local backgroundSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Background', backgroundDefaults);
     local nameSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Name', nameDefaults);
@@ -375,7 +376,7 @@ local function QueueNpcObject(entity)
     local typeLineSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Type line', typeLineDefaults);
     local iconSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Icon', npcObjectIconDefaults);
     local targetMarker = (resolvedEntityName ~= 'Object' and targetStateName ~= 'Idle')
-        and targetModuleMarker.Build(settingsEntityName, 'Idle', targetStateName, { enabled = false }, entity.distance)
+        and targetModuleMarker.Build(settingsEntityName, targetModuleStateName, targetStateName, { enabled = false }, entity.distance)
         or { enabled = false };
 
     ApplyNpcAnchorDefaults(iconSettings, npcObjectIconDefaults, -28, -30);

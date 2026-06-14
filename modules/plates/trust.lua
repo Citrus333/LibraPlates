@@ -332,6 +332,10 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
 end
 
 local function GetLayoutStateName(trust, targetStateName)
+    if (targetStateName == 'Target' or targetStateName == 'Subtarget') then
+        return 'Combat';
+    end
+
     if (
         trust ~= nil and
         (trust.slot ~= nil or targetStateName ~= 'Idle') and

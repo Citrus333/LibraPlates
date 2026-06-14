@@ -783,12 +783,7 @@ function targetModule.DrawSettings(settings, context)
             'TargetModuleArrowWidth',
             'TargetModuleArrowHeight'
         );
-        if (settings.arrowAnimation == 'Classic' or settings.arrowAnimation == 'Native shimmer') then
-            settings.arrowSprite = true;
-            settings.arrowAnimationSpeed = tonumber(settings.arrowAnimationSpeed) or 12;
-        end
-
-        settings.arrowAnimation = nil;
+        arrowAnimation.UpgradeLegacySettings(settings);
         local hasSpriteFrames = arrowAnimation.HasSpriteFrames(settings.arrowFile) == true;
         if (hasSpriteFrames == true) then
             settings.arrowSprite = DrawToggle('Animate', settings.arrowSprite == true);
@@ -814,7 +809,7 @@ function targetModule.DrawSettings(settings, context)
             'TargetModuleArrowX',
             'TargetModuleArrowY'
         );
-        if (isSubtargetModule == true) then
+        if (isSubtargetModule == true and entityName ~= 'Self') then
             imgui.Separator();
             DrawSectionHeader('Range colors');
             settings.arrowDistanceColoring = true;
@@ -823,6 +818,9 @@ function targetModule.DrawSettings(settings, context)
             settings.arrowInRangeColor = DrawColor('In-range tint', settings.arrowInRangeColor);
             uiTooltip.Info('Used by the Subtarget arrow when LibraPlates has a queued spell, ability, or weapon skill range from Ashita resources.');
         else
+            if (isSubtargetModule == true) then
+                settings.arrowDistanceColoring = false;
+            end
             settings.arrowColor = DrawColor('Arrow tint', settings.arrowColor);
         end
     else

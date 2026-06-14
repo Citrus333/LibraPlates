@@ -80,6 +80,8 @@ return {
         plateStackGap = 4,
         plateStackHorizontalOverlap = 2,
         plateStackVerticalOverlap = 2,
+        plateStackHorizontalSpreadPct = 125,
+        plateStackFixedBlockerWidthPct = 72,
         tacticalScreenClampEnabled = false,
         tacticalScreenClampTopPadding = 24,
         textureCacheLimit = 96,

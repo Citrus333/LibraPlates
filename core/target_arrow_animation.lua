@@ -141,6 +141,24 @@ function arrowAnimation.GetDropdownFileName(fileName)
     return arrowAnimation.GetAnimationBaseName(fileName);
 end
 
+function arrowAnimation.UpgradeLegacySettings(settings)
+    if (type(settings) ~= 'table') then
+        return settings;
+    end
+
+    if (settings.arrowAnimation == 'Classic' or settings.arrowAnimation == 'Native shimmer') then
+        if (arrowAnimation.HasSpriteFrames(settings.arrowFile) ~= true) then
+            settings.arrowFile = 'arrow_classic_01.png';
+        end
+
+        settings.arrowSprite = true;
+        settings.arrowAnimationSpeed = tonumber(settings.arrowAnimationSpeed) or defaultSpriteFps;
+        settings.arrowAnimation = nil;
+    end
+
+    return settings;
+end
+
 function arrowAnimation.HasImage(fileName)
     return arrowAnimation.NormalizeFileName(fileName) ~= 'None';
 end

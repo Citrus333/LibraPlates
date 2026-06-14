@@ -169,7 +169,7 @@ local function AddTextureAlias(alias, actualKey)
     textureAliases[alias][actualKey] = true;
 end
 
-local function ReleaseTextureKey(key)
+local function ReleaseTextureKey(key, countEviction)
     key = tostring(key or '');
 
     if (key == '' or textures[key] == nil) then
@@ -185,7 +185,7 @@ local function ReleaseTextureKey(key)
             local released = false;
 
             for _, actualKey in ipairs(keys) do
-                if (ReleaseTextureKey(actualKey) == true) then
+                if (ReleaseTextureKey(actualKey, countEviction) == true) then
                     released = true;
                 end
             end
@@ -207,27 +207,31 @@ local function ReleaseTextureKey(key)
     textureInfo[key] = nil;
     RemoveTextureAlias(key);
     RemoveTextureOrderKey(key);
-    lastEvictedKey = key;
-    lastEvictedAt = os.clock();
     textureCount = math.max(0, textureCount - 1);
-    textureEvictions = textureEvictions + 1;
-    evictionWindowCount = evictionWindowCount + 1;
-    local now = os.clock();
-    local elapsed = math.max(0.01, now - (tonumber(evictionWindowStart) or now));
-    if (elapsed >= 10.0) then
-        evictionRatePerMinute = (evictionWindowCount / elapsed) * 60.0;
-        evictionWindowStart = now;
-        evictionWindowCount = 0;
-    elseif (evictionRatePerMinute <= 0 and evictionWindowCount > 0) then
-        evictionRatePerMinute = (evictionWindowCount / elapsed) * 60.0;
+
+    if (countEviction == true) then
+        lastEvictedKey = key;
+        lastEvictedAt = os.clock();
+        textureEvictions = textureEvictions + 1;
+        evictionWindowCount = evictionWindowCount + 1;
+        local now = os.clock();
+        local elapsed = math.max(0.01, now - (tonumber(evictionWindowStart) or now));
+        if (elapsed >= 10.0) then
+            evictionRatePerMinute = (evictionWindowCount / elapsed) * 60.0;
+            evictionWindowStart = now;
+            evictionWindowCount = 0;
+        elseif (evictionRatePerMinute <= 0 and evictionWindowCount > 0) then
+            evictionRatePerMinute = (evictionWindowCount / elapsed) * 60.0;
+        end
     end
+
     collectgarbage('step', 32);
     return true;
 end
 
 local function TrimTextureCache()
     while (textureCount > maxTextures and #textureOrder > 0) do
-        ReleaseTextureKey(textureOrder[1]);
+        ReleaseTextureKey(textureOrder[1], true);
     end
 end
 
@@ -2564,7 +2568,7 @@ function canvasTexture.TouchKey(key)
 end
 
 function canvasTexture.ReleaseKey(key)
-    return ReleaseTextureKey(key);
+    return ReleaseTextureKey(key, false);
 end
 
 function canvasTexture.GetCacheStats()

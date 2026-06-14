@@ -39,6 +39,7 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Claim state color settings follow-up: add outline color controls for each Enemy claim state.
 - Blood aggro icon is not showing; likely hidden underneath the links icon due to an anchoring/overlap issue.
 - Catseye special native star icon follow-up: Enemy plates now test the native special-name-icon bit (`renderFlags1 & 0x800`) and draw the Catseye star across World/Target/Subtarget/Tactical states. Later add proper plate settings for this star icon and apply the same native replacement cleanly to NPC special icons.
+- Catseye special star settings: Enemy World/Tactical now has a bottom-list Special icon widget for size and X/Y placement. Preview wiring still needs to be added later.
 - Enmity is currently in Enemy; find a better spot, possibly profile-dependent for Enemy vs Self.
 - Move aggro.
 - Blue magic is missing casting icons and is not showing AOE.

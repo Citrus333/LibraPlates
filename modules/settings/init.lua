@@ -42,6 +42,7 @@ local newAdventurerIconDefaults = require('config.widgets.new_adventurer_icon');
 local enemyBehaviorIconDefaults = require('config.widgets.enemy_behavior_icon');
 local enemyDetectsIconDefaults = require('config.widgets.enemy_detects_icon');
 local enemyLinksIconDefaults = require('config.widgets.enemy_links_icon');
+local enemySpecialIconDefaults = require('config.widgets.enemy_special_icon');
 local barDefaults = require('config.widgets.bar');
 local mpBarDefaults = require('config.widgets.mp_bar');
 local tpBarDefaults = require('config.widgets.tp_bar');
@@ -668,6 +669,7 @@ local enemyIdleWidgets = T{
     'Peer (module)',
     'Target (module)',
     'Subtarget (module)',
+    'Special icon',
 };
 local enemyCombatWidgets = T{
     'Background',
@@ -685,6 +687,7 @@ local enemyCombatWidgets = T{
     'Target (module)',
     'Subtarget (module)',
     'Cast bar',
+    'Special icon',
 };
 local pcIdleWidgets = T{
     'Background',
@@ -855,6 +858,7 @@ local widgetKeys = {
     ['Behavior icon'] = 'Behavior icon',
     ['Detects icon'] = 'Detects icon',
     ['Links icon'] = 'Links icon',
+    ['Special icon'] = 'Special icon',
     ['Away icon'] = 'Away icon',
     ['Disconnect icon'] = 'Disconnect icon',
     ['Anon icon'] = 'Anon icon',
@@ -1300,6 +1304,7 @@ function GetWidgetDefaults(widget)
     if (widget == 'Behavior icon') then return enemyBehaviorIconDefaults; end
     if (widget == 'Detects icon') then return enemyDetectsIconDefaults; end
     if (widget == 'Links icon') then return enemyLinksIconDefaults; end
+    if (widget == 'Special icon') then return enemySpecialIconDefaults; end
     if (widget == 'Away icon') then return awayIconDefaults; end
     if (widget == 'Disconnect icon') then return disconnectIconDefaults; end
     if (widget == 'Anon icon') then return anonIconDefaults; end
@@ -3730,9 +3735,11 @@ function SelectPreviewElement(kind, context)
         behaviorIcon = 'Behavior icon',
         detectsIcon = 'Detects icon',
         linksIcon = 'Links icon',
+        specialIcon = 'Special icon',
         ['Behavior icon'] = 'Behavior icon',
         ['Detects icon'] = 'Detects icon',
         ['Links icon'] = 'Links icon',
+        ['Special icon'] = 'Special icon',
         bazaarIcon = 'Bazaar icon',
         awayIcon = 'Away icon',
         disconnectIcon = 'Disconnect icon',
@@ -3799,6 +3806,7 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         ['Behavior icon'] = true,
         ['Detects icon'] = true,
         ['Links icon'] = true,
+        ['Special icon'] = true,
     };
 
     if (deltaX == 0 and deltaY == 0) then
@@ -3925,9 +3933,11 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         behaviorIcon = 'Behavior icon',
         detectsIcon = 'Detects icon',
         linksIcon = 'Links icon',
+        specialIcon = 'Special icon',
         ['Behavior icon'] = 'Behavior icon',
         ['Detects icon'] = 'Detects icon',
         ['Links icon'] = 'Links icon',
+        ['Special icon'] = 'Special icon',
         bazaarIcon = 'Bazaar icon',
         awayIcon = 'Away icon',
         disconnectIcon = 'Disconnect icon',
@@ -7736,6 +7746,7 @@ local function DrawSelectedEditorPlates()
         selectedWidget == 'Behavior icon' or
         selectedWidget == 'Detects icon' or
         selectedWidget == 'Links icon' or
+        selectedWidget == 'Special icon' or
         selectedWidget == 'Away icon' or
         selectedWidget == 'Disconnect icon' or
         selectedWidget == 'Anon icon' or
@@ -7755,6 +7766,8 @@ local function DrawSelectedEditorPlates()
             defaults = enemyDetectsIconDefaults;
         elseif (selectedWidget == 'Links icon') then
             defaults = enemyLinksIconDefaults;
+        elseif (selectedWidget == 'Special icon') then
+            defaults = enemySpecialIconDefaults;
         elseif (selectedWidget == 'Away icon') then
             defaults = awayIconDefaults;
         elseif (selectedWidget == 'Disconnect icon') then
@@ -7903,7 +7916,7 @@ local function DrawSelectedEditorPlates()
         DrawManeuverSettings(settings);
     end
 
-    if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Behavior icon' or selectedWidget == 'Detects icon' or selectedWidget == 'Links icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Gathering (module)' or selectedWidget == 'Quick Menu (module)' or selectedWidget == 'AOE range (module)') then
+    if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Behavior icon' or selectedWidget == 'Detects icon' or selectedWidget == 'Links icon' or selectedWidget == 'Special icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Gathering (module)' or selectedWidget == 'Quick Menu (module)' or selectedWidget == 'AOE range (module)') then
         if (loadModeDrawn ~= true) then
             LibraPlatesSettingsDrawCurrentWidgetLoadMode();
         end

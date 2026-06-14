@@ -30,8 +30,8 @@ end
 function mobInfo.GetLookupName(mobName)
     local text = tostring(mobName or '');
 
-    while (text:sub(1, 1) == string.char(0xAB) or text:sub(1, 2) == '«') do
-        if (text:sub(1, 1) == string.char(0xAB)) then
+    while (text:sub(1, 1) == string.char(0xAA) or text:sub(1, 1) == string.char(0xAB) or text:sub(1, 2) == '«') do
+        if (text:sub(1, 1) == string.char(0xAA) or text:sub(1, 1) == string.char(0xAB)) then
             text = text:sub(2);
         else
             text = text:sub(3);

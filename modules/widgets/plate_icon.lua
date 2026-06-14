@@ -412,13 +412,17 @@ function plateIcon.DrawSettings(settings, context)
     ApplyDefaults(settings, defaults);
 
     DrawSectionHeader(label .. ' settings');
+    if (tonumber(defaults.minIconSize) == 0) then
+        imgui.TextColored(labelColor, 'Icon size 0 follows the plate font size.');
+    end
+
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end
 
     DrawAnchorControls(settings, context, label);
 
-    settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, 6, tonumber(defaults.maxIconSize) or 64, 1);
+    settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, tonumber(defaults.minIconSize) or 6, tonumber(defaults.maxIconSize) or 64, 1);
     settings.offsetX, settings.offsetY = DrawSliderPair(
         'position',
         'Position X',

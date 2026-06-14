@@ -14,6 +14,7 @@ local distanceDefaults = require('config.widgets.distance');
 local enemyBehaviorIconDefaults = require('config.widgets.enemy_behavior_icon');
 local enemyDetectsIconDefaults = require('config.widgets.enemy_detects_icon');
 local enemyLinksIconDefaults = require('config.widgets.enemy_links_icon');
+local enemySpecialIconDefaults = require('config.widgets.enemy_special_icon');
 local globalDefaults = require('config.global');
 local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
@@ -386,7 +387,12 @@ local function IsCatseyeSpecialNameIcon(enemy)
 end
 
 local function AddCatseyeSpecialNameIconToPlate(plateData, context)
-    if (context == nil or IsCatseyeSpecialNameIcon(context.enemy) ~= true) then
+    if (
+        context == nil or
+        context.specialIconSettings == nil or
+        context.specialIconSettings.enabled ~= true or
+        IsCatseyeSpecialNameIcon(context.enemy) ~= true
+    ) then
         return;
     end
 
@@ -397,18 +403,21 @@ local function AddCatseyeSpecialNameIconToPlate(plateData, context)
     end
 
     local nameSettings = context.nameSettings or nameDefaults;
+    local iconSettings = context.specialIconSettings or enemySpecialIconDefaults;
     local nameSize = tonumber(nameSettings.textSize) or tonumber(nameDefaults.textSize) or 24;
-    local iconSize = math.max(14, math.min(40, math.floor((nameSize * 0.95) + 0.5)));
+    local configuredSize = tonumber(iconSettings.iconSize) or 0;
+    local iconSize = configuredSize > 0 and configuredSize or math.floor((nameSize * 3.70) + 0.5);
+    iconSize = math.max(6, math.min(tonumber(iconSettings.maxIconSize) or enemySpecialIconDefaults.maxIconSize or 180, iconSize));
 
     plateData.icons = plateData.icons or {};
     plateData.icons[#plateData.icons + 1] = {
         kind = 'catseyeSpecialNameIcon',
         textureId = textureId,
         size = iconSize,
-        offsetX = (tonumber(nameSettings.offsetX) or 0) - iconSize - 8,
-        offsetY = (tonumber(nameSettings.offsetY) or -54) + 1,
-        anchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
-        anchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        offsetX = tonumber(iconSettings.offsetX) or enemySpecialIconDefaults.offsetX,
+        offsetY = tonumber(iconSettings.offsetY) or enemySpecialIconDefaults.offsetY,
+        anchorTo = iconSettings.anchorTo or enemySpecialIconDefaults.anchorTo,
+        anchorPoint = iconSettings.anchorPoint or enemySpecialIconDefaults.anchorPoint,
     };
 end
 
@@ -1477,6 +1486,7 @@ local function BuildEnemyQueueContext(enemy)
     local levelSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Level', levelDefaults);
     local idSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'ID', idDefaults);
     local distanceSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Distance', distanceDefaults);
+    local specialIconSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Special icon', enemySpecialIconDefaults);
     local mobInfoIconWidgetSettings = GetEnemyMobInfoIconWidgetSettings(layoutStateName);
     local buffsSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Buffs', buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Debuffs', debuffsDefaults);
@@ -1539,6 +1549,7 @@ local function BuildEnemyQueueContext(enemy)
         levelSettings = levelSettings,
         idSettings = idSettings,
         distanceSettings = distanceSettings,
+        specialIconSettings = specialIconSettings,
         mobInfoIconWidgetSettings = mobInfoIconWidgetSettings,
         buffsSettings = buffsSettings,
         debuffsSettings = debuffsSettings,
@@ -1571,7 +1582,7 @@ local function BuildEnemyCacheSignature(context)
     local enemy = context.enemy;
 
     return table.concat({
-        'v=2',
+        'v=7',
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'activeDetail=' .. tostring(context.hasActiveDetail),
         'name=' .. tostring(context.displayName or ''),
@@ -1585,6 +1596,7 @@ local function BuildEnemyCacheSignature(context)
         'claim=' .. tostring(context.claimCategory or ''),
         'ap=' .. tostring(mobInfoData.HasActivityPointMarker(enemy.name) == true),
         'catseyeSpecialNameIcon=' .. tostring(IsCatseyeSpecialNameIcon(enemy) == true),
+        'specialIconSettings=' .. SettingKey(context.specialIconSettings, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
         'nm=' .. tostring(context.mobInfo ~= nil and context.mobInfo.IsNM or ''),
         'aoe=' .. aoeNameHighlight.GetSignature(enemy.index, 'enemy'),
         'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
@@ -1642,6 +1654,7 @@ local function BuildEnemyPlateData(context)
             ['Away icon'] = 'awayIcon', ['Disconnect icon'] = 'disconnectIcon', ['Anon icon'] = 'anonIcon', ['Follow icon'] = 'followIcon',
             ['Party leader icon'] = 'partyLeaderIcon', ['Alliance leader icon'] = 'allianceLeaderIcon', ['Stars icon'] = 'starsIcon',
             ['Level sync icon'] = 'levelSyncIcon', ['New adventurer icon'] = 'newAdventurerIcon', ['Buffs'] = 'buffs', ['Debuffs'] = 'debuffs', ['Distance'] = 'distance',
+            ['Special icon'] = 'catseyeSpecialNameIcon',
         },
         hpBar = {
             enabled = context.hasActiveDetail == true and context.hpBarSettings.enabled == true,

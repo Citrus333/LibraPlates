@@ -1468,6 +1468,9 @@ local npcIcons = T{
     ['Archanne']                         = { type = "Past Event Watcher", icon = "PastEventWatcher.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 }, note = "Notes:\nThis NPC will let you watch cut-scenes that you have seen in Ru'lude Gardens in the past, for a small fee." },
     ['Arenuel']                          = { zones = { "Ru'Lude Gardens" }, zoneIds = { 243 } },
     ['Assai Nybaem']                     = { type = "Survivor", zones = { "Abyssea", "Ru'Lude Gardens" }, zoneIds = { 243 } },
+    ['Assistant']                     = { type = "Survivor", zones = { "Abyssea", "Ru'Lude Gardens" }, zoneIds = { 243 } },
+
+
     ['Auchefort']                        = { zones = { "Ru'Lude Gardens" }, zoneIds = { 243 } },
     ['Baran']                            = { type = "Quest Associate", icon = "QuestAssociate.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 }, note = "Involved in Quests:\n* Directs you to the crags for Below the Arks." },
 ['Chapi Galepilai']    = { type = "Citizen", icon = "Dialogue.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 } },

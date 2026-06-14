@@ -13,6 +13,7 @@ local counters = {};
 local lastCounters = {};
 local frameIndex = 0;
 local smoothing = 0.10;
+local lastReportStatus = '';
 local GetCounter = nil;
 
 local displayOrder = {
@@ -385,6 +386,150 @@ local function DrawAdaptiveStatusLine()
     imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, string.format('- FPS: %.1f  Frames: %.1fms', fps, frameMs));
 end
 
+local function EnsureFolder(path)
+    local exists = false;
+
+    pcall(function()
+        exists = ashita.fs.exists(path);
+    end);
+
+    if (exists == true) then
+        return true;
+    end
+
+    local ok = pcall(function()
+        if (ashita.fs.create_dir ~= nil) then
+            ashita.fs.create_dir(path);
+        elseif (ashita.fs.create_directory ~= nil) then
+            ashita.fs.create_directory(path);
+        end
+    end);
+
+    return ok == true;
+end
+
+local function GetReportPath()
+    local installPath = '.';
+
+    pcall(function()
+        installPath = AshitaCore:GetInstallPath();
+    end);
+
+    local folder = tostring(installPath) .. '\\config\\addons\\LibraPlates\\performance';
+    EnsureFolder(tostring(installPath) .. '\\config');
+    EnsureFolder(tostring(installPath) .. '\\config\\addons');
+    EnsureFolder(tostring(installPath) .. '\\config\\addons\\LibraPlates');
+    EnsureFolder(folder);
+
+    local stamp = os.date('%Y%m%d-%H%M%S') or tostring(math.floor(os.clock() * 1000));
+    return folder .. '\\LibraPlates-performance-' .. tostring(stamp) .. '.txt';
+end
+
+local function GetCacheStats()
+    local cacheStats = nil;
+    local cacheOk, canvasTexture = pcall(require, 'core.canvas_texture');
+    if (cacheOk == true and canvasTexture ~= nil and canvasTexture.GetCacheStats ~= nil) then
+        cacheStats = canvasTexture.GetCacheStats();
+    end
+
+    return cacheStats or { count = 0, max = 0, evictionsPerMinute = 0, evictions = 0 };
+end
+
+local function WritePerformanceReport()
+    local path = GetReportPath();
+    local file = io.open(path, 'w');
+
+    if (file == nil) then
+        lastReportStatus = 'Save failed';
+        return false;
+    end
+
+    local cacheStats = GetCacheStats();
+
+    file:write('LibraPlates Performance Snapshot\n');
+    file:write('Created: ' .. tostring(os.date('%Y-%m-%d %H:%M:%S') or '') .. '\n');
+    file:write(string.format(
+        'Adaptive: mode=%s fps=%.1f frameMs=%.1f tier=%s\n',
+        tostring(adaptivePerformance.GetEffectiveMode()),
+        tonumber(adaptivePerformance.GetEstimatedFps()) or 0,
+        tonumber(adaptivePerformance.GetAverageFrameMs()) or 0,
+        tostring(adaptivePerformance.GetTier())
+    ));
+    file:write('\nTiming\n');
+    file:write('Process\tAvg\tPeak\tLast\n');
+
+    for _, row in ipairs(BuildTimingRows()) do
+        file:write(string.format(
+            '%s\t%.2f\t%.2f\t%.2f\n',
+            tostring(row.label or row.name or ''),
+            tonumber(row.avg) or 0,
+            tonumber(row.peak) or 0,
+            tonumber(row.last) or 0
+        ));
+    end
+
+    local total = samples.total or {};
+    file:write(string.format('Total\t%.2f\t%.2f\t%.2f\n', tonumber(total.avg) or 0, tonumber(total.peak) or 0, tonumber(total.last) or 0));
+
+    file:write('\nCounters\n');
+    file:write(string.format(
+        'queued=%s\ndrawn=%s\nclickRects=%s\ncanvasRenders=%s\n',
+        tostring(GetCounter('queued')),
+        tostring(GetCounter('drawn')),
+        tostring(GetCounter('clickRects')),
+        tostring(GetCounter('canvasRenders'))
+    ));
+
+    file:write('\nTexture Cache\n');
+    file:write(string.format(
+        'used=%s/%s\nevictionsPerMinute=%.1f\ntotalEvictions=%s\nlastRender=%s\nlastRenderSize=%s\nlastEvicted=%s\n',
+        tostring(cacheStats.count),
+        tostring(cacheStats.max),
+        tonumber(cacheStats.evictionsPerMinute) or 0,
+        tostring(cacheStats.evictions),
+        tostring(cacheStats.lastRenderKey or ''),
+        tostring(cacheStats.lastRenderSize or ''),
+        tostring(cacheStats.lastEvictedKey or '')
+    ));
+
+    local nativeHookStatus = 'unknown';
+    local okNative, nativeTargetArrow = pcall(require, 'core.native_target_arrow');
+    if (okNative == true and nativeTargetArrow ~= nil and nativeTargetArrow.ShouldUseDrawHooks ~= nil) then
+        nativeHookStatus = tostring(nativeTargetArrow.ShouldUseDrawHooks() == true);
+    end
+    file:write('\nNative Hooks\n');
+    file:write('shouldUseDrawHooks=' .. tostring(nativeHookStatus) .. '\n');
+
+    file:write('\nAll Counters\n');
+    local names = {};
+    for name, _ in pairs(counters) do
+        names[#names + 1] = name;
+    end
+    table.sort(names);
+    for _, name in ipairs(names) do
+        file:write(tostring(name) .. '=' .. tostring(counters[name]) .. '\n');
+    end
+
+    file:close();
+    lastReportStatus = 'Saved report';
+    return true;
+end
+
+function perfMeter.WritePerformanceReport()
+    return WritePerformanceReport();
+end
+
+local function DrawReportButton()
+    if (imgui.Button ~= nil and imgui.Button('Save report##LibraPlatesPerfReport')) then
+        WritePerformanceReport();
+    end
+
+    if (lastReportStatus ~= '') then
+        imgui.SameLine();
+        imgui.TextColored({ 0.70, 0.90, 1.0, 1.0 }, tostring(lastReportStatus));
+    end
+end
+
 local function DrawCountsLine()
     imgui.TextColored(
         { 1.0, 0.84, 0.30, 1.0 },
@@ -416,11 +561,20 @@ local function DrawTextureCacheLine()
             tostring(cacheStats.evictions)
         )
     );
+    imgui.TextColored(
+        { 0.70, 0.90, 1.0, 1.0 },
+        string.format(
+            'Cache Detail: Last=%s | Size=%s | Evict=%s',
+            tostring(cacheStats.lastRenderKey or ''),
+            tostring(cacheStats.lastRenderSize or ''),
+            tostring(cacheStats.lastEvictedKey or '')
+        )
+    );
 end
 
 local function DrawTimingTableScrollArea()
     if (imgui.BeginChild ~= nil and imgui.EndChild ~= nil) then
-        imgui.BeginChild('##libraplates_perf_timing_scroll', { 0, -92 }, false);
+        imgui.BeginChild('##libraplates_perf_timing_scroll', { 0, -110 }, false);
         DrawTimingTable();
         imgui.EndChild();
         return;
@@ -837,6 +991,12 @@ function perfMeter.GetSummaryLines()
             tostring(cacheStats.evictions)
         );
         lines[#lines + 1] = string.format(
+            'Cache Detail: Last=%s | Size=%s | Evict=%s',
+            tostring(cacheStats.lastRenderKey or ''),
+            tostring(cacheStats.lastRenderSize or ''),
+            tostring(cacheStats.lastEvictedKey or '')
+        );
+        lines[#lines + 1] = string.format(
             'Detail native=%s target=%s npcScan=%s npcResolve=%s npcFast=%s',
             tostring(GetCounter('native.hook.calls')),
             tostring(GetCounter('target.marker.build.calls')),
@@ -863,6 +1023,24 @@ function perfMeter.GetSummaryLines()
             tostring(GetCounter('canvasPet')),
             tostring(GetCounter('canvasNpcObject')),
             tostring(GetCounter('canvasTargeted'))
+        );
+        lines[#lines + 1] = string.format(
+            'Detail enemy cache hit=%s miss=%s skipState=%s skipCast=%s skipBuffs=%s skipDebuffs=%s skipConfig=%s skipHover=%s',
+            tostring(GetCounter('enemy.cache.hit')),
+            tostring(GetCounter('enemy.cache.miss')),
+            tostring(GetCounter('enemy.cache.skip.state_Target') + GetCounter('enemy.cache.skip.state_Subtarget') + GetCounter('enemy.cache.skip.state_Tactical')),
+            tostring(GetCounter('enemy.cache.skip.cast')),
+            tostring(GetCounter('enemy.cache.skip.buffs')),
+            tostring(GetCounter('enemy.cache.skip.debuffs')),
+            tostring(GetCounter('enemy.cache.skip.config')),
+            tostring(GetCounter('enemy.cache.skip.hover'))
+        );
+        lines[#lines + 1] = string.format(
+            'Detail self cache hit=%s smooth=%s miss=%s skip=%s',
+            tostring(GetCounter('self.cache.hit')),
+            tostring(GetCounter('self.cache.smooth')),
+            tostring(GetCounter('self.cache.miss')),
+            tostring(GetCounter('self.cache.skip'))
         );
     end
 
@@ -938,6 +1116,7 @@ function perfMeter.RenderOverlay()
 
         if (compactOverlay == false and imgui.BeginTable ~= nil) then
             DrawAdaptiveStatusLine();
+            DrawReportButton();
             imgui.Separator();
             DrawTimingSortHeader();
             DrawTimingTableScrollArea();
@@ -948,6 +1127,8 @@ function perfMeter.RenderOverlay()
 
             return;
         end
+
+        DrawReportButton();
 
         for index, line in ipairs(lines) do
             local color = { 0.92, 0.92, 0.90, 1.0 };

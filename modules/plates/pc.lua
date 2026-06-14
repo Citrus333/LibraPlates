@@ -51,6 +51,7 @@ local plateCache = {};
 local indexCache = {};
 local maxPlateCacheEntries = 64;
 local lastPlateCacheTrim = 0;
+local wasConfigOpen = false;
 local scanCache = {
     clock = 0,
     range = nil,
@@ -842,6 +843,10 @@ end
 local function QueuePlayer(player)
     local targetStateName = targeting.GetTargetStateName(player.index);
 
+    if (entities.ShouldHideOtherPlayerPet(player.index, player.name) == true) then
+        return;
+    end
+
     local isPartyPlayer = tonumber(player.slot) ~= nil;
     local isTargetContext = targetStateName ~= 'Idle';
     local showDistanceBadge = targetStateName == 'Target' or targetStateName == 'Subtarget';
@@ -1252,9 +1257,12 @@ function pcPlate.Render()
         return;
     end
 
-    if (state.GetConfigOpen() == true) then
+    local configOpen = state.GetConfigOpen() == true;
+
+    if (configOpen == true and wasConfigOpen ~= true) then
         ClearPlateCache();
     end
+    wasConfigOpen = configOpen;
 
     TrimPlateCache();
 

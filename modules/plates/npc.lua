@@ -23,6 +23,7 @@ local plateCache = {};
 local indexCache = {};
 local maxPlateCacheEntries = 128;
 local lastPlateCacheTrim = 0;
+local wasConfigOpen = false;
 local scanCache = {
     clock = 0,
     range = nil,
@@ -302,10 +303,26 @@ local function QueueNpcObject(entity)
     local resolveTimer = perfMeter.BeginDetail('npc.resolve');
     local entityName = tostring(entity.entityType or 'NPC');
     local displayName = CleanDisplayName(entity.name);
+
+    if (entities.ShouldHideOtherPlayerPet(entity.index, displayName) == true) then
+        perfMeter.EndDetail(resolveTimer);
+        return;
+    end
+
     local resolvedEntityName, npcInfo = npcObjectInfo.ResolveKind(displayName, entityName);
     local settingsEntityName = resolvedEntityName;
     local clickTargetType = string.lower(resolvedEntityName);
     local targetStateName = targeting.GetTargetStateName(entity.index);
+
+    if (
+        entities.IsOwnPetIndex(entity.index) ~= true and
+        entities.IsSummonedPetTypeText(npcInfo ~= nil and npcInfo.type or nil) == true and
+        targeting.GetSettings().hideOtherPlayerPetPlates ~= false
+    ) then
+        perfMeter.EndDetail(resolveTimer);
+        return;
+    end
+
     perfMeter.EndDetail(resolveTimer);
 
     local now = os.clock();
@@ -616,9 +633,12 @@ function npcPlate.Render()
         return;
     end
 
-    if (state.GetConfigOpen() == true) then
+    local configOpen = state.GetConfigOpen() == true;
+
+    if (configOpen == true and wasConfigOpen ~= true) then
         ClearPlateCache();
     end
+    wasConfigOpen = configOpen;
 
     TrimPlateCache();
 

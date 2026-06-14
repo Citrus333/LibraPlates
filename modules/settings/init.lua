@@ -6710,6 +6710,11 @@ local function DrawGeneralVisibilitySection(settings)
         end, tooltip);
     end
 
+    DrawSettingsHeader('World plate filters');
+    DrawVisibilityCheckbox("Hide other players' pet plates", settings.hideOtherPlayerPetPlates ~= false, function(value)
+        settings.hideOtherPlayerPetPlates = value == true;
+    end, "Hides plates for pets that do not belong to you, such as avatars, wyverns, and jug pets. Your own pet plate stays visible.", 'HideOtherPlayerPetPlates');
+
     DrawSettingsHeader('Plate stacking');
     DrawVisibilityCheckbox('Stack overlapping plates', settings.plateStackingEnabled ~= false, function(value)
         settings.plateStackingEnabled = value == true;
@@ -6763,24 +6768,20 @@ local function DrawGeneralVisibilitySection(settings)
             end
         end, 'Controls which stackable plate types stay anchored first. Self, Target, Subtarget, and tactical marker plates are handled separately by Keep target fixed.');
 
-        local stackGap, stackGapChanged = DrawVisibilityNumber('Stack gap', settings.plateStackGap or 4, 'PlateStackGap', 0, 40, 1, 'Space between plates after stacking.');
+        local stackGap, stackGapChanged = DrawVisibilityNumber('Stack spacing', settings.plateStackGap or 4, 'PlateStackGap', 0, 160, 1, 'Pixel space kept between stacked plates. 20 means about 20 px between plates.');
         if (stackGapChanged == true) then
-            settings.plateStackGap = math.max(0, math.min(40, math.floor((tonumber(stackGap) or 4) + 0.5)));
+            settings.plateStackGap = math.max(0, math.min(160, math.floor((tonumber(stackGap) or 4) + 0.5)));
         end
 
-        local stackMaxLift, stackMaxLiftChanged = DrawVisibilityNumber('Max stack lift', settings.plateStackMaxLift or 72, 'PlateStackMaxLift', 0, 240, 1, 'Maximum screen distance a plate may move upward while avoiding overlap.');
-        if (stackMaxLiftChanged == true) then
-            settings.plateStackMaxLift = math.max(0, math.min(240, math.floor((tonumber(stackMaxLift) or 72) + 0.5)));
+        local overlapValue = tonumber(settings.plateStackVerticalOverlap) or tonumber(settings.plateStackHorizontalOverlap);
+        if (overlapValue == nil or (overlapValue > 0 and overlapValue <= 1)) then
+            overlapValue = 2;
         end
-
-        local horizontalOverlap, horizontalOverlapChanged = DrawVisibilityNumber('Horizontal overlap', math.floor(((tonumber(settings.plateStackHorizontalOverlap) or 0.30) * 100) + 0.5), 'PlateStackHorizontalOverlap', 5, 100, 1, 'How much horizontal overlap is allowed before stacking reacts.');
-        if (horizontalOverlapChanged == true) then
-            settings.plateStackHorizontalOverlap = math.max(0.05, math.min(1.0, (tonumber(horizontalOverlap) or 30) / 100));
-        end
-
-        local verticalOverlap, verticalOverlapChanged = DrawVisibilityNumber('Vertical overlap', math.floor(((tonumber(settings.plateStackVerticalOverlap) or 0.50) * 100) + 0.5), 'PlateStackVerticalOverlap', 5, 100, 1, 'How much vertical overlap is allowed before stacking reacts.');
-        if (verticalOverlapChanged == true) then
-            settings.plateStackVerticalOverlap = math.max(0.05, math.min(1.0, (tonumber(verticalOverlap) or 50) / 100));
+        local overlap, overlapChanged = DrawVisibilityNumber('Allowed overlap', math.floor(overlapValue + 0.5), 'PlateStackOverlap', 0, 80, 1, 'Screen pixels plates may overlap before stacking reacts. 2 means about 2 px overlap is allowed.');
+        if (overlapChanged == true) then
+            local value = math.max(0, math.min(80, math.floor((tonumber(overlap) or 2) + 0.5)));
+            settings.plateStackHorizontalOverlap = value;
+            settings.plateStackVerticalOverlap = value;
         end
     end
 

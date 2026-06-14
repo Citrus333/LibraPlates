@@ -9,6 +9,7 @@ local lastGatheringDisplay = nil;
 local lastGatheringDisplayUntil = 0;
 local gatheringToolCounts = nil;
 local lastGatheringToolPoll = 0;
+local suppressGatheringDisplayUntil = 0;
 local lastFishCommandTime = 0;
 local suppressFishRightMouse = false;
 
@@ -139,6 +140,10 @@ local function GetTargetingSettings()
 
     if (global.targeting.enablePetPlateTargeting == nil) then
         global.targeting.enablePetPlateTargeting = true;
+    end
+
+    if (global.targeting.hideOtherPlayerPetPlates == nil) then
+        global.targeting.hideOtherPlayerPetPlates = true;
     end
 
     if (global.targeting.blockPlateClicksWhenImguiCapturesMouse == nil) then
@@ -319,6 +324,7 @@ local function GetTargetingSettings()
         global.targeting.platePositionOffsets[entityName].y = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.platePositionOffsets[entityName].y) or 0) + 0.5)));
     end
     global.targeting.blockPlateClicksWhenImguiCapturesMouse = global.targeting.blockPlateClicksWhenImguiCapturesMouse == true;
+    global.targeting.hideOtherPlayerPetPlates = global.targeting.hideOtherPlayerPetPlates ~= false;
     global.targeting.plateClickNoGoZonesEnabled = global.targeting.plateClickNoGoZonesEnabled == true;
     global.targeting.plateClickNoGoZonesVisible = global.targeting.plateClickNoGoZonesVisible == true;
     global.targeting.performanceSafetyMode = global.targeting.performanceSafetyMode == true;
@@ -1029,7 +1035,7 @@ local function UpdateGatheringToolCounts()
         local current = GetGatheringToolCount(toolName);
         gatheringToolCounts[toolName] = current;
 
-        if (current < previous) then
+        if (current < previous and now >= (tonumber(suppressGatheringDisplayUntil) or 0)) then
             lastGatheringDisplay = {
                 targetName = nil,
                 toolName = toolName,
@@ -1045,6 +1051,19 @@ local function UpdateGatheringToolCounts()
                 ' -> ' .. tostring(current);
         end
     end
+end
+
+local function SuppressGatheringDisplay(seconds, reason)
+    local now = os.clock();
+    suppressGatheringDisplayUntil = math.max(
+        tonumber(suppressGatheringDisplayUntil) or 0,
+        now + math.max(1.0, tonumber(seconds) or 5.0)
+    );
+    lastGatheringDisplay = nil;
+    lastGatheringDisplayUntil = 0;
+    gatheringToolCounts = nil;
+    lastGatheringToolPoll = 0;
+    lastGatheringInteractStatus = 'display suppressed ' .. tostring(reason or 'zone');
 end
 
 local function NormalizeGatheringToolName(toolName)
@@ -1387,6 +1406,16 @@ end
 
 function targeting.GetGatheringInteractStatus()
     return lastGatheringInteractStatus;
+end
+
+function targeting.HandlePacketIn(e)
+    if (e ~= nil and e.id == 0x000A) then
+        SuppressGatheringDisplay(6.0, 'zone');
+    end
+end
+
+function targeting.HandleLogin()
+    SuppressGatheringDisplay(6.0, 'login');
 end
 
 function targeting.GetSettings()

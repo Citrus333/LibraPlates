@@ -3,6 +3,7 @@ local ffi = require('ffi');
 local bit = require('bit');
 local trustNames = require('core.trust_names');
 local targeting = require('core.targeting');
+local petDurations = require('data.pet_durations');
 local C = ffi.C;
 
 local entities = {};
@@ -42,6 +43,14 @@ local spiritPetNames = {
     ['LightSpirit'] = true,
     ['DarkSpirit'] = true,
 };
+local otherPlayerPetNames = {
+    ['Wyvern'] = true,
+    ['Lumiere'] = true,
+    ['Mnejing'] = true,
+    ['Ovjang'] = true,
+    ['Valkeng'] = true,
+};
+local normalizedPetNameSet = nil;
 
 local function SafeCall(fallback, fn)
     local ok, result = pcall(fn);
@@ -457,6 +466,9 @@ function entities.GetEnemy(index, allowHidden)
     local renderFlags1 = SafeCall(nil, function()
         return entityManager:GetRenderFlags1(index);
     end);
+    local spawnFlags = SafeCall(nil, function()
+        return entityManager:GetSpawnFlags(index);
+    end);
 
     return {
         index = index,
@@ -464,6 +476,7 @@ function entities.GetEnemy(index, allowHidden)
         name = ent.Name or 'Enemy',
         hpPercent = ent.HPPercent or 100,
         distance = ent.Distance ~= nil and math.sqrt(ent.Distance) or nil,
+        spawnFlags = spawnFlags,
         renderFlags0 = renderFlags0,
         renderFlags1 = renderFlags1,
     };
@@ -507,6 +520,7 @@ function entities.GetNearbyEnemies(maxDistance)
                     name = ent.Name or 'Enemy',
                     hpPercent = ent.HPPercent or 100,
                     distance = math.sqrt(ent.Distance),
+                    spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(index); end),
                     renderFlags0 = SafeCall(nil, function() return entityManager:GetRenderFlags0(index); end),
                     renderFlags1 = SafeCall(nil, function() return entityManager:GetRenderFlags1(index); end),
                 };
@@ -577,6 +591,66 @@ function entities.IsOwnPetIndex(index)
     local petIndex = entities.GetOwnPetTargetIndex();
 
     return petIndex ~= nil and tonumber(index) == petIndex;
+end
+
+local function NormalizePetName(name)
+    local rawName = tostring(name or ''):gsub('\170', '');
+    rawName = rawName:gsub('%c', '');
+    rawName = rawName:gsub('^%s+', ''):gsub('%s+$', '');
+    rawName = rawName:gsub('[^%w%s]', '');
+    rawName = rawName:gsub('%s+', '');
+
+    return string.lower(rawName);
+end
+
+local function GetNormalizedPetNameSet()
+    if (normalizedPetNameSet ~= nil) then
+        return normalizedPetNameSet;
+    end
+
+    normalizedPetNameSet = {};
+
+    for name, _ in pairs(avatarPetNames) do
+        normalizedPetNameSet[NormalizePetName(name)] = true;
+    end
+
+    for name, _ in pairs(spiritPetNames) do
+        normalizedPetNameSet[NormalizePetName(name)] = true;
+    end
+
+    for name, _ in pairs(otherPlayerPetNames) do
+        normalizedPetNameSet[NormalizePetName(name)] = true;
+    end
+
+    for name, _ in pairs(petDurations.bstJugMinutes or {}) do
+        normalizedPetNameSet[NormalizePetName(name)] = true;
+    end
+
+    return normalizedPetNameSet;
+end
+
+function entities.IsKnownPetName(name)
+    return GetNormalizedPetNameSet()[NormalizePetName(name)] == true;
+end
+
+function entities.IsSummonedPetTypeText(typeText)
+    local text = tostring(typeText or ''):lower();
+
+    return text:find('summoned avatar', 1, true) ~= nil;
+end
+
+function entities.ShouldHideOtherPlayerPet(index, name)
+    local settings = targeting.GetSettings();
+
+    if (settings.hideOtherPlayerPetPlates == false) then
+        return false;
+    end
+
+    if (entities.IsOwnPetIndex(index) == true) then
+        return false;
+    end
+
+    return entities.IsKnownPetName(name) == true;
 end
 
 local function GetPartyVitalsByTargetIndex(index)
@@ -1199,7 +1273,8 @@ function entities.GetNearbyPlayers(maxDistance)
                 ent.Name ~= '' and
                 ent.HPPercent ~= nil and
                 ent.Distance ~= nil and
-                ent.Distance <= maxDistanceSq
+                ent.Distance <= maxDistanceSq and
+                entities.ShouldHideOtherPlayerPet(index, ent.Name) ~= true
             ) then
                 results[#results + 1] = {
                     index = index,
@@ -1324,6 +1399,7 @@ function entities.GetNearbyNpcObjects(maxDistance)
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
                 IsNpcObjectStatusAllowed(entityStatus) == true and
+                entities.ShouldHideOtherPlayerPet(index, ent.Name) ~= true and
                 IsMogHouseFurniturePlaceholder(entityManager, index, ent) ~= true and
                 trustNames.IsKnownTrustName(ent.Name) ~= true
             ) then

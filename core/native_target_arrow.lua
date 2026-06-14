@@ -933,8 +933,7 @@ function nativeTargetArrow.ShouldUseDrawHooks()
         drawBlockFrames > 0 or
         partyBlockEnabled == true or
         hardHideManualEnabled == true or
-        hardHideBurstFrames > 0 or
-        perfMeter.GetDetailEnabled() == true;
+        hardHideBurstFrames > 0;
 end
 
 function nativeTargetArrow.SetHardHideBurstFrames(frames)

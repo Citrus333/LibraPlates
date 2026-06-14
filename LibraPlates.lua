@@ -15,6 +15,7 @@ local log = require('core.log');
 local modules = require('modules.init');
 local nativeTargetArrow = require('core.native_target_arrow');
 local targetActionRange = require('core.target_action_range');
+local targeting = require('core.targeting');
 local engagedEnemies = require('core.engaged_enemies');
 local enmity = require('core.enmity');
 local enemyCasts = require('core.enemy_casts');
@@ -119,10 +120,12 @@ ashita.events.register('mouse', 'libraplates_mouse', function(e)
 end);
 
 ashita.events.register('login', 'libraplates_login', function()
+    targeting.HandleLogin();
     modules.HandleLogin();
 end);
 
 ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
+    targeting.HandlePacketIn(e);
     mogJobDebug.HandlePacketIn(e);
     engagedEnemies.HandlePacketIn(e);
     enmity.HandlePacketIn(e);

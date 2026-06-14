@@ -38,8 +38,8 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Enemy level/difficulty follow-up: decide what level text/color should show for mobs that are effectively impossible to gauge normally.
 - Claim state color settings follow-up: add outline color controls for each Enemy claim state.
 - Blood aggro icon is not showing; likely hidden underneath the links icon due to an anchoring/overlap issue.
-- Catseye special native star icon follow-up: Enemy plates now test the native special-name-icon bit (`renderFlags1 & 0x800`) and draw the Catseye star across World/Target/Subtarget/Tactical states. Later add proper plate settings for this star icon and apply the same native replacement cleanly to NPC special icons.
-- Catseye special star settings: Enemy World/Tactical now has a bottom-list Special icon widget for size and X/Y placement. Preview wiring still needs to be added later.
+- Catseye special native star icon is 99% done: Enemy plates replace the native special marker with the Catseye star across World/Target/Subtarget/Tactical states, with Enemy World/Tactical Special icon settings for size and X/Y placement. Needs more testing in other zones. Preview wiring still needs to be added later.
+- Catseye special icon preview todo: add Special icon display/positioning to the Enemy settings preview so size and X/Y changes can be checked without live mobs.
 - Enmity is currently in Enemy; find a better spot, possibly profile-dependent for Enemy vs Self.
 - Move aggro.
 - Blue magic is missing casting icons and is not showing AOE.
@@ -68,6 +68,7 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 - Remove BST chat spam.
 - Trust status icons follow-up: decide whether Trust debuffs should remain supported/shown, or whether Trust plates should only show Trust buffs.
+- Bug: other players' pets can be treated like PC or NPC/Object plates by name, e.g. summoned Carbuncle/Fenrir showed the yellow type line `Cutscene/Summoned Avatar`, and the DRG wyvern name `Lumiere` still showed as a green plate. This is a pet plate/classification issue, not the NPCs with matching names.
 
 ### Buffs / Debuffs
 
@@ -114,13 +115,21 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Runtime lag diagnostic: PC plates dominated latest sample; investigate PC plate path/caching first if lag remains bad.
 - DirectX wrapper clue: Atom0s DX9 wrapper z-fighting fix greatly reduces LibraPlates lag, but makes Ashita addons click-through.
 - Accessibility/testing workflow: use `/lp lag` as the short one-command lag diagnostic.
+- Idle texture eviction follow-up: if `Evictions/min` climbs with low `Used` count, check for same-key canvas size churn or repeated plate-cache clears before chasing visible plate count.
 - FPS mode setting follow-up: direct FPS divisor memory write caused an Ashita crash when it was attempted during load, so FPS mode must only be applied from an explicit user action.
 - FPS mode UI now gives a short chat confirmation when the saved FPS setting is changed, and Check only updates the Current mode text without changing the selected setting.
 - Performance settings follow-up: wire `World plate update rate` and `Disable expensive widgets on world plates` to actual world-only throttling/preset behavior after in-game testing confirms the new Performance page layout.
-- Plate stacking follow-up: stacking now uses the old-addon local overlap resolver again. Test crowded PC plates first, then tune priority/target behavior if clicking a plate still feels too jumpy.
+- Plate stacking follow-up: the world-marker stacking movement path was removed after it lifted plates into the sky. Do not convert 2D stack deltas back into world Y. The old `Nameplates` addon stacks only because it draws final plates in 2D ImGui windows using `baseX/baseY/drawX/drawY`.
 
 ## Done
 
+- 2026-06-14 - Other-player pet plate filter added:
+  - PC and NPC/Object scans now skip non-owned known pet names when `hideOtherPlayerPetPlates` is enabled, covering SMN avatars/spirits, observed wyvern names, and known BST jug pet names while leaving the player's own pet path intact.
+  - Settings > Visibility now exposes this as `Hide other players' pet plates`, default on.
+- 2026-06-14 - Moved oversized backup/work artifacts out of the live addon folder:
+  - `TEMP WORK FOLDER` and `LibraPlates.rar` were moved to `C:\Users\Lila\Documents\ffxi Addon Work\_LibraPlates_large_files_removed_20260614` so launcher/game backup creation does not scan roughly 20 GB of non-runtime files.
+- 2026-06-14 - Moved old Libra backup/reference folders out of `Ashita\addons`:
+  - `LibraPlates-last` and `Libra Backups` were moved to `C:\Users\Lila\Documents\ffxi Addon Work\_Ashita_addons_backup_folders_20260614`, removing another roughly 8.8 GB from the launcher backup scan path.
 - 2026-06-13 - Performance settings page added:
   - Settings now has a dedicated Performance page after Scaling.
   - Performance monitor can be shown/hidden from settings and now has a compact overlay mode plus optional detailed timing.
@@ -150,13 +159,32 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - 2026-06-13 - First-pass world plate stacking added:
   - Overlapping selected texture world plates now get a temporary upward lift before both click-rect generation and drawing, so mouse targeting should stay aligned with the moved plate.
   - Loading priority now has a practical fallback order after Self/target/subtarget/tactical: PC, Enemy, Trust, Pet, NPC, Object.
-  - Settings > Visibility now has Plate stacking controls for enabling stacking, per-type participation, priority order, closest-on-top range stacking, tactical fixed behavior, stack gap, max stack lift, and overlap sensitivity.
+  - Settings > Visibility now has Plate stacking controls for enabling stacking, per-type participation, priority order, closest-on-top range stacking, tactical fixed behavior, stack spacing, and overlap sensitivity.
   - Settings > Visibility also has Tactical screen limits as an off-by-default option to keep Target/Subtarget/tactical marker plates from going above the top edge of the screen.
-  - Stacking was reworked back toward the old-addon behavior: plates are placed by screen position and only move when their actual rectangles overlap already placed plates.
+  - Stacking was reworked toward the old-addon behavior: plates are placed by screen position and only move when their actual rectangles overlap already placed plates. Stack gap is real pixel space, and horizontal/vertical overlap controls are pixel allowances instead of percentages. Follow-up PC crowd testing is still needed.
   - PC plate caching now includes the linkshell tint so color changes redraw instead of reusing an old white icon.
   - Plate render policy version was bumped so already-rendered dark linkshell plate textures are forced to refresh after reload.
   - Linkshell icon tint is brightened only for the linkshell icon render path because the gray shell PNG is multiplied by the tint in the render-target pipeline.
   - Linkshell mask is kept at 64x64 from the old addon so it stays smooth without adding unnecessary texture size.
+- 2026-06-14 - Removed broken world-marker stacking movement:
+  - The attempted projected-rectangle-to-world-Y stack resolver was removed from `core/world_marker_probe.lua`; enabling stacking no longer applies `_stackOffsetY` or moves world plates.
+  - Settings > Visibility no longer shows `Max stack lift`.
+  - The old `Nameplates` stacking behavior was inspected: it sorts screen-space plates by `baseY`, checks simple rectangle overlap, and changes only `drawY` for 2D ImGui plate windows. A real replacement should use that same 2D final-draw model instead of moving world anchors.
+- 2026-06-14 - Reduced idle canvas texture cache churn:
+  - Canvas render textures now include their render size in the internal cache key, so a plate key changing between canvas sizes no longer releases and recreates the same cache entry every frame.
+  - PC, NPC/Object, Enemy, and Trust plate caches now clear once when Settings opens instead of clearing every rendered frame while the config window is open.
+  - Detailed performance monitor now shows the last canvas render key/size and last evicted texture key to make the remaining FPS drop easier to isolate.
+  - Performance monitor now has a `Save report` button that writes a `.txt` snapshot to `config\addons\LibraPlates\performance`.
+  - Stale engaged enemy tracking no longer queues hidden/non-visible world enemy plates; current target/subtarget still allow hidden lookup for responsiveness.
+  - Stable engaged Enemy plates can now reuse their cached canvas texture; they still redraw when HP, cast/status rows, settings, or visual signature changes.
+  - Performance reports now include enemy cache skip reasons so remaining enemy canvas redraws can be tied to target state, casts, status rows, config, or hover.
+  - Enemy canvas caching is allowed while Settings/performance monitor is open; the enemy cache signature already includes plate settings, so edits still invalidate cached textures.
+  - Self world plate caching is also allowed while Settings/performance monitor is open, and performance reports include self cache hit/smooth/miss counters.
+  - `/lp perf report` now saves the same performance snapshot without opening the monitor, so testing can avoid UI overhead.
+  - Click debug is now truly off by default and `/lp clickdebug off` disables both hidden raw rect drawing and debug rect baking in plate canvases.
+  - Detailed performance mode no longer keeps native D3D draw hooks active by itself; reports now include `shouldUseDrawHooks` to verify hook state.
+  - Native party/target UI hide hooks now require an actual target before activating, so no-target idle testing should report `shouldUseDrawHooks=false`.
+  - Gathering tool-count display is suppressed briefly on login/zone packets and its count baseline is reset, preventing the false `0` tool-count flash during zoning. Confirmed fixed in-game.
 - 2026-06-13 - Profile visibility and auto-switch cleanup:
   - Settings now always shows the current profile in a compact top row, with direct profile switching available from any Settings/Plates/Modules view.
   - Confirmed profile auto-switch support already exists for main job plus sub job, including `Any` subjob matching any or no subjob.

@@ -983,7 +983,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         end
     end
 
-    local cacheEligible = state.GetConfigOpen() ~= true;
+    local cacheEligible = true;
     local signature = nil;
     local vitalSignature = nil;
 
@@ -1043,6 +1043,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         end
 
         perfMeter.Count('self.cache.miss', 1);
+    else
+        perfMeter.Count('self.cache.skip', 1);
     end
 
     local renderTextureKey = cachedWorldTextureKey .. (plateData.canvasWidth ~= nil and '-aoe' or '');

@@ -85,7 +85,7 @@ local function UpdateNativeTargetArrowVisibility()
         (
             targetingSettings.hideNativePartyTargetUi == true or
             targetingSettings.hideNativeTargetArrow == true
-        ) and
+        ) and hasAnyTarget == true and
         mogHouseNativePassthrough ~= true;
     local hideNativeTargetArrow =
         nativeHideSettingEnabled == true and
@@ -332,7 +332,7 @@ function modules.UpdateNativeTargetArrow()
         (
             targetingSettings.hideNativePartyTargetUi == true or
             targetingSettings.hideNativeTargetArrow == true
-        ) and
+        ) and hasAnyTarget == true and
         mogHouseNativePassthrough ~= true;
     local nativeHideSettingEnabled =
         targetingSettings.hideNativeTargetArrow == true and

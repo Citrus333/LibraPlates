@@ -31,6 +31,7 @@ local plateCache = {};
 local indexCache = {};
 local maxPlateCacheEntries = 32;
 local lastPlateCacheTrim = 0;
+local wasConfigOpen = false;
 local trustBuffDefaults = {};
 local nearbyScanCache = {
     clock = 0,
@@ -693,9 +694,12 @@ function trustPlate.Render()
         return;
     end
 
-    if (state.GetConfigOpen() == true) then
+    local configOpen = state.GetConfigOpen() == true;
+
+    if (configOpen == true and wasConfigOpen ~= true) then
         ClearPlateCache();
     end
+    wasConfigOpen = configOpen;
 
     TrimPlateCache();
 

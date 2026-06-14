@@ -53,6 +53,7 @@ local plateCache = {};
 local indexCache = {};
 local maxPlateCacheEntries = 64;
 local lastPlateCacheTrim = 0;
+local wasConfigOpen = false;
 local nonCombatZoneIds = {
     [26] = true, -- Tavnazian Safehold
     [50] = true, -- Aht Urhgan Whitegate
@@ -383,7 +384,11 @@ local function AddActivityPointIconToPlate(plateData, enemyName, nameSettings)
 end
 
 local function IsCatseyeSpecialNameIcon(enemy)
-    return bit.band(tonumber(enemy ~= nil and enemy.renderFlags1) or 0, 0x800) ~= 0;
+    local name = tostring(enemy ~= nil and enemy.name or '');
+
+    return
+        name:sub(1, 1) == string.char(0xAA) and
+        bit.band(tonumber(enemy ~= nil and enemy.renderFlags1) or 0, 0x800) ~= 0;
 end
 
 local function AddCatseyeSpecialNameIconToPlate(plateData, context)
@@ -1582,11 +1587,13 @@ local function BuildEnemyCacheSignature(context)
     local enemy = context.enemy;
 
     return table.concat({
-        'v=7',
+        'v=8',
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'activeDetail=' .. tostring(context.hasActiveDetail),
         'name=' .. tostring(context.displayName or ''),
         'server=' .. tostring(enemy.serverId or ''),
+        'spawn=' .. tostring(enemy.spawnFlags or ''),
+        'render1=' .. tostring(enemy.renderFlags1 or ''),
         'hp=' .. (context.hasActiveDetail == true and tostring(context.hpPercent) or ''),
         'dist=' .. tostring(context.distanceText or ''),
         'job=' .. tostring(context.jobText or ''),
@@ -1707,12 +1714,11 @@ end
 local function QueueEnemy(enemy)
     local settingsTimer = perfMeter.BeginDetail('enemy.settings');
     local context = BuildEnemyQueueContext(enemy);
+    local cacheSkipReason = nil;
     local cacheEligible = context.stateName == 'Idle'
-        and context.isEngaged ~= true
         and context.castData == nil
         and #context.buffRows == 0
         and #context.debuffRows == 0
-        and state.GetConfigOpen() ~= true
         and context.isHovered ~= true;
     local cacheKey = nil;
     local signature = nil;
@@ -1752,6 +1758,22 @@ local function QueueEnemy(enemy)
         end
 
         perfMeter.Count('enemy.cache.miss', 1);
+    else
+        if (context.stateName ~= 'Idle') then
+            cacheSkipReason = 'state_' .. tostring(context.stateName or 'unknown');
+        elseif (context.castData ~= nil) then
+            cacheSkipReason = 'cast';
+        elseif (#context.buffRows > 0) then
+            cacheSkipReason = 'buffs';
+        elseif (#context.debuffRows > 0) then
+            cacheSkipReason = 'debuffs';
+        elseif (context.isHovered == true) then
+            cacheSkipReason = 'hover';
+        else
+            cacheSkipReason = 'other';
+        end
+
+        perfMeter.Count('enemy.cache.skip.' .. tostring(cacheSkipReason), 1);
     end
     perfMeter.EndDetail(settingsTimer);
 
@@ -1774,7 +1796,7 @@ local function QueueEnemy(enemy)
 
     local canvasTimer = perfMeter.BeginDetail('enemy.canvas');
     local hasCatseyeSpecialNameIcon = IsCatseyeSpecialNameIcon(enemy) == true;
-    local textureKey = 'enemy-' .. tostring(enemy.index) .. (hasCatseyeSpecialNameIcon == true and '-catseye-star' or '') .. (plateData.canvasWidth ~= nil and '-aoe' or '');
+    local textureKey = 'enemy-v8-' .. tostring(enemy.index) .. (hasCatseyeSpecialNameIcon == true and '-catseye-star' or '') .. (plateData.canvasWidth ~= nil and '-aoe' or '');
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
     local plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
@@ -1921,9 +1943,12 @@ function enemyPlate.Render(importantOnly)
         return;
     end
 
-    if (state.GetConfigOpen() == true) then
+    local configOpen = state.GetConfigOpen() == true;
+
+    if (configOpen == true and wasConfigOpen ~= true) then
         ClearPlateCache();
     end
+    wasConfigOpen = configOpen;
 
     TrimPlateCache();
 
@@ -1961,7 +1986,7 @@ function enemyPlate.Render(importantOnly)
     QueueByIndex(currentTargetIndex, true);
 
     for _, index in ipairs(engagedEnemies.GetTrackedIndexes()) do
-        QueueByIndex(index, true);
+        QueueByIndex(index, false);
     end
 
     if (importantOnly == true) then

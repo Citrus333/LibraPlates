@@ -27,11 +27,17 @@ local textures = {};
 local textureInfo = {};
 local textureOrder = {};
 local textureIdToKey = {};
+local textureAliases = {};
 local textureCount = 0;
 local textureEvictions = 0;
 local evictionWindowStart = os.clock();
 local evictionWindowCount = 0;
 local evictionRatePerMinute = 0;
+local lastEvictedKey = '';
+local lastEvictedAt = 0;
+local lastRenderBaseKey = '';
+local lastRenderTextureKey = '';
+local lastRenderSize = '';
 local maxTextures = 96;
 local width = 1024;
 local height = 512;
@@ -113,6 +119,21 @@ local function TouchTextureKey(key)
     key = tostring(key or '');
 
     if (key == '' or textures[key] == nil) then
+        local aliases = textureAliases[key];
+
+        if (type(aliases) == 'table') then
+            local touched = false;
+
+            for actualKey, _ in pairs(aliases) do
+                if (textures[actualKey] ~= nil) then
+                    TouchTextureKey(actualKey);
+                    touched = true;
+                end
+            end
+
+            return touched;
+        end
+
         return false;
     end
 
@@ -124,10 +145,55 @@ local function TouchTextureKey(key)
     return true;
 end
 
+local function RemoveTextureAlias(actualKey)
+    for alias, aliases in pairs(textureAliases) do
+        if (type(aliases) == 'table') then
+            aliases[actualKey] = nil;
+
+            if (next(aliases) == nil) then
+                textureAliases[alias] = nil;
+            end
+        end
+    end
+end
+
+local function AddTextureAlias(alias, actualKey)
+    alias = tostring(alias or '');
+    actualKey = tostring(actualKey or '');
+
+    if (alias == '' or actualKey == '' or alias == actualKey) then
+        return;
+    end
+
+    textureAliases[alias] = textureAliases[alias] or {};
+    textureAliases[alias][actualKey] = true;
+end
+
 local function ReleaseTextureKey(key)
     key = tostring(key or '');
 
     if (key == '' or textures[key] == nil) then
+        local aliases = textureAliases[key];
+
+        if (type(aliases) == 'table') then
+            local keys = {};
+
+            for actualKey, _ in pairs(aliases) do
+                keys[#keys + 1] = actualKey;
+            end
+
+            local released = false;
+
+            for _, actualKey in ipairs(keys) do
+                if (ReleaseTextureKey(actualKey) == true) then
+                    released = true;
+                end
+            end
+
+            textureAliases[key] = nil;
+            return released;
+        end
+
         return false;
     end
 
@@ -139,7 +205,10 @@ local function ReleaseTextureKey(key)
 
     textures[key] = nil;
     textureInfo[key] = nil;
+    RemoveTextureAlias(key);
     RemoveTextureOrderKey(key);
+    lastEvictedKey = key;
+    lastEvictedAt = os.clock();
     textureCount = math.max(0, textureCount - 1);
     textureEvictions = textureEvictions + 1;
     evictionWindowCount = evictionWindowCount + 1;
@@ -703,7 +772,7 @@ local function DrawScrollingBarOverlay(device, barX, barY, barW, barH, progress,
     end
 end
 
-local function EnsureTexture(device, key)
+local function EnsureTexture(device, key, alias)
     key = tostring(key or 'world');
 
     if (textures[key] ~= nil) then
@@ -732,6 +801,7 @@ local function EnsureTexture(device, key)
         width = width,
         height = height,
     };
+    AddTextureAlias(alias, key);
     textureCount = textureCount + 1;
 
     local id = TextureId(textures[key]);
@@ -2025,7 +2095,12 @@ function canvasTexture.Render(plate, key)
         return Finish(nil, width, height);
     end
 
-    local targetTexture = EnsureTexture(device, key);
+    local baseKey = tostring(key or 'world');
+    local textureKey = baseKey .. '|size=' .. tostring(width) .. 'x' .. tostring(height);
+    lastRenderBaseKey = baseKey;
+    lastRenderTextureKey = textureKey;
+    lastRenderSize = tostring(width) .. 'x' .. tostring(height);
+    local targetTexture = EnsureTexture(device, textureKey, baseKey);
 
     if (targetTexture == nil or targetTexture.GetSurfaceLevel == nil) then
         return Finish(nil, width, height);
@@ -2502,6 +2577,11 @@ function canvasTexture.GetCacheStats()
         max = maxTextures,
         evictions = textureEvictions,
         evictionsPerMinute = currentRate,
+        lastEvictedKey = lastEvictedKey,
+        lastEvictedAgo = (lastEvictedAt > 0) and (now - lastEvictedAt) or nil,
+        lastRenderKey = lastRenderBaseKey,
+        lastRenderTextureKey = lastRenderTextureKey,
+        lastRenderSize = lastRenderSize,
     };
 end
 

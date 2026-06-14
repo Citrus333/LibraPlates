@@ -805,8 +805,12 @@ function commands.Handle(e)
             perfMeter.Reset();
             log.Info('Performance meter reset.');
             return;
+        elseif (value == 'report') then
+            perfMeter.WritePerformanceReport();
+            log.Info('Performance report saved.');
+            return;
         elseif (value ~= 'status' and value ~= '') then
-            log.Warn('Usage: /lp perf [on|off|reset|status] | /lp perf detail [on|off|status]');
+            log.Warn('Usage: /lp perf [on|off|reset|report|status] | /lp perf detail [on|off|status]');
             return;
         end
 
@@ -982,6 +986,8 @@ function commands.Handle(e)
         local typeLineSettings = state.GetWidgetSettings(resolvedEntityName, 'Idle', 'Type line', typeLineDefaults);
         local render0 = tonumber(debug.renderFlags0) or 0;
         local render1 = tonumber(debug.renderFlags1) or 0;
+        local hasNativeSpecialNameMarker = tostring(debug.name or ''):sub(1, 1) == string.char(0xAA);
+        local expectedStar = hasNativeSpecialNameMarker == true and HasFlag(render1, 0x800) == true;
 
         log.Info(
             'Entity debug target=' .. tostring(debug.index) ..
@@ -997,6 +1003,7 @@ function commands.Handle(e)
             ' render0=0x' .. string.format('%X', render0) ..
             ' render1=0x' .. string.format('%X', render1) ..
             ' specialNameBit=' .. tostring(HasFlag(render1, 0x800)) ..
+            ' specialNameMarker=' .. tostring(hasNativeSpecialNameMarker) ..
             ' r0hi=' .. tostring(HasFlag(render0, 0x80000000)) ..
             ' r0mid=' .. tostring(HasFlag(render0, 0x40000000)) ..
             ' indexAllowed=' .. tostring(debug.indexAllowed) ..
@@ -1019,9 +1026,10 @@ function commands.Handle(e)
             'Entity icon probe target=' .. tostring(debug.index) ..
             ' name=' .. tostring(cleanName) ..
             ' nativeSpecial=' .. tostring(HasFlag(render1, 0x800)) ..
+            ' nativeMarker=' .. tostring(hasNativeSpecialNameMarker) ..
             ' r0Bits=' .. DebugFlagList(render0, { 0x200, 0x2000, 0x400000, 0x800000, 0x40000000, 0x80000000 }) ..
             ' r1Bits=' .. DebugFlagList(render1, { 0x8, 0x40, 0x400, 0x800, 0x8000, 0x2000000 }) ..
-            ' expectedStar=' .. tostring(HasFlag(render1, 0x800))
+            ' expectedStar=' .. tostring(expectedStar)
         );
         return;
     end

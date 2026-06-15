@@ -1001,6 +1001,7 @@ local itemIcons = T{
         type = 'Object',
         icon = 'QuestionMark.png',
         zones = { 'Abyssea - Empyreal Paradox', 'Al Zahbi', 'Al\'Taieu', 'Altar Room', 'Alzadaal Undersea Ruins', 'Arrapago Reef', 'Aydeewa Subterrane', 'Balga\'s Dais', 'Batallia Downs', 'Batallia Downs [S]', 'Beadeaux', 'Beadeaux [S]', 'Bearclaw Pinnacle', 'Beaucedine Glacier', 'Beaucedine Glacier [S]', 'Bhaflau Thickets', 'Bibiki Bay', 'Boneyard Gully', 'Bostaunieux Oubliette', 'Buburimu Peninsula', 'Caedarva Mire', 'Cape Teriggan', 'Carpenters\' Landing', 'Castle Oztroja', 'Castle Oztroja [S]', 'Castle Zvahl Baileys', 'Castle Zvahl Baileys [S]', 'Castle Zvahl Keep', 'Castle Zvahl Keep [S]', 'Ceizak Battlegrounds', 'Chamber of Oracles', 'Cirdas Caverns', 'Cloister of Flames', 'Cloister of Frost', 'Cloister of Gales', 'Cloister of Storms', 'Cloister of Tides', 'Cloister of Tremors', 'Crawlers\' Nest', 'Crawlers\' Nest [S]', 'Dangruf Wadi', 'Davoi', 'Desuetia - Empyreal Paradox', 'Dho Gates', 'Dragon\'s Aery', 'East Ronfaure [S]', 'East Sarutabaruta', 'Empyreal Paradox', 'Escha - Ru\'Aun', 'Escha - Zi\'Tah', 'Fei\'Yin', 'Feretory', 'Foret de Hennetiel', 'Fort Karugo-Narugo [S]', 'Full Moon Fountain', 'Garlaige Citadel', 'Garlaige Citadel [S]', 'Ghelsba Outpost', 'Giddeus', 'Grand Palace of Hu\'Xzoi', 'Grauberg [S]', 'Gusgen Mines', 'Gustav Tunnel', 'Hall of The Gods', 'Hall of Transference', 'Halvung', 'Hazhalm Testing Grounds', 'Horlais Peak', 'Ifrit\'s Cauldron', 'Inner Horutoto Ruins', 'Jade Sepulcher', 'Jugner Forest', 'Jugner Forest [S]', 'Kamihr Drifts', 'King Ranperre\'s Tomb', 'Konschtat Highlands', 'Korroloka Tunnel', 'Kuftal Tunnel', 'La Theine Plateau', 'La Vaule [S]', 'La\'Loff Amphitheater', 'Leafallia', 'Lower Delkfutt\'s Tower', 'Lufaise Meadows', 'Mamook', 'Marjami Ravine', 'Maze of Shakhrami', 'Meriphataud Mountains', 'Meriphataud Mountains [S]', 'Middle Delkfutt\'s Tower', 'Mine Shaft #2716', 'Misareaux Coast', 'Mog Garden', 'Moh Gates', 'Monarch Linn', 'Monastic Cavern', 'Morimar Basalt Fields', 'Mount Kamihr', 'Mount Zhayolm', 'Navukgo Execution Chamber', 'North Gustaberg', 'North Gustaberg [S]', 'Oldton Movalpolos', 'Ordelle\'s Caves', 'Outer Horutoto Ruins', 'Outer Ra\'Kaznar', 'Palborough Mines', 'Pashhow Marshlands', 'Pashhow Marshlands [S]', 'Phomiuna Aqueducts', 'Promyvion - Vahzl', 'Provenance', 'Pso\'Xja', 'Qu\'Bia Arena', 'Qufim Island', 'Quicksand Caves', 'Qulun Dome', 'Ra\'Kaznar Inner Court', 'Ra\'Kaznar Turris', 'Ranguemont Pass', 'Reisenjima', 'Reisenjima Sanctorium', 'Riverne - Site #A01', 'Riverne - Site #B01', 'Ro\'Maeve', 'Rolanberry Fields', 'Rolanberry Fields [S]', 'Ru\'Aun Gardens', 'Sacrarium', 'Sacrificial Chamber', 'Sauromugue Champaign', 'Sauromugue Champaign [S]', 'Sea Serpent Grotto', 'Sih Gates', 'South Gustaberg', 'Spire of Dem', 'Spire of Holla', 'Spire of Mea', 'Spire of Vahzl', 'Stellar Fulcrum', 'Tahrongi Canyon', 'Talacca Cove', 'Temple of Uggalepih', 'The Boyahda Tree', 'The Celestial Nexus', 'The Eldieme Necropolis', 'The Eldieme Necropolis [S]', 'The Garden of Ru\'Hmet', 'The Sanctuary of Zi\'Tah', 'The Shrine of Ru\'Avitau', 'The Shrouded Maw', 'Throne Room', 'Throne Room [S]', 'Toraimarai Canal', 'Uleguerand Range', 'Valkurm Dunes', 'Valley of Sorrows', 'Vunkerl Inlet [S]', 'Wajaom Woodlands', 'Walk of Echoes', 'Waughroon Shrine', 'West Ronfaure', 'West Sarutabaruta', 'West Sarutabaruta [S]', 'Western Altepa Desert', 'Woh Gates', 'Xarcabard', 'Xarcabard [S]', 'Yahse Hunting Grounds', 'Yorcia Weald', 'Yughott Grotto', 'Yuhtunga Jungle', 'Zeruhn Mines' },
+        worldOffsetY = 0.0,
         zoneIds = { 2, 4, 5, 6, 8, 9, 10, 11, 13, 14, 17, 19, 21, 22, 23, 24, 25, 27, 28, 29, 30, 31, 33, 34, 35, 36, 48, 51, 52, 54, 57, 61, 62, 64, 65, 67, 68, 72, 78, 79, 81, 82, 83, 84, 85, 88, 89, 90, 91, 92, 95, 96, 97, 98, 99, 100, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 115, 116, 117, 118, 119, 120, 121, 122, 123, 125, 126, 128, 130, 136, 137, 138, 139, 140, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 159, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 178, 179, 180, 181, 182, 184, 190, 191, 192, 193, 194, 195, 196, 197, 198, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 211, 212, 222, 251, 255, 260, 261, 262, 263, 265, 266, 267, 268, 269, 270, 272, 273, 274, 276, 277, 280, 281, 282, 285, 288, 289, 290, 291, 293 },
         note = 'Needs Review.',
     },
@@ -1125,7 +1126,7 @@ local itemIcons = T{
         note = 'Needs Review.',
     },
 
-    ['Synergy Furnace']          = { type = 'Synergy Furnace', icon = 'craft_01.png', zones = { "Bastok Markets", "Port Bastok", "Northern San d'Oria", "Southern San d'Oria", "Port Windurst", "Windurst Waters", "Upper Jeuno", "Lower Jeuno", "Port Jeuno" }, worldOffsetY = 0.20 },
+    ['Synergy Furnace']          = { type = 'Synergy Furnace', icon = 'craft_01.png', zones = { "Bastok Markets", "Port Bastok", "Northern San d'Oria", "Southern San d'Oria", "Port Windurst", "Windurst Waters", "Upper Jeuno", "Lower Jeuno", "Port Jeuno" }, 
 
     ['Telepoint'] = {
         type = 'Object',
@@ -4775,7 +4776,442 @@ local itemIcons = T{
         note = 'Needs Review.',
     },
 
+    ['Abandoned Mineshaft'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Sauromugue Champaign [S]' },
+        zoneIds = { 98 },
+        note = 'Needs Review.',
+    },
 
+    ['Acid-eaten Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Mount Zhayolm' },
+        zoneIds = { 61 },
+        note = 'Needs Review.',
+    },
+
+    ['Ahmibi Watchtower'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Bhaflau Thickets' },
+        zoneIds = { 52 },
+        note = 'Needs Review.',
+    },
+
+    ['Airship Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Sealion\'s Den' },
+        zoneIds = { 32 },
+        note = 'Needs Review.',
+    },
+
+
+
+    ['Altar'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Monastic Cavern' },
+        zoneIds = { 150 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Altar of Ashes'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Ifrit\'s Cauldron' },
+        zoneIds = { 205 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Altar of Offerings'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Giddeus' },
+        zoneIds = { 145 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Altar of Rancor'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Den of Rancor' },
+        zoneIds = { 160 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Altepa Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Western Altepa Desert' },
+        zoneIds = { 125 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Ambuscade Tome'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Mhaura' },
+        zoneIds = { 249 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Amchuchu\'s Laboratory'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Western Adoulin' },
+        zoneIds = { 256 },
+        note = 'Needs Review.',
+    },
+
+    ['Ancient Lockbox'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Ilrusi Atoll', 'Lebros Cavern', 'Leujaoam Sanctum', 'Mamool Ja Training Grounds', 'Periqia', 'The Ashu Talif' },
+        zoneIds = { 55, 56, 60, 63, 66, 69 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Ancient Magical Gizmo'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Inner Horutoto Ruins', 'Outer Horutoto Ruins' },
+        zoneIds = { 192, 194 },
+        note = 'Needs Review.',
+    },
+
+
+
+    ['Animal Spoor'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Xarcabard [S]' },
+        zoneIds = { 137 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Anomaly Trigger #1'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Outer Ra\'Kaznar [U]' },
+        zoneIds = { 275 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Anomaly Trigger #2'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Outer Ra\'Kaznar [U]' },
+        zoneIds = { 275 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Anomaly Trigger #3'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Outer Ra\'Kaznar [U]' },
+        zoneIds = { 275 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Anomaly Trigger #4'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Outer Ra\'Kaznar [U]' },
+        zoneIds = { 275 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Anomaly Trigger #5'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Outer Ra\'Kaznar [U]' },
+        zoneIds = { 275 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Anomaly Trigger #6'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Outer Ra\'Kaznar [U]' },
+        zoneIds = { 275 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Ansgar'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Vunkerl Inlet [S]' },
+        zoneIds = { 83 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Antican Curule Aedilis'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Castle Zvahl Keep', 'La Theine Plateau' },
+        zoneIds = { 102, 162 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Antiquated Sluice Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Rala Waterways' },
+        zoneIds = { 258 },
+        note = 'Needs Review.',
+    },
+
+
+    ['AP Master Debug'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Altepa', 'Abyssea - Attohwa', 'Abyssea - Grauberg', 'Abyssea - Konschtat', 'Abyssea - La Theine', 'Abyssea - Misareaux', 'Abyssea - Tahrongi', 'Abyssea - Uleguerand', 'Abyssea - Vunkerl' },
+        zoneIds = { 15, 45, 132, 215, 216, 217, 218, 253, 254 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Apkallu Interpreter'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Reef', 'Mine Shaft #2716' },
+        zoneIds = { 13, 54 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Apkallu_A'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Reef' },
+        zoneIds = { 54 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Apkallu_B'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Reef' },
+        zoneIds = { 54 },
+        note = 'Needs Review.',
+    },
+	
+	
+    ['Arboreal Grove'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Mog Garden' },
+        zoneIds = { 280 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Arboreal Grove #2'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Mog Garden' },
+        zoneIds = { 280 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Arboreal Grove #3'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Mog Garden' },
+        zoneIds = { 280 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Arboreal Grove #4'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Mog Garden' },
+        zoneIds = { 280 },
+        note = 'Needs Review.',
+    },
+
+
+    ['ari01'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'West Sarutabaruta [S]' },
+        zoneIds = { 95 },
+        note = 'Needs Review.',
+    },
+
+
+    ['ari02'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'West Sarutabaruta [S]' },
+        zoneIds = { 95 },
+        note = 'Needs Review.',
+    },
+
+
+    ['ari03'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'West Sarutabaruta [S]' },
+        zoneIds = { 95 },
+        note = 'Needs Review.',
+    },
+
+   ['Armoury Crate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Remnants', 'Balga\'s Dais', 'Beadeaux [S]', 'Bearclaw Pinnacle', 'Bhaflau Remnants', 'Boneyard Gully', 'Castle Oztroja [S]', 'Chamber of Oracles', 'Ghelsba Outpost', 'Hazhalm Testing Grounds', 'Horlais Peak', 'Jade Sepulcher', 'La Vaule [S]', 'Mine Shaft #2716', 'Monarch Linn', 'Navukgo Execution Chamber', 'Nyzul Isle', 'Qu\'Bia Arena', 'Sacrificial Chamber', 'Silver Sea Remnants', 'Talacca Cove', 'The Shrouded Maw', 'Throne Room', 'Throne Room [S]', 'Waughroon Shrine', 'Zhayolm Remnants' },
+        zoneIds = { 6, 8, 10, 13, 31, 57, 64, 67, 73, 74, 75, 76, 77, 78, 85, 92, 99, 139, 140, 144, 146, 156, 163, 165, 168, 206 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Ars Monstrum'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Yorcia Weald [U]' },
+        zoneIds = { 264 },
+        note = 'Needs Review.',
+    },
+	
+	    ['Aspirants\' Grounds'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Assault'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'GM Home' },
+        zoneIds = { 210 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Astral Glimmer'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Hazhalm Testing Grounds' },
+        zoneIds = { 78 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Astral Plinth'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Reef', 'Halvung', 'Mamook' },
+        zoneIds = { 54, 62, 65 },
+        note = 'Needs Review.',
+    },
+
+
+    ['AT-01 Martello'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = 'Needs Review.',
+    },
+
+
+    ['AT-02 Martello'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = 'Needs Review.',
+    },
+
+
+    ['AT-03 Martello'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = 'Needs Review.',
+    },
+
+
+    ['AT-04 Martello'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = 'Needs Review.',
+    },
+
+
+    ['AT-05 Martello'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = 'Needs Review.',
+    },
+
+
+    ['AT-06 Martello'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = 'Needs Review.',
+    },
+
+
+    ['AT-07 Martello'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = 'Needs Review.',
+    },
+
+
+    ['AT-08 Martello'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = 'Needs Review.',
+    },
+
+
+    ['atmos_test'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Walk of Echoes' },
+        zoneIds = { 182 },
+        note = 'Needs Review.',
+    },
+	
     -------------------------------------------------------------------------------
     -- Misc
     -------------------------------------------------------------------------------
@@ -4858,6 +5294,7 @@ local itemIcons = T{
 
     ['Waypoint']                 = { type = 'Waypoint', icon = 'Waypoint.png' },
 
+}
 };
 
 return itemIcons;

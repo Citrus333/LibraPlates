@@ -5,6 +5,7 @@ local mpBarDefaults = require('config.widgets.mp_bar');
 local tpBarDefaults = require('config.widgets.tp_bar');
 local distanceDefaults = require('config.widgets.distance');
 local castBarDefaults = require('config.widgets.cast_bar');
+local buffsDefaults = require('config.widgets.buffs');
 local globalDefaults = require('config.global');
 local petDurations = require('data.pet_durations');
 local abilityRecast = require('libs.abilityrecast');
@@ -17,6 +18,7 @@ local barAnimations = require('core.bar_animations');
 local backgroundTextures = require('core.background_textures');
 local statusIconTextures = require('core.status_icon_textures');
 local spellIconTextures = require('core.spell_icon_textures');
+local statusTimerFormat = require('core.status_timer_format');
 local textureLoader = require('core.texture_loader');
 local entities = require('core.entities');
 local state = require('core.state');
@@ -24,6 +26,7 @@ local targeting = require('core.targeting');
 local enmity = require('core.enmity');
 local petState = require('core.pet_state');
 local bstCharmTimer = require('core.bst_charm_timer');
+local luopanStatuses = require('core.luopan_statuses');
 local pupManeuvers = require('core.pup_maneuvers');
 local targetModuleMarker = require('core.target_module_marker');
 local worldDepthPlate = require('core.world_depth_plate');
@@ -35,6 +38,10 @@ local jugIconTextureId = nil;
 local petStateIconTextureIds = {};
 local petAnchorBone = 12;
 local petWorldOffsetY = 0.16;
+local luopanWorldOffsetY = -1.60;
+local luopanCanvasHeight = 1024;
+local luopanPlateWorldHeight = 2.36;
+local luopanBuffsDefaults = {};
 local petTimerDefaults = {
     enabled = true,
     displayMode = 'Text',
@@ -65,6 +72,12 @@ local petStateDefaults = {
     offsetX = 52,
     offsetY = -52,
 };
+
+for key, value in pairs(buffsDefaults) do
+    luopanBuffsDefaults[key] = value;
+end
+luopanBuffsDefaults.enabled = true;
+luopanBuffsDefaults.offsetY = -122;
 
 local function IsTargetOrSubtarget(targetStateName)
     return targetStateName == 'Target' or targetStateName == 'Subtarget';
@@ -558,9 +571,13 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
     local elapsed = math.max(0.0, os.clock() - (tonumber(castData.startTime) or os.clock()));
     local castPercent = math.max(0, math.min(100, (elapsed / castTime) * 100));
     local spellIconId = tonumber(castData.spellIconId);
-    local spellIconTextureId = castBarSettings.showSpellIcon == true
-        and spellIconTextures.GetTextureId(spellIconId)
-        or nil;
+    local spellIconTextureId = nil;
+
+    if (castBarSettings.showSpellIcon == true) then
+        spellIconTextureId = statusIconTextures.GetTextureId(castData.spellStatusId)
+            or spellIconTextures.GetGeoTextureId(castData.spellId)
+            or spellIconTextures.GetTextureId(spellIconId);
+    end
 
     return {
         enabled = true,
@@ -593,6 +610,111 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
         iconOffsetY = tonumber(castBarSettings.spellIconOffsetY) or castBarDefaults.spellIconOffsetY,
         iconGap = 4,
     }, castPercent;
+end
+
+local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, globalSettings, kind)
+    if (iconSettings == nil or iconSettings.enabled ~= true or statusRows == nil or #statusRows == 0) then
+        return;
+    end
+
+    local maxIcons = math.max(1, math.min(64, tonumber(iconSettings.maxIcons) or 12));
+    local iconsPerRow = math.max(1, math.min(24, tonumber(iconSettings.iconsPerRow) or 6));
+    local iconSize = math.max(6, math.min(160, tonumber(iconSettings.iconSize) or 18));
+    local spacing = math.max(0, math.min(24, tonumber(iconSettings.iconSpacing) or 2));
+    local growLeft = tostring(iconSettings.growthDirection or 'Right') == 'Left';
+    local anchored = tostring(iconSettings.anchorTo or 'Plate') ~= 'Plate';
+    local rowHeight = iconSize + spacing;
+
+    if (iconSettings.showTimers == true) then
+        rowHeight = iconSize + math.max(spacing, (tonumber(iconSettings.timerFontSize) or 8) + math.max(0, tonumber(iconSettings.timerOffsetY) or 0) + 2);
+    end
+
+    local baseX = tonumber(iconSettings.offsetX) or 0;
+    local baseY = tonumber(iconSettings.offsetY) or 0;
+    local visibleRows = {};
+    local hideAboveSeconds = nil;
+
+    if (iconSettings.hideAboveDurationEnabled == true) then
+        local minutes = tonumber(iconSettings.hideAboveDurationMinutes) or 0;
+        if (minutes > 0) then hideAboveSeconds = minutes * 60; end
+    end
+
+    for _, rowData in ipairs(statusRows) do
+        local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
+        if (hideAboveSeconds == nil or timerSeconds == nil or timerSeconds <= hideAboveSeconds) then
+            visibleRows[#visibleRows + 1] = rowData;
+        end
+    end
+
+    local total = math.min(maxIcons, #visibleRows);
+    plateData.icons = plateData.icons or {};
+
+    for i = 1, total do
+        local rowData = visibleRows[i];
+        local statusId = type(rowData) == 'table' and rowData.id or rowData;
+        local textureId = statusIconTextures.GetTextureId(statusId, iconSettings.iconPack);
+
+        if (textureId ~= nil) then
+            local row = math.floor((i - 1) / iconsPerRow);
+            local col = (i - 1) % iconsPerRow;
+            local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
+            local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
+            local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
+            local timerText = nil;
+
+            if (anchored == true) then
+                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
+            elseif (growLeft == true) then
+                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+            end
+
+            if (iconSettings.showTimers == true and timerSeconds ~= nil and timerSeconds > 0) then
+                timerText = statusTimerFormat.Format(timerSeconds);
+            end
+
+            plateData.icons[#plateData.icons + 1] = {
+                kind = kind or 'status',
+                textureId = textureId,
+                size = iconSize,
+                offsetX = iconOffsetX,
+                offsetY = baseY + (row * rowHeight),
+                anchorTo = iconSettings.anchorTo,
+                anchorPoint = iconSettings.anchorPoint,
+                timerText = timerText,
+                timerSeconds = timerSeconds,
+                timerOffsetY = tonumber(iconSettings.timerOffsetY) or 0,
+                timerFontFamily = fonts.GetRole(globalSettings, iconSettings.timerUseSmallFont == true),
+                timerFontFlags = fonts.GetRoleFlags(globalSettings, iconSettings.timerUseSmallFont == true),
+                timerFontSize = textScale.ToTextureFontSize(iconSettings.timerFontSize, 8),
+                timerTextColor = iconSettings.timerTextColor,
+                timerTextOutline = iconSettings.timerTextOutline,
+                timerTextOutlineColor = iconSettings.timerTextOutlineColor,
+                timerTextOutlineSize = tonumber(iconSettings.timerTextOutlineSize) or 1,
+                timerBackground = iconSettings.timerBackground == true,
+                timerBackgroundPaddingX = tonumber(iconSettings.timerBackgroundPaddingX) or 2,
+                timerBackgroundPaddingY = tonumber(iconSettings.timerBackgroundPaddingY) or 1,
+                timerBackgroundBorderSize = tonumber(iconSettings.timerBackgroundBorderSize) or 0,
+                timerBackgroundBorderColor = iconSettings.timerBackgroundBorderColor,
+                timerCornerRadius = tonumber(iconSettings.timerCornerRadius) or 0,
+                timerWarningEnabled = iconSettings.timerWarningEnabled == true,
+                timerWarningStage1Seconds = tonumber(iconSettings.timerWarningStage1Seconds) or 10,
+                timerWarningStage2Seconds = tonumber(iconSettings.timerWarningStage2Seconds) or 8,
+                timerWarningStage3Seconds = tonumber(iconSettings.timerWarningStage3Seconds) or 5,
+                timerWarningStage1Color = iconSettings.timerWarningStage1Color,
+                timerWarningStage2Color = iconSettings.timerWarningStage2Color,
+                timerWarningStage3Color = iconSettings.timerWarningStage3Color,
+                timerWarningTextColorEnabled = iconSettings.timerWarningTextColorEnabled == true,
+                timerWarningFontStage1Color = iconSettings.timerWarningFontStage1Color,
+                timerWarningFontStage2Color = iconSettings.timerWarningFontStage2Color,
+                timerWarningFontStage3Color = iconSettings.timerWarningFontStage3Color,
+                timerWarningBoxColorEnabled = iconSettings.timerWarningBoxColorEnabled == true,
+                timerWarningBoxStage1Color = iconSettings.timerWarningBoxStage1Color,
+                timerWarningBoxStage2Color = iconSettings.timerWarningBoxStage2Color,
+                timerWarningBoxStage3Color = iconSettings.timerWarningBoxStage3Color,
+            };
+        end
+    end
 end
 
 local function AddDistanceToPlate(plateData, pet, distanceSettings, globalSettings)
@@ -1646,6 +1768,132 @@ local function QueuePupPet(pet)
     });
 end
 
+local function QueueLuopan(pet)
+    local layoutStateName = 'Luopan';
+    local targetStateName = targeting.GetTargetStateName(pet.index);
+    local nameSettings = state.GetWidgetSettings('Luopan', layoutStateName, 'Name', nameDefaults);
+    local backgroundSettings = state.GetWidgetSettings('Luopan', layoutStateName, 'Background', backgroundDefaults);
+    local hpBarSettings = state.GetWidgetSettings('Luopan', layoutStateName, 'HP Bar', barDefaults);
+    local buffsSettings = state.GetWidgetSettings('Luopan', layoutStateName, 'Buffs', luopanBuffsDefaults);
+    local distanceSettings = state.GetWidgetSettings('Luopan', layoutStateName, 'Distance', distanceDefaults);
+    local targetMarker = targetModuleMarker.Build('Luopan', layoutStateName, targetStateName, hpBarSettings, pet.distance);
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local targetingSettings = targeting.GetSettings();
+    local hpPercent = ClampPercent(pet.hpPercent, 100);
+    local hpColor = hpBarSettings.color or barDefaults.color;
+    local hpLowActive = (
+        hpBarSettings.lowColorEnabled == true and
+        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
+    );
+
+    if (hpLowActive == true) then
+        hpColor = hpBarSettings.lowColor or hpColor;
+    end
+
+    local plateData = {
+        hp = hpPercent,
+        targetMarker = targetMarker,
+        background = {
+            enabled = backgroundSettings.enabled == true,
+            width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
+            height = tonumber(backgroundSettings.height) or backgroundDefaults.height,
+            offsetX = tonumber(backgroundSettings.offsetX) or backgroundDefaults.offsetX,
+            offsetY = tonumber(backgroundSettings.offsetY) or backgroundDefaults.offsetY,
+            color = backgroundSettings.color or backgroundDefaults.color,
+            borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
+            borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
+            anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
+            anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+        },
+        name = (nameSettings.enabled == true) and ShortenName(pet.name, nameSettings.shortenName) or '',
+        nameFontFamily = fonts.GetRole(globalSettings, false),
+        nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
+        nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameColor = nameSettings.color or nameDefaults.color,
+        nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
+        nameOutlineColor = nameSettings.outlineColor or nameDefaults.outlineColor,
+        nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
+        nameOffsetX = ClampTextureOffset(tonumber(nameSettings.offsetX) or nameDefaults.offsetX, 1024, 24),
+        nameOffsetY = ClampTextureOffset(tonumber(nameSettings.offsetY) or nameDefaults.offsetY, luopanCanvasHeight, 24),
+        nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
+        nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        hpBar = {
+            enabled = hpBarSettings.enabled == true,
+            width = tonumber(hpBarSettings.width) or barDefaults.width,
+            height = tonumber(hpBarSettings.height) or barDefaults.height,
+            offsetX = tonumber(hpBarSettings.offsetX) or barDefaults.offsetX,
+            offsetY = tonumber(hpBarSettings.offsetY) or barDefaults.offsetY,
+            color = hpColor,
+            backgroundColor = hpBarSettings.backgroundColor or barDefaults.backgroundColor,
+            borderColor = hpBarSettings.borderColor or barDefaults.borderColor,
+            borderSize = tonumber(hpBarSettings.borderSize) or barDefaults.borderSize,
+            anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
+            anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
+            texture = hpBarSettings.texture or barDefaults.texture,
+            textureId = barTextures.GetTextureId(hpBarSettings.texture or barDefaults.texture),
+            animationEnabled = hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
+            animationTextureId = barAnimations.GetTextureId(hpBarSettings.lowAnimation),
+            animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or barDefaults.lowAnimationSpeed,
+            animationColor = hpBarSettings.lowAnimationColor,
+            showAtPercent = tonumber(hpBarSettings.showAtPercent) or barDefaults.showAtPercent,
+            text = BuildPercentFallbackResourceText(hpBarSettings, 'HP', pet.hp, pet.maxHp, hpPercent),
+            textOffsetX = tonumber(hpBarSettings.textOffsetX) or barDefaults.textOffsetX,
+            textOffsetY = tonumber(hpBarSettings.textOffsetY) or barDefaults.textOffsetY,
+            fontFamily = fonts.GetRole(globalSettings, hpBarSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, hpBarSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(hpBarSettings.fontSize, barDefaults.fontSize),
+            textColor = hpBarSettings.textColor or barDefaults.textColor,
+            textOutlineEnabled = hpBarSettings.textOutlineEnabled == true,
+            textOutlineColor = hpBarSettings.textOutlineColor or barDefaults.textOutlineColor,
+            textOutlineSize = tonumber(hpBarSettings.textOutlineSize) or barDefaults.textOutlineSize,
+        },
+        mpBar = { enabled = false },
+        tpBar = { enabled = false },
+        canvasHeight = luopanCanvasHeight,
+    };
+
+    if (IsTargetOrSubtarget(targetStateName) == true) then
+        AddDistanceToPlate(plateData, pet, distanceSettings, globalSettings);
+    end
+    AddStatusIconsToPlate(plateData, luopanStatuses.GetRows('buff'), buffsSettings, globalSettings, 'buffs');
+
+    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'luopan-' .. tostring(pet.index));
+    local plateTextureId = canvasTexture.GetTextureId(plateTexture);
+
+    if (plateTextureId == nil) then
+        return;
+    end
+
+    worldMarkerProbe.QueuePlate({
+        targetIndex = pet.index,
+        serverId = pet.serverId,
+        distance = pet.distance,
+        hp = hpPercent,
+        name = '',
+        isSelf = false,
+        stateName = targetStateName,
+        clickTargetType = 'pet',
+        worldMarker = targeting.ApplyPlateScalingSettings({
+            hpBar = { enabled = false },
+            plateTextureId = plateTextureId,
+            plateAlwaysOnTop = true,
+            plateTacticalOverlayOnly = true,
+            anchorBone = petAnchorBone,
+            plateWorldWidth = 2.35,
+            plateWorldHeight = luopanPlateWorldHeight,
+            plateWorldOffsetY = luopanWorldOffsetY,
+            plateTextureWidth = textureWidth,
+            plateTextureHeight = textureHeight,
+            plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData),
+            plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
+            clickTargetType = 'pet',
+            layoutStateName = layoutStateName,
+        }, 'pet', 0, luopanWorldOffsetY),
+    });
+end
+
 function petPlate.Build()
     return nil;
 end
@@ -1721,6 +1969,12 @@ function petPlate.Render()
 
     if (pupPet ~= nil) then
         QueuePupPet(pupPet);
+    end
+
+    local luopan = entities.GetOwnLuopan();
+
+    if (luopan ~= nil) then
+        QueueLuopan(luopan);
     end
 end
 

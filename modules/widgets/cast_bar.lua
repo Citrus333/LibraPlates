@@ -155,6 +155,29 @@ local function DrawNumberControl(id, value, minValue, maxValue)
     return current;
 end
 
+local function DrawTextInput(id, value, maxLength)
+    local current = tostring(value or '');
+
+    if (imgui.InputText ~= nil) then
+        local ref = { current };
+
+        if (imgui.PushItemWidth ~= nil) then
+            imgui.PushItemWidth(170);
+        end
+
+        imgui.InputText('##cast_bar_' .. id, ref, tonumber(maxLength) or 64);
+
+        if (imgui.PopItemWidth ~= nil) then
+            imgui.PopItemWidth();
+        end
+
+        return tostring(ref[1] or current);
+    end
+
+    imgui.TextColored(valueColor, current);
+    return current;
+end
+
 local function DrawPairedNumberRow(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local nextLeft = leftValue;
@@ -301,6 +324,93 @@ local function DrawTextSettingsRows(settings, defaults)
     settings.textOutlineColor = DrawColor('Outline color', settings.textOutlineColor);
     settings.textOffsetX = DrawNumber('Position X', settings.textOffsetX, -400, 400, 1);
     settings.textOffsetY = DrawNumber('Position Y', settings.textOffsetY, -400, 400, 1);
+end
+
+local function DrawInterruptBarSettingsRows(settings, defaults)
+    settings.interruptBarEnabled = DrawToggle('Interrupt bar', settings.interruptBarEnabled ~= false);
+
+    if (settings.interruptBarEnabled ~= true) then
+        return;
+    end
+
+    settings.interruptColorEnabled = true;
+    imgui.SameLine();
+    settings.interruptedColor = DrawColor('##interrupt_color', settings.interruptedColor or defaults.interruptedColor);
+end
+
+local function DrawInterruptTextSettingsRows(settings, defaults)
+    if (settings.interruptBarEnabled ~= true) then
+        return;
+    end
+
+    settings.interruptTextEnabled = DrawToggle('Interrupt text', settings.interruptTextEnabled == true);
+
+    if (settings.interruptTextEnabled ~= true) then
+        return;
+    end
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##cast_bar_interrupt_settings', 4, tableFlags)) then
+            imgui.TableSetupColumn('##left_label', 0, 118);
+            imgui.TableSetupColumn('##left_control', 0, 170);
+            imgui.TableSetupColumn('##right_label', 0, 118);
+            imgui.TableSetupColumn('##right_control', 0, 170);
+
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Text');
+            imgui.TableNextColumn();
+            settings.interruptedText = DrawTextInput('interrupt_text', settings.interruptedText or defaults.interruptedText or 'Interrupted', 64);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Use small font');
+            imgui.TableNextColumn();
+            settings.interruptUseSmallFont = DrawToggle('##InterruptUseSmallFont', settings.interruptUseSmallFont == true);
+
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Font size');
+            imgui.TableNextColumn();
+            settings.interruptFontSize = DrawNumberControl('interrupt_font_size', textScale.NormalizeSetting(settings.interruptFontSize, defaults.interruptFontSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Font color');
+            imgui.TableNextColumn();
+            settings.interruptTextColor = DrawColor('##interrupt_font_color', settings.interruptTextColor or defaults.interruptTextColor);
+
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Outline size');
+            imgui.TableNextColumn();
+            settings.interruptTextOutlineSize = DrawNumberControl('interrupt_outline_size', settings.interruptTextOutlineSize, 0, 8);
+            settings.interruptTextOutlineEnabled = (tonumber(settings.interruptTextOutlineSize) or 0) > 0;
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Outline color');
+            imgui.TableNextColumn();
+            settings.interruptTextOutlineColor = DrawColor('##interrupt_outline_color', settings.interruptTextOutlineColor or defaults.interruptTextOutlineColor);
+
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Position X');
+            imgui.TableNextColumn();
+            settings.interruptTextOffsetX = DrawNumberControl('interrupt_text_offset_x', settings.interruptTextOffsetX, -400, 400);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Position Y');
+            imgui.TableNextColumn();
+            settings.interruptTextOffsetY = DrawNumberControl('interrupt_text_offset_y', settings.interruptTextOffsetY, -400, 400);
+
+            imgui.EndTable();
+        end
+        return;
+    end
+
+    settings.interruptedText = DrawTextInput('interrupt_text', settings.interruptedText or defaults.interruptedText or 'Interrupted', 64);
+    settings.interruptUseSmallFont = DrawToggle('Use small font', settings.interruptUseSmallFont == true);
+    settings.interruptFontSize = DrawNumber('Font size', textScale.NormalizeSetting(settings.interruptFontSize, defaults.interruptFontSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize(), 1);
+    settings.interruptTextColor = DrawColor('Font color', settings.interruptTextColor or defaults.interruptTextColor);
+    settings.interruptTextOutlineSize = DrawNumber('Outline size', settings.interruptTextOutlineSize, 0, 8, 1);
+    settings.interruptTextOutlineEnabled = (tonumber(settings.interruptTextOutlineSize) or 0) > 0;
+    settings.interruptTextOutlineColor = DrawColor('Outline color', settings.interruptTextOutlineColor or defaults.interruptTextOutlineColor);
+    settings.interruptTextOffsetX = DrawNumber('Position X', settings.interruptTextOffsetX, -400, 400, 1);
+    settings.interruptTextOffsetY = DrawNumber('Position Y', settings.interruptTextOffsetY, -400, 400, 1);
 end
 
 local function DrawSpellIconRows(settings)
@@ -514,6 +624,7 @@ function castBar.DrawSettings(settings, context)
     settings.offsetX, settings.offsetY = DrawPairedNumberRow('position', 'Position X', 'offset_x', settings.offsetX, -400, 400, 'Position Y', 'offset_y', settings.offsetY, -400, 400);
     settings.color, settings.backgroundColor, settings.texture = DrawColorTextureRow('colors_texture', settings.color, settings.backgroundColor, settings.texture);
     settings.borderColor, settings.borderSize = DrawBorderRow('border', settings.borderColor, settings.borderSize);
+    DrawInterruptBarSettingsRows(settings, defaults);
 
     imgui.Separator();
     DrawSectionHeader('Text settings');
@@ -523,6 +634,8 @@ function castBar.DrawSettings(settings, context)
         settings.useSmallFont = true;
         DrawTextSettingsRows(settings, defaults);
     end
+
+    DrawInterruptTextSettingsRows(settings, defaults);
 
     imgui.Separator();
     DrawSectionHeader('Spell icon');

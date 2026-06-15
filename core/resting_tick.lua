@@ -5,6 +5,8 @@ local tickState = {
     cycleStart = nil,
     cycleLength = 20,
     displayLength = 20,
+    awaitingFirstTick = false,
+    lastHp = nil,
     lastMp = nil,
 };
 local logoutState = {
@@ -20,6 +22,8 @@ local function Reset()
     tickState.cycleStart = nil;
     tickState.cycleLength = 20;
     tickState.displayLength = 20;
+    tickState.awaitingFirstTick = false;
+    tickState.lastHp = nil;
     tickState.lastMp = nil;
 end
 
@@ -76,6 +80,16 @@ local function ResyncFromObservedMpTick(now, settings)
     local repeatLength = math.max(1, 10 + (tonumber(settings.repeatTickOffset) or 0) - overrun);
 
     tickState.active = true;
+    tickState.cycleStart = now;
+    tickState.cycleLength = repeatLength;
+    tickState.displayLength = repeatLength;
+end
+
+local function StartRepeatCycleFromObservedTick(now, settings)
+    local repeatLength = math.max(1, 10 + (tonumber(settings.repeatTickOffset) or 0));
+
+    tickState.active = true;
+    tickState.awaitingFirstTick = false;
     tickState.cycleStart = now;
     tickState.cycleLength = repeatLength;
     tickState.displayLength = repeatLength;
@@ -164,26 +178,42 @@ function restingTick.Get(status, hp, mp, maxMp, settings)
     end
 
     local now = os.clock();
+    local hpValue = tonumber(hp);
     local mpValue = tonumber(mp);
     local maxMpValue = tonumber(maxMp);
     local canDetectFullMp = maxMpValue ~= nil and maxMpValue > 0;
     local mpIsFull = canDetectFullMp == true and mpValue ~= nil and mpValue >= maxMpValue;
     local mpTickThreshold = tonumber(settings.mpTickThreshold) or 12;
+    local hpTickThreshold = tonumber(settings.hpTickThreshold) or mpTickThreshold;
+    local mpGain = (mpValue ~= nil and tickState.lastMp ~= nil) and (mpValue - tickState.lastMp) or 0;
+    local hpGain = (hpValue ~= nil and tickState.lastHp ~= nil) and (hpValue - tickState.lastHp) or 0;
+    local observedTick = mpGain > mpTickThreshold or hpGain > hpTickThreshold;
 
     if (tickState.active ~= true or tickState.cycleStart == nil) then
         tickState.active = true;
         tickState.cycleStart = now;
-        tickState.cycleLength = math.max(1, 20 + (tonumber(settings.firstTickOffset) or 1));
+        tickState.cycleLength = 20;
         tickState.displayLength = 20;
-    elseif (mpValue ~= nil and tickState.lastMp ~= nil and (mpValue - tickState.lastMp) > mpTickThreshold) then
+        tickState.awaitingFirstTick = true;
+    elseif (tickState.awaitingFirstTick == true and observedTick == true) then
+        StartRepeatCycleFromObservedTick(now, settings);
+    elseif (tickState.awaitingFirstTick ~= true and mpGain > mpTickThreshold) then
         ResyncFromObservedMpTick(now, settings);
     end
 
+    tickState.lastHp = hpValue;
     tickState.lastMp = mpValue;
 
     local elapsed = now - tickState.cycleStart;
 
     if (elapsed >= tickState.cycleLength) then
+        if (tickState.awaitingFirstTick == true) then
+            return {
+                progress = 0,
+                text = '0s',
+            };
+        end
+
         if (canDetectFullMp == true and mpIsFull ~= true) then
             return {
                 progress = 0,

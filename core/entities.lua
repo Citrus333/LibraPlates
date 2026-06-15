@@ -16,6 +16,7 @@ local bstMainJobId = 9;
 local drgMainJobId = 14;
 local smnMainJobId = 15;
 local pupMainJobId = 18;
+local geoMainJobId = 21;
 local mogHouseObjectSuppressionCache = {
     clock = 0,
     value = false,
@@ -593,6 +594,10 @@ function entities.IsOwnPetIndex(index)
     return petIndex ~= nil and tonumber(index) == petIndex;
 end
 
+function entities.IsOwnLuopanIndex(index)
+    return entities.GetPlayerMainJobId() == geoMainJobId and entities.IsOwnPetIndex(index) == true;
+end
+
 local function NormalizePetName(name)
     local rawName = tostring(name or ''):gsub('\170', '');
     rawName = rawName:gsub('%c', '');
@@ -972,6 +977,21 @@ function entities.GetOwnPupPet()
     end
 
     pet.petType = 'pup';
+    return pet;
+end
+
+function entities.GetOwnLuopan()
+    if (entities.GetPlayerMainJobId() ~= geoMainJobId) then
+        return nil;
+    end
+
+    local pet = GetOwnPet();
+
+    if (pet == nil or tostring(pet.name or '') ~= 'Luopan') then
+        return nil;
+    end
+
+    pet.petType = 'luopan';
     return pet;
 end
 

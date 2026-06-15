@@ -63,6 +63,8 @@ local mountedPlateLift = 1.05;
 local idleScanCacheSeconds = 0.20;
 local idleDirectDynamicCacheSeconds = 0.35;
 local idleDirectStaticCacheSeconds = 2.00;
+local pcIdleCanvasBuildsThisFrame = 0;
+local pcIdleCanvasBuildLimitThisFrame = 0;
 local jobAbbreviations = {
     [1] = 'WAR',
     [2] = 'MNK',
@@ -496,7 +498,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
             end
 
-            if (iconSettings.showTimers == true and timerSeconds ~= nil) then
+            if (iconSettings.showTimers == true and timerSeconds ~= nil and timerSeconds > 0) then
                 timerText = statusTimerFormat.Format(timerSeconds);
             end
 
@@ -710,6 +712,19 @@ local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, la
     return false;
 end
 
+local function ShouldDeferIdlePcCanvasBuild(cacheEligible)
+    if (cacheEligible ~= true or pcIdleCanvasBuildLimitThisFrame <= 0) then
+        return false;
+    end
+
+    if (pcIdleCanvasBuildsThisFrame >= pcIdleCanvasBuildLimitThisFrame) then
+        return true;
+    end
+
+    pcIdleCanvasBuildsThisFrame = pcIdleCanvasBuildsThisFrame + 1;
+    return false;
+end
+
 local function BuildPcPlateData(context)
     local plateData = {
         hp = context.hpPercent,
@@ -875,7 +890,7 @@ local function QueuePlayer(player)
     local levelSettings = state.GetWidgetSettings('PC', layoutStateName, 'Level', levelDefaults);
     local buffsSettings = state.GetWidgetSettings('PC', layoutStateName, 'Buffs', buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings('PC', layoutStateName, 'Debuffs', debuffsDefaults);
-    local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
+    local aoeRangeSettings = state.GetWidgetSettings('Self', 'Combat', 'AOE range', aoeRangeDefaults);
     local gameModeIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Game mode icon', gameModeIconDefaults);
     local partyLeaderIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Party leader icon', partyLeaderIconDefaults);
     local allianceLeaderIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Alliance leader icon', allianceLeaderIconDefaults);
@@ -1005,6 +1020,7 @@ local function QueuePlayer(player)
         signature = table.concat({
             'v=1',
             'policy=' .. canvasTexture.GetRenderPolicyKey(),
+            'statusIconPack=' .. tostring(globalSettings ~= nil and globalSettings.statusIcons ~= nil and globalSettings.statusIcons.iconPack or ''),
             'name=' .. tostring(player.name or ''),
             'status=' .. tostring(player.status or ''),
             'engaged=' .. BoolKey(currentPlayerEngaged),
@@ -1021,8 +1037,8 @@ local function QueuePlayer(player)
             'stars=' .. tostring(starsIconTextureId or ''),
             'new=' .. tostring(newAdventurerIconTextureId or ''),
             'staff=' .. tostring(staffIconTextureId or '') .. ':' .. tostring(staffInfo ~= nil and staffInfo.type or ''),
-            'aoe=' .. aoeNameHighlight.GetSignature(player.index, 'pc'),
-            'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
+            'aoe=' .. (isPartyPlayer == true and aoeNameHighlight.GetSignature(player.index, 'pc') or 'aoe-name:0'),
+            'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'dist:' .. SettingKey(distanceSettings, { 'enabled', 'loadMode', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint' }),
@@ -1055,21 +1071,28 @@ local function QueuePlayer(player)
 
     if (
         cacheEligible == true and
-        adaptivePerformance.ShouldThrottleBackground() == true and
-        adaptivePerformance.AllowBackgroundBuild('pc.idle.canvas', 1) ~= true
+        (
+            ShouldDeferIdlePcCanvasBuild(cacheEligible) == true or
+            (
+                adaptivePerformance.ShouldThrottleBackground() == true and
+                adaptivePerformance.AllowBackgroundBuild('pc.idle.canvas', 1) ~= true
+            )
+        )
     ) then
         if (
             staleCached ~= nil and
             QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true
         ) then
             perfMeter.Count('pc.cache.deferred', 1);
+        else
+            perfMeter.Count('pc.cache.deferredCold', 1);
         end
 
         return;
     end
 
     local buildTimer = perfMeter.BeginDetail('pc.build');
-    local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(player.index, 'pc') == true;
+    local nameAoeActive = isPartyPlayer == true and aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(player.index, 'pc') == true;
     local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
     local plateData = BuildPcPlateData({
         player = player,
@@ -1304,9 +1327,22 @@ function pcPlate.Render()
         end
     end
 
+    pcIdleCanvasBuildsThisFrame = 0;
+    if (#players >= 30) then
+        pcIdleCanvasBuildLimitThisFrame = 3;
+    elseif (#players >= 18) then
+        pcIdleCanvasBuildLimitThisFrame = 5;
+    elseif (#players >= 10) then
+        pcIdleCanvasBuildLimitThisFrame = 8;
+    else
+        pcIdleCanvasBuildLimitThisFrame = 0;
+    end
+
     for _, player in ipairs(players) do
         QueuePlayer(player);
     end
+
+    pcIdleCanvasBuildLimitThisFrame = 0;
 end
 
 return pcPlate;

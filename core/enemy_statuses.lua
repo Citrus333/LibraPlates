@@ -1,9 +1,15 @@
 require('common');
 
 local statusEffects = require('core.status_effects');
+local playerStatuses = require('core.player_statuses');
 
 local enemyStatuses = {};
 local tracked = {};
+local debugUntil = 0;
+local debugTargetServerId = 0;
+local debugLines = {};
+local AddDebugLine = nil;
+local GetDuration = nil;
 
 local statusOnMessages = T{144, 160, 164, 166, 186, 194, 203, 205, 230, 236, 266, 267, 268, 269, 237, 271, 272, 277, 278, 279, 280, 319, 320, 375, 412, 645, 754, 755, 804};
 local statusOffMessages = T{206, 64, 159, 168, 204, 321, 322, 341, 342, 343, 344, 350, 378, 531, 647, 805, 806};
@@ -14,6 +20,53 @@ local LUNAR_CRY_BP_ID = 530;
 local LUNAR_CRY_EFFECT_A = 146;
 local LUNAR_CRY_EFFECT_B = 148;
 local LUNAR_CRY_DURATION = 60;
+local GEO_AURA_RADIUS = 5.5;
+local activeGeoEnemyAura = nil;
+
+local indiEnemyAuras = {
+    [769] = 540, -- Indi-Poison
+    [787] = 558, -- Indi-Wilt
+    [788] = 559, -- Indi-Frailty
+    [789] = 560, -- Indi-Fade
+    [790] = 561, -- Indi-Malaise
+    [791] = 562, -- Indi-Slip
+    [792] = 563, -- Indi-Torpor
+    [793] = 564, -- Indi-Vex
+    [794] = 565, -- Indi-Languor
+    [795] = 566, -- Indi-Slow
+    [796] = 567, -- Indi-Paralysis
+    [797] = 568, -- Indi-Gravity
+};
+
+local indiEnemyStatusToSpell = {
+    [540] = 769, -- Indi-Poison
+    [558] = 787, -- Indi-Wilt
+    [559] = 788, -- Indi-Frailty
+    [560] = 789, -- Indi-Fade
+    [561] = 790, -- Indi-Malaise
+    [562] = 791, -- Indi-Slip
+    [563] = 792, -- Indi-Torpor
+    [564] = 793, -- Indi-Vex
+    [565] = 794, -- Indi-Languor
+    [566] = 795, -- Indi-Slow
+    [567] = 796, -- Indi-Paralysis
+    [568] = 797, -- Indi-Gravity
+};
+
+local indiEnemyNameToAura = {
+    ['indi-poison'] = { spellId = 769, statusId = 540 },
+    ['indi-wilt'] = { spellId = 787, statusId = 558 },
+    ['indi-frailty'] = { spellId = 788, statusId = 559 },
+    ['indi-fade'] = { spellId = 789, statusId = 560 },
+    ['indi-malaise'] = { spellId = 790, statusId = 561 },
+    ['indi-slip'] = { spellId = 791, statusId = 562 },
+    ['indi-torpor'] = { spellId = 792, statusId = 563 },
+    ['indi-vex'] = { spellId = 793, statusId = 564 },
+    ['indi-languor'] = { spellId = 794, statusId = 565 },
+    ['indi-slow'] = { spellId = 795, statusId = 566 },
+    ['indi-paralysis'] = { spellId = 796, statusId = 567 },
+    ['indi-gravity'] = { spellId = 797, statusId = 568 },
+};
 
 local function ParseActionPacket(e)
     if (e == nil or e.id ~= 0x0028 or e.data_raw == nil or ashita.bits == nil) then
@@ -127,6 +180,151 @@ local function ParseMessagePacket(e)
     return packet;
 end
 
+local function GetSelfServerId()
+    local memory = AshitaCore:GetMemoryManager();
+    local party = memory ~= nil and memory:GetParty() or nil;
+    local entity = memory ~= nil and memory:GetEntity() or nil;
+
+    if (party == nil or entity == nil) then
+        return 0;
+    end
+
+    local okIndex, selfIndex = pcall(function()
+        return party:GetMemberTargetIndex(0);
+    end);
+
+    selfIndex = okIndex == true and tonumber(selfIndex) or 0;
+
+    if (selfIndex == 0) then
+        return 0;
+    end
+
+    local okServer, serverId = pcall(function()
+        return entity:GetServerId(selfIndex);
+    end);
+
+    return okServer == true and (tonumber(serverId) or 0) or 0;
+end
+
+local function RefreshGeoEnemyAura(spellId, statusId)
+    spellId = tonumber(spellId) or 0;
+
+    if (indiEnemyAuras[spellId] == nil) then
+        return;
+    end
+
+    statusId = indiEnemyAuras[spellId];
+
+    activeGeoEnemyAura = {
+        spellId = spellId,
+        statusId = statusId or indiEnemyAuras[spellId],
+        expiresAt = os.time() + GetDuration(spellId),
+    };
+
+    AddDebugLine(
+        'geo aura active spell=' .. tostring(activeGeoEnemyAura.spellId) ..
+        ' status=' .. tostring(activeGeoEnemyAura.statusId)
+    );
+end
+
+local function ClearGeoEnemyAura(statusId)
+    statusId = tonumber(statusId) or 0;
+
+    if (
+        activeGeoEnemyAura ~= nil and
+        (statusId == 0 or statusId == tonumber(activeGeoEnemyAura.statusId))
+    ) then
+        AddDebugLine('geo aura cleared status=' .. tostring(activeGeoEnemyAura.statusId));
+        activeGeoEnemyAura = nil;
+    end
+end
+
+local function StripControlCodes(text)
+    return tostring(text or ''):gsub(string.char(0x1E) .. '.', ''):gsub('[%z\1-\31]', '');
+end
+
+local function SetGeoEnemyAuraFromName(name)
+    local aura = indiEnemyNameToAura[tostring(name or ''):lower()];
+
+    if (aura == nil) then
+        return false;
+    end
+
+    activeGeoEnemyAura = {
+        spellId = aura.spellId,
+        statusId = aura.statusId,
+        expiresAt = nil,
+        source = 'text',
+    };
+
+    AddDebugLine('geo aura text spell=' .. tostring(aura.spellId) .. ' status=' .. tostring(aura.statusId));
+    return true;
+end
+
+local function RefreshGeoEnemyAuraFromSelfStatuses()
+    local rows = playerStatuses.GetSelfRows(nil);
+
+    for _, row in ipairs(rows or {}) do
+        local statusId = tonumber(row.id) or 0;
+        local spellId = indiEnemyStatusToSpell[statusId];
+
+        if (spellId ~= nil) then
+            activeGeoEnemyAura = {
+                spellId = spellId,
+                statusId = statusId,
+                expiresAt = nil,
+            };
+
+            return activeGeoEnemyAura;
+        end
+    end
+
+    if (
+        activeGeoEnemyAura ~= nil and
+        activeGeoEnemyAura.source ~= 'text' and
+        indiEnemyStatusToSpell[tonumber(activeGeoEnemyAura.statusId) or 0] ~= nil
+    ) then
+        activeGeoEnemyAura = nil;
+    end
+
+    return nil;
+end
+
+function enemyStatuses.HandleTextIn(e)
+    local message = StripControlCodes(
+        (e ~= nil and (e.message or e.text or e.original or e.modified or e.injected)) or ''
+    );
+
+    if (message == '') then
+        return;
+    end
+
+    local indiName = message:match('starts casting%s+(Indi%-%S+)%s+on%s+');
+
+    if (indiName ~= nil and SetGeoEnemyAuraFromName(indiName) == true) then
+        return;
+    end
+
+    if (message:find('Colure Active effect wears off', 1, true) ~= nil) then
+        ClearGeoEnemyAura(0);
+    end
+end
+
+local function GetSelfGeoStatusText()
+    local rows = playerStatuses.GetSelfRows(nil);
+    local parts = {};
+
+    for _, row in ipairs(rows or {}) do
+        local statusId = tonumber(row.id) or 0;
+
+        if (indiEnemyStatusToSpell[statusId] ~= nil) then
+            parts[#parts + 1] = tostring(statusId) .. '->' .. tostring(indiEnemyStatusToSpell[statusId]);
+        end
+    end
+
+    return #parts > 0 and table.concat(parts, ',') or 'none';
+end
+
 local function TrackStatus(serverId, statusId, duration)
     serverId = tonumber(serverId) or 0;
     statusId = tonumber(statusId) or 0;
@@ -137,6 +335,28 @@ local function TrackStatus(serverId, statusId, duration)
 
     tracked[serverId] = tracked[serverId] or {};
     tracked[serverId][statusId] = os.time() + (tonumber(duration) or 300);
+end
+
+AddDebugLine = function(text)
+    if ((tonumber(debugUntil) or 0) <= os.clock()) then
+        return;
+    end
+
+    debugLines[#debugLines + 1] = string.format('%.3f %s', os.clock(), tostring(text or ''));
+
+    while (#debugLines > 24) do
+        table.remove(debugLines, 1);
+    end
+end
+
+local function ShouldDebugTarget(serverId)
+    if ((tonumber(debugUntil) or 0) <= os.clock()) then
+        return false;
+    end
+
+    local targetServerId = tonumber(debugTargetServerId) or 0;
+
+    return targetServerId == 0 or targetServerId == (tonumber(serverId) or 0);
 end
 
 local function ClearStatus(serverId, statusId)
@@ -150,7 +370,7 @@ local function ClearStatus(serverId, statusId)
     tracked[serverId][statusId] = nil;
 end
 
-local function GetDuration(spellId)
+GetDuration = function(spellId)
     spellId = tonumber(spellId) or 0;
 
     if (spellId == 58 or spellId == 80) then return 120; end
@@ -179,13 +399,32 @@ local function HandleActionPacket(packet)
             local spellId = packet.Param;
             local message = action.Message;
 
+            if (ShouldDebugTarget(target.Id) == true) then
+                AddDebugLine(
+                    'action type=' .. tostring(packet.Type) ..
+                    ' spell=' .. tostring(spellId) ..
+                    ' target=' .. tostring(target.Id) ..
+                    ' msg=' .. tostring(message) ..
+                    ' param=' .. tostring(action.Param) ..
+                    ' react=' .. tostring(action.Reaction) ..
+                    ' anim=' .. tostring(action.Animation) ..
+                    ' special=' .. tostring(action.SpecialEffect)
+                );
+            end
+
             if (packet.Type == 13 and packet.Param == LUNAR_CRY_BP_ID) then
                 TrackStatus(target.Id, LUNAR_CRY_EFFECT_A, LUNAR_CRY_DURATION);
                 TrackStatus(target.Id, LUNAR_CRY_EFFECT_B, LUNAR_CRY_DURATION);
+                if (ShouldDebugTarget(target.Id) == true) then
+                    AddDebugLine('tracked lunar-cry target=' .. tostring(target.Id));
+                end
             end
 
             if (statusOffMessages:contains(message)) then
                 ClearStatus(target.Id, action.Param);
+                if (tonumber(target.Id) == GetSelfServerId()) then
+                    ClearGeoEnemyAura(action.Param);
+                end
             elseif (packet.Type == 4 and spellDamageMessages:contains(message)) then
                 local expiry = nil;
 
@@ -214,6 +453,18 @@ local function HandleActionPacket(packet)
                 end
 
                 TrackStatus(target.Id, statusId, GetDuration(spellId));
+                if (tonumber(target.Id) == GetSelfServerId()) then
+                    RefreshGeoEnemyAura(spellId, statusId);
+                end
+                if (ShouldDebugTarget(target.Id) == true) then
+                    AddDebugLine(
+                        'tracked status target=' .. tostring(target.Id) ..
+                        ' id=' .. tostring(statusId) ..
+                        ' duration=' .. tostring(GetDuration(spellId)) ..
+                        ' isBuff=' .. tostring(statusEffects.IsBuff(statusId)) ..
+                        ' isDebuff=' .. tostring(statusEffects.IsDebuff(statusId))
+                    );
+                end
             end
         end
     end
@@ -239,8 +490,108 @@ function enemyStatuses.HandlePacketIn(e)
             tracked[message.target] = nil;
         elseif (statusOffMessages:contains(message.message)) then
             ClearStatus(message.target, message.param);
+            if (tonumber(message.target) == GetSelfServerId()) then
+                ClearGeoEnemyAura(message.param);
+            end
+        end
+
+        if (ShouldDebugTarget(message.target) == true) then
+            AddDebugLine(
+                'message target=' .. tostring(message.target) ..
+                ' msg=' .. tostring(message.message) ..
+                ' param=' .. tostring(message.param) ..
+                ' value=' .. tostring(message.value)
+            );
         end
     end
+end
+
+function enemyStatuses.EnableDebugForSeconds(seconds, serverId)
+    debugUntil = os.clock() + (tonumber(seconds) or 20);
+    debugTargetServerId = tonumber(serverId) or 0;
+    debugLines = {};
+end
+
+function enemyStatuses.SetDebugEnabled(enabled)
+    if (enabled == true) then
+        enemyStatuses.EnableDebugForSeconds(20, debugTargetServerId);
+        return;
+    end
+
+    debugUntil = 0;
+end
+
+function enemyStatuses.GetDebugText(serverId)
+    RefreshGeoEnemyAuraFromSelfStatuses();
+
+    serverId = tonumber(serverId) or 0;
+
+    local now = os.time();
+    local parts = {};
+    local rows = tracked[serverId] or {};
+
+    for statusId, expiresAt in pairs(rows) do
+        local seconds = (tonumber(expiresAt) or 0) - now;
+
+        if (seconds > 0) then
+            parts[#parts + 1] =
+                tostring(statusId) .. ':' .. tostring(seconds) ..
+                ':buff=' .. tostring(statusEffects.IsBuff(statusId)) ..
+                ':debuff=' .. tostring(statusEffects.IsDebuff(statusId));
+        end
+    end
+
+    table.sort(parts);
+
+    return
+        'Enemy status debug server=' .. tostring(serverId) ..
+        ' tracked=' .. (#parts > 0 and table.concat(parts, ',') or 'none') ..
+        ' selfGeo=' .. GetSelfGeoStatusText() ..
+        ' ' .. playerStatuses.GetSelfRawStatusText() ..
+        ' geoAura=' .. (
+            activeGeoEnemyAura ~= nil
+            and (tostring(activeGeoEnemyAura.spellId) .. '/' .. tostring(activeGeoEnemyAura.statusId) .. '/' .. tostring(activeGeoEnemyAura.expiresAt ~= nil and ((tonumber(activeGeoEnemyAura.expiresAt) or 0) - now) or 'aura'))
+            or 'none'
+        ) ..
+        ' capture=' .. tostring((tonumber(debugUntil) or 0) > os.clock()) ..
+        ' target=' .. tostring(debugTargetServerId) ..
+        ' log=' .. (#debugLines > 0 and table.concat(debugLines, ' | ') or 'none');
+end
+
+function enemyStatuses.GetGeoAuraDebuffRows(enemyDistance, isEngaged)
+    RefreshGeoEnemyAuraFromSelfStatuses();
+
+    if (isEngaged ~= true or activeGeoEnemyAura == nil) then
+        return {};
+    end
+
+    if (activeGeoEnemyAura.expiresAt ~= nil and (tonumber(activeGeoEnemyAura.expiresAt) or 0) <= os.time()) then
+        activeGeoEnemyAura = nil;
+        return {};
+    end
+
+    if ((tonumber(enemyDistance) or 999) > GEO_AURA_RADIUS) then
+        return {};
+    end
+
+    return {
+        {
+            id = activeGeoEnemyAura.statusId,
+            seconds = nil,
+            order = 9000,
+            source = 'geo-aura',
+        },
+    };
+end
+
+function enemyStatuses.GetGeoAuraSignature()
+    RefreshGeoEnemyAuraFromSelfStatuses();
+
+    if (activeGeoEnemyAura == nil) then
+        return 'none';
+    end
+
+    return tostring(activeGeoEnemyAura.spellId) .. ':' .. tostring(activeGeoEnemyAura.statusId) .. ':' .. tostring(activeGeoEnemyAura.expiresAt ~= nil and ((tonumber(activeGeoEnemyAura.expiresAt) or 0) > os.time()) or 'aura');
 end
 
 function enemyStatuses.GetActiveStatusRows(serverId, kind)

@@ -10,6 +10,7 @@ local jobIconTextures = require('core.job_icon_textures');
 local textureLoader = require('core.texture_loader');
 local backgroundTextures = require('core.background_textures');
 local targetModuleMarker = require('core.target_module_marker');
+local aoeRangeVisuals = require('core.aoe_range_visuals');
 local npcObjectInfo = require('core.npc_object_info');
 local fishing = require('core.fishing');
 local gathering = require('core.gathering');
@@ -52,6 +53,7 @@ local levelSyncIconDefaults = require('config.widgets.level_sync_icon');
 local newAdventurerIconDefaults = require('config.widgets.new_adventurer_icon');
 local targetModuleDefaults = require('config.widgets.target_module');
 local subtargetModuleDefaults = require('config.widgets.subtarget_module');
+local aoeRangeDefaults = require('config.widgets.aoe_range');
 
 local petTimerDefaults = {
     enabled = true,
@@ -317,6 +319,8 @@ local quickMenuMissingIcons = {};
 local trustBuffPreviewDefaults = {};
 local previewInfoIconTextureId = nil;
 local enmityIconTextureId = nil;
+local luopanPreviewTextureId = nil;
+local luopanPreviewTextureMissing = false;
 local selectedBackground = 'Light';
 local selectedZoom = '1x';
 local dragEnabled = false;
@@ -484,6 +488,27 @@ local function LoadBackground(name)
     return backgroundCache[fileName];
 end
 
+local function LoadLuopanPreviewTexture()
+    if (luopanPreviewTextureId ~= nil or luopanPreviewTextureMissing == true) then
+        return luopanPreviewTextureId;
+    end
+
+    local files = T{ 'Luopla.png', 'luopan.png' };
+
+    for _, fileName in ipairs(files) do
+        local path = addon.path .. '\\assets\\images\\geo-statuses\\' .. fileName;
+        local textureId = textureLoader.ToTextureId(textureLoader.Load(path));
+
+        if (textureId ~= nil) then
+            luopanPreviewTextureId = textureId;
+            return luopanPreviewTextureId;
+        end
+    end
+
+    luopanPreviewTextureMissing = true;
+    return nil;
+end
+
 local function LoadQuickMenuIcon(fileName)
     local name = tostring(fileName or '');
 
@@ -556,6 +581,21 @@ local function BuildTargetMarker(context, hpBarSettings)
         hpBarSettings,
         Number(context, 'distance', 0)
     );
+
+    if (marker ~= nil) then
+        marker.anchorKinds = { 'name', 'hp' };
+        marker.arrowAnchorKinds = { 'name' };
+    end
+
+    return marker;
+end
+
+local function BuildPreviewTargetMarker(entityName, stateName, context, hpBarSettings)
+    local marker = BuildTargetMarker(context, hpBarSettings);
+
+    if (marker == nil and tostring(entityName or '') == 'Luopan') then
+        marker = targetModuleMarker.Build('Luopan', tostring(stateName or 'Luopan'), 'Target', hpBarSettings, 0);
+    end
 
     if (marker ~= nil) then
         marker.anchorKinds = { 'name', 'hp' };
@@ -1880,6 +1920,10 @@ local function BuildPlate(entityName, stateName, context)
     local tpBarSettings = state.GetWidgetSettings(storageEntityName, stateName, 'TP Bar', tpDefaults);
     local castBarSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Cast bar', castDefaults);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local aoeRangeSettings = nil;
+    if (context ~= nil and context.widgetKey == 'AOE range' and stateName == 'Combat') then
+        aoeRangeSettings = state.GetWidgetSettings((entityName == 'Enemy') and 'Enemy' or 'Self', 'Combat', 'AOE range', aoeRangeDefaults);
+    end
     local playerIconSettings = GetPlayerPreviewIconSettings(storageEntityName, stateName);
     local enemyMobInfoIconSettings = GetEnemyMobInfoPreviewIconSettings(storageEntityName, stateName);
     local anonIconSettings = state.GetWidgetSettings(storageEntityName, stateName, 'Anon icon', anonIconDefaults);
@@ -1913,6 +1957,7 @@ local function BuildPlate(entityName, stateName, context)
         ['Pet (BST)'] = (stateName == 'Charmed Pet') and 'Desert Beetle' or 'CourierCarrie',
         ['Pet (DRG)'] = 'Lumiere',
         ['Pet (PUP)'] = 'Lobo',
+        ['Luopan'] = 'Luopan',
         ['NPC'] = 'Hunter',
         ['Object'] = 'Mining Point',
         ['NPC/Object'] = 'Hunter',
@@ -1968,6 +2013,20 @@ local function BuildPlate(entityName, stateName, context)
     local mpColor = mpBarSettings.color or { 0.25, 0.45, 1.0, 0.95 };
     local tpColor = tpBarSettings.color or { 1.0, 0.70, 0.18, 0.95 };
     local icons = {};
+    local previewAoeActive = (
+        stateName == 'Combat' and
+        context ~= nil and
+        context.widgetKey == 'AOE range' and
+        aoeRangeSettings ~= nil and
+        aoeRangeSettings.enabled == true
+    );
+    local previewNameSize = nameSettings.textSize;
+    local previewNameColor = (entityName == 'Enemy') and (nameSettings.claimUnclaimedColor or nameDefaults.claimUnclaimedColor or nameSettings.color or nameDefaults.color) or (nameSettings.color or { 1.0, 1.0, 1.0, 1.0 });
+
+    if (previewAoeActive == true) then
+        previewNameSize = math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize);
+        previewNameColor = aoeRangeSettings.fontColor or aoeRangeDefaults.fontColor;
+    end
 
     if (
         hpBarSettings.lowColorEnabled == true and
@@ -2059,8 +2118,8 @@ local function BuildPlate(entityName, stateName, context)
         name = (nameSettings.enabled == true) and previewName or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
-        nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
-        nameColor = (entityName == 'Enemy') and (nameSettings.claimUnclaimedColor or nameDefaults.claimUnclaimedColor or nameSettings.color or nameDefaults.color) or (nameSettings.color or { 1.0, 1.0, 1.0, 1.0 }),
+        nameFontSize = textScale.ToNameTextureFontSize(previewNameSize, nameDefaults.textSize),
+        nameColor = previewNameColor,
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
         nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
@@ -2068,6 +2127,7 @@ local function BuildPlate(entityName, stateName, context)
         nameOffsetY = tonumber(nameSettings.offsetY) or -54,
         nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        aoeNameActive = previewAoeActive == true,
         anchorMap = {
             ['Background'] = 'background',
             ['Name'] = 'name',
@@ -2228,7 +2288,7 @@ local function BuildPlate(entityName, stateName, context)
             iconGap = 4,
         },
         icons = icons,
-        targetMarker = BuildTargetMarker(context, hpBarSettings),
+        targetMarker = BuildPreviewTargetMarker(entityName, stateName, context, hpBarSettings),
         background = {
             enabled = backgroundSettings.enabled == true,
             width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
@@ -2250,6 +2310,10 @@ local function BuildPlate(entityName, stateName, context)
     AddCraftingPreviewWidget(plateData, globalSettings, context);
     AddGatheringPreviewWidget(plateData, globalSettings, context);
     AddRestingPreviewBar(plateData, globalSettings, context);
+
+    if (previewAoeActive == true) then
+        aoeRangeVisuals.Apply(plateData, aoeRangeSettings);
+    end
 
     if (entityName == 'Pet (PUP)') then
         pupManeuvers.AddIcons(plateData, maneuverSettings, globalSettings, pupManeuvers.GetPreviewState());
@@ -2604,6 +2668,22 @@ local function DrawPreviewInfoOverlay(drawList, x, y)
     elseif (imgui.SetTooltip ~= nil) then
         imgui.SetTooltip(text);
     end
+end
+
+local function DrawLuopanPreviewActor(drawList, x, y, previewWidth, previewHeight)
+    local textureId = LoadLuopanPreviewTexture();
+
+    if (textureId == nil or drawList == nil or drawList.AddImage == nil) then
+        return;
+    end
+
+    local size = math.max(58, math.min(previewWidth * 0.24, previewHeight * 0.42));
+    local centerX = x + (previewWidth * 0.5);
+    local centerY = y + (previewHeight * 0.85);
+    local left = centerX - (size * 0.5);
+    local top = centerY - (size * 0.5);
+
+    drawList:AddImage(textureId, { left, top }, { left + size, top + size }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
 end
 
 local function RemoveBadgeKind(plateData, kind)
@@ -3572,6 +3652,10 @@ function preview.Draw(entityName, stateName, context)
     local zoomHeight = previewHeight * plateZoom;
     local zoomX = x + ((previewWidth - zoomWidth) * 0.5);
     local zoomY = y + ((previewHeight - zoomHeight) * 0.5);
+
+    if (entityName == 'Luopan' and isPeerPreview ~= true and quickMenuOnlyPreview ~= true) then
+        DrawLuopanPreviewActor(drawList, x, y, previewWidth, previewHeight);
+    end
 
     if (isPeerPreview ~= true and quickMenuOnlyPreview ~= true) then
         drawList:AddImage(plateTextureId, { zoomX, zoomY }, { zoomX + zoomWidth, zoomY + zoomHeight }, uv1, uv2, 0xFFFFFFFF);

@@ -173,7 +173,10 @@ local function ShortenName(name, maxLength)
 end
 
 local function CleanDisplayName(name)
-    return tostring(name or ''):gsub('\170', '');
+    local text = tostring(name or ''):gsub('\170', '');
+    text = text:gsub('%c', '');
+    text = text:gsub('^%s+', ''):gsub('%s+$', '');
+    return text;
 end
 
 local function HasReadableDisplayName(name)
@@ -303,6 +306,11 @@ local function QueueNpcObject(entity)
     local resolveTimer = perfMeter.BeginDetail('npc.resolve');
     local entityName = tostring(entity.entityType or 'NPC');
     local displayName = CleanDisplayName(entity.name);
+
+    if (displayName == 'Luopan' or entities.IsOwnLuopanIndex(entity.index) == true) then
+        perfMeter.EndDetail(resolveTimer);
+        return;
+    end
 
     if (entities.ShouldHideOtherPlayerPet(entity.index, displayName) == true) then
         perfMeter.EndDetail(resolveTimer);

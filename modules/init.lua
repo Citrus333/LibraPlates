@@ -14,6 +14,7 @@ local diagnostics = require('core.diagnostics');
 local lagTest = require('core.lag_test');
 local cursorOverlay = require('core.cursor_overlay');
 local jobChange = require('core.job_change');
+local enemyCasts = require('core.enemy_casts');
 local imgui = require('imgui');
 
 -- ============================================================
@@ -253,6 +254,7 @@ function modules.Render()
     UpdateNativeNamesRetry();
     UpdateTargetModulePrewarm();
     jobChange.Update();
+    enemyCasts.TickDebug();
     perfMeter.Stop('native', nativeStart);
 
     if (state.GetConfigOpen() ~= true) then

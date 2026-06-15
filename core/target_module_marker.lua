@@ -7,6 +7,7 @@ local perfMeter = require('core.perf_meter');
 local nativeUiPolicy = require('core.native_ui_policy');
 local targeting = require('core.targeting');
 local targetActionRange = require('core.target_action_range');
+local aoeNameHighlight = require('core.aoe_name_highlight');
 
 local targetModuleMarker = {};
 local textureIds = {};
@@ -153,7 +154,7 @@ local function ResolveArrowDistanceColor(distance, settings, markerColor, target
         return CloneColor(settings.arrowInRangeColor, markerColor);
     end
 
-    local actionRange = targetActionRange.GetCurrentRange();
+    local actionRange = targetActionRange.GetCurrentRange() or aoeNameHighlight.GetCurrentActionTargetRange();
     local currentDistance = tonumber(distance);
 
     if (actionRange == nil or currentDistance == nil) then

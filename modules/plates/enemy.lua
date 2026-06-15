@@ -1025,9 +1025,13 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
     local elapsed = math.max(0.0, os.clock() - (tonumber(castData.startTime) or os.clock()));
     local castPercent = math.max(0, math.min(100, (elapsed / castTime) * 100));
     local spellIconId = tonumber(castData.spellIconId);
-    local spellIconTextureId = castBarSettings.showSpellIcon == true
-        and spellIconTextures.GetTextureId(spellIconId)
-        or nil;
+    local spellIconTextureId = nil;
+
+    if (castBarSettings.showSpellIcon == true) then
+        spellIconTextureId = statusIconTextures.GetTextureId(castData.spellStatusId)
+            or spellIconTextures.GetGeoTextureId(castData.spellId)
+            or spellIconTextures.GetTextureId(spellIconId);
+    end
 
     return {
         enabled = true,
@@ -1351,7 +1355,7 @@ local function AddStatusIconsToPlate(plateData, statusIds, iconSettings, isEngag
                 iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
             end
 
-            if (iconSettings.showTimers == true and timerSeconds ~= nil) then
+            if (iconSettings.showTimers == true and timerSeconds ~= nil and timerSeconds > 0) then
                 timerText = statusTimerFormat.Format(timerSeconds);
             end
 
@@ -1478,6 +1482,10 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
     return true;
 end
 
+local function ResolveAoeRangeSettings()
+    return state.GetWidgetSettings('Enemy', 'Combat', 'AOE range', aoeRangeDefaults);
+end
+
 local function BuildEnemyQueueContext(enemy)
     local stateName = targeting.GetTargetStateName(enemy.index);
     local castData = enemyCasts.GetActiveCast(enemy.serverId);
@@ -1495,7 +1503,7 @@ local function BuildEnemyQueueContext(enemy)
     local mobInfoIconWidgetSettings = GetEnemyMobInfoIconWidgetSettings(layoutStateName);
     local buffsSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Buffs', buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Debuffs', debuffsDefaults);
-    local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
+    local aoeRangeSettings = ResolveAoeRangeSettings();
     local peerPlateSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Peer', { enabled = true });
     local castBarSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Cast bar', castBarDefaults);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
@@ -1534,7 +1542,14 @@ local function BuildEnemyQueueContext(enemy)
     local debuffRows = ShouldLoadStatusRows(debuffsSettings, isEngaged, hasActiveDetail) == true
         and enemyStatuses.GetActiveStatusRows(enemy.serverId, 'debuff')
         or {};
+    local geoAuraDebuffs = ShouldLoadStatusRows(debuffsSettings, isEngaged, hasActiveDetail) == true
+        and enemyStatuses.GetGeoAuraDebuffRows(enemy.distance, isEngaged)
+        or {};
     local distanceText = nil;
+
+    for _, row in ipairs(geoAuraDebuffs) do
+        debuffRows[#debuffRows + 1] = row;
+    end
 
     if (showDistanceBadge == true and distanceSettings ~= nil and distanceSettings.enabled == true and enemy.distance ~= nil) then
         distanceText = tostring(distanceSettings.prefix or '') .. string.format('%.1f', tonumber(enemy.distance) or 0);
@@ -1585,10 +1600,20 @@ end
 
 local function BuildEnemyCacheSignature(context)
     local enemy = context.enemy;
+    local function StatusRowsKey(rows)
+        local parts = {};
+
+        for _, row in ipairs(rows or {}) do
+            parts[#parts + 1] = tostring(row.id) .. ':' .. tostring(math.floor(tonumber(row.seconds) or -1));
+        end
+
+        return table.concat(parts, ',');
+    end
 
     return table.concat({
         'v=8',
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
+        'statusIconPack=' .. tostring(context.globalSettings ~= nil and context.globalSettings.statusIcons ~= nil and context.globalSettings.statusIcons.iconPack or ''),
         'activeDetail=' .. tostring(context.hasActiveDetail),
         'name=' .. tostring(context.displayName or ''),
         'server=' .. tostring(enemy.serverId or ''),
@@ -1598,6 +1623,9 @@ local function BuildEnemyCacheSignature(context)
         'dist=' .. tostring(context.distanceText or ''),
         'job=' .. tostring(context.jobText or ''),
         'level=' .. tostring(context.levelText or ''),
+        'buffRows=' .. StatusRowsKey(context.buffRows),
+        'debuffRows=' .. StatusRowsKey(context.debuffRows),
+        'geoAura=' .. enemyStatuses.GetGeoAuraSignature(),
         'id=' .. tostring(tonumber(enemy.serverId) or tonumber(enemy.index) or 0),
         'difficulty=' .. tostring(context.mobInfo ~= nil and context.mobInfo.Difficulty or ''),
         'claim=' .. tostring(context.claimCategory or ''),
@@ -1606,7 +1634,7 @@ local function BuildEnemyCacheSignature(context)
         'specialIconSettings=' .. SettingKey(context.specialIconSettings, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
         'nm=' .. tostring(context.mobInfo ~= nil and context.mobInfo.IsNM or ''),
         'aoe=' .. aoeNameHighlight.GetSignature(enemy.index, 'enemy'),
-        'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
+        'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
         'bg=' .. SettingKey(context.backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
         'nameSettings=' .. SettingKey(context.nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
         'hpSettings=' .. (context.hasActiveDetail == true and SettingKey(context.hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor' }) or ''),
@@ -1646,7 +1674,7 @@ local function BuildEnemyPlateData(context)
         nameFontFamily = fonts.GetRole(context.globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(context.globalSettings, false),
         nameFontSize = textScale.ToNameTextureFontSize(nameTextSize, nameDefaults.textSize),
-        nameColor = (nameAoeActive == true and context.aoeRangeSettings.fontColor) or GetClaimNameColor(context.nameSettings, nameDefaults, context.claimCategory) or GetDifficultyColor(context.nameSettings, nameDefaults, context.mobInfo),
+        nameColor = (nameAoeActive == true and context.aoeRangeSettings.fontColor) or GetClaimNameColor(context.nameSettings, nameDefaults, context.claimCategory) or context.nameSettings.color or nameDefaults.color,
         nameOutlineEnabled = (tonumber(context.nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = context.nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
         nameOutlineSize = tonumber(context.nameSettings.outlineSize) or 0,

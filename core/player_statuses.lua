@@ -3,7 +3,9 @@ local partyStatuses = require('core.party_statuses');
 
 local playerStatuses = {};
 local INFINITE_STATUS_DURATION = 0x7FFFFFFF;
+local MIN_INITIAL_TIMER_SECONDS = 3;
 local realUtcStampPointer = nil;
+local selfTimerSeenLong = {};
 local levelSyncStatusIds = {
     [269] = true,
 };
@@ -131,7 +133,7 @@ local function ConvertRawStatusTimerToSeconds(rawTimer)
     end
 
     if (realDuration < 1) then
-        return 0;
+        return nil;
     end
 
     return realDuration / 60;
@@ -149,6 +151,34 @@ local function GetTimerSeconds(statusTimers, index)
     end
 
     return ConvertRawStatusTimerToSeconds(value);
+end
+
+local function NormalizeSelfTimer(statusId, seconds)
+    statusId = tonumber(statusId) or 0;
+    seconds = tonumber(seconds);
+
+    if (statusId <= 0 or seconds == nil) then
+        return nil;
+    end
+
+    if (seconds > MIN_INITIAL_TIMER_SECONDS) then
+        selfTimerSeenLong[statusId] = true;
+        return seconds;
+    end
+
+    if (selfTimerSeenLong[statusId] == true) then
+        return seconds;
+    end
+
+    return nil;
+end
+
+local function PruneSelfTimerSeen(activeStatusIds)
+    for statusId, _ in pairs(selfTimerSeenLong) do
+        if (activeStatusIds[statusId] ~= true) then
+            selfTimerSeenLong[statusId] = nil;
+        end
+    end
 end
 
 local function GetStatusIds(player)
@@ -207,6 +237,7 @@ function playerStatuses.GetSelfRows(kind)
     end
 
     local startIndex = GetStartIndex(statusIds);
+    local activeStatusIds = {};
 
     for offset = 0, 31 do
         local index = startIndex + offset;
@@ -223,13 +254,16 @@ function playerStatuses.GetSelfRows(kind)
                 (kind ~= 'buff' and kind ~= 'debuff')
             )
         ) then
+            activeStatusIds[statusId] = true;
             rows[#rows + 1] = {
                 id = statusId,
-                seconds = GetTimerSeconds(statusTimers, index),
+                seconds = NormalizeSelfTimer(statusId, GetTimerSeconds(statusTimers, index)),
                 order = offset + 1,
             };
         end
     end
+
+    PruneSelfTimerSeen(activeStatusIds);
 
     if (#rows == 0) then
         local partyRows = partyStatuses.GetMemberRows(GetSelfServerId(), kind);
@@ -298,6 +332,34 @@ function playerStatuses.GetSelfDebugText()
         ' debuffs=' .. tostring(#debuffs) ..
         ' selfServer=' .. tostring(GetSelfServerId()) ..
         ' ' .. partyStatuses.GetDebugText(GetSelfServerId());
+end
+
+function playerStatuses.GetSelfRawStatusText()
+    local player = GetPlayer();
+
+    if (player == nil) then
+        return 'selfRaw=nil';
+    end
+
+    local statusIds = GetStatusIds(player);
+    local statusTimers = GetStatusTimers(player);
+    local parts = {};
+
+    if (statusIds ~= nil) then
+        local startIndex = GetStartIndex(statusIds);
+
+        for offset = 0, 31 do
+            local index = startIndex + offset;
+            local statusId = GetStatusId(statusIds, index);
+
+            if (statusId ~= nil and statusId > 0 and statusId ~= 255) then
+                local timerSeconds = GetTimerSeconds(statusTimers, index);
+                parts[#parts + 1] = tostring(statusId) .. ':' .. tostring(timerSeconds ~= nil and math.floor(timerSeconds) or 'aura');
+            end
+        end
+    end
+
+    return 'selfRaw=' .. (#parts > 0 and table.concat(parts, '/') or 'none');
 end
 
 return playerStatuses;

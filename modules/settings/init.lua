@@ -489,7 +489,8 @@ local selectedModuleEntity = 'Enemy';
 local selectedModuleState = 'World';
 local selectedModuleWidget = 'Target';
 local selectedPeerEnemyInfo = 'Job';
-local selectedGeneralSection = 'Font';
+local selectedGeneralSection = 'Theme';
+local selectedHelpSection = 'User Guide';
 local profileNewNameBuffer = { '' };
 local profileCopyNameBuffer = { '' };
 local profileRenameNameBuffer = { '' };
@@ -500,6 +501,9 @@ local profileStatusMessage = '';
 local profilePopupStatusMessage = '';
 local detectedGameFpsMode = 'Unknown';
 local openDropdown = nil;
+local helpSearchBuffer = { '' };
+local troubleshooterSearchBuffer = { '' };
+local pendingHelpNavigation = nil;
 local previewSplitRatio = 0.42;
 local splitterArrowTextureId = nil;
 local DrawSelectedEditor = nil;
@@ -510,9 +514,11 @@ local heldButtonState = {};
 local targetModulePendingReset = nil;
 local maneuverPendingReset = nil;
 local loadModeDrawn = false;
+local useNativeTopTabs = false;
 
-local tabs = T{ 'Settings', 'Plates', 'Modules' };
-local generalSections = T{ 'Profiles', 'Font', 'Native UI', 'Mouse', 'Visibility', 'Scaling', 'Performance' };
+local tabs = T{ 'Settings', 'Plates', 'Help' };
+local generalSections = T{ 'Profiles', 'Theme', 'Native UI', 'Mouse', 'Visibility', 'Scaling', 'Performance' };
+local helpSections = T{ 'User Guide', 'Find Settings', 'Troubleshooter' };
 local entities = T{
     'Self',
     'Trust',
@@ -522,12 +528,13 @@ local entities = T{
     'Pet (SMN)',
     'Pet (DRG)',
     'Pet (PUP)',
+    'Luopan',
     'NPC',
     'Object',
 };
 local states = T{ 'World', 'Tactical' };
 local statesByEntity = {
-    ['Self'] = T{ 'World', 'Tactical', 'Resting', 'Fishing', 'Crafting' },
+    ['Self'] = T{ 'World', 'Tactical', 'Fishing', 'Crafting' },
     ['Enemy'] = T{ 'World', 'Tactical' },
     ['PC'] = T{ 'World', 'Tactical' },
     ['Trust'] = T{ 'World', 'Tactical' },
@@ -535,6 +542,7 @@ local statesByEntity = {
     ['Pet (SMN)'] = T{ 'Avatar', 'Spirit' },
     ['Pet (DRG)'] = T{ 'Wyvern' },
     ['Pet (PUP)'] = T{ 'Automaton' },
+    ['Luopan'] = T{ 'Luopan' },
     ['NPC'] = T{ 'World' },
     ['Object'] = T{ 'World' },
 };
@@ -590,9 +598,9 @@ local selfIdleWidgets = T{
     'Stars icon',
     'New adventurer icon',
     'Gathering (module)',
+    'Resting (module)',
     'Quick Menu (module)',
     'Peer (module)',
-    'AOE range (module)',
 };
 local selfCombatWidgets = T{
     'Background',
@@ -626,9 +634,7 @@ local selfRestingWidgets = T{
     'TP Bar',
     'Buffs',
     'Debuffs',
-    'Resting (module)',
     'Quick Menu (module)',
-    'AOE range (module)',
 };
 local selfFishingWidgets = T{
     'Background',
@@ -640,7 +646,6 @@ local selfFishingWidgets = T{
     'Debuffs',
     'Fishing (module)',
     'Quick Menu (module)',
-    'AOE range (module)',
 };
 local selfCraftingWidgets = T{
     'Background',
@@ -652,7 +657,6 @@ local selfCraftingWidgets = T{
     'Debuffs',
     'Crafting (module)',
     'Quick Menu (module)',
-    'AOE range (module)',
 };
 local enemyIdleWidgets = T{
     'Background',
@@ -684,6 +688,7 @@ local enemyCombatWidgets = T{
     'Enmity (module)',
     'Target (module)',
     'Subtarget (module)',
+    'AOE range (module)',
     'Cast bar',
     'Special icon',
 };
@@ -819,6 +824,15 @@ local automatonEditWidgets = T{
     'Subtarget (module)',
     'Target (module)',
 };
+local luopanEditWidgets = T{
+    'Background',
+    'Name',
+    'Distance',
+    'HP Bar',
+    'Buffs',
+    'Target (module)',
+    'Subtarget (module)',
+};
 local npcEditWidgets = T{
     'Background',
     'Name',
@@ -905,8 +919,22 @@ local widgetKeys = {
 };
 local moduleEntities = entities;
 
+function GetEntityDisplayLabel(entity)
+    local entityName = tostring(entity or '');
+
+    if (entityName == 'Luopan') then
+        return 'Pet (GEO)';
+    end
+
+    return entityName;
+end
+
 function NormalizeEntityName(entity)
     local entityName = tostring(entity or '');
+
+    if (entityName == 'Pet (GEO)') then
+        return 'Luopan';
+    end
 
     if (entityName == 'Wyvern') then
         return 'Pet (DRG)';
@@ -1242,6 +1270,10 @@ GetEditWidgetsFor = function(entity, stateName)
         return automatonEditWidgets;
     end
 
+    if (entityName == 'Luopan') then
+        return luopanEditWidgets;
+    end
+
     if (entityName == 'NPC') then
         return npcEditWidgets;
     end
@@ -1459,7 +1491,9 @@ function RestoreUiSelection()
         selectedTab = saved.selectedTab;
     end
 
-    if (ListContains(generalSections, saved.selectedGeneralSection) == true) then
+    if (saved.selectedGeneralSection == 'Font' or saved.selectedGeneralSection == 'Fonts') then
+        selectedGeneralSection = 'Theme';
+    elseif (ListContains(generalSections, saved.selectedGeneralSection) == true) then
         selectedGeneralSection = saved.selectedGeneralSection;
     end
 
@@ -1697,9 +1731,10 @@ function DrawSelectableRow(label, selected, color, id)
     return imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true;
 end
 
-function DrawCombo(label, items, selected, onSelect)
+function DrawCombo(label, items, selected, onSelect, displayLabelFn)
     DrawYellowHeader(label);
-    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, '[' .. selected .. ' v]');
+    local selectedLabel = displayLabelFn ~= nil and tostring(displayLabelFn(selected)) or tostring(selected or '');
+    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, '[' .. selectedLabel .. ' v]');
 
     if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
         if (openDropdown == label) then
@@ -1712,7 +1747,7 @@ function DrawCombo(label, items, selected, onSelect)
     if (openDropdown == label) then
         for _, item in ipairs(items) do
             local isSelected = tostring(item or '') == tostring(selected or '');
-            local itemLabel = tostring(item or '');
+            local itemLabel = displayLabelFn ~= nil and tostring(displayLabelFn(item)) or tostring(item or '');
             local color = { 0.92, 0.92, 0.90, 1.0 };
 
             if (isSelected == true) then
@@ -1727,8 +1762,9 @@ function DrawCombo(label, items, selected, onSelect)
     end
 end
 
-function DrawInlineCombo(label, items, selected, onSelect)
+function DrawInlineCombo(label, items, selected, onSelect, displayLabelFn)
     local current = tostring(selected or items[1] or 'Default');
+    local currentLabel = displayLabelFn ~= nil and displayLabelFn(current) or current;
 
     if (tostring(label or '') ~= '') then
         DrawYellowHeader(label);
@@ -1739,11 +1775,12 @@ function DrawInlineCombo(label, items, selected, onSelect)
             imgui.PushItemWidth(242);
         end
 
-        if (imgui.BeginCombo('##' .. label, current) == true) then
+        if (imgui.BeginCombo('##' .. label, currentLabel) == true) then
             for _, item in ipairs(items) do
                 local isSelected = (item == current);
+                local itemLabel = displayLabelFn ~= nil and displayLabelFn(item) or tostring(item);
 
-                if (imgui.Selectable(tostring(item), isSelected) == true) then
+                if (imgui.Selectable(itemLabel, isSelected) == true) then
                     onSelect(item);
                 end
 
@@ -1762,7 +1799,7 @@ function DrawInlineCombo(label, items, selected, onSelect)
         return;
     end
 
-    DrawCombo(label, items, current, onSelect);
+    DrawCombo(label, items, current, onSelect, displayLabelFn);
 end
 
 function DrawInlineComboRow(label, items, selected, onSelect, id, labelColorOverride, labelWidth, tableFlagsOverride)
@@ -3075,7 +3112,7 @@ function DrawManeuverSettings(settings)
             settings.timerUseSmallFont = value == true;
             state.Save();
         end);
-        uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
+        uiTooltip.Info('When enabled, this uses the Small text font style configured in Settings > Theme.');
 
         local fontSize, fontSizeChanged, timerY, timerYChanged = DrawPlacementPair('Font size', textScale.NormalizeSetting(settings.timerFontSize, maneuverDefaults.timerFontSize), 'ManeuverTimerFontSize', 'Timer Y', settings.timerOffsetY, 'ManeuverTimerY', -100, 100, 1);
         if (fontSizeChanged == true) then settings.timerFontSize = fontSize; state.Save(); end
@@ -3527,7 +3564,7 @@ function DrawFontFolderLink(label, detailText)
 end
 
 function DrawTopTabs()
-    if (imgui.BeginTabBar ~= nil and imgui.BeginTabItem ~= nil and imgui.EndTabItem ~= nil and imgui.EndTabBar ~= nil) then
+    if (useNativeTopTabs == true and imgui.BeginTabBar ~= nil and imgui.BeginTabItem ~= nil and imgui.EndTabItem ~= nil and imgui.EndTabBar ~= nil) then
         if (imgui.BeginTabBar('##libraplates_top_tabs')) then
             for _, tab in ipairs(tabs) do
                 local flags = (tab == selectedTab) and (_G.ImGuiTabItemFlags_SetSelected or 0) or 0;
@@ -3768,6 +3805,7 @@ function SelectPreviewElement(kind, context)
         starsIcon = 'Stars icon',
         levelSyncIcon = 'Level sync icon',
         newAdventurerIcon = 'New adventurer icon',
+        aoeRangeIcon = 'AOE range (module)',
         buffs = 'Buffs',
         debuffs = 'Debuffs',
     };
@@ -3966,6 +4004,7 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         starsIcon = 'Stars icon',
         levelSyncIcon = 'Level sync icon',
         newAdventurerIcon = 'New adventurer icon',
+        aoeRangeIcon = 'AOE range (module)',
         buffs = 'Buffs',
         debuffs = 'Debuffs',
     };
@@ -3980,6 +4019,19 @@ function DragPeerPreviewElement(kind, dx, dy, context)
     local widgetKey = widgetKeys[widget];
 
     if (widgetKey == nil) then
+        return;
+    end
+
+    if (widget == 'AOE range (module)' and normalizedKind == 'aoeRangeIcon') then
+        local aoeEntity = (selectedEntity == 'Enemy') and 'Enemy' or 'Self';
+        local settings = state.GetWidgetSettings(aoeEntity, 'Combat', widgetKey, GetWidgetDefaults(widget));
+
+        settings.iconOffsetX = math.max(-500, math.min(500, (tonumber(settings.iconOffsetX) or 0) + deltaX));
+        settings.iconOffsetY = math.max(-500, math.min(500, (tonumber(settings.iconOffsetY) or 0) + deltaY));
+        selectedWidget = widget;
+        EnsureSelectedWidgetAllowed();
+        PersistUiSelection();
+        state.Save();
         return;
     end
 
@@ -4133,6 +4185,13 @@ function GetPreviewSelection()
                 widgetKey = 'Quick Menu',
                 previewQuickMenu = true,
             };
+        elseif (selectedWidget == 'AOE range (module)') then
+            local previewAoeEntity = (selectedEntity == 'Enemy') and 'Enemy' or 'Self';
+            context = {
+                entityName = previewAoeEntity,
+                stateName = 'Combat',
+                widgetKey = 'AOE range',
+            };
         end
 
         if (selectedEntity == 'Self' and context.widgetKey == nil) then
@@ -4204,7 +4263,7 @@ function DrawPlatesSelector()
         selectedEntity = entity;
         EnsureSelectedStateAllowed();
         EnsureSelectedWidgetAllowed();
-    end);
+    end, GetEntityDisplayLabel);
 
     EnsureSelectedStateAllowed();
     DrawInlineCombo('Plate', GetStates(selectedEntity), selectedState, function(stateName)
@@ -4299,7 +4358,7 @@ function DrawModulesSelector()
             selectedModuleState = moduleStates[1] or 'World';
         end
         EnsureSelectedModuleWidgetAllowed();
-    end);
+    end, GetEntityDisplayLabel);
 
     DrawInlineCombo('Plate', GetStates(selectedModuleEntity), selectedModuleState, function(stateName)
         selectedModuleState = stateName;
@@ -5154,7 +5213,6 @@ function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
     if (settings.resting.ringThickness == nil) then settings.resting.ringThickness = 10; end
     if (settings.resting.offsetX == nil) then settings.resting.offsetX = 0; end
     if (settings.resting.offsetY == nil) then settings.resting.offsetY = 38; end
-    if (settings.resting.firstTickOffset == nil) then settings.resting.firstTickOffset = 1; end
     if (settings.resting.repeatTickOffset == nil) then settings.resting.repeatTickOffset = 0; end
     if (settings.resting.mpTickThreshold == nil) then settings.resting.mpTickThreshold = 12; end
     if (settings.resting.enableLogoutCountdown == nil) then settings.resting.enableLogoutCountdown = true; end
@@ -5235,9 +5293,8 @@ function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
         state.Save();
     end
 
-    local firstOffset, firstChanged, repeatOffset, repeatChanged = DrawPlacementPair('First offset', settings.resting.firstTickOffset, 'RestingFirstOffset', 'Repeat offset', settings.resting.repeatTickOffset, 'RestingRepeatOffset', -10, 10, 1);
-    if (firstChanged == true or repeatChanged == true) then
-        settings.resting.firstTickOffset = firstOffset;
+    local repeatOffset, repeatChanged = DrawPlacementSingle('Repeat offset', settings.resting.repeatTickOffset, 'RestingRepeatOffset', -10, 10, 1, 154, 124, 58);
+    if (repeatChanged == true) then
         settings.resting.repeatTickOffset = repeatOffset;
         state.Save();
     end
@@ -6138,8 +6195,19 @@ local function DrawSettingsHeader(text)
 end
 
 local function DrawGeneralFontSection(global)
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Font' });
-    DrawSettingsHeader('Global font settings');
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Theme' });
+    DrawSettingsHeader('Theme');
+
+    if (global.font == nil) then
+        global.font = {};
+    end
+
+    if (global.statusIcons == nil) then
+        global.statusIcons = {};
+    end
+
+    local statusIconTextures = require('core.status_icon_textures');
+
     imgui.TextWrapped('LibraPlates includes its default fonts, but they still need to be installed in Windows before they can be used. If a selected font is missing, a warning will appear below.');
     imgui.Spacing();
     imgui.TextWrapped('Large text is used for names. Small text is used by widgets with Use small font enabled. After installing new fonts, reload LibraPlates before checking status.');
@@ -6162,9 +6230,7 @@ local function DrawGeneralFontSection(global)
 
     imgui.Separator();
     imgui.Spacing();
-    DrawYellowHeader('Large text font');
-    imgui.Spacing();
-    DrawInlineCombo('', fonts.GetChoices('large'), global.font.largeFamily, function(fontFamily)
+    DrawInlineCombo('Large text font', fonts.GetChoices('large'), global.font.largeFamily, function(fontFamily)
         global.font.largeFamily = fontFamily;
     end);
 
@@ -6174,14 +6240,21 @@ local function DrawGeneralFontSection(global)
     imgui.Spacing();
     imgui.Separator();
     imgui.Spacing();
-    DrawYellowHeader('Small text font');
-    imgui.Spacing();
-    DrawInlineCombo('', fonts.GetChoices('small'), global.font.smallFamily, function(fontFamily)
+    DrawInlineCombo('Small text font', fonts.GetChoices('small'), global.font.smallFamily, function(fontFamily)
         global.font.smallFamily = fontFamily;
     end);
 
     DrawFontStatus('Small font', global.font.smallFamily);
     DrawFontFolderButton('Open small font folder', 'small');
+
+    imgui.Spacing();
+    imgui.Separator();
+    imgui.Spacing();
+    DrawInlineCombo('Status icon pack', statusIconTextures.GetPackNames(), global.statusIcons.iconPack or globalDefaults.statusIcons.iconPack, function(iconPack)
+        global.statusIcons.iconPack = statusIconTextures.ResolvePackName(iconPack);
+        state.Save();
+    end);
+    uiTooltip.Info('This pack is used by all Buffs and Debuffs across LibraPlates. Individual plates still keep their own icon size, spacing, and position settings.');
     imgui.Spacing();
     imgui.Separator();
 end
@@ -7486,6 +7559,531 @@ local function DrawSelectedEditorGeneral()
     end
 end
 
+local helpEntries = {
+    { kind = 'Feature', title = 'Plate stacking', path = 'Settings > Visibility > Plate stacking', text = 'Stack world plates in screen space using stack spacing, allowed overlap, horizontal spread, and fixed target blocker width.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Feature', title = 'Interrupted castbar', path = 'Plates > Self > World/Tactical > Cast bar', text = 'Stops LP self castbar early on movement interrupts and shows remaining lockout with Interrupt bar settings.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
+    { kind = 'Feature', title = 'Offensive AOE helper', path = 'Plates > Enemy > Tactical > AOE range (module)', text = 'Highlights enemies affected by loaded offensive AOE actions during subtarget selection.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
+    { kind = 'Feature', title = 'Defensive AOE helper', path = 'Plates > Self/PC/Trust > Tactical > AOE range (module)', text = 'Highlights friendly/self plates affected by friendly AOE actions such as Curaga.', tab = 'Plates', entity = 'Self', state = 'Tactical', widget = 'AOE range (module)' },
+    { kind = 'Feature', title = 'Hide other players pet plates', path = 'Settings > Visibility > World plate filters', text = 'Hides plates for pets that belong to other players while keeping your own pet visible.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Feature', title = 'Performance monitor reports', path = 'Settings > Performance > Performance monitor', text = 'Performance monitor can show process timings and save text reports for testing.', tab = 'Settings', section = 'Performance' },
+    { kind = 'Feature', title = 'Resting tick helper', path = 'Modules > Self > World > Resting', text = 'Shows resting tick timing and optional logout support while resting.', tab = 'Modules', entity = 'Self', state = 'World', widget = 'Resting' },
+    { kind = 'Setting', title = 'Out-of-range tint', path = 'Plates > Enemy/Self/PC/Trust > Target or Subtarget > Target/Subtarget module > Range colors', text = 'Color used by target or subtarget arrows when the loaded action is out of range.', tab = 'Plates', entity = 'Enemy', state = 'Target', widget = 'Target (module)' },
+    { kind = 'Setting', title = 'Warning tint', path = 'Plates > Enemy/Self/PC/Trust > Target or Subtarget > Target/Subtarget module > Range colors', text = 'Middle warning color for target or subtarget action range.', tab = 'Plates', entity = 'Enemy', state = 'Target', widget = 'Target (module)' },
+    { kind = 'Setting', title = 'In-range tint', path = 'Plates > Enemy/Self/PC/Trust > Target or Subtarget > Target/Subtarget module > Range colors', text = 'Color used by target or subtarget arrows when the loaded action is in range.', tab = 'Plates', entity = 'Enemy', state = 'Target', widget = 'Target (module)' },
+    { kind = 'Setting', title = 'Interrupt bar', path = 'Plates > Self > World/Tactical > Cast bar > Bar settings', text = 'Enables the interrupted castbar recovery display and sets its fill color.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
+    { kind = 'Setting', title = 'Interrupt text', path = 'Plates > Self > World/Tactical > Cast bar > Text settings', text = 'Enables custom Interrupted text with separate font, outline, and position settings.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
+    { kind = 'Setting', title = 'Stack spacing', path = 'Settings > Visibility > Plate stacking', text = 'Pixel space kept between stacked plates. 20 means about 20 px between plates.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Setting', title = 'Allowed overlap', path = 'Settings > Visibility > Plate stacking', text = 'Screen pixels plates may overlap before stacking reacts. 2 means about 2 px overlap is allowed.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Setting', title = 'Horizontal spread', path = 'Settings > Visibility > Plate stacking', text = 'How far stacked plates may fan left or right before stacking upward.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Setting', title = 'Keep target fixed', path = 'Settings > Visibility > Plate stacking', text = 'Keeps target and subtarget plates from being pushed by stack placement.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Setting', title = 'Hide distant world plates', path = 'Settings > Performance > World plates', text = 'Hides world plates past the distance limit while keeping target/subtarget/tactical plates.', tab = 'Settings', section = 'Performance' },
+    { kind = 'Setting', title = 'AOE font color', path = 'Plates > Enemy > Tactical > AOE range (module)', text = 'Font color used for offensive AOE affected enemy names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
+    { kind = 'Setting', title = 'AOE icon', path = 'Plates > Enemy/Self > Tactical > AOE range (module)', text = 'Optional icon shown with AOE affected names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
+};
+
+local helpWidgetDescriptions = {
+    ['Background'] = 'Plate background size, color, border, texture, position, and anchor settings.',
+    ['Name'] = 'Main plate name text: font size, color, outline, position, anchor, and name-specific styling.',
+    ['Type line'] = 'NPC/Object type line text shown under the name.',
+    ['Job'] = 'Job text display and styling.',
+    ['Level'] = 'Level text display and styling.',
+    ['Distance'] = 'Distance text display for target/subtarget and supported tactical plates.',
+    ['ID'] = 'Enemy ID text display and styling.',
+    ['HP Bar'] = 'HP bar size, color, text, low-color animation, position, texture, and anchor settings.',
+    ['MP Bar'] = 'MP bar size, color, text, low-color animation, position, texture, and anchor settings.',
+    ['TP Bar'] = 'TP bar size, segmented display, colors, text, position, texture, and anchor settings.',
+    ['Cast bar'] = 'Cast bar display, spell text/icon, interrupt bar, interrupt text, colors, position, and anchor settings.',
+    ['Buffs'] = 'Buff icons, timers, growth direction, warning colors, filtering, size, spacing, and position.',
+    ['Debuffs'] = 'Debuff icons, timers, growth direction, warning colors, filtering, size, spacing, and position.',
+    ['Game mode icon'] = 'Game mode icon display, size, position, and anchor settings.',
+    ['Bazaar icon'] = 'Bazaar icon display, size, position, and anchor settings.',
+    ['Linkshell icon'] = 'Linkshell icon display, size, position, and anchor settings.',
+    ['Away icon'] = 'Away icon display, size, position, and anchor settings.',
+    ['Disconnect icon'] = 'Disconnect icon display, size, position, and anchor settings.',
+    ['Anon icon'] = 'Anonymous icon display, size, position, and anchor settings.',
+    ['Follow icon'] = 'Follow icon display, size, position, and anchor settings.',
+    ['Party leader icon'] = 'Party leader icon display, size, position, and anchor settings.',
+    ['Alliance leader icon'] = 'Alliance leader icon display, size, position, and anchor settings.',
+    ['Stars icon'] = 'Catseye/new adventurer star icon display, size, position, and anchor settings.',
+    ['Level sync icon'] = 'Level sync icon display, size, position, and anchor settings.',
+    ['New adventurer icon'] = 'New adventurer icon display, size, position, and anchor settings.',
+    ['Behavior icon'] = 'Enemy behavior icon display, size, position, and anchor settings.',
+    ['Detects icon'] = 'Enemy detection icon display, size, position, and anchor settings.',
+    ['Links icon'] = 'Enemy links icon display, size, position, and anchor settings.',
+    ['Special icon'] = 'Enemy special/Catseye star icon display, size, position, and anchor settings.',
+    ['Icon'] = 'NPC/Object icon display, size, position, and anchor settings.',
+    ['NPC icon'] = 'NPC icon display, size, position, and anchor settings.',
+    ['Object icon'] = 'Object icon display, size, position, and anchor settings.',
+    ['Pet timer'] = 'BST pet timer text display and placement.',
+    ['Pet state'] = 'BST pet state display and placement.',
+    ['Ward timer'] = 'SMN Ward timer bar display and placement.',
+    ['Rage timer'] = 'SMN Rage timer bar display and placement.',
+    ['Sic'] = 'BST Sic cooldown bar display and placement.',
+    ['Ready bar'] = 'BST Ready cooldown bar display and placement.',
+    ['Reward'] = 'BST Reward cooldown display and placement.',
+    ['Maneuvers'] = 'PUP maneuver icon/timer display and placement.',
+    ['Target'] = 'Target module display: arrow, chevrons, lock marker, range colors, and placement.',
+    ['Subtarget'] = 'Subtarget module display: arrow, chevrons, range colors, and placement.',
+    ['Target (module)'] = 'Target module display: arrow, chevrons, lock marker, range colors, and placement.',
+    ['Subtarget (module)'] = 'Subtarget module display: arrow, chevrons, range colors, and placement.',
+    ['Peer (module)'] = 'Peer inspector data and display settings.',
+    ['Enmity (module)'] = 'Enmity icon/module display settings.',
+    ['Resting (module)'] = 'Resting tick helper display, timer, hide-at-full options, and logout support.',
+    ['Crafting (module)'] = 'Crafting helper display and cooldown/timer settings.',
+    ['Fishing (module)'] = 'Fishing helper display and cooldown/timer settings.',
+    ['Gathering (module)'] = 'Gathering helper display, count, and tool interaction settings.',
+    ['Quick Menu (module)'] = 'Quick Menu actions and plate menu behavior.',
+    ['AOE range (module)'] = 'AOE affected-name style, font size/color, optional icon, and placement.',
+};
+
+local helpGeneralEntries = {
+    { kind = 'Settings', title = 'Profiles', path = 'Settings > Profiles', text = 'Create, copy, rename, delete, reset, and auto-switch profiles.', tab = 'Settings', section = 'Profiles' },
+    { kind = 'Settings', title = 'Theme', path = 'Settings > Theme', text = 'Global large/small font selection, font install status, and the global Buff/Debuff icon pack.', tab = 'Settings', section = 'Theme' },
+    { kind = 'Settings', title = 'Native UI', path = 'Settings > Native UI', text = 'Native name/target UI replacement and hiding behavior.', tab = 'Settings', section = 'Native UI' },
+    { kind = 'Settings', title = 'Mouse', path = 'Settings > Mouse', text = 'Mouse adornment, mouse movement, click blocking, targeting, and right-click behavior.', tab = 'Settings', section = 'Mouse' },
+    { kind = 'Settings', title = 'Visibility', path = 'Settings > Visibility', text = 'World plate filters, hide other players pet plates, plate stacking, tactical screen limits.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Settings', title = 'Scaling', path = 'Settings > Scaling', text = 'Global and per-entity distance scaling and plate position settings.', tab = 'Settings', section = 'Scaling' },
+    { kind = 'Settings', title = 'Performance', path = 'Settings > Performance', text = 'Performance monitor, FPS mode, presets, world plate performance, texture cache, and safety settings.', tab = 'Settings', section = 'Performance' },
+};
+
+local function NormalizeHelpText(value)
+    return tostring(value or ''):lower():gsub('[^%w%s]+', ' '):gsub('%s+', ' '):gsub('^%s+', ''):gsub('%s+$', '');
+end
+
+local function BuildHelpEntries()
+    local results = {};
+    local seen = {};
+
+    local function add(entry)
+        if (entry == nil) then
+            return;
+        end
+
+        local key = tostring(entry.kind or '') .. '|' .. tostring(entry.path or '') .. '|' .. tostring(entry.title or '');
+        if (seen[key] == true) then
+            return;
+        end
+
+        seen[key] = true;
+        results[#results + 1] = entry;
+    end
+
+    for _, entry in ipairs(helpEntries) do add(entry); end
+    for _, entry in ipairs(helpGeneralEntries) do add(entry); end
+
+    for _, entity in ipairs(entities) do
+        for _, stateName in ipairs(GetStates(entity)) do
+            for _, widget in ipairs(GetEditWidgetsFor(entity, stateName)) do
+                add({
+                    kind = 'Plate',
+                    title = tostring(entity) .. ' ' .. tostring(stateName) .. ' ' .. tostring(widget),
+                    path = 'Plates > ' .. tostring(entity) .. ' > ' .. tostring(stateName) .. ' > ' .. tostring(widget),
+                    text = helpWidgetDescriptions[widget] or ('Settings for ' .. tostring(widget) .. '.'),
+                    tab = 'Plates',
+                    entity = entity,
+                    state = stateName,
+                    widget = widget,
+                });
+            end
+        end
+    end
+
+    return results;
+end
+
+local function HelpEntryMatches(entry, query)
+    if (query == '') then
+        return true;
+    end
+
+    local haystack = NormalizeHelpText(tostring(entry.kind or '') .. ' ' .. tostring(entry.title or '') .. ' ' .. tostring(entry.path or '') .. ' ' .. tostring(entry.text or ''));
+
+    for word in query:gmatch('%S+') do
+        if (haystack:find(word, 1, true) == nil) then
+            return false;
+        end
+    end
+
+    return true;
+end
+
+local function GoToHelpEntry(entry)
+    if (entry == nil or entry.tab == nil) then
+        return;
+    end
+
+    pendingHelpNavigation = entry;
+end
+
+local function ApplyPendingHelpNavigation()
+    local entry = pendingHelpNavigation;
+
+    if (entry == nil or entry.tab == nil) then
+        return;
+    end
+
+    pendingHelpNavigation = nil;
+    selectedTab = entry.tab;
+
+    if (entry.tab == 'Settings' and entry.section ~= nil) then
+        selectedGeneralSection = entry.section;
+    elseif (entry.tab == 'Plates') then
+        selectedEntity = entry.entity or selectedEntity;
+        selectedState = entry.state or selectedState;
+        selectedWidget = entry.widget or selectedWidget;
+    elseif (entry.tab == 'Modules') then
+        selectedModuleEntity = entry.entity or selectedModuleEntity;
+        selectedModuleState = entry.state or selectedModuleState;
+        selectedModuleWidget = entry.widget or selectedModuleWidget;
+    end
+end
+
+local helpGuideSections = {
+    {
+        title = 'What LibraPlates can do',
+        lines = {
+            'LibraPlates replaces and extends game nameplates for the things you care about: self, enemies, players, trusts, pets, NPCs, and objects.',
+            'Each entity can have different World and Tactical looks, so calm exploration, targeting, and combat can all read differently.',
+        },
+    },
+    {
+        title = 'Core features',
+        lines = {
+            '- Custom plate widgets: name, bars, castbar, buffs, debuffs, icons, distance, target arrows, subtarget arrows, and role-specific modules.',
+            '- AOE helper: shows offensive or defensive AOE name styles while a spell or ability is loaded on subtarget.',
+            '- Plate stacking: spreads crowded world plates in screen space with spacing, overlap, horizontal spread, and target priority controls.',
+            '- Castbar interrupt recovery: self castbars can stop early on interruption and show the remaining lockout with a separate interrupt bar style.',
+            '- Performance tools: monitor plate cost, export reports, hide distant world plates, and filter noisy plates like other players pets.',
+            '- Activity helpers: resting tick display plus fishing, crafting, gathering, quick menu, peer, and enmity modules.',
+        },
+    },
+    {
+        title = 'Where settings live',
+        lines = {
+            '- Settings: profiles, global font/native UI/mouse/visibility/scaling/performance behavior.',
+            '- Plates: visual setup per entity and plate state, including module placement when that module belongs to a plate.',
+            '- Help: user guide, searchable setting finder, and troubleshooting checklists.',
+        },
+    },
+    {
+        title = 'Good setup order',
+        lines = {
+            'Start with a profile, tune Self and Enemy first, then PC/Trust/Pet plates. After that, check Target/Subtarget, AOE, stacking, and performance filters in live play.',
+            'When something looks broken, search Find Settings first, then check Troubleshooter for the common setting combinations that can make a feature appear missing.',
+        },
+    },
+};
+
+local troubleshooterEntries = {
+    {
+        title = 'HP bar is not showing',
+        path = 'Plates > entity > state > HP Bar',
+        aliases = 'hp health bar missing invisible hidden full',
+        tab = 'Plates',
+        entity = 'Self',
+        state = 'World',
+        widget = 'HP Bar',
+        checks = {
+            'Check that HP Bar is enabled for the exact entity and state you are looking at.',
+            'Check whether hide-at-full HP is enabled; a full target may intentionally hide the bar.',
+            'Check position, width, height, alpha, and whether another widget is covering it.',
+            'Check the widget load mode if the plate only appears while targeted or tactical.',
+        },
+    },
+    {
+        title = 'Target or subtarget arrow is not animating',
+        path = 'Plates > entity > Tactical > Target/Subtarget',
+        aliases = 'target subtarget arrow animation animated cursor st t',
+        tab = 'Plates',
+        entity = 'Self',
+        state = 'Tactical',
+        widget = 'Subtarget',
+        checks = {
+            'Check the Target or Subtarget module for that entity/state, not only the normal name settings.',
+            'Check that the selected arrow image supports animation frames.',
+            'Check animation speed and tint settings for the active plate state.',
+            'Self, PC, Trust, Enemy, and pet states can have separate Target/Subtarget settings.',
+        },
+    },
+    {
+        title = 'AOE names are not changing color',
+        path = 'Plates > Enemy > Tactical > AOE range',
+        aliases = 'aoe area radius circle red names offensive defensive spell st subtarget',
+        tab = 'Plates',
+        entity = 'Enemy',
+        state = 'Tactical',
+        widget = 'AOE range (module)',
+        checks = {
+            'AOE preview is driven by a loaded subtarget action; direct <t> casts do not always show the native helper.',
+            'Offensive AOE should affect enemy plates only. Defensive AOE should affect self, party, alliance, trusts, and own pet where appropriate.',
+            'Check Enemy Tactical AOE range settings for offensive spells.',
+            'Check Self/PC/Trust/Pet Tactical AOE range settings for defensive spells.',
+            'Some pet AOE abilities originate from the pet while cast range still checks your pet-to-target rules.',
+        },
+    },
+    {
+        title = 'Range color or arrow tint looks wrong',
+        path = 'Plates > entity > Tactical > Target/Subtarget',
+        aliases = 'range color tint out of range warning in range arrow spell distance',
+        tab = 'Plates',
+        entity = 'Enemy',
+        state = 'Tactical',
+        widget = 'Subtarget',
+        checks = {
+            'Check Out-of-range, Warning, and In-range tint under the active Target/Subtarget settings.',
+            'AOE radius is not the same as cast range; the arrow tint is based on cast usability.',
+            'Self range is always effectively zero, so self-specific range color settings may not be meaningful.',
+        },
+    },
+    {
+        title = 'Plate stacking looks too vertical or too spread out',
+        path = 'Settings > Visibility',
+        aliases = 'stack stacking overlap spacing spread crowded plates vertical horizontal',
+        tab = 'Settings',
+        section = 'Visibility',
+        checks = {
+            'Check plate stacking is enabled.',
+            'Spacing controls the visible gap between stacked plates.',
+            'Allowed overlap controls how much plates may overlap before being pushed apart.',
+            'Horizontal spread controls how much nearby plates can fan sideways instead of only upward.',
+            'Keep target fixed can make the selected target feel stable while other plates move around it.',
+        },
+    },
+    {
+        title = 'Other players pet plates still show',
+        path = 'Settings > Visibility',
+        aliases = 'pet avatar wyvern automaton other players hide carbuncle fenrir ramuh smn drg pup',
+        tab = 'Settings',
+        section = 'Visibility',
+        checks = {
+            'Check Hide other player pet plates in Visibility.',
+            'Your own pet should remain visible.',
+            'If a pet still shows with a yellow NPC-style type line, it may be classified differently and needs a report.',
+        },
+    },
+    {
+        title = 'Buff timer says 0s forever',
+        path = 'Plates > Self > World/Tactical > Buffs',
+        aliases = 'buff timer aura zero 0s geo moogle roll refresh duration',
+        tab = 'Plates',
+        entity = 'Self',
+        state = 'World',
+        widget = 'Buffs',
+        checks = {
+            'Aura-style buffs can have no real duration timer from memory.',
+            'LibraPlates should not draw permanent 0s timers for no-duration aura buffs.',
+            'If a 0s timer remains forever, capture the buff name/source and report it.',
+        },
+    },
+    {
+        title = 'Castbar keeps going after interruption',
+        path = 'Plates > Self > World/Tactical > Cast bar',
+        aliases = 'castbar cast bar interrupt interrupted lockout recast movement stop',
+        tab = 'Plates',
+        entity = 'Self',
+        state = 'World',
+        widget = 'Cast bar',
+        checks = {
+            'Check Interrupt bar is enabled in the Cast bar settings.',
+            'Movement/self-interrupts should stop the LibraPlates bar early and show the remaining lockout color.',
+            'Some server interrupt messages arrive late, matching the native bar behavior, so those may only update when the message arrives.',
+        },
+    },
+    {
+        title = 'FPS drops or the game feels laggy',
+        path = 'Settings > Performance',
+        aliases = 'fps lag stutter freeze performance report monitor crowded players',
+        tab = 'Settings',
+        section = 'Performance',
+        checks = {
+            'Open the Performance monitor and save a report while the problem is happening.',
+            'Compare FPS with Settings and monitor closed.',
+            'Try hiding distant world plates and other players pet plates in crowded areas.',
+            'Plate stacking costs more in very crowded scenes; test with it off if the monitor shows plate cost spikes.',
+        },
+    },
+};
+
+local function DrawHelpLines(lines)
+    for _, line in ipairs(lines or {}) do
+        imgui.TextWrapped(tostring(line));
+        imgui.Spacing();
+    end
+end
+
+local function DrawHelpUserGuide()
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Help', 'User Guide' });
+
+    for _, section in ipairs(helpGuideSections) do
+        DrawSettingsHeader(section.title);
+        DrawHelpLines(section.lines);
+    end
+end
+
+local function DrawHelpFindSettings()
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Help', 'Find Settings' });
+    DrawSettingsHeader('Search');
+
+    if (imgui.PushItemWidth ~= nil) then
+        imgui.PushItemWidth(430);
+    end
+
+    if (imgui.InputText ~= nil) then
+        imgui.InputText('##HelpSearch', helpSearchBuffer, 96);
+    else
+        imgui.Text(tostring(helpSearchBuffer[1] or ''));
+    end
+
+    if (imgui.PopItemWidth ~= nil) then
+        imgui.PopItemWidth();
+    end
+
+    imgui.Spacing();
+
+    local query = NormalizeHelpText(helpSearchBuffer[1]);
+    local entries = BuildHelpEntries();
+    local maxVisible = (query == '') and 80 or 140;
+    local resultCount = 0;
+
+    for _, entry in ipairs(entries) do
+        if (HelpEntryMatches(entry, query) == true) then
+            resultCount = resultCount + 1;
+        end
+    end
+
+    DrawSettingsHeader(query == '' and 'Feature and setting list' or ('Results ' .. tostring(resultCount)));
+
+    local row = 0;
+    for _, entry in ipairs(entries) do
+        if (HelpEntryMatches(entry, query) == true) then
+            row = row + 1;
+            if (row > maxVisible) then
+                break;
+            end
+            imgui.Separator();
+            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, tostring(entry.kind or 'Help'));
+            imgui.SameLine();
+            imgui.Text(tostring(entry.title or ''));
+            imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, tostring(entry.path or ''));
+            imgui.TextWrapped(tostring(entry.text or ''));
+
+            if (entry.tab ~= nil and imgui.Button ~= nil) then
+                local clicked = imgui.Button('Go to ' .. tostring(entry.tab) .. '##HelpGo' .. tostring(row));
+                if (clicked ~= true and imgui.IsItemClicked ~= nil) then
+                    clicked = imgui.IsItemClicked(0) == true;
+                end
+
+                if (clicked) then
+                    GoToHelpEntry(entry);
+                end
+            end
+        end
+    end
+
+    if (resultCount == 0) then
+        imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, 'No matching help entries yet.');
+    elseif (resultCount > maxVisible) then
+        imgui.Separator();
+        imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Showing ' .. tostring(maxVisible) .. ' of ' .. tostring(resultCount) .. '. Type more words to narrow the search.');
+    end
+end
+
+local function TroubleshooterEntryMatches(entry, query)
+    if (query == '') then
+        return true;
+    end
+
+    local checkText = '';
+    for _, check in ipairs(entry.checks or {}) do
+        checkText = checkText .. ' ' .. tostring(check);
+    end
+
+    local haystack = NormalizeHelpText(tostring(entry.title or '') .. ' ' .. tostring(entry.path or '') .. ' ' .. tostring(entry.aliases or '') .. ' ' .. checkText);
+
+    for word in query:gmatch('%S+') do
+        if (haystack:find(word, 1, true) == nil) then
+            return false;
+        end
+    end
+
+    return true;
+end
+
+local function DrawHelpTroubleshooter()
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Help', 'Troubleshooter' });
+    DrawSettingsHeader('Search');
+
+    if (imgui.PushItemWidth ~= nil) then
+        imgui.PushItemWidth(430);
+    end
+
+    if (imgui.InputText ~= nil) then
+        imgui.InputText('##TroubleshooterSearch', troubleshooterSearchBuffer, 96);
+    else
+        imgui.Text(tostring(troubleshooterSearchBuffer[1] or ''));
+    end
+
+    if (imgui.PopItemWidth ~= nil) then
+        imgui.PopItemWidth();
+    end
+
+    imgui.Spacing();
+
+    local query = NormalizeHelpText(troubleshooterSearchBuffer[1]);
+    local resultCount = 0;
+
+    for _, entry in ipairs(troubleshooterEntries) do
+        if (TroubleshooterEntryMatches(entry, query) == true) then
+            resultCount = resultCount + 1;
+        end
+    end
+
+    DrawSettingsHeader(query == '' and 'Checklists' or ('Results ' .. tostring(resultCount)));
+
+    local row = 0;
+    for _, entry in ipairs(troubleshooterEntries) do
+        if (TroubleshooterEntryMatches(entry, query) == true) then
+            row = row + 1;
+            imgui.Separator();
+            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, tostring(entry.title or 'Troubleshooter'));
+            imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, tostring(entry.path or ''));
+
+            for _, check in ipairs(entry.checks or {}) do
+                imgui.TextWrapped('- ' .. tostring(check));
+            end
+
+            if (entry.tab ~= nil and imgui.Button ~= nil) then
+                local clicked = imgui.Button('Go to ' .. tostring(entry.tab) .. '##TroubleshooterGo' .. tostring(row));
+                if (clicked ~= true and imgui.IsItemClicked ~= nil) then
+                    clicked = imgui.IsItemClicked(0) == true;
+                end
+
+                if (clicked) then
+                    GoToHelpEntry(entry);
+                end
+            end
+        end
+    end
+
+    if (resultCount == 0) then
+        imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, 'No matching troubleshooting entries yet.');
+    end
+end
+
+local function DrawHelpTab()
+    if (selectedHelpSection == 'Find Settings') then
+        DrawHelpFindSettings();
+        return;
+    end
+
+    if (selectedHelpSection == 'Troubleshooter') then
+        DrawHelpTroubleshooter();
+        return;
+    end
+
+    DrawHelpUserGuide();
+end
+
 local function DrawSelectedEditorModules()
 if (selectedTab == 'Modules') then
         local selectedModuleName = tostring(selectedModuleWidget or ''):gsub('%s+', ' '):gsub('^%s+', ''):gsub('%s+$', '');
@@ -7744,7 +8342,7 @@ local function DrawSelectedEditorPlates()
     end
 
     loadModeDrawn = false;
-    LibraPlatesSettingsDrawBreadcrumb(T{ selectedTab, selectedEntity, selectedState, GetWidgetDisplayLabel(selectedWidget) });
+    LibraPlatesSettingsDrawBreadcrumb(T{ selectedTab, GetEntityDisplayLabel(selectedEntity), selectedState, GetWidgetDisplayLabel(selectedWidget) });
     LibraPlatesSettingsDrawCurrentWidgetLoadMode();
     imgui.Separator();
 
@@ -7967,6 +8565,11 @@ DrawSelectedEditor = function()
         return;
     end
 
+    if (selectedTab == 'Help') then
+        DrawHelpTab();
+        return;
+    end
+
     if (selectedTab == 'Modules') then
         DrawSelectedEditorModules();
         return;
@@ -8010,18 +8613,24 @@ function settingsUi.Render()
 
     if (began) then
         local ok, err = pcall(function()
+            ApplyPendingHelpNavigation();
             DrawTopTabs();
+            ApplyPendingHelpNavigation();
             imgui.Separator();
             DrawCurrentProfileTopBar();
             imgui.Separator();
 
-            if (selectedTab == 'Settings' or selectedTab == 'Plates' or selectedTab == 'Modules') then
+            if (selectedTab == 'Settings' or selectedTab == 'Plates' or selectedTab == 'Help' or selectedTab == 'Modules') then
                 local availWidth, availHeight = GetContentRegionAvail();
                 local selectorWidth = (selectedTab == 'Plates') and 260 or 190;
 
                 DrawChild('##selector_panel', { selectorWidth, math.max(260, availHeight - 24) }, true, function()
                     if (selectedTab == 'Modules') then
                         DrawModulesSelector();
+                    elseif (selectedTab == 'Help') then
+                        DrawSectionSelector(helpSections, selectedHelpSection, function(section)
+                            selectedHelpSection = section;
+                        end);
                     elseif (selectedTab == 'Settings') then
                         DrawSectionSelector(generalSections, selectedGeneralSection, function(section)
                             selectedGeneralSection = section;
@@ -8034,7 +8643,7 @@ function settingsUi.Render()
                 imgui.SameLine();
 
                 DrawChild('##right_panel', { math.max(280, availWidth - selectorWidth - 12), math.max(260, availHeight - 24) }, false, function()
-                    if (selectedTab == 'Settings') then
+                    if (selectedTab == 'Settings' or selectedTab == 'Help') then
                         DrawSelectedEditor();
                     else
                         DrawRightPanel();

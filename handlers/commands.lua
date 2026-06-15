@@ -20,11 +20,14 @@ local lagTest = require('core.lag_test');
 local diagnostics = require('core.diagnostics');
 local petState = require('core.pet_state');
 local abilityRecast = require('libs.abilityrecast');
+local enemyCasts = require('core.enemy_casts');
 local targetActionRange = require('core.target_action_range');
+local aoeNameHighlight = require('core.aoe_name_highlight');
 local adaptivePerformance = require('core.adaptive_performance');
 local cursorOverlay = require('core.cursor_overlay');
 local petPlate = require('modules.plates.pet');
 local mogJobDebug = require('core.mog_job_debug');
+local luopanStatuses = require('core.luopan_statuses');
 local jobChange = require('core.job_change');
 local globalDefaults = require('config.global');
 local jobDefaults = require('config.widgets.job');
@@ -33,6 +36,7 @@ local buffsDefaults = require('config.widgets.buffs');
 local debuffsDefaults = require('config.widgets.debuffs');
 local playerStatuses = require('core.player_statuses');
 local partyStatuses = require('core.party_statuses');
+local enemyStatuses = require('core.enemy_statuses');
 local npcObjectInfo = require('core.npc_object_info');
 local typeLineDefaults = require('config.widgets.type_line');
 
@@ -75,6 +79,16 @@ local function SplitCommand(command)
     end
 
     return args;
+end
+
+local function CommandSafeCall(fallback, fn)
+    local ok, result = pcall(fn);
+
+    if (ok ~= true or result == nil) then
+        return fallback;
+    end
+
+    return result;
 end
 
 local function FormatDebugNumber(value)
@@ -186,6 +200,173 @@ local function BuildVisibilityDiff(a, b)
     end
 
     return parts;
+end
+
+local function ReadTrustProbeStatusIds(memberPtr)
+    local ids = {};
+    local empty = false;
+
+    if (memberPtr == nil or memberPtr == 0) then
+        return ids;
+    end
+
+    for buffIndex = 0, 31 do
+        if (empty == true) then
+            break;
+        end
+
+        local highBits = CommandSafeCall(0, function()
+            return ashita.memory.read_uint8(memberPtr + 8 + math.floor(buffIndex / 4));
+        end);
+        local shift = math.fmod(buffIndex, 4) * 2;
+        highBits = bit.lshift(bit.band(bit.rshift(highBits, shift), 0x03), 8);
+
+        local lowBits = CommandSafeCall(0, function()
+            return ashita.memory.read_uint8(memberPtr + 16 + buffIndex);
+        end);
+        local statusId = highBits + lowBits;
+
+        if (statusId == 255) then
+            empty = true;
+        elseif (statusId > 0) then
+            ids[#ids + 1] = tostring(statusId);
+        end
+    end
+
+    return ids;
+end
+
+local function GetTrustProbePartyStatusPointer()
+    local pointerAddress = CommandSafeCall(0, function()
+        return AshitaCore:GetPointerManager():Get('party.statusicons');
+    end);
+
+    pointerAddress = tonumber(pointerAddress) or 0;
+
+    if (pointerAddress == 0) then
+        return 0;
+    end
+
+    return tonumber(CommandSafeCall(0, function()
+        return ashita.memory.read_uint32(pointerAddress);
+    end)) or 0;
+end
+
+local function BuildTrustProbeMembers(party, entityManager)
+    local members = {};
+
+    for slot = 0, 17 do
+        local active = CommandSafeCall(0, function() return party:GetMemberIsActive(slot); end);
+        local targetIndex = CommandSafeCall(0, function() return party:GetMemberTargetIndex(slot); end);
+        local serverId = CommandSafeCall(0, function() return party:GetMemberServerId(slot); end);
+        local memberName = CommandSafeCall('', function() return party:GetMemberName(slot); end);
+        local entityName = '';
+        local entityStatus = nil;
+
+        targetIndex = tonumber(targetIndex) or 0;
+        serverId = tonumber(serverId) or 0;
+
+        if (entityManager ~= nil and targetIndex > 0) then
+            entityName = CommandSafeCall('', function() return entityManager:GetName(targetIndex); end);
+            entityStatus = CommandSafeCall(nil, function() return entityManager:GetStatus(targetIndex); end);
+        end
+
+        if (tonumber(active) == 1 or targetIndex > 0 or serverId > 0) then
+            members[#members + 1] = {
+                slot = slot,
+                active = active,
+                targetIndex = targetIndex,
+                serverId = serverId,
+                memberName = memberName,
+                entityName = entityName,
+                entityStatus = entityStatus,
+            };
+        end
+    end
+
+    return members;
+end
+
+local function LogTrustBuffProbe(scanMode)
+    local party = CommandSafeCall(nil, function()
+        return AshitaCore:GetMemoryManager():GetParty();
+    end);
+    local entityManager = CommandSafeCall(nil, function()
+        return AshitaCore:GetMemoryManager():GetEntity();
+    end);
+    local statusPointer = GetTrustProbePartyStatusPointer();
+
+    log.Info('Trust buff probe statusPtr=0x' .. string.format('%X', tonumber(statusPointer) or 0));
+
+    if (party == nil) then
+        log.Warn('Trust buff probe failed: party manager unavailable.');
+        return;
+    end
+
+    local members = BuildTrustProbeMembers(party, entityManager);
+
+    if (scanMode == true and statusPointer ~= 0) then
+        local wanted = {};
+
+        for _, member in ipairs(members) do
+            if ((tonumber(member.serverId) or 0) > 0) then
+                wanted[tonumber(member.serverId)] = member;
+            end
+        end
+
+        local found = 0;
+        for offset = 0, 0x900, 4 do
+            local value = CommandSafeCall(0, function()
+                return ashita.memory.read_uint32(statusPointer + offset);
+            end);
+            local member = wanted[tonumber(value) or 0];
+
+            if (member ~= nil) then
+                found = found + 1;
+                local rowPtr = statusPointer + offset;
+                local ids = ReadTrustProbeStatusIds(rowPtr);
+
+                log.Info(
+                    'Trust buff scan match slot=' .. tostring(member.slot) ..
+                    ' name=' .. tostring(member.memberName) ..
+                    ' server=' .. tostring(member.serverId) ..
+                    ' offset=0x' .. string.format('%X', offset) ..
+                    ' rowPtr=0x' .. string.format('%X', rowPtr) ..
+                    ' ids=' .. (#ids > 0 and table.concat(ids, '/') or 'none')
+                );
+            end
+        end
+
+        if (found == 0) then
+            log.Info('Trust buff scan found no active party/trust server ids near party.statusicons.');
+        end
+
+        return;
+    end
+
+    for _, member in ipairs(members) do
+        local memberPtr = (statusPointer ~= 0) and (statusPointer + (0x30 * member.slot)) or 0;
+        local rawServerId = CommandSafeCall(0, function()
+            return ashita.memory.read_uint32(memberPtr);
+        end);
+        local ids = {};
+
+        if ((tonumber(rawServerId) or 0) == (tonumber(member.serverId) or -1)) then
+            ids = ReadTrustProbeStatusIds(memberPtr);
+        end
+
+        log.Info(
+            'Trust buff probe slot=' .. tostring(member.slot) ..
+            ' active=' .. tostring(member.active) ..
+            ' partyName=' .. tostring(member.memberName) ..
+            ' entityName=' .. tostring(member.entityName) ..
+            ' index=' .. tostring(member.targetIndex) ..
+            ' server=' .. tostring(member.serverId) ..
+            ' rawServer=' .. tostring(rawServerId) ..
+            ' status=' .. tostring(member.entityStatus) ..
+            ' ids=' .. (#ids > 0 and table.concat(ids, '/') or 'none')
+        );
+    end
 end
 
 local function FindAlTaieuFishIndex()
@@ -1169,6 +1350,91 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'trustbuffdebug' or subcommand == 'truststatusdebug') then
+        local action = tostring(args[3] or ''):lower();
+        LogTrustBuffProbe(action == 'scan');
+        return;
+    end
+
+    if (subcommand == 'luopanprobe' or subcommand == 'luopandebug') then
+        local action = tostring(args[3] or 'status'):lower();
+        local seconds = tonumber(args[4]);
+
+        if (action == 'on' or action == 'start') then
+            luopanStatuses.EnableProbe(seconds or 120);
+            return;
+        end
+
+        if (action == 'off' or action == 'stop') then
+            luopanStatuses.DisableProbe();
+            return;
+        end
+
+        if (action == 'status' or action == '') then
+            log.Info(luopanStatuses.GetProbeStatusText());
+            return;
+        end
+
+        log.Info('Usage: /lp luopanprobe on [seconds] | off | status');
+        return;
+    end
+
+        if (subcommand == 'enemystatusdebug' or subcommand == 'enemybuffdebug' or subcommand == 'enemydebuffdebug') then
+        local action = tostring(args[3] or 'status'):lower();
+        local seconds = tonumber(args[4]);
+        local targetIndex = targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
+        local targetName = nil;
+        local targetServerId = 0;
+        local targetEnemy = nil;
+        local targetEngaged = false;
+        local geoRows = {};
+
+        if (targetIndex ~= nil and targetIndex ~= 0) then
+            local entityManager = AshitaCore:GetMemoryManager():GetEntity();
+
+            if (entityManager ~= nil) then
+                targetName = CommandSafeCall(nil, function() return entityManager:GetName(targetIndex); end);
+                targetServerId = CommandSafeCall(0, function() return entityManager:GetServerId(targetIndex); end);
+            end
+
+            targetEnemy = entities.GetEnemy(targetIndex, true);
+            targetEngaged = engagedEnemies.IsEngaged(targetIndex) == true;
+            geoRows = enemyStatuses.GetGeoAuraDebuffRows(targetEnemy ~= nil and targetEnemy.distance or nil, targetEngaged);
+        end
+
+        if (action == 'on' or action == 'capture') then
+            enemyStatuses.EnableDebugForSeconds(seconds or 20, targetServerId);
+            log.Info(
+                'Enemy status capture on for ' .. tostring(seconds or 20) ..
+                ' seconds. target=' .. tostring(targetName) ..
+                ' server=' .. tostring(targetServerId)
+            );
+            return;
+        end
+
+        if (action == 'off') then
+            enemyStatuses.SetDebugEnabled(false);
+            log.Info('Enemy status capture off.');
+            return;
+        end
+
+        if (targetServerId == 0) then
+            log.Warn('Enemy status debug failed: target an enemy first.');
+            return;
+        end
+
+        log.Info(
+            'Enemy target=' .. tostring(targetName) ..
+            ' index=' .. tostring(targetIndex) ..
+            ' server=' .. tostring(targetServerId) ..
+            ' distance=' .. tostring(targetEnemy ~= nil and targetEnemy.distance or nil) ..
+            ' engaged=' .. tostring(targetEngaged) ..
+            ' geoRows=' .. tostring(#geoRows) ..
+            ' ' .. enemyStatuses.GetDebugText(targetServerId)
+        );
+        return;
+    end
+
     if (subcommand == 'fishingdebug' or subcommand == 'gatheringdebug' or subcommand == 'gathering') then
         local action = tostring(args[3] or 'status'):lower();
 
@@ -1234,6 +1500,31 @@ function commands.Handle(e)
             return;
         end
 
+        if (action == 'tracker') then
+            local trackerAction = tostring(args[4] or 'status'):lower();
+            local trackerSeconds = tonumber(args[5]);
+
+            if (trackerAction == 'on') then
+                enemyCasts.EnableDebugForSeconds(trackerSeconds or 20);
+                log.Info('Cast tracker capture on for ' .. tostring(trackerSeconds or 20) .. ' seconds.');
+                return;
+            end
+
+            if (trackerAction == 'off') then
+                enemyCasts.SetDebugEnabled(false);
+                log.Info('Cast tracker capture off.');
+                return;
+            end
+
+            if (trackerAction == 'status') then
+                log.Info(enemyCasts.GetDebugText());
+                return;
+            end
+
+            log.Info('Usage: /lp castdebug tracker on [seconds] | off | status');
+            return;
+        end
+
         if (action == 'on') then
             targetActionRange.EnableDebugForSeconds(seconds or 20);
             log.Info('Cast range debug on for ' .. tostring(seconds or 20) .. ' seconds.');
@@ -1253,7 +1544,12 @@ function commands.Handle(e)
             return;
         end
 
-        log.Info('Usage: /lp castdebug on [seconds] | off | status | check /ma "Cure" <stpc> | packets on [seconds] | packets off | packets status');
+        log.Info('Usage: /lp castdebug on [seconds] | off | status | check /ma "Cure" <stpc> | packets on [seconds] | packets off | packets status | tracker on [seconds] | tracker off | tracker status');
+        return;
+    end
+
+    if (subcommand == 'aoedebug') then
+        log.Info(aoeNameHighlight.GetDebugText());
         return;
     end
 

@@ -1,6 +1,8 @@
 local d3d8 = require('d3d8');
 local ffi = require('ffi');
 local textureLoader = require('core.texture_loader');
+local state = require('core.state');
+local globalDefaults = require('config.global');
 
 local statusIconTextures = {};
 local cache = {};
@@ -80,6 +82,10 @@ local function ScanLocalPacks()
         end
     end
 
+    for _, name in ipairs({ 'HD', 'Tetsouou', 'xiPrime', 'XIView' }) do
+        AddPack(name);
+    end
+
     table.sort(packs, function(a, b)
         return tostring(a):lower() < tostring(b):lower();
     end);
@@ -97,7 +103,7 @@ end
 
 local function GetPreferredLocalPack()
     local packs = GetLocalPacks();
-    local preferred = { 'XIView', 'xiPrime', 'HD' };
+    local preferred = { 'XIView', 'Tetsouou', 'xiPrime', 'HD' };
 
     for _, name in ipairs(preferred) do
         for _, pack in ipairs(packs) do
@@ -118,6 +124,13 @@ local function ResolvePack(iconPack)
     end
 
     return pack;
+end
+
+local function GetGlobalPack()
+    local global = state.GetGlobalSettings(globalDefaults);
+    local statusIcons = global ~= nil and global.statusIcons or nil;
+
+    return ResolvePack(statusIcons ~= nil and statusIcons.iconPack or globalDefaults.statusIcons.iconPack);
 end
 
 local function LoadFromPack(statusId, iconPack)
@@ -184,7 +197,7 @@ end
 
 function statusIconTextures.GetTextureId(statusId, iconPack)
     statusId = tonumber(statusId) or 0;
-    iconPack = ResolvePack(iconPack);
+    iconPack = GetGlobalPack();
 
     if (statusId <= 0) then
         return nil;
@@ -232,11 +245,7 @@ function statusIconTextures.GetPackNames()
         AddPack(pack);
     end
 
-    AddPack('Native');
-
     table.sort(packs, function(a, b)
-        if (a == 'Native') then return false; end
-        if (b == 'Native') then return true; end
         return tostring(a):lower() < tostring(b):lower();
     end);
 

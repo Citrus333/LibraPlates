@@ -910,20 +910,8 @@ function statusIcons.DrawSettings(settings, context)
 
     imgui.Separator();
     DrawSectionHeader(itemLabel .. ' settings');
-    settings.iconPack = statusIconTextures.ResolvePackName(settings.iconPack or defaults.iconPack);
-    settings.iconPack, settings.iconSize = DrawComboAndSliderRow(
-        'icon_pack_size',
-        itemLabel .. ' pack',
-        statusIconTextures.GetPackNames(),
-        settings.iconPack or statusIconTextures.GetDefaultPackName(),
-        'icon_pack',
-        itemLabel .. ' size',
-        'icon_size',
-        settings.iconSize,
-        8,
-        160,
-        1
-    );
+    settings.iconPack = nil;
+    settings.iconSize = DrawSingleSliderRow('icon_size', itemLabel .. ' size', 'icon_size', settings.iconSize, 8, 160, 1);
 
     settings.growthDirection = DrawComboRow(
         'Growth direction',

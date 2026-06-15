@@ -654,20 +654,6 @@ function name.DrawSettings(settings, context)
         settings.claimPartyColor = DrawLabeledColor('Claimed', settings.claimPartyColor);
         settings.claimOtherColor = DrawLabeledColor('Claimed by others', settings.claimOtherColor);
         settings.claimCallForHelpColor = DrawLabeledColor('Call for help', settings.claimCallForHelpColor);
-
-        imgui.Separator();
-        DrawSectionHeader('Difficulty font colors');
-        settings.difficultyColorsEnabled = DrawToggle('Use difficulty font colors', settings.difficultyColorsEnabled);
-
-        if (settings.difficultyColorsEnabled == true) then
-            settings.twColor = DrawColor('TW', settings.twColor);
-            settings.epColor = DrawColor('EP', settings.epColor);
-            settings.dcColor = DrawColor('DC', settings.dcColor);
-            settings.emColor = DrawColor('EM', settings.emColor);
-            settings.tColor = DrawColor('T', settings.tColor);
-            settings.vtColor = DrawColor('VT', settings.vtColor);
-            settings.itColor = DrawColor('IT', settings.itColor);
-        end
     end
 
     imgui.Separator();

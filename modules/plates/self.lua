@@ -148,7 +148,9 @@ local function TrimWorldPlateCache()
     cachedWorldPlates[oldestKey] = nil;
 end
 
-local function BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName)
+local function BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName, globalSettings)
+    local statusIconPack = globalSettings ~= nil and globalSettings.statusIcons ~= nil and globalSettings.statusIcons.iconPack or '';
+
     return table.concat({
         'v=1',
         'index=' .. tostring(center ~= nil and center.index or ''),
@@ -159,6 +161,7 @@ local function BuildWorldCacheSignature(plateData, center, stateName, targetStat
         'layout=' .. tostring(layoutStateName or ''),
         'aoe=' .. aoeNameHighlight.GetSignature(center ~= nil and center.index or 0, 'self'),
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
+        'statusIconPack=' .. tostring(statusIconPack),
         'debug=' .. tostring(worldMarkerProbe.GetClickDebug() == true),
         'plate=' .. StableTableKey(plateData),
     }, '\n');
@@ -218,7 +221,7 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
 end
 
 local function BuildAoeNameSettings(layoutStateName, nameSettings, targetIndex)
-    local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
+    local aoeRangeSettings = state.GetWidgetSettings('Self', 'Combat', 'AOE range', aoeRangeDefaults);
 
     if (aoeRangeSettings.enabled ~= true or aoeNameHighlight.IsHighlighted(targetIndex, 'self') ~= true) then
         return nameSettings;
@@ -327,7 +330,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
             end
 
-            if (iconSettings.showTimers == true and timerSeconds ~= nil) then
+            if (iconSettings.showTimers == true and timerSeconds ~= nil and timerSeconds > 0) then
                 timerText = statusTimerFormat.Format(timerSeconds);
             end
 
@@ -446,6 +449,10 @@ local function GetLiveSelfStateName(center)
 end
 
 local function GetLayoutStateName(stateName)
+    if (stateName == 'Resting') then
+        return 'Idle';
+    end
+
     return stateName;
 end
 
@@ -525,13 +532,57 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
         return nil, 0;
     end
 
+    if (castData.interrupted == true and castBarSettings.interruptBarEnabled == false) then
+        return nil, 0;
+    end
+
     local castTime = math.max(0.1, tonumber(castData.castTime) or 0.1);
     local elapsed = math.max(0.0, os.clock() - (tonumber(castData.startTime) or os.clock()));
+    if (castData.interrupted == true) then
+        elapsed = math.max(0.0, tonumber(castData.elapsed) or elapsed);
+    end
     local castPercent = math.max(0, math.min(100, (elapsed / castTime) * 100));
+    if (castData.interrupted == true and tonumber(castData.progress) ~= nil) then
+        castPercent = math.max(0, math.min(100, tonumber(castData.progress) or 0));
+    end
+    local displayText = (castData.interrupted == true)
+        and tostring(castBarSettings.interruptedText or castBarDefaults.interruptedText or 'Interrupted')
+        or tostring(castData.spellName or '');
+    local showText = castBarSettings.showSpellName ~= false;
+    if (castData.interrupted == true) then
+        showText = castBarSettings.interruptTextEnabled == true;
+    end
+    local textUseSmallFont = castBarSettings.useSmallFont == true;
+    local fontSize = castBarSettings.fontSize;
+    local textColor = castBarSettings.textColor;
+    local textOutlineEnabled = castBarSettings.textOutlineEnabled == true;
+    local textOutlineColor = castBarSettings.textOutlineColor;
+    local textOutlineSize = tonumber(castBarSettings.textOutlineSize) or castBarDefaults.textOutlineSize;
+    local textOffsetX = tonumber(castBarSettings.textOffsetX) or castBarDefaults.textOffsetX;
+    local textOffsetY = tonumber(castBarSettings.textOffsetY) or castBarDefaults.textOffsetY;
+
+    if (castData.interrupted == true) then
+        textUseSmallFont = castBarSettings.interruptUseSmallFont == true;
+        fontSize = castBarSettings.interruptFontSize or castBarDefaults.interruptFontSize;
+        textColor = castBarSettings.interruptTextColor or castBarDefaults.interruptTextColor;
+        textOutlineEnabled = castBarSettings.interruptTextOutlineEnabled == true;
+        textOutlineColor = castBarSettings.interruptTextOutlineColor or castBarDefaults.interruptTextOutlineColor;
+        textOutlineSize = tonumber(castBarSettings.interruptTextOutlineSize) or castBarDefaults.interruptTextOutlineSize;
+        textOffsetX = tonumber(castBarSettings.interruptTextOffsetX) or castBarDefaults.interruptTextOffsetX;
+        textOffsetY = tonumber(castBarSettings.interruptTextOffsetY) or castBarDefaults.interruptTextOffsetY;
+    end
+    local barColor = castBarSettings.color or castBarDefaults.color;
+    if (castData.interrupted == true and castBarSettings.interruptColorEnabled ~= false) then
+        barColor = castBarSettings.interruptedColor or castBarDefaults.interruptedColor;
+    end
     local spellIconId = tonumber(castData.spellIconId);
-    local spellIconTextureId = castBarSettings.showSpellIcon == true
-        and spellIconTextures.GetTextureId(spellIconId)
-        or nil;
+    local spellIconTextureId = nil;
+
+    if (castBarSettings.showSpellIcon == true) then
+        spellIconTextureId = statusIconTextures.GetTextureId(castData.spellStatusId)
+            or spellIconTextures.GetGeoTextureId(castData.spellId)
+            or spellIconTextures.GetTextureId(spellIconId);
+    end
 
     return {
         enabled = true,
@@ -541,22 +592,22 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
         offsetY = tonumber(castBarSettings.offsetY) or castBarDefaults.offsetY,
         anchorTo = castBarSettings.anchorTo or castBarDefaults.anchorTo,
         anchorPoint = castBarSettings.anchorPoint or castBarDefaults.anchorPoint,
-        color = castBarSettings.color or castBarDefaults.color,
+        color = barColor,
         backgroundColor = castBarSettings.backgroundColor or castBarDefaults.backgroundColor,
         borderColor = castBarSettings.borderColor or castBarDefaults.borderColor,
         borderSize = tonumber(castBarSettings.borderSize) or castBarDefaults.borderSize,
         texture = castBarSettings.texture or castBarDefaults.texture,
         textureId = barTextures.GetTextureId(castBarSettings.texture or castBarDefaults.texture),
-        text = (castBarSettings.showSpellName ~= false) and tostring(castData.spellName or '') or '',
-        textOffsetX = tonumber(castBarSettings.textOffsetX) or castBarDefaults.textOffsetX,
-        textOffsetY = tonumber(castBarSettings.textOffsetY) or castBarDefaults.textOffsetY,
-        fontFamily = fonts.GetRole(globalSettings, castBarSettings.useSmallFont == true),
-        fontFlags = fonts.GetRoleFlags(globalSettings, castBarSettings.useSmallFont == true),
-        fontSize = textScale.ToTextureFontSize(castBarSettings.fontSize, castBarDefaults.fontSize),
-        textColor = castBarSettings.textColor or castBarDefaults.textColor,
-        textOutlineEnabled = castBarSettings.textOutlineEnabled == true,
-        textOutlineColor = castBarSettings.textOutlineColor or castBarDefaults.textOutlineColor,
-        textOutlineSize = tonumber(castBarSettings.textOutlineSize) or castBarDefaults.textOutlineSize,
+        text = showText == true and displayText or '',
+        textOffsetX = textOffsetX,
+        textOffsetY = textOffsetY,
+        fontFamily = fonts.GetRole(globalSettings, textUseSmallFont),
+        fontFlags = fonts.GetRoleFlags(globalSettings, textUseSmallFont),
+        fontSize = textScale.ToTextureFontSize(fontSize, (castData.interrupted == true and castBarDefaults.interruptFontSize) or castBarDefaults.fontSize),
+        textColor = textColor or castBarDefaults.textColor,
+        textOutlineEnabled = textOutlineEnabled,
+        textOutlineColor = textOutlineColor or castBarDefaults.textOutlineColor,
+        textOutlineSize = textOutlineSize,
         separateLabelOffsets = true,
         iconTextureId = spellIconTextureId,
         iconSize = tonumber(castBarSettings.spellIconSize) or castBarDefaults.spellIconSize,
@@ -610,9 +661,9 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local hpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'HP Bar', barDefaults);
     local mpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'MP Bar', mpBarDefaults);
     local tpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'TP Bar', tpBarDefaults);
-    local castData = enemyCasts.GetActiveCast(center.serverId);
+    local castData = enemyCasts.GetActiveCast(center.serverId) or enemyCasts.GetInterruptedCast(center.serverId);
     local castBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'Cast bar', castBarDefaults);
-    local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
+    local aoeRangeSettings = state.GetWidgetSettings('Self', 'Combat', 'AOE range', aoeRangeDefaults);
     local buffsSettings = state.GetWidgetSettings('Self', layoutStateName, 'Buffs', buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings('Self', layoutStateName, 'Debuffs', debuffsDefaults);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
@@ -794,8 +845,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         'aoe=' .. tostring(nameAoeActive == true),
         'size=' .. tostring(nameTextSize or ''),
         'color=' .. StableTableKey(nameAoeActive == true and aoeRangeSettings.fontColor or ''),
-        'icon=' .. tostring(aoeRangeSettings.iconEnabled == true) .. ':' .. tostring(aoeRangeSettings.iconSize or ''),
-        'highlight=' .. tostring(aoeRangeSettings.highlightEnabled == true) .. ':' .. tostring(aoeRangeSettings.backgroundFile or '') .. ':' .. tostring(aoeRangeSettings.backgroundSpacing or '') .. ':' .. StableTableKey(aoeRangeSettings.backgroundColor or ''),
+        'icon=' .. tostring(aoeRangeSettings.iconEnabled == true) .. ':' .. tostring(aoeRangeSettings.iconSize or '') .. ':' .. tostring(aoeRangeSettings.iconOffsetX or '') .. ':' .. tostring(aoeRangeSettings.iconOffsetY or ''),
     }, ';');
 
     local plateData = {
@@ -939,6 +989,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     if (plateData.aoeNameActive == true) then
         aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
     end
+
     plateData.debugClickRects = worldMarkerProbe.GetClickDebug();
     plateData.debugClickRectColor = 0x01FFD400;
 
@@ -977,14 +1028,22 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         local logoutActive = restingTick.IsLogoutActive(restingSettings);
         local hideAtFullHp = restingSettings.hideAtFullHp == true and hpPercent >= 100;
         local hideAtFullMp = restingSettings.hideAtFullMp == true and mpIsFull == true;
+        local shouldHideResting = false;
         local tick = nil;
-        if (logoutActive == true or (hideAtFullHp ~= true and hideAtFullMp ~= true)) then
+
+        if (restingSettings.hideAtFullHp == true and restingSettings.hideAtFullMp == true) then
+            shouldHideResting = hideAtFullHp == true and hideAtFullMp == true;
+        else
+            shouldHideResting = hideAtFullHp == true or hideAtFullMp == true;
+        end
+
+        if (logoutActive == true or shouldHideResting ~= true) then
             tick = restingTick.Get(center.status, center.hp, center.mp, center.maxMp, restingSettings);
         else
             restingTick.Reset();
         end
 
-        if ((logoutActive == true or (hideAtFullHp ~= true and hideAtFullMp ~= true)) and tick ~= nil) then
+        if ((logoutActive == true or shouldHideResting ~= true) and tick ~= nil) then
             plateData.extraBars = plateData.extraBars or {};
             plateData.extraBars[#plateData.extraBars + 1] = {
                 kind = 'resting',
@@ -1031,7 +1090,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local cachedWorldPlate = cachedWorldPlates[cacheKey];
 
     if (cacheEligible == true) then
-        signature = BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName);
+        signature = BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName, globalSettings);
         vitalSignature = BuildWorldVitalSignature(
             center,
             hpPercent,
@@ -1039,6 +1098,10 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             tpValue,
             castPercent,
             castBar ~= nil and castBar.text or '',
+            castBar ~= nil and StableTableKey(castBar.color) or '',
+            castBar ~= nil and tostring(castBar.fontSize or '') or '',
+            castBar ~= nil and StableTableKey(castBar.textColor) or '',
+            castBar ~= nil and tostring(castBar.textOffsetX or '') .. ':' .. tostring(castBar.textOffsetY or '') or '',
             stateName,
             targetStateName,
             layoutStateName,
@@ -1046,7 +1109,11 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             targeting.GetGatheringDisplaySignature()
         );
 
-        if (cachedWorldPlate ~= nil and cachedWorldPlate.signature == signature) then
+        if (
+            cachedWorldPlate ~= nil and
+            cachedWorldPlate.signature == signature and
+            cachedWorldPlate.vitalSignature == vitalSignature
+        ) then
             canvasTexture.TouchKey(cachedWorldPlate.textureKey);
             cachedWorldPlate.lastUsed = os.clock();
             perfMeter.Count('self.cache.hit', 1);

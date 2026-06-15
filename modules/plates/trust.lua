@@ -347,6 +347,10 @@ local function GetLayoutStateName(trust, targetStateName)
     return 'Idle';
 end
 
+local function ResolveFriendlyAoeRangeSettings()
+    return state.GetWidgetSettings('Self', 'Combat', 'AOE range', aoeRangeDefaults);
+end
+
 local function QueueCachedTrust(trust, cached, targetStateName, layoutStateName, hpPercent, mpPercent, tpValue, useTargetOverlay)
     if (cached == nil or cached.texture == nil) then
         return false;
@@ -409,7 +413,7 @@ local function QueueTrust(trust)
     local tpBarSettings = state.GetWidgetSettings('Trust', layoutStateName, 'TP Bar', tpBarDefaults);
     local buffsSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Buffs', trustBuffDefaults);
     local debuffsSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Debuffs', debuffsDefaults);
-    local aoeRangeSettings = state.GetWidgetSettings('Self', layoutStateName, 'AOE range', aoeRangeDefaults);
+    local aoeRangeSettings = ResolveFriendlyAoeRangeSettings();
     local globalSettings = state.GetGlobalSettings(globalDefaults);
     local hpPercent = ClampPercent(trust.hpPercent, 100);
     local mpPercent = ClampPercent(trust.mpPercent, 100);
@@ -452,6 +456,7 @@ local function QueueTrust(trust)
         signature = table.concat({
             'v=1',
             'policy=' .. canvasTexture.GetRenderPolicyKey(),
+            'statusIconPack=' .. tostring(globalSettings ~= nil and globalSettings.statusIcons ~= nil and globalSettings.statusIcons.iconPack or ''),
             'name=' .. tostring(trust.name or ''),
             'layout=' .. tostring(layoutStateName or ''),
             'status=' .. tostring(trust.status or ''),
@@ -461,7 +466,7 @@ local function QueueTrust(trust)
             'tp=' .. tostring(tpValue),
             'enmity=' .. BoolKey(enmityEnabled),
             'aoe=' .. aoeNameHighlight.GetSignature(trust.index, 'trust'),
-            'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'highlightEnabled', 'backgroundFile', 'autoPlaceBackground', 'backgroundAutoPlaceAnchor', 'backgroundSpacing', 'backgroundWidth', 'backgroundHeight', 'backgroundOffsetX', 'backgroundOffsetY', 'backgroundColor' }),
+            'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),

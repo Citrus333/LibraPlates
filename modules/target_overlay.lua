@@ -28,6 +28,7 @@ local DrawImage;
 local smnMainJobId = 15;
 local drgMainJobId = 14;
 local pupMainJobId = 18;
+local geoMainJobId = 21;
 
 local function CleanDisplayName(name)
     local text = tostring(name or ''):gsub('\170', '');
@@ -299,6 +300,7 @@ local function ResolveEntityContext(index)
     local selfEntity = entities.GetSelf();
     local ownSmnPet = nil;
     local ownDrgPet = nil;
+    local ownLuopan = nil;
     local entityName = 'Enemy';
     local targetType = 'enemy';
     local valid = true;
@@ -308,6 +310,8 @@ local function ResolveEntityContext(index)
         ownSmnPet = entities.GetOwnSmnPet();
     elseif (entities.GetPlayerMainJobId() == drgMainJobId) then
         ownDrgPet = entities.GetOwnDrgPet();
+    elseif (entities.GetPlayerMainJobId() == geoMainJobId) then
+        ownLuopan = entities.GetOwnLuopan();
     end
 
     if (
@@ -335,6 +339,13 @@ local function ResolveEntityContext(index)
         valid = true;
     elseif (entities.GetPlayerMainJobId() == pupMainJobId and entities.IsOwnPetIndex(index) == true) then
         entityName = 'Automaton';
+        targetType = 'pet';
+        valid = true;
+    elseif (
+        (ownLuopan ~= nil and tonumber(ownLuopan.index) == tonumber(index)) or
+        entities.IsOwnLuopanIndex(index) == true
+    ) then
+        entityName = 'Luopan';
         targetType = 'pet';
         valid = true;
     elseif (selfEntity ~= nil and tonumber(selfEntity.index) == tonumber(index)) then
@@ -367,6 +378,7 @@ local function ResolveEntityContext(index)
             and ((ownSmnPet.petType == 'spirit') and 'Spirit' or 'Avatar')
             or ((ownDrgPet ~= nil and tonumber(ownDrgPet.index) == tonumber(index)) and 'Wyvern')
             or ((entities.GetPlayerMainJobId() == pupMainJobId and entities.IsOwnPetIndex(index) == true) and 'Automaton')
+            or (((ownLuopan ~= nil and tonumber(ownLuopan.index) == tonumber(index)) or entities.IsOwnLuopanIndex(index) == true) and 'Luopan')
             or ((ent ~= nil and ent.Status == 1) and 'Combat' or 'Idle'),
         valid = valid,
         partySlot = GetPartySlotInfo(index),

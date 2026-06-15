@@ -2,6 +2,10 @@
 
 This file is for shared testing notes between Lila, her husband, and Codex.
 
+## Hard Rules
+
+- LibraPlates must not read from, require, depend on, or assume files from any other installed addon folder at runtime. Bundled/imported assets are allowed only when they are copied into the LibraPlates folder and become LibraPlates-owned files.
+
 ## Reference
 
 - Good restore point: `C:\catseyexi\catseyexi-client\Ashita\addons\LibraPlates\_rollback_safety_20260526-141407-perfect-engaged-overlay`.
@@ -16,12 +20,16 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 ### Priority
 
+- Luopan status icons: `core\luopan_statuses.lua` tracks own GEO job ability ids `346` Lasting Emanation as status `515`, `347` Ecliptic Attrition as status `516`, and `351` Dematerialize as status `518`. `modules\plates\pet.lua` renders these through `Luopan > Luopan > Buffs`. Lasting/Ecliptic use a provisional 300s display window because the job ability entries do not include durations. Probe command: `/lp luopanprobe on [seconds] | off | status` logs matching action packets for ability ids `346/347/351` and status action params `515/516/518`.
 - Clean action queue logging format and remove duplicate spam before any logic changes.
 - Keep `/st` range queue/packet parsing disabled until stability checks are green.
 - Only next: rework action-range parsing if still needed.
 
 ### General / Settings
 
+- Help tab: now uses a side menu with `User Guide`, `Find Settings`, and `Troubleshooter`. Find Settings combines curated entries with generated Plate widget entries and `Go` buttons. Troubleshooter has starter checklists and player-language synonyms such as enmity/hate/threat/aggro, AOE/radius/circle, and performance/fps/lag.
+- Help follow-up: expand User Guide and Troubleshooter over time with exact row-level anchors, more synonyms, and common "why is X not showing/working?" cases as they come up in testing.
+- Settings UI: `Modules` tab is hidden for now. Module code/settings remain in place, but user-facing access should happen through `Plates` contexts and Help search. Follow-up: remove the unused Modules-tab code/settings path entirely once we confirm no unique settings still depend on it.
 - Replace native mouse.
 - Game mode is not reading properly.
 - Warning screen color scheme is still red.
@@ -33,7 +41,6 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 ### Enemy
 
 - Add Enemy cast bar settings.
-- Cast bar bug: when a spell cast is interrupted, the cast bar restarts instead of stopping/clearing.
 - Enemy preview needs long/short name examples.
 - Enemy level/difficulty follow-up: decide what level text/color should show for mobs that are effectively impossible to gauge normally.
 - Claim state color settings follow-up: add outline color controls for each Enemy claim state.
@@ -60,6 +67,8 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 ### Self
 
+- Self castbar improvement: manual movement interrupts now stop LP's own castbar early and can show the remaining lockout on the same castbar. Cast bar settings now include `Interrupt bar`, optional interrupt color, and optional interrupt text with separate font/outline/position controls. This is intentionally better than native, which keeps the castbar running until the late interrupt message.
+- Resting/logout follow-up: shutdown/logout timer is too short and needs tuning.
 - Move Resting out of the dropdown to its own setting and check the timer bug.
 - Self Quick Menu idea: add party invite actions/state, including accepting an invite and showing/handling invite pending.
 - DoH/DoL activity idea: add a ring timer for the cooldown before the player can fish, craft, or gather again.
@@ -91,6 +100,25 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Distance meter should only show on Target/Subtarget.
 - Range arrow color only works out of combat.
 - AOE range/highlight visuals should only trigger from the player's own AOE actions/casts, and should not false-trigger on queued single-target heals.
+- AOE offensive preview testing model:
+  - LP AOE style should mirror native enlarged names during active `<st>` spell selection; direct `<t>` casts should not create an LP-only helper preview.
+  - Offensive AOE only highlights enemies. Self, players, trusts, and pets do not get offensive AOE styling even when inside the circle.
+  - The `<st>` mob is always affected for target-centered offensive AOE and should get the AOE style; other enemies only highlight when inside that spell's AOE radius.
+  - AOE style must visually beat Enemy tactical/Combat/Target/Subtarget styling. Offensive AOE style belongs in Enemy Tactical settings; Enemy runtime reads only Enemy Tactical AOE settings, so hidden Self/Enemy Idle AOE buckets cannot leak colors into in-range enemies.
+  - AOE highlight background was removed from the feature path because it looks bad on world enemies. AOE styling now supports font color/size and optional icon only.
+  - Enemy Tactical `AOE range (module)` preview now shows the AOE font size/color and optional icon. Icon X/Y controls are exposed when `Show icon` is enabled.
+  - Defensive/friendly AOE styling uses `Self > Tactical > AOE range (module)` for Self/PC/Trust plates. This row is visible again and previews the friendly plate/icon instead of the Enemy offensive preview.
+  - Defensive AOE classification now also checks the active subtarget kind, so friendly-target casts such as Curaga stay on the friendly AOE path even if resource target flags look enemy-like.
+  - Settings cleanup: offensive AOE range styling should not be configured from Self World/Tactical/Resting/Fishing/Crafting; those lists no longer show `AOE range (module)`.
+  - Source rules to verify per spell/job: Black Magic -ga/Poisonga source is the `<st>` mob; Blue Magic offensive AOE source is self; pet BP/ability AOE source is pet; GEO Indi aura source is self/player and moves with the GEO.
+  - Pet BP/ability AOE center lookup now uses the shared own-pet resolver and logs `centerMode`/`pet` in `/lp aoedebug`, so SMN tests can confirm whether LP is centering on the pet or falling back to the selected target.
+  - SMN BP debug now also logs selected-target distance from the AOE center and prioritizes enemies in the nearby list; current Thunderspark test reported `centerMode=pet`/`center=Ramuh`, but the visible blue circle may still be the native game helper.
+  - Subtarget range-arrow colors for loaded AOE spells should use the action's target/cast range, not the AOE radius. `target_module_marker` now falls back to the live AOE action target range when the normal queued action-range path has no value.
+  - Candidate testing list from Lila: BLM true offensive AOE is the -ga line; WHM has Banishga/Banishga II; BLU has many self-centered offensive/status AOEs such as Sheep Song, Soporific, Yawn, Blastbomb, Grand Slam, Frypan, Maelstrom, Bomb Toss, Ice Break, Temporal Shift, Radiant Breath, Cold Wave, Corrosive Ooze; SMN needs BP/source testing such as Thunderspark and avatar AOEs; GEO enemy-affecting aura tests include Geo-Poison (5), Geo-Slow (52), Geo-Torpor (56), Geo-Slip (62), Geo-Languor (68), Geo-Paralysis (72), and Geo-Vex (74).
+  - Pet-job AOE testing matrix from Lila: SMN Astral Flow AoEs include Searing Light, Howling Moon, Inferno, Earthen Fury, Tidal Wave, Aerial Blast, Diamond Dust, Judgment Bolt, Ruinous Omen, and Zantetsuken (75); regular SMN BP AoEs include Thunderspark, Sleepga, Lunar Cry, Somnolence, Nightmare, and possibly Meteorite depending on server behavior, while Nether Blast is not AoE.
+  - BST AOE depends on pet/jug family; candidates include Sheep Song, Scream, Whirl Claws, Cursed Sphere, Seed Spray, and Spinning Top, while moves such as Power Attack are single target.
+  - PUP AOE is mainly automaton spell behavior: Stormwaker -ga spells and Soulsoother Banishga; exact list depends on head/frame/attachments.
+  - DRG wyvern breaths are generally single-target/cone style rather than true farming AoE, so DRG is low priority for LP AOE preview testing.
 - Target/Subtarget module settings seem to be Enemy settings applying to all entity types.
 - Target/Subtarget module ownership is not resolved. Do not remove Target/Subtarget from the Modules tab without Lila explicitly approving that direction.
 - Lock-on icon anchoring/scoping needs review; keep future cleanup focused on Enemy-only scope unless Lila approves broader entity behavior.
@@ -124,6 +152,21 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 ## Done
 
+- 2026-06-15 - Status icon theme cleanup:
+  - Settings `Font` is now `Theme`, and status icons have one global `Status icon pack` there instead of separate Buff/Debuff pack dropdowns on every plate.
+  - The visible status pack list is local pack based (`HD`, `Tetsouou`, `xiPrime`, `XIView` when present); `Native` remains only an internal fallback path.
+  - Castbar spell icons now use LibraPlates-owned `data\spell_status_ids.lua` before falling back to spell icons, so spells such as Protect/Shell can render the same selected status-pack icon as the buff after the cast lands.
+  - GEO/Indi cast fallback now resolves through the same global status pack, and `assets\images\geo-statuses` is reserved for Luopan preview art instead of duplicate numbered status icons.
+- 2026-06-14 - Moved Resting settings to Self World:
+  - `Resting (module)` is now listed under `Self > World` instead of the separate Self Resting plate dropdown.
+  - Live resting still detects player status `33`, but uses the Self World layout and adds the Resting module overlay instead of reading a separate Resting plate layout.
+- 2026-06-15 - Resting tick timer first-cycle sync:
+  - Resting displays the normal first 20s countdown, but if the first meaningful HP/MP gain is observed early/late it immediately starts the 10s repeat countdown from that observed tick.
+  - Removed the `First offset` setting because the first cycle is now data-synced instead of guessed; `Repeat offset` remains for small post-sync tuning.
+  - When both `Hide at full HP` and `Hide at full MP` are checked, Resting hides only when both are full. If only one is checked, that single condition still hides it.
+- 2026-06-14 - Removed abandoned Enemy Name difficulty colors:
+  - Enemy World/Tactical Name settings no longer show the old `Difficulty font colors` block.
+  - Name defaults and Enemy name rendering no longer use Name difficulty color keys; Level difficulty colors remain unchanged.
 - 2026-06-14 - Target/Subtarget ownership moved out of World:
   - Self, PC, Enemy, and Trust World settings no longer list Target/Subtarget module rows.
   - NPC/Object keep Target/Subtarget module rows inside the single visible World plate list, but those rows edit hidden Combat/Tactical storage.
@@ -134,6 +177,8 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - 2026-06-14 - NPC/staff capture output moved out of the live addon folder:
   - `/lp` NPC missing capture and staff capture now write to `C:\Users\Lila\Documents\ffxi Addon Work\WORK` instead of the removed `TEMP WORK FOLDER`.
 - 2026-06-14 - Reduced no-target to target/subtarget native-hide freeze risk:
+  - Cast tracking now clears/ignores interrupted-cast action messages, including observed `type=8 message=0` packets, instead of treating them as a fresh cast start; this is the first step before any separate interrupt recovery/donut indicator.
+  - Aura-style self buffs whose memory timer resolves to zero/expired no longer draw permanent `0s`; status timer text is only drawn when the timer value is above zero.
   - The native target startup burst no longer hard-hides party primitives through the draw hook; the burst is target-primitive only.
   - The hard-hide draw hook is enabled while Libra replaces native party/target UI so keyboard targeting cannot show the native arrow for the first few milliseconds, but the hook now writes only the target primitive.
   - Target/Subtarget module markers are prewarmed one per frame after load/login so the first real `/st` should not pay every arrow/background/chevron texture setup cost at once.
@@ -194,6 +239,8 @@ This file is for shared testing notes between Lila, her husband, and Codex.
   - Settings now expose `Horizontal spread` and `Target blocker width` so users can choose between tighter vertical stacks, wider WoW-style fanning, and softer/harder fixed target blockers.
 - 2026-06-14 - Reduced idle canvas texture cache churn:
   - Canvas render textures now include their render size in the internal cache key, so a plate key changing between canvas sizes no longer releases and recreates the same cache entry every frame.
+  - Husband crowded-player report `20260614-185549` showed `Plate PC avg=33.09ms` and `canvasRenders=31` while `World draw avg=0.10ms`; the lag was cold PC canvas construction, not the stacking resolver.
+  - Idle non-party PC plate canvas builds are now capped per frame in crowded areas, so large groups warm in over several frames instead of building every nearby PC texture at once.
   - PC, NPC/Object, Enemy, and Trust plate caches now clear once when Settings opens instead of clearing every rendered frame while the config window is open.
   - Detailed performance monitor now shows the last canvas render key/size and last evicted texture key to make the remaining FPS drop easier to isolate.
   - Performance monitor now has a `Save report` button that writes a `.txt` snapshot to `config\addons\LibraPlates\performance`.
@@ -445,7 +492,7 @@ Add new notes below. Newest notes can go at the top.
 - Peer Job component layout direction: Peer > Job uses compact paired rows. Display is a dropdown; Icon theme appears on the same row only when Icon display is selected; Position X/Y share one row; Icon mode shows Icon size and live/preview Peer renders the selected job icon; Text mode shows font size/color and outline settings. A similar shared normal Job editor pass was started too, but current testing focus remains Peer.
 - Peer Level component now includes difficulty font colors in the Peer style: Use difficulty font colors toggle plus TW/EP/DC/EM/T/VT/IT color rows. Live Enemy Peer colors Level from mob level versus viewer level; preview uses the T color as the sample.
 - Enmity module now follows the old addon Healer/Tank behavior while staying icon-only for now. The icon asset lives at `assets/images/enmity_icon.png`; Modules > Enmity exposes Active, Mode, Position X/Y, and Icon size. Healer mode marks the ally plate currently targeted by an enemy; Tank mode marks the enemy currently targeting self. Do not put background/highlight controls in Enmity yet; make those part of the future reusable highlight/effect system.
-- Resting module first rebuilt pass: live Self now treats entity `Status == 33` as Resting, keeps the regular Self layout sourced from Idle, and overlays a Resting tick bar from `global.resting`. Discord research says perfect accuracy is not possible from normal client state because rest gains are delivered on imperfect server update ticks. The tracker now syncs only from meaningful MP jumps (`mpTickThreshold`, default 12), not HP, because cures/regen can fake HP ticks. If the expected tick is late, the bar waits at `0s`; once the MP jump arrives, the next cycle is shortened by the overrun. At full MP it falls back to normal timer wrapping.
+- Resting module first rebuilt pass: live Self now treats entity `Status == 33` as Resting, keeps the regular Self layout sourced from Idle, and overlays a Resting tick bar from `global.resting`. Discord research says perfect accuracy is not possible from normal client state because rest gains are delivered on imperfect server update ticks. Current tracker shows the first 20s countdown, starts the 10s repeat countdown from the first meaningful HP/MP gain, then resyncs later repeats from meaningful MP jumps (`mpTickThreshold`, default 12). At full MP it falls back to normal timer wrapping.
 - Fishing module first rebuilt pass: old addon only had an empty `ui/widgets/fishing.lua`; useful source was the old Self module mapping plus worksheet status IDs. Current module treats statuses 38-43, 50-53, and 56-62 as Fishing, reuses the Self Idle layout as the base, and listens for fishing gut-feeling chat lines. Result mapping: didn't catch anything -> `fishing_00.png` + `You didn't catch anything`; good feeling -> `fishing_01.png` + `Easy catch`; don't know enough skill -> `fishing_02.png` + `Moderate catch`; fairly sure -> `fishing_03.png` + `Hard catch`; positive not enough -> `fishing_04.png` + `Very difficult catch`; bad feeling -> `fishing_05.png` + `Extreme catch`; terrible feeling -> `fishing_06.png` + `Dangerous catch`. These images are separate result icons, not animation frames, and live in `assets/images/fishing`. Settings live in Modules > Fishing and Plates > Self > Idle > Fishing (module).
 - Settings UI direction: reset actions should live at the bottom of each settings panel like the existing "Reset X position/settings" pattern, but Lila prefers actual buttons over yellow text links. Preserve the modal/dimmed confirmation behavior. First cleanup done in Plates > Target/Subtarget placement by removing the top "Reset placement nudges" button and adding bottom reset-position/settings buttons with confirmation. Follow-up pass should convert the remaining yellow reset links to bottom buttons without changing their behavior.
 - Focus pivot: prioritize getting all settings represented for all entities/states before continuing deep native-position investigations. First low-risk slice completed: PC settings now expose Background and Distance; NPC/Object settings now expose Subtarget module; live PC and NPC/Object plates now consume Background and Distance settings; settings preview shows Distance for PC/NPC/Object as well as Enemy.

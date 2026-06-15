@@ -4,6 +4,9 @@ return {
         largeFamily = 'Default',
         smallFamily = 'Default',
     },
+    statusIcons = {
+        iconPack = 'XIView',
+    },
     targeting = {
         enableRightClickAttack = true,
         rightClickAttackRange = 4.5,
@@ -121,7 +124,6 @@ return {
         ringThickness = 10,
         offsetX = 0,
         offsetY = 38,
-        firstTickOffset = 1,
         repeatTickOffset = 0,
         mpTickThreshold = 12,
         enableLogoutCountdown = true,

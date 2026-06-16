@@ -102,13 +102,6 @@ function petState.HandlePacketOut(e)
         state.lastRestingCommandId = actionId;
         state.lastRestingCommandName = commandName;
     end
-
-    log.Info(string.format(
-        'Pet state caught: %s actionId=%s category=%s',
-        commandName,
-        tostring(actionId),
-        tostring(category)
-    ));
 end
 
 function petState.GetState()

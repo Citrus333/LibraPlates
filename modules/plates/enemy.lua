@@ -54,6 +54,10 @@ local indexCache = {};
 local maxPlateCacheEntries = 64;
 local lastPlateCacheTrim = 0;
 local wasConfigOpen = false;
+local plateWorkGateCache = {
+    clock = 0,
+    result = true,
+};
 local nonCombatZoneIds = {
     [26] = true, -- Tavnazian Safehold
     [50] = true, -- Aht Urhgan Whitegate
@@ -1814,7 +1818,7 @@ local function QueueEnemy(enemy)
     perfMeter.EndDetail(statusTimer);
 
     if (context.hasActiveDetail == true and enmity.ShouldDrawEnemy(enemy, context.globalSettings) == true) then
-        enmity.AddIcon(plateData, context.globalSettings.enmity);
+        enmity.AddIcon(plateData, context.globalSettings.enmity, 'enemy');
     end
     plateData.debugClickRects = worldMarkerProbe.GetClickDebug();
     plateData.debugClickRectColor = 0x01FFD400;
@@ -1854,7 +1858,7 @@ local function QueueEnemy(enemy)
         AddPeerIdToPlate(plateData, enemy, peerSettings, context.globalSettings);
         plateData.icons, plateData.texts = BuildMobInfoRows(enemy, context.globalSettings, peerSettings);
         if (context.hasActiveDetail == true and enmity.ShouldDrawEnemy(enemy, context.globalSettings) == true) then
-            enmity.AddIcon(plateData, context.globalSettings.enmity);
+            enmity.AddIcon(plateData, context.globalSettings.enmity, 'enemy');
         end
         canvasTimer = perfMeter.BeginDetail('enemy.canvas');
         plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'enemy-libra-' .. tostring(enemy.index));
@@ -1966,6 +1970,55 @@ function enemyPlate.GetTargetOverlayEnabled()
     return targetOverlayEnabled == true;
 end
 
+local function EnemyWidgetEnabled(layoutStateName, widgetName, defaults)
+    local settings = state.GetWidgetSettings('Enemy', layoutStateName, widgetName, defaults);
+    return settings ~= nil and settings.enabled == true;
+end
+
+local function AnyEnemyWidgetCanLoadForState(layoutStateName)
+    return
+        EnemyWidgetEnabled(layoutStateName, 'Background', backgroundDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Name', nameDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'HP Bar', barDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Job', jobDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Level', levelDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'ID', idDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Distance', distanceDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Special icon', enemySpecialIconDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Behavior icon', enemyBehaviorIconDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Detects icon', enemyDetectsIconDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Links icon', enemyLinksIconDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Buffs', buffsDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Debuffs', debuffsDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Cast bar', castBarDefaults) == true or
+        EnemyWidgetEnabled(layoutStateName, 'Peer', { enabled = true }) == true;
+end
+
+local function AnyEnemyPlateWorkCanLoad()
+    local now = os.clock();
+
+    if ((now - (tonumber(plateWorkGateCache.clock) or 0)) < 0.50) then
+        return plateWorkGateCache.result == true;
+    end
+
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local enmitySettings = globalSettings ~= nil and globalSettings.enmity or nil;
+    local targetSettings = targetModuleMarker.GetSettings('Enemy', 'Combat', 'Target');
+    local subtargetSettings = targetModuleMarker.GetSettings('Enemy', 'Combat', 'Subtarget');
+    local result =
+        AnyEnemyWidgetCanLoadForState('Idle') == true or
+        AnyEnemyWidgetCanLoadForState('Combat') == true or
+        EnemyWidgetEnabled('Combat', 'AOE range', aoeRangeDefaults) == true or
+        targetModuleMarker.HasDrawableSettings('Enemy', targetSettings) == true or
+        targetModuleMarker.HasDrawableSettings('Enemy', subtargetSettings) == true or
+        (enmitySettings ~= nil and enmitySettings.enabled == true);
+
+    plateWorkGateCache.clock = now;
+    plateWorkGateCache.result = result == true;
+
+    return result == true;
+end
+
 function enemyPlate.Render(importantOnly)
     if (state.GetWorldEnabled() ~= true) then
         return;
@@ -1985,6 +2038,10 @@ function enemyPlate.Render(importantOnly)
     end
 
     if (worldMarkerProbe.GetEnabled() ~= true or worldMarkerProbe.GetReplacePlates() ~= true) then
+        return;
+    end
+
+    if (AnyEnemyPlateWorkCanLoad() ~= true) then
         return;
     end
 

@@ -7,10 +7,11 @@ local luopanStatuses = {};
 local activeStatuses = {};
 local nextOrder = 1;
 local probeUntil = nil;
+local activeLuopanServerId = nil;
 
 local abilityStatuses = {
-    [346] = { statusId = 515, duration = 300 }, -- Lasting Emanation
-    [347] = { statusId = 516, duration = 300 }, -- Ecliptic Attrition
+    [346] = { statusId = 515 }, -- Lasting Emanation
+    [347] = { statusId = 516 }, -- Ecliptic Attrition
     [351] = { statusId = 518, duration = 60 }, -- Dematerialize
 };
 local statusAbilityIds = {
@@ -127,26 +128,47 @@ local function IsProbeEnabled()
     return tonumber(probeUntil) ~= nil and os.clock() < tonumber(probeUntil);
 end
 
-local function TrackStatus(statusId, duration)
-    statusId = tonumber(statusId) or 0;
-    duration = tonumber(duration) or 0;
+local function SyncCurrentLuopan()
+    local luopan = entities.GetOwnLuopan();
+    local luopanServerId = luopan ~= nil and tonumber(luopan.serverId) or nil;
 
-    if (statusId <= 0 or duration <= 0) then
+    if (luopanServerId == nil or luopanServerId == 0) then
+        activeStatuses = {};
+        activeLuopanServerId = nil;
+        return nil;
+    end
+
+    if (activeLuopanServerId ~= nil and activeLuopanServerId ~= luopanServerId) then
+        activeStatuses = {};
+    end
+
+    activeLuopanServerId = luopanServerId;
+    return luopanServerId;
+end
+
+local function TrackStatus(statusId, duration, luopanServerId)
+    statusId = tonumber(statusId) or 0;
+    duration = tonumber(duration);
+    luopanServerId = tonumber(luopanServerId) or SyncCurrentLuopan();
+
+    if (statusId <= 0 or luopanServerId == nil or luopanServerId == 0) then
         return;
     end
+
+    activeLuopanServerId = luopanServerId;
 
     if (activeStatuses[statusId] == nil) then
         activeStatuses[statusId] = {
             order = nextOrder,
-            expiresAt = os.clock() + duration,
+            expiresAt = duration ~= nil and (os.clock() + duration) or nil,
         };
         nextOrder = nextOrder + 1;
     else
-        activeStatuses[statusId].expiresAt = os.clock() + duration;
+        activeStatuses[statusId].expiresAt = duration ~= nil and (os.clock() + duration) or nil;
     end
 
     if (IsProbeEnabled() == true) then
-        log.Info('Luopan tracked status=' .. tostring(statusId) .. ' duration=' .. tostring(duration));
+        log.Info('Luopan tracked status=' .. tostring(statusId) .. ' duration=' .. tostring(duration or 'luopan'));
     end
 end
 
@@ -228,8 +250,7 @@ local function HandleActionPacket(packet)
         return;
     end
 
-    local luopan = entities.GetOwnLuopan();
-    local luopanServerId = luopan ~= nil and tonumber(luopan.serverId) or 0;
+    local luopanServerId = SyncCurrentLuopan() or 0;
     local matchedLuopan = luopanServerId == 0;
 
     for _, target in ipairs(packet.Targets or {}) do
@@ -242,7 +263,7 @@ local function HandleActionPacket(packet)
     ProbeActionPacket(packet, ability, luopanServerId, matchedLuopan);
 
     if (ability ~= nil and matchedLuopan == true) then
-        TrackStatus(ability.statusId, ability.duration);
+        TrackStatus(ability.statusId, ability.duration, luopanServerId);
     end
 end
 
@@ -253,6 +274,7 @@ function luopanStatuses.HandlePacketIn(e)
 
     if (e.id == 0x000A) then
         activeStatuses = {};
+        activeLuopanServerId = nil;
     elseif (e.id == 0x0028) then
         HandleActionPacket(ParseActionPacket(e));
     end
@@ -265,17 +287,18 @@ function luopanStatuses.GetRows(kind)
 
     local rows = {};
     local now = os.clock();
+    SyncCurrentLuopan();
 
     for statusId, data in pairs(activeStatuses) do
         local expiresAt = tonumber(data.expiresAt) or 0;
 
-        if (expiresAt <= now) then
+        if (tonumber(data.expiresAt) ~= nil and expiresAt <= now) then
             activeStatuses[statusId] = nil;
         else
             rows[#rows + 1] = {
                 id = statusId,
                 order = tonumber(data.order) or 0,
-                seconds = expiresAt - now,
+                seconds = tonumber(data.expiresAt) ~= nil and (expiresAt - now) or nil,
             };
         end
     end
@@ -289,6 +312,7 @@ end
 
 function luopanStatuses.Reset()
     activeStatuses = {};
+    activeLuopanServerId = nil;
 end
 
 function luopanStatuses.EnableProbe(seconds)
@@ -312,10 +336,10 @@ function luopanStatuses.GetProbeStatusText()
     end
 
     for _, row in ipairs(rows) do
-        rowParts[#rowParts + 1] = tostring(row.id) .. ':' .. string.format('%.1f', tonumber(row.seconds) or 0);
+        rowParts[#rowParts + 1] = tostring(row.id) .. ':' .. (tonumber(row.seconds) ~= nil and string.format('%.1f', tonumber(row.seconds) or 0) or 'luopan');
     end
 
-    return 'Luopan probe enabled=' .. tostring(IsProbeEnabled()) .. ' remaining=' .. string.format('%.1f', remaining) .. ' active=' .. (#rowParts > 0 and table.concat(rowParts, '/') or 'none');
+    return 'Luopan probe enabled=' .. tostring(IsProbeEnabled()) .. ' remaining=' .. string.format('%.1f', remaining) .. ' luopanServer=' .. tostring(activeLuopanServerId) .. ' active=' .. (#rowParts > 0 and table.concat(rowParts, '/') or 'none');
 end
 
 return luopanStatuses;

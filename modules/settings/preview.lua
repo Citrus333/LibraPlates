@@ -318,7 +318,6 @@ local quickMenuIconCache = {};
 local quickMenuMissingIcons = {};
 local trustBuffPreviewDefaults = {};
 local previewInfoIconTextureId = nil;
-local enmityIconTextureId = nil;
 local luopanPreviewTextureId = nil;
 local luopanPreviewTextureMissing = false;
 local selectedBackground = 'Light';
@@ -395,15 +394,6 @@ local function LoadPreviewInfoIcon()
 
     previewInfoIconTextureId = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\ui-icons\\info.png'));
     return previewInfoIconTextureId;
-end
-
-local function LoadEnmityIcon()
-    if (enmityIconTextureId ~= nil) then
-        return enmityIconTextureId;
-    end
-
-    enmityIconTextureId = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\enmity_icon.png'));
-    return enmityIconTextureId;
 end
 
 local function LoadPetIcon(fileName)
@@ -848,6 +838,7 @@ local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind)
     table.insert(icons, {
         kind = kind,
         textureId = textureId,
+        tint = kind == 'enmity' and settings.color or settings.tint,
         size = tonumber(settings.iconSize) or 16,
         offsetX = tonumber(settings.offsetX) or defaultX,
         offsetY = tonumber(settings.offsetY) or defaultY,
@@ -964,8 +955,29 @@ local function AddEnmityPreviewIcon(plateData, globalSettings, context)
         return;
     end
 
+    local role = tostring(context.entityName or '') == 'Enemy' and 'enemy' or 'ally';
+    local markerSettings = {};
+
+    if (role == 'enemy') then
+        markerSettings.enabled = true;
+        markerSettings.iconSize = globalSettings.enmity.enemyIconSize or globalSettings.enmity.iconSize or 31;
+        markerSettings.offsetX = globalSettings.enmity.enemyOffsetX or globalSettings.enmity.offsetX or -108;
+        markerSettings.offsetY = globalSettings.enmity.enemyOffsetY or globalSettings.enmity.offsetY or -17;
+        markerSettings.color = globalSettings.enmity.enemyColor or globalSettings.enmity.color or { 0.25, 0.85, 1.0, 1.0 };
+        markerSettings.iconFile = globalSettings.enmity.enemyIconFile or 'shield-alert.png';
+    else
+        markerSettings.enabled = true;
+        markerSettings.iconSize = globalSettings.enmity.allyIconSize or globalSettings.enmity.iconSize or 31;
+        markerSettings.offsetX = globalSettings.enmity.allyOffsetX or globalSettings.enmity.offsetX or -108;
+        markerSettings.offsetY = globalSettings.enmity.allyOffsetY or globalSettings.enmity.offsetY or -17;
+        markerSettings.color = globalSettings.enmity.allyColor or globalSettings.enmity.color or { 1.0, 0.28, 0.20, 1.0 };
+        markerSettings.iconFile = globalSettings.enmity.allyIconFile or 'warning-dimond.png';
+    end
+
+    local enmityIcons = require('core.enmity_icons');
+
     plateData.icons = plateData.icons or {};
-    AddIcon(plateData.icons, globalSettings.enmity, LoadEnmityIcon(), -108, -17, 'enmity');
+    AddIcon(plateData.icons, markerSettings, enmityIcons.GetTextureId(markerSettings.iconFile), -108, -17, 'enmity');
 end
 
 local function AddFishingPreviewIcon(plateData, globalSettings, context)

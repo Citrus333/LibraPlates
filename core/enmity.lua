@@ -1,10 +1,9 @@
 local bit = require('bit');
-local textureLoader = require('core.texture_loader');
+local enmityIcons = require('core.enmity_icons');
 
 local enmity = {};
 local enemyTargetServerIds = {};
 local enemyTargetClocks = {};
-local enmityIconTextureId = nil;
 local targetTimeoutSeconds = 10.0;
 
 local function SafeCall(fallback, fn)
@@ -198,20 +197,11 @@ end
 local function GetMode(settings)
     local mode = tostring(settings ~= nil and settings.mode or 'healer'):lower();
 
-    if (mode ~= 'tank') then
-        return 'healer';
+    if (mode == 'tank' or mode == 'both') then
+        return mode;
     end
 
-    return 'tank';
-end
-
-local function GetIconTextureId()
-    if (enmityIconTextureId ~= nil) then
-        return enmityIconTextureId;
-    end
-
-    enmityIconTextureId = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\enmity_icon.png'));
-    return enmityIconTextureId;
+    return 'healer';
 end
 
 function enmity.HandlePacketIn(e)
@@ -302,18 +292,43 @@ end
 
 function enmity.ShouldDrawEnemy(enemy, globalSettings)
     local settings = globalSettings ~= nil and globalSettings.enmity or nil;
+    local mode = GetMode(settings);
 
-    return settings ~= nil and settings.enabled == true and GetMode(settings) == 'tank' and enmity.IsEnemyTargetingSelf(enemy) == true;
+    return settings ~= nil and settings.enabled == true and (mode == 'tank' or mode == 'both') and enmity.IsEnemyTargetingSelf(enemy) == true;
 end
 
 function enmity.ShouldDrawAlly(ally, globalSettings)
     local settings = globalSettings ~= nil and globalSettings.enmity or nil;
+    local mode = GetMode(settings);
 
-    return settings ~= nil and settings.enabled == true and GetMode(settings) == 'healer' and ally ~= nil and enmity.IsServerIdTargeted(ally.serverId, ally.index) == true;
+    return settings ~= nil and settings.enabled == true and (mode == 'healer' or mode == 'both') and ally ~= nil and enmity.IsServerIdTargeted(ally.serverId, ally.index) == true;
 end
 
-function enmity.AddIcon(plateData, settings)
-    local textureId = GetIconTextureId();
+local function GetMarkerSettings(settings, role)
+    settings = settings or {};
+
+    if (role == 'enemy') then
+        return {
+            iconFile = settings.enemyIconFile or settings.iconFile or 'shield-alert.png',
+            color = settings.enemyColor or settings.color or { 0.25, 0.85, 1.0, 1.0 },
+            iconSize = tonumber(settings.enemyIconSize) or tonumber(settings.iconSize) or 31,
+            offsetX = tonumber(settings.enemyOffsetX) or tonumber(settings.offsetX) or -108,
+            offsetY = tonumber(settings.enemyOffsetY) or tonumber(settings.offsetY) or -17,
+        };
+    end
+
+    return {
+        iconFile = settings.allyIconFile or settings.iconFile or 'warning-dimond.png',
+        color = settings.allyColor or settings.color or { 1.0, 0.28, 0.20, 1.0 },
+        iconSize = tonumber(settings.allyIconSize) or tonumber(settings.iconSize) or 31,
+        offsetX = tonumber(settings.allyOffsetX) or tonumber(settings.offsetX) or -108,
+        offsetY = tonumber(settings.allyOffsetY) or tonumber(settings.offsetY) or -17,
+    };
+end
+
+function enmity.AddIcon(plateData, settings, role)
+    local marker = GetMarkerSettings(settings, role);
+    local textureId = enmityIcons.GetTextureId(marker.iconFile);
 
     if (plateData == nil or settings == nil or textureId == nil) then
         return;
@@ -323,9 +338,10 @@ function enmity.AddIcon(plateData, settings)
     plateData.icons[#plateData.icons + 1] = {
         kind = 'enmity',
         textureId = textureId,
-        size = math.max(6, math.min(160, tonumber(settings.iconSize) or 31)),
-        offsetX = tonumber(settings.offsetX) or -108,
-        offsetY = tonumber(settings.offsetY) or -17,
+        tint = marker.color,
+        size = math.max(6, math.min(160, tonumber(marker.iconSize) or 31)),
+        offsetX = tonumber(marker.offsetX) or -108,
+        offsetY = tonumber(marker.offsetY) or -17,
     };
 end
 

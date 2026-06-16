@@ -27,6 +27,8 @@ modules.settings = require('modules.settings.init');
 modules.targetOverlay = require('modules.target_overlay');
 
 local previousHadAnyTarget = false;
+local previousTargetIndex = nil;
+local previousSubTargetIndex = nil;
 local nativeTargetStartupBurstFrames = 0;
 local nativeTargetStartupBurstMaxFrames = 6;
 local nativeTargetStartupTransitions = 0;
@@ -42,6 +44,12 @@ local nativeNamesPeriodicIntervalFrames = 600;
 local nativeNamesNextPeriodicFrame = 0;
 local targetModulePrewarmQueue = {};
 local targetModulePrewarmWarned = false;
+local perfIsolation = {
+    targeting = false,
+    native = false,
+    mouse = false,
+    overlays = false,
+};
 
 local function GetLoginStatus()
     local status = nil;
@@ -63,9 +71,13 @@ local function HasAnyTarget()
 end
 
 local function UpdateNativeTargetStartupBurst()
-    local hasAnyTarget = HasAnyTarget();
+    local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
+    local hasAnyTarget = targetIndex ~= nil or subTargetIndex ~= nil;
+    local targetChanged =
+        tonumber(previousTargetIndex or 0) ~= tonumber(targetIndex or 0) or
+        tonumber(previousSubTargetIndex or 0) ~= tonumber(subTargetIndex or 0);
 
-    if (previousHadAnyTarget ~= true and hasAnyTarget == true) then
+    if ((previousHadAnyTarget ~= true or targetChanged == true) and hasAnyTarget == true) then
         nativeTargetStartupBurstFrames = nativeTargetStartupBurstMaxFrames;
         nativeTargetStartupTransitions = nativeTargetStartupTransitions + 1;
         nativeTargetLastTransitionClock = os.clock();
@@ -74,6 +86,8 @@ local function UpdateNativeTargetStartupBurst()
     end
 
     previousHadAnyTarget = hasAnyTarget == true;
+    previousTargetIndex = targetIndex;
+    previousSubTargetIndex = subTargetIndex;
 end
 
 local function UpdateNativeTargetArrowVisibility()
@@ -100,7 +114,7 @@ local function UpdateNativeTargetArrowVisibility()
         nativeTargetStartupBurstFrames > 0;
 
     nativeTargetArrow.SetHideAllPrimitivesEnabled(hideNativePartyTargetUi);
-    nativeTargetArrow.SetHardHideEveryDrawEnabled(hideNativePartyTargetUi or hideNativeTargetArrow);
+    nativeTargetArrow.SetHardHideEveryDrawEnabled(hideNativeTargetArrow);
     nativeTargetArrow.SetTargetPrimitiveHideAllowed(mogHouseNativePassthrough ~= true or hasAnyTarget == true);
     nativeTargetArrow.SetEnabled(hideNativeTargetArrow or startupBurstActive);
 
@@ -125,6 +139,10 @@ local function QueueNativeNamesCommand(hidden)
 
     pcall(function()
         AshitaCore:GetChatManager():QueueCommand(-1, hidden == true and '/names off' or '/names on');
+    end);
+
+    pcall(function()
+        AshitaCore:GetChatManager():QueueCommand(1, hidden == true and '/names off' or '/names on');
     end);
 
     return true;
@@ -162,7 +180,7 @@ local function UpdateNativeNamesVisibility(force)
 
     if (force == true or nativeNamesLastHidden ~= shouldHide) then
         nativeNamesLastHidden = shouldHide;
-        ScheduleNativeNamesSync(shouldHide, 8, 90);
+        ScheduleNativeNamesSync(shouldHide, 12, 20);
     end
 end
 
@@ -234,7 +252,9 @@ function modules.Render()
     perfMeter.BeginFrame();
     local totalStart = perfMeter.Start();
 
-    if (state.GetConfigOpen() ~= true) then
+    if (perfIsolation.mouse == true) then
+        mouseControls.Release();
+    elseif (state.GetConfigOpen() ~= true) then
         mouseControls.Update();
     else
         mouseControls.Release();
@@ -245,16 +265,20 @@ function modules.Render()
     perfMeter.Stop('settings', settingsStart);
 
     local targetingStart = perfMeter.Start();
-    targeting.Update();
+    if (perfIsolation.targeting ~= true) then
+        targeting.Update();
+    end
     perfMeter.Stop('targeting', targetingStart);
 
     local nativeStart = perfMeter.Start();
-    UpdateNativeTargetArrowVisibility();
-    UpdateNativeNamesVisibility(false);
-    UpdateNativeNamesRetry();
-    UpdateTargetModulePrewarm();
-    jobChange.Update();
-    enemyCasts.TickDebug();
+    if (perfIsolation.native ~= true) then
+        UpdateNativeTargetArrowVisibility();
+        UpdateNativeNamesVisibility(false);
+        UpdateNativeNamesRetry();
+        UpdateTargetModulePrewarm();
+        jobChange.Update();
+        enemyCasts.TickDebug();
+    end
     perfMeter.Stop('native', nativeStart);
 
     if (state.GetConfigOpen() ~= true) then
@@ -275,18 +299,26 @@ function modules.Render()
     end
 
     local overlayStart = perfMeter.Start();
-    modules.targetOverlay.Render();
+    if (perfIsolation.overlays ~= true) then
+        modules.targetOverlay.Render();
+    end
     perfMeter.Stop('target.overlay', overlayStart);
 
     local peerStart = perfMeter.Start();
-    peerInspector.Render();
+    if (perfIsolation.overlays ~= true) then
+        peerInspector.Render();
+    end
     perfMeter.Stop('peer', peerStart);
 
     local quickStart = perfMeter.Start();
-    quickMenu.Render();
+    if (perfIsolation.overlays ~= true) then
+        quickMenu.Render();
+    end
     perfMeter.Stop('quick.menu', quickStart);
 
-    cursorOverlay.Render();
+    if (perfIsolation.overlays ~= true) then
+        cursorOverlay.Render();
+    end
 
     perfMeter.Stop('total', totalStart);
     lagTest.Update();
@@ -295,6 +327,11 @@ function modules.Render()
 end
 
 function modules.HandleMouse(e)
+    if (perfIsolation.mouse == true) then
+        mouseControls.Release();
+        return;
+    end
+
     cursorOverlay.HandleMouse(e);
     worldMarkerProbe.UpdateFocusState();
 
@@ -317,6 +354,58 @@ function modules.HandleMouse(e)
     end
 
     mouseControls.HandleMouse(e);
+end
+
+function modules.SetPerfIsolation(name, value)
+    name = tostring(name or ''):lower();
+
+    if (name == 'all') then
+        local enabled = value == true;
+        for key, _ in pairs(perfIsolation) do
+            perfIsolation[key] = enabled;
+        end
+        if (enabled == true) then
+            mouseControls.Release();
+            nativeTargetArrow.RestoreAll();
+        end
+        return true;
+    end
+
+    if (perfIsolation[name] == nil) then
+        return false;
+    end
+
+    perfIsolation[name] = value == true;
+
+    if (name == 'mouse' and value == true) then
+        mouseControls.Release();
+    elseif (name == 'native' and value == true) then
+        nativeTargetArrow.RestoreAll();
+    end
+
+    return true;
+end
+
+function modules.GetPerfIsolation(name)
+    name = tostring(name or ''):lower();
+
+    if (name == 'all') then
+        for _, enabled in pairs(perfIsolation) do
+            if (enabled == true) then
+                return true;
+            end
+        end
+        return false;
+    end
+
+    return perfIsolation[name] == true;
+end
+
+function modules.GetPerfIsolationStatus()
+    return 'targeting=' .. tostring(perfIsolation.targeting == true) ..
+        ' native=' .. tostring(perfIsolation.native == true) ..
+        ' mouse=' .. tostring(perfIsolation.mouse == true) ..
+        ' overlays=' .. tostring(perfIsolation.overlays == true);
 end
 
 function modules.ResetWorldMarker()
@@ -375,7 +464,7 @@ function modules.UpdateNativeTargetArrow()
         nativeTargetStartupBurstFrames > 0;
 
     nativeTargetArrow.SetHideAllPrimitivesEnabled(hideNativePartyTargetUi);
-    nativeTargetArrow.SetHardHideEveryDrawEnabled(hideNativePartyTargetUi or hideNativeTargetArrow);
+    nativeTargetArrow.SetHardHideEveryDrawEnabled(hideNativeTargetArrow);
     nativeTargetArrow.SetTargetPrimitiveHideAllowed(mogHouseNativePassthrough ~= true or hasAnyTarget == true);
     nativeTargetArrow.SetEnabled(hideNativeTargetArrow or startupBurstActive);
 

@@ -10,6 +10,8 @@ local state = {
     activeProfilePath = nil,
     loadedFromDisk = false,
     savedThisSession = false,
+    lastBackup = 0,
+    lastBackupPrune = 0,
 };
 
 local settingsFileName = 'settings.lua';
@@ -21,6 +23,10 @@ local backupsFolderName = 'backups';
 local profileSystemVersion = 1;
 local suspiciousShrinkRatio = 0.50;
 local suspiciousShrinkMinBytes = 8192;
+local normalSaveBackupIntervalSeconds = 600;
+local backupPruneIntervalSeconds = 600;
+local maxBackupFiles = 1;
+local maxBackupBytes = 256 * 1024 * 1024;
 local SerializeValue = nil;
 local CopyTable = nil;
 local ApplyLoadedWorldEnabled = nil;
@@ -107,13 +113,11 @@ local function GetTimestamp()
 end
 
 local function GetProfileBackupPath(characterProfileName, userProfileName)
-    local safeName = SanitizeProfilePart(userProfileName) or defaultUserProfileName;
-
-    return GetBackupsFolder(characterProfileName) .. '\\' .. safeName .. '-' .. GetTimestamp() .. '.lua';
+    return GetBackupsFolder(characterProfileName) .. '\\settings-backup.lua';
 end
 
 local function GetManifestBackupPath(characterProfileName)
-    return GetBackupsFolder(characterProfileName) .. '\\settings-pre-profile-' .. GetTimestamp() .. '.lua';
+    return GetBackupsFolder(characterProfileName) .. '\\settings-backup.lua';
 end
 
 local function GetLegacyProfilePath()
@@ -211,6 +215,118 @@ local function CopyFile(sourcePath, targetPath)
     target:close();
 
     return true;
+end
+
+local function GetDirectoryEntries(folder)
+    local ok, files = pcall(function()
+        if (ashita.fs.get_directory ~= nil) then
+            return ashita.fs.get_directory(folder, '.*');
+        end
+
+        if (ashita.fs.get_dir ~= nil) then
+            return ashita.fs.get_dir(folder, '.*');
+        end
+
+        return nil;
+    end);
+
+    if (ok ~= true or type(files) ~= 'table') then
+        return {};
+    end
+
+    return files;
+end
+
+local function GetDirectoryEntryName(entry)
+    if (type(entry) == 'table') then
+        return tostring(entry.name or entry.Name or entry.file or entry.File or entry.path or entry.Path or '');
+    end
+
+    return tostring(entry or '');
+end
+
+local function PruneBackups(profileName, force)
+    if (IsCharacterProfileName(profileName) ~= true) then
+        return;
+    end
+
+    local now = os.clock();
+
+    if (force ~= true and (now - (tonumber(state.lastBackupPrune) or 0)) < backupPruneIntervalSeconds) then
+        return;
+    end
+
+    state.lastBackupPrune = now;
+
+    local folder = GetBackupsFolder(profileName);
+    local files = {};
+    local totalBytes = 0;
+
+    for _, entry in ipairs(GetDirectoryEntries(folder)) do
+        local fileName = GetDirectoryEntryName(entry):gsub('^.*[\\/]', '');
+
+        if (fileName ~= '' and fileName:lower():match('%.lua$') ~= nil) then
+            local path = folder .. '\\' .. fileName;
+            local size = ReadFileSize(path);
+
+            files[#files + 1] = {
+                name = fileName,
+                path = path,
+                size = size,
+            };
+            totalBytes = totalBytes + size;
+        end
+    end
+
+    table.sort(files, function(left, right)
+        local leftIsCurrent = tostring(left.name or ''):lower() == 'settings-backup.lua';
+        local rightIsCurrent = tostring(right.name or ''):lower() == 'settings-backup.lua';
+
+        if (leftIsCurrent ~= rightIsCurrent) then
+            return leftIsCurrent == true;
+        end
+
+        return tostring(left.name or '') > tostring(right.name or '');
+    end);
+
+    local count = #files;
+    local index = #files;
+
+    while (index >= 1 and (count > maxBackupFiles or totalBytes > maxBackupBytes)) do
+        local entry = files[index];
+
+        pcall(function()
+            os.remove(entry.path);
+        end);
+
+        totalBytes = totalBytes - (tonumber(entry.size) or 0);
+        count = count - 1;
+        index = index - 1;
+    end
+end
+
+local function BackupActiveProfile(profileName, force)
+    if (state.activeProfilePath == nil) then
+        return;
+    end
+
+    if (ReadFileSize(state.activeProfilePath) <= 0) then
+        return;
+    end
+
+    local now = os.clock();
+
+    if (
+        force ~= true and
+        (now - (tonumber(state.lastBackup) or 0)) < normalSaveBackupIntervalSeconds
+    ) then
+        return;
+    end
+
+    if (CopyFile(state.activeProfilePath, GetProfileBackupPath(profileName, state.activeProfileName)) == true) then
+        state.lastBackup = now;
+    end
+
 end
 
 local function LoadLuaTableFile(path)
@@ -697,9 +813,7 @@ function state.Save()
         return false;
     end
 
-    if (oldSize > 0) then
-        CopyFile(state.activeProfilePath, GetProfileBackupPath(profileName, state.activeProfileName));
-    end
+    BackupActiveProfile(profileName, false);
 
     local file = io.open(state.activeProfilePath, 'w');
 
@@ -741,6 +855,17 @@ function state.SaveThrottled(interval)
     end
 
     state.Save();
+end
+
+function state.PruneBackups()
+    local profileName = state.characterProfileName or GetCharacterProfileName();
+
+    if (profileName == nil or IsCharacterProfileName(profileName) ~= true) then
+        return false;
+    end
+
+    PruneBackups(profileName, true);
+    return true;
 end
 
 -- ============================================================

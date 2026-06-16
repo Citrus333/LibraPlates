@@ -95,6 +95,7 @@ local worldMarkerProbe = {};
 
 local enabled = false;
 local replacePlates = false;
+local drawSuppressed = false;
 local compareAnchors = false;
 local showText = false;
 local showDistance = false;
@@ -422,6 +423,8 @@ local function AddPlateClickRects(targetIndex, targetType, rects, union, metadat
         modelHitboxSize = metadata ~= nil and metadata.modelHitboxSize or nil,
         plateTextureId = metadata ~= nil and metadata.plateTextureId or nil,
         plateOverlayRect = metadata ~= nil and metadata.plateOverlayRect or nil,
+        plateOverlayOffsetX = metadata ~= nil and metadata.plateOverlayOffsetX or nil,
+        plateOverlayOffsetY = metadata ~= nil and metadata.plateOverlayOffsetY or nil,
         clickEnabled = metadata == nil or metadata.clickEnabled ~= false,
         rects = rects,
         union = union,
@@ -541,6 +544,8 @@ local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, styl
         modelHitboxSize = style.modelHitboxSize,
         plateTextureId = style.plateAlwaysOnTop == true and style.plateTextureId or nil,
         plateOverlayRect = nil,
+        plateOverlayOffsetX = tonumber(style.plateOverlayOffsetX) or 0,
+        plateOverlayOffsetY = tonumber(style.plateOverlayOffsetY) or 0,
         clickEnabled = style.plateClickTargetEnabled ~= false,
     };
 
@@ -587,7 +592,14 @@ local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, styl
         end
 
         if (left ~= nil and top ~= nil and right ~= nil and bottom ~= nil) then
-            metadata.plateOverlayRect = { x1 = left, y1 = top, x2 = right, y2 = bottom };
+            local overlayOffsetX = tonumber(metadata.plateOverlayOffsetX) or 0;
+            local overlayOffsetY = tonumber(metadata.plateOverlayOffsetY) or 0;
+            metadata.plateOverlayRect = {
+                x1 = left + overlayOffsetX,
+                y1 = top + overlayOffsetY,
+                x2 = right + overlayOffsetX,
+                y2 = bottom + overlayOffsetY,
+            };
         end
     end
 
@@ -2058,6 +2070,14 @@ function worldMarkerProbe.GetReplacePlates()
     return replacePlates;
 end
 
+function worldMarkerProbe.SetDrawSuppressed(value)
+    drawSuppressed = value == true;
+end
+
+function worldMarkerProbe.GetDrawSuppressed()
+    return drawSuppressed == true;
+end
+
 function worldMarkerProbe.SetCompareAnchors(value)
     compareAnchors = (value == true);
 end
@@ -2976,6 +2996,16 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         return;
     end
 
+    if (drawSuppressed == true) then
+        if (pass == 2) then
+            lastDrawCount = 0;
+            queuedPlates = {};
+            queuedPlateSet = {};
+        end
+
+        return;
+    end
+
     local entityManager = getEntityManager();
     local device = d3d8.get_device();
 
@@ -3357,6 +3387,8 @@ function worldMarkerProbe.GetAlwaysVisiblePlates()
                 clickName = entry.name,
                 textureId = entry.plateTextureId,
                 rect = entry.plateOverlayRect,
+                overlayOffsetX = entry.plateOverlayOffsetX,
+                overlayOffsetY = entry.plateOverlayOffsetY,
             };
         end
     end
@@ -3637,6 +3669,7 @@ end
 function worldMarkerProbe.GetStatusText()
     return 'enabled=' .. tostring(enabled) ..
         ' replace=' .. tostring(replacePlates) ..
+        ' drawsuppressed=' .. tostring(drawSuppressed) ..
         ' compare=' .. tostring(compareAnchors) ..
         ' text=' .. tostring(showText) ..
         ' distance=' .. tostring(showDistance) ..

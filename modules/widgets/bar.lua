@@ -694,10 +694,10 @@ local function DrawFontRow(settings, defaults, idPrefix)
     idPrefix = tostring(idPrefix or '');
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##bar_' .. idPrefix .. 'font_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##font_size_label', 0, 108);
-            imgui.TableSetupColumn('##font_size_control', 0, 170);
-            imgui.TableSetupColumn('##font_color_label', 0, 108);
-            imgui.TableSetupColumn('##font_color_control', 0, 170);
+            imgui.TableSetupColumn('##font_size_label', 0, 116);
+            imgui.TableSetupColumn('##font_size_control', 0, 150);
+            imgui.TableSetupColumn('##font_color_label', 0, 116);
+            imgui.TableSetupColumn('##font_color_control', 0, 54);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.fontSize = DrawTableSlider('Font size', idPrefix .. 'font_size', textScale.NormalizeSetting(settings.fontSize, defaults.fontSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
@@ -717,10 +717,10 @@ local function DrawOutlineRow(settings, idPrefix)
     idPrefix = tostring(idPrefix or '');
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##bar_' .. idPrefix .. 'outline_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##outline_size_label', 0, 108);
-            imgui.TableSetupColumn('##outline_size_control', 0, 170);
-            imgui.TableSetupColumn('##outline_color_label', 0, 108);
-            imgui.TableSetupColumn('##outline_color_control', 0, 170);
+            imgui.TableSetupColumn('##outline_size_label', 0, 116);
+            imgui.TableSetupColumn('##outline_size_control', 0, 150);
+            imgui.TableSetupColumn('##outline_color_label', 0, 116);
+            imgui.TableSetupColumn('##outline_color_control', 0, 54);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.textOutlineSize = DrawTableSlider('Outline size', idPrefix .. 'outline_size', settings.textOutlineSize, 0, 12, false);

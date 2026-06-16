@@ -29,6 +29,10 @@ local scanCache = {
     range = nil,
     entities = nil,
 };
+local plateWorkGateCache = {
+    clock = 0,
+    result = true,
+};
 local idleScanCacheSeconds = 0.20;
 
 local function ColorKey(color)
@@ -306,6 +310,11 @@ local function QueueNpcObject(entity)
     local resolveTimer = perfMeter.BeginDetail('npc.resolve');
     local entityName = tostring(entity.entityType or 'NPC');
     local displayName = CleanDisplayName(entity.name);
+
+    if (entities.IsOwnPetIndex(entity.index) == true) then
+        perfMeter.EndDetail(resolveTimer);
+        return;
+    end
 
     if (displayName == 'Luopan' or entities.IsOwnLuopanIndex(entity.index) == true) then
         perfMeter.EndDetail(resolveTimer);
@@ -629,6 +638,42 @@ local function QueueNpcObject(entity)
     perfMeter.EndDetail(queueTimer);
 end
 
+local function AnyNpcObjectWidgetCanLoadForEntity(entityName)
+    local backgroundSettings = state.GetWidgetSettings(entityName, 'Idle', 'Background', backgroundDefaults);
+    local nameSettings = state.GetWidgetSettings(entityName, 'Idle', 'Name', nameDefaults);
+    local distanceSettings = state.GetWidgetSettings(entityName, 'Idle', 'Distance', distanceDefaults);
+    local typeLineSettings = state.GetWidgetSettings(entityName, 'Idle', 'Type line', typeLineDefaults);
+    local iconSettings = state.GetWidgetSettings(entityName, 'Idle', 'Icon', npcObjectIconDefaults);
+
+    return
+        backgroundSettings.enabled == true or
+        nameSettings.enabled == true or
+        distanceSettings.enabled == true or
+        typeLineSettings.enabled == true or
+        iconSettings.enabled == true;
+end
+
+local function AnyNpcObjectPlateWorkCanLoad()
+    local now = os.clock();
+
+    if ((now - (tonumber(plateWorkGateCache.clock) or 0)) < 0.50) then
+        return plateWorkGateCache.result == true;
+    end
+
+    local npcTargetSettings = targetModuleMarker.GetSettings('NPC', 'Combat', 'Target');
+    local npcSubtargetSettings = targetModuleMarker.GetSettings('NPC', 'Combat', 'Subtarget');
+    local result =
+        AnyNpcObjectWidgetCanLoadForEntity('NPC') == true or
+        AnyNpcObjectWidgetCanLoadForEntity('Object') == true or
+        targetModuleMarker.HasDrawableSettings('NPC', npcTargetSettings) == true or
+        targetModuleMarker.HasDrawableSettings('NPC', npcSubtargetSettings) == true;
+
+    plateWorkGateCache.clock = now;
+    plateWorkGateCache.result = result == true;
+
+    return result == true;
+end
+
 function npcPlate.Build()
     return nil;
 end
@@ -656,6 +701,11 @@ function npcPlate.Render()
     end
 
     if (worldMarkerProbe.GetEnabled() ~= true or worldMarkerProbe.GetReplacePlates() ~= true) then
+        return;
+    end
+
+    if (AnyNpcObjectPlateWorkCanLoad() ~= true) then
+        scanCache.entities = nil;
         return;
     end
 

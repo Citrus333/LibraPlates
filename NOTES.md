@@ -20,23 +20,22 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 ### Priority
 
-- Luopan status icons: `core\luopan_statuses.lua` tracks own GEO job ability ids `346` Lasting Emanation as status `515`, `347` Ecliptic Attrition as status `516`, and `351` Dematerialize as status `518`. `modules\plates\pet.lua` renders these through `Luopan > Luopan > Buffs`. Lasting/Ecliptic use a provisional 300s display window because the job ability entries do not include durations. Probe command: `/lp luopanprobe on [seconds] | off | status` logs matching action packets for ability ids `346/347/351` and status action params `515/516/518`.
 - Clean action queue logging format and remove duplicate spam before any logic changes.
 - Keep `/st` range queue/packet parsing disabled until stability checks are green.
 - Only next: rework action-range parsing if still needed.
 
 ### General / Settings
 
-- Help tab: now uses a side menu with `User Guide`, `Find Settings`, and `Troubleshooter`. Find Settings combines curated entries with generated Plate widget entries and `Go` buttons. Troubleshooter has starter checklists and player-language synonyms such as enmity/hate/threat/aggro, AOE/radius/circle, and performance/fps/lag.
 - Help follow-up: expand User Guide and Troubleshooter over time with exact row-level anchors, more synonyms, and common "why is X not showing/working?" cases as they come up in testing.
-- Settings UI: `Modules` tab is hidden for now. Module code/settings remain in place, but user-facing access should happen through `Plates` contexts and Help search. Follow-up: remove the unused Modules-tab code/settings path entirely once we confirm no unique settings still depend on it.
-- Replace native mouse.
+- Settings UI follow-up: remove the unused Modules-tab code/settings path entirely once we confirm no unique settings still depend on it.
 - Game mode is not reading properly.
-- Warning screen color scheme is still red.
 - Some widget-list names are blue.
 - Settings reset bug: resetting widget settings/position does not appear to reset anchor settings (`anchorTo` / `anchorPoint`).
 - Disable nameplate click-through when clicking game UI such as action bars, chat windows, or menus.
 - Release packaging cleanup: do not ship old debug depth probe plugins (`LibraDepthProbe` / `LibraDepthProbestatus`) with the release package.
+- Config backup cleanup: current config backups are way too large; investigate what is being copied and reduce/exclude bulky generated or non-runtime files.
+- Performance isolation follow-up: after bridge off, plates drop to near zero work but LP still costs ~14-15 FPS vs unloaded. Use `/lp isolate targeting|native|mouse|overlays on`, `/lp perf reset`, then `/lp perf` to find the hidden cost.
+- Native first-target flash tradeoff: do not restore the permanent native draw hook to hide the first F-key target flash. It fixes the flash but costs too much FPS; prefer the cheap per-frame native hide path unless Lila explicitly accepts the performance cost.
 
 ### Enemy
 
@@ -47,7 +46,6 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Blood aggro icon is not showing; likely hidden underneath the links icon due to an anchoring/overlap issue.
 - Catseye special native star icon is 99% done: Enemy plates replace the native special marker with the Catseye star across World/Target/Subtarget/Tactical states, with Enemy World/Tactical Special icon settings for size and X/Y placement. Needs more testing in other zones. Preview wiring still needs to be added later.
 - Catseye special icon preview todo: add Special icon display/positioning to the Enemy settings preview so size and X/Y changes can be checked without live mobs.
-- Enmity is currently in Enemy; find a better spot, possibly profile-dependent for Enemy vs Self.
 - Move aggro.
 - Blue magic is missing casting icons and is not showing AOE.
 
@@ -64,12 +62,12 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 - Level sync icon is missing, and player HP/MP values are not updating after sync/resync.
 - Peer level should be color-correct to level.
+- Plate height follow-up: investigate race/model-size based Y placement. Small characters currently have plates much higher above their heads than larger models; older code may have had race-aware height calculation that should be recovered or rebuilt.
 
 ### Self
 
-- Self castbar improvement: manual movement interrupts now stop LP's own castbar early and can show the remaining lockout on the same castbar. Cast bar settings now include `Interrupt bar`, optional interrupt color, and optional interrupt text with separate font/outline/position controls. This is intentionally better than native, which keeps the castbar running until the late interrupt message.
-- Resting/logout follow-up: shutdown/logout timer is too short and needs tuning.
-- Move Resting out of the dropdown to its own setting and check the timer bug.
+- Resting follow-up: check remaining timer bugs after the move to Self World.
+- Resting/logout bug: shutdown/logout timer gets hidden by `Hide at full HP/MP`, but those hide options should apply only to normal resting ticks, not logout countdown.
 - Self Quick Menu idea: add party invite actions/state, including accepting an invite and showing/handling invite pending.
 - DoH/DoL activity idea: add a ring timer for the cooldown before the player can fish, craft, or gather again.
 
@@ -97,7 +95,6 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 ### Targeting / Tactical
 
 - Copy target/subtarget module is not working.
-- Distance meter should only show on Target/Subtarget.
 - Range arrow color only works out of combat.
 - AOE range/highlight visuals should only trigger from the player's own AOE actions/casts, and should not false-trigger on queued single-target heals.
 - AOE offensive preview testing model:
@@ -144,14 +141,55 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - DirectX wrapper clue: Atom0s DX9 wrapper z-fighting fix greatly reduces LibraPlates lag, but makes Ashita addons click-through.
 - Accessibility/testing workflow: use `/lp lag` as the short one-command lag diagnostic.
 - Idle texture eviction follow-up: if `Evictions/min` climbs with low `Used` count, check for same-key canvas size churn or repeated plate-cache clears before chasing visible plate count.
-- Husband subtarget report `20260614-142652` showed `canvasRenders=0` but high `Evictions/min` with only `33/96` textures used; this was cleanup accounting from released plate-cache keys, not real cache pressure. `canvasTexture.ReleaseKey()` no longer counts manual plate-cache releases as texture evictions; only cache-limit trims do.
 - FPS mode setting follow-up: direct FPS divisor memory write caused an Ashita crash when it was attempted during load, so FPS mode must only be applied from an explicit user action.
-- FPS mode UI now gives a short chat confirmation when the saved FPS setting is changed, and Check only updates the Current mode text without changing the selected setting.
 - Performance settings follow-up: wire `World plate update rate` and `Disable expensive widgets on world plates` to actual world-only throttling/preset behavior after in-game testing confirms the new Performance page layout.
 - Plate stacking follow-up: the world-marker stacking movement path was removed after it lifted plates into the sky. Do not convert 2D stack deltas back into world Y. The old `Nameplates` addon stacks only because it draws final plates in 2D ImGui windows using `baseX/baseY/drawX/drawY`.
 
 ## Done
 
+- 2026-06-17 - Performance/backup cleanup pass:
+  - Added early runtime gates for Self, PC, NPC/Object, Enemy, and Trust plates so disabled plate groups/widgets skip scanning/build work sooner.
+  - Added a PC per-plate no-content guard so disabled PC widgets/modules do not still build custom-font canvas plates.
+  - Removed the permanent per-draw native-hide hook from `Use native party/target UI` off; native party/target hiding now relies on cheaper per-frame visibility writes unless target-arrow hiding specifically needs the hook.
+  - Reverted the risky world-marker click/stack projection throttle after crash testing; bridge/plate isolation is being used instead.
+  - Optimized Peer hover lookup to scan plate hitboxes once per frame.
+  - Changed settings backups to one refreshed `settings-backup.lua` file; `/lp backups prune` now warns and does nothing because pruning huge old folders in-game caused disconnects.
+  - Kept `/lp bridge on|off|status` as the full world-marker bridge toggle and added `/lp isolate` runtime switches for targeting/native/mouse/overlay diagnostics.
+
+- 2026-06-16 - Cleared completed backlog items:
+  - Marked native mouse replacement, warning screen color scheme, shutdown timer tuning, and target/subtarget-only Distance meter cleanup as done.
+- 2026-06-16 - Notes cleanup:
+  - Active To DO entries now avoid carrying completed implementation details for Help, Modules visibility, Self castbar interrupt behavior, Resting placement, FPS UI confirmation, and the subtarget eviction-accounting fix.
+- 2026-06-16 - Chat spam cleanup:
+  - `/lp config` / `/lp settings` no longer prints `Config open=true/false`.
+  - Pet command tracking no longer prints `Pet state caught...` during normal play.
+- 2026-06-16 - Pet/Wyvern bar settings spacing:
+  - Bar widget `Text Settings:` rows use narrower controls so right-side labels like `Outline color` are not clipped in narrower Pet settings panels.
+- 2026-06-16 - Theme status icon preview strip:
+  - `Settings > Theme > Status icon pack` now shows example icons for Haste, Protect, Paralyze, Army's Paeon, Chaos Roll, and status ids `375`, `381`, `553`, and `470` using the selected global status pack.
+- 2026-06-16 - Wyvern resting plate offset:
+  - DRG Wyvern plates now use resting-only anchor bone `0` plus a small tactical overlay Y nudge so the plate follows the lowered/resting body instead of drifting from the normal pet bone.
+  - PC and NPC/Object plate scans now explicitly skip the player's own pet index to avoid duplicate Lumiere/Wyvern plates during reload classification.
+- 2026-06-16 - Pet probe command:
+  - Added `/lp petprobe` to report own pet index/name/type/status, self status, raw entity debug fields, and whether the resting trigger would fire.
+- 2026-06-16 - Help/settings navigation cleanup:
+  - Help now uses a side menu with `User Guide`, `Find Settings`, and `Troubleshooter`.
+  - Find Settings combines curated entries with generated Plate widget entries and `Go` buttons; Troubleshooter has starter checklists and player-language synonyms.
+  - The user-facing `Modules` tab is hidden for now; module settings should be reached through Plates contexts and Help search while remaining code paths are reviewed.
+- 2026-06-16 - Self castbar interrupt improvement:
+  - Manual movement interrupts now stop LibraPlates' own castbar early and can show the remaining lockout on the same castbar.
+  - Cast bar settings include `Interrupt bar`, optional interrupt color, and optional interrupt text with separate font/outline/position controls.
+- 2026-06-16 - Performance/FPS notes resolved:
+  - FPS mode UI gives a short chat confirmation when the saved FPS setting changes, and Check only updates Current mode text.
+  - `canvasTexture.ReleaseKey()` no longer counts manual plate-cache releases as texture evictions; only cache-limit trims count as evictions.
+- 2026-06-16 - Enmity profile/mode redesign:
+  - `Settings > Profiles > Enmity` owns Active and Mode (`Healer`, `Tank`, `Both`) under Auto switch.
+  - `Enmity (module)` plate panels now configure role-specific marker visuals: ally danger markers on Self/PC/Trust/Pet and enemy control markers on Enemy.
+  - Enmity icons load from bundled `assets\images\enmity` PNGs, with icon preview rows, color tint, size, position, and preview/drag support.
+- 2026-06-16 - Luopan GEO status icons:
+  - `core\luopan_statuses.lua` tracks own GEO abilities: Lasting Emanation (`515`), Ecliptic Attrition (`516`), and Dematerialize (`518`).
+  - `modules\plates\pet.lua` renders Luopan status icons through `Luopan > Luopan > Buffs`.
+  - Lasting/Ecliptic are current-Luopan lifetime effects; Dematerialize uses a 60s timer. Probe command: `/lp luopanprobe on [seconds] | off | status`.
 - 2026-06-15 - Status icon theme cleanup:
   - Settings `Font` is now `Theme`, and status icons have one global `Status icon pack` there instead of separate Buff/Debuff pack dropdowns on every plate.
   - The visible status pack list is local pack based (`HD`, `Tetsouou`, `xiPrime`, `XIView` when present); `Native` remains only an internal fallback path.
@@ -491,7 +529,6 @@ Add new notes below. Newest notes can go at the top.
 - Background settings layout direction: make one polished background editor pattern and reuse it everywhere. Desired order is Width/Height, Position X/Y, then Fill color + Opacity on one row, then Border color + Border size on one row. Applied to Peer > Background and the shared normal plate Background editor.
 - Peer Job component layout direction: Peer > Job uses compact paired rows. Display is a dropdown; Icon theme appears on the same row only when Icon display is selected; Position X/Y share one row; Icon mode shows Icon size and live/preview Peer renders the selected job icon; Text mode shows font size/color and outline settings. A similar shared normal Job editor pass was started too, but current testing focus remains Peer.
 - Peer Level component now includes difficulty font colors in the Peer style: Use difficulty font colors toggle plus TW/EP/DC/EM/T/VT/IT color rows. Live Enemy Peer colors Level from mob level versus viewer level; preview uses the T color as the sample.
-- Enmity module now follows the old addon Healer/Tank behavior while staying icon-only for now. The icon asset lives at `assets/images/enmity_icon.png`; Modules > Enmity exposes Active, Mode, Position X/Y, and Icon size. Healer mode marks the ally plate currently targeted by an enemy; Tank mode marks the enemy currently targeting self. Do not put background/highlight controls in Enmity yet; make those part of the future reusable highlight/effect system.
 - Resting module first rebuilt pass: live Self now treats entity `Status == 33` as Resting, keeps the regular Self layout sourced from Idle, and overlays a Resting tick bar from `global.resting`. Discord research says perfect accuracy is not possible from normal client state because rest gains are delivered on imperfect server update ticks. Current tracker shows the first 20s countdown, starts the 10s repeat countdown from the first meaningful HP/MP gain, then resyncs later repeats from meaningful MP jumps (`mpTickThreshold`, default 12). At full MP it falls back to normal timer wrapping.
 - Fishing module first rebuilt pass: old addon only had an empty `ui/widgets/fishing.lua`; useful source was the old Self module mapping plus worksheet status IDs. Current module treats statuses 38-43, 50-53, and 56-62 as Fishing, reuses the Self Idle layout as the base, and listens for fishing gut-feeling chat lines. Result mapping: didn't catch anything -> `fishing_00.png` + `You didn't catch anything`; good feeling -> `fishing_01.png` + `Easy catch`; don't know enough skill -> `fishing_02.png` + `Moderate catch`; fairly sure -> `fishing_03.png` + `Hard catch`; positive not enough -> `fishing_04.png` + `Very difficult catch`; bad feeling -> `fishing_05.png` + `Extreme catch`; terrible feeling -> `fishing_06.png` + `Dangerous catch`. These images are separate result icons, not animation frames, and live in `assets/images/fishing`. Settings live in Modules > Fishing and Plates > Self > Idle > Fishing (module).
 - Settings UI direction: reset actions should live at the bottom of each settings panel like the existing "Reset X position/settings" pattern, but Lila prefers actual buttons over yellow text links. Preserve the modal/dimmed confirmation behavior. First cleanup done in Plates > Target/Subtarget placement by removing the top "Reset placement nudges" button and adding bottom reset-position/settings buttons with confirmation. Follow-up pass should convert the remaining yellow reset links to bottom buttons without changing their behavior.
@@ -525,16 +562,13 @@ Add new notes below. Newest notes can go at the top.
 - User backlog: Keep the current profile always visible in settings, possibly with a top bar.
 - User backlog: Add enemy cast bar settings.
 - User backlog: Make buff filtering input smarter for time values, possibly a 2-digit field plus S/M/H radio buttons.
-- User backlog: Enmity is currently in Enemy; find a better place, possibly profile-dependent for Enemy vs Self.
 - User backlog: Remove BST chat spam.
 - User backlog: Some widget-list names are blue.
-- User backlog: Distance meter should only show on target/subtarget.
 - User backlog: Move resting out of dropdown to its own setting and check its timer bug.
 - User backlog: Enemy preview needs long/short name examples.
 - User backlog: Blue magic is missing casting icons and is not showing AOE.
 - User backlog: Add stacking plate priority list so users can choose which plates show in which order.
 - User backlog: GEO and maybe other auras have `0` duration, which triggers buff time color warnings.
-- User backlog: Warning screen color scheme is still red.
 - User backlog: Range arrow color only works out of combat.
 - Mog House / Nomad Moogle quick menu presets: mostly done, needs a little more testing.
   - Mog House Moogle now shows a dedicated job-preset section in the quick menu.

@@ -38,6 +38,10 @@ local nearbyScanCache = {
     range = nil,
     trusts = nil,
 };
+local plateWorkGateCache = {
+    clock = 0,
+    result = true,
+};
 local nearbyTrustScanCacheSeconds = 0.20;
 
 for key, value in pairs(buffsDefaults) do
@@ -618,7 +622,7 @@ local function QueueTrust(trust)
     };
 
     if (enmityEnabled == true) then
-        enmity.AddIcon(plateData, globalSettings.enmity);
+        enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
     AddStatusIconsToPlate(plateData, buffRows, buffsSettings, layoutStateName == 'Combat', globalSettings, 'buffs');
@@ -698,6 +702,47 @@ function trustPlate.Build()
     return nil;
 end
 
+local function TrustWidgetEnabled(layoutStateName, widgetName, defaults)
+    local settings = state.GetWidgetSettings('Trust', layoutStateName, widgetName, defaults);
+    return settings ~= nil and settings.enabled == true;
+end
+
+local function AnyTrustWidgetCanLoadForState(layoutStateName)
+    return
+        TrustWidgetEnabled(layoutStateName, 'Background', backgroundDefaults) == true or
+        TrustWidgetEnabled(layoutStateName, 'Name', nameDefaults) == true or
+        TrustWidgetEnabled(layoutStateName, 'HP Bar', barDefaults) == true or
+        TrustWidgetEnabled(layoutStateName, 'MP Bar', mpBarDefaults) == true or
+        TrustWidgetEnabled(layoutStateName, 'TP Bar', tpBarDefaults) == true or
+        TrustWidgetEnabled(layoutStateName, 'Buffs', trustBuffDefaults) == true or
+        TrustWidgetEnabled(layoutStateName, 'Debuffs', debuffsDefaults) == true;
+end
+
+local function AnyTrustPlateWorkCanLoad()
+    local now = os.clock();
+
+    if ((now - (tonumber(plateWorkGateCache.clock) or 0)) < 0.50) then
+        return plateWorkGateCache.result == true;
+    end
+
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local enmitySettings = globalSettings ~= nil and globalSettings.enmity or nil;
+    local targetSettings = targetModuleMarker.GetSettings('Trust', 'Combat', 'Target');
+    local subtargetSettings = targetModuleMarker.GetSettings('Trust', 'Combat', 'Subtarget');
+    local result =
+        AnyTrustWidgetCanLoadForState('Idle') == true or
+        AnyTrustWidgetCanLoadForState('Combat') == true or
+        TrustWidgetEnabled('Combat', 'AOE range', aoeRangeDefaults) == true or
+        targetModuleMarker.HasDrawableSettings('Trust', targetSettings) == true or
+        targetModuleMarker.HasDrawableSettings('Trust', subtargetSettings) == true or
+        (enmitySettings ~= nil and enmitySettings.enabled == true);
+
+    plateWorkGateCache.clock = now;
+    plateWorkGateCache.result = result == true;
+
+    return result == true;
+end
+
 function trustPlate.Render()
     if (state.GetWorldEnabled() ~= true) then
         return;
@@ -717,6 +762,11 @@ function trustPlate.Render()
     end
 
     if (worldMarkerProbe.GetEnabled() ~= true or worldMarkerProbe.GetReplacePlates() ~= true) then
+        return;
+    end
+
+    if (AnyTrustPlateWorkCanLoad() ~= true) then
+        nearbyScanCache.trusts = nil;
         return;
     end
 

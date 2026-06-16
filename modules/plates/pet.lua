@@ -38,6 +38,8 @@ local jugIconTextureId = nil;
 local petStateIconTextureIds = {};
 local petAnchorBone = 12;
 local petWorldOffsetY = 0.16;
+local wyvernRestingAnchorBone = 0;
+local wyvernRestingOverlayOffsetY = -170;
 local luopanWorldOffsetY = -1.60;
 local luopanCanvasHeight = 1024;
 local luopanPlateWorldHeight = 2.36;
@@ -81,6 +83,27 @@ luopanBuffsDefaults.offsetY = -122;
 
 local function IsTargetOrSubtarget(targetStateName)
     return targetStateName == 'Target' or targetStateName == 'Subtarget';
+end
+
+local function IsPetResting(pet)
+    if (tonumber(pet ~= nil and pet.status or nil) == 33) then
+        return true;
+    end
+
+    local self = entities.GetSelf();
+    return tonumber(self ~= nil and self.status or nil) == 33;
+end
+
+function petPlate.GetWyvernWorldOffsetY(pet)
+    return petWorldOffsetY;
+end
+
+function petPlate.GetWyvernAnchorBone(pet)
+    return IsPetResting(pet) == true and wyvernRestingAnchorBone or petAnchorBone;
+end
+
+function petPlate.GetWyvernOverlayOffsetY(pet)
+    return IsPetResting(pet) == true and wyvernRestingOverlayOffsetY or 0;
 end
 
 local function GetJugIconTextureId()
@@ -1088,7 +1111,7 @@ local function QueueBstPet(pet)
     end
 
     if (enmity.ShouldDrawAlly(pet, globalSettings) == true) then
-        enmity.AddIcon(plateData, globalSettings.enmity);
+        enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'bst-pet-' .. tostring(pet.index));
@@ -1334,7 +1357,7 @@ local function QueueSmnPet(pet)
     end
 
     if (enmity.ShouldDrawAlly(pet, globalSettings) == true) then
-        enmity.AddIcon(plateData, globalSettings.enmity);
+        enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'smn-pet-' .. tostring(pet.index));
@@ -1375,6 +1398,9 @@ end
 local function QueueWyvernPet(pet)
     local layoutStateName = 'Wyvern';
     local targetStateName = targeting.GetTargetStateName(pet.index);
+    local wyvernAnchorBone = petPlate.GetWyvernAnchorBone(pet);
+    local wyvernWorldOffsetY = petPlate.GetWyvernWorldOffsetY(pet);
+    local wyvernOverlayOffsetY = petPlate.GetWyvernOverlayOffsetY(pet);
     local nameSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'Background', backgroundDefaults);
     local hpBarSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'HP Bar', barDefaults);
@@ -1510,7 +1536,7 @@ local function QueueWyvernPet(pet)
     end
 
     if (enmity.ShouldDrawAlly(pet, globalSettings) == true) then
-        enmity.AddIcon(plateData, globalSettings.enmity);
+        enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'wyvern-pet-' .. tostring(pet.index));
@@ -1535,10 +1561,11 @@ local function QueueWyvernPet(pet)
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
-            anchorBone = petAnchorBone,
+            anchorBone = wyvernAnchorBone,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
-            plateWorldOffsetY = petWorldOffsetY,
+            plateWorldOffsetY = wyvernWorldOffsetY,
+            plateOverlayOffsetY = wyvernOverlayOffsetY,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData),
@@ -1728,7 +1755,7 @@ local function QueuePupPet(pet)
     pupManeuvers.AddIcons(plateData, maneuverSettings, globalSettings);
 
     if (enmity.ShouldDrawAlly(pet, globalSettings) == true) then
-        enmity.AddIcon(plateData, globalSettings.enmity);
+        enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'pup-pet-' .. tostring(pet.index));

@@ -65,6 +65,11 @@ local idleDirectDynamicCacheSeconds = 0.35;
 local idleDirectStaticCacheSeconds = 2.00;
 local pcIdleCanvasBuildsThisFrame = 0;
 local pcIdleCanvasBuildLimitThisFrame = 0;
+local plateWorkGateCache = {
+    clock = 0,
+    engaged = nil,
+    result = true,
+};
 local jobAbbreviations = {
     [1] = 'WAR',
     [2] = 'MNK',
@@ -725,6 +730,87 @@ local function ShouldDeferIdlePcCanvasBuild(cacheEligible)
     return false;
 end
 
+local function TargetMarkerCanDraw(layoutStateName, targetStateName)
+    local nativeUiPolicy = require('core.native_ui_policy');
+
+    if (nativeUiPolicy.ShouldDrawLibraTargetingSystem() ~= true) then
+        return false;
+    end
+
+    local markerSettings = targetModuleMarker.GetSettings('PC', layoutStateName, targetStateName);
+    return targetModuleMarker.HasDrawableSettings('PC', markerSettings) == true;
+end
+
+local function AnyPcWidgetCanLoadForState(layoutStateName)
+    local backgroundSettings = state.GetWidgetSettings('PC', layoutStateName, 'Background', backgroundDefaults);
+    local nameSettings = state.GetWidgetSettings('PC', layoutStateName, 'Name', nameDefaults);
+    local distanceSettings = state.GetWidgetSettings('PC', layoutStateName, 'Distance', distanceDefaults);
+    local hpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'HP Bar', barDefaults);
+    local mpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'MP Bar', mpBarDefaults);
+    local tpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'TP Bar', tpBarDefaults);
+    local jobSettings = state.GetWidgetSettings('PC', layoutStateName, 'Job', jobDefaults);
+    local levelSettings = state.GetWidgetSettings('PC', layoutStateName, 'Level', levelDefaults);
+    local buffsSettings = state.GetWidgetSettings('PC', layoutStateName, 'Buffs', buffsDefaults);
+    local debuffsSettings = state.GetWidgetSettings('PC', layoutStateName, 'Debuffs', debuffsDefaults);
+    local gameModeIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Game mode icon', gameModeIconDefaults);
+    local partyLeaderIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Party leader icon', partyLeaderIconDefaults);
+    local allianceLeaderIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Alliance leader icon', allianceLeaderIconDefaults);
+    local linkshellIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Linkshell icon', linkshellIconDefaults);
+    local bazaarIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Bazaar icon', bazaarIconDefaults);
+    local awayIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Away icon', awayIconDefaults);
+    local disconnectIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Disconnect icon', disconnectIconDefaults);
+    local starsIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Stars icon', starsIconDefaults);
+    local newAdventurerIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'New adventurer icon', newAdventurerIconDefaults);
+
+    return
+        WidgetLoads(backgroundSettings, 'Background') == true or
+        WidgetLoads(nameSettings, 'Name') == true or
+        WidgetLoads(distanceSettings, 'Distance') == true or
+        WidgetLoads(hpBarSettings, 'HP Bar') == true or
+        WidgetLoads(mpBarSettings, 'MP Bar') == true or
+        WidgetLoads(tpBarSettings, 'TP Bar') == true or
+        WidgetLoads(jobSettings, 'Job') == true or
+        WidgetLoads(levelSettings, 'Level') == true or
+        WidgetLoads(gameModeIconSettings, 'Game mode icon') == true or
+        WidgetLoads(partyLeaderIconSettings, 'Party leader icon') == true or
+        WidgetLoads(allianceLeaderIconSettings, 'Alliance leader icon') == true or
+        WidgetLoads(linkshellIconSettings, 'Linkshell icon') == true or
+        WidgetLoads(bazaarIconSettings, 'Bazaar icon') == true or
+        WidgetLoads(awayIconSettings, 'Away icon') == true or
+        WidgetLoads(disconnectIconSettings, 'Disconnect icon') == true or
+        WidgetLoads(starsIconSettings, 'Stars icon') == true or
+        WidgetLoads(newAdventurerIconSettings, 'New adventurer icon') == true or
+        ShouldLoadStatusRows(buffsSettings, 'Buffs', layoutStateName == 'Combat') == true or
+        ShouldLoadStatusRows(debuffsSettings, 'Debuffs', layoutStateName == 'Combat') == true;
+end
+
+local function AnyPcPlateWorkCanLoad()
+    local now = os.clock();
+    local engagedKey = currentPlayerEngaged == true;
+
+    if (
+        plateWorkGateCache.engaged == engagedKey and
+        (now - (tonumber(plateWorkGateCache.clock) or 0)) < 0.50
+    ) then
+        return plateWorkGateCache.result == true;
+    end
+
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local enmitySettings = globalSettings ~= nil and globalSettings.enmity or nil;
+    local result =
+        AnyPcWidgetCanLoadForState('Idle') == true or
+        AnyPcWidgetCanLoadForState('Combat') == true or
+        TargetMarkerCanDraw('Combat', 'Target') == true or
+        TargetMarkerCanDraw('Combat', 'Subtarget') == true or
+        (enmitySettings ~= nil and enmitySettings.enabled == true);
+
+    plateWorkGateCache.clock = now;
+    plateWorkGateCache.engaged = engagedKey;
+    plateWorkGateCache.result = result == true;
+
+    return result == true;
+end
+
 local function BuildPcPlateData(context)
     local plateData = {
         hp = context.hpPercent,
@@ -900,7 +986,9 @@ local function QueuePlayer(player)
     local disconnectIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Disconnect icon', disconnectIconDefaults);
     local starsIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Stars icon', starsIconDefaults);
     local newAdventurerIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'New adventurer icon', newAdventurerIconDefaults);
+    local nativeUiPolicy = require('core.native_ui_policy');
     local targetMarker = targetStateName ~= 'Idle'
+        and nativeUiPolicy.ShouldDrawLibraTargetingSystem() == true
         and targetModuleMarker.Build('PC', layoutStateName, targetStateName, hpBarSettings, player.distance)
         or { enabled = false };
 
@@ -915,6 +1003,8 @@ local function QueuePlayer(player)
     local hpBarLoads = hasHp == true and WidgetLoads(hpBarSettings, 'HP Bar');
     local mpBarLoads = hasMp == true and WidgetLoads(mpBarSettings, 'MP Bar');
     local tpBarLoads = hasTp == true and WidgetLoads(tpBarSettings, 'TP Bar');
+    local jobLoads = WidgetLoads(jobSettings, 'Job');
+    local levelLoads = WidgetLoads(levelSettings, 'Level');
     local hpAnimationEnabled = hpBarLoads == true and hpBarSettings.lowColorEnabled == true and hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25) and hpBarSettings.lowAnimationEnabled == true;
     local mpAnimationEnabled = mpBarLoads == true and mpBarSettings.lowColorEnabled == true and mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25) and mpBarSettings.lowAnimationEnabled == true;
     perfMeter.EndDetail(settingsTimer);
@@ -1005,6 +1095,33 @@ local function QueuePlayer(player)
         distanceText = FormatDistanceText(distanceSettings, player.distance);
     end
 
+    local isEngaged = tonumber(player.status) == 1;
+    local buffsLoad = ShouldLoadStatusRows(buffsSettings, 'Buffs', isEngaged);
+    local debuffsLoad = ShouldLoadStatusRows(debuffsSettings, 'Debuffs', isEngaged);
+    local nameAoeActive = isPartyPlayer == true and aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(player.index, 'pc') == true;
+    local enmityAllyDraws = layoutStateName == 'Combat' and enmity.ShouldDrawAlly(player, globalSettings) == true;
+    local targetMarkerDraws = targetMarker ~= nil and targetMarker.enabled == true;
+
+    if (
+        backgroundLoads ~= true and
+        nameLoads ~= true and
+        hpBarLoads ~= true and
+        mpBarLoads ~= true and
+        tpBarLoads ~= true and
+        jobLoads ~= true and
+        levelLoads ~= true and
+        buffsLoad ~= true and
+        debuffsLoad ~= true and
+        distanceText == nil and
+        #icons == 0 and
+        targetMarkerDraws ~= true and
+        enmityAllyDraws ~= true and
+        nameAoeActive ~= true
+    ) then
+        indexCache[tonumber(player.index) or 0] = nil;
+        return;
+    end
+
     local cacheEligible = targetStateName == 'Idle'
         and isPartyPlayer ~= true
         and isTacticalPlayer ~= true
@@ -1092,7 +1209,6 @@ local function QueuePlayer(player)
     end
 
     local buildTimer = perfMeter.BeginDetail('pc.build');
-    local nameAoeActive = isPartyPlayer == true and aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(player.index, 'pc') == true;
     local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
     local plateData = BuildPcPlateData({
         player = player,
@@ -1134,11 +1250,11 @@ local function QueuePlayer(player)
         aoeRangeSettings = aoeRangeSettings,
     });
 
-    if (WidgetLoads(jobSettings, 'Job') == true) then
+    if (jobLoads == true) then
         AddJobToPlate(plateData, GetJobText(player.mainJob), jobSettings, globalSettings);
     end
 
-    if (WidgetLoads(levelSettings, 'Level') == true) then
+    if (levelLoads == true) then
         AddTextBadge(plateData, 'level', player.mainJobLevel, levelSettings, levelDefaults, globalSettings);
     end
 
@@ -1164,13 +1280,12 @@ local function QueuePlayer(player)
     end
 
     local statusTimer = perfMeter.BeginDetail('pc.status');
-    local isEngaged = tonumber(player.status) == 1;
 
-    if (ShouldLoadStatusRows(buffsSettings, 'Buffs', isEngaged) == true) then
+    if (buffsLoad == true) then
         AddStatusIconsToPlate(plateData, partyStatuses.GetMemberRows(player.serverId, 'buff'), buffsSettings, isEngaged, globalSettings, 'buffs');
     end
 
-    if (ShouldLoadStatusRows(debuffsSettings, 'Debuffs', isEngaged) == true) then
+    if (debuffsLoad == true) then
         AddStatusIconsToPlate(plateData, partyStatuses.GetMemberRows(player.serverId, 'debuff'), debuffsSettings, isEngaged, globalSettings, 'debuffs');
     end
     perfMeter.EndDetail(statusTimer);
@@ -1195,8 +1310,8 @@ local function QueuePlayer(player)
         };
     end
 
-    if (layoutStateName == 'Combat' and enmity.ShouldDrawAlly(player, globalSettings) == true) then
-        enmity.AddIcon(plateData, globalSettings.enmity);
+    if (enmityAllyDraws == true) then
+        enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
     if (plateData.aoeNameActive == true) then
         aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
@@ -1298,6 +1413,12 @@ function pcPlate.Render()
     end
 
     currentPlayerEngaged = targeting.IsPlayerEngaged() == true;
+
+    if (AnyPcPlateWorkCanLoad() ~= true) then
+        scanCache.players = nil;
+        return;
+    end
+
     local range = targeting.GetWorldPlateRange();
     local now = os.clock();
     local canUseScanCache = currentPlayerEngaged ~= true
@@ -1339,7 +1460,9 @@ function pcPlate.Render()
     end
 
     for _, player in ipairs(players) do
-        QueuePlayer(player);
+        if (entities.IsOwnPetIndex(player.index) ~= true) then
+            QueuePlayer(player);
+        end
     end
 
     pcIdleCanvasBuildLimitThisFrame = 0;

@@ -1240,41 +1240,49 @@ function peerInspector.Render()
     local globalSettings = state.GetGlobalSettings(globalDefaults);
     local peerSettings = globalSettings.peer or {};
 
+    if (peerSettings.enabled == false) then
+        return;
+    end
+
     if (IsModifierActive(peerSettings) ~= true) then
         return;
     end
 
-    local hoveredSelf = worldMarkerProbe.GetHoveredPlate('self');
+    local hovered = worldMarkerProbe.GetHoveredPlate();
 
-    if (hoveredSelf ~= nil) then
-        local layoutStateName = tostring(hoveredSelf.layoutStateName or 'Idle');
+    if (hovered == nil or hovered.targetIndex == nil) then
+        return;
+    end
+
+    local targetType = tostring(hovered.targetType or '');
+
+    if (targetType == 'self') then
+        local layoutStateName = tostring(hovered.layoutStateName or 'Idle');
         local selfPeerSettings = state.GetWidgetSettings('Self', layoutStateName, 'Peer', { enabled = true });
 
         if (selfPeerSettings ~= nil and selfPeerSettings.enabled == true) then
             DrawSelfInspector(GetSelfPeerData(), peerSettings);
-            return;
         end
+
+        return;
     end
 
-    local hoveredPlayer = worldMarkerProbe.GetHoveredPlate('pc');
-
-    if (hoveredPlayer ~= nil and hoveredPlayer.targetIndex ~= nil) then
-        local layoutStateName = tostring(hoveredPlayer.layoutStateName or 'Idle');
+    if (targetType == 'pc') then
+        local layoutStateName = tostring(hovered.layoutStateName or 'Idle');
         local playerPeerSettings = state.GetWidgetSettings('PC', layoutStateName, 'Peer', { enabled = true });
 
         if (playerPeerSettings ~= nil and playerPeerSettings.enabled == true) then
-            local player = GetPlayerPeerData(hoveredPlayer.targetIndex, peerSettings);
+            local player = GetPlayerPeerData(hovered.targetIndex, peerSettings);
 
             if (player ~= nil) then
                 DrawPlayerInspector(player, peerSettings);
-                return;
             end
         end
+
+        return;
     end
 
-    local hovered = worldMarkerProbe.GetHoveredPlate('enemy');
-
-    if (hovered == nil or hovered.targetIndex == nil) then
+    if (targetType ~= 'enemy') then
         return;
     end
 

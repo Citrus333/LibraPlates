@@ -667,6 +667,39 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'isolate' or subcommand == 'perfiso') then
+        local name = tostring(args[3] or 'status'):lower();
+        local value = tostring(args[4] or 'status'):lower();
+
+        if (name == 'status' or name == '') then
+            log.Info('Perf isolate disabled subsystems: ' .. modules.GetPerfIsolationStatus());
+            return;
+        end
+
+        if (value == 'on' or value == 'disable' or value == 'disabled') then
+            if (modules.SetPerfIsolation(name, true) ~= true) then
+                log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|all on|off|status');
+                return;
+            end
+        elseif (value == 'off' or value == 'enable' or value == 'enabled') then
+            if (modules.SetPerfIsolation(name, false) ~= true) then
+                log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|all on|off|status');
+                return;
+            end
+        elseif (value == 'toggle' or value == '') then
+            if (modules.SetPerfIsolation(name, modules.GetPerfIsolation(name) ~= true) ~= true) then
+                log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|all on|off|status');
+                return;
+            end
+        elseif (value ~= 'status') then
+            log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|all on|off|status');
+            return;
+        end
+
+        log.Info('Perf isolate disabled subsystems: ' .. modules.GetPerfIsolationStatus());
+        return;
+    end
+
     if (subcommand == 'clickdebug') then
         local value = tostring(args[3] or ''):lower();
 
@@ -1012,6 +1045,19 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'backups') then
+        local value = tostring(args[3] or 'prune'):lower();
+
+        if (value ~= 'prune' and value ~= 'clean' and value ~= 'status') then
+            log.Warn('Usage: /lp backups status');
+            return;
+        end
+
+        log.Warn('In-game backup pruning is disabled. Close the game and delete old files from the LibraPlates backups folder manually. Future backups overwrite settings-backup.lua only.');
+
+        return;
+    end
+
     if (subcommand == 'lagtest' or subcommand == 'lagcheck') then
         local value = tostring(args[3] or ''):lower();
 
@@ -1267,6 +1313,43 @@ function commands.Handle(e)
 
     if (subcommand == 'petstate') then
         log.Info(petState.GetStatusText());
+        return;
+    end
+
+    if (subcommand == 'petprobe') then
+        local selfEntity = entities.GetSelf();
+        local petIndex = entities.GetOwnPetTargetIndex();
+        local mainJob = entities.GetPlayerMainJobId();
+        local pet = entities.GetOwnDrgPet() or entities.GetOwnBstPet() or entities.GetOwnSmnPet() or entities.GetOwnPupPet() or entities.GetOwnLuopan();
+        local debug = petIndex ~= nil and entities.GetEntityDebugInfo(petIndex, targeting.GetSettings().enemyPlateRange) or nil;
+        local selfStatus = tonumber(selfEntity ~= nil and selfEntity.status or nil);
+        local petStatus = tonumber(pet ~= nil and pet.status or nil);
+        local restingTrigger = petStatus == 33 or selfStatus == 33;
+        local petAnchorBone = (pet ~= nil and pet.petType == 'wyvern') and petPlate.GetWyvernAnchorBone(pet) or nil;
+        local petWorldOffset = (pet ~= nil and pet.petType == 'wyvern') and petPlate.GetWyvernWorldOffsetY(pet) or nil;
+        local petOverlayOffset = (pet ~= nil and pet.petType == 'wyvern') and petPlate.GetWyvernOverlayOffsetY(pet) or nil;
+
+        log.Info(
+            'Pet probe mainJob=' .. tostring(mainJob) ..
+            ' selfStatus=' .. tostring(selfStatus) ..
+            ' petIndex=' .. tostring(petIndex) ..
+            ' petName=' .. tostring(pet ~= nil and pet.name or nil) ..
+            ' petType=' .. tostring(pet ~= nil and pet.petType or nil) ..
+            ' petServer=' .. tostring(pet ~= nil and pet.serverId or nil) ..
+            ' petStatus=' .. tostring(petStatus) ..
+            ' petHpPct=' .. tostring(pet ~= nil and pet.hpPercent or nil) ..
+            ' petDistance=' .. tostring(pet ~= nil and pet.distance or nil) ..
+            ' restingTrigger=' .. tostring(restingTrigger) ..
+            ' petAnchorBone=' .. tostring(petAnchorBone) ..
+            ' petWorldOffsetY=' .. tostring(petWorldOffset) ..
+            ' petOverlayOffsetY=' .. tostring(petOverlayOffset) ..
+            ' rawName=' .. tostring(debug ~= nil and debug.name or nil) ..
+            ' rawType=' .. tostring(debug ~= nil and debug.type or nil) ..
+            ' rawStatus=' .. tostring(debug ~= nil and debug.status or nil) ..
+            ' spawn=0x' .. string.format('%X', tonumber(debug ~= nil and debug.spawnFlags or 0) or 0) ..
+            ' render0=0x' .. string.format('%X', tonumber(debug ~= nil and debug.renderFlags0 or 0) or 0) ..
+            ' render1=0x' .. string.format('%X', tonumber(debug ~= nil and debug.renderFlags1 or 0) or 0)
+        );
         return;
     end
 
@@ -1684,7 +1767,6 @@ function commands.Handle(e)
 
     if (subcommand == 'config' or subcommand == 'settings') then
         state.SetConfigOpen(not state.GetConfigOpen());
-        log.Info('Config open=' .. tostring(state.GetConfigOpen()));
         return;
     end
 
@@ -1800,7 +1882,7 @@ function commands.Handle(e)
         return;
     end
 
-    log.Info('Commands: /lp config, /lp perf on, /lp perf detail on, /lp diag start, /lp diag scenario target-on, /lp diag restore, /lp world on, /lp world off, /lp mousemove on, /lp mousesteer on, /lp bridge status, /lp depthbridge, /lp depthtest, /lp castdebug on [seconds], /lp fpsstatus, /lp imgui, /lp cursor on');
+    log.Info('Commands: /lp config, /lp petprobe, /lp perf on, /lp perf detail on, /lp isolate status, /lp diag start, /lp diag scenario target-on, /lp diag restore, /lp world on, /lp world off, /lp mousemove on, /lp mousesteer on, /lp bridge status, /lp depthbridge, /lp depthtest, /lp castdebug on [seconds], /lp fpsstatus, /lp imgui, /lp cursor on');
 end
 
 return commands;

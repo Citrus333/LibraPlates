@@ -7,6 +7,7 @@ local anchorControls = require('modules.widgets.anchor_controls');
 local preview = require('modules.settings.preview');
 local textureLoader = require('core.texture_loader');
 local jobIconTextures = require('core.job_icon_textures');
+LibraPlatesEnmityIcons = require('core.enmity_icons');
 local uiTooltip = require('core.ui_tooltip');
 local arrowAnimation = require('core.target_arrow_animation');
 local fonts = require('core.fonts');
@@ -3563,6 +3564,47 @@ function DrawFontFolderLink(label, detailText)
     end
 end
 
+function DrawStatusIconPackPreview(statusIconTextures)
+    local samples = {
+        { id = 33, label = 'Haste' },
+        { id = 40, label = 'Protect' },
+        { id = 4, label = 'Paralyze' },
+        { id = 193, label = "Army's Paeon" },
+        { id = 310, label = 'Chaos Roll' },
+        { id = 375, label = '375' },
+        { id = 381, label = '381' },
+        { id = 553, label = '553' },
+        { id = 470, label = '470' },
+    };
+
+    local function DrawIconTooltip(text)
+        if (imgui.IsItemHovered == nil or imgui.IsItemHovered() ~= true) then
+            return;
+        end
+
+        if (imgui.SetTooltip ~= nil) then
+            imgui.SetTooltip(tostring(text or ''));
+        end
+    end
+
+    imgui.Spacing();
+    imgui.TextColored(settingsLabelColor, 'Examples');
+
+    for index, sample in ipairs(samples) do
+        if (index > 1) then
+            imgui.SameLine();
+        end
+
+        local textureId = statusIconTextures.GetTextureId(sample.id);
+        if (textureId ~= nil) then
+            imgui.Image(textureId, { 24, 24 }, { 0, 0 }, { 1, 1 });
+            DrawIconTooltip(sample.label);
+        else
+            imgui.TextColored({ 0.60, 0.62, 0.66, 1.0 }, '--');
+        end
+    end
+end
+
 function DrawTopTabs()
     if (useNativeTopTabs == true and imgui.BeginTabBar ~= nil and imgui.BeginTabItem ~= nil and imgui.EndTabItem ~= nil and imgui.EndTabBar ~= nil) then
         if (imgui.BeginTabBar('##libraplates_top_tabs')) then
@@ -3806,6 +3848,7 @@ function SelectPreviewElement(kind, context)
         levelSyncIcon = 'Level sync icon',
         newAdventurerIcon = 'New adventurer icon',
         aoeRangeIcon = 'AOE range (module)',
+        enmity = 'Enmity (module)',
         buffs = 'Buffs',
         debuffs = 'Debuffs',
     };
@@ -3966,6 +4009,28 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         return;
     end
 
+    if (normalizedKind == 'enmity') then
+        local global = state.GetGlobalSettings(globalDefaults);
+        local isEnemyRole = (context ~= nil and tostring(context.entityName or '') == 'Enemy') or (selectedTab == 'Plates' and GetStorageEntity(selectedEntity) == 'Enemy');
+        local xKey = isEnemyRole == true and 'enemyOffsetX' or 'allyOffsetX';
+        local yKey = isEnemyRole == true and 'enemyOffsetY' or 'allyOffsetY';
+        local fallbackX = isEnemyRole == true and (global.enmity ~= nil and global.enmity.enemyOffsetX or nil) or (global.enmity ~= nil and global.enmity.allyOffsetX or nil);
+        local fallbackY = isEnemyRole == true and (global.enmity ~= nil and global.enmity.enemyOffsetY or nil) or (global.enmity ~= nil and global.enmity.allyOffsetY or nil);
+        global.enmity = global.enmity or {};
+        global.enmity[xKey] = math.max(-500, math.min(500, (tonumber(fallbackX) or tonumber(global.enmity.offsetX) or -108) + deltaX));
+        global.enmity[yKey] = math.max(-500, math.min(500, (tonumber(fallbackY) or tonumber(global.enmity.offsetY) or -17) + deltaY));
+
+        if (selectedTab == 'Modules') then
+            selectedModuleWidget = 'Enmity';
+        elseif (selectedTab == 'Plates' and ListContains(GetEditWidgets(), 'Enmity (module)') == true) then
+            selectedWidget = 'Enmity (module)';
+        end
+
+        PersistUiSelection();
+        state.Save();
+        return;
+    end
+
     local widgetByKind = {
         background = 'Background',
         name = 'Name',
@@ -4005,6 +4070,7 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         levelSyncIcon = 'Level sync icon',
         newAdventurerIcon = 'New adventurer icon',
         aoeRangeIcon = 'AOE range (module)',
+        enmity = 'Enmity (module)',
         buffs = 'Buffs',
         debuffs = 'Debuffs',
     };
@@ -5162,44 +5228,178 @@ function LibraPlatesSettingsDrawPeerModuleSettings(settings, options)
     end
 end
 
-function LibraPlatesSettingsDrawEnmityModuleSettings(settings, hideActive)
+function EnsureEnmitySettings(settings)
     settings.enmity = settings.enmity or {};
 
     if (settings.enmity.enabled == nil) then settings.enmity.enabled = true; end
     if (settings.enmity.mode == nil) then settings.enmity.mode = 'healer'; end
-    if (settings.enmity.offsetX == nil) then settings.enmity.offsetX = -108; end
-    if (settings.enmity.offsetY == nil) then settings.enmity.offsetY = -17; end
-    if (settings.enmity.iconSize == nil) then settings.enmity.iconSize = 31; end
+    if (settings.enmity.allyIconFile == nil) then settings.enmity.allyIconFile = settings.enmity.iconFile or 'warning-dimond.png'; end
+    if (settings.enmity.allyColor == nil) then settings.enmity.allyColor = settings.enmity.color or { 1.0, 0.28, 0.20, 1.0 }; end
+    if (settings.enmity.allyOffsetX == nil) then settings.enmity.allyOffsetX = settings.enmity.offsetX or -108; end
+    if (settings.enmity.allyOffsetY == nil) then settings.enmity.allyOffsetY = settings.enmity.offsetY or -17; end
+    if (settings.enmity.allyIconSize == nil) then settings.enmity.allyIconSize = settings.enmity.iconSize or 31; end
+    if (settings.enmity.enemyIconFile == nil) then settings.enmity.enemyIconFile = 'shield-alert.png'; end
+    if (settings.enmity.enemyColor == nil) then settings.enmity.enemyColor = { 0.25, 0.85, 1.0, 1.0 }; end
+    if (settings.enmity.enemyOffsetX == nil) then settings.enmity.enemyOffsetX = settings.enmity.offsetX or -108; end
+    if (settings.enmity.enemyOffsetY == nil) then settings.enmity.enemyOffsetY = settings.enmity.offsetY or -17; end
+    if (settings.enmity.enemyIconSize == nil) then settings.enmity.enemyIconSize = settings.enmity.iconSize or 31; end
+end
 
-    if (hideActive ~= true) then
-        DrawCheckbox('Active', settings.enmity.enabled == true, function(value)
-            settings.enmity.enabled = value == true;
-            state.Save();
-        end);
+function GetEnmityModeLabel(mode)
+    mode = tostring(mode or 'healer'):lower();
+
+    if (mode == 'tank') then
+        return 'Tank';
+    elseif (mode == 'both') then
+        return 'Both';
     end
 
-    if (settings.enmity.enabled ~= true and hideActive ~= true) then
+    return 'Healer';
+end
+
+function DrawEnmityIconComboRow(label, items, selected, onSelect, id, fallback)
+    local current = LibraPlatesEnmityIcons.ResolveFile(selected, fallback);
+    local comboId = '##' .. tostring(id or label or 'enmity_icon_combo');
+
+    local function DrawControl()
+        if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+            if (imgui.PushItemWidth ~= nil) then
+                imgui.PushItemWidth(260);
+            end
+
+            if (imgui.BeginCombo(comboId, current) == true) then
+                for _, item in ipairs(items) do
+                    local itemText = tostring(item or '');
+                    local isSelected = itemText == current;
+                    local textureId = LibraPlatesEnmityIcons.GetTextureId(itemText);
+
+                    if (textureId ~= nil and imgui.Image ~= nil) then
+                        imgui.Image(textureId, { 18, 18 }, { 0, 0 }, { 1, 1 });
+                        imgui.SameLine();
+                    end
+
+                    if (imgui.Selectable(itemText, isSelected) == true) then
+                        onSelect(itemText);
+                    end
+
+                    if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                        imgui.SetItemDefaultFocus();
+                    end
+                end
+
+                imgui.EndCombo();
+            end
+
+            if (imgui.PopItemWidth ~= nil) then
+                imgui.PopItemWidth();
+            end
+
+            return;
+        end
+
+        DrawInlineComboRow(label, items, current, onSelect, id, nil, 94, settingsTableFlagsNoBorders);
+    end
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##settings_enmity_icon_combo_' .. tostring(id or label or 'combo'), 2, settingsTableFlagsNoBorders)) then
+            imgui.TableSetupColumn('##label', 0, 94);
+            imgui.TableSetupColumn('##control', 0, 260);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, label);
+            imgui.TableNextColumn();
+            DrawControl();
+            imgui.EndTable();
+        end
+    else
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, label);
+        imgui.SameLine();
+        DrawControl();
+    end
+end
+
+function DrawEnmityMarkerSettings(enmitySettings, role)
+    local prefix = role == 'enemy' and 'enemy' or 'ally';
+    local title = role == 'enemy' and 'Enemy control marker' or 'Ally danger marker';
+    local idPrefix = role == 'enemy' and 'EnemyControl' or 'AllyDanger';
+
+    DrawYellowHeader(title);
+    imgui.Spacing();
+
+    local iconKey = prefix .. 'IconFile';
+    local colorKey = prefix .. 'Color';
+    local sizeKey = prefix .. 'IconSize';
+    local xKey = prefix .. 'OffsetX';
+    local yKey = prefix .. 'OffsetY';
+    local currentIcon = LibraPlatesEnmityIcons.ResolveFile(enmitySettings[iconKey], prefix == 'enemy' and 'shield-alert.png' or 'warning-dimond.png');
+
+    DrawEnmityIconComboRow('Icon', LibraPlatesEnmityIcons.GetFiles(), currentIcon, function(value)
+        enmitySettings[iconKey] = LibraPlatesEnmityIcons.ResolveFile(value, currentIcon);
+        state.Save();
+    end, idPrefix .. 'IconFile', currentIcon);
+    local iconColor, iconColorChanged = DrawSettingsColor('Color', enmitySettings[colorKey], idPrefix .. 'Color');
+    if (iconColorChanged == true) then
+        enmitySettings[colorKey] = iconColor;
+        state.Save();
+    end
+
+    local x, xChanged, y, yChanged = DrawPlacementPair('Position X', enmitySettings[xKey], idPrefix .. 'IconX', 'Position Y', enmitySettings[yKey], idPrefix .. 'IconY', -500, 500, 1);
+    if (xChanged == true or yChanged == true) then
+        enmitySettings[xKey] = x;
+        enmitySettings[yKey] = y;
+        state.Save();
+    end
+
+    local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', enmitySettings[sizeKey], idPrefix .. 'IconSize', 6, 160, 1, 104, 124, 58);
+    if (iconSizeChanged == true) then
+        enmitySettings[sizeKey] = iconSize;
+        state.Save();
+    end
+end
+
+function LibraPlatesSettingsDrawEnmityProfileSettings(settings)
+    EnsureEnmitySettings(settings);
+
+    DrawYellowHeader('Enmity');
+    imgui.Spacing();
+
+    DrawCheckbox('Active', settings.enmity.enabled == true, function(value)
+        settings.enmity.enabled = value == true;
+        state.Save();
+    end);
+
+    if (settings.enmity.enabled ~= true) then
         return;
     end
 
-    local modeDisplay = (tostring(settings.enmity.mode or 'healer'):lower() == 'tank') and 'Tank' or 'Healer';
-    DrawInlineComboRow('Mode', T{ 'Healer', 'Tank' }, modeDisplay, function(value)
+    DrawInlineComboRow('Mode', T{ 'Healer', 'Tank', 'Both' }, GetEnmityModeLabel(settings.enmity.mode), function(value)
         settings.enmity.mode = tostring(value or 'Healer'):lower();
         state.Save();
-    end, 'EnmityMode');
+    end, 'ProfileEnmityMode', nil, 94, settingsTableFlagsNoBorders);
+end
 
-    local x, xChanged, y, yChanged = DrawPlacementPair('Position X', settings.enmity.offsetX, 'EnmityIconX', 'Position Y', settings.enmity.offsetY, 'EnmityIconY', -500, 500, 1);
-    if (xChanged == true or yChanged == true) then
-        settings.enmity.offsetX = x;
-        settings.enmity.offsetY = y;
-        state.Save();
+function LibraPlatesSettingsDrawEnmityModuleSettings(settings, options)
+    EnsureEnmitySettings(settings);
+
+    options = options or {};
+
+    if (settings.enmity.enabled ~= true) then
+        imgui.TextColored({ 0.80, 0.80, 0.78, 1.0 }, 'Enmity is disabled in Settings > Profiles.');
+        return;
     end
 
-    local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.enmity.iconSize, 'EnmityIconSize', 6, 160, 1, 104, 124, 58);
-    if (iconSizeChanged == true) then
-        settings.enmity.iconSize = iconSize;
-        state.Save();
+    local mode = tostring(settings.enmity.mode or 'healer'):lower();
+    local role = options.role == 'enemy' and 'enemy' or 'ally';
+
+    if (role == 'enemy' and mode == 'healer') then
+        imgui.TextColored({ 0.80, 0.80, 0.78, 1.0 }, 'Enemy control markers are hidden while Enmity mode is Healer.');
+        return;
+    elseif (role == 'ally' and mode == 'tank') then
+        imgui.TextColored({ 0.80, 0.80, 0.78, 1.0 }, 'Ally danger markers are hidden while Enmity mode is Tank.');
+        return;
     end
+
+    DrawEnmityMarkerSettings(settings.enmity, role);
 end
 
 function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
@@ -6255,6 +6455,7 @@ local function DrawGeneralFontSection(global)
         state.Save();
     end);
     uiTooltip.Info('This pack is used by all Buffs and Debuffs across LibraPlates. Individual plates still keep their own icon size, spacing, and position settings.');
+    DrawStatusIconPackPreview(statusIconTextures);
     imgui.Spacing();
     imgui.Separator();
 end
@@ -7060,6 +7261,12 @@ local function DrawGeneralProfilesSection()
 
         uiTooltip.Info('Any sub job matches all subjobs and also matches when no subjob is set.');
     end
+
+    imgui.Spacing();
+    imgui.Spacing();
+    imgui.Separator();
+    imgui.Spacing();
+    LibraPlatesSettingsDrawEnmityProfileSettings(state.GetGlobalSettings(globalDefaults));
 
     imgui.Spacing();
     imgui.Separator();
@@ -8112,7 +8319,7 @@ if (selectedTab == 'Modules') then
         end
 
         if (selectedModuleName == 'Enmity') then
-            LibraPlatesSettingsDrawEnmityModuleSettings(state.GetGlobalSettings(globalDefaults));
+            LibraPlatesSettingsDrawEnmityModuleSettings(state.GetGlobalSettings(globalDefaults), { role = 'ally' });
             return;
         end
 
@@ -8186,7 +8393,10 @@ local function DrawSelectedEditorPlatesModules()
     end
 
     if (selectedWidget == 'Enmity (module)') then
-        LibraPlatesSettingsDrawEnmityModuleSettings(state.GetGlobalSettings(globalDefaults), true);
+        local storageEntity = GetStorageEntity(selectedEntity);
+        LibraPlatesSettingsDrawEnmityModuleSettings(state.GetGlobalSettings(globalDefaults), {
+            role = storageEntity == 'Enemy' and 'enemy' or 'ally',
+        });
         return;
     end
 

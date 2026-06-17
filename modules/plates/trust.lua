@@ -25,6 +25,7 @@ local worldMarkerProbe = require('core.world_marker_probe');
 local aoeNameHighlight = require('core.aoe_name_highlight');
 local aoeRangeVisuals = require('core.aoe_range_visuals');
 local perfMeter = require('core.perf_meter');
+local adaptivePerformance = require('core.adaptive_performance');
 
 local trustPlate = {};
 local plateCache = {};
@@ -409,6 +410,9 @@ local function QueueTrust(trust)
     local targetStateName = targeting.GetTargetStateName(trust.index);
     local layoutStateName = GetLayoutStateName(trust, targetStateName);
     local useTargetOverlay = layoutStateName == 'Combat' or targetStateName ~= 'Idle';
+    local isProtectedPlate = useTargetOverlay == true;
+
+    local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isProtectedPlate);
     local settingsTimer = perfMeter.BeginDetail('trust.settings');
     local nameSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Background', backgroundDefaults);
@@ -449,8 +453,8 @@ local function QueueTrust(trust)
         mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25);
     local targetMarker = targetModuleMarker.Build('Trust', layoutStateName, targetStateName, hpBarSettings, trust.distance);
     local enmityEnabled = enmity.ShouldDrawAlly(trust, globalSettings) == true;
-    local buffRows = trustStatusIcons.GetRows(trust.serverId, 'buff');
-    local debuffRows = trustStatusIcons.GetRows(trust.serverId, 'debuff');
+    local buffRows = suppressExpensiveWorldWidgets ~= true and trustStatusIcons.GetRows(trust.serverId, 'buff') or {};
+    local debuffRows = suppressExpensiveWorldWidgets ~= true and trustStatusIcons.GetRows(trust.serverId, 'debuff') or {};
     local cacheEligible = state.GetConfigOpen() ~= true;
     local cacheKey = nil;
     local signature = nil;
@@ -625,8 +629,10 @@ local function QueueTrust(trust)
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
-    AddStatusIconsToPlate(plateData, buffRows, buffsSettings, layoutStateName == 'Combat', globalSettings, 'buffs');
-    AddStatusIconsToPlate(plateData, debuffRows, debuffsSettings, layoutStateName == 'Combat', globalSettings, 'debuffs');
+    if (suppressExpensiveWorldWidgets ~= true) then
+        AddStatusIconsToPlate(plateData, buffRows, buffsSettings, layoutStateName == 'Combat', globalSettings, 'buffs');
+        AddStatusIconsToPlate(plateData, debuffRows, debuffsSettings, layoutStateName == 'Combat', globalSettings, 'debuffs');
+    end
     if (plateData.aoeNameActive == true) then
         aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
     end

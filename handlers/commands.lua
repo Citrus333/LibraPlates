@@ -39,6 +39,7 @@ local partyStatuses = require('core.party_statuses');
 local enemyStatuses = require('core.enemy_statuses');
 local npcObjectInfo = require('core.npc_object_info');
 local typeLineDefaults = require('config.widgets.type_line');
+local mounts = require('core.mounts');
 
 local commands = {};
 local visDebugCaptures = {};
@@ -608,6 +609,16 @@ function commands.Handle(e)
 
     if (subcommand == 'npc' or subcommand == 'npcadd') then
         AppendMissingNpc();
+        return;
+    end
+
+    if (subcommand == 'mountdebug') then
+        if (tostring(args[3] or ''):lower() == 'scout') then
+            mounts.StartPacketScout(args[4]);
+            return;
+        end
+
+        log.Info(mounts.GetDebugStatusText(tostring(args[3] or ''):lower() == 'all'));
         return;
     end
 

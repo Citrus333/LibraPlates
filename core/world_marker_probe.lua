@@ -3495,11 +3495,27 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
         return true;
     end
 
-    if (
-        entry.targetType == 'object' and
-        (message == 513 or message == 514)
-    ) then
-        lastClickStatus = 'object left native pass message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y) .. ' target=' .. tostring(entry.targetIndex);
+    if (entry.targetType == 'object' and message == 513) then
+        local ok = false;
+
+        pcall(function ()
+            ok = selectTarget(entry.targetIndex, false);
+        end);
+
+        lastClickStatus = 'object left select ' .. tostring(ok) .. ' message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y) .. ' target=' .. tostring(entry.targetIndex);
+
+        if (ok == true) then
+            suppressNextLeftRelease = true;
+            e.blocked = true;
+            return true;
+        end
+
+        lastClickStatus = 'object left native pass select-failed message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y) .. ' target=' .. tostring(entry.targetIndex);
+        return false;
+    end
+
+    if (entry.targetType == 'object' and message == 514) then
+        lastClickStatus = 'object left release native pass message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y) .. ' target=' .. tostring(entry.targetIndex);
         return false;
     end
 

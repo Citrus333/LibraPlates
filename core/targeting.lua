@@ -74,6 +74,10 @@ local function GetTargetingSettings()
         global.targeting.enableRightClickAttack = true;
     end
 
+    if (global.targeting.enableRightClickAttackWhileMounted == nil) then
+        global.targeting.enableRightClickAttackWhileMounted = false;
+    end
+
     if (global.targeting.enableLeftClickEnemyTargetIdle == nil) then
         global.targeting.enableLeftClickEnemyTargetIdle = true;
     end
@@ -887,6 +891,10 @@ function targeting.AttackEnemyTarget(targetIndex, serverId, distance, modelHitbo
         return false;
     end
 
+    if (settings.enableRightClickAttackWhileMounted ~= true and targeting.IsPlayerMounted() == true) then
+        return false;
+    end
+
     local attackRange = tonumber(settings.rightClickAttackRange) or 4.5;
     local effectiveAttackRange = attackRange + 0.5 + (tonumber(modelHitboxSize) or 0.5);
 
@@ -905,6 +913,28 @@ function targeting.AttackEnemyTarget(targetIndex, serverId, distance, modelHitbo
     end
 
     return selected == true;
+end
+
+function targeting.IsPlayerMounted()
+    local ok, status = pcall(function()
+        local memory = AshitaCore:GetMemoryManager();
+        local party = memory:GetParty();
+        local selfIndex = party ~= nil and party:GetMemberTargetIndex(0) or nil;
+
+        if (selfIndex == nil or selfIndex <= 0) then
+            return nil;
+        end
+
+        local entity = memory:GetEntity();
+
+        if (entity == nil or entity.GetStatus == nil) then
+            return nil;
+        end
+
+        return entity:GetStatus(selfIndex);
+    end);
+
+    return ok == true and tonumber(status) == 85;
 end
 
 local gatheringActions = {

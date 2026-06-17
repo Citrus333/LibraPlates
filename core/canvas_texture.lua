@@ -1362,12 +1362,14 @@ local function ResolveAnchorRects(rects, plate)
                 local resolved = nil;
 
                 if (fallbackTarget ~= nil) then
-                    resolved = {
-                        x = tonumber(fallbackTarget.x) or 0,
-                        y = tonumber(fallbackTarget.y) or 0,
-                        width = defaultRect.width,
-                        height = defaultRect.height,
-                    };
+                    local tempBounds = {};
+
+                    for key, value in pairs(bounds or {}) do
+                        tempBounds[key] = value;
+                    end
+
+                    tempBounds[targetKey] = fallbackTarget;
+                    resolved = anchorGeometry.ResolveAnchoredRect(layout, tostring(rect.kind or ''), defaultRect, tempBounds, anchorMap);
                 else
                     resolved = anchorGeometry.ResolveAnchoredRect(layout, tostring(rect.kind or ''), defaultRect, bounds, anchorMap);
                 end

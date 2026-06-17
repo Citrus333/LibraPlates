@@ -27,27 +27,25 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 ### General / Settings
 
 - Help follow-up: expand User Guide and Troubleshooter over time with exact row-level anchors, more synonyms, and common "why is X not showing/working?" cases as they come up in testing.
+- Future integration idea: incorporate ChatMon / ZoneName / JA-style functionality into LibraPlates.
 - Settings UI follow-up: remove the unused Modules-tab code/settings path entirely once we confirm no unique settings still depend on it.
+- Keep the current profile always visible in settings, possibly with a top bar.
 - Game mode is not reading properly.
 - Some widget-list names are blue.
 - Settings reset bug: resetting widget settings/position does not appear to reset anchor settings (`anchorTo` / `anchorPoint`).
+- Color picker alpha bug: setting alpha to max can sometimes become `0` internally and hide the color even though the picker does not visibly show the change; moving alpha again fixes it.
 - Disable nameplate click-through when clicking game UI such as action bars, chat windows, or menus.
 - Release packaging cleanup: do not ship old debug depth probe plugins (`LibraDepthProbe` / `LibraDepthProbestatus`) with the release package.
-- Config backup cleanup: current config backups are way too large; investigate what is being copied and reduce/exclude bulky generated or non-runtime files.
 - Performance isolation follow-up: after bridge off, plates drop to near zero work but LP still costs ~14-15 FPS vs unloaded. Use `/lp isolate targeting|native|mouse|overlays on`, `/lp perf reset`, then `/lp perf` to find the hidden cost.
 - Native first-target flash tradeoff: do not restore the permanent native draw hook to hide the first F-key target flash. It fixes the flash but costs too much FPS; prefer the cheap per-frame native hide path unless Lila explicitly accepts the performance cost.
+- Future/fun idea: optional blacklist visual replacement, such as swapping blacklisted player models to same-race fomor-style placeholders with silly generated names.
 
 ### Enemy
 
-- Add Enemy cast bar settings.
-- Enemy preview needs long/short name examples.
-- Enemy level/difficulty follow-up: decide what level text/color should show for mobs that are effectively impossible to gauge normally.
-- Claim state color settings follow-up: add outline color controls for each Enemy claim state.
-- Blood aggro icon is not showing; likely hidden underneath the links icon due to an anchoring/overlap issue.
 - Catseye special native star icon is 99% done: Enemy plates replace the native special marker with the Catseye star across World/Target/Subtarget/Tactical states, with Enemy World/Tactical Special icon settings for size and X/Y placement. Needs more testing in other zones. Preview wiring still needs to be added later.
-- Catseye special icon preview todo: add Special icon display/positioning to the Enemy settings preview so size and X/Y changes can be checked without live mobs.
 - Move aggro.
 - Blue magic is missing casting icons and is not showing AOE.
+- Enemy names can become claimed-color when someone enters engaged status, instead of only when the mob is actually claimed.
 
 ### NPC / Object
 
@@ -57,12 +55,17 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - NPC/Object data direction: future zone-scoped loading should wait until data has full zone coverage, then load by zone on zone change with exact-name lookup and cached results.
 - Add a setting for `???`/search objects to show or hide names.
 - Fishing/gathering interaction needs field testing and a decision on Clamming Point, Fish Trap, and other fishing-related objects.
+- Sky aura pots are anchored too high.
+- Some objects/NPCs such as Nomad Moogle, Home Point, and ground spots can show double Target/Subtarget arrows and appear to be affected by NPC options.
+- Object/NPC plates can show during cutscenes; confirm which entity type and suppress during cutscene/interface-hidden states.
 
 ### PC / Player
 
 - Level sync icon is missing, and player HP/MP values are not updating after sync/resync.
 - Peer level should be color-correct to level.
+- Check Conquest War and Union Conquest War naming/colors; CW and UCW have orange names.
 - Plate height follow-up: investigate race/model-size based Y placement. Small characters currently have plates much higher above their heads than larger models; older code may have had race-aware height calculation that should be recovered or rebuilt.
+- Party member puppet claim/enmity bug: another player's puppet getting aggro can flip enemy nameplates to claimed-by-another color.
 
 ### Self
 
@@ -70,12 +73,14 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Resting/logout bug: shutdown/logout timer gets hidden by `Hide at full HP/MP`, but those hide options should apply only to normal resting ticks, not logout countdown.
 - Self Quick Menu idea: add party invite actions/state, including accepting an invite and showing/handling invite pending.
 - DoH/DoL activity idea: add a ring timer for the cooldown before the player can fish, craft, or gather again.
+- Self World game mode icon, linkshell icon, and similar anchored icons work in preview but not reliably in-game.
 
 ### Pet / Trust
 
 - Remove BST chat spam.
 - Trust status icons follow-up: decide whether Trust debuffs should remain supported/shown, or whether Trust plates should only show Trust buffs.
 - Bug: other players' pets can be treated like PC or NPC/Object plates by name, e.g. summoned Carbuncle/Fenrir showed the yellow type line `Cutscene/Summoned Avatar`, and the DRG wyvern name `Lumiere` still showed as a green plate. This is a pet plate/classification issue, not the NPCs with matching names.
+- SMN pet bars are not working; check Avatar/Spirit bars first, then verify BST, DRG Wyvern, PUP Automaton, and Luopan pet bars for the same issue.
 
 ### Buffs / Debuffs
 
@@ -96,6 +101,17 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 - Copy target/subtarget module is not working.
 - Range arrow color only works out of combat.
+- Target/Subtarget module settings are confusing/split across the main module menu and plate menus; changes in one place can appear not to affect live plates.
+- Target/Subtarget copy/paste settings are missing or not exposed where expected.
+- Target/Subtarget chevrons/arrows stop stretching at large sizes, around X 80 / Y 100.
+- Self-target chevrons are not spaced far enough apart on the X axis to contain very wide HP bars, such as 500 width.
+- Distance number idea: draw Target/Subtarget distance on the targeting layer so it remains constant-size and visible through walls.
+- Subtarget mode bug: the current true target can be drawn as Subtarget while choosing a subtarget.
+- Engaged left-click rules need another pass: non-enemy/self targets can still be left-clicked while weapon drawn, while enemy behavior differs.
+- Retest targeting matrix after the next input fix, especially right-click during subtarget mode while not engaged/engaged.
+- Husband reports `[C]` subtarget causes stutter.
+- Long-press camera idea: if mouse-down starts over a plate and is held for about 0.5-0.67s, reinject/pass the held click into the game world behind the plate so camera control works in crowded plate areas.
+- `<st>` range arrow colors should match the default target arrow behavior: red out of range, yellow just outside range, blue in range.
 - AOE range/highlight visuals should only trigger from the player's own AOE actions/casts, and should not false-trigger on queued single-target heals.
 - AOE offensive preview testing model:
   - LP AOE style should mirror native enlarged names during active `<st>` spell selection; direct `<t>` casts should not create an LP-only helper preview.
@@ -119,15 +135,16 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Target/Subtarget module settings seem to be Enemy settings applying to all entity types.
 - Target/Subtarget module ownership is not resolved. Do not remove Target/Subtarget from the Modules tab without Lila explicitly approving that direction.
 - Lock-on icon anchoring/scoping needs review; keep future cleanup focused on Enemy-only scope unless Lila approves broader entity behavior.
+- Add stacking plate priority settings so users can choose which overlapping plates show first.
 
 ### Profiles
 
 - Continue profile work.
+- Profile auto-switch by main job and subjob, with subjob `Any` including no subjob.
 
 ### Quick Menu / Mog House
 
 - Quick Menu needs size settings or flexible sizing depending on visible selections.
-- Mog House should have a different Quick Menu on the Moogle with handy actions such as job change.
 
 ### Peer
 
@@ -141,20 +158,60 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - DirectX wrapper clue: Atom0s DX9 wrapper z-fighting fix greatly reduces LibraPlates lag, but makes Ashita addons click-through.
 - Accessibility/testing workflow: use `/lp lag` as the short one-command lag diagnostic.
 - Idle texture eviction follow-up: if `Evictions/min` climbs with low `Used` count, check for same-key canvas size churn or repeated plate-cache clears before chasing visible plate count.
+- FPS 1 setting remains very laggy; investigate separately from the direct FPS divisor crash follow-up.
 - FPS mode setting follow-up: direct FPS divisor memory write caused an Ashita crash when it was attempted during load, so FPS mode must only be applied from an explicit user action.
-- Performance settings follow-up: wire `World plate update rate` and `Disable expensive widgets on world plates` to actual world-only throttling/preset behavior after in-game testing confirms the new Performance page layout.
 - Plate stacking follow-up: the world-marker stacking movement path was removed after it lifted plates into the sky. Do not convert 2D stack deltas back into world Y. The old `Nameplates` addon stacks only because it draws final plates in 2D ImGui windows using `baseX/baseY/drawX/drawY`.
 
 ## Done
+
+- 2026-06-17 - Catseye special icon preview:
+  - Added Special icon display/positioning to the Enemy settings preview so size and X/Y changes can be checked without live mobs.
+
+- 2026-06-17 - Enemy claim-state outline colors:
+  - Enemy Name settings now expose outline color controls for Unclaimed, Claimed, Claimed by others, and Call for help claim states.
+  - Live Enemy name rendering and Enemy preview use the matching claim-state outline color.
+
+- 2026-06-17 - Enemy blood aggro icon:
+  - Fixed the icon anchoring/overlap issue so Sound and Blood detection icons can both draw when Links is absent.
+  - Confirmed in-game at night on skeleton/Wight mobs.
+
+- 2026-06-17 - Mounted right-click attack safety:
+  - Added a separate `Allow while mounted (can dismount)` toggle under Mouse > Right click.
+  - Right-click enemy attack now keeps the existing `Right-click attack` setting, but blocks while mounted unless the mounted toggle is enabled.
+
+- 2026-06-17 - Notes cleanup:
+  - Marked Enemy cast bar settings as done; Enemy > Combat cast bar settings are already exposed and wired.
+  - Promoted still-active stragglers from the old 2026-06-11 backlog into the organized To DO sections.
+  - Removed duplicate/stale backlog lines for items already represented in To DO or Done, including Enemy cast bar settings, Mog House quick menu recovery, PC Distance settings, and preview/control follow-ups.
+  - Moved Enemy level/difficulty follow-up for effectively impossible-to-gauge mobs out of active To DO.
+
+- 2026-06-17 - Mog House Moogle quick menu recovery:
+  - Mog House `Moogle` plate scanning now bypasses the Trust-name filter only when the existing Mog House object-suppression detector is active.
+  - Mog House `Moogle` data lookup now maps to the bundled `Moogle (Mog House)` entry without needing per-city Mog House zone IDs.
+  - Quick Menu job favorite preset rows are shown from NPC/Object Quick Menu settings, where the Moogle quick menu is configured.
+  - Quest and mission bullet lines in NPC info use the same quick-menu link coloring; the default link cap was raised so mission rows after several quest rows can still link, and Mog House job presets default to hiding NPC info/wiki text for a cleaner job-swap menu.
+  - Renamed the section to Job change presets and added optional three-digit `/lockstyleset` values per favorite; `000` means no lockstyle command.
 
 - 2026-06-17 - Performance/backup cleanup pass:
   - Added early runtime gates for Self, PC, NPC/Object, Enemy, and Trust plates so disabled plate groups/widgets skip scanning/build work sooner.
   - Added a PC per-plate no-content guard so disabled PC widgets/modules do not still build custom-font canvas plates.
   - Removed the permanent per-draw native-hide hook from `Use native party/target UI` off; native party/target hiding now relies on cheaper per-frame visibility writes unless target-arrow hiding specifically needs the hook.
+  - Wired Performance presets/settings: `World plate update rate` now throttles idle/background canvas rebuilds without skipping queued plates, avoiding flashing; `Disable expensive widgets` drops idle world-only extras such as PC social/status icons, Enemy status/aura rows, NPC/Object icon/type details, and Trust status rows while keeping target/subtarget/party/tactical/engaged/casting/hovered detail.
   - Reverted the risky world-marker click/stack projection throttle after crash testing; bridge/plate isolation is being used instead.
   - Optimized Peer hover lookup to scan plate hitboxes once per frame.
   - Changed settings backups to one refreshed `settings-backup.lua` file; `/lp backups prune` now warns and does nothing because pruning huge old folders in-game caused disconnects.
   - Kept `/lp bridge on|off|status` as the full world-marker bridge toggle and added `/lp isolate` runtime switches for targeting/native/mouse/overlay diagnostics.
+
+- 2026-06-17 - Catseye object classification:
+  - Added Lower Jeuno `zoneIds = { 245 }` to the bundled `EXP Guide` Catseye item entry and made matching Catseye item entries resolve as Object before generic NPC data, so raw client NPC-type guides can left-click pass through to native interaction.
+  - Object plate left-click now explicitly selects the object target instead of only passing the click through to native hitboxes, which may sit lower than LP plates for Catseye guide/book objects.
+
+- 2026-06-17 - Preview controls:
+  - Preview lighting, Zoom, and Drag moved into the preview image as bottom-corner icon controls using bundled `ui-icons` assets with hover tooltips; lighting uses one icon that cycles Light/Mid/Dark.
+  - Enemy plate preview has a top-right long/short name toggle using bundled `long.png` / `short.png`, switching between `Sabotender Enamorado` and `Puk`.
+
+- 2026-06-17 - Settings window layout:
+  - Settings window position and size are saved in global settings and restored after reload, with screen clamping so it does not reopen off-screen.
 
 - 2026-06-16 - Cleared completed backlog items:
   - Marked native mouse replacement, warning screen color scheme, shutdown timer tuning, and target/subtarget-only Distance meter cleanup as done.
@@ -426,14 +483,10 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - 2026-06-07 — Quickmenu links are now `bg-wiki`:
   - `All quickmenu links now use https://www.bg-wiki.com`
   - `Catseye NPC quickmenu links now use https://www.bg-wiki.com/ffxi/CatsEyeXI_NPCs#...`
-- Targeting module changes do not affect anything.
 - Pet targeting test result: `/target <pet>` works for Lila's own pet, `/subtarget <pet>` does nothing, and `/ignorepet on` appears to prevent targeting other players' pets rather than own pet. In Plates, pet states should expose `Target (module)` only, not `Subtarget (module)`. Runtime overlay should not draw pet Subtarget module unless a real native pet-subtarget case is later found.
 - Future pet targeting setting idea: many pet players may have little/no reason to target their own pet because normal actions are pet-command based and players generally cannot cast normal spells directly on pets. Consider a toggle to keep pet plates visible but disable pet targeting/click rects/target module selection, similar in spirit to the native-hidden/non-targetable fish handling. This could prevent accidental tab/click targeting of own pets while preserving pet HP/timer info.
 - Pet targeting test toggle implemented for addon-side testing: `/lp pettargeting off` (alias `/lp petclick off`) keeps own pet plates visible but disables LibraPlates pet click targeting and suppresses pet Target module overlay; `/lp pettargeting on` restores it; `/lp pettargeting status` prints current state. This does not change native FFXI tab targeting yet.
 - The pet targeting test toggle is now exposed as `Allow pet plate targeting` in pet Target-module settings. It appears in Plates > pet entity > pet state > Target (module), and also in Modules > pet entity > pet state > Target. It applies to BST, SMN, Wyvern/DRG, and Automaton/PUP.
-- At a certain width, the chevrons and arrows stop stretching, around 80 X and 100 Y.
-- Look into a way to model-swap blacklisted players into Fomor models of the same race with funny placeholder names like "Forgotten Blabber Mouth" or "Party Saboteur".
-- Target module is not drawing the chevrons for self-targeting far enough apart on the X axis to contain the width of a 500 wide HP bar.
 - Add Zoom/Libra state and settings for all entity types, not only enemies.
 - TP bar is currently one bar with two black spacers, not three true sections, and it does not yet have separate three-section colors. This is for TP-capable plates such as Self/players, not Enemy/NPC/Object.
 - Newly added files in `assets\images\widget-bars` are not appearing in the bar texture/options list. Check texture discovery/cache/listing for widget bar assets.
@@ -441,10 +494,6 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Clicking an element in the preview window should open/select that element's settings.
 - The inspect/Libra window should be called Peer.
 - Peer module/entity coverage updated: Peer should live in Plates for Self, PC, and Enemy. NPC/Object Peer was considered and intentionally skipped because Quick Menu is the better place for clickable NPC/Object actions. Do not add Peer to NPC/Object, Trust, or pet entities unless Lila changes this later.
-- Furniture/Object note: Aura pots in Sky are way too high.
-- Furniture/Object note: In the middle of the Mog House there is a nameplate that reads "FURNITURE."
-- Consider putting the distance number on the targeting layer so it remains constant size and visible through walls.
-- Left-click targeting while engaged still seems partly active: with weapon drawn and an enemy engaged, self can still be targeted by left click, while other enemies seemingly cannot.
 - NPC/Object plates need an option to show function text instead of, or alongside, an icon, such as "Map Dealer" or "Weather Forecaster".
 - All plate families need the Peer state included when the full state set is added back, not only Idle/Combat/Target/Subtarget.
 - BST pet state: Fight should be treated as temporary; when fighting ends, return to the last resting state such as Heel or Stay. If no resting state is known, hide the state.
@@ -537,8 +586,6 @@ Add new notes below. Newest notes can go at the top.
 - Target/Subtarget settings UI cleanup: the Modules tab still contains Target/Subtarget and owns broader options such as Auto place plus info/tooltips. Plates > entity > state > Target/Subtarget should be focused on placement and should not repeat the same Auto place controls. The Target/Subtarget placement drawer uses paired slider rows for Position X/Y and Width/Height like the approved BST-style controls. This changes editor layout only; it does not mutate saved `rebuild_profile.lua` values or force-copy the approved BST visual values into every entity/state.
 - Future highlight/background system idea: look into making reusable highlight/background visuals that can be assigned to certain states or warnings, such as aggro, low HP, and other alert conditions. This should probably fit into the broader all-entities/all-states settings pass rather than being hardcoded per widget.
 - Current transition terminology: `World Context` means true 3D world-marker plates drawn in `core.world_marker_probe`; `Tactical Context` / `important overlay` / `always-visible plates` means the 2D overlay path drawn by `modules.target_overlay` from `worldMarkerProbe.GetAlwaysVisiblePlates()`. In code, tactical plates are generally marked with `plateAlwaysOnTop = true` and `plateTacticalOverlayOnly = true`.
-- Todo: add a setting to disable right-click enemy attack while mounted. Mounted right-clicks should not accidentally try to attack from LibraPlates when Lila is riding.
-- Todo: add out-of-range HP bar color settings for PC and Enemy plates so active-detail/range-limited plates can communicate that their HP display is out of live detail range instead of normal live HP.
 - Bug: Trust plate settings are not taking effect live. Settings UI exposes Trust > World and Trust > Tactical widget toggles such as Name, HP Bar, MP Bar, TP Bar, Quick Menu, Enmity, Target, and Subtarget, but in-game trust plates continue showing/hiding elements inconsistently with those settings. Need inspect trust render path and verify whether it reads Trust World/Tactical settings or uses PC/party defaults/hardcoded tactical layout.
 - Current tactical/overlay entities confirmed in code: Self tactical/overlay behavior is not controlled by the removed `importantOverlaySelf` setting; engaged enemies can use the extra engaged-enemy overlay path when `importantOverlayEnabled` and `importantOverlayEngagedEnemies` are enabled; Trust plates are tactical; BST pet plates are tactical; SMN pet plates are tactical. Pet tactical anchors currently use `anchorBone = 12` and `plateWorldOffsetY = 0.16` while the global/default world anchor remains bone `2`. Titan testing lined the tactical canvas center up with the native name at this value.
 - Current world-context entities still using normal world-marker behavior: PCs, NPCs, Objects, non-important enemies, and any plate not marked `plateTacticalOverlayOnly`. These still need review before any broad anchor or overlay changes.
@@ -549,40 +596,6 @@ Add new notes below. Newest notes can go at the top.
 - Canvas debug command exists for alignment testing: `/lp canvasdebug on/off`. Because tactical pets draw through `modules.target_overlay`, the debug rectangle/center marker must be visible in the overlay path, not only in the 3D world-marker draw path.
 - Future tactical overlay setting idea: when an in-view tactical entity is still visible but its plate would be offscreen, optionally adjust/clamp the plate back into view. This should apply to tactical/important entities only and should not imply drawing plates for entities that are not visible/native-hidden.
 - Need to implement enmity support for pet plates later.
-
-### 2026-06-11
-
-- User backlog: game mode is not reading properly.
-- User backlog: NPC is missing target/subtarget highlight settings; check whether subtarget has range colors.
-- User backlog: Copy target/subtarget module is not working.
-- User backlog: Check all previews, especially text and growth direction display values such as HP vs `1200/2000`.
-- User backlog: Move aggro.
-- User backlog: Continue profile work.
-- User backlog: Quick menu needs size settings or flexible sizing depending on visible selections.
-- User backlog: Keep the current profile always visible in settings, possibly with a top bar.
-- User backlog: Add enemy cast bar settings.
-- User backlog: Make buff filtering input smarter for time values, possibly a 2-digit field plus S/M/H radio buttons.
-- User backlog: Remove BST chat spam.
-- User backlog: Some widget-list names are blue.
-- User backlog: Move resting out of dropdown to its own setting and check its timer bug.
-- User backlog: Enemy preview needs long/short name examples.
-- User backlog: Blue magic is missing casting icons and is not showing AOE.
-- User backlog: Add stacking plate priority list so users can choose which plates show in which order.
-- User backlog: GEO and maybe other auras have `0` duration, which triggers buff time color warnings.
-- User backlog: Range arrow color only works out of combat.
-- Mog House / Nomad Moogle quick menu presets: mostly done, needs a little more testing.
-  - Mog House Moogle now shows a dedicated job-preset section in the quick menu.
-  - Presets are configured from `Plates > Self > World > Quick Menu`.
-  - Non-Ru'Lude `Nomad Moogle` locations now use the same job-change preset behavior.
-  - `Ru'Lude Gardens` `Nomad Moogle` keeps its special quest/info identity instead of using the generic preset menu.
-  - Backend `/lp jobchange ...` support remains valid for Mog House / Nomad / Pilgrim job-change paths.
-  - Follow-up idea: add Lockstyle access/action into the Moogle job-change / preset flow.
-- User backlog: Profile auto-switch by main job and subjob, with subjob `Any` including no subjob.
-- User backlog: Set TP bar color when TP is full.
-- User backlog: HP bar color/alpha when out of range.
-- User backlog: Peer level should be color-correct to level.
-- User backlog: Check Conquest War and Union Conquest War naming/colors; CW and UCW have orange names.
-- User backlog: Husband reports `[C]` subtarget causes stutter.
 
 ### 2026-05-28
 
@@ -633,14 +646,3 @@ Add new notes below. Newest notes can go at the top.
 - Added a settings preview path for Target/Subtarget module arrows, chevrons, and background. This is meant to let positioning be checked in the preview panel instead of disabling the live overlay while settings are open.
 - Shared notes file created.
 
-- Bug follow-up: Mog House moogle classification/data is mostly resolved.
-  - Quick Menu now promotes the Mog House Moogle out of the Trust action path into the intended job-change menu behavior.
-  - Keep a little more live testing on Mog House Moogle, Nomad Moogle, and Ru'Lude special-case behavior before calling this fully done.
-
-- TODO: Investigate urgent performance issue: FPS 1 setting is very laggy.
-
-- TODO: PC World plates show range/distance on every plate and there is currently no way to turn it off.
-
-- TODO: Retest targeting matrix after next input fix: especially right-click during subtarget mode while not engaged/engaged should select subtarget and not open quick menu.
-
-- TODO: Check lock-on settings after target/subtarget marker updates; confirm placement, visibility, and whether settings location/labels are clear.

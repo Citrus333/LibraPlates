@@ -330,6 +330,7 @@ local function QueueNpcObject(entity)
     local settingsEntityName = resolvedEntityName;
     local clickTargetType = string.lower(resolvedEntityName);
     local targetStateName = targeting.GetTargetStateName(entity.index);
+    local isTacticalTarget = targetStateName ~= 'Idle';
 
     if (
         entities.IsOwnPetIndex(entity.index) ~= true and
@@ -384,9 +385,10 @@ local function QueueNpcObject(entity)
     end
 
     local settingsTimer = perfMeter.BeginDetail('npc.settings');
-    local isTacticalTarget = targetStateName ~= 'Idle';
     local targetModuleStateName = isTacticalTarget == true and 'Combat' or 'Idle';
     local showDistanceBadge = targetStateName == 'Target' or targetStateName == 'Subtarget';
+
+    local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isTacticalTarget == true);
     local backgroundSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Background', backgroundDefaults);
     local nameSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Name', nameDefaults);
     local distanceSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Distance', distanceDefaults);
@@ -400,8 +402,8 @@ local function QueueNpcObject(entity)
     ApplyNpcAnchorDefaults(typeLineSettings, typeLineDefaults, 0, -30);
 
     local globalSettings = state.GetGlobalSettings(globalDefaults);
-    local iconTextureId = iconSettings.enabled == true and npcObjectInfo.GetTextureId(displayName, resolvedEntityName) or nil;
-    local typeText = typeLineSettings.enabled == true and npcObjectInfo.GetType(displayName, resolvedEntityName) or nil;
+    local iconTextureId = suppressExpensiveWorldWidgets ~= true and iconSettings.enabled == true and npcObjectInfo.GetTextureId(displayName, resolvedEntityName) or nil;
+    local typeText = suppressExpensiveWorldWidgets ~= true and typeLineSettings.enabled == true and npcObjectInfo.GetType(displayName, resolvedEntityName) or nil;
     local distanceText = nil;
 
     if (showDistanceBadge == true and distanceSettings.enabled == true and entity.distance ~= nil) then
@@ -420,8 +422,8 @@ local function QueueNpcObject(entity)
         background = backgroundSettings,
         name = nameSettings,
         distance = distanceSettings,
-        typeLine = typeLineSettings,
-        icon = iconSettings,
+        typeLine = suppressExpensiveWorldWidgets == true and { enabled = false } or typeLineSettings,
+        icon = suppressExpensiveWorldWidgets == true and { enabled = false } or iconSettings,
     }, {
         iconTextureId = iconTextureId,
         typeText = typeText,

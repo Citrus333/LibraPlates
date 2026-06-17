@@ -6,6 +6,7 @@ local npcObjectInfo = require('core.npc_object_info');
 local log = require('core.log');
 local jobChange = require('core.job_change');
 local jobIconTextures = require('core.job_icon_textures');
+local mounts = require('core.mounts');
 local widgetDefaults = { enabled = true };
 local quickMenuPresetCount = 10;
 
@@ -498,6 +499,9 @@ local function EnsureSettings()
     if (menu.self.leaveParty == nil) then menu.self.leaveParty = true; end
     if (menu.self.leaveAlliance == nil) then menu.self.leaveAlliance = true; end
     if (menu.self.cancelPartyRequest == nil) then menu.self.cancelPartyRequest = true; end
+    if (menu.self.mount == nil) then menu.self.mount = true; end
+    local ownedMountChoices = mounts.GetOwnedChoices();
+    if (menu.self.selectedMount == nil or tostring(menu.self.selectedMount or '') == '' or mounts.IsOwned(menu.self.selectedMount) ~= true) then menu.self.selectedMount = ownedMountChoices[1] or ''; end
     if (menu.self.autogroup == nil) then menu.self.autogroup = (menu.self.autogroupOn ~= false or menu.self.autogroupOff ~= false); end
     if (menu.self.ignoreTrust == nil) then menu.self.ignoreTrust = (menu.self.ignoreTrustOn ~= false or menu.self.ignoreTrustOff ~= false); end
     if (menu.self.hideTrust == nil) then menu.self.hideTrust = (menu.self.hideTrustOn ~= false or menu.self.hideTrustOff ~= false); end
@@ -515,7 +519,7 @@ local function EnsureSettings()
     if (menu.npc.openLink == nil) then menu.npc.openLink = true; end
     if (menu.npc.maxInfoChars == nil) then menu.npc.maxInfoChars = 420; end
     if (menu.npc.maxInfoLines == nil) then menu.npc.maxInfoLines = 10; end
-    if (menu.npc.maxQuestLinks == nil) then menu.npc.maxQuestLinks = 4; end
+    if (menu.npc.maxQuestLinks == nil or tonumber(menu.npc.maxQuestLinks) == 4) then menu.npc.maxQuestLinks = 8; end
     EnsurePresetSettings(menu);
 
     return menu;
@@ -577,13 +581,25 @@ end
 EnsurePresetSettings = function(menu)
     menu.presets = menu.presets or {};
     if (menu.presets.iconTheme == nil) then menu.presets.iconTheme = 'FFXI'; end
+    if (menu.presets.hideInfo == nil) then menu.presets.hideInfo = true; end
     menu.presets.entries = menu.presets.entries or {};
 
     for index = 1, quickMenuPresetCount do
         menu.presets.entries[index] = menu.presets.entries[index] or {};
         if (menu.presets.entries[index].mainJob == nil) then menu.presets.entries[index].mainJob = 'None'; end
         if (menu.presets.entries[index].subJob == nil) then menu.presets.entries[index].subJob = 'None'; end
+        if (menu.presets.entries[index].lockstyleSet == nil) then menu.presets.entries[index].lockstyleSet = 0; end
     end
+end
+
+local function NormalizeLockstyleSet(value)
+    local number = tonumber(tostring(value or ''):match('%d+')) or 0;
+    number = math.floor(number + 0.5);
+
+    if (number < 0) then number = 0; end
+    if (number > 999) then number = 999; end
+
+    return number;
 end
 
 local function GetPresetRows(menu)
@@ -598,12 +614,14 @@ local function GetPresetRows(menu)
     for _, entry in ipairs(entries) do
         local mainJob = tostring(entry.mainJob or 'None');
         local subJob = tostring(entry.subJob or 'None');
+        local lockstyleSet = NormalizeLockstyleSet(entry.lockstyleSet);
 
         if (mainJob ~= 'None' and subJob ~= 'None' and mainJob ~= subJob) then
             rows[#rows + 1] = {
-                label = mainJob .. '/' .. subJob,
+                label = mainJob .. '/' .. subJob .. (lockstyleSet > 0 and ('  LS ' .. string.format('%03d', lockstyleSet)) or ''),
                 mainJob = mainJob,
                 subJob = subJob,
+                lockstyleSet = lockstyleSet,
                 textureId = jobIconTextures.GetTextureId(mainJob, theme),
             };
         end
@@ -694,7 +712,12 @@ local function ExtractQuestLinks(text, maxLinks, info)
 
         if (clean == '') then
             inQuestSection = false;
-        elseif (clean:lower():match('^starts quest[s]?:') ~= nil or clean:lower():match('^involved in quest[s]?:') ~= nil) then
+        elseif (
+            clean:lower():match('^starts quest[s]?:') ~= nil or
+            clean:lower():match('^involved in quest[s]?:') ~= nil or
+            clean:lower():match('^starts mission[s]?:') ~= nil or
+            clean:lower():match('^involved in mission[s]?:') ~= nil
+        ) then
             inQuestSection = true;
         elseif (clean:match('^[%w%s]+:') ~= nil and clean:match('^%*%s+') == nil) then
             inQuestSection = false;
@@ -736,7 +759,12 @@ local function CreateQuestLineLinkResolver(maxLinks, linkColor, info)
             return nil;
         end
 
-        if (clean:lower():match('^starts quest[s]?:') ~= nil or clean:lower():match('^involved in quest[s]?:') ~= nil) then
+        if (
+            clean:lower():match('^starts quest[s]?:') ~= nil or
+            clean:lower():match('^involved in quest[s]?:') ~= nil or
+            clean:lower():match('^starts mission[s]?:') ~= nil or
+            clean:lower():match('^involved in mission[s]?:') ~= nil
+        ) then
             inQuestSection = true;
             return nil;
         end
@@ -1313,7 +1341,7 @@ function quickMenu.OpenForPlate(entry, x, y)
         name = GetEntityName(entry.targetIndex, entry.name);
     end
 
-    if (targetType == 'trust' and jobChange.IsJobChangeNpcName(name) == true) then
+    if ((targetType == 'trust' or targetType == 'object') and jobChange.IsJobChangeNpcName(name) == true) then
         targetType = 'npc';
     end
 
@@ -1497,18 +1525,19 @@ function quickMenu.Render()
             local typeText = NormalizeNpcInfoText(info.type or '');
             local infoText = LimitNpcInfoText(info.info or '', menu.npc.maxInfoChars, menu.npc.maxInfoLines);
             local link = BuildNpcLink(pendingMenu.name, info);
-            local canUseJobPresets = pendingMenu.targetType == 'npc' and jobChange.CanUseTarget(pendingMenu.name, pendingMenu.targetIndex) == true;
+            local canUseJobPresets = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object') and jobChange.CanUseTarget(pendingMenu.name, pendingMenu.targetIndex) == true;
+            local hideInfoForJobPresets = canUseJobPresets == true and menu.presets ~= nil and menu.presets.hideInfo == true;
             local bodyTextColor = GetReadableTextColor(menu);
             local sectionTextColor = menu.headerColor or npcSectionTextColor;
             local linkTextColor = menu.linkColor or npcLinkTextColor;
             local questLineLinkResolver = (menu.npc.openLink == true) and CreateQuestLineLinkResolver(menu.npc.maxQuestLinks, linkTextColor, info) or nil;
             local bodyWidth = math.max(160, (tonumber(menu.width) or 270) - 24);
 
-            if (menu.npc.showType == true and typeText ~= '') then
+            if (hideInfoForJobPresets ~= true and menu.npc.showType == true and typeText ~= '') then
                 ReserveTextBlockHeight(QueueForegroundTextBlock(typeText, bodyTextColor, bodyWidth, nil, sectionTextColor, linkTextColor), typeText);
             end
 
-            if (menu.npc.showInfo == true and infoText ~= '') then
+            if (hideInfoForJobPresets ~= true and menu.npc.showInfo == true and infoText ~= '') then
                 if (typeText ~= '') then
                     imgui.Separator();
                 end
@@ -1516,7 +1545,7 @@ function quickMenu.Render()
                 ReserveTextBlockHeight(QueueForegroundTextBlock(infoText, bodyTextColor, bodyWidth, questLineLinkResolver, sectionTextColor, linkTextColor), infoText);
             end
 
-            if (menu.npc.openLink == true and link ~= '' and canUseJobPresets ~= true) then
+            if (hideInfoForJobPresets ~= true and menu.npc.openLink == true and link ~= '' and canUseJobPresets ~= true) then
                 if (typeText ~= '' or infoText ~= '') then
                     imgui.Separator();
                 end
@@ -1528,18 +1557,18 @@ function quickMenu.Render()
 
             if (canUseJobPresets == true) then
                 local presetRows = GetPresetRows(menu);
-                local hadContentAbove = (typeText ~= '' or infoText ~= '' or link ~= '');
+                local hadContentAbove = hideInfoForJobPresets ~= true and (typeText ~= '' or infoText ~= '' or link ~= '');
 
                 if (hadContentAbove == true) then
                     imgui.Separator();
                 end
 
-                imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Mog House job presets');
+                imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Job change presets');
 
                 if (#presetRows > 0) then
                     for _, row in ipairs(presetRows) do
                         MenuItem(row.label, nil, function()
-                            local ok, err = jobChange.ChangeJobs(row.mainJob, row.subJob);
+                            local ok, err = jobChange.ChangeJobs(row.mainJob, row.subJob, row.lockstyleSet);
                             if (ok ~= true) then
                                 log.Warn(tostring(err or 'Job preset failed.'));
                             end
@@ -1585,6 +1614,23 @@ function quickMenu.Render()
                     QueueCommand('/prcmd off');
                     pendingPartyRequestUntil = 0;
                 end, menu);
+            end
+
+            if (menu.self.mount == true) then
+                if (mounts.IsMounted() == true) then
+                    MenuItem('Dismount', 'mount.png', function()
+                        QueueCommand('/dismount', 1);
+                    end, menu);
+                else
+                    local selectedMount = tostring(menu.self.selectedMount or 'Chocobo');
+                    MenuItem('Mount: ' .. (selectedMount ~= '' and selectedMount or 'None found'), 'mount.png', function()
+                        local mountName = selectedMount == 'Random' and mounts.GetRandomChoice() or selectedMount;
+
+                        if (mountName ~= nil and tostring(mountName or '') ~= '') then
+                            QueueCommand('/mount "' .. tostring(mountName) .. '"', 1);
+                        end
+                    end, menu);
+                end
             end
 
             if (menu.self.ignoreTrust == true) then

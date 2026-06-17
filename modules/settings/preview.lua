@@ -318,13 +318,16 @@ local quickMenuIconCache = {};
 local quickMenuMissingIcons = {};
 local trustBuffPreviewDefaults = {};
 local previewInfoIconTextureId = nil;
+local previewUiIconCache = {};
 local luopanPreviewTextureId = nil;
 local luopanPreviewTextureMissing = false;
 local selectedBackground = 'Light';
 local selectedZoom = '1x';
+local enemyPreviewNameMode = 'Long';
 local dragEnabled = false;
 local activeDragKind = nil;
 local mouseInPreview = false;
+local previewControlClickConsumed = false;
 local backgroundOptions = T{ 'Light', 'Mid', 'Dark' };
 local zoomOptions = T{ '1x', '2x' };
 local backgroundFiles = {
@@ -394,6 +397,21 @@ local function LoadPreviewInfoIcon()
 
     previewInfoIconTextureId = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\ui-icons\\info.png'));
     return previewInfoIconTextureId;
+end
+
+local function LoadPreviewUiIcon(fileName)
+    fileName = tostring(fileName or '');
+
+    if (fileName == '') then
+        return nil;
+    end
+
+    if (previewUiIconCache[fileName] ~= nil) then
+        return previewUiIconCache[fileName];
+    end
+
+    previewUiIconCache[fileName] = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\ui-icons\\' .. fileName));
+    return previewUiIconCache[fileName];
 end
 
 local function LoadPetIcon(fileName)
@@ -694,20 +712,8 @@ local function DrawStyledDragToggle()
 end
 
 local function DrawStyledPreviewControls()
-    DrawPreviewInfo('Preview how the plate reads in different lighting conditions. This only changes the preview background, not the live plate.');
+    DrawPreviewInfo('Use the controls inside the preview image to change lighting, zoom, and drag mode. These controls only affect the preview.');
     imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Preview');
-    imgui.SameLine();
-    DrawStyledBackgroundSelector();
-    imgui.SameLine();
-    DrawPreviewInfo('Zoom changes the preview magnification so you can inspect placement and spacing.');
-    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Zoom');
-    imgui.SameLine();
-    DrawStyledZoomSelector();
-    imgui.SameLine();
-    DrawPreviewInfo('When enabled, drag plate elements directly inside the preview window to update their positions. Turn it off to avoid accidental position changes.');
-    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Drag');
-    imgui.SameLine();
-    DrawStyledDragToggle();
 end
 
 local function DrawZoomSelector()
@@ -847,19 +853,6 @@ local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind)
     });
 end
 
-local function BuildForcedPreviewIconSettings(settings)
-    local previewSettings = {};
-
-    if (type(settings) == 'table') then
-        for key, value in pairs(settings) do
-            previewSettings[key] = value;
-        end
-    end
-
-    previewSettings.enabled = true;
-    return previewSettings;
-end
-
 local function GetEnemyMobInfoPreviewIconSettings(storageEntityName, stateName)
     return {
         behavior = state.GetWidgetSettings(storageEntityName, stateName, 'Behavior icon', enemyBehaviorIconDefaults),
@@ -897,18 +890,9 @@ end
 local function AddEnemyWorldMobInfoPreviewIcons(icons, globalSettings, widgetSettings, context)
     widgetSettings = widgetSettings or {};
     local iconStyle = SanitizePeerIconStyle(globalSettings.peer ~= nil and globalSettings.peer.iconStyle or 'round');
-    local selectedWidget = context ~= nil and tostring(context.selectedWidget or '') or '';
     local behaviorSettings = widgetSettings.behavior;
     local detectsSettings = widgetSettings.detects;
     local linksSettings = widgetSettings.links;
-
-    if (selectedWidget == 'Behavior icon') then
-        behaviorSettings = BuildForcedPreviewIconSettings(behaviorSettings);
-    elseif (selectedWidget == 'Detects icon') then
-        detectsSettings = BuildForcedPreviewIconSettings(detectsSettings);
-    elseif (selectedWidget == 'Links icon') then
-        linksSettings = BuildForcedPreviewIconSettings(linksSettings);
-    end
 
     AddIcon(icons, behaviorSettings, LoadPeerIcon('AggroNQ', iconStyle), -96, -34, 'Behavior icon');
     AddIcon(icons, detectsSettings, LoadPeerIcon('Sound', iconStyle), -72, -34, 'Detects icon');
@@ -1964,7 +1948,7 @@ local function BuildPlate(entityName, stateName, context)
     end
     local previewNames = {
         ['PC'] = 'Libra',
-        ['Enemy'] = 'Sabotender Enamorado',
+        ['Enemy'] = (enemyPreviewNameMode == 'Short') and 'Puk' or 'Sabotender Enamorado',
         ['Trust'] = 'Kupipi',
         ['Pet (BST)'] = (stateName == 'Charmed Pet') and 'Desert Beetle' or 'CourierCarrie',
         ['Pet (DRG)'] = 'Lumiere',
@@ -2034,6 +2018,7 @@ local function BuildPlate(entityName, stateName, context)
     );
     local previewNameSize = nameSettings.textSize;
     local previewNameColor = (entityName == 'Enemy') and (nameSettings.claimUnclaimedColor or nameDefaults.claimUnclaimedColor or nameSettings.color or nameDefaults.color) or (nameSettings.color or { 1.0, 1.0, 1.0, 1.0 });
+    local previewNameOutlineColor = (entityName == 'Enemy') and (nameSettings.claimUnclaimedOutlineColor or nameDefaults.claimUnclaimedOutlineColor or nameSettings.outlineColor or nameDefaults.outlineColor) or (nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 });
 
     if (previewAoeActive == true) then
         previewNameSize = math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize);
@@ -2133,7 +2118,7 @@ local function BuildPlate(entityName, stateName, context)
         nameFontSize = textScale.ToNameTextureFontSize(previewNameSize, nameDefaults.textSize),
         nameColor = previewNameColor,
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
-        nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        nameOutlineColor = previewNameOutlineColor,
         nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
         nameOffsetX = tonumber(nameSettings.offsetX) or 0,
         nameOffsetY = tonumber(nameSettings.offsetY) or -54,
@@ -2531,6 +2516,10 @@ local function GetMousePos()
 end
 
 local function WasPreviewClicked()
+    if (previewControlClickConsumed == true) then
+        return false;
+    end
+
     if (imgui.IsMouseClicked ~= nil) then
         return imgui.IsMouseClicked(0) == true;
     end
@@ -2657,7 +2646,7 @@ local function DrawPreviewInfoOverlay(drawList, x, y)
         return;
     end
 
-    local text = 'Click a preview element to open its settings. In Peer preview, clicking a Peer element selects the matching Peer component, such as Background, HP bar, Range, or Damage modifiers.';
+    local text = 'Click any element in the preview window to open its settings.';
 
     if (imgui.BeginTooltip ~= nil and imgui.EndTooltip ~= nil) then
         imgui.BeginTooltip();
@@ -2679,6 +2668,145 @@ local function DrawPreviewInfoOverlay(drawList, x, y)
         imgui.EndTooltip();
     elseif (imgui.SetTooltip ~= nil) then
         imgui.SetTooltip(text);
+    end
+end
+
+local function ShowPreviewTooltip(text)
+    if (imgui.BeginTooltip ~= nil and imgui.EndTooltip ~= nil) then
+        imgui.BeginTooltip();
+
+        if (imgui.PushTextWrapPos ~= nil) then
+            imgui.PushTextWrapPos(360);
+        end
+
+        if (imgui.TextWrapped ~= nil) then
+            imgui.TextWrapped(tostring(text or ''));
+        else
+            imgui.Text(tostring(text or ''));
+        end
+
+        if (imgui.PopTextWrapPos ~= nil) then
+            imgui.PopTextWrapPos();
+        end
+
+        imgui.EndTooltip();
+    elseif (imgui.SetTooltip ~= nil) then
+        imgui.SetTooltip(tostring(text or ''));
+    end
+end
+
+local function DrawPreviewCornerIconButton(drawList, id, textureId, x, y, size, tint, tooltip)
+    if (textureId ~= nil and drawList ~= nil and drawList.AddImage ~= nil) then
+        drawList:AddImage(textureId, { x, y }, { x + size, y + size }, { 0, 0 }, { 1, 1 }, tint or 0xFFFFFFFF);
+    elseif (drawList ~= nil and drawList.AddRectFilled ~= nil) then
+        drawList:AddRectFilled({ x, y }, { x + size, y + size }, 0xAA20242C);
+    end
+
+    if (imgui.SetCursorScreenPos == nil or imgui.InvisibleButton == nil) then
+        return false;
+    end
+
+    imgui.SetCursorScreenPos({ x, y });
+    local clicked = imgui.InvisibleButton(id, { size, size }) == true;
+
+    if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true) then
+        ShowPreviewTooltip(tooltip);
+    end
+
+    if (clicked == true) then
+        previewControlClickConsumed = true;
+    end
+
+    return clicked;
+end
+
+local function DrawPreviewCornerControls(drawList, x, y, previewWidth, previewHeight)
+    local size = 32;
+    local pad = 10;
+    local gap = 6;
+    local bottomY = y + previewHeight - size - pad;
+    local zoomed = selectedZoom == '2x';
+    local idleTint = selectedBackground == 'Light' and 0xFF000000 or 0xFFFFFFFF;
+    local idleOffTint = selectedBackground == 'Light' and 0x99000000 or 0x99FFFFFF;
+    local enabledTint = 0xFF00B850;
+    local zoomIcon = zoomed == true and 'zoom-out.png' or 'zoom-in.png';
+    local zoomText = zoomed == true
+        and 'Zoom out to 1x preview.'
+        or 'Zoom in to 2x preview.';
+    local dragText = dragEnabled == true
+        and 'Drag enabled. Click to disable preview dragging.'
+        or 'Drag disabled. Click to enable preview dragging.';
+    local backgroundIcon = string.lower(tostring(selectedBackground or 'Light')) .. '.png';
+    local backgroundText = 'Preview background: ' .. tostring(selectedBackground or 'Light') .. '. Click to cycle Light, Mid, Dark.';
+
+    if (DrawPreviewCornerIconButton(
+        drawList,
+        '##preview_zoom_corner',
+        LoadPreviewUiIcon(zoomIcon),
+        x + pad,
+        bottomY,
+        size,
+        idleTint,
+        zoomText
+    ) == true) then
+        selectedZoom = zoomed == true and '1x' or '2x';
+    end
+
+    if (DrawPreviewCornerIconButton(
+        drawList,
+        '##preview_background_cycle',
+        LoadPreviewUiIcon(backgroundIcon),
+        x + pad + size + gap,
+        bottomY,
+        size,
+        idleTint,
+        backgroundText
+    ) == true) then
+        if (selectedBackground == 'Light') then
+            selectedBackground = 'Mid';
+        elseif (selectedBackground == 'Mid') then
+            selectedBackground = 'Dark';
+        else
+            selectedBackground = 'Light';
+        end
+    end
+
+    if (DrawPreviewCornerIconButton(
+        drawList,
+        '##preview_drag_corner',
+        LoadPreviewUiIcon('drag.png'),
+        x + previewWidth - size - pad,
+        bottomY,
+        size,
+        dragEnabled == true and enabledTint or idleOffTint,
+        dragText
+    ) == true) then
+        dragEnabled = dragEnabled ~= true;
+        activeDragKind = nil;
+    end
+end
+
+local function DrawEnemyPreviewNameModeControl(drawList, x, y, previewWidth)
+    local size = 32;
+    local pad = 10;
+    local longMode = enemyPreviewNameMode ~= 'Short';
+    local idleTint = selectedBackground == 'Light' and 0xFF000000 or 0xFFFFFFFF;
+    local iconName = longMode == true and 'long.png' or 'short.png';
+    local tooltip = longMode == true
+        and 'Enemy preview name: long. Click to use short name.'
+        or 'Enemy preview name: short. Click to use long name.';
+
+    if (DrawPreviewCornerIconButton(
+        drawList,
+        '##preview_enemy_name_mode',
+        LoadPreviewUiIcon(iconName),
+        x + previewWidth - size - pad,
+        y + pad,
+        size,
+        idleTint,
+        tooltip
+    ) == true) then
+        enemyPreviewNameMode = longMode == true and 'Short' or 'Long';
     end
 end
 
@@ -3087,6 +3215,7 @@ local function GetQuickMenuPreviewRows(entityName, menu)
         if (menu.self.acceptInvite == true or menu.self.declineInvite == true) then rows[#rows + 1] = { 'Accept Invite', 'accept-invite.png' }; end
         if (menu.self.leaveParty == true) then rows[#rows + 1] = { 'Leave Party', 'LeaveParty.png' }; end
         if (menu.self.cancelPartyRequest == true) then rows[#rows + 1] = { 'Cancel Party Request', 'cancel-party-request.png' }; end
+        if (menu.self.mount == true) then rows[#rows + 1] = { 'Mount: ' .. tostring(menu.self.selectedMount or 'Chocobo'), 'mount.png' }; end
         if (menu.self.ignoreTrust == true) then rows[#rows + 1] = { 'Ignore Other Trusts: On', 'ignore-trust-on.png' }; end
         if (menu.self.hideTrust == true) then rows[#rows + 1] = { 'Hide Other Trusts: Off', 'hide-other-trusts-off.png' }; end
         if (menu.self.emoteTrust == true) then rows[#rows + 1] = { 'Emote Trust: Off', 'emote-trusts-off.png' }; end
@@ -3105,18 +3234,17 @@ local function GetQuickMenuPreviewRows(entityName, menu)
 
     if (entity == 'NPC' or entity == 'Object') then
         local rows = {};
-
-        if (menu.npc.showType == true) then rows[#rows + 1] = { (entity == 'Object') and 'Mining Point' or 'Weekly Hunt', nil }; end
-        if (menu.npc.openLink == true) then rows[#rows + 1] = { 'Open Wiki Page', 'catseye.png' }; end
+        local presetRows = {};
 
         if (entity == 'NPC') then
             for _, entry in ipairs(menu.presets.entries) do
                 local mainJob = tostring(entry.mainJob or 'None');
                 local subJob = tostring(entry.subJob or 'None');
+                local lockstyleSet = math.max(0, math.min(999, math.floor((tonumber(entry.lockstyleSet) or 0) + 0.5)));
 
                 if (mainJob ~= 'None' and subJob ~= 'None' and mainJob ~= subJob) then
-                    rows[#rows + 1] = {
-                        mainJob .. '/' .. subJob,
+                    presetRows[#presetRows + 1] = {
+                        mainJob .. '/' .. subJob .. (lockstyleSet > 0 and ('  LS ' .. string.format('%03d', lockstyleSet)) or ''),
                         nil,
                         jobIconTextures.GetTextureId(mainJob, menu.presets.iconTheme),
                     };
@@ -3124,7 +3252,48 @@ local function GetQuickMenuPreviewRows(entityName, menu)
             end
         end
 
-        return (entity == 'Object') and 'Mining Point' or 'Hunter', nil, rows;
+        local hideInfoForJobPresets = entity == 'NPC' and #presetRows > 0 and menu.presets.hideInfo == true;
+        local isJobPresetPreview = entity == 'NPC' and #presetRows > 0;
+
+        if (hideInfoForJobPresets ~= true and menu.npc.showType == true) then
+            rows[#rows + 1] = {
+                (entity == 'Object') and 'Mining Point' or (isJobPresetPreview == true and 'MHMU worker' or 'Weekly Hunt'),
+                nil,
+                nil,
+                kind = 'text',
+            };
+        end
+
+        if (hideInfoForJobPresets ~= true and menu.npc.showInfo == true) then
+            if (entity == 'Object') then
+                rows[#rows + 1] = { 'Gathering point info...', nil, nil, kind = 'text' };
+            else
+                local sampleInfo = {
+                    { 'Starts Quests:', 'header' },
+                    { 'Mandragora-Mad', 'link', true },
+                };
+
+                for _, line in ipairs(sampleInfo) do
+                    rows[#rows + 1] = {
+                        line[1],
+                        nil,
+                        nil,
+                        kind = line[2],
+                        bullet = line[3] == true,
+                    };
+                end
+            end
+        end
+
+        if (hideInfoForJobPresets ~= true and menu.npc.openLink == true and #presetRows == 0) then
+            rows[#rows + 1] = { 'Open Wiki Page', 'catseye.png' };
+        end
+
+        for _, row in ipairs(presetRows) do
+            rows[#rows + 1] = row;
+        end
+
+        return (entity == 'Object') and 'Mining Point' or (isJobPresetPreview == true and 'Moogle' or 'Hunter'), nil, rows;
     end
 
     local rows = {};
@@ -3149,13 +3318,19 @@ local function DrawQuickMenuPreview(drawList, x, y, previewWidth, previewHeight,
     local iconSize = tonumber(menu.iconSize) or 22;
     local width = math.max(220, math.min(tonumber(menu.width) or 270, previewWidth - 28));
     local rowHeight = math.max(24, iconSize + 4);
-    local height = 44 + (#rows * rowHeight);
+    local textRowHeight = 17;
+    local height = 44;
+
+    for _, row in ipairs(rows) do
+        height = height + (row.kind == 'spacer' and 8 or ((row[2] ~= nil or row[3] ~= nil) and rowHeight or textRowHeight));
+    end
     local menuX = x + math.max(12, math.floor((previewWidth - width) * 0.5));
     local menuY = y + math.max(32, math.floor((previewHeight - height) * 0.5));
     local bgColor = ColorToU32(menu.backgroundColor, { 0.02, 0.02, 0.07, 0.96 });
     local borderColor = ColorToU32(menu.borderColor, { 0.25, 0.25, 0.36, 1.0 });
     local textColor = ColorToU32(GetQuickMenuReadableTextColor(menu), { 1.0, 1.0, 1.0, 1.0 });
     local headerColor = ColorToU32(menu.headerColor, { 1.0, 0.84, 0.0, 1.0 });
+    local linkColor = ColorToU32(menu.linkColor, { 0.48, 0.82, 1.0, 1.0 });
 
     drawList:AddRectFilled({ menuX, menuY }, { menuX + width, menuY + height }, bgColor);
 
@@ -3187,7 +3362,13 @@ local function DrawQuickMenuPreview(drawList, x, y, previewWidth, previewHeight,
         local label = row[1];
         local iconFile = row[2];
         local textureId = row[3];
-        local labelX = menuX + 12;
+        local isBullet = row.bullet == true;
+        local labelX = menuX + 12 + (isBullet and 12 or 0);
+        local currentRowHeight = (iconFile ~= nil or textureId ~= nil) and rowHeight or textRowHeight;
+
+        if (row.kind == 'spacer') then
+            rowY = rowY + 8;
+        else
 
         if (menu.iconsEnabled ~= false and drawList.AddImage ~= nil and (iconFile ~= nil or textureId ~= nil)) then
             textureId = textureId or LoadQuickMenuIcon(iconFile);
@@ -3198,8 +3379,20 @@ local function DrawQuickMenuPreview(drawList, x, y, previewWidth, previewHeight,
             end
         end
 
-        drawList:AddText({ labelX, rowY + 3 }, textColor, label);
-        rowY = rowY + rowHeight;
+        if (isBullet == true and drawList.AddCircleFilled ~= nil) then
+            drawList:AddCircleFilled({ menuX + 18, rowY + 10 }, 2.5, linkColor, 8);
+        end
+
+        local rowColor = textColor;
+        if (row.kind == 'header') then
+            rowColor = headerColor;
+        elseif (row.kind == 'link') then
+            rowColor = linkColor;
+        end
+
+        drawList:AddText({ labelX, rowY + 2 }, rowColor, label);
+        rowY = rowY + currentRowHeight;
+        end
     end
 end
 
@@ -3587,6 +3780,7 @@ end
 
 function preview.Draw(entityName, stateName, context)
     mouseInPreview = false;
+    previewControlClickConsumed = false;
 
     local quickMenuOnlyPreview = context ~= nil and context.previewQuickMenu == true;
     local plate = quickMenuOnlyPreview ~= true and BuildPlate(entityName, stateName, context) or nil;
@@ -3632,6 +3826,7 @@ function preview.Draw(entityName, stateName, context)
     end
 
     local x, y = imgui.GetCursorScreenPos();
+    local previewCursorY = imgui.GetCursorPosY ~= nil and imgui.GetCursorPosY() or nil;
     local backgroundTextureId = LoadBackground(selectedBackground);
     local uv1, uv2, plateZoom = GetZoomUvs(entityName, stateName);
     local mouseX, mouseY = GetMousePos();
@@ -3690,13 +3885,22 @@ function preview.Draw(entityName, stateName, context)
     end
 
     DrawPreviewInfoOverlay(drawList, x, y);
+    DrawPreviewCornerControls(drawList, x, y, previewWidth, previewHeight);
+
+    if (entityName == 'Enemy' and isPeerPreview ~= true and quickMenuOnlyPreview ~= true) then
+        DrawEnemyPreviewNameModeControl(drawList, x, y, previewWidth);
+    end
 
     if (isPeerPreview ~= true and quickMenuOnlyPreview ~= true) then
         HandlePreviewElementDrag(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight, context);
         HandlePreviewElementClick(plate, textureWidth, textureHeight, zoomX, zoomY, zoomWidth, zoomHeight, context);
     end
 
-    imgui.SetCursorPosY(imgui.GetCursorPosY() + previewHeight);
+    if (previewCursorY ~= nil and imgui.SetCursorPosY ~= nil) then
+        imgui.SetCursorPosY(previewCursorY + previewHeight);
+    else
+        imgui.SetCursorPosY(imgui.GetCursorPosY() + previewHeight);
+    end
 end
 
 return preview;

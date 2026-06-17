@@ -518,30 +518,50 @@ local function AddEnemyMobInfoWidgetIcons(plateData, iconNames, iconSettings, de
         return;
     end
 
+    local renderIcons = {};
     local size = math.max(6, math.min(96, tonumber(iconSettings.iconSize) or tonumber(defaultSettings.iconSize) or 18));
     local x = tonumber(iconSettings.offsetX);
     local y = tonumber(iconSettings.offsetY);
-
-    if (x == nil) then x = tonumber(defaultSettings.offsetX) or 0; end
-    if (y == nil) then y = tonumber(defaultSettings.offsetY) or 0; end
-
-    plateData.icons = plateData.icons or {};
 
     for _, iconName in ipairs(iconNames) do
         local textureId = GetMobInfoIconTextureId(iconName, iconStyle);
 
         if (textureId ~= nil) then
-            plateData.icons[#plateData.icons + 1] = {
-                kind = tostring(kind or 'icon'),
+            renderIcons[#renderIcons + 1] = {
                 textureId = textureId,
-                size = size,
-                offsetX = x,
-                offsetY = y,
-                anchorTo = iconSettings.anchorTo or defaultSettings.anchorTo,
-                anchorPoint = iconSettings.anchorPoint or defaultSettings.anchorPoint,
             };
-            x = x + size + 3;
         end
+    end
+
+    if (#renderIcons == 0) then
+        return;
+    end
+
+    if (x == nil) then x = tonumber(defaultSettings.offsetX) or 0; end
+    if (y == nil) then y = tonumber(defaultSettings.offsetY) or 0; end
+
+    local gap = 3;
+    local anchorPoint = tostring(iconSettings.anchorPoint or defaultSettings.anchorPoint or '');
+
+    if (#renderIcons > 1 and tostring(iconSettings.anchorTo or defaultSettings.anchorTo or 'Plate') ~= 'Plate') then
+        if (anchorPoint == 'Left' or anchorPoint == 'Top Left' or anchorPoint == 'Bottom Left') then
+            x = x - ((#renderIcons - 1) * (size + gap));
+        end
+    end
+
+    plateData.icons = plateData.icons or {};
+
+    for _, icon in ipairs(renderIcons) do
+        plateData.icons[#plateData.icons + 1] = {
+            kind = tostring(kind or 'icon'),
+            textureId = icon.textureId,
+            size = size,
+            offsetX = x,
+            offsetY = y,
+            anchorTo = iconSettings.anchorTo or defaultSettings.anchorTo,
+            anchorPoint = iconSettings.anchorPoint or defaultSettings.anchorPoint,
+        };
+        x = x + size + gap;
     end
 end
 
@@ -1163,6 +1183,30 @@ local function GetClaimNameColor(nameSettings, nameDefaults, claimCategory)
     return nameSettings.claimUnclaimedColor or nameDefaults.claimUnclaimedColor or nameDefaults.color;
 end
 
+local function GetClaimNameOutlineColor(nameSettings, nameDefaults, claimCategory)
+    if (nameSettings == nil) then
+        return nil;
+    end
+
+    if (claimCategory == 'unclaimed') then
+        return nameSettings.claimUnclaimedOutlineColor or nameDefaults.claimUnclaimedOutlineColor or nameSettings.outlineColor or nameDefaults.outlineColor;
+    end
+
+    if (claimCategory == 'party') then
+        return nameSettings.claimPartyOutlineColor or nameDefaults.claimPartyOutlineColor or nameSettings.outlineColor or nameDefaults.outlineColor;
+    end
+
+    if (claimCategory == 'other') then
+        return nameSettings.claimOtherOutlineColor or nameDefaults.claimOtherOutlineColor or nameSettings.outlineColor or nameDefaults.outlineColor;
+    end
+
+    if (claimCategory == 'call_for_help') then
+        return nameSettings.claimCallForHelpOutlineColor or nameDefaults.claimCallForHelpOutlineColor or nameSettings.outlineColor or nameDefaults.outlineColor;
+    end
+
+    return nameSettings.claimUnclaimedOutlineColor or nameDefaults.claimUnclaimedOutlineColor or nameSettings.outlineColor or nameDefaults.outlineColor;
+end
+
 local function GetIdBoxColor(idSettings, mobInfo)
     if (idSettings == nil or idSettings.boxDifficultyColorsEnabled ~= true) then
         return idSettings ~= nil and idSettings.boxBackgroundColor or idDefaults.boxBackgroundColor;
@@ -1524,6 +1568,7 @@ local function BuildEnemyQueueContext(enemy)
         importantAlwaysOnTop == true or
         castData ~= nil or
         isHovered == true;
+    local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(hasActiveDetail);
 
     if (
         hpBarSettings.lowColorEnabled == true and
@@ -1540,13 +1585,13 @@ local function BuildEnemyQueueContext(enemy)
     local mobInfo = mobInfoData.GetMobInfo(enemy.name, enemy.index);
     local jobText = mobInfoData.GetJobString(mobInfo);
     local levelText = mobInfoData.GetLevelString(mobInfo);
-    local buffRows = ShouldLoadStatusRows(buffsSettings, isEngaged, hasActiveDetail) == true
+    local buffRows = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(buffsSettings, isEngaged, hasActiveDetail) == true
         and enemyStatuses.GetActiveStatusRows(enemy.serverId, 'buff')
         or {};
-    local debuffRows = ShouldLoadStatusRows(debuffsSettings, isEngaged, hasActiveDetail) == true
+    local debuffRows = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(debuffsSettings, isEngaged, hasActiveDetail) == true
         and enemyStatuses.GetActiveStatusRows(enemy.serverId, 'debuff')
         or {};
-    local geoAuraDebuffs = ShouldLoadStatusRows(debuffsSettings, isEngaged, hasActiveDetail) == true
+    local geoAuraDebuffs = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(debuffsSettings, isEngaged, hasActiveDetail) == true
         and enemyStatuses.GetGeoAuraDebuffRows(enemy.distance, isEngaged)
         or {};
     local distanceText = nil;
@@ -1615,7 +1660,7 @@ local function BuildEnemyCacheSignature(context)
     end
 
     return table.concat({
-        'v=8',
+        'v=9',
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'statusIconPack=' .. tostring(context.globalSettings ~= nil and context.globalSettings.statusIcons ~= nil and context.globalSettings.statusIcons.iconPack or ''),
         'activeDetail=' .. tostring(context.hasActiveDetail),
@@ -1627,6 +1672,7 @@ local function BuildEnemyCacheSignature(context)
         'dist=' .. tostring(context.distanceText or ''),
         'job=' .. tostring(context.jobText or ''),
         'level=' .. tostring(context.levelText or ''),
+        'mobFlags=' .. table.concat(mobInfoData.GetFlags(context.mobInfo), ','),
         'buffRows=' .. StatusRowsKey(context.buffRows),
         'debuffRows=' .. StatusRowsKey(context.debuffRows),
         'geoAura=' .. enemyStatuses.GetGeoAuraSignature(),
@@ -1640,7 +1686,7 @@ local function BuildEnemyCacheSignature(context)
         'aoe=' .. aoeNameHighlight.GetSignature(enemy.index, 'enemy'),
         'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
         'bg=' .. SettingKey(context.backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
-        'nameSettings=' .. SettingKey(context.nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
+        'nameSettings=' .. SettingKey(context.nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'claimUnclaimedOutlineColor', 'claimPartyOutlineColor', 'claimOtherOutlineColor', 'claimCallForHelpOutlineColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
         'hpSettings=' .. (context.hasActiveDetail == true and SettingKey(context.hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor' }) or ''),
         'jobSettings=' .. SettingKey(context.jobSettings, { 'enabled', 'displayModeIndex', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'iconTheme', 'iconSize' }),
         'levelSettings=' .. SettingKey(context.levelSettings, { 'enabled', 'textSize', 'color', 'difficultyColorsEnabled', 'twColor', 'epColor', 'dcColor', 'emColor', 'tColor', 'vtColor', 'itColor', 'outlineSize', 'outlineColor', 'twOutlineColor', 'epOutlineColor', 'dcOutlineColor', 'emOutlineColor', 'tOutlineColor', 'vtOutlineColor', 'itOutlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
@@ -1680,7 +1726,7 @@ local function BuildEnemyPlateData(context)
         nameFontSize = textScale.ToNameTextureFontSize(nameTextSize, nameDefaults.textSize),
         nameColor = (nameAoeActive == true and context.aoeRangeSettings.fontColor) or GetClaimNameColor(context.nameSettings, nameDefaults, context.claimCategory) or context.nameSettings.color or nameDefaults.color,
         nameOutlineEnabled = (tonumber(context.nameSettings.outlineSize) or 0) > 0,
-        nameOutlineColor = context.nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        nameOutlineColor = GetClaimNameOutlineColor(context.nameSettings, nameDefaults, context.claimCategory) or context.nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
         nameOutlineSize = tonumber(context.nameSettings.outlineSize) or 0,
         nameOffsetX = tonumber(context.nameSettings.offsetX) or 0,
         nameOffsetY = tonumber(context.nameSettings.offsetY) or -54,
@@ -1746,6 +1792,7 @@ end
 local function QueueEnemy(enemy)
     local settingsTimer = perfMeter.BeginDetail('enemy.settings');
     local context = BuildEnemyQueueContext(enemy);
+
     local cacheSkipReason = nil;
     local cacheEligible = context.stateName == 'Idle'
         and context.castData == nil

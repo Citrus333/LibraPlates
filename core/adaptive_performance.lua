@@ -168,12 +168,66 @@ function adaptivePerformance.ShouldThrottleBackground()
         return false;
     end
 
-    return effective == 'Balanced' or effective == 'Performance';
+    return effective == 'Balanced' or
+        effective == 'Performance' or
+        adaptivePerformance.GetWorldPlateUpdateInterval() > 1;
+end
+
+function adaptivePerformance.GetWorldPlateUpdateInterval()
+    local global = state.GetGlobalSettings(globalDefaults);
+    local targeting = global ~= nil and global.targeting or {};
+    local rate = tostring(targeting.worldPlateUpdateRate or 'Full');
+
+    if (rate == 'Low') then
+        return 4;
+    end
+
+    if (rate == 'Balanced') then
+        return 2;
+    end
+
+    return 1;
+end
+
+function adaptivePerformance.ShouldUpdateWorldPlate(key, protected)
+    if (protected == true) then
+        return true;
+    end
+
+    local interval = adaptivePerformance.GetWorldPlateUpdateInterval();
+
+    if (interval <= 1) then
+        return true;
+    end
+
+    local seed = 0;
+    local text = tostring(key or '');
+
+    for i = 1, #text do
+        seed = (seed + string.byte(text, i)) % interval;
+    end
+
+    return ((frameSerial + seed) % interval) == 0;
+end
+
+function adaptivePerformance.ShouldDisableExpensiveWorldWidgets(protected)
+    if (protected == true) then
+        return false;
+    end
+
+    local global = state.GetGlobalSettings(globalDefaults);
+    local targeting = global ~= nil and global.targeting or {};
+
+    return targeting.disableExpensiveWorldWidgets == true;
 end
 
 function adaptivePerformance.AllowBackgroundBuild(key, limit)
     if (adaptivePerformance.ShouldThrottleBackground() ~= true) then
         return true;
+    end
+
+    if (adaptivePerformance.ShouldUpdateWorldPlate(key, false) ~= true) then
+        return false;
     end
 
     if (backgroundBudgetFrame ~= frameSerial) then

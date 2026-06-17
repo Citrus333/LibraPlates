@@ -1391,6 +1391,7 @@ function entities.GetNearbyNpcObjects(maxDistance)
     local targetIndex = targeting.GetCurrentTargetIndex();
     local subTargetIndex = targeting.GetCurrentSubTargetIndex();
     local partyIndexes = nil;
+    local mogHouseObjectSuppressionArea = entities.IsMogHouseObjectSuppressionArea() == true;
 
     if (entityManager == nil) then
         return results;
@@ -1412,6 +1413,8 @@ function entities.GetNearbyNpcObjects(maxDistance)
             local entityStatus = tonumber(ent.Status) or 0;
             local isObject = (ent.Type == 2 or ent.Type == 3);
             local allowUnsettledCharacter = entityStatus == 47;
+            local cleanName = tostring(ent.Name or ''):gsub('\170', '');
+            local isMogHouseMoogle = mogHouseObjectSuppressionArea == true and cleanName == 'Moogle';
 
             if (
                 ent.Name ~= nil and
@@ -1421,7 +1424,7 @@ function entities.GetNearbyNpcObjects(maxDistance)
                 IsNpcObjectStatusAllowed(entityStatus) == true and
                 entities.ShouldHideOtherPlayerPet(index, ent.Name) ~= true and
                 IsMogHouseFurniturePlaceholder(entityManager, index, ent) ~= true and
-                trustNames.IsKnownTrustName(ent.Name) ~= true
+                (trustNames.IsKnownTrustName(ent.Name) ~= true or isMogHouseMoogle == true)
             ) then
                 partyIndexes = partyIndexes or BuildPartyMemberIndexSet();
 

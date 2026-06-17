@@ -96,6 +96,18 @@ function trustNames.IsKnownTrustName(name)
         return false;
     end
 
+    local zoneName = GetCurrentZoneName();
+
+    if (
+        cleanName == 'Moogle' and
+        (
+            zoneName == 'Mog House' or
+            tostring(zoneName or ''):find('Rent%-a%-Room') ~= nil
+        )
+    ) then
+        return false;
+    end
+
     -- Some trust names are also normal NPCs. When the current zone has a
     -- concrete NPC entry with the same name, keep it in the NPC data path.
     if (EntryHasCurrentZone(GetCuratedNpcEntry(cleanName)) == true) then

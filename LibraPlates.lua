@@ -31,6 +31,7 @@ local crafting = require('core.crafting');
 local textureLoader = require('core.texture_loader');
 local npcObjectInfo = require('core.npc_object_info');
 local quickMenu = require('core.quick_menu');
+local mounts = require('core.mounts');
 local diagnostics = require('core.diagnostics');
 local adaptivePerformance = require('core.adaptive_performance');
 local profileAutoSwitch = require('core.profile_auto_switch');
@@ -113,6 +114,7 @@ end);
 
 ashita.events.register('command', 'libraplates_command', function(e)
     targetActionRange.HandleCommandText(e.command);
+    mounts.HandleCommandText(e.command);
     commands.Handle(e);
 end);
 
@@ -126,6 +128,7 @@ ashita.events.register('login', 'libraplates_login', function()
 end);
 
 ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
+    mounts.HandlePacketIn(e);
     targeting.HandlePacketIn(e);
     mogJobDebug.HandlePacketIn(e);
     engagedEnemies.HandlePacketIn(e);
@@ -140,6 +143,7 @@ ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
 end);
 
 ashita.events.register('packet_out', 'libraplates_packet_out', function(e)
+    mounts.HandlePacketOut(e);
     mogJobDebug.HandlePacketOut(e);
     petState.HandlePacketOut(e);
     bstCharmTimer.HandlePacketOut(e);
@@ -155,6 +159,7 @@ end);
 ashita.events.register('d3d_present', 'libraplates_present', function()
     local ok, err = pcall(function()
         adaptivePerformance.UpdateFrame();
+        mounts.Update();
         profileAutoSwitch.Update();
         nativeTargetArrow.SetTraceCapturePaused(false);
         nativeTargetArrow.EndTraceFrame();

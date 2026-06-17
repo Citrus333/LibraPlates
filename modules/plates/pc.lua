@@ -952,6 +952,9 @@ local function QueuePlayer(player)
     local isTargetContext = targetStateName ~= 'Idle';
     local showDistanceBadge = targetStateName == 'Target' or targetStateName == 'Subtarget';
     local isTacticalPlayer = isPartyPlayer == true;
+    local isProtectedPlate = isPartyPlayer == true or isTargetContext == true;
+
+    local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isProtectedPlate);
     local useTargetOverlay = isTacticalPlayer == true or isTargetContext == true;
     local layoutStateName = (isTacticalPlayer == true or isTargetContext == true) and 'Combat' or 'Idle';
     local hasHp = player.hpPercent ~= nil or (player.hp ~= nil and player.maxHp ~= nil and tonumber(player.maxHp) > 0);
@@ -1003,8 +1006,8 @@ local function QueuePlayer(player)
     local hpBarLoads = hasHp == true and WidgetLoads(hpBarSettings, 'HP Bar');
     local mpBarLoads = hasMp == true and WidgetLoads(mpBarSettings, 'MP Bar');
     local tpBarLoads = hasTp == true and WidgetLoads(tpBarSettings, 'TP Bar');
-    local jobLoads = WidgetLoads(jobSettings, 'Job');
-    local levelLoads = WidgetLoads(levelSettings, 'Level');
+    local jobLoads = suppressExpensiveWorldWidgets ~= true and WidgetLoads(jobSettings, 'Job');
+    local levelLoads = suppressExpensiveWorldWidgets ~= true and WidgetLoads(levelSettings, 'Level');
     local hpAnimationEnabled = hpBarLoads == true and hpBarSettings.lowColorEnabled == true and hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25) and hpBarSettings.lowAnimationEnabled == true;
     local mpAnimationEnabled = mpBarLoads == true and mpBarSettings.lowColorEnabled == true and mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25) and mpBarSettings.lowAnimationEnabled == true;
     perfMeter.EndDetail(settingsTimer);
@@ -1040,38 +1043,38 @@ local function QueuePlayer(player)
         AddIcon(icons, { enabled = true, iconSize = 28, offsetX = -42, offsetY = -78 }, staffIconTextureId, -42, -78, 'staffIcon');
     end
 
-    if (WidgetLoads(gameModeIconSettings, 'Game mode icon') == true) then
+    if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(gameModeIconSettings, 'Game mode icon') == true) then
         gameModeIconTextureId = gameMode.GetIconTextureId(gameMode.Resolve(player.index, false));
         AddIcon(icons, gameModeIconSettings, gameModeIconTextureId, -72, -54, 'gameModeIcon');
     end
 
-    if (WidgetLoads(linkshellIconSettings, 'Linkshell icon') == true) then
+    if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(linkshellIconSettings, 'Linkshell icon') == true) then
         linkshellIconTextureId = playerIndicators.GetLinkshellIconTextureId(player.index);
         linkshellIconTint = playerIndicators.GetLinkshellIconTint(player.index);
         AddIcon(icons, linkshellIconSettings, linkshellIconTextureId, 48, -54, 'linkshellIcon', linkshellIconTint);
     end
 
-    if (WidgetLoads(bazaarIconSettings, 'Bazaar icon') == true) then
+    if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(bazaarIconSettings, 'Bazaar icon') == true) then
         bazaarIconTextureId = playerIndicators.GetBazaarIconTextureId(player.index);
         AddIcon(icons, bazaarIconSettings, bazaarIconTextureId, 72, -54, 'bazaarIcon');
     end
 
-    if (WidgetLoads(awayIconSettings, 'Away icon') == true) then
+    if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(awayIconSettings, 'Away icon') == true) then
         awayIconTextureId = playerIndicators.GetAwayIconTextureId(player.index);
         AddIcon(icons, awayIconSettings, awayIconTextureId, 120, -54, 'awayIcon');
     end
 
-    if (WidgetLoads(disconnectIconSettings, 'Disconnect icon') == true) then
+    if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(disconnectIconSettings, 'Disconnect icon') == true) then
         disconnectIconTextureId = playerIndicators.GetDisconnectIconTextureId(player.index);
         AddIcon(icons, disconnectIconSettings, disconnectIconTextureId, 144, -54, 'disconnectIcon');
     end
 
-    if (WidgetLoads(starsIconSettings, 'Stars icon') == true) then
+    if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(starsIconSettings, 'Stars icon') == true) then
         starsIconTextureId = playerIndicators.GetStarsIconTextureId(player.index);
         AddIcon(icons, starsIconSettings, starsIconTextureId, -48, -54, 'starsIcon');
     end
 
-    if (WidgetLoads(newAdventurerIconSettings, 'New adventurer icon') == true) then
+    if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(newAdventurerIconSettings, 'New adventurer icon') == true) then
         newAdventurerIconTextureId = playerIndicators.GetNewAdventurerIconTextureId(player.index);
         AddIcon(icons, newAdventurerIconSettings, newAdventurerIconTextureId, 24, -54, 'newAdventurerIcon');
     end
@@ -1096,8 +1099,8 @@ local function QueuePlayer(player)
     end
 
     local isEngaged = tonumber(player.status) == 1;
-    local buffsLoad = ShouldLoadStatusRows(buffsSettings, 'Buffs', isEngaged);
-    local debuffsLoad = ShouldLoadStatusRows(debuffsSettings, 'Debuffs', isEngaged);
+    local buffsLoad = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(buffsSettings, 'Buffs', isEngaged);
+    local debuffsLoad = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(debuffsSettings, 'Debuffs', isEngaged);
     local nameAoeActive = isPartyPlayer == true and aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(player.index, 'pc') == true;
     local enmityAllyDraws = layoutStateName == 'Combat' and enmity.ShouldDrawAlly(player, globalSettings) == true;
     local targetMarkerDraws = targetMarker ~= nil and targetMarker.enabled == true;

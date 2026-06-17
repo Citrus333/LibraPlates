@@ -102,11 +102,35 @@ local function SendOutgoingPacket(id, packedData)
     return true;
 end
 
+local function QueueCommand(command, mode)
+    if (AshitaCore == nil or AshitaCore.GetChatManager == nil) then
+        return;
+    end
+
+    AshitaCore:GetChatManager():QueueCommand(tonumber(mode) or 1, tostring(command or ''));
+end
+
 local function QueueAction(delaySeconds, action)
     queuedActions[#queuedActions + 1] = {
         at = GetNow() + math.max(0, tonumber(delaySeconds) or 0),
         action = action,
     };
+end
+
+local function NormalizeLockstyleSet(value)
+    local number = tonumber(tostring(value or ''):match('%d+'));
+
+    if (number == nil or number <= 0) then
+        return nil;
+    end
+
+    number = math.floor(number + 0.5);
+
+    if (number > 999) then
+        number = 999;
+    end
+
+    return number;
 end
 
 local function ClearQueue()
@@ -258,9 +282,10 @@ local function BuildChangePlan(targetMainCode, targetSubCode)
     return plan;
 end
 
-local function StartPlan(plan)
+local function StartPlan(plan, lockstyleSet)
     local npc = FindNearbyJobChangeNpc();
     local delay = 0.0;
+    lockstyleSet = NormalizeLockstyleSet(lockstyleSet);
 
     if (npc == nil) then
         return false, 'Not close enough to a job-change Moogle.';
@@ -288,14 +313,22 @@ local function StartPlan(plan)
         delay = delay + 0.6;
     end
 
+    if (lockstyleSet ~= nil) then
+        QueueAction(delay + 0.8, {
+            kind = 'command',
+            command = '/lockstyleset ' .. tostring(lockstyleSet),
+        });
+    end
+
     sequenceActive = (#queuedActions > 0);
     log.Info('Queued job change via ' .. tostring(npc.name) .. ' at ' .. string.format('%.1f', tonumber(npc.distance) or 0) .. ' yalms.');
     return true;
 end
 
-function jobChange.ChangeJobs(targetMainCode, targetSubCode)
+function jobChange.ChangeJobs(targetMainCode, targetSubCode, lockstyleSet)
     targetMainCode = NormalizeJobCode(targetMainCode);
     targetSubCode = NormalizeJobCode(targetSubCode);
+    lockstyleSet = NormalizeLockstyleSet(lockstyleSet);
 
     if (targetMainCode ~= nil and jobCodeToId[targetMainCode] == nil) then
         return false, 'Unknown main job: ' .. tostring(targetMainCode);
@@ -307,10 +340,14 @@ function jobChange.ChangeJobs(targetMainCode, targetSubCode)
 
     local plan, err = BuildChangePlan(targetMainCode, targetSubCode);
     if (plan == nil) then
+        if (lockstyleSet ~= nil and tostring(err or '') == 'No change required.') then
+            return StartPlan({}, lockstyleSet);
+        end
+
         return false, err;
     end
 
-    return StartPlan(plan);
+    return StartPlan(plan, lockstyleSet);
 end
 
 function jobChange.IsJobChangeNpcName(name)
@@ -369,6 +406,8 @@ function jobChange.Update()
                 log.Info('Changing ' .. (action.isMain == true and 'main' or 'sub') .. ' job to ' .. tostring(jobCode) .. '.');
             end
         end
+    elseif (action.kind == 'command') then
+        QueueCommand(action.command, action.mode or 1);
     end
 
     if (#queuedActions == 0) then

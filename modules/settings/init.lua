@@ -5,6 +5,7 @@ local state = require('core.state');
 local widgets = require('modules.widgets.init');
 local anchorControls = require('modules.widgets.anchor_controls');
 local preview = require('modules.settings.preview');
+LibraPlatesSettingsWindowLayout = require('modules.settings.window_layout');
 local textureLoader = require('core.texture_loader');
 local jobIconTextures = require('core.job_icon_textures');
 LibraPlatesEnmityIcons = require('core.enmity_icons');
@@ -116,11 +117,29 @@ local function GetQuickMenuPresetSubJobOptions(mainJob)
     return options;
 end
 
+function LibraPlatesSettingsNormalizeLockstyleSet(value)
+    local number = tonumber(tostring(value or ''):match('%d+')) or 0;
+    number = math.floor(number + 0.5);
+
+    if (number < 0) then number = 0; end
+    if (number > 999) then number = 999; end
+
+    return number;
+end
+
+function LibraPlatesSettingsFormatLockstyleSet(value)
+    return string.format('%03d', LibraPlatesSettingsNormalizeLockstyleSet(value));
+end
+
 local function EnsureQuickMenuPresets(menu)
     menu.presets = menu.presets or {};
 
     if (menu.presets.iconTheme == nil) then
         menu.presets.iconTheme = 'FFXI';
+    end
+
+    if (menu.presets.hideInfo == nil) then
+        menu.presets.hideInfo = true;
     end
 
     menu.presets.entries = menu.presets.entries or {};
@@ -130,8 +149,23 @@ local function EnsureQuickMenuPresets(menu)
 
         if (entry.mainJob == nil) then entry.mainJob = 'None'; end
         if (entry.subJob == nil) then entry.subJob = 'None'; end
+        if (entry.lockstyleSet == nil) then entry.lockstyleSet = 0; end
 
         menu.presets.entries[index] = entry;
+    end
+end
+
+function LibraPlatesSettingsDrawLockstyleSetControl(id, entry)
+    local current = LibraPlatesSettingsFormatLockstyleSet(entry.lockstyleSet);
+    local ref = { current };
+
+    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(46); end
+    local changed = imgui.InputText ~= nil and imgui.InputText('##' .. tostring(id), ref, 4) == true;
+    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+    if (changed == true) then
+        entry.lockstyleSet = LibraPlatesSettingsNormalizeLockstyleSet(ref[1]);
+        state.Save();
     end
 end
 
@@ -143,14 +177,21 @@ local function DrawQuickMenuPresetRows(menu)
         state.Save();
     end, 'QuickMenuPresetTheme');
 
-    imgui.TextWrapped('Quick change job favorites:');
+    DrawCheckbox('Hide info', menu.presets.hideInfo == true, function(value)
+        menu.presets.hideInfo = value == true;
+        state.Save();
+    end);
+    uiTooltip.Info('When the quick menu can show job change presets, hide the NPC type, info, and wiki link so only job swap rows are shown.');
+
+    imgui.TextWrapped('Quick change favorites. Style 000 means no /lockstyleset command.');
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##quick_menu_presets', 5, settingsTableFlagsNoBorders)) then
+        if (imgui.BeginTable('##quick_menu_presets', 6, settingsTableFlagsNoBorders)) then
             imgui.TableSetupColumn('##slot', 0, 32);
             imgui.TableSetupColumn('##icon', 0, 34);
             imgui.TableSetupColumn('##main', 0, 132);
             imgui.TableSetupColumn('##sub', 0, 132);
+            imgui.TableSetupColumn('Style', 0, 54);
             imgui.TableSetupColumn('##spacer', 0, 1);
 
             for index = 1, quickMenuPresetCount do
@@ -195,6 +236,9 @@ local function DrawQuickMenuPresetRows(menu)
                 end);
 
                 imgui.TableNextColumn();
+                LibraPlatesSettingsDrawLockstyleSetControl('QuickMenuPresetLockstyle' .. tostring(index), entry);
+
+                imgui.TableNextColumn();
                 imgui.Dummy({ 1, 1 });
             end
 
@@ -220,6 +264,10 @@ local function DrawQuickMenuPresetRows(menu)
             entry.subJob = value;
             state.Save();
         end, 'QuickMenuPresetSubFallback' .. tostring(index));
+
+        imgui.TextColored(settingsLabelColor, '#' .. tostring(index) .. ' Lockstyle');
+        imgui.SameLine();
+        LibraPlatesSettingsDrawLockstyleSetControl('QuickMenuPresetLockstyleFallback' .. tostring(index), entry);
     end
 end
 
@@ -6156,6 +6204,9 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     if (menu.self.leaveParty == nil) then menu.self.leaveParty = true; end
     if (menu.self.leaveAlliance == nil) then menu.self.leaveAlliance = true; end
     if (menu.self.cancelPartyRequest == nil) then menu.self.cancelPartyRequest = true; end
+    if (menu.self.mount == nil) then menu.self.mount = true; end
+    local ownedMountChoices = require('core.mounts').GetOwnedChoices();
+    if (menu.self.selectedMount == nil or tostring(menu.self.selectedMount or '') == '' or require('core.mounts').IsOwned(menu.self.selectedMount) ~= true) then menu.self.selectedMount = ownedMountChoices[1] or ''; end
     if (menu.self.autogroup == nil) then menu.self.autogroup = (menu.self.autogroupOn ~= false or menu.self.autogroupOff ~= false); end
     if (menu.self.ignoreTrust == nil) then menu.self.ignoreTrust = (menu.self.ignoreTrustOn ~= false or menu.self.ignoreTrustOff ~= false); end
     if (menu.self.hideTrust == nil) then menu.self.hideTrust = (menu.self.hideTrustOn ~= false or menu.self.hideTrustOff ~= false); end
@@ -6279,6 +6330,24 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
         state.Save();
     end);
 
+    DrawCheckbox('Mount/Dismount', menu.self.mount == true, function(value)
+        menu.self.mount = value == true;
+        state.Save();
+    end);
+
+    if (menu.self.mount == true) then
+        local ownedMountChoices = require('core.mounts').GetOwnedChoices();
+
+        DrawInlineComboRow('Mount', ownedMountChoices, menu.self.selectedMount or '', function(value)
+            menu.self.selectedMount = value;
+            state.Save();
+        end, 'QuickMenuSelfMount');
+
+        if (#ownedMountChoices == 0) then
+            uiTooltip.Info('No owned mounts found yet. Use /mount "Raptor" once, or any mount you own, and LibraPlates will add it after you mount successfully.');
+        end
+    end
+
     imgui.Separator();
     DrawYellowHeader('Trust filters');
 
@@ -6297,13 +6366,6 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
             state.Save();
         end);
 
-        if (selectedTab == 'Plates' and scopedEntity == 'Self' and tostring(selectedState or '') == 'World') then
-            imgui.Separator();
-            DrawYellowHeader('Mog House job presets');
-            imgui.TextWrapped('Quick change job favorites for the Mog House Moogle.');
-            imgui.Spacing();
-            DrawQuickMenuPresetRows(menu);
-        end
     end
 
     if (scopedEntity == nil or scopedEntity == 'Trust') then
@@ -6346,6 +6408,12 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
             menu.npc.openLink = value == true;
             state.Save();
         end);
+
+        imgui.Separator();
+        DrawYellowHeader('Job change presets');
+        imgui.TextWrapped('Quick change favorites for Mog House and Nomad Moogles.');
+        imgui.Spacing();
+        DrawQuickMenuPresetRows(menu);
 
     end
 end
@@ -6645,11 +6713,18 @@ local function DrawGeneralMouseSection()
         settings.enableRightClickAttack = value == true;
     end);
 
-    DrawSliderTenths('Right-click attack range', settings.rightClickAttackRange, 30, 299, function(value)
-        settings.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(value) or 4.5));
-    end);
+    if (settings.enableRightClickAttack == true) then
+        DrawCheckbox('Allow while mounted (can dismount)', settings.enableRightClickAttackWhileMounted == true, function(value)
+            settings.enableRightClickAttackWhileMounted = value == true;
+        end);
+        uiTooltip.Info('When off, right-click attack is blocked while mounted so it will not dismount you.');
 
-    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Range includes a small hitbox allowance, matching the old addon behavior.');
+        DrawSliderTenths('Right-click attack range', settings.rightClickAttackRange, 30, 299, function(value)
+            settings.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(value) or 4.5));
+        end);
+
+        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Range includes a small hitbox allowance, matching the old addon behavior.');
+    end
 
     imgui.Separator();
     DrawSettingsHeader('Plate click blocking');
@@ -6908,7 +6983,7 @@ local function DrawGeneralPerformanceSection(settings)
     DrawPerformanceCombo('Update rate', T{ 'Full', 'Balanced', 'Low' }, settings.worldPlateUpdateRate or 'Full', function(value)
         settings.performancePreset = 'Custom';
         settings.worldPlateUpdateRate = value;
-    end, 'WorldPlateUpdateRate', 'Reserved for throttling non-target world plate refresh. Tactical plates stay smooth.');
+    end, 'WorldPlateUpdateRate', 'Throttles idle/non-tactical world plate refresh. Target, subtarget, party/tactical, engaged, casting, hovered, and important plates stay smooth.');
 
     DrawPerformanceCheckbox('Hide distant world plates', settings.hideDistantWorldPlates == true, function(value)
         settings.performancePreset = 'Custom';
@@ -6926,7 +7001,7 @@ local function DrawGeneralPerformanceSection(settings)
     DrawPerformanceCheckbox('Disable expensive widgets', settings.disableExpensiveWorldWidgets == true, function(value)
         settings.performancePreset = 'Custom';
         settings.disableExpensiveWorldWidgets = value == true;
-    end, 'Reserved right now. Planned world-only candidates: Buffs, Debuffs, cast/details text, status icons, and other extra visuals. Tactical plates will keep full detail.', 'DisableExpensiveWorldWidgets');
+    end, 'Drops expensive idle world-only extras such as status/social icons and detail text while keeping target, subtarget, party/tactical, engaged, casting, and hovered plates detailed.', 'DisableExpensiveWorldWidgets');
 
     DrawSettingsHeader('Texture cache');
     local cacheLimit, cacheLimitChanged = DrawPerformanceNumber('Texture cache limit', settings.textureCacheLimit or 96, 'TextureCacheLimit', 32, 256, 1, 'Maximum number of generated plate/icon textures LibraPlates keeps cached before older textures can be evicted.');
@@ -8801,6 +8876,7 @@ end
 
 function settingsUi.Render()
     if (state.GetConfigOpen() ~= true) then
+        LibraPlatesSettingsWindowLayout.ResetAppearing();
         return;
     end
 
@@ -8808,9 +8884,7 @@ function settingsUi.Render()
 
     local renderError = nil;
 
-    if (imgui.SetNextWindowSize ~= nil) then
-        imgui.SetNextWindowSize({ 1100, 720 }, _G.ImGuiCond_FirstUseEver or 4);
-    end
+    LibraPlatesSettingsWindowLayout.Apply();
 
     local styleCount = PushSettingsAccentStyle();
     local windowFlags = settingsWindowFlags;
@@ -8822,6 +8896,8 @@ function settingsUi.Render()
     local began = imgui.Begin('LibraPlates Settings', windowOpen, windowFlags);
 
     if (began) then
+        LibraPlatesSettingsWindowLayout.Save();
+
         local ok, err = pcall(function()
             ApplyPendingHelpNavigation();
             DrawTopTabs();

@@ -183,7 +183,9 @@ local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, c
         'server=' .. tostring(center ~= nil and center.serverId or ''),
         'status=' .. tostring(center ~= nil and center.status or ''),
         'hp=' .. tostring(hpPercent or ''),
+        'hpValue=' .. tostring(center ~= nil and center.hp or '') .. '/' .. tostring(center ~= nil and center.maxHp or ''),
         'mp=' .. tostring(mpPercent or ''),
+        'mpValue=' .. tostring(center ~= nil and center.mp or '') .. '/' .. tostring(center ~= nil and center.maxMp or ''),
         'tp=' .. tostring(tpValue or ''),
         'cast=' .. tostring(castPercent or ''),
         'castText=' .. tostring(castText or ''),
@@ -244,6 +246,7 @@ local function BuildAoeNameSettings(layoutStateName, nameSettings, targetIndex)
     end
 
     merged.textSize = tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize;
+    merged.color = aoeRangeSettings.fontColor or aoeRangeDefaults.fontColor or merged.color;
     return merged;
 end
 
@@ -365,6 +368,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 timerBackground = iconSettings.timerBackground == true,
                 timerBackgroundPaddingX = tonumber(iconSettings.timerBackgroundPaddingX) or 2,
                 timerBackgroundPaddingY = tonumber(iconSettings.timerBackgroundPaddingY) or 1,
+                timerBackgroundColor = iconSettings.timerBackgroundColor,
                 timerBackgroundBorderSize = tonumber(iconSettings.timerBackgroundBorderSize) or 0,
                 timerBackgroundBorderColor = iconSettings.timerBackgroundBorderColor,
                 timerCornerRadius = tonumber(iconSettings.timerCornerRadius) or 0,
@@ -379,10 +383,18 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 timerWarningFontStage1Color = iconSettings.timerWarningFontStage1Color,
                 timerWarningFontStage2Color = iconSettings.timerWarningFontStage2Color,
                 timerWarningFontStage3Color = iconSettings.timerWarningFontStage3Color,
+                timerWarningOutlineColorEnabled = iconSettings.timerWarningOutlineColorEnabled == true,
+                timerWarningOutlineStage1Color = iconSettings.timerWarningOutlineStage1Color,
+                timerWarningOutlineStage2Color = iconSettings.timerWarningOutlineStage2Color,
+                timerWarningOutlineStage3Color = iconSettings.timerWarningOutlineStage3Color,
                 timerWarningBoxColorEnabled = iconSettings.timerWarningBoxColorEnabled == true,
                 timerWarningBoxStage1Color = iconSettings.timerWarningBoxStage1Color,
                 timerWarningBoxStage2Color = iconSettings.timerWarningBoxStage2Color,
                 timerWarningBoxStage3Color = iconSettings.timerWarningBoxStage3Color,
+                timerWarningBoxBorderEnabled = iconSettings.timerWarningBoxBorderEnabled == true,
+                timerWarningBoxBorderStage1Color = iconSettings.timerWarningBoxBorderStage1Color,
+                timerWarningBoxBorderStage2Color = iconSettings.timerWarningBoxBorderStage2Color,
+                timerWarningBoxBorderStage3Color = iconSettings.timerWarningBoxBorderStage3Color,
                 timerWarningBackgroundEnabled = iconSettings.timerWarningBackgroundEnabled == true,
                 timerWarningIconPadding = tonumber(iconSettings.iconWarningPadding) or 6,
                 timerWarningIconBackgroundStage1Color = iconSettings.timerWarningIconBackgroundStage1Color,
@@ -609,7 +621,8 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
     if (castBarSettings.showSpellIcon == true) then
         spellIconTextureId = statusIconTextures.GetTextureId(castData.spellStatusId)
             or spellIconTextures.GetGeoTextureId(castData.spellId)
-            or spellIconTextures.GetTextureId(spellIconId);
+            or spellIconTextures.GetTextureId(spellIconId)
+            or spellIconTextures.GetTextureId(castData.spellId);
     end
 
     return {
@@ -683,7 +696,11 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local linkshellIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Linkshell icon', linkshellIconDefaults);
     local awayIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Away icon', awayIconDefaults);
     local disconnectIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Disconnect icon', disconnectIconDefaults);
+    local anonIconDefaults = require('config.widgets.anon_icon');
+    local anonIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Anon icon', anonIconDefaults);
     local starsIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Stars icon', starsIconDefaults);
+    local levelSyncIconDefaults = require('config.widgets.level_sync_icon');
+    local levelSyncIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Level sync icon', levelSyncIconDefaults);
     local newAdventurerIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'New adventurer icon', newAdventurerIconDefaults);
     local backgroundSettings = state.GetWidgetSettings('Self', layoutStateName, 'Background', backgroundDefaults);
     local hpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'HP Bar', barDefaults);
@@ -731,7 +748,9 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         IsEnabled(linkshellIconSettings) or
         IsEnabled(awayIconSettings) or
         IsEnabled(disconnectIconSettings) or
+        IsEnabled(anonIconSettings) or
         IsEnabled(starsIconSettings) or
+        IsEnabled(levelSyncIconSettings) or
         IsEnabled(newAdventurerIconSettings) or
         shouldLoadBuffs == true or
         shouldLoadDebuffs == true;
@@ -785,7 +804,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     end
     local nameEnabled = (nameSettings.enabled == true);
     local defaultOffsetY = tonumber(nameDefaults.offsetY) or 0;
-    local modeText = (gameModeIconSettings.enabled == true) and gameMode.Resolve(center.index, false) or '';
+    local modeText = gameMode.Resolve(center.index, false);
     local modeIconTextureId = (gameModeIconSettings.enabled == true) and gameMode.GetIconTextureId(modeText) or nil;
     local icons = {};
 
@@ -893,6 +912,21 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         end
     end
 
+    if (anonIconSettings.enabled == true) then
+        local anonTextureId = playerIndicators.GetAnonIconTextureId(center.index);
+        if (anonTextureId ~= nil) then
+            table.insert(icons, {
+                kind = 'anonIcon',
+                textureId = anonTextureId,
+                size = tonumber(anonIconSettings.iconSize) or 16,
+                offsetX = tonumber(anonIconSettings.offsetX) or -120,
+                offsetY = tonumber(anonIconSettings.offsetY) or -54,
+                anchorTo = anonIconSettings.anchorTo,
+                anchorPoint = anonIconSettings.anchorPoint,
+            });
+        end
+    end
+
     if (starsIconSettings.enabled == true) then
         local starsTextureId = playerIndicators.GetStarsIconTextureId(center.index);
         if (starsTextureId ~= nil) then
@@ -904,6 +938,21 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(starsIconSettings.offsetY) or -54,
                 anchorTo = starsIconSettings.anchorTo,
                 anchorPoint = starsIconSettings.anchorPoint,
+            });
+        end
+    end
+
+    if (levelSyncIconSettings.enabled == true and playerStatuses.HasSelfLevelSyncStatus() == true) then
+        local levelSyncTextureId = playerIndicators.GetStaticIconTextureId('lvsync');
+        if (levelSyncTextureId ~= nil) then
+            table.insert(icons, {
+                kind = 'levelSyncIcon',
+                textureId = levelSyncTextureId,
+                size = tonumber(levelSyncIconSettings.iconSize) or 16,
+                offsetX = tonumber(levelSyncIconSettings.offsetX) or -24,
+                offsetY = tonumber(levelSyncIconSettings.offsetY) or -54,
+                anchorTo = levelSyncIconSettings.anchorTo,
+                anchorPoint = levelSyncIconSettings.anchorPoint,
             });
         end
     end
@@ -925,10 +974,20 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     local castBar, castPercent = BuildCastBar(castData, castBarSettings, globalSettings);
     local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
+    local nameColor = nameSettings.color or { 1.0, 1.0, 1.0, 1.0 };
+
+    if (nativeUiPolicy.ShouldOverwriteNativeNameColors() ~= true) then
+        if (playerIndicators.HasAnonNameColor(center.index) == true) then
+            nameColor = playerIndicators.GetAnonNameColor();
+        elseif (modeText == 'CW' or modeText == 'UCW') then
+            nameColor = playerIndicators.GetCampaignNameColor();
+        end
+    end
+
     local nameStyleKey = table.concat({
         'aoe=' .. tostring(nameAoeActive == true),
         'size=' .. tostring(nameTextSize or ''),
-        'color=' .. StableTableKey(nameAoeActive == true and aoeRangeSettings.fontColor or ''),
+        'color=' .. StableTableKey(nameAoeActive == true and aoeRangeSettings.fontColor or nameColor),
         'icon=' .. tostring(aoeRangeSettings.iconEnabled == true) .. ':' .. tostring(aoeRangeSettings.iconSize or '') .. ':' .. tostring(aoeRangeSettings.iconOffsetX or '') .. ':' .. tostring(aoeRangeSettings.iconOffsetY or ''),
     }, ';');
 
@@ -957,7 +1016,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
         nameFontSize = textScale.ToNameTextureFontSize(nameTextSize, nameDefaults.textSize),
-        nameColor = (nameAoeActive == true and aoeRangeSettings.fontColor) or nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
+        nameColor = (nameAoeActive == true and aoeRangeSettings.fontColor) or nameColor,
         nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
         nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
@@ -1065,7 +1124,9 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             { kind = 'bazaarIcon', settings = bazaarIconSettings, defaults = bazaarIconDefaults, defaultX = 72, defaultY = -54 },
             { kind = 'awayIcon', settings = awayIconSettings, defaults = awayIconDefaults, defaultX = 120, defaultY = -54 },
             { kind = 'disconnectIcon', settings = disconnectIconSettings, defaults = disconnectIconDefaults, defaultX = 144, defaultY = -54 },
+            { kind = 'anonIcon', settings = anonIconSettings, defaults = anonIconDefaults, defaultX = -120, defaultY = -54 },
             { kind = 'starsIcon', settings = starsIconSettings, defaults = starsIconDefaults, defaultX = -48, defaultY = -54 },
+            { kind = 'levelSyncIcon', settings = levelSyncIconSettings, defaults = levelSyncIconDefaults, defaultX = -24, defaultY = -54 },
             { kind = 'newAdventurerIcon', settings = newAdventurerIconSettings, defaults = newAdventurerIconDefaults, defaultX = 24, defaultY = -54 },
         }),
     };
@@ -1148,8 +1209,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 borderSize = tonumber(restingSettings.borderSize) or 0,
                 textureId = barTextures.GetTextureId(restingSettings.texture or 'Solid'),
                 text = tick.text,
-                textOffsetX = 0,
-                textOffsetY = 0,
+                textOffsetX = tonumber(restingSettings.textOffsetX) or 0,
+                textOffsetY = tonumber(restingSettings.textOffsetY) or 0,
                 fontFamily = fonts.GetRole(globalSettings, true),
                 fontFlags = fonts.GetRoleFlags(globalSettings, true),
                 fontSize = textScale.ToTextureFontSize(restingSettings.fontSize, 12),
@@ -1158,6 +1219,24 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 textOutlineColor = restingSettings.textOutlineColor or { 1.0, 1.0, 1.0, 1.0 },
                 textOutlineSize = tonumber(restingSettings.textOutlineSize) or 1,
             };
+
+            if (tick.countdown == true and tick.label ~= nil) then
+                plateData.texts = plateData.texts or {};
+                plateData.texts[#plateData.texts + 1] = {
+                    kind = 'restingCountdownText',
+                    text = tostring(tick.label or ''),
+                    offsetX = tonumber(restingSettings.countdownTextOffsetX) or 0,
+                    offsetY = tonumber(restingSettings.countdownTextOffsetY) or 0,
+                    align = 'center',
+                    fontFamily = fonts.GetRole(globalSettings, true),
+                    fontFlags = fonts.GetRoleFlags(globalSettings, true),
+                    fontSize = textScale.ToTextureFontSize(restingSettings.countdownFontSize, 12),
+                    color = restingSettings.countdownTextColor or { 1.0, 0.84, 0.0, 1.0 },
+                    outlineEnabled = restingSettings.countdownTextOutlineEnabled ~= false,
+                    outlineColor = restingSettings.countdownTextOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+                    outlineSize = tonumber(restingSettings.countdownTextOutlineSize) or 2,
+                };
+            end
         end
     else
         if (restingTick.ShouldPreserveLogoutTransition() == true) then
@@ -1167,7 +1246,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         end
     end
 
-    local cacheEligible = true;
+    local cacheEligible = aoeNameHighlight.HasLiveAoe() ~= true and enmityActive ~= true;
     local signature = nil;
     local vitalSignature = nil;
     local cacheKey = GetWorldCacheKey(stateName, targetStateName, layoutStateName, plateData.canvasWidth ~= nil);
@@ -1182,10 +1261,6 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             tpValue,
             castPercent,
             castBar ~= nil and castBar.text or '',
-            castBar ~= nil and StableTableKey(castBar.color) or '',
-            castBar ~= nil and tostring(castBar.fontSize or '') or '',
-            castBar ~= nil and StableTableKey(castBar.textColor) or '',
-            castBar ~= nil and tostring(castBar.textOffsetX or '') .. ':' .. tostring(castBar.textOffsetY or '') or '',
             stateName,
             targetStateName,
             layoutStateName,
@@ -1201,28 +1276,6 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             canvasTexture.TouchKey(cachedWorldPlate.textureKey);
             cachedWorldPlate.lastUsed = os.clock();
             perfMeter.Count('self.cache.hit', 1);
-            QueueRenderedWorldPlate(
-                center,
-                hpPercent,
-                targetStateName,
-                layoutStateName,
-                cachedWorldPlate.plateTextureId,
-                cachedWorldPlate.textureWidth,
-                cachedWorldPlate.textureHeight,
-                cachedWorldPlate.plateClickRects
-            );
-            return;
-        end
-
-        if (
-            adaptivePerformance.ShouldThrottleBackground() == true and
-            cachedWorldPlate ~= nil and
-            cachedWorldPlate.vitalSignature == vitalSignature and
-            (os.clock() - (tonumber(cachedWorldPlate.lastUsed) or 0)) < 0.75
-        ) then
-            canvasTexture.TouchKey(cachedWorldPlate.textureKey);
-            cachedWorldPlate.lastUsed = os.clock();
-            perfMeter.Count('self.cache.smooth', 1);
             QueueRenderedWorldPlate(
                 center,
                 hpPercent,

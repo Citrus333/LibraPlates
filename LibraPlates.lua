@@ -13,6 +13,7 @@ local state = require('core.state');
 local commands = require('handlers.commands');
 local log = require('core.log');
 local modules = require('modules.init');
+local aoeNameHighlight = require('core.aoe_name_highlight');
 local nativeTargetArrow = require('core.native_target_arrow');
 local targetActionRange = require('core.target_action_range');
 local targeting = require('core.targeting');
@@ -32,6 +33,9 @@ local textureLoader = require('core.texture_loader');
 local npcObjectInfo = require('core.npc_object_info');
 local quickMenu = require('core.quick_menu');
 local mounts = require('core.mounts');
+local anonStatus = require('core.anon_status');
+local playerBlacklist = require('core.player_blacklist');
+local blacklistModelReplace = require('core.blacklist_model_replace');
 local diagnostics = require('core.diagnostics');
 local adaptivePerformance = require('core.adaptive_performance');
 local profileAutoSwitch = require('core.profile_auto_switch');
@@ -113,8 +117,11 @@ end);
 -- ============================================================
 
 ashita.events.register('command', 'libraplates_command', function(e)
+    aoeNameHighlight.HandleCommandText(e.command);
     targetActionRange.HandleCommandText(e.command);
     mounts.HandleCommandText(e.command);
+    anonStatus.HandleCommandText(e.command);
+    playerBlacklist.HandleCommandText(e.command);
     commands.Handle(e);
 end);
 
@@ -128,6 +135,7 @@ ashita.events.register('login', 'libraplates_login', function()
 end);
 
 ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
+    blacklistModelReplace.HandlePacketIn(e);
     mounts.HandlePacketIn(e);
     targeting.HandlePacketIn(e);
     mogJobDebug.HandlePacketIn(e);

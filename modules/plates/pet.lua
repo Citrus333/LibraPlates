@@ -1,4 +1,5 @@
 local backgroundDefaults = require('config.widgets.background');
+local imgui = require('imgui');
 local nameDefaults = require('config.widgets.name');
 local barDefaults = require('config.widgets.bar');
 local mpBarDefaults = require('config.widgets.mp_bar');
@@ -229,6 +230,7 @@ local wardBarDefaults = {
     borderColor = { 0.0, 0.0, 0.0, 1.0 },
     borderSize = 0,
     texture = 'Solid',
+    fillDirection = 'Left to right',
     labelDisplayMode = 'Text',
     labelIconSize = 14,
     labelIconOffsetX = 0,
@@ -256,6 +258,7 @@ local rageBarDefaults = {
     borderColor = { 0.0, 0.0, 0.0, 1.0 },
     borderSize = 0,
     texture = 'Solid',
+    fillDirection = 'Left to right',
     labelDisplayMode = 'Text',
     labelIconSize = 14,
     labelIconOffsetX = 0,
@@ -599,7 +602,8 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
     if (castBarSettings.showSpellIcon == true) then
         spellIconTextureId = statusIconTextures.GetTextureId(castData.spellStatusId)
             or spellIconTextures.GetGeoTextureId(castData.spellId)
-            or spellIconTextures.GetTextureId(spellIconId);
+            or spellIconTextures.GetTextureId(spellIconId)
+            or spellIconTextures.GetTextureId(castData.spellId);
     end
 
     return {
@@ -717,6 +721,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, global
                 timerBackground = iconSettings.timerBackground == true,
                 timerBackgroundPaddingX = tonumber(iconSettings.timerBackgroundPaddingX) or 2,
                 timerBackgroundPaddingY = tonumber(iconSettings.timerBackgroundPaddingY) or 1,
+                timerBackgroundColor = iconSettings.timerBackgroundColor,
                 timerBackgroundBorderSize = tonumber(iconSettings.timerBackgroundBorderSize) or 0,
                 timerBackgroundBorderColor = iconSettings.timerBackgroundBorderColor,
                 timerCornerRadius = tonumber(iconSettings.timerCornerRadius) or 0,
@@ -731,10 +736,18 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, global
                 timerWarningFontStage1Color = iconSettings.timerWarningFontStage1Color,
                 timerWarningFontStage2Color = iconSettings.timerWarningFontStage2Color,
                 timerWarningFontStage3Color = iconSettings.timerWarningFontStage3Color,
+                timerWarningOutlineColorEnabled = iconSettings.timerWarningOutlineColorEnabled == true,
+                timerWarningOutlineStage1Color = iconSettings.timerWarningOutlineStage1Color,
+                timerWarningOutlineStage2Color = iconSettings.timerWarningOutlineStage2Color,
+                timerWarningOutlineStage3Color = iconSettings.timerWarningOutlineStage3Color,
                 timerWarningBoxColorEnabled = iconSettings.timerWarningBoxColorEnabled == true,
                 timerWarningBoxStage1Color = iconSettings.timerWarningBoxStage1Color,
                 timerWarningBoxStage2Color = iconSettings.timerWarningBoxStage2Color,
                 timerWarningBoxStage3Color = iconSettings.timerWarningBoxStage3Color,
+                timerWarningBoxBorderEnabled = iconSettings.timerWarningBoxBorderEnabled == true,
+                timerWarningBoxBorderStage1Color = iconSettings.timerWarningBoxBorderStage1Color,
+                timerWarningBoxBorderStage2Color = iconSettings.timerWarningBoxBorderStage2Color,
+                timerWarningBoxBorderStage3Color = iconSettings.timerWarningBoxBorderStage3Color,
             };
         end
     end
@@ -911,6 +924,7 @@ local function BuildExtraBar(settings, defaults, progress, text, kind, iconName,
         borderColor = settings.borderColor or defaults.borderColor,
         borderSize = tonumber(settings.borderSize) or defaults.borderSize,
         textureId = barTextures.GetTextureId(settings.texture),
+        fillDirection = settings.fillDirection or defaults.fillDirection or 'Left to right',
         showAtPercent = segmented and 300 or (tonumber(settings.showAtPercent) or 100),
         segmented = segmented,
         segmentGap = tonumber(settings.segmentGap) or defaults.segmentGap,
@@ -933,6 +947,80 @@ local function BuildExtraBar(settings, defaults, progress, text, kind, iconName,
         iconOffsetY = tonumber(settings.labelIconOffsetY) or 0,
         separateLabelOffsets = iconTextureId ~= nil or tostring(labelText or '') ~= '',
     };
+end
+
+local function BuildNameOnlyPlateData(source, nameText)
+    return {
+        hp = source.hp,
+        name = tostring(nameText or source.name or ''),
+        nameFontFamily = source.nameFontFamily,
+        nameFontFlags = source.nameFontFlags,
+        nameFontSize = source.nameFontSize,
+        nameColor = source.nameColor,
+        nameOutlineEnabled = source.nameOutlineEnabled,
+        nameOutlineColor = source.nameOutlineColor,
+        nameOutlineSize = source.nameOutlineSize,
+        nameOffsetX = source.nameOffsetX,
+        nameOffsetY = source.nameOffsetY,
+        nameAnchorTo = source.nameAnchorTo,
+        nameAnchorPoint = source.nameAnchorPoint,
+    };
+end
+
+local function DrawStaticPlateTexture(textureId, centerX, centerY, width, height, windowId)
+    if (imgui == nil or textureId == nil) then
+        return false;
+    end
+
+    if (imgui.Begin == nil or imgui.Image == nil) then
+        return false;
+    end
+
+    local drawW = math.max(1, tonumber(width) or 1);
+    local drawH = math.max(1, tonumber(height) or 1);
+    local left = (tonumber(centerX) or 0) - (drawW * 0.5);
+    local top = (tonumber(centerY) or 0) - (drawH * 0.5);
+    local flags =
+        (_G.ImGuiWindowFlags_NoTitleBar or 0) +
+        (_G.ImGuiWindowFlags_NoResize or 0) +
+        (_G.ImGuiWindowFlags_NoMove or 0) +
+        (_G.ImGuiWindowFlags_NoScrollbar or 0) +
+        (_G.ImGuiWindowFlags_NoScrollWithMouse or 0) +
+        (_G.ImGuiWindowFlags_NoSavedSettings or 0) +
+        (_G.ImGuiWindowFlags_NoInputs or 0) +
+        (_G.ImGuiWindowFlags_NoBackground or 0);
+
+    if (imgui.SetNextWindowPos ~= nil) then
+        imgui.SetNextWindowPos({ left, top }, _G.ImGuiCond_Always or 1);
+    end
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ drawW, drawH }, _G.ImGuiCond_Always or 1);
+    end
+
+    local pushedPadding = false;
+    if (imgui.PushStyleVar ~= nil and _G.ImGuiStyleVar_WindowPadding ~= nil) then
+        imgui.PushStyleVar(_G.ImGuiStyleVar_WindowPadding, { 0, 0 });
+        pushedPadding = true;
+    end
+
+    local visible = imgui.Begin('LibraPlates Pet Static Panel##' .. tostring(windowId or 'static_pet'), true, flags);
+
+    if (visible == true) then
+        if (imgui.SetCursorPos ~= nil) then
+            imgui.SetCursorPos({ 0, 0 });
+        end
+
+        imgui.Image(textureId, { drawW, drawH }, { 0, 0 }, { 1, 1 });
+    end
+
+    imgui.End();
+
+    if (pushedPadding == true and imgui.PopStyleVar ~= nil) then
+        imgui.PopStyleVar();
+    end
+
+    return true;
 end
 
 local function QueueBstPet(pet)
@@ -1121,6 +1209,49 @@ local function QueueBstPet(pet)
         return;
     end
 
+    local petPlateMode = tostring(targetingSettings.bstPetPlateMode or 'Normal');
+    local worldPlateTextureId = plateTextureId;
+    local worldTextureWidth = textureWidth;
+    local worldTextureHeight = textureHeight;
+    local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+
+    if (petPlateMode ~= 'Normal') then
+        local staticPlateData = CopySettingsWith(plateData, {
+            background = CopySettingsWith(plateData.background, {
+                enabled = targetingSettings.bstPetStaticBackground ~= false,
+            }),
+        });
+        local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, 'bst-pet-static-' .. tostring(pet.index));
+        local staticTextureId = canvasTexture.GetTextureId(staticTexture);
+
+        if (staticTextureId ~= nil and staticTextureWidth ~= nil and staticTextureHeight ~= nil) then
+            local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings.bstPetStaticScale) or 35) / 100));
+            DrawStaticPlateTexture(
+                staticTextureId,
+                tonumber(targetingSettings.bstPetStaticX) or 170,
+                tonumber(targetingSettings.bstPetStaticY) or 690,
+                staticTextureWidth * staticScale,
+                staticTextureHeight * staticScale,
+                'static_bst_pet_' .. tostring(pet.index)
+            );
+        end
+    end
+
+    if (petPlateMode == 'Detach from pet') then
+        local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
+        local nameTexture, nameTextureWidth, nameTextureHeight = canvasTexture.Render(nameOnlyPlateData, 'bst-pet-name-' .. tostring(pet.index));
+        local nameTextureId = canvasTexture.GetTextureId(nameTexture);
+
+        if (nameTextureId == nil) then
+            return;
+        end
+
+        worldPlateTextureId = nameTextureId;
+        worldTextureWidth = nameTextureWidth;
+        worldTextureHeight = nameTextureHeight;
+        worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
+    end
+
     worldMarkerProbe.QueuePlate({
         targetIndex = pet.index,
         serverId = pet.serverId,
@@ -1133,16 +1264,16 @@ local function QueueBstPet(pet)
         clickTargetType = 'pet',
         worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
-            plateTextureId = plateTextureId,
+            plateTextureId = worldPlateTextureId,
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
             anchorBone = petAnchorBone,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = petWorldOffsetY,
-            plateTextureWidth = textureWidth,
-            plateTextureHeight = textureHeight,
-            plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData),
+            plateTextureWidth = worldTextureWidth,
+            plateTextureHeight = worldTextureHeight,
+            plateClickRects = worldClickRects,
             plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
             clickTargetType = 'pet',
         }, 'pet', 0, petWorldOffsetY),
@@ -1367,6 +1498,49 @@ local function QueueSmnPet(pet)
         return;
     end
 
+    local petPlateMode = tostring(targetingSettings.smnPetPlateMode or 'Normal');
+    local worldPlateTextureId = plateTextureId;
+    local worldTextureWidth = textureWidth;
+    local worldTextureHeight = textureHeight;
+    local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+
+    if (petPlateMode ~= 'Normal') then
+        local staticPlateData = CopySettingsWith(plateData, {
+            background = CopySettingsWith(plateData.background, {
+                enabled = targetingSettings.smnPetStaticBackground ~= false,
+            }),
+        });
+        local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, 'smn-pet-static-' .. tostring(pet.index));
+        local staticTextureId = canvasTexture.GetTextureId(staticTexture);
+
+        if (staticTextureId ~= nil and staticTextureWidth ~= nil and staticTextureHeight ~= nil) then
+            local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings.smnPetStaticScale) or 35) / 100));
+            DrawStaticPlateTexture(
+                staticTextureId,
+                tonumber(targetingSettings.smnPetStaticX) or 170,
+                tonumber(targetingSettings.smnPetStaticY) or 690,
+                staticTextureWidth * staticScale,
+                staticTextureHeight * staticScale,
+                'static_smn_pet_' .. tostring(pet.index)
+            );
+        end
+    end
+
+    if (petPlateMode == 'Detach from pet') then
+        local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
+        local nameTexture, nameTextureWidth, nameTextureHeight = canvasTexture.Render(nameOnlyPlateData, 'smn-pet-name-' .. tostring(pet.index));
+        local nameTextureId = canvasTexture.GetTextureId(nameTexture);
+
+        if (nameTextureId == nil) then
+            return;
+        end
+
+        worldPlateTextureId = nameTextureId;
+        worldTextureWidth = nameTextureWidth;
+        worldTextureHeight = nameTextureHeight;
+        worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
+    end
+
     worldMarkerProbe.QueuePlate({
         targetIndex = pet.index,
         serverId = pet.serverId,
@@ -1379,16 +1553,16 @@ local function QueueSmnPet(pet)
         clickTargetType = 'pet',
         worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
-            plateTextureId = plateTextureId,
+            plateTextureId = worldPlateTextureId,
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
             anchorBone = petAnchorBone,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = petWorldOffsetY,
-            plateTextureWidth = textureWidth,
-            plateTextureHeight = textureHeight,
-            plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData),
+            plateTextureWidth = worldTextureWidth,
+            plateTextureHeight = worldTextureHeight,
+            plateClickRects = worldClickRects,
             plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
             clickTargetType = 'pet',
         }, 'pet', 0, petWorldOffsetY),
@@ -1546,6 +1720,49 @@ local function QueueWyvernPet(pet)
         return;
     end
 
+    local petPlateMode = tostring(targetingSettings.drgPetPlateMode or 'Normal');
+    local worldPlateTextureId = plateTextureId;
+    local worldTextureWidth = textureWidth;
+    local worldTextureHeight = textureHeight;
+    local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+
+    if (petPlateMode ~= 'Normal') then
+        local staticPlateData = CopySettingsWith(plateData, {
+            background = CopySettingsWith(plateData.background, {
+                enabled = targetingSettings.drgPetStaticBackground ~= false,
+            }),
+        });
+        local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, 'drg-pet-static-' .. tostring(pet.index));
+        local staticTextureId = canvasTexture.GetTextureId(staticTexture);
+
+        if (staticTextureId ~= nil and staticTextureWidth ~= nil and staticTextureHeight ~= nil) then
+            local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings.drgPetStaticScale) or 35) / 100));
+            DrawStaticPlateTexture(
+                staticTextureId,
+                tonumber(targetingSettings.drgPetStaticX) or 170,
+                tonumber(targetingSettings.drgPetStaticY) or 690,
+                staticTextureWidth * staticScale,
+                staticTextureHeight * staticScale,
+                'static_drg_pet_' .. tostring(pet.index)
+            );
+        end
+    end
+
+    if (petPlateMode == 'Detach from pet') then
+        local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
+        local nameTexture, nameTextureWidth, nameTextureHeight = canvasTexture.Render(nameOnlyPlateData, 'drg-pet-name-' .. tostring(pet.index));
+        local nameTextureId = canvasTexture.GetTextureId(nameTexture);
+
+        if (nameTextureId == nil) then
+            return;
+        end
+
+        worldPlateTextureId = nameTextureId;
+        worldTextureWidth = nameTextureWidth;
+        worldTextureHeight = nameTextureHeight;
+        worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
+    end
+
     worldMarkerProbe.QueuePlate({
         targetIndex = pet.index,
         serverId = pet.serverId,
@@ -1558,7 +1775,7 @@ local function QueueWyvernPet(pet)
         clickTargetType = 'pet',
         worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
-            plateTextureId = plateTextureId,
+            plateTextureId = worldPlateTextureId,
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
             anchorBone = wyvernAnchorBone,
@@ -1566,9 +1783,9 @@ local function QueueWyvernPet(pet)
             plateWorldHeight = 1.18,
             plateWorldOffsetY = wyvernWorldOffsetY,
             plateOverlayOffsetY = wyvernOverlayOffsetY,
-            plateTextureWidth = textureWidth,
-            plateTextureHeight = textureHeight,
-            plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData),
+            plateTextureWidth = worldTextureWidth,
+            plateTextureHeight = worldTextureHeight,
+            plateClickRects = worldClickRects,
             plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
             clickTargetType = 'pet',
             layoutStateName = layoutStateName,
@@ -1765,6 +1982,49 @@ local function QueuePupPet(pet)
         return;
     end
 
+    local petPlateMode = tostring(targetingSettings.pupPetPlateMode or 'Normal');
+    local worldPlateTextureId = plateTextureId;
+    local worldTextureWidth = textureWidth;
+    local worldTextureHeight = textureHeight;
+    local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+
+    if (petPlateMode ~= 'Normal') then
+        local staticPlateData = CopySettingsWith(plateData, {
+            background = CopySettingsWith(plateData.background, {
+                enabled = targetingSettings.pupPetStaticBackground ~= false,
+            }),
+        });
+        local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, 'pup-pet-static-' .. tostring(pet.index));
+        local staticTextureId = canvasTexture.GetTextureId(staticTexture);
+
+        if (staticTextureId ~= nil and staticTextureWidth ~= nil and staticTextureHeight ~= nil) then
+            local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings.pupPetStaticScale) or 35) / 100));
+            DrawStaticPlateTexture(
+                staticTextureId,
+                tonumber(targetingSettings.pupPetStaticX) or 170,
+                tonumber(targetingSettings.pupPetStaticY) or 690,
+                staticTextureWidth * staticScale,
+                staticTextureHeight * staticScale,
+                'static_pup_pet_' .. tostring(pet.index)
+            );
+        end
+    end
+
+    if (petPlateMode == 'Detach from pet') then
+        local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
+        local nameTexture, nameTextureWidth, nameTextureHeight = canvasTexture.Render(nameOnlyPlateData, 'pup-pet-name-' .. tostring(pet.index));
+        local nameTextureId = canvasTexture.GetTextureId(nameTexture);
+
+        if (nameTextureId == nil) then
+            return;
+        end
+
+        worldPlateTextureId = nameTextureId;
+        worldTextureWidth = nameTextureWidth;
+        worldTextureHeight = nameTextureHeight;
+        worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
+    end
+
     worldMarkerProbe.QueuePlate({
         targetIndex = pet.index,
         serverId = pet.serverId,
@@ -1778,16 +2038,16 @@ local function QueuePupPet(pet)
         clickTargetType = 'pet',
         worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
-            plateTextureId = plateTextureId,
+            plateTextureId = worldPlateTextureId,
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
             anchorBone = petAnchorBone,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = petWorldOffsetY,
-            plateTextureWidth = textureWidth,
-            plateTextureHeight = textureHeight,
-            plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData),
+            plateTextureWidth = worldTextureWidth,
+            plateTextureHeight = worldTextureHeight,
+            plateClickRects = worldClickRects,
             plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
             clickTargetType = 'pet',
             layoutStateName = layoutStateName,

@@ -15,6 +15,10 @@ local colorEditFlags = bit ~= nil and bit.bor ~= nil
     and bit.bor(_G.ImGuiColorEditFlags_NoAlpha or 0, _G.ImGuiColorEditFlags_NoInputs or 0)
     or ((_G.ImGuiColorEditFlags_NoAlpha or 0) + (_G.ImGuiColorEditFlags_NoInputs or 0));
 local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
+local pairLabelWidth = 158;
+local pairControlWidth = 180;
+local colorLabelWidth = 142;
+local colorControlWidth = 62;
 local pendingReset = nil;
 local heldButtonState = {};
 
@@ -232,7 +236,7 @@ local function DrawSingleSlider(label, id, value, minValue, maxValue, showButton
         local columnCount = hasSuffix and 3 or 2;
 
         if (imgui.BeginTable('##bar_' .. id .. '_row', columnCount, tableFlags)) then
-            imgui.TableSetupColumn('##label', 0, labelWidth or 170);
+            imgui.TableSetupColumn('##label', 0, labelWidth or pairLabelWidth);
             imgui.TableSetupColumn('##control', 0, controlWidth or 170);
             if (hasSuffix == true) then
                 imgui.TableSetupColumn('##suffix', 0, 82);
@@ -270,10 +274,10 @@ local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, left
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##bar_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 108);
-            imgui.TableSetupColumn('##control_left', 0, 170);
-            imgui.TableSetupColumn('##label_right', 0, 108);
-            imgui.TableSetupColumn('##control_right', 0, 170);
+            imgui.TableSetupColumn('##label_left', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##control_left', 0, pairControlWidth);
+            imgui.TableSetupColumn('##label_right', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##control_right', 0, pairControlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax, true, 95);
@@ -362,7 +366,7 @@ local function DrawComboRow(label, value, options, id, comboWidth)
         local result = value;
 
         if (imgui.BeginTable('##bar_' .. tostring(id or label or 'combo') .. '_row', 2, tableFlags)) then
-            imgui.TableSetupColumn('##label', 0, 170);
+            imgui.TableSetupColumn('##label', 0, pairLabelWidth);
             imgui.TableSetupColumn('##control', 0, 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -489,10 +493,10 @@ local function DrawColorPair(rowId, leftLabel, leftId, leftValue, rightLabel, ri
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##bar_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 108);
-            imgui.TableSetupColumn('##control_left', 0, 170);
-            imgui.TableSetupColumn('##label_right', 0, 108);
-            imgui.TableSetupColumn('##control_right', 0, 170);
+            imgui.TableSetupColumn('##label_left', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##control_left', 0, pairControlWidth);
+            imgui.TableSetupColumn('##label_right', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##control_right', 0, pairControlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             leftResult = DrawColorCell(leftLabel, leftId, leftValue);
@@ -521,28 +525,8 @@ local function DrawColorTextureRow(rowId, fillColor, backgroundColor, texture)
     local key = tostring(rowId or 'color_texture');
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##bar_' .. key, 6, tableFlags)) then
-            imgui.TableSetupColumn('##fill_label', 0, 108);
-            imgui.TableSetupColumn('##fill_control', 0, 34);
-            imgui.TableSetupColumn('##bg_label', 0, 90);
-            imgui.TableSetupColumn('##bg_control', 0, 34);
-            imgui.TableSetupColumn('##texture_label', 0, 90);
-            imgui.TableSetupColumn('##texture_control', 0, 180);
-            imgui.TableNextRow();
-            imgui.TableNextColumn();
-            imgui.TextColored(labelColor, 'Fill color');
-            imgui.TableNextColumn();
-            nextFillColor = DrawColor(key .. '_fill_color', fillColor);
-            imgui.TableNextColumn();
-            imgui.TextColored(labelColor, 'BG color');
-            imgui.TableNextColumn();
-            nextBackgroundColor = DrawColor(key .. '_bg_color', backgroundColor);
-            imgui.TableNextColumn();
-            imgui.TextColored(labelColor, 'Texture');
-            imgui.TableNextColumn();
-            nextTexture = DrawChoice('Texture', texture, barTextures.GetOptions(), key .. '_texture', 170);
-            imgui.EndTable();
-        end
+        nextFillColor, nextBackgroundColor = DrawColorPair(key .. '_colors', 'Fill color', key .. '_fill_color', fillColor, 'BG color', key .. '_bg_color', backgroundColor);
+        nextTexture = DrawComboRow('Texture', texture, barTextures.GetOptions(), key .. '_texture', 170);
 
         return nextFillColor, nextBackgroundColor, nextTexture;
     end
@@ -569,10 +553,10 @@ local function DrawBorderRow(rowId, borderColor, borderSize)
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##bar_' .. key, 4, tableFlags)) then
-            imgui.TableSetupColumn('##color_label', 0, 118);
-            imgui.TableSetupColumn('##color_control', 0, 42);
-            imgui.TableSetupColumn('##size_label', 0, 104);
-            imgui.TableSetupColumn('##size_control', 0, 154);
+            imgui.TableSetupColumn('##color_label', 0, colorLabelWidth);
+            imgui.TableSetupColumn('##color_control', 0, colorControlWidth);
+            imgui.TableSetupColumn('##size_label', 0, colorLabelWidth);
+            imgui.TableSetupColumn('##size_control', 0, pairControlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Border color');
@@ -690,14 +674,43 @@ local function DrawLowWarningRow(rowId, percentValue, warningColor)
     return nextPercent, nextColor;
 end
 
+local function DrawToggleGroupRow(rowId, items)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##bar_' .. tostring(rowId or 'toggles'), #items, tableFlags)) then
+            for index = 1, #items do
+                imgui.TableSetupColumn('##toggle_' .. tostring(index), 0, 190);
+            end
+
+            imgui.TableNextRow();
+
+            for _, item in ipairs(items) do
+                imgui.TableNextColumn();
+                item.value = DrawToggle(item.label, item.value);
+            end
+
+            imgui.EndTable();
+        end
+
+        return;
+    end
+
+    for index, item in ipairs(items) do
+        if (index < #items) then
+            item.value = DrawInlineToggle(item.label, item.value);
+        else
+            item.value = DrawToggle(item.label, item.value);
+        end
+    end
+end
+
 local function DrawFontRow(settings, defaults, idPrefix)
     idPrefix = tostring(idPrefix or '');
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##bar_' .. idPrefix .. 'font_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##font_size_label', 0, 116);
-            imgui.TableSetupColumn('##font_size_control', 0, 150);
-            imgui.TableSetupColumn('##font_color_label', 0, 116);
-            imgui.TableSetupColumn('##font_color_control', 0, 54);
+            imgui.TableSetupColumn('##font_size_label', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##font_size_control', 0, pairControlWidth);
+            imgui.TableSetupColumn('##font_color_label', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##font_color_control', 0, colorControlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.fontSize = DrawTableSlider('Font size', idPrefix .. 'font_size', textScale.NormalizeSetting(settings.fontSize, defaults.fontSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
@@ -717,10 +730,10 @@ local function DrawOutlineRow(settings, idPrefix)
     idPrefix = tostring(idPrefix or '');
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##bar_' .. idPrefix .. 'outline_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##outline_size_label', 0, 116);
-            imgui.TableSetupColumn('##outline_size_control', 0, 150);
-            imgui.TableSetupColumn('##outline_color_label', 0, 116);
-            imgui.TableSetupColumn('##outline_color_control', 0, 54);
+            imgui.TableSetupColumn('##outline_size_label', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##outline_size_control', 0, pairControlWidth);
+            imgui.TableSetupColumn('##outline_color_label', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##outline_color_control', 0, colorControlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.textOutlineSize = DrawTableSlider('Outline size', idPrefix .. 'outline_size', settings.textOutlineSize, 0, 12, false);
@@ -886,10 +899,26 @@ function bar.DrawSettings(settings, context)
     settings.color, settings.backgroundColor, settings.texture = DrawColorTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture);
     settings.borderColor, settings.borderSize = DrawBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
 
+    if (resourceName == 'Ward' or resourceName == 'Rage') then
+        settings.fillDirection = DrawComboRow('Fill direction', settings.fillDirection or defaults.fillDirection or 'Left to right', { 'Left to right', 'Right to left' }, idPrefix .. 'fill_direction', 150);
+    end
+
     if (resourceName == 'HP') then
         settings.showAtPercent = DrawSingleSlider('Show at HP', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, 108, 150, 'percent');
     elseif (resourceName == 'MP') then
         settings.showAtPercent = DrawSingleSlider('Show at MP', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, 108, 150, 'percent');
+    end
+
+    if (resourceName == 'HP' and context ~= nil and context.showOutOfRangeOpacity == true) then
+        imgui.Separator();
+        DrawSectionHeader('Out of range:');
+        settings.outOfRangeOpacityEnabled = DrawToggle('Use out-of-range fill color', settings.outOfRangeOpacityEnabled);
+
+        if (settings.outOfRangeOpacityEnabled == true) then
+            imgui.TextColored(labelColor, 'Fill color');
+            imgui.SameLine();
+            settings.outOfRangeColor = DrawColor(idPrefix .. 'out_of_range_color', settings.outOfRangeColor);
+        end
     end
 
     if (isSegmentedResource == true) then
@@ -939,15 +968,31 @@ function bar.DrawSettings(settings, context)
             showPercentLabel = 'Show ' .. resourceName .. ' percent';
         end
 
+        local textToggles = {};
+
         if (showValueLabel ~= nil) then
-            settings.showValue = DrawInlineToggle(showValueLabel, settings.showValue);
+            textToggles[#textToggles + 1] = { label = showValueLabel, value = settings.showValue };
         end
 
         if (showPercentLabel ~= nil) then
-            settings.showPercent = DrawInlineToggle(showPercentLabel, settings.showPercent);
+            textToggles[#textToggles + 1] = { label = showPercentLabel, value = settings.showPercent };
         end
 
-        settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
+        textToggles[#textToggles + 1] = { label = 'Use small font', value = settings.useSmallFont };
+        DrawToggleGroupRow(idPrefix .. 'text_toggles', textToggles);
+
+        local toggleIndex = 1;
+        if (showValueLabel ~= nil) then
+            settings.showValue = textToggles[toggleIndex].value;
+            toggleIndex = toggleIndex + 1;
+        end
+
+        if (showPercentLabel ~= nil) then
+            settings.showPercent = textToggles[toggleIndex].value;
+            toggleIndex = toggleIndex + 1;
+        end
+
+        settings.useSmallFont = textToggles[toggleIndex].value;
         uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
     end
 
@@ -961,7 +1006,12 @@ function bar.DrawSettings(settings, context)
 
     if (labelIconOptions == true) then
         imgui.Separator();
-        DrawSectionHeader('Labels:');
+        if (resourceName == 'Ward' or resourceName == 'Rage') then
+            DrawSectionHeader(resourceName .. ' Icon/Text:');
+        else
+            DrawSectionHeader('Labels:');
+        end
+
         if (settings.labelDisplayMode == 'Icon + text') then
             settings.labelDisplayMode = 'Text';
         end
@@ -984,6 +1034,8 @@ function bar.DrawSettings(settings, context)
                 settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'counter_position', 'Counter X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Counter Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
             end
         elseif (resourceName == 'Ward' or resourceName == 'Rage') then
+            imgui.Separator();
+            DrawSectionHeader('Timer Text:');
             settings.showValue = false;
             settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' timer', settings.showPercent ~= false);
             if (settings.showPercent == true) then

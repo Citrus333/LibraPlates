@@ -16,6 +16,62 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Do not mutate `C:\catseyexi\catseyexi-client\Ashita\config\addons\LibraPlates\rebuild_profile.lua` unless Lila explicitly approves it.
 - If two people are testing, only one person should edit addon code at a time.
 
+## Plate Runtime Mapping
+
+This section is the map for World/Tactical confusion. Player-facing settings are sometimes placed differently from runtime storage so the UI stays understandable.
+
+### NPC
+
+- Player-facing normal NPC settings live under `Plates > NPC > World`.
+- `Plates > NPC > World > Target (module)` and `Subtarget (module)` are shown on the World page, but they edit hidden `NPC + Combat/Tactical` target-module storage.
+- Runtime normal NPC:
+  - Untargeted NPC: `NPC + Idle/World` base plate.
+  - Targeted/subtargeted NPC: `NPC + Idle/World` base plate plus `NPC + Combat/Tactical` Target/Subtarget module.
+  - The normal NPC World target module must suppress the target-module Highlight/background blob.
+- `Plates > NPC > Tactical` is for combat-style allied NPC layouts, not the normal target swap path unless code explicitly routes an NPC through that tactical layout.
+
+### Object
+
+- Object plates are `Object + Idle/World`.
+- Object target-module rows, when shown through NPC/Object UI paths, follow the same player-facing World-page convention, but normal object plates should not become full Tactical plates.
+
+### PC
+
+- Untargeted neutral PC: `PC + Idle/World`.
+- Party, target-context, or tactical PC: `PC + Combat/Tactical`.
+
+### Enemy
+
+- Idle enemy: `Enemy + Idle/World`.
+- Engaged, casting, target, or subtarget enemy: `Enemy + Combat/Tactical`.
+- Safety rule: while the player is engaged, Enemy plates outrank PC plates when `maxWorldPlateCount` trims queued world plates.
+- Safety rule: while the player is engaged, idle/non-combat Enemy plates are fixed blockers in plate stacking. They may overlap, but stacking must not move them away from their actor or off the top of the screen.
+
+### Trust
+
+- Idle trust: `Trust + Idle/World`.
+- Combat, target, or subtarget trust: `Trust + Combat/Tactical`.
+
+### Self
+
+- Normal self plate follows the active self layout.
+- Target/subtarget context uses `Self + Combat/Tactical` target-module behavior.
+- Resting, crafting, fishing, and gathering are module overlays, not separate normal target plate swaps.
+
+### Pet And Luopan
+
+- Pet entities use their pet-specific state pages.
+- Pet target support is controlled by `Allow pet plate targeting`.
+- Luopan uses Luopan-specific plate/module behavior.
+
+## Handoff Note For Torkson
+
+- If copying Lila's LibraPlates profile/settings after the NPC Tactical work, reload LibraPlates once before testing.
+- NPC World Target/Subtarget module rows intentionally edit the hidden NPC Tactical/Combat target-module storage. This is player-facing World placement but code-facing Tactical storage.
+- NPC World intentionally has no Highlight section. Normal targeted NPCs suppress the target-module Highlight/background blob.
+- Use NPC Tactical for Campaign/Garrison fighting NPCs that need full HP-bar tactical layouts.
+- If a Campaign/Garrison allied NPC still looks like a normal world NPC, target it and run `/lp entitydebug`; the useful fields are `tacticalNpcAllowed` and `layout`.
+
 ## To DO
 
 ### Priority
@@ -28,63 +84,51 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 - Help follow-up: expand User Guide and Troubleshooter over time with exact row-level anchors, more synonyms, and common "why is X not showing/working?" cases as they come up in testing.
 - Future integration idea: incorporate ChatMon / ZoneName / JA-style functionality into LibraPlates.
-- Settings UI follow-up: remove the unused Modules-tab code/settings path entirely once we confirm no unique settings still depend on it.
-- Keep the current profile always visible in settings, possibly with a top bar.
 - Game mode is not reading properly.
 - Some widget-list names are blue.
 - Settings reset bug: resetting widget settings/position does not appear to reset anchor settings (`anchorTo` / `anchorPoint`).
-- Color picker alpha bug: setting alpha to max can sometimes become `0` internally and hide the color even though the picker does not visibly show the change; moving alpha again fixes it.
 - Disable nameplate click-through when clicking game UI such as action bars, chat windows, or menus.
 - Release packaging cleanup: do not ship old debug depth probe plugins (`LibraDepthProbe` / `LibraDepthProbestatus`) with the release package.
-- Performance isolation follow-up: after bridge off, plates drop to near zero work but LP still costs ~14-15 FPS vs unloaded. Use `/lp isolate targeting|native|mouse|overlays on`, `/lp perf reset`, then `/lp perf` to find the hidden cost.
-- Native first-target flash tradeoff: do not restore the permanent native draw hook to hide the first F-key target flash. It fixes the flash but costs too much FPS; prefer the cheap per-frame native hide path unless Lila explicitly accepts the performance cost.
 - Future/fun idea: optional blacklist visual replacement, such as swapping blacklisted player models to same-race fomor-style placeholders with silly generated names.
 
 ### Enemy
 
 - Catseye special native star icon is 99% done: Enemy plates replace the native special marker with the Catseye star across World/Target/Subtarget/Tactical states, with Enemy World/Tactical Special icon settings for size and X/Y placement. Needs more testing in other zones. Preview wiring still needs to be added later.
-- Move aggro.
-- Blue magic is missing casting icons and is not showing AOE.
-- Enemy names can become claimed-color when someone enters engaged status, instead of only when the mob is actually claimed.
+- Special icon follow-up: rename Special icon wording/settings and re-check preview behavior.
+- Enemy Peer / MobDB icons follow-up: aggro/link/detect-style icons may not link to their parent/anchor correctly depending on how many icons are visible; check variable icon counts and avoid holes/overlap.
 
 ### NPC / Object
 
 - NPC needs target/subtarget highlight settings; check whether Subtarget has range colors.
-- NPC/Object targeting bug: husband saw a black billboard flashing over targeted NPCs while Settings was open; likely related to target marker background/canvas state or preview/settings interaction.
-- NPC nameplate height idea: investigate race/model-family based plate height adjustment so short NPCs and tall NPCs do not need one blunt global NPC Y offset.
+- NPC nameplate height idea: investigate race/model-family based plate height adjustment so short NPCs and tall NPCs do not need one blunt global NPC Y offset. Discuss before implementing; the first skeleton-bounds draw-time attempt put plates on the floor and was reverted.
 - NPC/Object data direction: future zone-scoped loading should wait until data has full zone coverage, then load by zone on zone change with exact-name lookup and cached results.
 - Add a setting for `???`/search objects to show or hide names.
 - Fishing/gathering interaction needs field testing and a decision on Clamming Point, Fish Trap, and other fishing-related objects.
 - Sky aura pots are anchored too high.
-- Some objects/NPCs such as Nomad Moogle, Home Point, and ground spots can show double Target/Subtarget arrows and appear to be affected by NPC options.
-- Object/NPC plates can show during cutscenes; confirm which entity type and suppress during cutscene/interface-hidden states.
+- Object/NPC cutscene suppression added using event-active/interface-hidden flags; needs live cutscene and Hide Menus testing.
 
 ### PC / Player
 
-- Level sync icon is missing, and player HP/MP values are not updating after sync/resync.
 - Peer level should be color-correct to level.
 - Check Conquest War and Union Conquest War naming/colors; CW and UCW have orange names.
-- Plate height follow-up: investigate race/model-size based Y placement. Small characters currently have plates much higher above their heads than larger models; older code may have had race-aware height calculation that should be recovered or rebuilt.
+- Plate height test: verify Self/PC plate height while mounted, including normal mounts and rental chocobo.
 - Party member puppet claim/enmity bug: another player's puppet getting aggro can flip enemy nameplates to claimed-by-another color.
 
 ### Self
 
-- Resting follow-up: check remaining timer bugs after the move to Self World.
-- Resting/logout bug: shutdown/logout timer gets hidden by `Hide at full HP/MP`, but those hide options should apply only to normal resting ticks, not logout countdown.
 - Self Quick Menu idea: add party invite actions/state, including accepting an invite and showing/handling invite pending.
 - DoH/DoL activity idea: add a ring timer for the cooldown before the player can fish, craft, or gather again.
 - Self World game mode icon, linkshell icon, and similar anchored icons work in preview but not reliably in-game.
+- Resting/logout follow-up: shutdown counter is not working.
 
 ### Pet / Trust
 
 - Remove BST chat spam.
 - Trust status icons follow-up: decide whether Trust debuffs should remain supported/shown, or whether Trust plates should only show Trust buffs.
 - Bug: other players' pets can be treated like PC or NPC/Object plates by name, e.g. summoned Carbuncle/Fenrir showed the yellow type line `Cutscene/Summoned Avatar`, and the DRG wyvern name `Lumiere` still showed as a green plate. This is a pet plate/classification issue, not the NPCs with matching names.
-- SMN pet bars are not working; check Avatar/Spirit bars first, then verify BST, DRG Wyvern, PUP Automaton, and Luopan pet bars for the same issue.
 
 ### Buffs / Debuffs
 
-- Make buff filtering input smarter for time values, possibly a two-digit field plus S/M/H selectors.
 - Debuff timers need a dedicated cleanup/test pass after Buffs.
 - Debuff growth direction should still be tested in-game.
 - Mounted buff timer appears during zoning but disappears afterward.
@@ -94,75 +138,119 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 - Check all previews, especially text and growth direction display values such as HP vs `1200/2000`.
 - HP / MP / TP bars should have a free-form text option in settings/preview so value display formats can be checked without relying on live data.
+- Anchor audit: check all widget anchors across entities/states, especially pet plates and pet widgets.
 - Set TP bar color when TP is full.
-- HP bar color/alpha when out of range.
 
 ### Targeting / Tactical
 
-- Copy target/subtarget module is not working.
-- Range arrow color only works out of combat.
-- Target/Subtarget module settings are confusing/split across the main module menu and plate menus; changes in one place can appear not to affect live plates.
-- Target/Subtarget copy/paste settings are missing or not exposed where expected.
+- Target/Subtarget module copy/paste is not working or not exposed consistently.
+- Target/Subtarget settings ownership/scoping needs final review: Modules tab vs Plates settings are still confusing, and changes can appear to affect the wrong entity/state. Do not remove Target/Subtarget from the Modules tab without Lila explicitly approving that direction.
 - Target/Subtarget chevrons/arrows stop stretching at large sizes, around X 80 / Y 100.
 - Self-target chevrons are not spaced far enough apart on the X axis to contain very wide HP bars, such as 500 width.
 - Distance number idea: draw Target/Subtarget distance on the targeting layer so it remains constant-size and visible through walls.
 - Subtarget mode bug: the current true target can be drawn as Subtarget while choosing a subtarget.
-- Engaged left-click rules need another pass: non-enemy/self targets can still be left-clicked while weapon drawn, while enemy behavior differs.
-- Retest targeting matrix after the next input fix, especially right-click during subtarget mode while not engaged/engaged.
+- Targeting input matrix needs another pass: retest left/right-click behavior while not engaged/engaged and during subtarget mode. Non-enemy/self targets may still be left-clickable while weapon drawn, while enemy behavior differs.
 - Husband reports `[C]` subtarget causes stutter.
 - Long-press camera idea: if mouse-down starts over a plate and is held for about 0.5-0.67s, reinject/pass the held click into the game world behind the plate so camera control works in crowded plate areas.
-- `<st>` range arrow colors should match the default target arrow behavior: red out of range, yellow just outside range, blue in range.
-- AOE range/highlight visuals should only trigger from the player's own AOE actions/casts, and should not false-trigger on queued single-target heals.
-- AOE offensive preview testing model:
-  - LP AOE style should mirror native enlarged names during active `<st>` spell selection; direct `<t>` casts should not create an LP-only helper preview.
-  - Offensive AOE only highlights enemies. Self, players, trusts, and pets do not get offensive AOE styling even when inside the circle.
-  - The `<st>` mob is always affected for target-centered offensive AOE and should get the AOE style; other enemies only highlight when inside that spell's AOE radius.
-  - AOE style must visually beat Enemy tactical/Combat/Target/Subtarget styling. Offensive AOE style belongs in Enemy Tactical settings; Enemy runtime reads only Enemy Tactical AOE settings, so hidden Self/Enemy Idle AOE buckets cannot leak colors into in-range enemies.
-  - AOE highlight background was removed from the feature path because it looks bad on world enemies. AOE styling now supports font color/size and optional icon only.
-  - Enemy Tactical `AOE range (module)` preview now shows the AOE font size/color and optional icon. Icon X/Y controls are exposed when `Show icon` is enabled.
-  - Defensive/friendly AOE styling uses `Self > Tactical > AOE range (module)` for Self/PC/Trust plates. This row is visible again and previews the friendly plate/icon instead of the Enemy offensive preview.
-  - Defensive AOE classification now also checks the active subtarget kind, so friendly-target casts such as Curaga stay on the friendly AOE path even if resource target flags look enemy-like.
-  - Settings cleanup: offensive AOE range styling should not be configured from Self World/Tactical/Resting/Fishing/Crafting; those lists no longer show `AOE range (module)`.
-  - Source rules to verify per spell/job: Black Magic -ga/Poisonga source is the `<st>` mob; Blue Magic offensive AOE source is self; pet BP/ability AOE source is pet; GEO Indi aura source is self/player and moves with the GEO.
-  - Pet BP/ability AOE center lookup now uses the shared own-pet resolver and logs `centerMode`/`pet` in `/lp aoedebug`, so SMN tests can confirm whether LP is centering on the pet or falling back to the selected target.
-  - SMN BP debug now also logs selected-target distance from the AOE center and prioritizes enemies in the nearby list; current Thunderspark test reported `centerMode=pet`/`center=Ramuh`, but the visible blue circle may still be the native game helper.
-  - Subtarget range-arrow colors for loaded AOE spells should use the action's target/cast range, not the AOE radius. `target_module_marker` now falls back to the live AOE action target range when the normal queued action-range path has no value.
-  - Candidate testing list from Lila: BLM true offensive AOE is the -ga line; WHM has Banishga/Banishga II; BLU has many self-centered offensive/status AOEs such as Sheep Song, Soporific, Yawn, Blastbomb, Grand Slam, Frypan, Maelstrom, Bomb Toss, Ice Break, Temporal Shift, Radiant Breath, Cold Wave, Corrosive Ooze; SMN needs BP/source testing such as Thunderspark and avatar AOEs; GEO enemy-affecting aura tests include Geo-Poison (5), Geo-Slow (52), Geo-Torpor (56), Geo-Slip (62), Geo-Languor (68), Geo-Paralysis (72), and Geo-Vex (74).
-  - Pet-job AOE testing matrix from Lila: SMN Astral Flow AoEs include Searing Light, Howling Moon, Inferno, Earthen Fury, Tidal Wave, Aerial Blast, Diamond Dust, Judgment Bolt, Ruinous Omen, and Zantetsuken (75); regular SMN BP AoEs include Thunderspark, Sleepga, Lunar Cry, Somnolence, Nightmare, and possibly Meteorite depending on server behavior, while Nether Blast is not AoE.
-  - BST AOE depends on pet/jug family; candidates include Sheep Song, Scream, Whirl Claws, Cursed Sphere, Seed Spray, and Spinning Top, while moves such as Power Attack are single target.
-  - PUP AOE is mainly automaton spell behavior: Stormwaker -ga spells and Soulsoother Banishga; exact list depends on head/frame/attachments.
-  - DRG wyvern breaths are generally single-target/cone style rather than true farming AoE, so DRG is low priority for LP AOE preview testing.
-- Target/Subtarget module settings seem to be Enemy settings applying to all entity types.
-- Target/Subtarget module ownership is not resolved. Do not remove Target/Subtarget from the Modules tab without Lila explicitly approving that direction.
+- SCH AOE follow-up: test Scholar AOE/stratagem behavior later when a 75 SCH is available.
 - Lock-on icon anchoring/scoping needs review; keep future cleanup focused on Enemy-only scope unless Lila approves broader entity behavior.
 - Add stacking plate priority settings so users can choose which overlapping plates show first.
 
-### Profiles
-
-- Continue profile work.
-- Profile auto-switch by main job and subjob, with subjob `Any` including no subjob.
-
-### Quick Menu / Mog House
-
-- Quick Menu needs size settings or flexible sizing depending on visible selections.
-
 ### Peer
 
-- Enemy Peer / MobDB icon follow-up: check whether any MobDB-style enemy info icons are still missing.
 - Peer follow-up: consider whether Peer should also support Objects, not only Self / PC / Enemy.
 
-### Performance / Debug
-
-- Performance bug report: lag feels like it gets worse over time while staying in the same area; investigate as possible accumulation/leak behavior.
-- Runtime lag diagnostic: PC plates dominated latest sample; investigate PC plate path/caching first if lag remains bad.
-- DirectX wrapper clue: Atom0s DX9 wrapper z-fighting fix greatly reduces LibraPlates lag, but makes Ashita addons click-through.
-- Accessibility/testing workflow: use `/lp lag` as the short one-command lag diagnostic.
-- Idle texture eviction follow-up: if `Evictions/min` climbs with low `Used` count, check for same-key canvas size churn or repeated plate-cache clears before chasing visible plate count.
-- FPS 1 setting remains very laggy; investigate separately from the direct FPS divisor crash follow-up.
-- FPS mode setting follow-up: direct FPS divisor memory write caused an Ashita crash when it was attempted during load, so FPS mode must only be applied from an explicit user action.
-- Plate stacking follow-up: the world-marker stacking movement path was removed after it lifted plates into the sky. Do not convert 2D stack deltas back into world Y. The old `Nameplates` addon stacks only because it draws final plates in 2D ImGui windows using `baseX/baseY/drawX/drawY`.
-
 ## Done
+
+- 2026-06-20 - Enemy plate combat visibility hardening:
+  - While the player is engaged, Enemy plates now outrank PC plates when the world-plate cap trims queued plates.
+  - Idle/non-combat Enemy plates now act as fixed blockers in plate stacking during combat so the stacker does not shove nearby threats away from their actor.
+  - Stacked Enemy plates are clamped at the top of the screen instead of being allowed to move above the visible viewport.
+
+- 2026-06-19 - Quick Menu flexible sizing:
+  - Marked Quick Menu size settings or flexible sizing depending on visible selections as done.
+
+- 2026-06-19 - PC race/model-size plate height first pass:
+  - PC plates now try the native/exact nameplate anchor first and fall back to the regular bone anchor if it is unavailable.
+  - Added PC-only body-family plate Y adjustment using skeleton shape detection for Tarutaru, Mithra, Hume, Elvaan, and Galka.
+  - Added user-tunable PC race height settings under Settings > Scaling: enable toggle plus Y and Size controls for Taru, Mithra, Hume, Elvaan, and Galka.
+  - Self and NPC plate height work remain separate follow-ups; this pass does not change NPC/Object or Self rendering.
+
+- 2026-06-19 - PC MP bar visibility:
+  - PC combat MP bars now require real positive max MP when available, and only fall back to MP-capable main jobs when max MP data is unavailable.
+
+- 2026-06-19 - Level sync icon and sync/resync HP/MP refresh:
+  - Added Level sync icon settings to Self World, Self Tactical, and PC Tactical.
+  - Wired live Self and PC Tactical plates to draw the bundled `lvsync.png` icon from level sync status data.
+  - Fixed Self/PC plate cache signatures so actual HP/MP/max values refresh after level sync/resync, not only percent changes.
+
+- 2026-06-19 - Buff filtering time input:
+  - Replaced the fixed minutes-only Buff filtering input with a compact value plus H/M/S unit selector while keeping the stored filter value compatible with existing minute-based logic.
+
+- 2026-06-19 - Pet Rage/Ward settings cleanup:
+  - Marked the confusing Rage/Ward layout, bar fill direction controls, and preview anchoring cleanup as done.
+
+- 2026-06-19 - Pet detach/static panel and pet bars:
+  - Marked Distance widget wiring for pet/world/static plates as done.
+  - Marked SMN Avatar/Spirit pet bars and follow-up verification across BST, DRG Wyvern, PUP Automaton, and Luopan pet bars as done.
+
+- 2026-06-19 - NPC/Object targeting bug:
+  - Moved the husband-reported black billboard flashing over targeted NPCs while Settings was open to Done.
+
+- 2026-06-19 - AOE range/highlight testing pass:
+  - Marked the broad AOE testing matrix as complete for tested jobs/actions: WHM, BLM, BLU, SMN, BST, PUP, GEO, DRG pet detach context, COR, BRD, and DNC.
+  - LP AOE style now mirrors native loaded-action AOE behavior from the player's own queued action, with offensive/debuff AOE limited to valid enemy targets and friendly AOE limited to self/party/alliance/trust/own-pet style targets.
+  - Blue Magic offensive AOE stays caster-centered from spell resource data; target-centered offensive spells use the selected target; pet actions can center on the pet; GEO aura behavior uses the live/resource AOE data.
+  - Range-arrow colors remain cast/target range, not AOE radius.
+  - AOE debug/logic now uses the queued action resource resolved by the shared action-range path instead of doing a second weaker lookup.
+  - DNC Waltz-style friendly JA AOE now centers on the selected target instead of forcing all friendly JAs with self target flags to self.
+  - Remaining known AOE gap: SCH needs testing later because Lila does not have a 75 SCH.
+
+- 2026-06-18 - BST Fight targeting range/AOE:
+  - Added a PetCommand resource path for `/pet "Fight"` so Target/Subtarget arrow colors use the pet command range instead of stale spell/ability data.
+  - Decoded Fight's `range = 11` PetCommand data to the observed ~18-yalm command range.
+  - Suppressed stale AOE highlight data during `/pet Fight` targeting so old spell data such as Healing Breeze cannot light up Self or other plates.
+
+- 2026-06-18 - BST Ready AOE:
+  - Confirmed Pet Ready AOE highlighting works with the new pet skill resource data path.
+
+- 2026-06-18 - PUP pet detach/static panel:
+  - Added Automaton support for the same Normal / Detach from pet / Both static panel workflow used by BST and SMN pets.
+  - Added PUP static panel background, X/Y, and scale settings.
+  - Confirmed in-game that the PUP detach/static panel behavior looks good.
+
+- 2026-06-18 - PC Tactical HP bar out-of-range color:
+  - Replaced opacity-based dimming with a solid out-of-range HP fill color to avoid alpha picker/runtime issues.
+  - PC Tactical HP bars now use the queued action range when a target cursor is active, otherwise fall back to passive 21y range like XIUI-style party list dimming.
+  - The setting remains under `PC > Tactical > HP Bar` as `Use out-of-range fill color` plus `Fill color`.
+
+- 2026-06-18 - Self enmity/aggro icon cleanup:
+  - Fixed Self enmity icon sticking after one-shot kills by pruning dead/missing enemy actors from the enmity target table.
+  - Added `/lp enmitydebug` / `/lp aggrodebug` to compare Self status, target status, claim/tracked state, and LP's enmity decision.
+  - Fixed Self enmity icon waiting until weapon draw by skipping Self plate cache reuse while the enmity icon is active.
+  - Avoided false enmity seeding from interrupted spell cast-start packets.
+
+- 2026-06-18 - Targeting notes cleanup:
+  - Consolidated duplicate Target/Subtarget To DO lines for copy/paste exposure, module ownership/scoping, and left/right-click retesting into fewer active items.
+  - Removed stale duplicate wording about range-arrow behavior and Enemy settings applying globally; the remaining active note keeps the broader ownership/scoping review.
+
+- 2026-06-18 - Notes cleanup:
+  - Moved the requested settings/profile/performance cleanup notes to Done, including Modules-tab cleanup, current-profile top bar, color alpha bug, profile work, profile auto-switch, isolation/perf diagnostics, native first-target flash tradeoff, FPS follow-ups, plate stacking warning, `/lp lag` workflow, and related lag/debug notes.
+  - Moved stale NPC/Object double Target/Subtarget arrow and Enemy Peer/MobDB missing-icon follow-ups out of active To DO.
+
+- 2026-06-18 - Resting follow-ups:
+  - Moved the remaining Self World resting timer follow-up to Done.
+  - Fixed/closed the shutdown/logout countdown hide bug: full HP/MP hide options apply only to normal resting ticks, not logout countdown.
+
+- 2026-06-17 - Enemy aggro/claim cleanup:
+  - Marked Move aggro as complete.
+  - Fixed Enemy names becoming claimed-color from engaged status instead of actual claim state.
+
+- 2026-06-17 - Blue Magic AOE, casting icon, and range arrow:
+  - Blue Magic AOE highlighting now uses spell resource data and treats offensive BLU AOE as caster-centered instead of target-centered.
+  - Enemy casting icons now fall back to the spell ID when status/icon lookup misses.
+  - Enemy AOE optional icon works through `AOE range (module)` settings; confirmed missing icon was position X/Y, not render logic.
+  - Subtarget range-arrow colors now use cast/target range instead of AOE radius: red too far, yellow near range, purple in cast range.
 
 - 2026-06-17 - Catseye special icon preview:
   - Added Special icon display/positioning to the Enemy settings preview so size and X/Y changes can be checked without live mobs.

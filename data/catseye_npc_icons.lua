@@ -367,6 +367,7 @@ local npcIcons = T{
     ['Manusiel']          = { type = 'CW Early Gear', zones = { "Selbina" }, location = 'Selbina I-9 / J-9', icon = 'QuestNPC.png', note = 'Crystal Warrior:\n* Starts quests: Helping Hands and\nRolling with Punches.\n* Level 20 early gear quests in\nSelbina.' },
     ['Mellie']            = { type = 'Novice Trials', icon = 'Event.png', zones = { "Selbina" }, location = 'Selbina H-7', note = 'Novice Trials:\n* Starts no-cooldown equipment\naugment trials.\n* Can transfer completed NQ\naugments to crafted HQ versions.\n* Trials may be completed on any\njob.' },
     ['Renovio']           = { type = 'Lv30 Gear Upgrades', icon = 'Renovio.png', zones = { "Selbina" }, note = 'CatsEyeXI:\n* Upgrades custom augmented level\n30 gearsets to +1.\n* Pairs with Steel Teeth in Mhaura.' },
+    ['Cokhe-Lokhe']       = { type = 'Repeatable Quest', zones = { "Selbina" }, icon = 'QuestNPC.png', note = 'Starts Quests:\n* Soup of the Day (repeatable)' },
 
 -------------------------------------------------------------------------------
 -- Ship bound for Al Zahbi

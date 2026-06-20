@@ -1182,6 +1182,7 @@ function entities.GetPartyTrusts(maxDistance)
             IsVisibleEntity(entityManager, index, true) == true
         ) then
             local ent = GetEntity(index);
+            local spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(index); end);
 
             if (
                 ent ~= nil and
@@ -1196,6 +1197,7 @@ function entities.GetPartyTrusts(maxDistance)
                     slot = slot,
                     name = ent.Name,
                     status = ent.Status,
+                    spawnFlags = spawnFlags,
                     distance = math.sqrt(ent.Distance),
                     hp = GetTrustMemberHP(party, slot),
                     maxHp = nil,
@@ -1217,60 +1219,10 @@ function entities.GetPartyTrusts(maxDistance)
 end
 
 function entities.GetNearbyTrusts(maxDistance)
-    local results = {};
-    local maxDistanceSq = (tonumber(maxDistance) or 50) * (tonumber(maxDistance) or 50);
-    local entityManager = AshitaCore:GetMemoryManager():GetEntity();
-    local partyIndexes = nil;
-
-    if (entityManager == nil) then
-        return results;
-    end
-
-    for index = 0, 2303 do
-        if (index < 1024 or index > 1791) then
-            local ent = GetEntity(index);
-
-            if (
-                ent ~= nil and
-                ent.Name ~= nil and
-                ent.Name ~= '' and
-                ent.Distance ~= nil and
-                ent.Distance <= maxDistanceSq and
-                IsTrustStatusAllowed(ent.Status) == true and
-                trustNames.IsKnownTrustName(ent.Name) == true
-            ) then
-                partyIndexes = partyIndexes or BuildPartyMemberIndexSet();
-
-                if (
-                    IsMobIndex(entityManager, index) ~= true and
-                    partyIndexes[index] ~= true and
-                    IsVisibleEntity(entityManager, index, true) == true
-                ) then
-                    results[#results + 1] = {
-                        index = index,
-                        serverId = SafeCall(nil, function() return entityManager:GetServerId(index); end),
-                        slot = nil,
-                        name = ent.Name,
-                        status = ent.Status,
-                        distance = math.sqrt(ent.Distance),
-                        hp = nil,
-                        maxHp = nil,
-                        hpPercent = ent.HPPercent or 100,
-                        mp = nil,
-                        maxMp = nil,
-                        mpPercent = nil,
-                        tp = nil,
-                    };
-                end
-            end
-        end
-    end
-
-    table.sort(results, function(a, b)
-        return (tonumber(a.distance) or 0) < (tonumber(b.distance) or 0);
-    end);
-
-    return results;
+    -- Trust names are reused by Campaign/Garrison NPCs, so name-only scanning
+    -- misclassifies allied battle NPCs as trusts. Real trust plates come from
+    -- GetPartyTrusts, which reads the party table.
+    return {};
 end
 
 function entities.GetNearbyPlayers(maxDistance)
@@ -1312,6 +1264,64 @@ function entities.GetNearbyPlayers(maxDistance)
                         results[#results][key] = value;
                     end
                 end
+            end
+        end
+    end
+
+    table.sort(results, function(a, b)
+        return (tonumber(a.distance) or 0) < (tonumber(b.distance) or 0);
+    end);
+
+    return results;
+end
+
+function entities.GetNearbyTacticalNpcs(maxDistance)
+    local results = {};
+    local maxDistanceSq = (tonumber(maxDistance) or 50) * (tonumber(maxDistance) or 50);
+    local entityManager = AshitaCore:GetMemoryManager():GetEntity();
+
+    if (entityManager == nil) then
+        return results;
+    end
+
+    for index = 0, 2303 do
+        if (index < 1024 or index > 1791) then
+            local ent = GetEntity(index);
+            local spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(index); end);
+            local entityType = tonumber(ent ~= nil and ent.Type or nil);
+            local spawnFlagValue = tonumber(spawnFlags) or 0;
+            local hasNpcSpawnFlag = bit.band(spawnFlagValue, 0x02) == 0x02;
+            local isObjectLike = entityType == 2 or entityType == 3;
+
+            if (
+                ent ~= nil and
+                ent.Name ~= nil and
+                ent.Name ~= '' and
+                (hasNpcSpawnFlag == true or isObjectLike == true) and
+                ent.HPPercent ~= nil and
+                ent.HPPercent > 0 and
+                ent.Distance ~= nil and
+                ent.Distance <= maxDistanceSq and
+                tonumber(ent.Status) == 1 and
+                entities.IsPartyMemberIndex(index) ~= true and
+                entities.IsOwnPetIndex(index) ~= true and
+                entities.IsOwnLuopanIndex(index) ~= true and
+                IsVisibleEntity(entityManager, index, false) == true
+            ) then
+                results[#results + 1] = {
+                    index = index,
+                    serverId = SafeCall(nil, function() return entityManager:GetServerId(index); end),
+                    name = ent.Name,
+                    status = ent.Status,
+                    entityType = 'NPC',
+                    layoutStateName = 'Combat',
+                    tacticalNpc = true,
+                    hpPercent = ent.HPPercent or 100,
+                    distance = math.sqrt(ent.Distance),
+                    spawnFlags = spawnFlags,
+                    renderFlags0 = SafeCall(nil, function() return entityManager:GetRenderFlags0(index); end),
+                    renderFlags1 = SafeCall(nil, function() return entityManager:GetRenderFlags1(index); end),
+                };
             end
         end
     end
@@ -1550,6 +1560,23 @@ function entities.GetEntityDebugInfo(index, maxDistance)
     local indexAllowed = targetIndex < 1024 or targetIndex > 1791;
     local statusAllowed = IsNpcObjectStatusAllowed(status);
     local inRange = distanceSq ~= nil and distanceSq <= maxDistanceSq;
+    local partyData = GetPartyMemberDataByTargetIndex(targetIndex);
+    local spawnFlagValue = tonumber(spawnFlags) or 0;
+    local hasNpcSpawnFlag = bit.band(spawnFlagValue, 0x02) == 0x02;
+    local tacticalNpcAllowed = indexAllowed == true
+        and isMob ~= true
+        and isParty ~= true
+        and visible == true
+        and ent ~= nil
+        and ent.Name ~= nil
+        and ent.Name ~= ''
+        and inRange == true
+        and (hasNpcSpawnFlag == true or isObject == true)
+        and tonumber(status) == 1
+        and tonumber(ent.HPPercent) ~= nil
+        and tonumber(ent.HPPercent) > 0
+        and entities.IsOwnPetIndex(targetIndex) ~= true
+        and entities.IsOwnLuopanIndex(targetIndex) ~= true;
     local npcScanAllowed = indexAllowed == true
         and isMob ~= true
         and isParty ~= true
@@ -1566,6 +1593,11 @@ function entities.GetEntityDebugInfo(index, maxDistance)
         index = targetIndex,
         name = ent ~= nil and ent.Name or nil,
         status = status,
+        hpPercent = ent ~= nil and ent.HPPercent or nil,
+        mp = ent ~= nil and ent.MP or nil,
+        maxMp = ent ~= nil and ent.MaxMP or nil,
+        mpPercent = ent ~= nil and ent.MPPercent or nil,
+        tp = ent ~= nil and ent.TP or nil,
         type = entityType,
         distance = distanceSq ~= nil and math.sqrt(distanceSq) or nil,
         distanceSq = distanceSq,
@@ -1584,6 +1616,18 @@ function entities.GetEntityDebugInfo(index, maxDistance)
         inRange = inRange,
         statusAllowed = statusAllowed,
         npcScanAllowed = npcScanAllowed,
+        tacticalNpcAllowed = tacticalNpcAllowed,
+        layoutStateName = tacticalNpcAllowed == true and 'Combat' or nil,
+        partySlot = partyData ~= nil and partyData.slot or nil,
+        partyHp = partyData ~= nil and partyData.hp or nil,
+        partyMaxHp = partyData ~= nil and partyData.maxHp or nil,
+        partyHpPercent = partyData ~= nil and partyData.hpPercent or nil,
+        partyMp = partyData ~= nil and partyData.mp or nil,
+        partyMaxMp = partyData ~= nil and partyData.maxMp or nil,
+        partyMpPercent = partyData ~= nil and partyData.mpPercent or nil,
+        partyTp = partyData ~= nil and partyData.tp or nil,
+        partyMainJob = partyData ~= nil and partyData.mainJob or nil,
+        partyMainJobLevel = partyData ~= nil and partyData.mainJobLevel or nil,
     };
 end
 

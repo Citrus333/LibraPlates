@@ -628,10 +628,11 @@ function targetModule.DrawSettings(settings, context)
 
     local defaults = context ~= nil and context.defaults or {};
     local label = tostring(context ~= nil and context.widget or 'Target Module');
-    local isNpcObject = tostring(context ~= nil and context.entity or '') == 'NPC';
     local entityName = tostring(context ~= nil and context.entity or '');
+    local sourceStateName = tostring(context ~= nil and (context.sourceState or context.state) or '');
     local isSubtargetModule = tostring(label) == 'Subtarget (module)';
     local lockOnly = context ~= nil and context.lockOnly == true;
+    local allowHighlight = not (entityName == 'NPC' and (sourceStateName == 'World' or sourceStateName == 'Idle'));
     local isPet = (
         entityName == 'Pet (BST)' or
         entityName == 'Pet (SMN)' or
@@ -716,7 +717,7 @@ function targetModule.DrawSettings(settings, context)
         end
     end
 
-    if (isNpcObject ~= true) then
+    if (allowHighlight == true) then
         imgui.Separator();
         DrawSectionHeader('Highlight');
         settings.backgroundFile = DrawFile('Highlight image', 'backgrounds', settings.backgroundFile);

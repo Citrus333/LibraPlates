@@ -155,6 +155,7 @@ local petWardBarDefaults = {
     borderColor = { 0.0, 0.0, 0.0, 1.0 },
     borderSize = 0,
     texture = 'Solid',
+    fillDirection = 'Left to right',
     labelDisplayMode = 'Text',
     labelIconSize = 14,
     labelIconOffsetX = 0,
@@ -182,6 +183,7 @@ local petRageBarDefaults = {
     borderColor = { 0.0, 0.0, 0.0, 1.0 },
     borderSize = 0,
     texture = 'Solid',
+    fillDirection = 'Left to right',
     labelDisplayMode = 'Text',
     labelIconSize = 14,
     labelIconOffsetX = 0,
@@ -321,6 +323,8 @@ local previewInfoIconTextureId = nil;
 local previewUiIconCache = {};
 local luopanPreviewTextureId = nil;
 local luopanPreviewTextureMissing = false;
+local spiritPreviewTextureId = nil;
+local spiritPreviewTextureMissing = false;
 local selectedBackground = 'Light';
 local selectedZoom = '1x';
 local enemyPreviewNameMode = 'Long';
@@ -517,6 +521,20 @@ local function LoadLuopanPreviewTexture()
     return nil;
 end
 
+local function LoadSpiritPreviewTexture()
+    if (spiritPreviewTextureId ~= nil or spiritPreviewTextureMissing == true) then
+        return spiritPreviewTextureId;
+    end
+
+    spiritPreviewTextureId = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\ui-icons\\light-spirit.png'));
+
+    if (spiritPreviewTextureId == nil) then
+        spiritPreviewTextureMissing = true;
+    end
+
+    return spiritPreviewTextureId;
+end
+
 local function LoadQuickMenuIcon(fileName)
     local name = tostring(fileName or '');
 
@@ -587,7 +605,13 @@ local function BuildTargetMarker(context, hpBarSettings)
         context.stateName,
         targetStateName,
         hpBarSettings,
-        Number(context, 'distance', 0)
+        Number(context, 'distance', 0),
+        {
+            previewMode = true,
+            previewLockOn = targetStateName == 'Target',
+            suppressBackground = tostring(context.entityName or '') == 'NPC'
+                and (tostring(context.sourceState or '') == 'World' or tostring(context.sourceState or '') == 'Idle'),
+        }
     );
 
     if (marker ~= nil) then
@@ -602,7 +626,7 @@ local function BuildPreviewTargetMarker(entityName, stateName, context, hpBarSet
     local marker = BuildTargetMarker(context, hpBarSettings);
 
     if (marker == nil and tostring(entityName or '') == 'Luopan') then
-        marker = targetModuleMarker.Build('Luopan', tostring(stateName or 'Luopan'), 'Target', hpBarSettings, 0);
+        marker = targetModuleMarker.Build('Luopan', tostring(stateName or 'Luopan'), 'Target', hpBarSettings, 0, { previewMode = true });
     end
 
     if (marker ~= nil) then
@@ -870,7 +894,9 @@ local function GetPlayerPreviewIconSettings(storageEntityName, stateName)
         bazaar = state.GetWidgetSettings(storageEntityName, stateName, 'Bazaar icon', bazaarIconDefaults),
         away = state.GetWidgetSettings(storageEntityName, stateName, 'Away icon', awayIconDefaults),
         disconnect = state.GetWidgetSettings(storageEntityName, stateName, 'Disconnect icon', disconnectIconDefaults),
+        anon = state.GetWidgetSettings(storageEntityName, stateName, 'Anon icon', anonIconDefaults),
         stars = state.GetWidgetSettings(storageEntityName, stateName, 'Stars icon', starsIconDefaults),
+        levelSync = state.GetWidgetSettings(storageEntityName, stateName, 'Level sync icon', levelSyncIconDefaults),
         newAdventurer = state.GetWidgetSettings(storageEntityName, stateName, 'New adventurer icon', newAdventurerIconDefaults),
     };
 end
@@ -883,7 +909,9 @@ local function AddPlayerPreviewIcons(icons, playerIconSettings)
     AddIcon(icons, playerIconSettings.bazaar, LoadWidgetIcon('bazaar.png'), 72, -54, 'bazaarIcon');
     AddIcon(icons, playerIconSettings.away, LoadWidgetIcon('away.png'), 120, -54, 'awayIcon');
     AddIcon(icons, playerIconSettings.disconnect, LoadWidgetIcon('dc.png'), 144, -54, 'disconnectIcon');
+    AddIcon(icons, playerIconSettings.anon, LoadWidgetIcon('anon.png'), -120, -54, 'anonIcon');
     AddIcon(icons, playerIconSettings.stars, LoadWidgetIcon('stars.png'), -48, -54, 'starsIcon');
+    AddIcon(icons, playerIconSettings.levelSync, LoadWidgetIcon('lvsync.png'), -24, -54, 'levelSyncIcon');
     AddIcon(icons, playerIconSettings.newAdventurer, LoadWidgetIcon('new_adventurer.png'), 24, -54, 'newAdventurerIcon');
 end
 
@@ -981,16 +1009,16 @@ local function AddFishingPreviewIcon(plateData, globalSettings, context)
         previewSettings[key] = value;
     end
 
-    if (context.previewFishingResult == true) then
-        previewSettings.iconFile = 'fishing_01.png';
+    previewSettings.iconFile = previewSettings.iconFile or 'fishing_01.png';
+    if (previewSettings.showLabel == nil) then
         previewSettings.showLabel = true;
-        previewSettings.previewResult = true;
     end
+    previewSettings.previewResult = true;
 
     fishing.AddIcon(plateData, previewSettings);
 
     local icon = plateData.icons ~= nil and plateData.icons[#plateData.icons] or nil;
-    if (icon ~= nil and context.previewFishingResult == true) then
+    if (icon ~= nil and previewSettings.showLabel ~= false) then
         icon.timerText = 'Easy catch';
     end
 end
@@ -1035,13 +1063,13 @@ local function AddGatheringPreviewWidget(plateData, globalSettings, context)
         previewSettings[key] = value;
     end
 
-    if (context.previewGatheringResult == true) then
-        previewSettings.previewResult = true;
-        previewSettings.previewDisplay = {
-            iconFile = 'hatchet.png',
-            count = 12,
-        };
-        previewSettings.displayMode = previewSettings.displayMode or 'Tool + count';
+    previewSettings.previewResult = true;
+    previewSettings.previewDisplay = {
+        iconFile = previewSettings.iconFile or 'hatchet.png',
+        count = 12,
+    };
+    previewSettings.displayMode = previewSettings.displayMode or 'Tool + count';
+    if (previewSettings.showCount == nil) then
         previewSettings.showCount = true;
     end
 
@@ -1054,7 +1082,6 @@ local function AddRestingPreviewBar(plateData, globalSettings, context)
     end
 
     local resting = globalSettings.resting or {};
-
     if (resting.enabled == false) then
         return;
     end
@@ -1079,6 +1106,9 @@ local function AddRestingPreviewBar(plateData, globalSettings, context)
         borderSize = tonumber(resting.borderSize) or 0,
         textureId = barTextures.GetTextureId(resting.texture or 'Solid'),
         text = '11s',
+        textKind = 'restingText',
+        textOffsetX = tonumber(resting.textOffsetX) or 0,
+        textOffsetY = tonumber(resting.textOffsetY) or 0,
         fontFamily = fonts.GetRole(globalSettings, true),
         fontFlags = fonts.GetRoleFlags(globalSettings, true),
         fontSize = textScale.ToTextureFontSize(resting.fontSize, 12),
@@ -1087,6 +1117,24 @@ local function AddRestingPreviewBar(plateData, globalSettings, context)
         textOutlineColor = resting.textOutlineColor or { 1.0, 1.0, 1.0, 1.0 },
         textOutlineSize = tonumber(resting.textOutlineSize) or 1,
     };
+
+    if (resting.enableLogoutCountdown ~= false) then
+        plateData.texts = plateData.texts or {};
+        plateData.texts[#plateData.texts + 1] = {
+            kind = 'restingCountdownText',
+            text = 'Shutdown',
+            offsetX = tonumber(resting.countdownTextOffsetX) or 0,
+            offsetY = tonumber(resting.countdownTextOffsetY) or 0,
+            align = 'center',
+            fontFamily = fonts.GetRole(globalSettings, true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, true),
+            fontSize = textScale.ToTextureFontSize(resting.countdownFontSize, 12),
+            color = resting.countdownTextColor or { 1.0, 0.84, 0.0, 1.0 },
+            outlineEnabled = resting.countdownTextOutlineEnabled ~= false,
+            outlineColor = resting.countdownTextOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            outlineSize = tonumber(resting.countdownTextOutlineSize) or 2,
+        };
+    end
 end
 
 local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
@@ -1099,6 +1147,8 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
     local iconSize = math.max(6, math.min(160, tonumber(settings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(settings.iconSpacing) or 2));
     local rowHeight = iconSize + spacing;
+    local growLeft = tostring(settings.growthDirection or 'Right') == 'Left';
+    local anchored = tostring(settings.anchorTo or 'Plate') ~= 'Plate';
 
     if (settings.showTimers == true) then
         rowHeight = iconSize + math.max(spacing, (tonumber(settings.timerFontSize) or 8) + math.max(0, tonumber(settings.timerOffsetY) or 0) + 2);
@@ -1133,6 +1183,7 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
             local col = (i - 1) % iconsPerRow;
             local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
             local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
             local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
             local timerText = nil;
 
@@ -1140,11 +1191,17 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
                 timerText = statusTimerFormat.Format(timerSeconds);
             end
 
+            if (anchored == true) then
+                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
+            elseif (growLeft == true) then
+                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+            end
+
             icons[#icons + 1] = {
                 kind = kind,
                 textureId = textureId,
                 size = iconSize,
-                offsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing)),
+                offsetX = iconOffsetX,
                 offsetY = baseY + (row * rowHeight),
                 anchorTo = settings.anchorTo,
                 anchorPoint = settings.anchorPoint,
@@ -1161,6 +1218,7 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
                 timerBackground = settings.timerBackground == true,
                 timerBackgroundPaddingX = tonumber(settings.timerBackgroundPaddingX) or 2,
                 timerBackgroundPaddingY = tonumber(settings.timerBackgroundPaddingY) or 1,
+                timerBackgroundColor = settings.timerBackgroundColor,
                 timerBackgroundBorderSize = tonumber(settings.timerBackgroundBorderSize) or 0,
                 timerBackgroundBorderColor = settings.timerBackgroundBorderColor,
                 timerCornerRadius = tonumber(settings.timerCornerRadius) or 0,
@@ -1175,10 +1233,18 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
                 timerWarningFontStage1Color = settings.timerWarningFontStage1Color,
                 timerWarningFontStage2Color = settings.timerWarningFontStage2Color,
                 timerWarningFontStage3Color = settings.timerWarningFontStage3Color,
+                timerWarningOutlineColorEnabled = settings.timerWarningOutlineColorEnabled == true,
+                timerWarningOutlineStage1Color = settings.timerWarningOutlineStage1Color,
+                timerWarningOutlineStage2Color = settings.timerWarningOutlineStage2Color,
+                timerWarningOutlineStage3Color = settings.timerWarningOutlineStage3Color,
                 timerWarningBoxColorEnabled = settings.timerWarningBoxColorEnabled == true,
                 timerWarningBoxStage1Color = settings.timerWarningBoxStage1Color,
                 timerWarningBoxStage2Color = settings.timerWarningBoxStage2Color,
                 timerWarningBoxStage3Color = settings.timerWarningBoxStage3Color,
+                timerWarningBoxBorderEnabled = settings.timerWarningBoxBorderEnabled == true,
+                timerWarningBoxBorderStage1Color = settings.timerWarningBoxBorderStage1Color,
+                timerWarningBoxBorderStage2Color = settings.timerWarningBoxBorderStage2Color,
+                timerWarningBoxBorderStage3Color = settings.timerWarningBoxBorderStage3Color,
                 timerWarningBackgroundEnabled = settings.timerWarningBackgroundEnabled == true,
                 timerWarningIconPadding = tonumber(settings.iconWarningPadding) or 6,
                 timerWarningIconBackgroundStage1Color = settings.timerWarningIconBackgroundStage1Color,
@@ -1336,11 +1402,14 @@ local function BuildPreviewExtraBar(settings, defaults, progress, text, kind, ic
         height = tonumber(settings.height) or defaults.height,
         offsetX = tonumber(settings.offsetX) or defaults.offsetX,
         offsetY = tonumber(settings.offsetY) or defaults.offsetY,
+        anchorTo = settings.anchorTo or defaults.anchorTo,
+        anchorPoint = settings.anchorPoint or defaults.anchorPoint,
         color = settings.color or defaults.color,
         backgroundColor = settings.backgroundColor or defaults.backgroundColor,
         borderColor = settings.borderColor or defaults.borderColor,
         borderSize = tonumber(settings.borderSize) or defaults.borderSize,
         textureId = barTextures.GetTextureId(settings.texture),
+        fillDirection = settings.fillDirection or defaults.fillDirection or 'Left to right',
         showAtPercent = segmented and 300 or (tonumber(settings.showAtPercent) or 100),
         segmented = segmented,
         segmentGap = tonumber(settings.segmentGap) or defaults.segmentGap,
@@ -1379,8 +1448,11 @@ local function CopySettingsWith(settings, overrides)
     return copy;
 end
 
-local function ShouldShowDistancePreview(context)
-    return context ~= nil and context.widgetKey == 'Distance';
+local function ShouldShowDistancePreview(context, distanceSettings)
+    return (
+        (distanceSettings ~= nil and distanceSettings.enabled == true) or
+        (context ~= nil and context.widgetKey == 'Distance')
+    );
 end
 
 local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings, hpBarSettings, tpBarSettings, globalSettings, context)
@@ -1595,6 +1667,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
             { kind = 'awayIcon', settings = playerIconSettings.away, defaults = awayIconDefaults, defaultX = 120, defaultY = -54 },
             { kind = 'disconnectIcon', settings = playerIconSettings.disconnect, defaults = disconnectIconDefaults, defaultX = 144, defaultY = -54 },
             { kind = 'starsIcon', settings = playerIconSettings.stars, defaults = starsIconDefaults, defaultX = -48, defaultY = -54 },
+            { kind = 'levelSyncIcon', settings = playerIconSettings.levelSync, defaults = levelSyncIconDefaults, defaultX = -24, defaultY = -54 },
             { kind = 'newAdventurerIcon', settings = playerIconSettings.newAdventurer, defaults = newAdventurerIconDefaults, defaultX = 24, defaultY = -54 },
             { kind = 'Behavior icon', settings = enemyMobInfoIconSettings.behavior, defaults = enemyBehaviorIconDefaults, defaultX = -96, defaultY = -34 },
             { kind = 'Detects icon', settings = enemyMobInfoIconSettings.detects, defaults = enemyDetectsIconDefaults, defaultX = -72, defaultY = -34 },
@@ -1669,7 +1742,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
         },
     };
 
-    if (ShouldShowDistancePreview(context) == true and distanceSettings ~= nil and distanceSettings.enabled == true) then
+    if (ShouldShowDistancePreview(context, distanceSettings) == true and distanceSettings ~= nil) then
         plateData.badges = plateData.badges or {};
         plateData.badges[#plateData.badges + 1] = {
             kind = 'distance',
@@ -1954,7 +2027,7 @@ local function BuildPlate(entityName, stateName, context)
         ['Pet (DRG)'] = 'Lumiere',
         ['Pet (PUP)'] = 'Lobo',
         ['Luopan'] = 'Luopan',
-        ['NPC'] = 'Hunter',
+        ['NPC'] = (stateName == 'Combat') and 'Lhu Mhakaracca' or 'Hunter',
         ['Object'] = 'Mining Point',
         ['NPC/Object'] = 'Hunter',
     };
@@ -1970,40 +2043,14 @@ local function BuildPlate(entityName, stateName, context)
             previewName = tostring(self.name);
         end
 
-        if (self ~= nil and tonumber(self.hp) ~= nil and tonumber(self.hp) > 0) then
-            hp = tonumber(self.hp);
-        end
-
-        if (self ~= nil and tonumber(self.maxHp) ~= nil and tonumber(self.maxHp) > 0) then
-            maxHp = tonumber(self.maxHp);
-        end
-
-        if (self ~= nil and tonumber(self.mp) ~= nil) then
-            mp = tonumber(self.mp);
-        end
-
-        if (self ~= nil and tonumber(self.maxMp) ~= nil and tonumber(self.maxMp) > 0) then
-            maxMp = tonumber(self.maxMp);
-        end
-
-        if (self ~= nil and tonumber(self.tp) ~= nil) then
-            tp = tonumber(self.tp);
-        end
     end
 
     local hpPercent = pupPreview == true and 100 or ClampPercent((hp / maxHp) * 100, 92);
     local mpPercent = pupPreview == true and 0 or ClampPercent((mp / maxMp) * 100, 69);
     local tpPercent = math.max(0, math.min(300, (math.max(0, math.min(3000, tp)) / 10)));
 
-    if (entityName == 'Self' and self ~= nil and tonumber(self.hpPercent) ~= nil and tonumber(self.hpPercent) > 0) then
-        hpPercent = ClampPercent(self.hpPercent, hpPercent);
-    end
-
-    if (entityName == 'Self' and self ~= nil and tonumber(self.mpPercent) ~= nil and tonumber(self.mpPercent) >= 0) then
-        mpPercent = ClampPercent(self.mpPercent, mpPercent);
-    end
-
     local npcObjectPreview = (entityName == 'NPC' or entityName == 'Object' or entityName == 'NPC/Object');
+    local npcTacticalPreview = entityName == 'NPC' and stateName == 'Combat';
 
     local hpColor = hpBarSettings.color or { 0.20, 0.95, 0.34, 0.95 };
     local mpColor = mpBarSettings.color or { 0.25, 0.45, 1.0, 0.95 };
@@ -2157,7 +2204,7 @@ local function BuildPlate(entityName, stateName, context)
             ['Distance'] = 'distance',
         },
         hpBar = {
-            enabled = npcObjectPreview ~= true and hpBarSettings.enabled == true,
+            enabled = (npcObjectPreview ~= true or npcTacticalPreview == true) and hpBarSettings.enabled == true,
             width = tonumber(hpBarSettings.width) or 180,
             height = tonumber(hpBarSettings.height) or 12,
             offsetX = tonumber(hpBarSettings.offsetX) or 0,
@@ -2339,7 +2386,7 @@ local function BuildPlate(entityName, stateName, context)
             plateData.jobFontFlags = fonts.GetRoleFlags(globalSettings, true);
             plateData.jobFontSize = textScale.ToTextureFontSize(jobSettings.textSize, jobDefaults.textSize);
             plateData.jobColor = jobSettings.color or jobDefaults.color;
-            plateData.jobOutlineEnabled = jobSettings.outlineEnabled == true;
+            plateData.jobOutlineEnabled = (entityName == 'Enemy') and ((tonumber(jobSettings.outlineSize) or 0) > 0) or (jobSettings.outlineEnabled == true);
             plateData.jobOutlineColor = jobSettings.outlineColor or jobDefaults.outlineColor;
             plateData.jobOutlineSize = tonumber(jobSettings.outlineSize) or jobDefaults.outlineSize;
             plateData.jobOffsetX = tonumber(jobSettings.offsetX) or 0;
@@ -2402,10 +2449,9 @@ local function BuildPlate(entityName, stateName, context)
     end
 
     if (
-        ShouldShowDistancePreview(context) == true and
+        ShouldShowDistancePreview(context, distanceSettings) == true and
         (entityName == 'Enemy' or entityName == 'PC' or entityName == 'NPC' or entityName == 'Object' or entityName == 'NPC/Object') and
-        distanceSettings ~= nil and
-        distanceSettings.enabled == true
+        distanceSettings ~= nil
     ) then
         plateData.badges = plateData.badges or {};
         plateData.badges[#plateData.badges + 1] = {
@@ -2427,7 +2473,7 @@ local function BuildPlate(entityName, stateName, context)
     end
 
     if (entityName == 'NPC' or entityName == 'NPC/Object') then
-        local iconTextureId = npcObjectInfo.GetTextureId(previewName, 'NPC');
+        local iconTextureId = npcObjectInfo.GetTextureId(previewName, 'NPC', { ignoreZone = true });
 
         if (iconSettings ~= nil and iconSettings.enabled == true and iconTextureId ~= nil) then
             plateData.icons = plateData.icons or {};
@@ -2442,7 +2488,7 @@ local function BuildPlate(entityName, stateName, context)
             };
         end
     elseif (entityName == 'Object') then
-        local iconTextureId = npcObjectInfo.GetTextureId(previewName, 'Object');
+        local iconTextureId = npcObjectInfo.GetTextureId(previewName, 'Object', { ignoreZone = true });
 
         if (iconSettings ~= nil and iconSettings.enabled == true and iconTextureId ~= nil) then
             plateData.icons = plateData.icons or {};
@@ -2463,7 +2509,7 @@ local function BuildPlate(entityName, stateName, context)
         typeLineSettings ~= nil and
         typeLineSettings.enabled == true
     ) then
-        local previewTypeText = npcObjectInfo.GetType(previewName, entityName) or ((entityName == 'Object') and 'Mining Point' or 'Weekly Hunt');
+        local previewTypeText = npcObjectInfo.GetType(previewName, entityName, { ignoreZone = true }) or ((entityName == 'Object') and 'Mining Point' or 'Weekly Hunt');
 
         plateData.texts = plateData.texts or {};
         plateData.texts[#plateData.texts + 1] = {
@@ -2820,6 +2866,22 @@ local function DrawLuopanPreviewActor(drawList, x, y, previewWidth, previewHeigh
     local size = math.max(58, math.min(previewWidth * 0.24, previewHeight * 0.42));
     local centerX = x + (previewWidth * 0.5);
     local centerY = y + (previewHeight * 0.85);
+    local left = centerX - (size * 0.5);
+    local top = centerY - (size * 0.5);
+
+    drawList:AddImage(textureId, { left, top }, { left + size, top + size }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+end
+
+local function DrawSpiritPreviewActor(drawList, x, y, previewWidth, previewHeight)
+    local textureId = LoadSpiritPreviewTexture();
+
+    if (textureId == nil or drawList == nil or drawList.AddImage == nil) then
+        return;
+    end
+
+    local size = math.max(52, math.min(previewWidth * 0.20, previewHeight * 0.34));
+    local centerX = x + (previewWidth * 0.50);
+    local centerY = y + (previewHeight * 0.72);
     local left = centerX - (size * 0.5);
     local top = centerY - (size * 0.5);
 
@@ -3215,10 +3277,10 @@ local function GetQuickMenuPreviewRows(entityName, menu)
         if (menu.self.acceptInvite == true or menu.self.declineInvite == true) then rows[#rows + 1] = { 'Accept Invite', 'accept-invite.png' }; end
         if (menu.self.leaveParty == true) then rows[#rows + 1] = { 'Leave Party', 'LeaveParty.png' }; end
         if (menu.self.cancelPartyRequest == true) then rows[#rows + 1] = { 'Cancel Party Request', 'cancel-party-request.png' }; end
-        if (menu.self.mount == true) then rows[#rows + 1] = { 'Mount: ' .. tostring(menu.self.selectedMount or 'Chocobo'), 'mount.png' }; end
-        if (menu.self.ignoreTrust == true) then rows[#rows + 1] = { 'Ignore Other Trusts: On', 'ignore-trust-on.png' }; end
-        if (menu.self.hideTrust == true) then rows[#rows + 1] = { 'Hide Other Trusts: Off', 'hide-other-trusts-off.png' }; end
-        if (menu.self.emoteTrust == true) then rows[#rows + 1] = { 'Emote Trust: Off', 'emote-trusts-off.png' }; end
+        if (menu.self.aceTownMog == true) then rows[#rows + 1] = { 'ACE Mog House', 'catseye.png' }; end
+        if (menu.self.mount == true or menu.self.ignoreTrust == true or menu.self.hideTrust == true or menu.self.emoteTrust == true) then
+            rows[#rows + 1] = { 'Field-only actions hidden in town', nil };
+        end
 
         return 'Libra', 'Player.png', rows;
     end
@@ -3455,8 +3517,17 @@ local function DrawPreviewPeerPanelBox(drawList, x, y, w, h, peerSettings)
     end
 end
 
-local function GetPreviewPeerInspectorWidth(peerSettings)
-    local width = tonumber(peerSettings ~= nil and peerSettings.inspectorWidth) or 430;
+local function GetPreviewPeerInspectorWidth(peerSettings, entityName)
+    local entity = tostring(entityName or '');
+    local width = nil;
+
+    if (entity == 'Self') then
+        width = tonumber(peerSettings ~= nil and peerSettings.selfInspectorWidth);
+    elseif (entity == 'PC') then
+        width = tonumber(peerSettings ~= nil and peerSettings.pcInspectorWidth);
+    end
+
+    width = width or tonumber(peerSettings ~= nil and peerSettings.inspectorWidth) or 430;
     return math.max(220, math.min(800, width));
 end
 
@@ -3495,7 +3566,7 @@ local function DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHei
 
     local settings = state.GetGlobalSettings(globalDefaults);
     local peerSettings = settings.peer or {};
-    local panelW = math.max(320, math.min(GetPreviewPeerInspectorWidth(peerSettings), previewWidth - 36));
+    local panelW = math.max(320, math.min(GetPreviewPeerInspectorWidth(peerSettings, 'Enemy'), previewWidth - 36));
     local panelH = math.min(
         (tostring(peerSettings.displayMode or 'Text') == 'Text') and GetPreviewEnemyPeerTextInspectorHeight(peerSettings) or GetPreviewEnemyPeerIconInspectorHeight(peerSettings),
         previewHeight - 36
@@ -3628,7 +3699,7 @@ local function DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight)
         (showAttackDefense and 26 or 0) +
         (showResists and 46 or 0) +
         12;
-    local panelW = math.min(GetPreviewPeerInspectorWidth(peerSettings), previewWidth - 36);
+    local panelW = math.min(GetPreviewPeerInspectorWidth(peerSettings, 'Self'), previewWidth - 36);
     local panelH = math.min(math.max(52, panelHeight), previewHeight - 28);
     local panelX = x + math.floor((previewWidth - panelW) * 0.5);
     local panelY = y + math.floor((previewHeight - panelH) * 0.5);
@@ -3746,7 +3817,7 @@ local function DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight)
 
     local settings = state.GetGlobalSettings(globalDefaults);
     local peerSettings = settings.peer or {};
-    local panelW = math.min(GetPreviewPeerInspectorWidth(peerSettings), previewWidth - 36);
+    local panelW = math.min(GetPreviewPeerInspectorWidth(peerSettings, 'PC'), previewWidth - 36);
     local panelH = math.min(136, previewHeight - 28);
     local panelX = x + math.floor((previewWidth - panelW) * 0.5);
     local panelY = y + math.floor((previewHeight - panelH) * 0.5);
@@ -3862,6 +3933,10 @@ function preview.Draw(entityName, stateName, context)
 
     if (entityName == 'Luopan' and isPeerPreview ~= true and quickMenuOnlyPreview ~= true) then
         DrawLuopanPreviewActor(drawList, x, y, previewWidth, previewHeight);
+    end
+
+    if (entityName == 'Pet (SMN)' and stateName == 'Spirit' and isPeerPreview ~= true and quickMenuOnlyPreview ~= true) then
+        DrawSpiritPreviewActor(drawList, x, y, previewWidth, previewHeight);
     end
 
     if (isPeerPreview ~= true and quickMenuOnlyPreview ~= true) then

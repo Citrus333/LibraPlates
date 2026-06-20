@@ -9,6 +9,7 @@ local worldMarkerProbe = require('core.world_marker_probe');
 local mouseControls = require('core.mouse_controls');
 local targeting = require('core.targeting');
 local engagedEnemies = require('core.engaged_enemies');
+local enmity = require('core.enmity');
 local enemyPlate = require('modules.plates.enemy');
 local overlaySuppression = require('core.overlay_suppression');
 local nativeTargetArrow = require('core.native_target_arrow');
@@ -68,6 +69,34 @@ local function DebugFlagList(value, flags)
     return table.concat(parts, ',');
 end
 
+function LibraPlatesFormatRenderFlags(targetIndex)
+    local gameMode = require('core.game_mode');
+    local parts = {};
+
+    for flagIndex = 0, 7 do
+        parts[#parts + 1] = 'r' .. tostring(flagIndex) .. '=0x' .. string.format('%X', gameMode.ReadRenderFlag(targetIndex, flagIndex));
+    end
+
+    return table.concat(parts, ' ');
+end
+
+function LibraPlatesResolveNativeNameColorProbe(targetIndex)
+    local gameMode = require('core.game_mode');
+    local playerIndicators = require('core.player_indicators');
+    local anon = playerIndicators.HasAnonNameColor(targetIndex) == true;
+    local modeText = gameMode.Resolve(targetIndex, false);
+
+    if (anon == true) then
+        return 'anon-blue#1A4C97';
+    end
+
+    if (modeText == 'CW' or modeText == 'UCW') then
+        return tostring(modeText) .. '-orange#' .. playerIndicators.GetCampaignNameColorHex();
+    end
+
+    return 'normal';
+end
+
 -- ============================================================
 -- Parsing
 -- ============================================================
@@ -92,6 +121,30 @@ local function CommandSafeCall(fallback, fn)
     return result;
 end
 
+local function GetDebugServerId(entityManager, index)
+    index = tonumber(index) or 0;
+
+    if (entityManager == nil or index <= 0) then
+        return 0;
+    end
+
+    return tonumber(CommandSafeCall(0, function()
+        return entityManager:GetServerId(index);
+    end)) or 0;
+end
+
+local function GetDebugStatus(entityManager, index)
+    index = tonumber(index) or 0;
+
+    if (entityManager == nil or index <= 0) then
+        return nil;
+    end
+
+    return CommandSafeCall(nil, function()
+        return entityManager:GetStatus(index);
+    end);
+end
+
 local function FormatDebugNumber(value)
     local number = tonumber(value);
 
@@ -110,6 +163,144 @@ local function ParseDebugList(text)
     end
 
     return values;
+end
+
+local function GetPcRaceGuess(modelKey)
+    modelKey = tonumber(modelKey);
+
+    if (modelKey == nil) then
+        return 'unknown';
+    end
+
+    if (modelKey == 0x0001) then
+        return 'Hume';
+    elseif (modelKey == 0x3D01) then
+        return 'Mithra';
+    elseif (modelKey == 0x7301) then
+        return 'Elvaan';
+    elseif (modelKey == 0xB701) then
+        return 'Galka';
+    end
+
+    return 'unknown';
+end
+
+local function NearlyEqual(value, target, tolerance)
+    value = tonumber(value);
+    target = tonumber(target);
+    tolerance = tonumber(tolerance) or 0.05;
+
+    if (value == nil or target == nil) then
+        return false;
+    end
+
+    return math.abs(value - target) <= tolerance;
+end
+
+local function GetPcBodyGuess(debug)
+    if (debug == nil) then
+        return 'unknown';
+    end
+
+    local bones = tonumber(debug.boneCount);
+    local zSpan = tonumber(debug.boneSpanZ);
+    local ySpan = tonumber(debug.boneSpanY);
+
+    if (bones == 93 and NearlyEqual(zSpan, 2.10, 0.06) and NearlyEqual(ySpan, 1.90, 0.08)) then
+        return 'Tarutaru';
+    elseif (bones == 108 and NearlyEqual(zSpan, 2.00, 0.08) and NearlyEqual(ySpan, 2.50, 0.08)) then
+        return 'Mithra';
+    elseif ((bones == 97 or bones == 94 or bones == 93) and zSpan >= 2.10 and zSpan <= 2.70 and NearlyEqual(ySpan, 2.50, 0.08)) then
+        return 'Hume';
+    elseif (bones == 99 and NearlyEqual(zSpan, 3.40, 0.10) and NearlyEqual(ySpan, 2.50, 0.08)) then
+        return 'Elvaan';
+    elseif (bones == 107 and NearlyEqual(zSpan, 3.04, 0.10) and NearlyEqual(ySpan, 2.65, 0.08)) then
+        return 'Galka';
+    end
+
+    return 'unknown';
+end
+
+local function NormalizePcHeightFamily(value)
+    value = tostring(value or ''):lower();
+
+    if (value == 'human' or value == 'hume') then
+        return 'hume', 'Human / Hume';
+    elseif (value == 'taru' or value == 'tarutaru') then
+        return 'tarutaru', 'Tarutaru';
+    elseif (value == 'mithra' or value == 'cat') then
+        return 'mithra', 'Mithra';
+    elseif (value == 'elvaan' or value == 'elf') then
+        return 'elvaan', 'Elvaan';
+    elseif (value == 'galka') then
+        return 'galka', 'Galka';
+    end
+
+    return nil, nil;
+end
+
+local function EnsurePcHeightSettings(settings)
+    if (type(settings.pcRacePlateAdjustments) ~= 'table') then
+        settings.pcRacePlateAdjustments = {};
+    end
+
+    settings.pcRacePlateAdjustments.enabled = true;
+    local baselines = {
+        tarutaru = 82,
+        mithra = 77,
+        hume = 60,
+        elvaan = 55,
+        galka = 67,
+    };
+
+    local defaults = {
+        tarutaru = { y = 0, size = 0 },
+        mithra = { y = 0, size = 0 },
+        hume = { y = 0, size = 0 },
+        elvaan = { y = 0, size = 0 },
+        galka = { y = 0, size = 0 },
+    };
+
+    for key, value in pairs(defaults) do
+        if (type(settings.pcRacePlateAdjustments[key]) ~= 'table') then
+            settings.pcRacePlateAdjustments[key] = {};
+        end
+
+        if (settings.pcRacePlateAdjustments[key].y == nil) then settings.pcRacePlateAdjustments[key].y = value.y; end
+        if (settings.pcRacePlateAdjustments[key].size == nil) then settings.pcRacePlateAdjustments[key].size = value.size; end
+
+        if (settings.pcRacePlateAdjustments.baselineVersion ~= 2) then
+            local yValue = tonumber(settings.pcRacePlateAdjustments[key].y) or 0;
+            local baseline = baselines[key] or 0;
+            if (math.abs(yValue - baseline) <= 1) then
+                yValue = 0;
+            elseif (math.abs(yValue) > 50 and baseline > 0) then
+                yValue = yValue - baseline;
+            end
+
+            settings.pcRacePlateAdjustments[key].y = math.max(-100, math.min(100, math.floor(yValue + 0.5)));
+        end
+    end
+
+    settings.pcRacePlateAdjustments.baselineVersion = 2;
+end
+
+local function ApplyPcHeightDefaults(settings)
+    EnsurePcHeightSettings(settings);
+
+    local defaults = {
+        tarutaru = { y = 0, size = 0 },
+        mithra = { y = 0, size = 0 },
+        hume = { y = 0, size = 0 },
+        elvaan = { y = 0, size = 0 },
+        galka = { y = 0, size = 0 },
+    };
+
+    for key, value in pairs(defaults) do
+        settings.pcRacePlateAdjustments[key].y = value.y;
+        settings.pcRacePlateAdjustments[key].size = value.size;
+    end
+    settings.pcRacePlateAdjustments.baselineVersion = 2;
 end
 
 local function AddChangedField(parts, label, a, b)
@@ -627,6 +818,186 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'nativecolors' or subcommand == 'nativecolour' or subcommand == 'nativecolours') then
+        local value = tostring(args[3] or ''):lower();
+        local settings = targeting.GetSettings();
+
+        if (value == 'on' or value == 'true' or value == '1') then
+            settings.overwriteNativeNameColors = true;
+        elseif (value == 'off' or value == 'false' or value == '0') then
+            settings.overwriteNativeNameColors = false;
+        else
+            settings.overwriteNativeNameColors = settings.overwriteNativeNameColors == false;
+        end
+
+        state.Save();
+        log.Info('Overwrite native name colors=' .. tostring(settings.overwriteNativeNameColors ~= false));
+        return;
+    end
+
+    if (subcommand == 'anon' or subcommand == 'anonymous') then
+        local value = tostring(args[3] or ''):lower();
+        local anonStatus = require('core.anon_status');
+
+        if (value == 'on' or value == 'true' or value == '1') then
+            anonStatus.SetSelfAnonymous(true);
+        elseif (value == 'off' or value == 'false' or value == '0') then
+            anonStatus.SetSelfAnonymous(false);
+        elseif (value == 'status') then
+            log.Info('Self anon tracked=' .. tostring(anonStatus.GetSelfAnonymous() == true));
+            return;
+        else
+            anonStatus.SetSelfAnonymous(anonStatus.GetSelfAnonymous() ~= true);
+        end
+
+        log.Info('Self anon tracked=' .. tostring(anonStatus.GetSelfAnonymous() == true));
+        return;
+    end
+
+    if (subcommand == 'blist' or subcommand == 'blacklist') then
+        local action = tostring(args[3] or 'status'):lower();
+        local playerBlacklist = require('core.player_blacklist');
+
+        if (action == 'add' or action == 'insert') then
+            local name = tostring(args[4] or '');
+            local reasonParts = {};
+
+            for i = 5, #args do
+                reasonParts[#reasonParts + 1] = tostring(args[i] or '');
+            end
+
+            local ok, err = playerBlacklist.AddName(name, table.concat(reasonParts, ' '), 'lp-command');
+
+            if (ok == true) then
+                pcall(function()
+                    AshitaCore:GetChatManager():QueueCommand(1, '/blacklist add "' .. name:gsub('"', '') .. '"');
+                end);
+                log.Info('Added ' .. name .. ' to LibraPlates blacklist.');
+            else
+                log.Warn(tostring(err or 'Blacklist add failed.'));
+            end
+            return;
+        end
+
+        if (action == 'delete' or action == 'del' or action == 'remove' or action == 'rm') then
+            local name = tostring(args[4] or '');
+
+            if (playerBlacklist.RemoveName(name) == true) then
+                pcall(function()
+                    AshitaCore:GetChatManager():QueueCommand(1, '/blacklist delete "' .. name:gsub('"', '') .. '"');
+                end);
+                log.Info('Removed ' .. name .. ' from LibraPlates blacklist.');
+            else
+                log.Warn('Blacklist remove failed; not listed locally: ' .. name);
+            end
+            return;
+        end
+
+        local rows = playerBlacklist.List();
+        log.Info('LibraPlates blacklist entries=' .. tostring(#rows) .. '. Usage: /lp blist add <name> | /lp blist remove <name>');
+        for i = 1, math.min(#rows, 8) do
+            local row = rows[i];
+            log.Info(
+                tostring(i) .. '. ' ..
+                tostring(row.name or '') ..
+                ' id=' .. tostring(row.serverId or 'pending') ..
+                ' reason=' .. tostring(row.reason or '')
+            );
+        end
+        return;
+    end
+
+    if (subcommand == 'blmodel' or subcommand == 'blacklistmodel') then
+        local action = tostring(args[3] or 'status'):lower();
+        local blacklistModelReplace = require('core.blacklist_model_replace');
+        local playerBlacklist = require('core.player_blacklist');
+        local settings = playerBlacklist.GetModelReplaceSettings();
+
+        if (action == 'on' or action == 'enable') then
+            settings.modelReplaceEnabled = true;
+            state.Save();
+            log.Info('Blacklist model replacement enabled.');
+            return;
+        end
+
+        if (action == 'off' or action == 'disable') then
+            settings.modelReplaceEnabled = false;
+            state.Save();
+            log.Info('Blacklist model replacement disabled.');
+            return;
+        end
+
+        if (action == 'debug') then
+            local value = tostring(args[4] or ''):lower();
+            blacklistModelReplace.SetDebugEnabled(value == 'on' or value == 'true' or value == '1');
+            log.Info(blacklistModelReplace.GetDebugStatusText());
+            return;
+        end
+
+        log.Info(
+            'Blacklist model replacement enabled=' .. tostring(settings.modelReplaceEnabled == true) ..
+            ' race=' .. tostring(settings.modelReplaceRace) ..
+            ' hair=' .. tostring(settings.modelReplaceHair) ..
+            ' preserveRace=' .. tostring(settings.modelReplacePreserveRace ~= false) ..
+            ' fomor=' .. tostring(settings.modelReplaceUseFomor ~= false) ..
+            ' clearGear=' .. tostring(settings.modelReplaceClearGear == true) ..
+            ' | ' .. blacklistModelReplace.GetDebugStatusText()
+        );
+        return;
+    end
+
+    if (subcommand == 'stack' or subcommand == 'platestack' or subcommand == 'stacking') then
+        local action = tostring(args[3] or 'status'):lower();
+        local settings = targeting.GetSettings();
+
+        if (action == 'on' or action == 'enable') then
+            settings.plateStackingEnabled = true;
+            state.Save();
+        elseif (action == 'off' or action == 'disable') then
+            settings.plateStackingEnabled = false;
+            state.Save();
+        elseif (action == 'pc' or action == 'players') then
+            local value = tostring(args[4] or ''):lower();
+            if (type(settings.plateStackingTypes) ~= 'table') then settings.plateStackingTypes = {}; end
+            settings.plateStackingTypes.pc = value == 'on' or value == 'true' or value == '1';
+            state.Save();
+        elseif (action ~= 'status') then
+            log.Warn('Usage: /lp stack on|off|status|pc on|pc off');
+            return;
+        end
+
+        log.Info(
+            'Plate stacking enabled=' .. tostring(settings.plateStackingEnabled ~= false) ..
+            ' pc=' .. tostring(type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes.pc == true) ..
+            ' enemy=' .. tostring(type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes.enemy == true) ..
+            ' gap=' .. tostring(settings.plateStackGap) ..
+            ' overlap=' .. tostring(settings.plateStackHorizontalOverlap) .. '/' .. tostring(settings.plateStackVerticalOverlap) ..
+            ' spread=' .. tostring(settings.plateStackHorizontalSpreadPct) ..
+            ' maxWorldPlateCount=' .. tostring(settings.maxWorldPlateCount or 0)
+        );
+        return;
+    end
+
+    if (subcommand == 'platecap' or subcommand == 'worldcap') then
+        local action = tostring(args[3] or 'status'):lower();
+        local settings = targeting.GetSettings();
+        local value = tonumber(args[3]);
+
+        if (action == 'off' or action == 'unlimited' or action == 'none') then
+            settings.maxWorldPlateCount = 0;
+            state.Save();
+        elseif (value ~= nil) then
+            settings.maxWorldPlateCount = math.max(0, math.min(300, math.floor(value + 0.5)));
+            state.Save();
+        elseif (action ~= 'status') then
+            log.Warn('Usage: /lp platecap 0|40|80|status');
+            return;
+        end
+
+        log.Info('Max world plate count=' .. tostring(settings.maxWorldPlateCount or 0) .. ' (0 = unlimited).');
+        return;
+    end
+
     if (subcommand == 'world') then
         local value = tostring(args[3] or ''):lower();
 
@@ -852,6 +1223,49 @@ function commands.Handle(e)
         end
 
         log.Info(worldMarkerProbe.GetStatusText());
+        return;
+    end
+
+    if (subcommand == 'pcheight' or subcommand == 'pcheights') then
+        local settings = targeting.GetSettings();
+        EnsurePcHeightSettings(settings);
+
+        local action = tostring(args[3] or ''):lower();
+
+        if (action == 'default' or action == 'defaults' or action == 'reset') then
+            ApplyPcHeightDefaults(settings);
+            state.Save();
+            log.Info('PC height adjustments reset to 0. Zero now means the built-in race baseline.');
+            return;
+        end
+
+        local familyKey, familyLabel = NormalizePcHeightFamily(args[3]);
+
+        if (familyKey == nil) then
+            local parts = {};
+            for _, key in ipairs({ 'hume', 'tarutaru', 'mithra', 'elvaan', 'galka' }) do
+                local race = settings.pcRacePlateAdjustments[key] or {};
+                parts[#parts + 1] = key .. '=' .. tostring(race.y);
+            end
+
+            log.Info('PC height adjustments enabled=' .. tostring(settings.pcRacePlateAdjustments.enabled ~= false) .. ' ' .. table.concat(parts, ' | '));
+            log.Info('Usage: /lp pcheight human <y> | /lp pcheight defaults. 0 is the built-in baseline; positive lowers more.');
+            return;
+        end
+
+        local yValue = tonumber(args[4]);
+
+        if (yValue == nil) then
+            local race = settings.pcRacePlateAdjustments[familyKey] or {};
+            log.Info('PC height ' .. familyLabel .. ' y=' .. tostring(race.y) .. '. 0 is the built-in baseline; positive lowers more. Usage: /lp pcheight ' .. tostring(args[3]) .. ' <y>');
+            return;
+        end
+
+        local race = settings.pcRacePlateAdjustments[familyKey];
+        race.y = math.max(-100, math.min(100, math.floor(yValue + 0.5)));
+
+        state.Save();
+        log.Info('PC height ' .. familyLabel .. ' set y=' .. tostring(race.y) .. '.');
         return;
     end
 
@@ -1155,6 +1569,52 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'enmitydebug' or subcommand == 'aggrodebug') then
+        local memory = CommandSafeCall(nil, function()
+            return AshitaCore:GetMemoryManager();
+        end);
+        local party = memory ~= nil and CommandSafeCall(nil, function()
+            return memory:GetParty();
+        end) or nil;
+        local entityManager = memory ~= nil and CommandSafeCall(nil, function()
+            return memory:GetEntity();
+        end) or nil;
+        local selfIndex = party ~= nil and (tonumber(CommandSafeCall(0, function()
+            return party:GetMemberTargetIndex(0);
+        end)) or 0) or 0;
+        local targetIndex = tonumber(args[3]) or targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex() or 0;
+        local selfServerId = GetDebugServerId(entityManager, selfIndex);
+        local targetServerId = GetDebugServerId(entityManager, targetIndex);
+        local targetDebug = entities.GetEntityDebugInfo(targetIndex, targeting.GetSettings().enemyPlateRange);
+        local targetName = targetDebug ~= nil and targetDebug.name or CommandSafeCall('', function()
+            return entityManager:GetName(targetIndex);
+        end);
+        local targetIsEnemy = targetDebug ~= nil and targetDebug.isMob == true;
+        local enemyTargetingSelf = enmity.IsEnemyTargetingSelf({
+            index = targetIndex,
+            serverId = targetServerId,
+        });
+        local selfTargetedByAnyEnemy = enmity.IsServerIdTargeted(selfServerId, selfIndex);
+
+        log.Info(
+            'Enmity debug self=' .. tostring(selfIndex) ..
+            ' selfServer=' .. tostring(selfServerId) ..
+            ' selfStatus=' .. tostring(GetDebugStatus(entityManager, selfIndex)) ..
+            ' target=' .. tostring(targetIndex) ..
+            ' targetServer=' .. tostring(targetServerId) ..
+            ' targetName=' .. tostring(targetName) ..
+            ' targetStatus=' .. tostring(GetDebugStatus(entityManager, targetIndex)) ..
+            ' targetHp=' .. tostring(targetDebug ~= nil and targetDebug.hpPercent or nil) ..
+            ' targetType=' .. tostring(targetDebug ~= nil and targetDebug.type or nil) ..
+            ' targetIsEnemy=' .. tostring(targetIsEnemy) ..
+            ' targetClaim=' .. tostring(engagedEnemies.GetClaimCategory(targetIndex)) ..
+            ' targetTracked=' .. tostring(engagedEnemies.IsEngaged(targetIndex)) ..
+            ' targetAimingSelf=' .. tostring(enemyTargetingSelf) ..
+            ' selfTargetedByAny=' .. tostring(selfTargetedByAnyEnemy)
+        );
+        return;
+    end
+
     if (subcommand == 'claimdebug') then
         local action = tostring(args[3] or 'on'):lower();
 
@@ -1232,6 +1692,18 @@ function commands.Handle(e)
             ' name=' .. tostring(debug.name) ..
             ' type=' .. tostring(debug.type) ..
             ' status=' .. tostring(debug.status) ..
+            ' hp=' .. tostring(debug.hpPercent) ..
+            ' mp=' .. tostring(debug.mp) .. '/' .. tostring(debug.maxMp) ..
+            ' mpPct=' .. tostring(debug.mpPercent) ..
+            ' tp=' .. tostring(debug.tp) ..
+            ' partySlot=' .. tostring(debug.partySlot) ..
+            ' partyHp=' .. tostring(debug.partyHp) .. '/' .. tostring(debug.partyMaxHp) ..
+            ' partyHpPct=' .. tostring(debug.partyHpPercent) ..
+            ' partyMp=' .. tostring(debug.partyMp) .. '/' .. tostring(debug.partyMaxMp) ..
+            ' partyMpPct=' .. tostring(debug.partyMpPercent) ..
+            ' partyTp=' .. tostring(debug.partyTp) ..
+            ' partyJob=' .. tostring(debug.partyMainJob) ..
+            ' partyLevel=' .. tostring(debug.partyMainJobLevel) ..
             ' distance=' .. tostring(debug.distance) ..
             ' current=' .. tostring(targeting.GetCurrentTargetIndex()) ..
             ' sub=' .. tostring(targeting.GetCurrentSubTargetIndex()) ..
@@ -1255,6 +1727,8 @@ function commands.Handle(e)
             ' inRange=' .. tostring(debug.inRange) ..
             ' statusAllowed=' .. tostring(debug.statusAllowed) ..
             ' npcScanAllowed=' .. tostring(debug.npcScanAllowed) ..
+            ' tacticalNpcAllowed=' .. tostring(debug.tacticalNpcAllowed) ..
+            ' layout=' .. tostring(debug.layoutStateName) ..
             ' resolved=' .. tostring(resolvedEntityName) ..
             ' infoSource=' .. tostring(info ~= nil and info.source or nil) ..
             ' infoType=' .. tostring(info ~= nil and info.type or nil) ..
@@ -1285,8 +1759,23 @@ function commands.Handle(e)
         end
 
         if (found == nil) then
-            log.Warn('PC debug failed: target is not a nearby PC. target=' .. tostring(targetIndex));
-            return;
+            local entityManager = entities.GetEntityManager();
+            local ent = GetEntity(targetIndex);
+            local debug = entities.GetEntityDebugInfo(targetIndex, targeting.GetSettings().enemyPlateRange);
+
+            if (targetIndex == nil or ent == nil or tostring(ent.Name or '') == '' or tonumber(debug ~= nil and debug.type or -1) ~= 0) then
+                log.Warn('PC debug failed: target is not a PC. target=' .. tostring(targetIndex) .. ' type=' .. tostring(debug ~= nil and debug.type or nil));
+                return;
+            end
+
+            found = {
+                index = targetIndex,
+                serverId = GetDebugServerId(entityManager, targetIndex),
+                name = ent.Name,
+                status = ent.Status,
+                distance = ent.Distance ~= nil and math.sqrt(ent.Distance) or nil,
+                hpPercent = ent.HPPercent or 100,
+            };
         end
 
         local layoutStateName = (tonumber(found.slot) ~= nil or tonumber(found.status) == 1) and 'Combat' or 'Idle';
@@ -1295,6 +1784,8 @@ function commands.Handle(e)
         local debug = entities.GetEntityDebugInfo(found.index, targeting.GetSettings().enemyPlateRange);
         local entity = GetEntity(found.index);
         local linkshellColor = tonumber(entity ~= nil and entity.LinkshellColor) or 0;
+        local probeGameMode = require('core.game_mode');
+        local probePlayerIndicators = require('core.player_indicators');
 
         log.Info(
             'PC debug target=' .. tostring(found.index) ..
@@ -1305,6 +1796,12 @@ function commands.Handle(e)
             ' spawn=0x' .. string.format('%X', tonumber(debug ~= nil and debug.spawnFlags or 0) or 0) ..
             ' render0=0x' .. string.format('%X', tonumber(debug ~= nil and debug.renderFlags0 or 0) or 0) ..
             ' render1=0x' .. string.format('%X', tonumber(debug ~= nil and debug.renderFlags1 or 0) or 0) ..
+            ' renderAll=' .. LibraPlatesFormatRenderFlags(found.index) ..
+            ' mode=' .. tostring(probeGameMode.Resolve(found.index, false)) ..
+            ' anonGuess=' .. tostring(probePlayerIndicators.HasAnonNameColor(found.index) == true) ..
+            ' lpNameColorGuess=' .. LibraPlatesResolveNativeNameColorProbe(found.index) ..
+            ' overwriteNativeNameColors=' .. tostring(targeting.GetSettings().overwriteNativeNameColors ~= false) ..
+            ' useNativeNames=' .. tostring(targeting.GetSettings().hideNativeNamesOnLoad ~= true) ..
             ' layout=' .. tostring(layoutStateName) ..
             ' slot=' .. tostring(found.slot) ..
             ' hp=' .. tostring(found.hp) .. '/' .. tostring(found.maxHp) .. ' pct=' .. tostring(found.hpPercent) ..
@@ -1319,6 +1816,76 @@ function commands.Handle(e)
             ' levelEnabled=' .. tostring(levelSettings.enabled == true) ..
             ' levelXY=' .. tostring(levelSettings.offsetX) .. ',' .. tostring(levelSettings.offsetY)
         );
+
+        local modelDebug, modelErr = worldMarkerProbe.GetVisibilityDebug(found.index, entities.GetEntityManager, entities.GetBone);
+
+        if (modelDebug ~= nil) then
+            local actorInts = ParseDebugList(modelDebug.actorInts);
+            local actorFloats = ParseDebugList(modelDebug.actorScalars);
+            local modelKey = tonumber(actorInts['20']);
+            local sizeScale = tonumber(actorFloats['6A0']);
+
+            log.Info(
+                'PC model probe target=' .. tostring(found.index) ..
+                ' name=' .. tostring(found.name) ..
+                ' serverId=' .. tostring(found.serverId) ..
+                ' modelKey=0x' .. string.format('%X', tonumber(modelKey) or 0) ..
+                ' raceGuess=' .. GetPcRaceGuess(modelKey) ..
+                ' bodyGuess=' .. GetPcBodyGuess(modelDebug) ..
+                ' sizeScale=' .. tostring(sizeScale) ..
+                ' type=' .. tostring(modelDebug.type) ..
+                ' spawn=0x' .. string.format('%X', tonumber(modelDebug.spawnFlags) or 0) ..
+                ' rf0=0x' .. string.format('%X', tonumber(modelDebug.renderFlags0) or 0) ..
+                ' rf1=0x' .. string.format('%X', tonumber(modelDebug.renderFlags1) or 0) ..
+                ' bones=' .. tostring(modelDebug.boneCount) ..
+                ' z=' .. tostring(modelDebug.boneMinZ) .. '/' .. tostring(modelDebug.boneMaxZ) .. '/' .. tostring(modelDebug.boneSpanZ) ..
+                ' y=' .. tostring(modelDebug.boneMinY) .. '/' .. tostring(modelDebug.boneMaxY) .. '/' .. tostring(modelDebug.boneSpanY) ..
+                ' baseZ=' .. tostring(modelDebug.baseZ) ..
+                ' b2=' .. tostring(modelDebug.bone2 ~= nil and modelDebug.bone2.worldX or nil) .. ',' .. tostring(modelDebug.bone2 ~= nil and modelDebug.bone2.worldY or nil) .. ',' .. tostring(modelDebug.bone2 ~= nil and modelDebug.bone2.worldZ or nil) ..
+                ' b12=' .. tostring(modelDebug.bone12 ~= nil and modelDebug.bone12.worldX or nil) .. ',' .. tostring(modelDebug.bone12 ~= nil and modelDebug.bone12.worldY or nil) .. ',' .. tostring(modelDebug.bone12 ~= nil and modelDebug.bone12.worldZ or nil) ..
+                ' obj=0x' .. string.format('%X', tonumber(modelDebug.objectPointer) or 0) ..
+                ' af=' .. tostring(modelDebug.actorScalars) ..
+                ' ai=' .. tostring(modelDebug.actorInts) ..
+                ' of=' .. tostring(modelDebug.objectScalars) ..
+                ' oi=' .. tostring(modelDebug.objectInts)
+            );
+        else
+            log.Warn('PC model probe failed: ' .. tostring(modelErr) .. ' target=' .. tostring(found.index));
+        end
+
+        return;
+    end
+
+    if (subcommand == 'selfdebug') then
+        local selfEntity = entities.GetSelf();
+        local selfIndex = tonumber(selfEntity ~= nil and selfEntity.index) or 0;
+
+        if (selfIndex == 0) then
+            log.Warn('Self debug failed: self index missing.');
+            return;
+        end
+
+        local debug = entities.GetEntityDebugInfo(selfIndex, targeting.GetSettings().enemyPlateRange);
+        local probeGameMode = require('core.game_mode');
+        local probePlayerIndicators = require('core.player_indicators');
+
+        log.Info(
+            'Self debug target=' .. tostring(selfIndex) ..
+            ' name=' .. tostring(selfEntity ~= nil and selfEntity.name or nil) ..
+            ' serverId=' .. tostring(selfEntity ~= nil and selfEntity.serverId or nil) ..
+            ' status=' .. tostring(selfEntity ~= nil and selfEntity.status or nil) ..
+            ' type=' .. tostring(debug ~= nil and debug.type or nil) ..
+            ' spawn=0x' .. string.format('%X', tonumber(debug ~= nil and debug.spawnFlags or 0) or 0) ..
+            ' render0=0x' .. string.format('%X', tonumber(debug ~= nil and debug.renderFlags0 or 0) or 0) ..
+            ' render1=0x' .. string.format('%X', tonumber(debug ~= nil and debug.renderFlags1 or 0) or 0) ..
+            ' renderAll=' .. LibraPlatesFormatRenderFlags(selfIndex) ..
+            ' mode=' .. tostring(probeGameMode.Resolve(selfIndex, false)) ..
+            ' anonGuess=' .. tostring(probePlayerIndicators.HasAnonNameColor(selfIndex) == true) ..
+            ' lpNameColorGuess=' .. LibraPlatesResolveNativeNameColorProbe(selfIndex) ..
+            ' overwriteNativeNameColors=' .. tostring(targeting.GetSettings().overwriteNativeNameColors ~= false) ..
+            ' useNativeNames=' .. tostring(targeting.GetSettings().hideNativeNamesOnLoad ~= true)
+        );
+
         return;
     end
 

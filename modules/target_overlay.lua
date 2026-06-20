@@ -25,6 +25,7 @@ local chevronMaxEdgeSpacing = 280;
 local lastDebug = 'target overlay has not drawn yet';
 local lastNativeHideDebug = 'native hide gate has not run yet';
 local DrawImage;
+local bstMainJobId = 9;
 local smnMainJobId = 15;
 local drgMainJobId = 14;
 local pupMainJobId = 18;
@@ -35,6 +36,33 @@ local function CleanDisplayName(name)
     text = text:gsub('%c', '');
     text = text:gsub('^%s+', ''):gsub('%s+$', '');
     return text;
+end
+
+local function GetManualNameOutlineRadius(value)
+    local size = math.max(0, tonumber(value) or 0);
+
+    if (size <= 2) then
+        return 0;
+    end
+
+    return math.min(8, math.floor(size + 0.5));
+end
+
+local function BuildOutlineOffsets(radius)
+    local r = math.max(0, tonumber(radius) or 0);
+
+    if (r <= 0) then
+        return {};
+    end
+
+    local inner = math.max(1, math.floor((r * 0.55) + 0.5));
+
+    return {
+        { -r, 0 }, { r, 0 }, { 0, -r }, { 0, r },
+        { -r, -r }, { r, -r }, { -r, r }, { r, r },
+        { -inner, 0 }, { inner, 0 }, { 0, -inner }, { 0, inner },
+        { -inner, -inner }, { inner, -inner }, { -inner, inner }, { inner, inner },
+    };
 end
 
 local function GetAddonPath()
@@ -298,6 +326,7 @@ end
 local function ResolveEntityContext(index)
     local ent = GetEntity(index);
     local selfEntity = entities.GetSelf();
+    local ownBstPet = nil;
     local ownSmnPet = nil;
     local ownDrgPet = nil;
     local ownLuopan = nil;
@@ -306,7 +335,9 @@ local function ResolveEntityContext(index)
     local valid = true;
     local resolvedInfo = nil;
 
-    if (entities.GetPlayerMainJobId() == smnMainJobId) then
+    if (entities.GetPlayerMainJobId() == bstMainJobId) then
+        ownBstPet = entities.GetOwnBstPet();
+    elseif (entities.GetPlayerMainJobId() == smnMainJobId) then
         ownSmnPet = entities.GetOwnSmnPet();
     elseif (entities.GetPlayerMainJobId() == drgMainJobId) then
         ownDrgPet = entities.GetOwnDrgPet();
@@ -324,6 +355,13 @@ local function ResolveEntityContext(index)
     end
 
     if (
+        ownBstPet ~= nil and
+        tonumber(ownBstPet.index) == tonumber(index)
+    ) then
+        entityName = 'Pet (BST)';
+        targetType = 'pet';
+        valid = true;
+    elseif (
         ownSmnPet ~= nil and
         tonumber(ownSmnPet.index) == tonumber(index)
     ) then
@@ -364,7 +402,7 @@ local function ResolveEntityContext(index)
     else
         local rawEntityName = (ent ~= nil and (ent.Type == 2 or ent.Type == 3)) and 'Object' or 'NPC';
         local displayName = CleanDisplayName(ent ~= nil and ent.Name or '');
-        local resolvedEntityName, info = npcObjectInfo.ResolveKind(displayName, rawEntityName);
+        local resolvedEntityName, info = npcObjectInfo.ResolveKind(displayName, rawEntityName, { targetIndex = index });
 
         entityName = resolvedEntityName;
         targetType = (resolvedEntityName == 'Object') and 'object' or 'npc';
@@ -374,7 +412,9 @@ local function ResolveEntityContext(index)
     return {
         entityName = entityName,
         targetType = targetType,
-        layoutStateName = (ownSmnPet ~= nil and tonumber(ownSmnPet.index) == tonumber(index))
+        layoutStateName = (ownBstPet ~= nil and tonumber(ownBstPet.index) == tonumber(index))
+            and ((ownBstPet.durationMinutes ~= nil) and 'Jug Pet' or 'Charmed Pet')
+            or (ownSmnPet ~= nil and tonumber(ownSmnPet.index) == tonumber(index))
             and ((ownSmnPet.petType == 'spirit') and 'Spirit' or 'Avatar')
             or ((ownDrgPet ~= nil and tonumber(ownDrgPet.index) == tonumber(index)) and 'Wyvern')
             or ((entities.GetPlayerMainJobId() == pupMainJobId and entities.IsOwnPetIndex(index) == true) and 'Automaton')
@@ -417,7 +457,7 @@ local function DrawFallbackTargetName(drawList, index, context, stateName, cx, c
     end
 
     local rawEntityName = IsRawObjectContext(context) == true and 'Object' or tostring(context.entityName or 'NPC');
-    local _, knownInfo = npcObjectInfo.ResolveKind(displayName, rawEntityName);
+    local _, knownInfo = npcObjectInfo.ResolveKind(displayName, rawEntityName, { targetIndex = index });
 
     if (knownInfo ~= nil) then
         return;
@@ -456,7 +496,7 @@ local function IsDataBackedObjectTarget(index)
 
     local rawEntityName = (ent.Type == 2 or ent.Type == 3) and 'Object' or 'NPC';
     local displayName = tostring(ent.Name):gsub('\170', '');
-    local resolvedEntityName, info = npcObjectInfo.ResolveKind(displayName, rawEntityName);
+    local resolvedEntityName, info = npcObjectInfo.ResolveKind(displayName, rawEntityName, { targetIndex = index });
 
     return resolvedEntityName == 'Object' and info ~= nil;
 end
@@ -547,7 +587,7 @@ local function DrawObjectTargetInfo(drawList, index)
     end
 
     local displayName = tostring(ent.Name):gsub('\170', '');
-    local info = npcObjectInfo.Find(displayName, 'Object');
+    local info = npcObjectInfo.Find(displayName, 'Object', { targetIndex = index });
 
     if (info == nil) then
         return;
@@ -560,16 +600,49 @@ local function DrawObjectTargetInfo(drawList, index)
     end
 
     local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local nameSettings = state.GetWidgetSettings('Object', 'Idle', 'Name', nameDefaults);
     local typeSettings = state.GetWidgetSettings('Object', 'Idle', 'Type line', typeLineDefaults);
     local iconSettings = state.GetWidgetSettings('Object', 'Idle', 'Icon', npcObjectIconDefaults);
+    local nameText = displayName;
     local typeText = tostring(info.type or '');
     local iconTextureId = npcObjectInfo.GetTextureId(displayName, 'Object');
+    local fallbackScale = 0.38;
     local iconSize = math.max(10, math.min(48, tonumber(iconSettings.iconSize) or npcObjectIconDefaults.iconSize or 22));
+    local nameTextureId = nil;
+    local nameOutlineTextureId = nil;
+    local nameOutlineRadius = 0;
+    local nameW = 0;
+    local nameH = 0;
     local textTextureId = nil;
     local textW = 0;
     local textH = 0;
 
-    if (typeText ~= '') then
+    if (nameSettings.enabled == true and nameText ~= '') then
+        nameOutlineRadius = GetManualNameOutlineRadius(nameSettings.outlineSize);
+        nameTextureId, nameW, nameH = gdiTextTexture.GetTexture(nameText, {
+            fontFamily = fonts.GetRole(globalSettings, false),
+            fontFlags = fonts.GetRoleFlags(globalSettings, false),
+            fontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+            color = nameSettings.color or nameDefaults.color,
+            outlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0 and nameOutlineRadius <= 0,
+            outlineColor = nameSettings.outlineColor or nameDefaults.outlineColor,
+            outlineSize = tonumber(nameSettings.outlineSize) or nameDefaults.outlineSize,
+        });
+
+        if (nameOutlineRadius > 0) then
+            nameOutlineTextureId = select(1, gdiTextTexture.GetTexture(nameText, {
+                fontFamily = fonts.GetRole(globalSettings, false),
+                fontFlags = fonts.GetRoleFlags(globalSettings, false),
+                fontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+                color = nameSettings.outlineColor or nameDefaults.outlineColor,
+                outlineEnabled = false,
+                outlineColor = nameSettings.outlineColor or nameDefaults.outlineColor,
+                outlineSize = 0,
+            }));
+        end
+    end
+
+    if (typeSettings.enabled == true and typeText ~= '') then
         textTextureId, textW, textH = gdiTextTexture.GetTexture(typeText, {
             fontFamily = fonts.GetRole(globalSettings, typeSettings.useSmallFont == true),
             fontFlags = fonts.GetRoleFlags(globalSettings, typeSettings.useSmallFont == true),
@@ -582,27 +655,50 @@ local function DrawObjectTargetInfo(drawList, index)
     end
 
     local showIcon = iconSettings.enabled == true and iconTextureId ~= nil;
+    local showName = nameTextureId ~= nil and nameW > 0 and nameH > 0 and nameText ~= '';
+    local showType = textTextureId ~= nil and textW > 0 and textH > 0 and typeText ~= '';
 
-    if (showIcon ~= true and (textTextureId == nil or typeText == '')) then
+    if (showIcon ~= true and showName ~= true and showType ~= true) then
         return;
     end
 
     local gap = 5;
     local totalW = 0;
     local rowH = 0;
+    local textBlockW = 0;
+    local textBlockH = 0;
+    local scaledNameW = nameW * fallbackScale;
+    local scaledNameH = nameH * fallbackScale;
+    local scaledNameOutlineRadius = nameOutlineRadius * fallbackScale;
+    local scaledTextW = textW * fallbackScale;
+    local scaledTextH = textH * fallbackScale;
 
     if (showIcon == true) then
         totalW = totalW + iconSize;
         rowH = math.max(rowH, iconSize);
     end
 
-    if (textTextureId ~= nil and textW > 0 and textH > 0 and typeText ~= '') then
+    if (showName == true) then
+        textBlockW = math.max(textBlockW, scaledNameW + (scaledNameOutlineRadius * 2));
+        textBlockH = textBlockH + scaledNameH + (scaledNameOutlineRadius * 2);
+    end
+
+    if (showType == true) then
+        if (textBlockH > 0) then
+            textBlockH = textBlockH + 2;
+        end
+
+        textBlockW = math.max(textBlockW, scaledTextW);
+        textBlockH = textBlockH + scaledTextH;
+    end
+
+    if (textBlockW > 0 and textBlockH > 0) then
         if (totalW > 0) then
             totalW = totalW + gap;
         end
 
-        totalW = totalW + textW;
-        rowH = math.max(rowH, textH);
+        totalW = totalW + textBlockW;
+        rowH = math.max(rowH, textBlockH);
     end
 
     local x = pos.x - (totalW * 0.5);
@@ -613,8 +709,32 @@ local function DrawObjectTargetInfo(drawList, index)
         x = x + iconSize + gap;
     end
 
-    if (textTextureId ~= nil and textW > 0 and textH > 0 and typeText ~= '') then
-        DrawImage(drawList, textTextureId, x, y + ((rowH - textH) * 0.5), textW, textH, 0xFFFFFFFF);
+    local textY = y + ((rowH - textBlockH) * 0.5);
+
+    if (showName == true) then
+        local nameX = x + ((textBlockW - scaledNameW) * 0.5);
+        local nameY = textY + scaledNameOutlineRadius;
+
+        if (nameOutlineTextureId ~= nil and nameOutlineRadius > 0) then
+            for _, offset in ipairs(BuildOutlineOffsets(nameOutlineRadius)) do
+                DrawImage(
+                    drawList,
+                    nameOutlineTextureId,
+                    nameX + (offset[1] * fallbackScale),
+                    nameY + (offset[2] * fallbackScale),
+                    scaledNameW,
+                    scaledNameH,
+                    0xFFFFFFFF
+                );
+            end
+        end
+
+        DrawImage(drawList, nameTextureId, nameX, nameY, scaledNameW, scaledNameH, 0xFFFFFFFF);
+        textY = textY + scaledNameH + (scaledNameOutlineRadius * 2) + 2;
+    end
+
+    if (showType == true) then
+        DrawImage(drawList, textTextureId, x + ((textBlockW - scaledTextW) * 0.5), textY, scaledTextW, scaledTextH, 0xFFFFFFFF);
     end
 end
 

@@ -106,6 +106,7 @@ local anchorBone = 2;
 local verticalOffset = 0.16;
 local nameVerticalOffset = 0.54;
 local queuedPlates = {};
+local queuedStaticPlates = {};
 local queuedPlateSet = {};
 local selfClickRect = nil;
 local selfClickRects = nil;
@@ -1585,6 +1586,113 @@ local function DrawScreenTextureWithDepth(device, textureId, wx, wy, wz, offsetX
     return ok == true;
 end
 
+local function DrawFixedScreenTexture(device, textureId, centerX, centerY, width, height)
+    textureId = tonumber(textureId);
+
+    if (textureId == nil or textureId == 0) then
+        return false;
+    end
+
+    local drawW = math.max(1, tonumber(width) or 1);
+    local drawH = math.max(1, tonumber(height) or 1);
+    local left = (tonumber(centerX) or 0) - (drawW * 0.5);
+    local top = (tonumber(centerY) or 0) - (drawH * 0.5);
+    local right = left + drawW;
+    local bottom = top + drawH;
+    local texture = ffi.cast('IDirect3DBaseTexture8*', ffi.cast('uintptr_t', textureId));
+
+    local _, saveLight = device:GetRenderState(D3DRS_LIGHTING);
+    local _, saveZ = device:GetRenderState(D3DRS_ZENABLE);
+    local _, saveZWrite = device:GetRenderState(D3DRS_ZWRITEENABLE);
+    local _, saveZFunc = device:GetRenderState(D3DRS_ZFUNC);
+    local _, saveZBias = device:GetRenderState(D3DRS_ZBIAS);
+    local _, saveBlend = device:GetRenderState(D3DRS_ALPHABLENDENABLE);
+    local _, saveSrc = device:GetRenderState(D3DRS_SRCBLEND);
+    local _, saveDst = device:GetRenderState(D3DRS_DESTBLEND);
+    local _, saveCull = device:GetRenderState(D3DRS_CULLMODE);
+    local _, saveAlphaTest = device:GetRenderState(D3DRS_ALPHATESTENABLE);
+    local _, saveAlphaRef = device:GetRenderState(D3DRS_ALPHAREF);
+    local _, saveAlphaFunc = device:GetRenderState(D3DRS_ALPHAFUNC);
+    local _, saveFvf = device:GetVertexShader();
+    local _, saveTex = device:GetTexture(0);
+    local _, savePixelShader = device:GetPixelShader();
+    local _, saveColorOp = device:GetTextureStageState(0, D3DTSS_COLOROP);
+    local _, saveColorArg1 = device:GetTextureStageState(0, D3DTSS_COLORARG1);
+    local _, saveColorArg2 = device:GetTextureStageState(0, D3DTSS_COLORARG2);
+    local _, saveAlphaOp = device:GetTextureStageState(0, D3DTSS_ALPHAOP);
+    local _, saveAlphaArg1 = device:GetTextureStageState(0, D3DTSS_ALPHAARG1);
+    local _, saveMagFilter = device:GetTextureStageState(0, D3DTSS_MAGFILTER);
+    local _, saveMinFilter = device:GetTextureStageState(0, D3DTSS_MINFILTER);
+    local _, saveAddressU = device:GetTextureStageState(0, D3DTSS_ADDRESSU);
+    local _, saveAddressV = device:GetTextureStageState(0, D3DTSS_ADDRESSV);
+
+    device:SetTexture(0, texture);
+    device:SetVertexShader(D3DFVF_XYZRHW_DIFFUSE_TEX1);
+    device:SetPixelShader(0);
+    device:SetRenderState(D3DRS_LIGHTING, 0);
+    device:SetRenderState(D3DRS_CULLMODE, 1);
+    device:SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
+    device:SetRenderState(D3DRS_SRCBLEND, 5);
+    device:SetRenderState(D3DRS_DESTBLEND, 6);
+    device:SetRenderState(D3DRS_ZENABLE, 0);
+    device:SetRenderState(D3DRS_ZWRITEENABLE, 0);
+    device:SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
+    device:SetRenderState(D3DRS_ZBIAS, 0);
+    device:SetRenderState(D3DRS_ALPHATESTENABLE, 1);
+    device:SetRenderState(D3DRS_ALPHAREF, 0x40);
+    device:SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);
+    device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+    device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+    device:SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+    device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+    device:SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+    device:SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+    device:SetTextureStageState(0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+    device:SetTextureStageState(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+    device:SetTextureStageState(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+
+    local color = 0xFFFFFFFF;
+    local vertices = ffi.new('lp_world_marker_screen_vertex_t[6]', {
+        { left,  top,    0, 1, color, 0, 0 },
+        { right, top,    0, 1, color, 1, 0 },
+        { right, bottom, 0, 1, color, 1, 1 },
+        { left,  top,    0, 1, color, 0, 0 },
+        { right, bottom, 0, 1, color, 1, 1 },
+        { left,  bottom, 0, 1, color, 0, 1 },
+    });
+
+    local ok = pcall(function()
+        device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, 2, vertices, SCREEN_VERTEX_SIZE);
+    end);
+
+    device:SetTexture(0, saveTex);
+    device:SetRenderState(D3DRS_LIGHTING, saveLight);
+    device:SetRenderState(D3DRS_ZENABLE, saveZ);
+    device:SetRenderState(D3DRS_ZWRITEENABLE, saveZWrite);
+    device:SetRenderState(D3DRS_ZFUNC, saveZFunc);
+    device:SetRenderState(D3DRS_ZBIAS, saveZBias);
+    device:SetRenderState(D3DRS_ALPHABLENDENABLE, saveBlend);
+    device:SetRenderState(D3DRS_SRCBLEND, saveSrc);
+    device:SetRenderState(D3DRS_DESTBLEND, saveDst);
+    device:SetRenderState(D3DRS_CULLMODE, saveCull);
+    device:SetRenderState(D3DRS_ALPHATESTENABLE, saveAlphaTest);
+    device:SetRenderState(D3DRS_ALPHAREF, saveAlphaRef);
+    device:SetRenderState(D3DRS_ALPHAFUNC, saveAlphaFunc);
+    device:SetVertexShader(saveFvf);
+    if (savePixelShader ~= nil) then device:SetPixelShader(savePixelShader); end
+    device:SetTextureStageState(0, D3DTSS_COLOROP, saveColorOp);
+    device:SetTextureStageState(0, D3DTSS_COLORARG1, saveColorArg1);
+    device:SetTextureStageState(0, D3DTSS_COLORARG2, saveColorArg2);
+    device:SetTextureStageState(0, D3DTSS_ALPHAOP, saveAlphaOp);
+    device:SetTextureStageState(0, D3DTSS_ALPHAARG1, saveAlphaArg1);
+    device:SetTextureStageState(0, D3DTSS_MAGFILTER, saveMagFilter);
+    device:SetTextureStageState(0, D3DTSS_MINFILTER, saveMinFilter);
+    device:SetTextureStageState(0, D3DTSS_ADDRESSU, saveAddressU);
+    device:SetTextureStageState(0, D3DTSS_ADDRESSV, saveAddressV);
+
+    return ok == true;
+end
+
 local function DrawCanvasIconWithState(device, wx, wy, wz, style)
     if (style == nil or style.canvasIcons == nil) then
         return;
@@ -1863,7 +1971,7 @@ end
 local function GetAnchor(actorPointer, getBone, style)
     local bone = NormalizeAnchorBone(style ~= nil and style.anchorBone or anchorBone);
 
-    if (anchorMode == 'exact') then
+    if (anchorMode == 'exact' or (style ~= nil and style.useExactNameplateAnchor == true)) then
         local ok, x, y, z = pcall(function ()
             return GetExactNameplateAnchor(actorPointer, bone);
         end);
@@ -1951,6 +2059,75 @@ local function GetBoneBounds(actorPointer)
         baseY = baseY,
         baseZ = baseZ,
     };
+end
+
+local function NearlyEqual(value, target, tolerance)
+    value = tonumber(value);
+    target = tonumber(target);
+    tolerance = tonumber(tolerance) or 0.05;
+
+    if (value == nil or target == nil) then
+        return false;
+    end
+
+    return math.abs(value - target) <= tolerance;
+end
+
+local function GetPcBodyFamilyFromBounds(bounds)
+    if (bounds == nil) then
+        return nil;
+    end
+
+    local bones = tonumber(bounds.count);
+    local zSpan = tonumber(bounds.spanZ);
+    local ySpan = tonumber(bounds.spanY);
+
+    if (bones == 93 and NearlyEqual(zSpan, 2.10, 0.06) and NearlyEqual(ySpan, 1.90, 0.08)) then
+        return 'Tarutaru';
+    elseif (bones == 108 and NearlyEqual(zSpan, 2.00, 0.08) and NearlyEqual(ySpan, 2.50, 0.08)) then
+        return 'Mithra';
+    elseif ((bones == 97 or bones == 94 or bones == 93) and zSpan >= 2.10 and zSpan <= 2.70 and NearlyEqual(ySpan, 2.50, 0.08)) then
+        return 'Hume';
+    elseif (bones == 99 and (NearlyEqual(zSpan, 3.40, 0.10) or NearlyEqual(zSpan, 2.84, 0.10)) and NearlyEqual(ySpan, 2.50, 0.08)) then
+        return 'Elvaan';
+    elseif (bones == 107 and NearlyEqual(zSpan, 3.04, 0.10) and NearlyEqual(ySpan, 2.65, 0.08)) then
+        return 'Galka';
+    end
+
+    return nil;
+end
+
+local function GetPcBodyPlateOffset(actorPointer)
+    local bounds = GetBoneBounds(actorPointer);
+    local family = GetPcBodyFamilyFromBounds(bounds);
+
+    if (family == nil) then
+        return 0;
+    end
+
+    local settings = targeting.GetSettings();
+    local adjustments = settings ~= nil and settings.pcRacePlateAdjustments or nil;
+
+    if (type(adjustments) ~= 'table' or adjustments.enabled == false) then
+        return 0;
+    end
+
+    local key = string.lower(family);
+    local race = type(adjustments[key]) == 'table' and adjustments[key] or nil;
+
+    if (race == nil) then
+        return 0;
+    end
+
+    local baselineY = {
+        tarutaru = 82,
+        mithra = 77,
+        hume = 60,
+        elvaan = 55,
+        galka = 67,
+    };
+
+    return ((baselineY[key] or 0) + (tonumber(race.y) or 0)) * 0.01;
 end
 
 local function ReadFloatList(pointer, offsets)
@@ -2413,9 +2590,24 @@ function worldMarkerProbe.QueuePlate(plate)
     lastQueuedCount = #queuedPlates;
 end
 
+function worldMarkerProbe.QueueStaticPlate(plate)
+    if (enabled ~= true or plate == nil or plate.textureId == nil) then
+        return;
+    end
+
+    queuedStaticPlates[#queuedStaticPlates + 1] = {
+        textureId = plate.textureId,
+        x = tonumber(plate.x) or 0,
+        y = tonumber(plate.y) or 0,
+        width = tonumber(plate.width) or 1,
+        height = tonumber(plate.height) or 1,
+    };
+end
+
 function worldMarkerProbe.ResetPass()
     pass = 0;
     queuedPlates = {};
+    queuedStaticPlates = {};
     queuedPlateSet = {};
 end
 
@@ -2592,19 +2784,33 @@ local function ApplyScreenPlateStacking(drawablePlates)
     local horizontalAllowance = math.max(0, math.floor((tonumber(settings.plateStackHorizontalOverlap) or 2) + 0.5));
     local verticalAllowance = math.max(0, math.floor((tonumber(settings.plateStackVerticalOverlap) or horizontalAllowance) + 0.5));
     local gap = math.max(0, math.floor((tonumber(settings.plateStackGap) or 4) + 0.5));
+    local playerEngaged = IsPlayerEngaged() == true;
     local stackEntries = {};
 
     for order, plate in ipairs(drawablePlates or {}) do
         local stackType = GetStackType(plate);
         local entry = entriesByIndex[tonumber(plate.targetIndex) or 0];
 
-        if (stackType ~= nil and entry ~= nil and entry.union ~= nil and stackTypes[stackType] == true) then
+        if (
+            stackType ~= nil and
+            entry ~= nil and
+            entry.union ~= nil and
+            stackTypes[stackType] == true and
+            (stackType ~= 'pc' or playerEngaged == true)
+        ) then
             local union = entry.union;
             local x1 = tonumber(union.x1);
             local y1 = tonumber(union.y1);
             local x2 = tonumber(union.x2);
             local y2 = tonumber(union.y2);
-            local isFixed = settings.plateStackKeepTacticalFixed ~= false and IsTacticalStackPlate(plate, targetIndex, subTargetIndex);
+            local stateName = tostring(plate.stateName or 'Idle');
+            local isCombatIdleEnemy =
+                stackType == 'enemy' and
+                playerEngaged == true and
+                stateName == 'Idle';
+            local isFixed =
+                isCombatIdleEnemy == true or
+                (settings.plateStackKeepTacticalFixed ~= false and IsTacticalStackPlate(plate, targetIndex, subTargetIndex));
             local stackX1 = x1;
             local stackX2 = x2;
 
@@ -2697,6 +2903,10 @@ local function ApplyScreenPlateStacking(drawablePlates)
             end
         end
 
+        if (entry.stackType == 'enemy' and entry.drawY < 0) then
+            entry.drawY = 0;
+        end
+
         local offsetX = entry.drawX - entry.baseX;
         local offsetY = entry.drawY - entry.baseY;
         entry.plate._stackScreenOffsetX = offsetX;
@@ -2755,6 +2965,9 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         local plateWorldOffsetY =
             (tonumber(style.plateWorldOffsetY) or tonumber(style.nameWorldOffsetY) or 0.78) +
             ((plateScale - 1.0) * (tonumber(style.plateDistanceScaleOffsetY) or 0));
+        if (style.pcBodyPlateOffsetEnabled == true) then
+            plateWorldOffsetY = plateWorldOffsetY + GetPcBodyPlateOffset(actorPointer);
+        end
         local plateWorldOffsetZ = tonumber(style.plateWorldOffsetZ) or 0;
         local plateX = wx + plateWorldOffsetX;
         local plateY = wz + verticalOffset + plateWorldOffsetY - nameVerticalOffset;
@@ -2852,7 +3065,7 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
                 plateZ,
                 plateWorldWidth,
                 plateWorldHeight,
-                false,
+                true,
                 stackScreenOffsetX,
                 stackScreenOffsetY
             );
@@ -2911,7 +3124,10 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
     if (showText == true) then
         local nameY = wz + verticalOffset + (tonumber(style.nameWorldOffsetY) or 0.78) - nameVerticalOffset;
         DrawCanvasIconWithState(device, wx, nameY, wy, style);
-        DrawNameWithState(device, plate.name, plate.distance, wx, nameY, wy, style);
+        local targetingSettings = targeting.GetSettings();
+        if (targetingSettings.hideNativeNamesOnLoad == true or plate.forceName == true) then
+            DrawNameWithState(device, plate.name, plate.distance, wx, nameY, wy, style);
+        end
         if (plate.isSelf == true and plate.jobText ~= nil and tostring(plate.jobText or '') ~= '') then
             local jobY = wz + verticalOffset + (tonumber(style.jobWorldOffsetY) or 0.54) - nameVerticalOffset;
             DrawJobWithState(device, plate, wx, jobY, wy, style);
@@ -2927,6 +3143,7 @@ local function GetPlateQueuePriority(plate, targetIndex, subTargetIndex)
     local index = tonumber(plate ~= nil and plate.targetIndex) or 0;
     local marker = plate ~= nil and plate.worldMarker ~= nil and plate.worldMarker.targetMarker or nil;
     local targetType = tostring(plate ~= nil and plate.clickTargetType or ''):lower();
+    local playerEngaged = IsPlayerEngaged() == true;
 
     if (plate ~= nil and plate.isSelf == true) then
         return 0;
@@ -2940,8 +3157,8 @@ local function GetPlateQueuePriority(plate, targetIndex, subTargetIndex)
         return 2;
     end
 
-    if (targetType == 'pc') then return 10; end
-    if (targetType == 'enemy') then return 20; end
+    if (targetType == 'enemy') then return playerEngaged == true and 10 or 20; end
+    if (targetType == 'pc') then return playerEngaged == true and 20 or 10; end
     if (targetType == 'trust') then return 30; end
     if (targetType == 'pet') then return 40; end
     if (targetType == 'npc') then return 50; end
@@ -2992,7 +3209,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         return;
     end
 
-    if (#queuedPlates == 0) then
+    if (#queuedPlates == 0 and #queuedStaticPlates == 0) then
         return;
     end
 
@@ -3000,6 +3217,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         if (pass == 2) then
             lastDrawCount = 0;
             queuedPlates = {};
+            queuedStaticPlates = {};
             queuedPlateSet = {};
         end
 
@@ -3057,7 +3275,20 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         end
     end
 
+    for _, plate in ipairs(queuedStaticPlates) do
+        local ok, err = pcall(function()
+            DrawFixedScreenTexture(device, plate.textureId, plate.x, plate.y, plate.width, plate.height);
+        end);
+
+        if (ok == true) then
+            lastDrawCount = lastDrawCount + 1;
+        else
+            lastError = tostring(err);
+        end
+    end
+
     queuedPlates = {};
+    queuedStaticPlates = {};
     queuedPlateSet = {};
 end
 

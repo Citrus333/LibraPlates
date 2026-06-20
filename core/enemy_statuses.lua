@@ -370,8 +370,82 @@ local function ClearStatus(serverId, statusId)
     tracked[serverId][statusId] = nil;
 end
 
+local function SafeCall(fallback, fn)
+    local ok, result = pcall(fn);
+
+    if (ok ~= true or result == nil) then
+        return fallback;
+    end
+
+    return result;
+end
+
+local function GetSpellResourceById(spellId)
+    spellId = tonumber(spellId) or 0;
+
+    if (spellId <= 0) then
+        return nil;
+    end
+
+    local resourceManager = AshitaCore:GetResourceManager();
+
+    if (resourceManager == nil or resourceManager.GetSpellById == nil) then
+        return nil;
+    end
+
+    return SafeCall(nil, function()
+        return resourceManager:GetSpellById(spellId);
+    end);
+end
+
+local function GetSpellStatusByResource(spellId)
+    local spell = GetSpellResourceById(spellId);
+
+    if (spell == nil) then
+        return nil;
+    end
+
+    for _, key in ipairs({ 'Status', 'status', 'StatusId', 'statusId', 'status_id' }) do
+        local value = tonumber(SafeCall(nil, function()
+            return spell[key];
+        end));
+
+        if (value ~= nil and value > 0) then
+            return value;
+        end
+    end
+
+    return nil;
+end
+
+local function GetSpellDurationByResource(spellId)
+    local spell = GetSpellResourceById(spellId);
+
+    if (spell == nil) then
+        return nil;
+    end
+
+    for _, key in ipairs({ 'Duration', 'duration', 'BaseDuration', 'base_duration' }) do
+        local value = tonumber(SafeCall(nil, function()
+            return spell[key];
+        end));
+
+        if (value ~= nil and value > 0) then
+            return value;
+        end
+    end
+
+    return nil;
+end
+
 GetDuration = function(spellId)
     spellId = tonumber(spellId) or 0;
+
+    local resourceDuration = GetSpellDurationByResource(spellId);
+
+    if (resourceDuration ~= nil and resourceDuration > 0) then
+        return resourceDuration;
+    end
 
     if (spellId == 58 or spellId == 80) then return 120; end
     if (spellId == 56 or spellId == 79) then return 180; end
@@ -449,7 +523,7 @@ local function HandleActionPacket(packet)
                 local statusId = tonumber(action.Param);
 
                 if ((statusId == nil or statusId <= 0) and packet.Type == 4) then
-                    statusId = statusEffects.GetDebuffIdBySpellId(spellId);
+                    statusId = GetSpellStatusByResource(spellId) or statusEffects.GetDebuffIdBySpellId(spellId);
                 end
 
                 TrackStatus(target.Id, statusId, GetDuration(spellId));

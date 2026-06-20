@@ -459,7 +459,7 @@ local function AddJobToPlate(plateData, jobText, jobSettings, globalSettings)
     plateData.jobFontFlags = fonts.GetRoleFlags(globalSettings, true);
     plateData.jobFontSize = textScale.ToTextureFontSize(jobSettings.textSize, jobDefaults.textSize);
     plateData.jobColor = jobSettings.color or jobDefaults.color;
-    plateData.jobOutlineEnabled = jobSettings.outlineEnabled == true;
+    plateData.jobOutlineEnabled = (tonumber(jobSettings.outlineSize) or 0) > 0;
     plateData.jobOutlineColor = jobSettings.outlineColor or jobDefaults.outlineColor;
     plateData.jobOutlineSize = tonumber(jobSettings.outlineSize) or jobDefaults.outlineSize;
     plateData.jobOffsetX = tonumber(jobSettings.offsetX) or 0;
@@ -1054,7 +1054,8 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
     if (castBarSettings.showSpellIcon == true) then
         spellIconTextureId = statusIconTextures.GetTextureId(castData.spellStatusId)
             or spellIconTextures.GetGeoTextureId(castData.spellId)
-            or spellIconTextures.GetTextureId(spellIconId);
+            or spellIconTextures.GetTextureId(spellIconId)
+            or spellIconTextures.GetTextureId(castData.spellId);
     end
 
     return {
@@ -1428,6 +1429,7 @@ local function AddStatusIconsToPlate(plateData, statusIds, iconSettings, isEngag
                 timerBackground = iconSettings.timerBackground == true,
                 timerBackgroundPaddingX = tonumber(iconSettings.timerBackgroundPaddingX) or 2,
                 timerBackgroundPaddingY = tonumber(iconSettings.timerBackgroundPaddingY) or 1,
+                timerBackgroundColor = iconSettings.timerBackgroundColor,
                 timerBackgroundBorderSize = tonumber(iconSettings.timerBackgroundBorderSize) or 0,
                 timerBackgroundBorderColor = iconSettings.timerBackgroundBorderColor,
                 timerCornerRadius = tonumber(iconSettings.timerCornerRadius) or 0,
@@ -1442,10 +1444,18 @@ local function AddStatusIconsToPlate(plateData, statusIds, iconSettings, isEngag
                 timerWarningFontStage1Color = iconSettings.timerWarningFontStage1Color,
                 timerWarningFontStage2Color = iconSettings.timerWarningFontStage2Color,
                 timerWarningFontStage3Color = iconSettings.timerWarningFontStage3Color,
+                timerWarningOutlineColorEnabled = iconSettings.timerWarningOutlineColorEnabled == true,
+                timerWarningOutlineStage1Color = iconSettings.timerWarningOutlineStage1Color,
+                timerWarningOutlineStage2Color = iconSettings.timerWarningOutlineStage2Color,
+                timerWarningOutlineStage3Color = iconSettings.timerWarningOutlineStage3Color,
                 timerWarningBoxColorEnabled = iconSettings.timerWarningBoxColorEnabled == true,
                 timerWarningBoxStage1Color = iconSettings.timerWarningBoxStage1Color,
                 timerWarningBoxStage2Color = iconSettings.timerWarningBoxStage2Color,
                 timerWarningBoxStage3Color = iconSettings.timerWarningBoxStage3Color,
+                timerWarningBoxBorderEnabled = iconSettings.timerWarningBoxBorderEnabled == true,
+                timerWarningBoxBorderStage1Color = iconSettings.timerWarningBoxBorderStage1Color,
+                timerWarningBoxBorderStage2Color = iconSettings.timerWarningBoxBorderStage2Color,
+                timerWarningBoxBorderStage3Color = iconSettings.timerWarningBoxBorderStage3Color,
                 timerWarningBackgroundEnabled = iconSettings.timerWarningBackgroundEnabled == true,
                 timerWarningIconPadding = tonumber(iconSettings.iconWarningPadding) or 6,
                 timerWarningIconBackgroundStage1Color = iconSettings.timerWarningIconBackgroundStage1Color,
@@ -1559,7 +1569,7 @@ local function BuildEnemyQueueContext(enemy)
     local hpPercent = ClampPercent(enemy.hpPercent, 100);
     local hpColor = hpBarSettings.color or { 0.90, 0.20, 0.20, 1.0 };
     local isTacticalTarget = stateName ~= 'Idle';
-    local showDistanceBadge = stateName == 'Target' or stateName == 'Subtarget';
+    local showDistanceBadge = distanceSettings ~= nil and distanceSettings.enabled == true;
     local isHovered = worldMarkerProbe.IsPlateHovered(enemy.index, 'enemy') == true;
     local importantAlwaysOnTop =
         isTacticalTarget == true or
@@ -1600,7 +1610,7 @@ local function BuildEnemyQueueContext(enemy)
         debuffRows[#debuffRows + 1] = row;
     end
 
-    if (showDistanceBadge == true and distanceSettings ~= nil and distanceSettings.enabled == true and enemy.distance ~= nil) then
+    if (showDistanceBadge == true and enemy.distance ~= nil) then
         distanceText = tostring(distanceSettings.prefix or '') .. string.format('%.1f', tonumber(enemy.distance) or 0);
     end
 
@@ -1699,7 +1709,10 @@ end
 
 local function BuildEnemyPlateData(context)
     local enemy = context.enemy;
-    local nameAoeActive = context.aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(enemy.index, 'enemy') == true;
+    local nameAoeActive =
+        context.claimCategory ~= 'other' and
+        context.aoeRangeSettings.enabled == true and
+        aoeNameHighlight.IsHighlighted(enemy.index, 'enemy') == true;
     local nameTextSize = nameAoeActive == true and math.max(tonumber(context.nameSettings.textSize) or nameDefaults.textSize, tonumber(context.aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or context.nameSettings.textSize;
     local plateData = {
         hp = context.hpPercent,
@@ -1721,6 +1734,7 @@ local function BuildEnemyPlateData(context)
         },
         name = (context.nameSettings.enabled == true) and ShortenName(context.displayName, context.nameSettings.shortenName) or '',
         aoeNameActive = nameAoeActive == true,
+        forceName = nameAoeActive == true,
         nameFontFamily = fonts.GetRole(context.globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(context.globalSettings, false),
         nameFontSize = textScale.ToNameTextureFontSize(nameTextSize, nameDefaults.textSize),
@@ -1794,11 +1808,14 @@ local function QueueEnemy(enemy)
     local context = BuildEnemyQueueContext(enemy);
 
     local cacheSkipReason = nil;
+    local hasDynamicDistance = context.distanceText ~= nil and context.distanceText ~= '';
     local cacheEligible = context.stateName == 'Idle'
         and context.castData == nil
         and #context.buffRows == 0
         and #context.debuffRows == 0
-        and context.isHovered ~= true;
+        and context.isHovered ~= true
+        and aoeNameHighlight.HasLiveAoe() ~= true
+        and hasDynamicDistance ~= true;
     local cacheKey = nil;
     local signature = nil;
 
@@ -1812,17 +1829,6 @@ local function QueueEnemy(enemy)
 
         if (QueueCachedEnemy(enemy, cached, context.stateName, context.importantAlwaysOnTop, context.hpPercent) == true) then
             perfMeter.Count('enemy.cache.hit', 1);
-            perfMeter.EndDetail(settingsTimer);
-            return;
-        end
-
-        if (
-            adaptivePerformance.ShouldThrottleBackground() == true and
-            cached ~= nil and
-            (os.clock() - (tonumber(cached.lastUsed) or 0)) < 1.00 and
-            QueueCachedEnemy(enemy, cached, context.stateName, context.importantAlwaysOnTop, context.hpPercent) == true
-        ) then
-            perfMeter.Count('enemy.cache.smooth', 1);
             perfMeter.EndDetail(settingsTimer);
             return;
         end
@@ -1848,6 +1854,10 @@ local function QueueEnemy(enemy)
             cacheSkipReason = 'debuffs';
         elseif (context.isHovered == true) then
             cacheSkipReason = 'hover';
+        elseif (aoeNameHighlight.HasLiveAoe() == true) then
+            cacheSkipReason = 'aoe';
+        elseif (hasDynamicDistance == true) then
+            cacheSkipReason = 'distance';
         else
             cacheSkipReason = 'other';
         end

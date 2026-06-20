@@ -59,6 +59,10 @@ function nativeUiPolicy.UseNativeNames()
     return GetTargetingSettings().hideNativeNamesOnLoad ~= true;
 end
 
+function nativeUiPolicy.ShouldOverwriteNativeNameColors()
+    return GetTargetingSettings().overwriteNativeNameColors ~= false;
+end
+
 function nativeUiPolicy.ShouldDrawLibraTargetingSystem()
     return nativeUiPolicy.UseNativeTargetingSystem() ~= true;
 end

@@ -5,48 +5,6 @@ local globalDefaults = require('config.global');
 
 local mounts = {};
 
-local mountNamesByKeyItemId = T{
-    [3072] = 'Chocobo',
-    [3073] = 'Raptor',
-    [3074] = 'Tiger',
-    [3075] = 'Crab',
-    [3076] = 'Red Crab',
-    [3077] = 'Bomb',
-    [3078] = 'Sheep',
-    [3079] = 'Morbol',
-    [3080] = 'Crawler',
-    [3081] = 'Fenrir',
-    [3082] = 'Beetle',
-    [3083] = 'Moogle',
-    [3084] = 'Magic Pot',
-    [3085] = 'Tulfaire',
-    [3086] = 'Warmachine',
-    [3087] = 'Xzomit',
-    [3088] = 'Hippogryph',
-    [3089] = 'Spectral Chair',
-    [3090] = 'Spheroid',
-    [3091] = 'Omega',
-    [3092] = 'Coeurl',
-    [3093] = 'Goobbue',
-    [3094] = 'Raaz',
-    [3095] = 'Levitus',
-    [3096] = 'Adamantoise',
-    [3097] = 'Dhalmel',
-    [3098] = 'Doll',
-    [3099] = 'Golden Bomb',
-    [3100] = 'Buffalo',
-    [3101] = 'Wivre',
-    [3102] = 'Red Raptor',
-    [3103] = 'Iron Giant',
-    [3104] = 'Byakko',
-    [3105] = 'Noble Chocobo',
-    [3106] = 'Ixion',
-    [3107] = 'Phuabo',
-    [3108] = 'Craklaw',
-    [3109] = 'Alicorn',
-    [3110] = 'Bubble Crab',
-};
-
 local cachedChoices = nil;
 local cachedOwnedChoices = nil;
 local cachedOwnedAt = 0;
@@ -103,6 +61,28 @@ local function ReadResourceMountNames()
     end
 
     return names;
+end
+
+local function ReadResourceMountName(id)
+    local resources = GetResourceManager();
+
+    if (resources == nil or resources.GetString == nil) then
+        return nil;
+    end
+
+    local ok, name = pcall(function()
+        return resources:GetString('mounts.names', id);
+    end);
+
+    if (ok ~= true) then
+        return nil;
+    end
+
+    local choices = T{};
+    local seen = {};
+    AddUnique(choices, seen, name);
+
+    return choices[1];
 end
 
 local function Trim(value)
@@ -272,7 +252,7 @@ local function ReadOwnedMountNames()
 
     if (type(packetOwnedMountIds) == 'table') then
         for _, mountId in ipairs(packetOwnedMountIds) do
-            AddUnique(names, seen, mountNamesByKeyItemId[3072 + mountId]);
+            AddUnique(names, seen, ReadResourceMountName(mountId));
         end
 
         if (#names > 0) then
@@ -294,7 +274,7 @@ local function ReadOwnedMountNames()
 
     for id = scanStartId, scanEndId do
         if (HasKeyItem(player, id) == true) then
-            AddUnique(names, seen, mountNamesByKeyItemId[id] or ReadResourceKeyItemName(id));
+            AddUnique(names, seen, ReadResourceKeyItemName(id));
         end
     end
 
@@ -311,10 +291,6 @@ function mounts.GetChoices()
 
     for _, name in ipairs(choices) do
         seen[name] = true;
-    end
-
-    for _, name in pairs(mountNamesByKeyItemId) do
-        AddUnique(choices, seen, name);
     end
 
     cachedChoices = choices;
@@ -458,7 +434,7 @@ local function ReadMountIdsFromPacketData(data, startOffset)
             if (bit.band(value, bit.lshift(1, bitIndex)) ~= 0) then
                 local mountId = (byteIndex * 8) + bitIndex;
 
-                if (mountNamesByKeyItemId[3072 + mountId] ~= nil) then
+                if (ReadResourceMountName(mountId) ~= nil) then
                     owned[#owned + 1] = mountId;
                 end
             end
@@ -516,7 +492,7 @@ function mounts.GetDebugStatusText(includeRaw)
         end);
 
         if (ok == true and (value == true or tonumber(value) == 1)) then
-            local name = mountNamesByKeyItemId[id] or ReadResourceKeyItemName(id);
+            local name = ReadResourceKeyItemName(id);
 
             if (name ~= nil) then
                 parts[#parts + 1] = tostring(id) .. '=' .. tostring(name);

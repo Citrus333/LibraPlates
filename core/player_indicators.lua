@@ -1,7 +1,22 @@
 local textureLoader = require('core.texture_loader');
+local state = require('core.state');
 
 local indicators = {};
 local textureCache = {};
+local SafeCall = nil;
+local GetParty = nil;
+local GetPartySlotByTargetIndex = nil;
+local anonNameColor = { 0x1A / 255, 0x4C / 255, 0x97 / 255, 1.0 };
+local campaignNameColor = { 0xFF / 255, 0x9A / 255, 0x45 / 255, 1.0 };
+
+local function CopyColor(color)
+    return {
+        color[1],
+        color[2],
+        color[3],
+        color[4],
+    };
+end
 
 local function Band(left, right)
     if (bit ~= nil and bit.band ~= nil) then
@@ -47,6 +62,44 @@ local function ReadRenderFlag(targetIndex, flagIndex)
     return tonumber(value) or 0;
 end
 
+local function GetServerId(targetIndex)
+    local entityManager = AshitaCore:GetMemoryManager():GetEntity();
+
+    if (entityManager == nil or targetIndex == nil) then
+        return nil;
+    end
+
+    local ok, value = pcall(function()
+        return entityManager:GetServerId(targetIndex);
+    end);
+
+    if (ok == true and tonumber(value) ~= nil and tonumber(value) > 0) then
+        return value;
+    end
+
+    local party, slot = GetPartySlotByTargetIndex(targetIndex);
+
+    if (party ~= nil and slot ~= nil) then
+        return SafeCall(nil, function()
+            return party:GetMemberServerId(slot);
+        end);
+    end
+
+    return nil;
+end
+
+local function GetSelfServerId()
+    local party = GetParty();
+
+    if (party == nil) then
+        return nil;
+    end
+
+    return SafeCall(nil, function()
+        return party:GetMemberServerId(0);
+    end);
+end
+
 local function LoadIcon(name)
     local key = tostring(name or ''):lower();
 
@@ -65,7 +118,7 @@ local function LoadIcon(name)
     return textureCache[key];
 end
 
-local function GetParty()
+GetParty = function()
     local ok, party = pcall(function()
         return AshitaCore:GetMemoryManager():GetParty();
     end);
@@ -77,7 +130,7 @@ local function GetParty()
     return nil;
 end
 
-local function SafeCall(fallback, fn)
+SafeCall = function(fallback, fn)
     local ok, result = pcall(fn);
 
     if (ok ~= true or result == nil) then
@@ -97,7 +150,7 @@ local function IsTruthy(value)
     return number ~= nil and number ~= 0;
 end
 
-local function GetPartySlotByTargetIndex(targetIndex)
+GetPartySlotByTargetIndex = function(targetIndex)
     local party = GetParty();
     local index = tonumber(targetIndex) or 0;
 
@@ -288,6 +341,42 @@ function indicators.GetNewAdventurerIconTextureId(targetIndex)
     end
 
     return LoadIcon('new_adventurer');
+end
+
+function indicators.HasAnonNameColor(targetIndex)
+    local serverId = tonumber(GetServerId(targetIndex)) or 0;
+
+    if (serverId == 0) then
+        return false;
+    end
+
+    local anonymousByServerId = state.GetAnonymousByServerId();
+
+    if (serverId == (tonumber(GetSelfServerId()) or 0)) then
+        return anonymousByServerId[tostring(serverId)] ~= true and anonymousByServerId[serverId] ~= true;
+    end
+
+    return anonymousByServerId[tostring(serverId)] == true or anonymousByServerId[serverId] == true;
+end
+
+function indicators.GetAnonNameColor()
+    return CopyColor(anonNameColor);
+end
+
+function indicators.GetCampaignNameColor()
+    return CopyColor(campaignNameColor);
+end
+
+function indicators.GetCampaignNameColorHex()
+    return 'FF9A45';
+end
+
+function indicators.GetAnonIconTextureId(targetIndex)
+    if (indicators.HasAnonNameColor(targetIndex) ~= true) then
+        return nil;
+    end
+
+    return LoadIcon('anon');
 end
 
 function indicators.IsGameMaster(targetIndex)

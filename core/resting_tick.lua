@@ -15,6 +15,7 @@ local logoutState = {
     endClock = nil,
     duration = 30,
     seenResting = false,
+    label = 'Logout',
 };
 
 local function Reset()
@@ -41,6 +42,7 @@ local function ClearLogout()
     logoutState.endClock = nil;
     logoutState.duration = 30;
     logoutState.seenResting = false;
+    logoutState.label = 'Logout';
 end
 
 local function ShouldPreserveLogoutTransition()
@@ -69,15 +71,17 @@ local function GetLogoutCountdown(settings)
 
     return {
         progress = (remaining / duration) * 100,
-        text = 'Logout ' .. tostring(math.ceil(remaining)) .. 's',
+        text = tostring(math.ceil(remaining)) .. 's',
+        label = tostring(logoutState.label or 'Logout'),
+        countdown = true,
     };
 end
 
-local function ResyncFromObservedMpTick(now, settings)
+local function ResyncFromObservedMpTick(now)
     local elapsed = now - (tickState.cycleStart or now);
     local expectedLength = math.max(1, tonumber(tickState.cycleLength) or 10);
     local overrun = math.max(0, elapsed - expectedLength);
-    local repeatLength = math.max(1, 10 + (tonumber(settings.repeatTickOffset) or 0) - overrun);
+    local repeatLength = math.max(1, 10 - overrun);
 
     tickState.active = true;
     tickState.cycleStart = now;
@@ -85,14 +89,12 @@ local function ResyncFromObservedMpTick(now, settings)
     tickState.displayLength = repeatLength;
 end
 
-local function StartRepeatCycleFromObservedTick(now, settings)
-    local repeatLength = math.max(1, 10 + (tonumber(settings.repeatTickOffset) or 0));
-
+local function StartRepeatCycleFromObservedTick(now)
     tickState.active = true;
     tickState.awaitingFirstTick = false;
     tickState.cycleStart = now;
-    tickState.cycleLength = repeatLength;
-    tickState.displayLength = repeatLength;
+    tickState.cycleLength = 10;
+    tickState.displayLength = 10;
 end
 
 function restingTick.Reset()
@@ -125,7 +127,12 @@ function restingTick.HandleTextIn(e)
         return;
     end
 
-    local seconds = string.match(message, 'Executing logout in (%d+) seconds');
+    local lowerMessage = string.lower(message);
+    local action, seconds = string.match(lowerMessage, 'executing (logout) in (%d+) seconds');
+
+    if (seconds == nil) then
+        action, seconds = string.match(lowerMessage, 'executing (shutdown) in (%d+) seconds');
+    end
 
     if (seconds ~= nil) then
         local duration = math.max(1, tonumber(seconds) or 30);
@@ -135,6 +142,7 @@ function restingTick.HandleTextIn(e)
         logoutState.endClock = logoutState.startClock + duration;
         logoutState.duration = duration;
         logoutState.seenResting = false;
+        logoutState.label = (tostring(action or 'logout') == 'shutdown') and 'Shutdown' or 'Logout';
         return;
     end
 
@@ -183,7 +191,7 @@ function restingTick.Get(status, hp, mp, maxMp, settings)
     local maxMpValue = tonumber(maxMp);
     local canDetectFullMp = maxMpValue ~= nil and maxMpValue > 0;
     local mpIsFull = canDetectFullMp == true and mpValue ~= nil and mpValue >= maxMpValue;
-    local mpTickThreshold = tonumber(settings.mpTickThreshold) or 12;
+    local mpTickThreshold = 12;
     local hpTickThreshold = tonumber(settings.hpTickThreshold) or mpTickThreshold;
     local mpGain = (mpValue ~= nil and tickState.lastMp ~= nil) and (mpValue - tickState.lastMp) or 0;
     local hpGain = (hpValue ~= nil and tickState.lastHp ~= nil) and (hpValue - tickState.lastHp) or 0;
@@ -196,9 +204,9 @@ function restingTick.Get(status, hp, mp, maxMp, settings)
         tickState.displayLength = 20;
         tickState.awaitingFirstTick = true;
     elseif (tickState.awaitingFirstTick == true and observedTick == true) then
-        StartRepeatCycleFromObservedTick(now, settings);
+        StartRepeatCycleFromObservedTick(now);
     elseif (tickState.awaitingFirstTick ~= true and mpGain > mpTickThreshold) then
-        ResyncFromObservedMpTick(now, settings);
+        ResyncFromObservedMpTick(now);
     end
 
     tickState.lastHp = hpValue;
@@ -224,7 +232,7 @@ function restingTick.Get(status, hp, mp, maxMp, settings)
         while (elapsed >= tickState.cycleLength) do
             elapsed = elapsed - tickState.cycleLength;
             tickState.cycleStart = now - elapsed;
-            tickState.cycleLength = math.max(1, 10 + (tonumber(settings.repeatTickOffset) or 0));
+            tickState.cycleLength = 10;
             tickState.displayLength = 10;
         end
     end

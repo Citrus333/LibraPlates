@@ -1,7 +1,9 @@
 local targetActionRange = {};
 local log = require('core.log');
+local petCommands = require('data.pet_commands');
 local resourceCache = {};
 local lastAction = nil;
+local recentAction = nil;
 local lastQueuedPacketSignature = nil;
 local lastQueuedPacketAt = 0;
 local actionCacheSeconds = nil;
@@ -14,6 +16,7 @@ local lastCommandQueuedSignature = nil;
 local debugPacketOutEnabled = false;
 local lastCastCommandSignature = nil;
 local lastCastCommandSeenAt = -1;
+local petCommandCategory = 18;
 
 local trackedCategories = {
     [2] = true,   -- Ability queue variants used by this client packet path
@@ -21,6 +24,7 @@ local trackedCategories = {
     [7] = true,  -- Weaponskill
     [9] = true,  -- Ability
     [16] = true, -- Ranged
+    [18] = true, -- Pet command
 };
 local debugEnabled = false;
 local actionPacketIds = {
@@ -52,6 +56,7 @@ local categoryNames = {
     [7] = 'weaponskill',
     [9] = 'ability',
     [16] = 'ranged',
+    [18] = 'petcommand',
 };
 
 local resourceMethodCandidates = {
@@ -236,30 +241,27 @@ local function FormatWordPairs(data, offsets)
     local parts = {};
 
     for _, offset in ipairs(offsets) do
-        if (offset == nil) then
-            goto continue;
+        if (offset ~= nil) then
+
+            local leCategory = ReadWordLocal(data, offset, true);
+            local leAction = ReadWordLocal(data, offset + 2, true);
+            local beCategory = ReadWordLocal(data, offset, false);
+            local beAction = ReadWordLocal(data, offset + 2, false);
+
+            if (
+                leCategory ~= nil or leAction ~= nil or
+                beCategory ~= nil or beAction ~= nil
+            ) then
+                parts[#parts + 1] = string.format(
+                    'off=%x le=%s/%s be=%s/%s',
+                    tonumber(offset) or 0,
+                    tostring(leCategory or '-'),
+                    tostring(leAction or '-'),
+                    tostring(beCategory or '-'),
+                    tostring(beAction or '-')
+                );
+            end
         end
-
-        local leCategory = ReadWordLocal(data, offset, true);
-        local leAction = ReadWordLocal(data, offset + 2, true);
-        local beCategory = ReadWordLocal(data, offset, false);
-        local beAction = ReadWordLocal(data, offset + 2, false);
-
-        if (
-            leCategory ~= nil or leAction ~= nil or
-            beCategory ~= nil or beAction ~= nil
-        ) then
-            parts[#parts + 1] = string.format(
-                'off=%x le=%s/%s be=%s/%s',
-                tonumber(offset) or 0,
-                tostring(leCategory or '-'),
-                tostring(leAction or '-'),
-                tostring(beCategory or '-'),
-                tostring(beAction or '-')
-            );
-        end
-
-        ::continue::
     end
 
     return table.concat(parts, ' | ');
@@ -375,6 +377,8 @@ local function ParseActionCommand(commandText)
         category = 3;
     elseif (command == 'ja' or command == 'jobability') then
         category = 2;
+    elseif (command == 'pet') then
+        category = petCommandCategory;
     elseif (command == 'ws' or command == 'weaponskill') then
         category = 7;
     elseif (
@@ -421,6 +425,23 @@ local function BuildActionCommandLookup(category)
 
     if (actionCommandNameCache[normalizedCategory] ~= nil) then
         return actionCommandNameCache[normalizedCategory];
+    end
+
+    if (normalizedCategory == petCommandCategory) then
+        local map = {};
+
+        for id, command in pairs(petCommands) do
+            local normalized = NormalizeActionName(command.en or command.name);
+            if (type(normalized) == 'string' and normalized ~= '') then
+                map[normalized] = {
+                    id = tonumber(command.id) or tonumber(id),
+                    method = 'PetCommand',
+                };
+            end
+        end
+
+        actionCommandNameCache[normalizedCategory] = map;
+        return map;
     end
 
     local methodCandidates = {
@@ -513,6 +534,9 @@ local function ResolveActionIdByName(category, actionName)
     if (entry ~= nil) then
         local candidateId = tonumber(entry.id);
         local candidateMethod = tostring(entry.method or '');
+        if (resolvedCategory == petCommandCategory and candidateId ~= nil) then
+            return candidateId, 'PetCommand';
+        end
         if (candidateId ~= nil and candidateMethod ~= '') then
             local idMethods = {
                 [2] = { 'GetAbilityById', 'GetAbilityByTimerId', 'GetSpellById' },
@@ -692,18 +716,15 @@ local function ResolveActionIdByName(category, actionName)
 
                     if (type(resolvedId) == 'number' and resolvedId > 0) then
                         local checkName, checkMethod = ReadRecordNameForCategory(resolvedCategory, resolvedId);
-                        if (type(checkName) ~= 'string' or checkName ~= normalized or type(checkMethod) ~= 'string') then
-                            goto continue_attempt;
+                        if (type(checkName) == 'string' and checkName == normalized and type(checkMethod) == 'string') then
+                            map[normalized] = {
+                                id = resolvedId,
+                                method = checkMethod,
+                            };
+                            return resolvedId, checkMethod;
                         end
-
-                        map[normalized] = {
-                            id = resolvedId,
-                            method = checkMethod,
-                        };
-                        return resolvedId, checkMethod;
                     end
                 end
-                ::continue_attempt::
             end
         end
     end
@@ -1261,6 +1282,10 @@ local areaRangeLookup = {
     [0x00FF] = 255,
 };
 
+local petCommandRangeLookup = {
+    [0x000B] = 18,
+};
+
 local function DecodeRangeCode(resource, rawValue)
     local index = NormalizeNumber(rawValue);
 
@@ -1275,6 +1300,14 @@ local function DecodeRangeCode(resource, rawValue)
         lookup = areaRangeLookup;
     end
 
+    local actionType = tostring(ReadResourceField(resource, 'type') or ReadResourceField(resource, 'Type') or ''):lower();
+    if (actionType == 'petcommand') then
+        local petCommandDecoded = petCommandRangeLookup[index];
+        if (petCommandDecoded ~= nil) then
+            return petCommandDecoded;
+        end
+    end
+
     local decoded = lookup[index];
     if (decoded ~= nil) then
         return decoded;
@@ -1285,6 +1318,23 @@ local function DecodeRangeCode(resource, rawValue)
     end
 
     return abilityRangeLookup[index];
+end
+
+local function IsBlueMagicResource(resource)
+    if (resource == nil) then
+        return false;
+    end
+
+    local actionType = tostring(ReadResourceField(resource, 'type') or ReadResourceField(resource, 'Type') or '');
+    if (actionType:lower() == 'bluemagic') then
+        return true;
+    end
+
+    if (NormalizeNumber(ReadResourceField(resource, 'skill') or ReadResourceField(resource, 'Skill')) == 43) then
+        return true;
+    end
+
+    return NormalizeNumber(ReadResourceField(resource, 'blu_points') or ReadResourceField(resource, 'BluPoints')) ~= nil;
 end
 
 local function ResolveRangeFromResourceManager(category, actionId)
@@ -1327,21 +1377,11 @@ local function ResolveRangeFromResourceManager(category, actionId)
             local value = SafeCall(nil, function()
                 return resourceManager[methodName](resourceManager, tonumber(actionId), false);
             end);
-            local valueArea = SafeCall(nil, function()
-                return resourceManager[methodName](resourceManager, tonumber(actionId), true);
-            end);
 
             if (value ~= nil) then
                 local number = NormalizeNumber(value);
                 if (number ~= nil and number > 0) then
                     return number;
-                end
-            end
-
-            if (valueArea ~= nil) then
-                local numberArea = NormalizeNumber(valueArea);
-                if (numberArea ~= nil and numberArea > 0) then
-                    return numberArea;
                 end
             end
         end
@@ -1351,11 +1391,6 @@ local function ResolveRangeFromResourceManager(category, actionId)
 end
 
 local function ExtractRange(resource, category, actionId)
-    local methodRange = ResolveRangeFromResourceManager(category, actionId);
-    if (methodRange ~= nil and methodRange > 0) then
-        return methodRange;
-    end
-
     local function ResolveCandidate(value)
         local number = NormalizeNumber(value);
         if (number ~= nil and number > 0) then
@@ -1380,6 +1415,18 @@ local function ExtractRange(resource, category, actionId)
         return nil;
     end
 
+    if (tonumber(category) == 3 and IsBlueMagicResource(resource) == true) then
+        local blueRange = ResolveCandidate(ReadResourceField(resource, 'Range') or ReadResourceField(resource, 'range'));
+        if (blueRange ~= nil and blueRange > 0) then
+            return blueRange;
+        end
+    end
+
+    local methodRange = ResolveRangeFromResourceManager(category, actionId);
+    if (methodRange ~= nil and methodRange > 0) then
+        return methodRange;
+    end
+
     local candidateKeys = {
         'Range',
         'range',
@@ -1389,12 +1436,6 @@ local function ExtractRange(resource, category, actionId)
         'distance',
         'MaxRange',
         'maxRange',
-        'Radius',
-        'radius',
-        'AreaRange',
-        'areaRange',
-        'AOERange',
-        'aoeRange',
     };
 
     for _, key in ipairs(candidateKeys) do
@@ -1412,13 +1453,20 @@ local function ExtractRange(resource, category, actionId)
                 local lower = key:lower();
                 if (
                     lower:find('range') ~= nil or
-                    lower:find('distance') ~= nil or
-                    lower:find('radius') ~= nil
+                    lower:find('distance') ~= nil
                 ) then
-                    local resolved = ResolveCandidate(value);
-                    if (resolved ~= nil and resolved > 0) then
-                        scannedResult = resolved;
-                        return;
+                    local isAreaRange = (
+                        lower:find('area') ~= nil or
+                        lower:find('aoe') ~= nil or
+                        lower:find('radius') ~= nil
+                    );
+
+                    if (isAreaRange ~= true) then
+                        local resolved = ResolveCandidate(value);
+                        if (resolved ~= nil and resolved > 0) then
+                            scannedResult = resolved;
+                            return;
+                        end
                     end
                 end
             end
@@ -1521,6 +1569,19 @@ local function ResolveActionResource(category, actionId, requireKnownMethods, sk
 
     if (actionId == nil or actionId <= 0) then
         return nil, nil, nil;
+    end
+
+    if (category == petCommandCategory) then
+        local resource = petCommands[actionId];
+        resourceCache[tostring(category) .. ':' .. tostring(actionId)] = {
+            resource = resource,
+            method = 'PetCommand',
+            id = actionId,
+            category = category,
+            resolvedId = actionId,
+        };
+
+        return resource, 'PetCommand', actionId;
     end
 
     local key = tostring(category) .. ':' .. tostring(actionId);
@@ -1854,18 +1915,16 @@ ScanActionCandidates = function(data, size, requireResolved)
     if (requireResolved == true) then
         local function ResolveCandidate(candidateList)
             for _, candidate in ipairs(candidateList) do
-                if (IsLikelyNoopActionId(candidate.action) == true) then
-                    goto continue;
-                end
-                local resourceMethodOk, resource = pcall(function()
-                    return ResolveActionResource(candidate.category, candidate.action, true, true);
-                end);
+                if (IsLikelyNoopActionId(candidate.action) ~= true) then
+                    local resourceMethodOk, resource = pcall(function()
+                        return ResolveActionResource(candidate.category, candidate.action, true, true);
+                    end);
 
-                if (resourceMethodOk == true and resource ~= nil) then
-                    DebugLog('action-range candidate resolved=' .. tostring(candidate.category) .. ' action=' .. tostring(candidate.action) .. ' offset=' .. tostring(candidate.offset));
-                    return candidate.category, candidate.action;
+                    if (resourceMethodOk == true and resource ~= nil) then
+                        DebugLog('action-range candidate resolved=' .. tostring(candidate.category) .. ' action=' .. tostring(candidate.action) .. ' offset=' .. tostring(candidate.offset));
+                        return candidate.category, candidate.action;
+                    end
                 end
-                ::continue::
             end
 
             return nil, nil;
@@ -2087,6 +2146,8 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
         queuedType = 'mobskill';
     elseif (queuedMethod == 'GetItemById') then
         queuedType = 'item';
+    elseif (queuedMethod == 'PetCommand' or category == petCommandCategory) then
+        queuedType = 'petcommand';
     elseif (category == 3) then
         queuedType = 'spell';
     elseif (category == 2 or category == 7 or category == 9 or category == 16) then
@@ -2116,10 +2177,12 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
         id = actionId,
         range = range,
         name = queuedName,
+        resource = resolvedOk == true and queuedResource or nil,
         resourceMethod = queuedMethod,
         resolvedId = queuedResolvedId,
         updated = os.clock(),
     };
+    recentAction = lastAction;
     lastQueuedPacketSignature = {
         category = category,
         action = actionId,
@@ -2159,7 +2222,7 @@ function targetActionRange.HandleActionCommand(commandText)
             if (
                 token == 'ma' or token == 'magic' or token:match('^m%d+$') ~= nil or
                 token == 'so' or token == 'nin' or
-                token == 'ja' or token == 'jobability' or
+                token == 'ja' or token == 'jobability' or token == 'pet' or
                 token == 'ws' or token == 'weaponskill' or
                 token == 'ra' or token == 'ranged' or
                 token == 'range' or token == 'shoot' or token == 'throw'
@@ -2331,6 +2394,20 @@ end
 
 function targetActionRange.GetCurrentAction()
     return lastAction;
+end
+
+function targetActionRange.GetRecentAction()
+    if (recentAction == nil) then
+        return nil;
+    end
+
+    local updated = tonumber(recentAction.updated) or 0;
+    if (updated > 0 and (os.clock() - updated) > 10.0) then
+        recentAction = nil;
+        return nil;
+    end
+
+    return recentAction;
 end
 
 function targetActionRange.GetCurrentRange()

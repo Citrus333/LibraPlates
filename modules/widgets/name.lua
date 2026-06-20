@@ -363,15 +363,15 @@ local DrawColorCell = nil;
 local function DrawClaimColorRow(label, colorValue, outlineValue)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##claim_color_' .. label:gsub('%s+', '_'), 4, tableFlags)) then
-            imgui.TableSetupColumn('##claim_color_label', 0, 145);
+            imgui.TableSetupColumn('##claim_color_label', 0, 170);
             imgui.TableSetupColumn('##claim_color_control', 0, 170);
-            imgui.TableSetupColumn('##claim_outline_label', 0, 145);
+            imgui.TableSetupColumn('##claim_outline_label', 0, 170);
             imgui.TableSetupColumn('##claim_outline_control', 0, 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             colorValue = DrawColorCell(label, colorValue);
             imgui.TableNextColumn();
-            outlineValue = DrawColorCell('Outline', outlineValue);
+            outlineValue = DrawColorCell('Outline color', outlineValue);
             imgui.EndTable();
         end
 

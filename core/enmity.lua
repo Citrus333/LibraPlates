@@ -132,8 +132,13 @@ end
 local function PruneExpired()
     local now = os.clock();
 
-    for enemyServerId, clock in pairs(enemyTargetClocks) do
-        if ((now - (tonumber(clock) or 0)) > targetTimeoutSeconds) then
+    for enemyServerId, _ in pairs(enemyTargetServerIds) do
+        local clock = enemyTargetClocks[enemyServerId];
+        local enemyIndex = GetIndexFromServerId(enemyServerId);
+        if (
+            ((now - (tonumber(clock) or 0)) > targetTimeoutSeconds) or
+            IsEnemyIndex(enemyIndex) ~= true
+        ) then
             enemyTargetClocks[enemyServerId] = nil;
             enemyTargetServerIds[enemyServerId] = nil;
         end
@@ -218,10 +223,11 @@ function enmity.HandlePacketIn(e)
         return;
     end
 
-    local ok, actorServerId, targetCount, targetServerId = pcall(function()
+    local ok, actorServerId, targetCount, actionType, targetServerId = pcall(function()
         return
             tonumber(ashita.bits.unpack_be(e.data_raw, 0, 40, 32)) or 0,
             tonumber(ashita.bits.unpack_be(e.data_raw, 0, 72, 6)) or 0,
+            tonumber(ashita.bits.unpack_be(e.data_raw, 0, 82, 4)) or 0,
             tonumber(ashita.bits.unpack_be(e.data_raw, 0, 150, 32)) or 0;
     end);
 
@@ -237,6 +243,18 @@ function enmity.HandlePacketIn(e)
     local targetIndex = GetIndexFromServerId(targetServerId);
 
     if (IsEnemyIndex(actorIndex) ~= true) then
+        if (
+            actionType ~= 8 and
+            actionType ~= 9 and
+            IsEnemyIndex(targetIndex) == true and
+            IsProtectedTargetServerId(actorServerId, actorIndex) == true
+        ) then
+            enemyTargetServerIds[targetServerId] = actorServerId;
+            enemyTargetClocks[targetServerId] = os.clock();
+        end
+
+        enemyTargetServerIds[actorServerId] = nil;
+        enemyTargetClocks[actorServerId] = nil;
         return;
     end
 
@@ -281,8 +299,11 @@ function enmity.IsServerIdTargeted(serverId, index)
 
     PruneExpired();
 
-    for _, targetServerId in pairs(enemyTargetServerIds) do
-        if (targetServerId == serverId) then
+    for enemyServerId, targetServerId in pairs(enemyTargetServerIds) do
+        if (IsEnemyIndex(GetIndexFromServerId(enemyServerId)) ~= true) then
+            enemyTargetServerIds[enemyServerId] = nil;
+            enemyTargetClocks[enemyServerId] = nil;
+        elseif (targetServerId == serverId) then
             return true;
         end
     end

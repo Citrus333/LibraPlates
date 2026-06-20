@@ -142,6 +142,10 @@ local function GetTargetingSettings()
         global.targeting.hideNativeNamesOnLoad = true;
     end
 
+    if (global.targeting.overwriteNativeNameColors == nil) then
+        global.targeting.overwriteNativeNameColors = true;
+    end
+
     if (global.targeting.enablePetPlateTargeting == nil) then
         global.targeting.enablePetPlateTargeting = true;
     end
@@ -313,6 +317,44 @@ local function GetTargetingSettings()
     global.targeting.customEntityDistanceScaling = global.targeting.customEntityDistanceScaling == true;
     global.targeting.globalPlateOffsetX = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.globalPlateOffsetX) or 0) + 0.5)));
     global.targeting.globalPlateOffsetY = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.globalPlateOffsetY) or 0) + 0.5)));
+    if (type(global.targeting.pcRacePlateAdjustments) ~= 'table') then
+        global.targeting.pcRacePlateAdjustments = {};
+    end
+    local pcRaceAdjustments = global.targeting.pcRacePlateAdjustments;
+    pcRaceAdjustments.enabled = pcRaceAdjustments.enabled ~= false;
+    local pcRaceBaselines = {
+        tarutaru = 82,
+        mithra = 77,
+        hume = 60,
+        elvaan = 55,
+        galka = 67,
+    };
+    local pcRaceDefaults = {
+        tarutaru = { y = 0, size = 0 },
+        mithra = { y = 0, size = 0 },
+        hume = { y = 0, size = 0 },
+        elvaan = { y = 0, size = 0 },
+        galka = { y = 0, size = 0 },
+    };
+    for key, defaults in pairs(pcRaceDefaults) do
+        if (type(pcRaceAdjustments[key]) ~= 'table') then
+            pcRaceAdjustments[key] = {};
+        end
+
+        local yValue = tonumber(pcRaceAdjustments[key].y) or defaults.y;
+        if (pcRaceAdjustments.baselineVersion ~= 2) then
+            local baseline = pcRaceBaselines[key] or 0;
+            if (math.abs(yValue - baseline) <= 1) then
+                yValue = 0;
+            elseif (math.abs(yValue) > 50 and baseline > 0) then
+                yValue = yValue - baseline;
+            end
+        end
+
+        pcRaceAdjustments[key].y = math.max(-100, math.min(100, math.floor(yValue + 0.5)));
+        pcRaceAdjustments[key].size = math.max(-100, math.min(100, math.floor((tonumber(pcRaceAdjustments[key].size) or defaults.size) + 0.5)));
+    end
+    pcRaceAdjustments.baselineVersion = 2;
     for _, entityName in ipairs({ 'self', 'pc', 'trust', 'enemy', 'npc', 'object', 'pet' }) do
         if (type(global.targeting.plateDistanceScales[entityName]) ~= 'table') then
             global.targeting.plateDistanceScales[entityName] = {};

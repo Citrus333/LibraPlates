@@ -11875,8 +11875,8 @@ local npcIcons = T{
     ['Field Manual'] = {
         type = 'Unknown',
         icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'Beaucedine Glacier', 'Behemoth\'s Dominion', 'Buburimu Peninsula', 'Cape Teriggan', 'East Ronfaure', 'East Sarutabaruta', 'Eastern Altepa Desert', 'Jugner Forest', 'Konschtat Highlands', 'La Theine Plateau', 'Meriphataud Mountains', 'North Gustaberg', 'Pashhow Marshlands', 'Qufim Island', 'Ro\'Maeve', 'Rolanberry Fields', 'Ru\'Aun Gardens', 'Sauromugue Champaign', 'South Gustaberg', 'Tahrongi Canyon', 'The Sanctuary of Zi\'Tah', 'Valkurm Dunes', 'Valley of Sorrows', 'West Ronfaure', 'West Sarutabaruta', 'Western Altepa Desert', 'Xarcabard', 'Yhoator Jungle', 'Yuhtunga Jungle' },
-        zoneIds = { 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 130 },
+        zones = { 'North Gustaberg', 'South Gustaberg', 'West Ronfaure', 'East Ronfaure', 'West Sarutabaruta', 'East Sarutabaruta', 'Konschtat Highlands', 'La Theine Plateau', 'Tahrongi Canyon', 'Valkurm Dunes', 'Buburimu Peninsula', 'Jugner Forest', 'Pashhow Marshlands', 'Meriphataud Mountains', 'Rolanberry Fields', 'Batallia Downs', 'Sauromugue Champaign', 'Qufim Island', 'Yuhtunga Jungle', 'Yhoator Jungle', 'Eastern Altepa Desert', 'Western Altepa Desert', 'Beaucedine Glacier', 'Xarcabard', 'The Sanctuary of Zi\'Tah', 'Behemoth\'s Dominion', 'Ro\'Maeve', 'Cape Teriggan', 'Valley of Sorrows', 'Ru\'Aun Gardens' },
+        zoneIds = { 106, 107, 100, 101, 115, 116, 108, 102, 117, 103, 118, 104, 109, 119, 110, 105, 120, 126, 123, 124, 114, 125, 111, 112, 121, 127, 122, 113, 128, 130 },
         note = 'Needs Review.',
     },
 
@@ -11884,8 +11884,8 @@ local npcIcons = T{
     ['Field Parchment'] = {
         type = 'Unknown',
         icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'Beaucedine Glacier', 'Behemoth\'s Dominion', 'Buburimu Peninsula', 'Cape Teriggan', 'East Ronfaure', 'East Sarutabaruta', 'Eastern Altepa Desert', 'Jugner Forest', 'Konschtat Highlands', 'La Theine Plateau', 'Meriphataud Mountains', 'North Gustaberg', 'Pashhow Marshlands', 'Qufim Island', 'Ro\'Maeve', 'Rolanberry Fields', 'Ru\'Aun Gardens', 'Sauromugue Champaign', 'South Gustaberg', 'Tahrongi Canyon', 'The Sanctuary of Zi\'Tah', 'Valkurm Dunes', 'Valley of Sorrows', 'West Ronfaure', 'West Sarutabaruta', 'Western Altepa Desert', 'Xarcabard', 'Yhoator Jungle', 'Yuhtunga Jungle' },
-        zoneIds = { 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 130 },
+        zones = { 'North Gustaberg', 'South Gustaberg', 'West Ronfaure', 'East Ronfaure', 'West Sarutabaruta', 'East Sarutabaruta', 'La Theine Plateau', 'Konschtat Highlands', 'Tahrongi Canyon', 'Buburimu Peninsula', 'Valkurm Dunes', 'Jugner Forest', 'Meriphataud Mountains', 'Pashhow Marshlands', 'Qufim Island', 'Batallia Downs', 'Rolanberry Fields', 'Sauromugue Champaign', 'Beaucedine Glacier', 'Xarcabard', 'Behemoth\'s Dominion', 'Eastern Altepa Desert', 'Yuhtunga Jungle', 'The Sanctuary of Zi\'Tah', 'Western Altepa Desert', 'Yhoator Jungle', 'Cape Teriggan', 'Ro\'Maeve', 'Valley of Sorrows', 'Ru\'Aun Gardens' },
+        zoneIds = { 106, 107, 100, 101, 115, 116, 102, 108, 117, 118, 103, 104, 119, 109, 126, 105, 110, 120, 111, 112, 127, 114, 123, 121, 125, 124, 113, 122, 128, 130 },
         note = 'Needs Review.',
     },
 

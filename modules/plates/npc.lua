@@ -9,6 +9,7 @@ local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
 local backgroundTextures = require('core.background_textures');
 local entities = require('core.entities');
+local clientVisibility = require('core.client_visibility');
 local adaptivePerformance = require('core.adaptive_performance');
 local npcObjectInfo = require('core.npc_object_info');
 local perfMeter = require('core.perf_meter');
@@ -299,7 +300,7 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
             clickTargetType = clickTargetType,
             clickName = displayName,
             layoutStateName = 'Idle',
-        }, clickTargetType == 'object' and 'object' or 'npc', cached.plateWorldOffsetX, cached.plateWorldOffsetY),
+        }, tostring(clickTargetType or ''):lower() == 'object' and 'object' or 'npc', cached.plateWorldOffsetX, cached.plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 
@@ -310,6 +311,11 @@ local function QueueNpcObject(entity)
     local resolveTimer = perfMeter.BeginDetail('npc.resolve');
     local entityName = tostring(entity.entityType or 'NPC');
     local displayName = CleanDisplayName(entity.name);
+
+    if (npcObjectInfo.ShouldHidePlate(displayName) == true) then
+        perfMeter.EndDetail(resolveTimer);
+        return;
+    end
 
     if (entities.IsOwnPetIndex(entity.index) == true) then
         perfMeter.EndDetail(resolveTimer);
@@ -326,7 +332,7 @@ local function QueueNpcObject(entity)
         return;
     end
 
-    local resolvedEntityName, npcInfo = npcObjectInfo.ResolveKind(displayName, entityName);
+    local resolvedEntityName, npcInfo = npcObjectInfo.ResolveKind(displayName, entityName, { targetIndex = entity.index });
     local settingsEntityName = resolvedEntityName;
     local clickTargetType = string.lower(resolvedEntityName);
     local targetStateName = targeting.GetTargetStateName(entity.index);
@@ -395,7 +401,9 @@ local function QueueNpcObject(entity)
     local typeLineSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Type line', typeLineDefaults);
     local iconSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Icon', npcObjectIconDefaults);
     local targetMarker = (resolvedEntityName ~= 'Object' and targetStateName ~= 'Idle')
-        and targetModuleMarker.Build(settingsEntityName, targetModuleStateName, targetStateName, { enabled = false }, entity.distance)
+        and targetModuleMarker.Build(settingsEntityName, targetModuleStateName, targetStateName, { enabled = false }, entity.distance, {
+            suppressBackground = true,
+        })
         or { enabled = false };
 
     ApplyNpcAnchorDefaults(iconSettings, npcObjectIconDefaults, -28, -30);
@@ -635,7 +643,7 @@ local function QueueNpcObject(entity)
             clickTargetType = clickTargetType,
             clickName = displayName,
             layoutStateName = 'Idle',
-        }, clickTargetType == 'object' and 'object' or 'npc', plateWorldOffsetX, plateWorldOffsetY),
+        }, resolvedEntityName == 'Object' and 'object' or 'npc', plateWorldOffsetX, plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 end
@@ -703,6 +711,11 @@ function npcPlate.Render()
     end
 
     if (worldMarkerProbe.GetEnabled() ~= true or worldMarkerProbe.GetReplacePlates() ~= true) then
+        return;
+    end
+
+    if (clientVisibility.ShouldHideNpcObjectPlates() == true) then
+        scanCache.entities = nil;
         return;
     end
 

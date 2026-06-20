@@ -75,6 +75,55 @@ local function Number(settings, key, fallback)
     return value;
 end
 
+local function SafeNumber(fn)
+    local ok, value = pcall(fn);
+
+    if (ok ~= true) then
+        return nil;
+    end
+
+    return tonumber(value);
+end
+
+local function GetSubtargetActionRange()
+    if (targeting.IsSubTargetModeActive() ~= true) then
+        return nil;
+    end
+
+    local memory = AshitaCore:GetMemoryManager();
+    local targetManager = memory ~= nil and memory:GetTarget() or nil;
+
+    if (targetManager == nil or targetManager.GetActionId == nil) then
+        return nil;
+    end
+
+    local actionId = SafeNumber(function() return targetManager:GetActionId(); end);
+
+    if (actionId == nil or actionId <= 0) then
+        return nil;
+    end
+
+    local resourceManager = AshitaCore:GetResourceManager();
+
+    if (resourceManager ~= nil and resourceManager.GetSpellRange ~= nil) then
+        local spellRange = SafeNumber(function() return resourceManager:GetSpellRange(actionId, false); end);
+
+        if (spellRange ~= nil and spellRange > 0) then
+            return spellRange;
+        end
+    end
+
+    if (resourceManager ~= nil and resourceManager.GetAbilityRange ~= nil) then
+        local abilityRange = SafeNumber(function() return resourceManager:GetAbilityRange(actionId, false); end);
+
+        if (abilityRange ~= nil and abilityRange > 0) then
+            return abilityRange;
+        end
+    end
+
+    return nil;
+end
+
 local function ClampNumber(value, fallback, minValue, maxValue)
     local number = tonumber(value);
 
@@ -137,7 +186,7 @@ local function CloneColor(source, fallback)
     };
 end
 
-local function ResolveArrowDistanceColor(distance, settings, markerColor, targetStateName, entityName)
+local function ResolveArrowDistanceColor(distance, settings, markerColor, targetStateName, entityName, options)
     if (settings == nil) then
         return CloneColor(nil, markerColor);
     end
@@ -154,24 +203,40 @@ local function ResolveArrowDistanceColor(distance, settings, markerColor, target
         return CloneColor(settings.arrowInRangeColor, markerColor);
     end
 
-    local actionRange = targetActionRange.GetCurrentRange() or aoeNameHighlight.GetCurrentActionTargetRange();
+    local actionRange = nil;
+
+    if (options == nil or options.previewMode ~= true) then
+        actionRange = targetModuleMarker.GetCurrentActionRange();
+    end
+
     local currentDistance = tonumber(distance);
 
     if (actionRange == nil or currentDistance == nil) then
         return CloneColor(settings.arrowInRangeColor, markerColor);
     end
 
-    local warningRange = math.max(0, tonumber(actionRange) - 3.0);
+    local warningRange = tonumber(actionRange) + 3.0;
 
-    if (currentDistance > tonumber(actionRange)) then
-        return CloneColor(settings.arrowOutOfRangeColor, markerColor);
+    if (currentDistance <= tonumber(actionRange)) then
+        return CloneColor(settings.arrowInRangeColor, markerColor);
     end
 
-    if (currentDistance >= warningRange) then
+    if (currentDistance <= warningRange) then
         return CloneColor(settings.arrowWarningColor, markerColor);
     end
 
-    return CloneColor(settings.arrowInRangeColor, markerColor);
+    return CloneColor(settings.arrowOutOfRangeColor, markerColor);
+end
+
+function targetModuleMarker.GetCurrentActionRange()
+    if (
+        aoeNameHighlight.IsSuppressed ~= nil and
+        aoeNameHighlight.IsSuppressed() == true
+    ) then
+        return targetActionRange.GetCurrentRange();
+    end
+
+    return GetSubtargetActionRange() or aoeNameHighlight.GetCurrentActionTargetRange() or targetActionRange.GetCurrentRange();
 end
 
 local function GetAutoPlaceAnchorKinds(value)
@@ -191,8 +256,6 @@ local tacticalTargetEntities = {
     Enemy = true,
     PC = true,
     Trust = true,
-    NPC = true,
-    Object = true,
 };
 
 local function ResolveTargetModuleState(entityName, layoutStateName, targetStateName)
@@ -211,8 +274,7 @@ function targetModuleMarker.HasDrawableSettings(entityName, settings)
         return false;
     end
 
-    local allowBackground = tostring(entityName or '') ~= 'NPC';
-    local hasBackground = allowBackground == true and IsBackgroundEnabled(settings) == true;
+    local hasBackground = IsBackgroundEnabled(settings) == true;
     local hasArrow = settings.arrowEnabled ~= false and tostring(settings.arrowFile or 'None') ~= 'None';
     local hasChevrons = GetChevronFile(settings) ~= 'None';
 
@@ -230,7 +292,7 @@ function targetModuleMarker.GetSettings(entityName, layoutStateName, targetState
     return settings, defaults;
 end
 
-function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, hpBarSettings, distance)
+function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, hpBarSettings, distance, options)
     local perfToken = perfMeter.BeginDetail('target.marker.build');
 
     local function Finish(result)
@@ -248,7 +310,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         return Finish({ enabled = false });
     end
 
-    if (nativeUiPolicy.ShouldDrawLibraTargetingSystem() ~= true) then
+    if ((options == nil or options.previewMode ~= true) and nativeUiPolicy.ShouldDrawLibraTargetingSystem() ~= true) then
         lastDebug = string.format(
             'target marker skipped entity=%s layout=%s target=%s reason=native-targeting-system',
             tostring(entityName),
@@ -260,7 +322,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
 
     local settings, defaults = targetModuleMarker.GetSettings(entityName, layoutStateName, targetStateName);
     local markerColor = settings.color or defaults.color;
-    local arrowColor = ResolveArrowDistanceColor(distance, settings, markerColor, targetStateName, entityName);
+    local arrowColor = ResolveArrowDistanceColor(distance, settings, markerColor, targetStateName, entityName, options);
 
     if (settings.enabled == false or markerColor == nil) then
         lastDebug = string.format(
@@ -278,8 +340,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
 
     local autoPlaceBackground = settings.autoPlaceBackground ~= false;
     local autoPlaceArrow = settings.autoPlaceArrow ~= false;
-    local allowBackground = tostring(entityName or '') ~= 'NPC';
-    local backgroundEnabled = IsBackgroundEnabled(settings);
+    local backgroundEnabled = IsBackgroundEnabled(settings) and not (options ~= nil and options.suppressBackground == true);
     local hpWidth = tonumber(hpBarSettings.width) or 180;
     local hpHeight = tonumber(hpBarSettings.height) or 12;
     local hpOffsetX = tonumber(hpBarSettings.offsetX) or 0;
@@ -287,8 +348,16 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
     local backgroundSpacing = math.max(0, Number(settings, 'backgroundSpacing', 7));
     local arrowAnimated = settings.arrowEnabled ~= false and settings.arrowSprite == true and arrowAnimation.HasSpriteFrames(settings.arrowFile) == true;
     local arrowTextureId = settings.arrowEnabled ~= false and arrowAnimation.GetTextureId(settings.arrowFile, arrowAnimated, Number(settings, 'arrowAnimationSpeed', 12)) or nil;
-    local lockTextureId = (tostring(entityName or '') == 'Enemy' and targetStateName == 'Target' and settings.lockEnabled ~= false and targeting.GetIsTargetLockedOn() == true) and GetTextureId('lock', settings.lockFile or 'lock.png') or nil;
-    local backgroundTextureId = allowBackground == true and backgroundEnabled == true and GetTextureId('backgrounds', settings.backgroundFile) or nil;
+    local lockOn = false;
+
+    if (options ~= nil and options.previewLockOn ~= nil) then
+        lockOn = options.previewLockOn == true;
+    else
+        lockOn = targeting.GetIsTargetLockedOn() == true;
+    end
+
+    local lockTextureId = (tostring(entityName or '') == 'Enemy' and targetStateName == 'Target' and settings.lockEnabled ~= false and lockOn == true) and GetTextureId('lock', settings.lockFile or 'lock.png') or nil;
+    local backgroundTextureId = backgroundEnabled == true and GetTextureId('backgrounds', settings.backgroundFile) or nil;
     local chevronTextureId = GetTextureId('chevrons', GetChevronFile(settings));
     local showArrow = arrowTextureId ~= nil;
     local showLock = lockTextureId ~= nil;
@@ -305,7 +374,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         tostring(backgroundEnabled),
         tostring(settings.backgroundFile),
         tostring(backgroundTextureId),
-        tostring(allowBackground == true and backgroundEnabled == true),
+        tostring(backgroundEnabled == true),
         tostring(settings.arrowFile),
         tostring(arrowTextureId),
         tostring(settings.chevronFile),
@@ -316,7 +385,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
 
     local result = {
         enabled = true,
-        showBackground = allowBackground == true and backgroundEnabled == true,
+        showBackground = backgroundEnabled == true,
         showArrow = showArrow,
         showLock = showLock,
         showChevrons = showChevrons,
@@ -374,7 +443,7 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         cornerLength = 12,
     };
 
-    if (targetStateName == 'Subtarget') then
+    if (targetStateName == 'Subtarget' and (options == nil or options.previewMode ~= true)) then
         local targetIndex = targeting.GetCurrentTargetIndex();
         local subTargetIndex = targeting.GetCurrentSubTargetIndex();
         local sameTargetSubtarget =

@@ -14,6 +14,8 @@ local colorEditFlags = bit ~= nil and bit.bor ~= nil
     and bit.bor(_G.ImGuiColorEditFlags_NoAlpha or 0, _G.ImGuiColorEditFlags_NoInputs or 0)
     or ((_G.ImGuiColorEditFlags_NoAlpha or 0) + (_G.ImGuiColorEditFlags_NoInputs or 0));
 local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
+local rowLabelWidth = 122;
+local rowControlWidth = 124;
 local heldButtonState = {};
 
 local function ClickText(label, color)
@@ -287,12 +289,12 @@ local function DrawDisplayRow(settings)
         local columns = iconMode == true and 4 or 2;
 
         if (imgui.BeginTable('##job_display_row', columns, tableFlags)) then
-            imgui.TableSetupColumn('##display_label', 0, 104);
-            imgui.TableSetupColumn('##display_control', 0, 124);
+            imgui.TableSetupColumn('##display_label', 0, rowLabelWidth);
+            imgui.TableSetupColumn('##display_control', 0, rowControlWidth);
 
             if (iconMode == true) then
-                imgui.TableSetupColumn('##theme_label', 0, 104);
-                imgui.TableSetupColumn('##theme_control', 0, 124);
+                imgui.TableSetupColumn('##theme_label', 0, rowLabelWidth);
+                imgui.TableSetupColumn('##theme_control', 0, rowControlWidth);
             end
 
             imgui.TableNextRow();
@@ -376,10 +378,10 @@ local function DrawPlacementPair(leftLabel, leftValue, leftId, rightLabel, right
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##job_pair_' .. tostring(leftId) .. '_' .. tostring(rightId), 4, tableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 104);
-            imgui.TableSetupColumn('##control_left', 0, 124);
-            imgui.TableSetupColumn('##label_right', 0, 104);
-            imgui.TableSetupColumn('##control_right', 0, 124);
+            imgui.TableSetupColumn('##label_left', 0, rowLabelWidth);
+            imgui.TableSetupColumn('##control_left', 0, rowControlWidth);
+            imgui.TableSetupColumn('##label_right', 0, rowLabelWidth);
+            imgui.TableSetupColumn('##control_right', 0, rowControlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, leftLabel);
@@ -406,8 +408,8 @@ local function DrawSingleSlider(label, id, value, minValue, maxValue, step)
         local result = value;
 
         if (imgui.BeginTable('##job_single_' .. tostring(id), 2, tableFlags)) then
-            imgui.TableSetupColumn('##label', 0, 104);
-            imgui.TableSetupColumn('##control', 0, 124);
+            imgui.TableSetupColumn('##label', 0, rowLabelWidth);
+            imgui.TableSetupColumn('##control', 0, rowControlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, label);
@@ -445,15 +447,16 @@ local function DrawColorControl(id, color)
     return color;
 end
 
-local function DrawSliderAndColorRow(sizeLabel, sizeId, sizeValue, minValue, maxValue, colorLabel, colorId, colorValue)
+local function DrawSliderAndColorRow(sizeLabel, sizeId, sizeValue, minValue, maxValue, colorLabel, colorId, colorValue, labelWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local sizeResult = sizeValue;
         local colorResult = colorValue;
+        local width = tonumber(labelWidth) or rowLabelWidth;
 
         if (imgui.BeginTable('##job_size_color_' .. tostring(sizeId) .. '_' .. tostring(colorId), 4, tableFlags)) then
-            imgui.TableSetupColumn('##size_label', 0, 104);
-            imgui.TableSetupColumn('##size_control', 0, 124);
-            imgui.TableSetupColumn('##color_label', 0, 104);
+            imgui.TableSetupColumn('##size_label', 0, width);
+            imgui.TableSetupColumn('##size_control', 0, rowControlWidth);
+            imgui.TableSetupColumn('##color_label', 0, width);
             imgui.TableSetupColumn('##color_control', 0, 60);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -624,9 +627,7 @@ function job.DrawSettings(settings, context)
             'text_color',
             settings.color
         );
-        settings.outlineEnabled = DrawToggle('Text outline', settings.outlineEnabled);
-
-        if (settings.outlineEnabled == true) then
+        if (context ~= nil and context.entity == 'Enemy') then
             settings.outlineSize, settings.outlineColor = DrawSliderAndColorRow(
                 'Outline size',
                 'outline_size',
@@ -635,8 +636,26 @@ function job.DrawSettings(settings, context)
                 8,
                 'Outline color',
                 'outline_color',
-                settings.outlineColor
+                settings.outlineColor,
+                122
             );
+            settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
+        else
+            settings.outlineEnabled = DrawToggle('Text outline', settings.outlineEnabled);
+
+            if (settings.outlineEnabled == true) then
+                settings.outlineSize, settings.outlineColor = DrawSliderAndColorRow(
+                    'Outline size',
+                    'outline_size',
+                    settings.outlineSize,
+                    0,
+                    8,
+                    'Outline color',
+                    'outline_color',
+                    settings.outlineColor,
+                    122
+                );
+            end
         end
     end
 

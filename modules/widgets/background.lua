@@ -57,6 +57,28 @@ local function DrawCheckbox(label, value)
     return value == true;
 end
 
+local function DrawTexturePreviewTooltip(fileName)
+    local textureId = backgroundTextures.GetTextureId(fileName);
+
+    if (imgui.IsItemHovered == nil or imgui.IsItemHovered() ~= true) then
+        return;
+    end
+
+    if (
+        textureId ~= nil and
+        imgui.BeginTooltip ~= nil and
+        imgui.EndTooltip ~= nil and
+        imgui.Image ~= nil
+    ) then
+        imgui.BeginTooltip();
+        imgui.Text(tostring(fileName or ''));
+        imgui.Image(textureId, { 220, 110 }, { 0, 0 }, { 1, 1 });
+        imgui.EndTooltip();
+    elseif (imgui.SetTooltip ~= nil) then
+        imgui.SetTooltip(tostring(fileName or ''));
+    end
+end
+
 local function DrawTextureFile(label, current)
     local files = backgroundTextures.GetFiles();
     local value = tostring(current or files[1] or 'None');
@@ -65,13 +87,17 @@ local function DrawTextureFile(label, current)
     imgui.SameLine();
 
     if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
-        if (imgui.BeginCombo('##background_texture_' .. tostring(label), value) == true) then
+        local comboOpen = imgui.BeginCombo('##background_texture_' .. tostring(label), value) == true;
+        DrawTexturePreviewTooltip(value);
+
+        if (comboOpen == true) then
             for _, file in ipairs(files) do
                 local selected = (file == value);
 
                 if (imgui.Selectable(tostring(file), selected) == true) then
                     value = file;
                 end
+                DrawTexturePreviewTooltip(file);
 
                 if (selected == true and imgui.SetItemDefaultFocus ~= nil) then
                     imgui.SetItemDefaultFocus();

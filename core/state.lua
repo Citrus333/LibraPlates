@@ -12,6 +12,8 @@ local state = {
     savedThisSession = false,
     lastBackup = 0,
     lastBackupPrune = 0,
+    characterProfileCacheName = nil,
+    characterProfileCacheClock = 0,
 };
 
 local settingsFileName = 'settings.lua';
@@ -53,6 +55,11 @@ local function SanitizeProfilePart(value)
 end
 
 local function GetCharacterProfileName()
+    local now = os.clock();
+    if (state.characterProfileCacheName ~= nil and (now - (tonumber(state.characterProfileCacheClock) or 0)) < 1.0) then
+        return state.characterProfileCacheName;
+    end
+
     local name = nil;
     local serverId = nil;
 
@@ -70,10 +77,14 @@ local function GetCharacterProfileName()
     serverId = tonumber(serverId) or 0;
 
     if (name == nil or serverId <= 0) then
+        state.characterProfileCacheName = nil;
+        state.characterProfileCacheClock = now;
         return nil;
     end
 
-    return name .. '_' .. tostring(serverId);
+    state.characterProfileCacheName = name .. '_' .. tostring(serverId);
+    state.characterProfileCacheClock = now;
+    return state.characterProfileCacheName;
 end
 
 local function GetProfileFolder(profileName)
@@ -950,6 +961,60 @@ function state.GetProfile()
     end
 
     return state.profile;
+end
+
+function state.GetRuntime()
+    local profile = state.GetProfile();
+
+    if (type(profile.runtime) ~= 'table') then
+        profile.runtime = {};
+    end
+
+    return profile.runtime;
+end
+
+function state.GetAnonymousByServerId()
+    local runtime = state.GetRuntime();
+
+    if (type(runtime.anonymousByServerId) ~= 'table') then
+        runtime.anonymousByServerId = {};
+    end
+
+    return runtime.anonymousByServerId;
+end
+
+function state.GetVisualBlacklist()
+    local runtime = state.GetRuntime();
+
+    if (type(runtime.visualBlacklist) ~= 'table') then
+        runtime.visualBlacklist = {};
+    end
+
+    if (type(runtime.visualBlacklist.entries) ~= 'table') then
+        runtime.visualBlacklist.entries = {};
+    end
+
+    if (type(runtime.visualBlacklist.pendingNames) ~= 'table') then
+        runtime.visualBlacklist.pendingNames = {};
+    end
+
+    if (runtime.visualBlacklist.modelReplaceEnabled == nil) then
+        runtime.visualBlacklist.modelReplaceEnabled = true;
+    end
+
+    runtime.visualBlacklist.modelReplaceRace = tonumber(runtime.visualBlacklist.modelReplaceRace) or 5;
+    runtime.visualBlacklist.modelReplaceHair = tonumber(runtime.visualBlacklist.modelReplaceHair) or 2;
+    if (runtime.visualBlacklist.modelReplacePreserveRace == nil) then
+        runtime.visualBlacklist.modelReplacePreserveRace = true;
+    end
+    if (runtime.visualBlacklist.modelReplaceClearGear == nil) then
+        runtime.visualBlacklist.modelReplaceClearGear = true;
+    end
+    if (runtime.visualBlacklist.modelReplaceUseFomor == nil) then
+        runtime.visualBlacklist.modelReplaceUseFomor = true;
+    end
+
+    return runtime.visualBlacklist;
 end
 
 function state.GetActiveProfileName()

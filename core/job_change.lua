@@ -1,6 +1,7 @@
 require('common');
 
 local entities = require('core.entities');
+local gameMode = require('core.game_mode');
 local log = require('core.log');
 
 local jobChange = {};
@@ -45,6 +46,36 @@ local moogleNames = {
 local baseTempJobCodes = { 'WAR', 'MNK', 'WHM', 'BLM', 'RDM', 'THF' };
 local queuedActions = {};
 local sequenceActive = false;
+local aceTownZoneIds = {
+    [26] = true, -- Tavnazian Safehold
+    [48] = true, -- Al Zahbi
+    [50] = true, -- Aht Urhgan Whitegate
+    [53] = true, -- Nashmau
+    [230] = true, -- Southern San d'Oria
+    [231] = true, -- Northern San d'Oria
+    [232] = true, -- Port San d'Oria
+    [233] = true, -- Chateau d'Oraguille
+    [234] = true, -- Bastok Mines
+    [235] = true, -- Bastok Markets
+    [236] = true, -- Port Bastok
+    [237] = true, -- Metalworks
+    [238] = true, -- Windurst Waters
+    [239] = true, -- Windurst Walls
+    [240] = true, -- Port Windurst
+    [241] = true, -- Windurst Woods
+    [242] = true, -- Heavens Tower
+    [243] = true, -- Ru'Lude Gardens
+    [244] = true, -- Upper Jeuno
+    [245] = true, -- Lower Jeuno
+    [246] = true, -- Port Jeuno
+    [247] = true, -- Rabao
+    [248] = true, -- Selbina
+    [249] = true, -- Mhaura
+    [250] = true, -- Kazham
+    [252] = true, -- Norg
+    [256] = true, -- Western Adoulin
+    [257] = true, -- Eastern Adoulin
+};
 
 local function GetNow()
     return os.clock();
@@ -282,18 +313,44 @@ local function BuildChangePlan(targetMainCode, targetSubCode)
     return plan;
 end
 
-local function StartPlan(plan, lockstyleSet)
-    local npc = FindNearbyJobChangeNpc();
+local function IsSelfAce()
+    local memory = AshitaCore:GetMemoryManager();
+    local party = memory ~= nil and memory:GetParty() or nil;
+    local index = nil;
+
+    if (party ~= nil) then
+        pcall(function()
+            index = party:GetMemberTargetIndex(0);
+        end);
+    end
+
+    return gameMode.Resolve(index, false) == 'ACE';
+end
+
+local function IsAceTownZone()
+    return aceTownZoneIds[GetCurrentZoneId()] == true;
+end
+
+local function StartPlan(plan, lockstyleSet, options)
+    options = options or {};
+    local useRemoteMog = options.remoteMog == true;
+    local npc = useRemoteMog ~= true and FindNearbyJobChangeNpc() or nil;
     local delay = 0.0;
     lockstyleSet = NormalizeLockstyleSet(lockstyleSet);
 
-    if (npc == nil) then
+    if (useRemoteMog ~= true and npc == nil) then
         return false, 'Not close enough to a job-change Moogle.';
     end
 
     ClearQueue();
 
-    if (npc.name == 'Nomad Moogle' or npc.name == 'Pilgrim Moogle') then
+    if (useRemoteMog == true) then
+        QueueAction(delay, {
+            kind = 'command',
+            command = '!mog',
+        });
+        delay = delay + 1.0;
+    elseif (npc.name == 'Nomad Moogle' or npc.name == 'Pilgrim Moogle') then
         QueueAction(delay, {
             kind = 'poke',
             serverId = npc.serverId,
@@ -321,11 +378,15 @@ local function StartPlan(plan, lockstyleSet)
     end
 
     sequenceActive = (#queuedActions > 0);
-    log.Info('Queued job change via ' .. tostring(npc.name) .. ' at ' .. string.format('%.1f', tonumber(npc.distance) or 0) .. ' yalms.');
+    if (useRemoteMog == true) then
+        log.Info('Queued ACE town job change via !mog.');
+    else
+        log.Info('Queued job change via ' .. tostring(npc.name) .. ' at ' .. string.format('%.1f', tonumber(npc.distance) or 0) .. ' yalms.');
+    end
     return true;
 end
 
-function jobChange.ChangeJobs(targetMainCode, targetSubCode, lockstyleSet)
+local function ChangeJobsWithOptions(targetMainCode, targetSubCode, lockstyleSet, options)
     targetMainCode = NormalizeJobCode(targetMainCode);
     targetSubCode = NormalizeJobCode(targetSubCode);
     lockstyleSet = NormalizeLockstyleSet(lockstyleSet);
@@ -341,13 +402,25 @@ function jobChange.ChangeJobs(targetMainCode, targetSubCode, lockstyleSet)
     local plan, err = BuildChangePlan(targetMainCode, targetSubCode);
     if (plan == nil) then
         if (lockstyleSet ~= nil and tostring(err or '') == 'No change required.') then
-            return StartPlan({}, lockstyleSet);
+            return StartPlan({}, lockstyleSet, options);
         end
 
         return false, err;
     end
 
-    return StartPlan(plan, lockstyleSet);
+    return StartPlan(plan, lockstyleSet, options);
+end
+
+function jobChange.ChangeJobs(targetMainCode, targetSubCode, lockstyleSet)
+    return ChangeJobsWithOptions(targetMainCode, targetSubCode, lockstyleSet, nil);
+end
+
+function jobChange.ChangeJobsViaAceTownMog(targetMainCode, targetSubCode, lockstyleSet)
+    if (jobChange.CanUseAceTownMog() ~= true) then
+        return false, 'ACE town Mog House job change is not available here.';
+    end
+
+    return ChangeJobsWithOptions(targetMainCode, targetSubCode, lockstyleSet, { remoteMog = true });
 end
 
 function jobChange.IsJobChangeNpcName(name)
@@ -371,6 +444,14 @@ function jobChange.CanUseTarget(targetName, targetIndex)
     local ent = GetEntity(tonumber(targetIndex) or -1);
     local distance = tonumber(ent ~= nil and ent.Distance or nil);
     return distance ~= nil and distance <= 36;
+end
+
+function jobChange.IsTownZone()
+    return IsAceTownZone() == true;
+end
+
+function jobChange.CanUseAceTownMog()
+    return IsSelfAce() == true and jobChange.IsTownZone() == true;
 end
 
 function jobChange.Update()

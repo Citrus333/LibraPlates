@@ -7,6 +7,7 @@ local log = require('core.log');
 local jobChange = require('core.job_change');
 local jobIconTextures = require('core.job_icon_textures');
 local mounts = require('core.mounts');
+local playerBlacklist = require('core.player_blacklist');
 local widgetDefaults = { enabled = true };
 local quickMenuPresetCount = 10;
 
@@ -493,12 +494,14 @@ local function EnsureSettings()
     if (menu.pc.invitePartyToAlliance == nil) then menu.pc.invitePartyToAlliance = true; end
     if (menu.pc.passPartyLeader == nil) then menu.pc.passPartyLeader = true; end
     if (menu.pc.passAllianceLeader == nil) then menu.pc.passAllianceLeader = true; end
+    if (menu.pc.blacklist == nil) then menu.pc.blacklist = true; end
     if (menu.self == nil) then menu.self = {}; end
     if (menu.self.acceptInvite == nil) then menu.self.acceptInvite = true; end
     if (menu.self.declineInvite == nil) then menu.self.declineInvite = true; end
     if (menu.self.leaveParty == nil) then menu.self.leaveParty = true; end
     if (menu.self.leaveAlliance == nil) then menu.self.leaveAlliance = true; end
     if (menu.self.cancelPartyRequest == nil) then menu.self.cancelPartyRequest = true; end
+    if (menu.self.aceTownMog == nil) then menu.self.aceTownMog = true; end
     if (menu.self.mount == nil) then menu.self.mount = true; end
     local ownedMountChoices = mounts.GetOwnedChoices();
     if (menu.self.selectedMount == nil or tostring(menu.self.selectedMount or '') == '' or mounts.IsOwned(menu.self.selectedMount) ~= true) then menu.self.selectedMount = ownedMountChoices[1] or ''; end
@@ -576,6 +579,10 @@ local function QueueCommand(command, mode)
     end
 
     AshitaCore:GetChatManager():QueueCommand(tonumber(mode) or 1, tostring(command or ''));
+end
+
+local function QuoteCommandName(name)
+    return '"' .. tostring(name or ''):gsub('"', '') .. '"';
 end
 
 EnsurePresetSettings = function(menu)
@@ -1058,10 +1065,17 @@ local function SelfToggleMenuItem(key, label, iconFile, currentState, commandBas
     end, menu, true);
 end
 
-local function RequestConfirm(label, command)
+local function RequestConfirm(label, command, options)
+    options = options or {};
+
     pendingConfirm = {
         label = tostring(label or 'action'),
-        command = tostring(command or ''),
+        command = (type(command) == 'string') and tostring(command or '') or nil,
+        action = type(command) == 'function' and command or options.action,
+        reasonEnabled = options.reasonEnabled == true,
+        reasonLabel = tostring(options.reasonLabel or 'Reason'),
+        reasonRef = { tostring(options.reason or '') },
+        confirmLabel = tostring(options.confirmLabel or 'Confirm'),
         open = true,
     };
 end
@@ -1079,6 +1093,11 @@ local function DrawConfirm()
     if (imgui.BeginPopupModal == nil) then
         imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, pendingConfirm.label .. '?');
 
+        if (pendingConfirm.reasonEnabled == true and imgui.InputText ~= nil) then
+            imgui.Text(tostring(pendingConfirm.reasonLabel or 'Reason'));
+            imgui.InputText('##quick_menu_confirm_reason', pendingConfirm.reasonRef, 160);
+        end
+
         if (imgui.Button ~= nil and imgui.Button('Cancel') == true) then
             pendingConfirm = nil;
             return;
@@ -1086,8 +1105,12 @@ local function DrawConfirm()
 
         imgui.SameLine();
 
-        if (imgui.Button ~= nil and imgui.Button('Confirm') == true) then
-            QueueCommand(pendingConfirm.command);
+        if (imgui.Button ~= nil and imgui.Button(pendingConfirm.confirmLabel or 'Confirm') == true) then
+            if (pendingConfirm.action ~= nil) then
+                pendingConfirm.action(tostring(pendingConfirm.reasonRef ~= nil and pendingConfirm.reasonRef[1] or ''));
+            elseif (pendingConfirm.command ~= nil) then
+                QueueCommand(pendingConfirm.command);
+            end
             pendingConfirm = nil;
         end
 
@@ -1100,6 +1123,10 @@ local function DrawConfirm()
 
     if (imgui.BeginPopupModal(confirmPopupId)) then
         imgui.Text(pendingConfirm.label .. '?');
+        if (pendingConfirm.reasonEnabled == true and imgui.InputText ~= nil) then
+            imgui.Text(tostring(pendingConfirm.reasonLabel or 'Reason'));
+            imgui.InputText('##quick_menu_confirm_reason', pendingConfirm.reasonRef, 160);
+        end
         imgui.Separator();
 
         if (imgui.Button ~= nil and imgui.Button('Cancel') == true) then
@@ -1109,8 +1136,12 @@ local function DrawConfirm()
 
         imgui.SameLine();
 
-        if (imgui.Button ~= nil and imgui.Button('Confirm') == true) then
-            QueueCommand(pendingConfirm.command);
+        if (imgui.Button ~= nil and imgui.Button(pendingConfirm.confirmLabel or 'Confirm') == true) then
+            if (pendingConfirm.action ~= nil) then
+                pendingConfirm.action(tostring(pendingConfirm.reasonRef ~= nil and pendingConfirm.reasonRef[1] or ''));
+            elseif (pendingConfirm.command ~= nil) then
+                QueueCommand(pendingConfirm.command);
+            end
             pendingConfirm = nil;
             imgui.CloseCurrentPopup();
         end
@@ -1580,6 +1611,7 @@ function quickMenu.Render()
             end
         elseif (pendingMenu.targetType == 'self') then
             local context = GetPartyContext(pendingMenu.targetIndex);
+            local isTown = jobChange.IsTownZone() == true;
 
             local hasPendingInvite = quickMenu.HasPendingInvite() == true or context.selfSolo == true;
 
@@ -1616,7 +1648,26 @@ function quickMenu.Render()
                 end, menu);
             end
 
-            if (menu.self.mount == true) then
+            if (menu.self.aceTownMog == true and jobChange.CanUseAceTownMog() == true) then
+                local presetRows = GetPresetRows(menu);
+
+                if (#presetRows > 0) then
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'ACE Mog House');
+
+                    for _, row in ipairs(presetRows) do
+                        MenuItem(row.label, nil, function()
+                            local ok, err = jobChange.ChangeJobsViaAceTownMog(row.mainJob, row.subJob, row.lockstyleSet);
+                            if (ok ~= true) then
+                                log.Warn(tostring(err or 'ACE town job preset failed.'));
+                            end
+                        end, menu, false, row.textureId);
+                    end
+
+                    imgui.Separator();
+                end
+            end
+
+            if (isTown ~= true and menu.self.mount == true) then
                 if (mounts.IsMounted() == true) then
                     MenuItem('Dismount', 'mount.png', function()
                         QueueCommand('/dismount', 1);
@@ -1633,19 +1684,19 @@ function quickMenu.Render()
                 end
             end
 
-            if (menu.self.ignoreTrust == true) then
+            if (isTown ~= true and menu.self.ignoreTrust == true) then
                 SelfToggleMenuItem('ignoreTrust', 'Ignore Other Trusts', 'ignore-trust-on.png', menu.self.ignoreTrustState == true, '/ignoretrust', function(value)
                     menu.self.ignoreTrustState = value == true;
                 end, menu, 'ignore-trust-off.png');
             end
 
-            if (menu.self.hideTrust == true) then
+            if (isTown ~= true and menu.self.hideTrust == true) then
                 SelfToggleMenuItem('hideTrust', 'Hide Other Trusts', 'hide-other-trusts-on.png', menu.self.hideTrustState == true, '/hidetrust', function(value)
                     menu.self.hideTrustState = value == true;
                 end, menu, 'hide-other-trusts-off.png');
             end
 
-            if (menu.self.emoteTrust == true) then
+            if (isTown ~= true and menu.self.emoteTrust == true) then
                 SelfToggleMenuItem('emoteTrust', 'Emote Trust', 'emote-trusts-on.png', menu.self.emoteTrustState == true, '/emotetrust', function(value)
                     menu.self.emoteTrustState = value == true;
                 end, menu, 'emote-trusts-off.png');
@@ -1682,6 +1733,46 @@ function quickMenu.Render()
             end
         else
             local context = GetPartyContext(pendingMenu.targetIndex);
+            local blacklistPlayer = {
+                name = pendingMenu.name,
+                serverId = pendingMenu.serverId,
+            };
+
+            if (menu.pc.blacklist == true and context.targetIsSelf ~= true) then
+                if (playerBlacklist.IsListed(blacklistPlayer) == true) then
+                    MenuItem('Remove from blacklist', 'blacklist.png', function()
+                        local targetName = tostring(blacklistPlayer.name or '');
+                        RequestConfirm('Remove ' .. targetName .. ' from blacklist', function()
+                            if (playerBlacklist.RemovePlayer(blacklistPlayer) == true) then
+                                QueueCommand('/blacklist delete ' .. QuoteCommandName(targetName));
+                                log.Info('Removed ' .. targetName .. ' from LibraPlates blacklist.');
+                            else
+                                log.Warn(targetName .. ' was not in the LibraPlates blacklist.');
+                            end
+                        end, {
+                            confirmLabel = 'Remove',
+                        });
+                    end, menu);
+                else
+                    MenuItem('Add to blacklist', 'blacklist.png', function()
+                        local targetName = tostring(blacklistPlayer.name or '');
+                        RequestConfirm('Blacklist ' .. targetName, function(reason)
+                            local ok, err = playerBlacklist.AddPlayer(blacklistPlayer, reason, 'quick-menu');
+
+                            if (ok == true) then
+                                QueueCommand('/blacklist add ' .. QuoteCommandName(targetName));
+                                log.Info('Added ' .. targetName .. ' to LibraPlates blacklist.');
+                            else
+                                log.Warn(tostring(err or 'Failed to add player to LibraPlates blacklist.'));
+                            end
+                        end, {
+                            reasonEnabled = true,
+                            reasonLabel = 'Reason (optional)',
+                            confirmLabel = 'Add',
+                        });
+                    end, menu);
+                end
+            end
 
             if (menu.pc.examine == true) then
                 MenuItem('Examine', 'Examine.png', function()

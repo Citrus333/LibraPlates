@@ -106,6 +106,17 @@ local function ColorKey(color)
     }, ',');
 end
 
+local function SolidColor(color, fallback)
+    local source = color or fallback or { 1.0, 1.0, 1.0, 1.0 };
+
+    return {
+        tonumber(source[1]) or 1.0,
+        tonumber(source[2]) or 1.0,
+        tonumber(source[3]) or 1.0,
+        1.0,
+    };
+end
+
 local function BoolKey(value)
     return value == true and '1' or '0';
 end
@@ -528,6 +539,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 timerBackground = iconSettings.timerBackground == true,
                 timerBackgroundPaddingX = tonumber(iconSettings.timerBackgroundPaddingX) or 2,
                 timerBackgroundPaddingY = tonumber(iconSettings.timerBackgroundPaddingY) or 1,
+                timerBackgroundColor = iconSettings.timerBackgroundColor,
                 timerBackgroundBorderSize = tonumber(iconSettings.timerBackgroundBorderSize) or 0,
                 timerBackgroundBorderColor = iconSettings.timerBackgroundBorderColor,
                 timerCornerRadius = tonumber(iconSettings.timerCornerRadius) or 0,
@@ -542,10 +554,18 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 timerWarningFontStage1Color = iconSettings.timerWarningFontStage1Color,
                 timerWarningFontStage2Color = iconSettings.timerWarningFontStage2Color,
                 timerWarningFontStage3Color = iconSettings.timerWarningFontStage3Color,
+                timerWarningOutlineColorEnabled = iconSettings.timerWarningOutlineColorEnabled == true,
+                timerWarningOutlineStage1Color = iconSettings.timerWarningOutlineStage1Color,
+                timerWarningOutlineStage2Color = iconSettings.timerWarningOutlineStage2Color,
+                timerWarningOutlineStage3Color = iconSettings.timerWarningOutlineStage3Color,
                 timerWarningBoxColorEnabled = iconSettings.timerWarningBoxColorEnabled == true,
                 timerWarningBoxStage1Color = iconSettings.timerWarningBoxStage1Color,
                 timerWarningBoxStage2Color = iconSettings.timerWarningBoxStage2Color,
                 timerWarningBoxStage3Color = iconSettings.timerWarningBoxStage3Color,
+                timerWarningBoxBorderEnabled = iconSettings.timerWarningBoxBorderEnabled == true,
+                timerWarningBoxBorderStage1Color = iconSettings.timerWarningBoxBorderStage1Color,
+                timerWarningBoxBorderStage2Color = iconSettings.timerWarningBoxBorderStage2Color,
+                timerWarningBoxBorderStage3Color = iconSettings.timerWarningBoxBorderStage3Color,
                 timerWarningBackgroundEnabled = iconSettings.timerWarningBackgroundEnabled == true,
                 timerWarningIconPadding = tonumber(iconSettings.iconWarningPadding) or 6,
                 timerWarningIconBackgroundStage1Color = iconSettings.timerWarningIconBackgroundStage1Color,
@@ -586,6 +606,7 @@ local pcSocialLoadDefaults = {
     ['Away icon'] = 'Out of combat',
     ['Disconnect icon'] = 'Out of combat',
     ['Stars icon'] = 'Out of combat',
+    ['Level sync icon'] = 'Out of combat',
     ['New adventurer icon'] = 'Out of combat',
 };
 
@@ -667,10 +688,12 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,
+            useExactNameplateAnchor = true,
             plateWorldWidth = cached.plateWorldWidth or 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = cached.plateWorldOffsetY,
             plateDistanceScaleOffsetY = 0.28,
+            pcBodyPlateOffsetEnabled = true,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
             plateClickRects = cached.elementRects,
@@ -759,7 +782,11 @@ local function AnyPcWidgetCanLoadForState(layoutStateName)
     local bazaarIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Bazaar icon', bazaarIconDefaults);
     local awayIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Away icon', awayIconDefaults);
     local disconnectIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Disconnect icon', disconnectIconDefaults);
+    local anonIconDefaults = require('config.widgets.anon_icon');
+    local anonIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Anon icon', anonIconDefaults);
     local starsIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Stars icon', starsIconDefaults);
+    local levelSyncIconDefaults = require('config.widgets.level_sync_icon');
+    local levelSyncIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Level sync icon', levelSyncIconDefaults);
     local newAdventurerIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'New adventurer icon', newAdventurerIconDefaults);
 
     return
@@ -778,7 +805,9 @@ local function AnyPcWidgetCanLoadForState(layoutStateName)
         WidgetLoads(bazaarIconSettings, 'Bazaar icon') == true or
         WidgetLoads(awayIconSettings, 'Away icon') == true or
         WidgetLoads(disconnectIconSettings, 'Disconnect icon') == true or
+        WidgetLoads(anonIconSettings, 'Anon icon') == true or
         WidgetLoads(starsIconSettings, 'Stars icon') == true or
+        WidgetLoads(levelSyncIconSettings, 'Level sync icon') == true or
         WidgetLoads(newAdventurerIconSettings, 'New adventurer icon') == true or
         ShouldLoadStatusRows(buffsSettings, 'Buffs', layoutStateName == 'Combat') == true or
         ShouldLoadStatusRows(debuffsSettings, 'Debuffs', layoutStateName == 'Combat') == true;
@@ -812,16 +841,36 @@ local function AnyPcPlateWorkCanLoad()
 end
 
 local function BuildPcPlateData(context)
+    local hpBarColor = context.hpBarOutOfRange == true and SolidColor(context.hpBarSettings.outOfRangeColor, { 0.02, 0.08, 0.12, 1.0 }) or context.hpColor;
+    local hpBarAnimationColor = context.hpBarOutOfRange == true and hpBarColor or context.hpBarSettings.lowAnimationColor;
+    local nameColor = context.nameSettings.color or { 1.0, 1.0, 1.0, 1.0 };
+    local targetingSettings = targeting.GetSettings();
+    local playerBlacklist = require('core.player_blacklist');
+
+    if (targetingSettings.overwriteNativeNameColors == false) then
+        if (playerIndicators.HasAnonNameColor(context.player.index) == true) then
+            nameColor = playerIndicators.GetAnonNameColor();
+        else
+            local modeText = context.gameModeText or gameMode.Resolve(context.player.index, false);
+            if (modeText == 'CW' or modeText == 'UCW') then
+                nameColor = playerIndicators.GetCampaignNameColor();
+            end
+        end
+    end
+
+    local displayName = ShortenName(context.player.name, context.nameSettings.shortenName);
+    displayName = playerBlacklist.GetDisplayName(context.player, displayName);
+
     local plateData = {
         hp = context.hpPercent,
         mp = context.mpPercent,
         tp = context.tpPercent,
         aoeNameActive = context.nameAoeActive == true,
-        name = (context.nameLoads == true) and ShortenName(context.player.name, context.nameSettings.shortenName) or '',
+        name = (context.nameLoads == true) and displayName or '',
         nameFontFamily = fonts.GetRole(context.globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(context.globalSettings, false),
         nameFontSize = textScale.ToNameTextureFontSize(context.nameTextSize, nameDefaults.textSize),
-        nameColor = (context.nameAoeActive == true and context.aoeRangeSettings.fontColor) or context.nameSettings.color or { 1.0, 1.0, 1.0, 1.0 },
+        nameColor = (context.nameAoeActive == true and context.aoeRangeSettings.fontColor) or nameColor,
         nameOutlineEnabled = (tonumber(context.nameSettings.outlineSize) or 0) > 0,
         nameOutlineColor = context.nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
         nameOutlineSize = tonumber(context.nameSettings.outlineSize) or 0,
@@ -835,7 +884,7 @@ local function BuildPcPlateData(context)
             height = tonumber(context.hpBarSettings.height) or 12,
             offsetX = tonumber(context.hpBarSettings.offsetX) or 0,
             offsetY = tonumber(context.hpBarSettings.offsetY) or 0,
-            color = context.hpColor,
+            color = hpBarColor,
             backgroundColor = context.hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = context.hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(context.hpBarSettings.borderSize) or 0,
@@ -846,7 +895,7 @@ local function BuildPcPlateData(context)
             animationEnabled = context.hpAnimationEnabled,
             animationTextureId = context.hpAnimationEnabled == true and barAnimations.GetTextureId(context.hpBarSettings.lowAnimation) or nil,
             animationSpeed = tonumber(context.hpBarSettings.lowAnimationSpeed) or 40,
-            animationColor = context.hpBarSettings.lowAnimationColor,
+            animationColor = hpBarAnimationColor,
             showAtPercent = tonumber(context.hpBarSettings.showAtPercent) or 100,
             text = BuildResourceText(context.hpBarSettings, 'HP', context.player.hp, context.player.maxHp, context.hpPercent),
             textOffsetX = tonumber(context.hpBarSettings.textOffsetX) or 0,
@@ -950,7 +999,6 @@ local function QueuePlayer(player)
 
     local isPartyPlayer = tonumber(player.slot) ~= nil;
     local isTargetContext = targetStateName ~= 'Idle';
-    local showDistanceBadge = targetStateName == 'Target' or targetStateName == 'Subtarget';
     local isTacticalPlayer = isPartyPlayer == true;
     local isProtectedPlate = isPartyPlayer == true or isTargetContext == true;
 
@@ -958,20 +1006,53 @@ local function QueuePlayer(player)
     local useTargetOverlay = isTacticalPlayer == true or isTargetContext == true;
     local layoutStateName = (isTacticalPlayer == true or isTargetContext == true) and 'Combat' or 'Idle';
     local hasHp = player.hpPercent ~= nil or (player.hp ~= nil and player.maxHp ~= nil and tonumber(player.maxHp) > 0);
-    local hasMp = layoutStateName == 'Combat' and (player.mpPercent ~= nil or (player.mp ~= nil and player.maxMp ~= nil and tonumber(player.maxMp) > 0));
+    local playerMaxMp = tonumber(player.maxMp);
+    local playerMainJob = tonumber(player.mainJob);
+    local mainJobCanHaveMp =
+        playerMainJob == nil or
+        playerMainJob == 3 or -- WHM
+        playerMainJob == 4 or -- BLM
+        playerMainJob == 5 or -- RDM
+        playerMainJob == 7 or -- PLD
+        playerMainJob == 8 or -- DRK
+        playerMainJob == 10 or -- BRD
+        playerMainJob == 15 or -- SMN
+        playerMainJob == 16 or -- BLU
+        playerMainJob == 20 or -- SCH
+        playerMainJob == 21 or -- GEO
+        playerMainJob == 22; -- RUN
+    local hasMp = layoutStateName == 'Combat' and (
+        (playerMaxMp ~= nil and playerMaxMp > 0) or
+        (playerMaxMp == nil and (player.mpPercent ~= nil or player.mp ~= nil) and mainJobCanHaveMp == true)
+    );
     local hasTp = layoutStateName == 'Combat' and player.tp ~= nil;
     local hpPercent = ClampPercent(player.hpPercent, 100);
     local mpPercent = ClampPercent(player.mpPercent, 100);
     local tpValue = ClampTp(player.tp);
 
-    if (QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true) then
+    local earlyDistanceSettings = nil;
+    local canUseFreshIdleCache = true;
+
+    if (targetStateName == 'Idle' and useTargetOverlay ~= true and state.GetConfigOpen() ~= true) then
+        earlyDistanceSettings = state.GetWidgetSettings('PC', layoutStateName, 'Distance', distanceDefaults);
+
+        if (WidgetLoads(earlyDistanceSettings, 'Distance') == true) then
+            canUseFreshIdleCache = false;
+        end
+    end
+
+    if (
+        canUseFreshIdleCache == true and
+        QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true
+    ) then
         return;
     end
 
     local settingsTimer = perfMeter.BeginDetail('pc.settings');
     local backgroundSettings = state.GetWidgetSettings('PC', layoutStateName, 'Background', backgroundDefaults);
     local nameSettings = state.GetWidgetSettings('PC', layoutStateName, 'Name', nameDefaults);
-    local distanceSettings = state.GetWidgetSettings('PC', layoutStateName, 'Distance', distanceDefaults);
+    local distanceSettings = earlyDistanceSettings or state.GetWidgetSettings('PC', layoutStateName, 'Distance', distanceDefaults);
+    local showDistanceBadge = WidgetLoads(distanceSettings, 'Distance') == true;
     local hpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'HP Bar', barDefaults);
     local mpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'MP Bar', mpBarDefaults);
     local tpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'TP Bar', tpBarDefaults);
@@ -987,7 +1068,11 @@ local function QueuePlayer(player)
     local bazaarIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Bazaar icon', bazaarIconDefaults);
     local awayIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Away icon', awayIconDefaults);
     local disconnectIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Disconnect icon', disconnectIconDefaults);
+    local anonIconDefaults = require('config.widgets.anon_icon');
+    local anonIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Anon icon', anonIconDefaults);
     local starsIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Stars icon', starsIconDefaults);
+    local levelSyncIconDefaults = require('config.widgets.level_sync_icon');
+    local levelSyncIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Level sync icon', levelSyncIconDefaults);
     local newAdventurerIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'New adventurer icon', newAdventurerIconDefaults);
     local nativeUiPolicy = require('core.native_ui_policy');
     local targetMarker = targetStateName ~= 'Idle'
@@ -1010,6 +1095,12 @@ local function QueuePlayer(player)
     local levelLoads = suppressExpensiveWorldWidgets ~= true and WidgetLoads(levelSettings, 'Level');
     local hpAnimationEnabled = hpBarLoads == true and hpBarSettings.lowColorEnabled == true and hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25) and hpBarSettings.lowAnimationEnabled == true;
     local mpAnimationEnabled = mpBarLoads == true and mpBarSettings.lowColorEnabled == true and mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25) and mpBarSettings.lowAnimationEnabled == true;
+    local queuedActionRange = hpBarSettings.outOfRangeOpacityEnabled == true and targetModuleMarker.GetCurrentActionRange() or nil;
+    local hpBarOutOfRangeDistance = tonumber(queuedActionRange) or tonumber(hpBarSettings.outOfRangeDefaultDistance) or 21;
+    local hpBarOutOfRange = layoutStateName == 'Combat'
+        and hpBarSettings.outOfRangeOpacityEnabled == true
+        and tonumber(player.distance) ~= nil
+        and tonumber(player.distance) > hpBarOutOfRangeDistance;
     perfMeter.EndDetail(settingsTimer);
 
     if (hpBarSettings.lowColorEnabled == true and hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)) then
@@ -1031,10 +1122,14 @@ local function QueuePlayer(player)
     local bazaarIconTextureId = nil;
     local awayIconTextureId = nil;
     local disconnectIconTextureId = nil;
+    local anonIconTextureId = nil;
     local starsIconTextureId = nil;
+    local levelSyncIconTextureId = nil;
     local newAdventurerIconTextureId = nil;
     local allianceLeaderIconTextureId = nil;
     local partyLeaderIconTextureId = nil;
+    local playerGameModeText = gameMode.Resolve(player.index, false);
+    local playerAnonNameColor = playerIndicators.HasAnonNameColor(player.index) == true;
     local staffInfo = ResolveStaffInfo(player);
     local staffIconTextureId = nil;
 
@@ -1044,7 +1139,7 @@ local function QueuePlayer(player)
     end
 
     if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(gameModeIconSettings, 'Game mode icon') == true) then
-        gameModeIconTextureId = gameMode.GetIconTextureId(gameMode.Resolve(player.index, false));
+        gameModeIconTextureId = gameMode.GetIconTextureId(playerGameModeText);
         AddIcon(icons, gameModeIconSettings, gameModeIconTextureId, -72, -54, 'gameModeIcon');
     end
 
@@ -1069,9 +1164,19 @@ local function QueuePlayer(player)
         AddIcon(icons, disconnectIconSettings, disconnectIconTextureId, 144, -54, 'disconnectIcon');
     end
 
+    if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(anonIconSettings, 'Anon icon') == true) then
+        anonIconTextureId = playerIndicators.GetAnonIconTextureId(player.index);
+        AddIcon(icons, anonIconSettings, anonIconTextureId, -120, -54, 'anonIcon');
+    end
+
     if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(starsIconSettings, 'Stars icon') == true) then
         starsIconTextureId = playerIndicators.GetStarsIconTextureId(player.index);
         AddIcon(icons, starsIconSettings, starsIconTextureId, -48, -54, 'starsIcon');
+    end
+
+    if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(levelSyncIconSettings, 'Level sync icon') == true and partyStatuses.HasLevelSyncStatus(player.serverId) == true) then
+        levelSyncIconTextureId = playerIndicators.GetStaticIconTextureId('lvsync');
+        AddIcon(icons, levelSyncIconSettings, levelSyncIconTextureId, -24, -54, 'levelSyncIcon');
     end
 
     if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(newAdventurerIconSettings, 'New adventurer icon') == true) then
@@ -1094,7 +1199,7 @@ local function QueuePlayer(player)
 
     local distanceText = nil;
 
-    if (showDistanceBadge == true and WidgetLoads(distanceSettings, 'Distance') == true and player.distance ~= nil) then
+    if (showDistanceBadge == true and player.distance ~= nil) then
         distanceText = FormatDistanceText(distanceSettings, player.distance);
     end
 
@@ -1129,23 +1234,31 @@ local function QueuePlayer(player)
         and isPartyPlayer ~= true
         and isTacticalPlayer ~= true
         and useTargetOverlay ~= true
-        and state.GetConfigOpen() ~= true;
+        and state.GetConfigOpen() ~= true
+        and distanceText == nil;
 
     local cacheKey = nil;
     local signature = nil;
     local staleCached = nil;
+    local blacklistSignature = require('core.player_blacklist').GetSignature(player);
 
     if (cacheEligible == true) then
         cacheKey = 'pc:' .. tostring(player.index);
         signature = table.concat({
             'v=1',
             'policy=' .. canvasTexture.GetRenderPolicyKey(),
+            'overwriteNativeNameColors=' .. tostring(targeting.GetSettings().overwriteNativeNameColors ~= false),
+            'blacklist=' .. blacklistSignature,
+            'gameModeText=' .. tostring(playerGameModeText or ''),
+            'anonNameColor=' .. tostring(playerAnonNameColor),
             'statusIconPack=' .. tostring(globalSettings ~= nil and globalSettings.statusIcons ~= nil and globalSettings.statusIcons.iconPack or ''),
             'name=' .. tostring(player.name or ''),
             'status=' .. tostring(player.status or ''),
             'engaged=' .. BoolKey(currentPlayerEngaged),
             'hp=' .. tostring(hasHp == true and hpPercent or ''),
+            'hpValue=' .. tostring(player.hp or '') .. '/' .. tostring(player.maxHp or ''),
             'mp=' .. tostring(hasMp == true and mpPercent or ''),
+            'mpValue=' .. tostring(player.mp or '') .. '/' .. tostring(player.maxMp or ''),
             'tp=' .. tostring(hasTp == true and tpValue or ''),
             'distance=' .. tostring(distanceText or ''),
             'game=' .. tostring(gameModeIconTextureId or ''),
@@ -1155,6 +1268,7 @@ local function QueuePlayer(player)
             'away=' .. tostring(awayIconTextureId or ''),
             'disconnect=' .. tostring(disconnectIconTextureId or ''),
             'stars=' .. tostring(starsIconTextureId or ''),
+            'lvsync=' .. tostring(levelSyncIconTextureId or ''),
             'new=' .. tostring(newAdventurerIconTextureId or ''),
             'staff=' .. tostring(staffIconTextureId or '') .. ':' .. tostring(staffInfo ~= nil and staffInfo.type or ''),
             'aoe=' .. (isPartyPlayer == true and aoeNameHighlight.GetSignature(player.index, 'pc') or 'aoe-name:0'),
@@ -1162,7 +1276,7 @@ local function QueuePlayer(player)
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'dist:' .. SettingKey(distanceSettings, { 'enabled', 'loadMode', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint' }),
-            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
+            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
             'icons=' .. tostring(#icons),
         }, '\n');
 
@@ -1227,6 +1341,7 @@ local function QueuePlayer(player)
         hpBarSettings = hpBarSettings,
         hpColor = hpColor,
         hpAnimationEnabled = hpAnimationEnabled,
+        hpBarOutOfRange = hpBarOutOfRange,
         mpBarLoads = mpBarLoads,
         mpBarSettings = mpBarSettings,
         mpColor = mpColor,
@@ -1235,6 +1350,7 @@ local function QueuePlayer(player)
         tpBarSettings = tpBarSettings,
         tpColor = tpColor,
         targetMarker = targetMarker,
+        gameModeText = playerGameModeText,
         icons = icons,
         anchorFallbackDefinitions = {
             { kind = 'gameModeIcon', settings = gameModeIconSettings, defaults = gameModeIconDefaults, defaultX = -72, defaultY = -54 },
@@ -1242,7 +1358,9 @@ local function QueuePlayer(player)
             { kind = 'bazaarIcon', settings = bazaarIconSettings, defaults = bazaarIconDefaults, defaultX = 72, defaultY = -54 },
             { kind = 'awayIcon', settings = awayIconSettings, defaults = awayIconDefaults, defaultX = 120, defaultY = -54 },
             { kind = 'disconnectIcon', settings = disconnectIconSettings, defaults = disconnectIconDefaults, defaultX = 144, defaultY = -54 },
+            { kind = 'anonIcon', settings = anonIconSettings, defaults = anonIconDefaults, defaultX = -120, defaultY = -54 },
             { kind = 'starsIcon', settings = starsIconSettings, defaults = starsIconDefaults, defaultX = -48, defaultY = -54 },
+            { kind = 'levelSyncIcon', settings = levelSyncIconSettings, defaults = levelSyncIconDefaults, defaultX = -24, defaultY = -54 },
             { kind = 'newAdventurerIcon', settings = newAdventurerIconSettings, defaults = newAdventurerIconDefaults, defaultX = 24, defaultY = -54 },
             { kind = 'partyLeaderIcon', settings = partyLeaderIconSettings, defaults = partyLeaderIconDefaults, defaultX = -96, defaultY = -54 },
             { kind = 'allianceLeaderIcon', settings = allianceLeaderIconSettings, defaults = allianceLeaderIconDefaults, defaultX = -120, defaultY = -54 },
@@ -1344,7 +1462,7 @@ local function QueuePlayer(player)
             textureHeight = textureHeight,
             elementRects = elementRects,
             plateWorldWidth = 2.35,
-            plateWorldOffsetY = (tonumber(player.status) == 85) and (0.50 - mountedPlateLift) or 0.50,
+            plateWorldOffsetY = (tonumber(player.status) == 85) and (0.05 - mountedPlateLift) or 0.05,
         };
         indexCache[tonumber(player.index) or 0] = {
             cacheKey = cacheKey,
@@ -1355,7 +1473,7 @@ local function QueuePlayer(player)
     end
 
     local queueTimer = perfMeter.BeginDetail('pc.queue');
-    local plateWorldOffsetY = (tonumber(player.status) == 85) and (0.50 - mountedPlateLift) or 0.50;
+    local plateWorldOffsetY = (tonumber(player.status) == 85) and (0.05 - mountedPlateLift) or 0.05;
     local targetingSettings = targeting.GetSettings();
 
     worldMarkerProbe.QueuePlate({
@@ -1374,10 +1492,12 @@ local function QueuePlayer(player)
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,
+            useExactNameplateAnchor = true,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetY = plateWorldOffsetY,
             plateDistanceScaleOffsetY = 0.28,
+            pcBodyPlateOffsetEnabled = true,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = elementRects,

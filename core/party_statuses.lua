@@ -622,6 +622,35 @@ function partyStatuses.GetMemberRows(serverId, kind)
     return rows;
 end
 
+function partyStatuses.HasLevelSyncStatus(serverId)
+    serverId = tonumber(serverId) or 0;
+
+    if (serverId == 0) then
+        return false;
+    end
+
+    RefreshFromMemoryIfEmpty();
+
+    local statusIds = partyBuffs[serverId];
+
+    if (statusIds == nil) then
+        return false;
+    end
+
+    local startIndex = statusIds[0] ~= nil and 0 or 1;
+
+    for offset = 0, 31 do
+        local index = startIndex + offset;
+        local statusId = tonumber(statusIds[index]);
+
+        if (statusId ~= nil and levelSyncStatusIds[statusId] == true) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
 function partyStatuses.GetDebugText(serverId)
     serverId = tonumber(serverId) or 0;
     RefreshFromMemoryIfEmpty();

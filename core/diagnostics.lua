@@ -147,10 +147,11 @@ local function GetSettingsLine()
     local settings = targeting.GetSettings();
 
     return string.format(
-        'settings nativeParty=%s nativeArrow=%s nativeNames=%s nativeHookNeeded=%s %s',
+        'settings nativeParty=%s nativeArrow=%s nativeNames=%s overwriteNativeNameColors=%s nativeHookNeeded=%s %s',
         tostring(settings.hideNativePartyTargetUi == true),
         tostring(settings.hideNativeTargetArrow == true),
         tostring(settings.hideNativeNamesOnLoad == true),
+        tostring(settings.overwriteNativeNameColors ~= false),
         tostring(nativeTargetArrow.ShouldUseDrawHooks() == true),
         nativeTargetArrow.GetHardHideEveryDrawStatusText()
     );

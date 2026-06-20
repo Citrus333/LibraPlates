@@ -450,15 +450,19 @@ local function GetTimerBackgroundColor(icon)
     local normalSeconds = tonumber(icon.timerNormalSeconds) or 60;
     local soonSeconds = tonumber(icon.timerSoonSeconds) or 20;
 
+    if (icon.timerBackgroundColor ~= nil) then
+        return icon.timerBackgroundColor;
+    end
+
     if (seconds > normalSeconds) then
-        return icon.timerNormalBackgroundColor or icon.timerBackgroundColor;
+        return icon.timerNormalBackgroundColor;
     end
 
     if (seconds > soonSeconds) then
-        return icon.timerSoonBackgroundColor or icon.timerBackgroundColor;
+        return icon.timerSoonBackgroundColor;
     end
 
-    return icon.timerUrgentBackgroundColor or icon.timerBackgroundColor;
+    return icon.timerUrgentBackgroundColor;
 end
 
 local function GetTimerWarningStage(icon)
@@ -514,10 +518,22 @@ local function GetTimerWarningColor(icon, target)
         return icon.timerWarningFontStage1Color or icon.timerWarningStage1Color or { 1.0, 1.0, 1.0, 1.0 };
     end
 
+    if (target == 'outline') then
+        if (stage == 3) then return icon.timerWarningOutlineStage3Color or icon.timerTextOutlineColor or { 0.0, 0.0, 0.0, 1.0 }; end
+        if (stage == 2) then return icon.timerWarningOutlineStage2Color or icon.timerTextOutlineColor or { 0.0, 0.0, 0.0, 1.0 }; end
+        return icon.timerWarningOutlineStage1Color or icon.timerTextOutlineColor or { 0.0, 0.0, 0.0, 1.0 };
+    end
+
     if (target == 'box') then
         if (stage == 3) then return icon.timerWarningBoxStage3Color or icon.timerWarningStage3Color or { 1.0, 0.15, 0.15, 1.0 }; end
         if (stage == 2) then return icon.timerWarningBoxStage2Color or icon.timerWarningStage2Color or { 1.0, 0.50, 0.05, 1.0 }; end
         return icon.timerWarningBoxStage1Color or icon.timerWarningStage1Color or { 1.0, 0.90, 0.20, 1.0 };
+    end
+
+    if (target == 'boxBorder') then
+        if (stage == 3) then return icon.timerWarningBoxBorderStage3Color or icon.timerWarningStage3Color or { 1.0, 0.15, 0.15, 1.0 }; end
+        if (stage == 2) then return icon.timerWarningBoxBorderStage2Color or icon.timerWarningStage2Color or { 1.0, 0.50, 0.05, 1.0 }; end
+        return icon.timerWarningBoxBorderStage1Color or icon.timerWarningStage1Color or { 1.0, 0.90, 0.20, 1.0 };
     end
 
     if (target == 'iconBackground') then
@@ -935,10 +951,17 @@ local function DrawBar(device, centerX, centerY, bar, progress, defaultColor, re
 
     DrawRect(device, barX, barY, barW, barH, ColorToD3D(bar.backgroundColor, { 0.05, 0.05, 0.05, 0.85 }));
 
+    local fillW = barW * progress;
+    local fillX = barX;
+
+    if (tostring(bar.fillDirection or 'Left to right') == 'Right to left') then
+        fillX = barX + barW - fillW;
+    end
+
     if (bar.textureId ~= nil and tonumber(bar.textureId) ~= nil and tonumber(bar.textureId) ~= 0) then
-        DrawTexture(device, bar.textureId, barX, barY, barW * progress, barH, ColorToD3D(bar.color, defaultColor), progress, 1);
+        DrawTexture(device, bar.textureId, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor), progress, 1);
     else
-        DrawRect(device, barX, barY, barW * progress, barH, ColorToD3D(bar.color, defaultColor));
+        DrawRect(device, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor));
     end
 
     if (bar.animationEnabled == true) then
@@ -1502,8 +1525,10 @@ local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
         textY = textY + sharedOffsetY;
     end
 
+    local labelKind = bar.labelKind or kind;
+
     if (iconSize > 0) then
-        AddRect(rects, iconX, iconY, iconSize, iconSize, 4, kind);
+        AddRect(rects, iconX, iconY, iconSize, iconSize, 4, labelKind);
     elseif (bar.separateLabelOffsets == true and labelText ~= '' and labelW ~= nil and labelH ~= nil and labelW > 0 and labelH > 0) then
         AddRect(
             rects,
@@ -1512,12 +1537,12 @@ local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
             labelW,
             labelH,
             4,
-            kind
+            labelKind
         );
     end
 
     if (barText ~= '' and textW ~= nil and textH ~= nil and textW > 0 and textH > 0) then
-        AddRect(rects, textX, textY, textW, textH, 4, kind);
+        AddRect(rects, textX, textY, textW, textH, 4, bar.textKind or labelKind);
     end
 end
 
@@ -1534,6 +1559,8 @@ local function GetBadgeRect(centerX, centerY, badge)
 
     local textW = 0;
     local textH = 0;
+    local labelW = 0;
+    local labelH = 0;
 
     if (textValue ~= '') then
         local _, measuredW, measuredH = gdiTextTexture.GetTexture(textValue, {
@@ -1554,18 +1581,106 @@ local function GetBadgeRect(centerX, centerY, badge)
         textH = measuredH;
     end
 
+    if (labelValue ~= '') then
+        local _, measuredW, measuredH = gdiTextTexture.GetTexture(labelValue, {
+            fontFamily = ResolveFontFamily(badge.fontFamily),
+            fontFlags = tonumber(badge.fontFlags) or 0,
+            fontSize = math.max(8, tonumber(badge.fontSize) or 12),
+            color = badge.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            outlineEnabled = badge.textOutlineEnabled == true,
+            outlineColor = badge.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            outlineSize = tonumber(badge.textOutlineSize) or 0,
+        });
+
+        if (measuredW ~= nil and measuredH ~= nil and measuredW > 0 and measuredH > 0) then
+            labelW = measuredW;
+            labelH = measuredH;
+        end
+    end
+
     local iconSize = 0;
     local iconGap = 0;
 
     if (hasIcon == true) then
-        iconSize = math.max(1, tonumber(badge.iconSize) or textH or 16);
+        local defaultIconSize = ((textH > 0) and textH) or ((labelH > 0) and labelH) or 16;
+        iconSize = math.max(1, tonumber(badge.iconSize) or defaultIconSize);
         iconGap = math.max(0, tonumber(badge.iconGap) or 4);
     end
 
     local padX = math.max(0, tonumber(badge.paddingX) or 0);
     local padY = math.max(0, tonumber(badge.paddingY) or 0);
-    local contentW = textW + iconSize + ((iconSize > 0 and textW > 0) and iconGap or 0);
-    local contentH = math.max(textH, iconSize);
+    local measuredTextW = (textW > 0) and textW or labelW;
+    local measuredTextH = (textH > 0) and textH or labelH;
+    local contentW = measuredTextW + iconSize + ((iconSize > 0 and measuredTextW > 0) and iconGap or 0);
+    local contentH = math.max(measuredTextH, iconSize);
+
+    if (badge.separateLabelOffsets == true) then
+        local offsetX = tonumber(badge.offsetX) or 0;
+        local offsetY = tonumber(badge.offsetY) or 0;
+        local minX = nil;
+        local minY = nil;
+        local maxX = nil;
+        local maxY = nil;
+
+        local function includeRect(x, y, w, h)
+            if (x == nil or y == nil or w == nil or h == nil or w <= 0 or h <= 0) then
+                return;
+            end
+
+            minX = (minX == nil) and x or math.min(minX, x);
+            minY = (minY == nil) and y or math.min(minY, y);
+            maxX = (maxX == nil) and (x + w) or math.max(maxX, x + w);
+            maxY = (maxY == nil) and (y + h) or math.max(maxY, y + h);
+        end
+
+        if (iconSize > 0) then
+            includeRect(
+                centerX + offsetX + (tonumber(badge.labelOffsetX) or 0) - (iconSize * 0.5),
+                centerY + offsetY + (tonumber(badge.labelOffsetY) or 0) - (iconSize * 0.5),
+                iconSize,
+                iconSize
+            );
+        elseif (labelW > 0 and labelH > 0) then
+            includeRect(
+                centerX + offsetX + (tonumber(badge.labelOffsetX) or 0) - (labelW * 0.5),
+                centerY + offsetY + (tonumber(badge.labelOffsetY) or 0) - (labelH * 0.5),
+                labelW,
+                labelH
+            );
+        end
+
+        if (textW > 0 and textH > 0) then
+            includeRect(
+                centerX + offsetX + (tonumber(badge.textOffsetX) or 0) - (textW * 0.5),
+                centerY + offsetY + (tonumber(badge.textOffsetY) or 0) - (textH * 0.5),
+                textW,
+                textH
+            );
+        end
+
+        if (minX ~= nil and minY ~= nil and maxX ~= nil and maxY ~= nil) then
+            local visibleW = maxX - minX;
+            local visibleH = maxY - minY;
+            local badgeW = math.max(tonumber(badge.minWidth) or 0, visibleW + (padX * 2));
+            local badgeH = math.max(tonumber(badge.minHeight) or 0, visibleH + (padY * 2));
+            local badgeX = minX + (visibleW * 0.5) - (badgeW * 0.5);
+            local badgeY = minY + (visibleH * 0.5) - (badgeH * 0.5);
+
+            return {
+                x = badgeX,
+                y = badgeY,
+                w = badgeW,
+                h = badgeH,
+                textW = textW,
+                textH = textH,
+                iconSize = iconSize,
+                iconGap = iconGap,
+                contentW = contentW,
+                contentH = contentH,
+            };
+        end
+    end
+
     local badgeW = math.max(tonumber(badge.minWidth) or 0, contentW + (padX * 2));
     local badgeH = math.max(tonumber(badge.minHeight) or 0, contentH + (padY * 2));
     local badgeX = centerX - (badgeW * 0.5) + (tonumber(badge.offsetX) or 0);
@@ -1809,7 +1924,7 @@ function canvasTexture.GetElementRects(plate)
         end
     end
 
-    local plateName = nativeUiPolicy.ShouldDrawLibraNames() == true and tostring(plate.name or '') or '';
+    local plateName = (nativeUiPolicy.ShouldDrawLibraNames() == true or plate.forceName == true) and tostring(plate.name or '') or '';
 
     if (plateName ~= '') then
         local manualOutlineRadius = GetManualNameOutlineRadius(plate.nameOutlineSize);
@@ -2248,7 +2363,9 @@ function canvasTexture.Render(plate, key)
                 local iconBackgroundWarningColor = GetTimerWarningColor(icon, 'iconBackground');
                 local iconBorderWarningColor = GetTimerWarningColor(icon, 'iconBorder');
                 local timerFontWarningColor = GetTimerWarningColor(icon, 'font');
+                local timerOutlineWarningColor = GetTimerWarningColor(icon, 'outline');
                 local timerBoxWarningColor = GetTimerWarningColor(icon, 'box');
+                local timerBoxBorderWarningColor = GetTimerWarningColor(icon, 'boxBorder');
 
                 local iconWarningBackgroundActive = iconBackgroundWarningColor ~= nil and icon.timerWarningBackgroundEnabled == true;
                 local iconWarningPad = iconWarningBackgroundActive and math.max(0, math.floor((tonumber(icon.timerWarningIconPadding) or 6) + 0.5)) or 0;
@@ -2316,7 +2433,7 @@ function canvasTexture.Render(plate, key)
                         fontSize = math.max(4, tonumber(icon.timerFontSize) or 8),
                         color = timerTextColor,
                         outlineEnabled = (tonumber(icon.timerTextOutlineSize) or 0) > 0,
-                        outlineColor = icon.timerTextOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+                        outlineColor = (timerOutlineWarningColor ~= nil and icon.timerWarningOutlineColorEnabled == true) and timerOutlineWarningColor or icon.timerTextOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
                         outlineSize = tonumber(icon.timerTextOutlineSize) or 1,
                     };
                     local timerTextureId, timerW, timerH = gdiTextTexture.GetTexture(timerText, timerFontOptions);
@@ -2328,7 +2445,7 @@ function canvasTexture.Render(plate, key)
                         local timerY = iconY + iconSize + 1 + (tonumber(icon.timerOffsetY) or 0);
 
                         if (icon.timerBackground == true) then
-                            local sampleText = string.find(timerText, 'm', 1, true) ~= nil and '88m' or '88';
+                            local sampleText = string.find(timerText, 'm', 1, true) ~= nil and '88m' or '88s';
                             local _, sampleW = gdiTextTexture.GetTexture(sampleText, timerFontOptions);
 
                             timerBoxW = math.max(timerW, tonumber(sampleW) or 0);
@@ -2349,7 +2466,10 @@ function canvasTexture.Render(plate, key)
                                 timerBoxW + (padX * 2),
                                 timerBoxH + (padY * 2),
                                 boxColor,
-                                ColorToD3D(icon.timerBackgroundBorderColor, { 0.0, 0.0, 0.0, 1.0 }),
+                                ColorToD3D(
+                                    (timerBoxBorderWarningColor ~= nil and icon.timerWarningBoxBorderEnabled == true) and timerBoxBorderWarningColor or icon.timerBackgroundBorderColor,
+                                    { 0.0, 0.0, 0.0, 1.0 }
+                                ),
                                 borderSize,
                                 tonumber(icon.timerCornerRadius) or 0
                             );
@@ -2408,7 +2528,7 @@ function canvasTexture.Render(plate, key)
                 end
             end
 
-            local plateName = nativeUiPolicy.ShouldDrawLibraNames() == true and tostring(plate.name or '') or '';
+            local plateName = (nativeUiPolicy.ShouldDrawLibraNames() == true or plate.forceName == true) and tostring(plate.name or '') or '';
             local nameFontSize = GetNameFontSize(plate, plateName);
             local renderFontSize = GetNameRenderFontSize(nameFontSize);
             local renderScale = GetNameRenderScale(nameFontSize, renderFontSize);

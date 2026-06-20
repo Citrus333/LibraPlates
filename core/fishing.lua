@@ -151,7 +151,7 @@ end
 function fishing.GetTextureId(settings)
     settings = settings or {};
 
-    local result = fishing.GetResult();
+    local result = (settings.previewResult == true) and nil or fishing.GetResult();
 
     if (result == nil and settings.previewResult ~= true) then
         return nil;
@@ -164,7 +164,7 @@ end
 
 function fishing.AddIcon(plateData, settings)
     local textureId = fishing.GetTextureId(settings);
-    local result = fishing.GetResult();
+    local result = (settings.previewResult == true) and nil or fishing.GetResult();
 
     if (plateData == nil or settings == nil or settings.enabled == false or textureId == nil) then
         return;

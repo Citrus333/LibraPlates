@@ -18,12 +18,25 @@ local npcIcons = LoadTable('data.npc_icons');
 local itemIcons = LoadTable('data.item_icons');
 local catseyeNpcIcons = LoadTable('data.catseye_npc_icons');
 local catseyeItemIcons = LoadTable('data.catseye_item_icons');
+local hiddenEntries = LoadTable('data.npc_object_hidden');
 local textureIds = {};
 local currentZoneId = nil;
 local currentZoneName = nil;
+local MergeEntry;
 
 local function CleanName(name)
     return tostring(name or ''):gsub('\170', '');
+end
+
+local function NormalizeName(name)
+    local text = CleanName(name);
+
+    text = text:gsub('\\', '');
+    text = text:gsub('[`´’]', "'");
+    text = text:gsub('%s+', ' ');
+    text = text:gsub('^%s+', ''):gsub('%s+$', '');
+
+    return text;
 end
 
 local function NormalizeZoneName(zoneName)
@@ -183,18 +196,60 @@ local function ReadEntry(sourceName, entry, ignoreZone)
     };
 end
 
-local function FindIn(name, sourceName, source)
-    return ReadEntry(sourceName, source[CleanName(name)]);
+local function ReadZoneIndexOverride(sourceName, entry, options)
+    if (type(entry) ~= 'table' or type(options) ~= 'table' or type(entry.byZoneIndex) ~= 'table') then
+        return nil;
+    end
+
+    local currentZoneIdValue = GetCurrentZoneId();
+    local targetIndex = tonumber(options.targetIndex or options.index);
+
+    if (currentZoneIdValue == 0 or targetIndex == nil) then
+        return nil;
+    end
+
+    local zoneOverrides = entry.byZoneIndex[currentZoneIdValue] or entry.byZoneIndex[tostring(currentZoneIdValue)];
+
+    if (type(zoneOverrides) ~= 'table') then
+        return nil;
+    end
+
+    local override = zoneOverrides[targetIndex] or zoneOverrides[tostring(targetIndex)];
+
+    if (type(override) ~= 'table') then
+        return nil;
+    end
+
+    return ReadEntry(sourceName, override, true);
 end
 
-local function FindScopedIn(name, sourceName, source)
-    local entry = source[CleanName(name)];
+local function ApplyZoneIndexOverride(sourceName, entry, info, options)
+    local override = ReadZoneIndexOverride(sourceName, entry, options);
+
+    if (override == nil) then
+        return info;
+    end
+
+    return MergeEntry(override, info);
+end
+
+local function FindIn(name, sourceName, source, ignoreZone, options)
+    local entry = source[NormalizeName(name)] or source[CleanName(name)];
+    local info = ReadEntry(sourceName, entry, ignoreZone == true);
+
+    return ApplyZoneIndexOverride(sourceName, entry, info, options);
+end
+
+local function FindScopedIn(name, sourceName, source, ignoreZone, options)
+    local entry = source[NormalizeName(name)] or source[CleanName(name)];
 
     if (GetEntryZones(entry) == nil) then
         return nil;
     end
 
-    return ReadEntry(sourceName, entry);
+    local info = ReadEntry(sourceName, entry, ignoreZone == true);
+
+    return ApplyZoneIndexOverride(sourceName, entry, info, options);
 end
 
 local function FindMogHouseMoogleAlias(sourceName, source)
@@ -205,7 +260,7 @@ local function FindMogHouseMoogleAlias(sourceName, source)
     return ReadEntry(sourceName, source['Moogle (Mog House)'], true);
 end
 
-local function MergeEntry(primary, fallback)
+MergeEntry = function(primary, fallback)
     if (primary == nil) then
         return fallback;
     end
@@ -237,39 +292,50 @@ local function MergeEntry(primary, fallback)
     return primary;
 end
 
-function npcInfo.Find(name, entityType)
+function npcInfo.ShouldHidePlate(name)
+    local cleanName = NormalizeName(name);
+
+    return hiddenEntries[cleanName] == true;
+end
+
+function npcInfo.Find(name, entityType, options)
+    if (npcInfo.ShouldHidePlate(name) == true) then
+        return nil;
+    end
+
     local kind = tostring(entityType or ''):lower();
     local cleanName = CleanName(name);
+    local ignoreZone = type(options) == 'table' and options.ignoreZone == true;
 
     if (kind == 'object') then
-        local item = FindIn(name, 'catseye_item', catseyeItemIcons)
-            or FindScopedIn(name, 'item', itemIcons)
-            or FindIn(name, 'item', itemIcons);
-        local npc = FindIn(name, 'catseye_npc', catseyeNpcIcons)
-            or FindScopedIn(name, 'npc', npcIcons)
-            or (cleanName == 'Moogle' and FindMogHouseMoogleAlias('npc', npcIcons) or nil)
-            or FindIn(name, 'npc', npcIcons);
+        local item = FindIn(name, 'catseye_item', catseyeItemIcons, ignoreZone, options)
+            or FindScopedIn(name, 'item', itemIcons, ignoreZone, options)
+            or FindIn(name, 'item', itemIcons, ignoreZone, options);
+        local npc = FindIn(name, 'catseye_npc', catseyeNpcIcons, ignoreZone, options)
+            or FindScopedIn(name, 'npc', npcIcons, ignoreZone, options)
+            or (ignoreZone ~= true and cleanName == 'Moogle' and FindMogHouseMoogleAlias('npc', npcIcons) or nil)
+            or FindIn(name, 'npc', npcIcons, ignoreZone, options);
 
         return MergeEntry(item, npc);
     end
 
-    local catseyeNpc = FindIn(name, 'catseye_npc', catseyeNpcIcons)
-        or FindScopedIn(name, 'catseye_npc', catseyeNpcIcons);
-    local npc = FindScopedIn(name, 'npc', npcIcons)
-        or (cleanName == 'Moogle' and FindMogHouseMoogleAlias('npc', npcIcons) or nil)
-        or FindIn(name, 'npc', npcIcons);
+    local catseyeNpc = FindIn(name, 'catseye_npc', catseyeNpcIcons, ignoreZone, options)
+        or FindScopedIn(name, 'catseye_npc', catseyeNpcIcons, ignoreZone, options);
+    local npc = FindScopedIn(name, 'npc', npcIcons, ignoreZone, options)
+        or (ignoreZone ~= true and cleanName == 'Moogle' and FindMogHouseMoogleAlias('npc', npcIcons) or nil)
+        or FindIn(name, 'npc', npcIcons, ignoreZone, options);
 
     return MergeEntry(catseyeNpc, npc) or npc;
 end
 
-function npcInfo.ResolveKind(name, entityType)
-    local catseyeItemInfo = FindIn(name, 'catseye_item', catseyeItemIcons);
+function npcInfo.ResolveKind(name, entityType, options)
+    local catseyeItemInfo = FindIn(name, 'catseye_item', catseyeItemIcons, false, options);
 
     if (catseyeItemInfo ~= nil) then
         return 'Object', catseyeItemInfo;
     end
 
-    local info = npcInfo.Find(name, entityType);
+    local info = npcInfo.Find(name, entityType, options);
     local rawType = tostring(entityType or ''):lower();
 
     if (info ~= nil) then
@@ -280,9 +346,9 @@ function npcInfo.ResolveKind(name, entityType)
         return 'NPC', info;
     end
 
-    local itemInfo = FindIn(name, 'catseye_item', catseyeItemIcons)
-        or FindScopedIn(name, 'item', itemIcons)
-        or FindIn(name, 'item', itemIcons);
+    local itemInfo = FindIn(name, 'catseye_item', catseyeItemIcons, false, options)
+        or FindScopedIn(name, 'item', itemIcons, false, options)
+        or FindIn(name, 'item', itemIcons, false, options);
 
     if (itemInfo ~= nil) then
         return 'Object', itemInfo;
@@ -296,8 +362,8 @@ function npcInfo.ResolveKind(name, entityType)
     return 'NPC', nil;
 end
 
-function npcInfo.GetType(name, entityType)
-    local info = npcInfo.Find(name, entityType);
+function npcInfo.GetType(name, entityType, options)
+    local info = npcInfo.Find(name, entityType, options);
 
     if (info ~= nil and info.type ~= nil and tostring(info.type) ~= '') then
         return tostring(info.type);
@@ -365,8 +431,8 @@ local function BuildIconPath(info)
     return path;
 end
 
-function npcInfo.GetTextureId(name, entityType)
-    local path = BuildIconPath(npcInfo.Find(name, entityType));
+function npcInfo.GetTextureId(name, entityType, options)
+    local path = BuildIconPath(npcInfo.Find(name, entityType, options));
 
     if (path == nil or path == '') then
         return nil;

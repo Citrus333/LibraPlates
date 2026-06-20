@@ -29,7 +29,21 @@ local function GetSelfServerId()
     local party = memory ~= nil and memory:GetParty() or nil;
     local entity = memory ~= nil and memory:GetEntity() or nil;
 
-    if (party == nil or entity == nil) then
+    if (party == nil) then
+        return nil;
+    end
+
+    local partyServerId = SafeCall(0, function()
+        return party:GetMemberServerId(0);
+    end);
+
+    partyServerId = tonumber(partyServerId) or 0;
+
+    if (partyServerId ~= 0) then
+        return partyServerId;
+    end
+
+    if (entity == nil) then
         return nil;
     end
 
@@ -181,6 +195,28 @@ local function PruneSelfTimerSeen(activeStatusIds)
     end
 end
 
+local function CopySelfTimersToPartyRows(selfRows, partyRows)
+    local selfTimers = {};
+
+    for _, row in ipairs(selfRows or {}) do
+        local statusId = tonumber(row.id) or 0;
+
+        if (statusId > 0 and row.seconds ~= nil) then
+            selfTimers[statusId] = row.seconds;
+        end
+    end
+
+    for _, row in ipairs(partyRows or {}) do
+        local statusId = tonumber(row.id) or 0;
+
+        if (selfTimers[statusId] ~= nil) then
+            row.seconds = selfTimers[statusId];
+        end
+    end
+
+    return partyRows;
+end
+
 local function GetStatusIds(player)
     local statusIds = SafeCall(nil, function()
         return player:GetStatusIcons();
@@ -224,6 +260,7 @@ end
 function playerStatuses.GetSelfRows(kind)
     local player = GetPlayer();
     local rows = {};
+    local selfServerId = GetSelfServerId();
 
     if (player == nil) then
         return rows;
@@ -233,7 +270,7 @@ function playerStatuses.GetSelfRows(kind)
     local statusTimers = GetStatusTimers(player);
 
     if (statusIds == nil) then
-        return partyStatuses.GetMemberRows(GetSelfServerId(), kind);
+        return partyStatuses.GetMemberRows(selfServerId, kind);
     end
 
     local startIndex = GetStartIndex(statusIds);
@@ -265,8 +302,16 @@ function playerStatuses.GetSelfRows(kind)
 
     PruneSelfTimerSeen(activeStatusIds);
 
+    if (kind == 'buff' or kind == 'debuff') then
+        local partyRows = partyStatuses.GetMemberRows(selfServerId, kind);
+
+        if (#partyRows > 0) then
+            return CopySelfTimersToPartyRows(rows, partyRows);
+        end
+    end
+
     if (#rows == 0) then
-        local partyRows = partyStatuses.GetMemberRows(GetSelfServerId(), kind);
+        local partyRows = partyStatuses.GetMemberRows(selfServerId, kind);
 
         if (#partyRows > 0) then
             return partyRows;
@@ -289,8 +334,35 @@ function playerStatuses.GetSelfRows(kind)
 
         return (tonumber(a.order) or 0) < (tonumber(b.order) or 0);
     end);
-
     return rows;
+end
+
+function playerStatuses.HasSelfLevelSyncStatus()
+    local player = GetPlayer();
+    local selfServerId = GetSelfServerId();
+
+    if (player == nil) then
+        return partyStatuses.HasLevelSyncStatus(selfServerId);
+    end
+
+    local statusIds = GetStatusIds(player);
+
+    if (statusIds == nil) then
+        return partyStatuses.HasLevelSyncStatus(selfServerId);
+    end
+
+    local startIndex = GetStartIndex(statusIds);
+
+    for offset = 0, 31 do
+        local index = startIndex + offset;
+        local statusId = GetStatusId(statusIds, index);
+
+        if (statusId ~= nil and levelSyncStatusIds[statusId] == true) then
+            return true;
+        end
+    end
+
+    return partyStatuses.HasLevelSyncStatus(selfServerId);
 end
 
 function playerStatuses.GetSelfDebugText()

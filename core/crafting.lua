@@ -168,7 +168,7 @@ end
 function crafting.GetTextureId(settings)
     settings = settings or {};
 
-    local result = state.result;
+    local result = (settings.previewResult == true) and nil or state.result;
 
     if (result == nil and settings.previewResult ~= true) then
         return nil;
@@ -184,7 +184,7 @@ function crafting.AddWidget(plateData, settings)
         return;
     end
 
-    local result = state.result;
+    local result = (settings.previewResult == true) and nil or state.result;
     local previewResult = NormalizeResult(settings.previewResultName) or 'hq';
     local text = crafting.GetTextForResult(result or (settings.previewResult == true and previewResult or nil));
 

@@ -76,6 +76,60 @@ local function DrawRadioChoice(label, selected)
     return ClickText(text, (selected == true) and actionColor or labelColor);
 end
 
+local function NormalizeTimeUnit(unit)
+    unit = tostring(unit or 'M'):upper();
+
+    if (unit == 'H' or unit == 'M' or unit == 'S') then
+        return unit;
+    end
+
+    return 'M';
+end
+
+local function TimeValueFromMinutes(minutes, unit)
+    local value = tonumber(minutes) or 0;
+    unit = NormalizeTimeUnit(unit);
+
+    if (unit == 'H') then
+        return math.max(1, math.floor((value / 60) + 0.5));
+    end
+
+    if (unit == 'S') then
+        return math.max(1, math.floor((value * 60) + 0.5));
+    end
+
+    return math.max(1, math.floor(value + 0.5));
+end
+
+local function MinutesFromTimeValue(value, unit)
+    local current = math.max(1, tonumber(value) or 1);
+    unit = NormalizeTimeUnit(unit);
+
+    if (unit == 'H') then
+        return current * 60;
+    end
+
+    if (unit == 'S') then
+        return current / 60;
+    end
+
+    return current;
+end
+
+local function TimeUnitLimits(unit)
+    unit = NormalizeTimeUnit(unit);
+
+    if (unit == 'H') then
+        return 1, 168, 1;
+    end
+
+    if (unit == 'S') then
+        return 1, 86400, 1;
+    end
+
+    return 1, 1440, 1;
+end
+
 local function DrawHideBuffsMode(settings)
     settings.hideOutOfCombat = DrawCheckbox('Hide buffs', settings.hideOutOfCombat);
 
@@ -395,15 +449,35 @@ local function DrawColorPairRow(rowId, leftLabel, leftId, leftValue, rightLabel,
     return leftResult, rightResult;
 end
 
-local function DrawBuffFilterDurationRow(rowId, enabledValue, minutesValue)
+local function DrawTimeUnitButtons(rowId, unit)
+    local result = NormalizeTimeUnit(unit);
+
+    for _, option in ipairs({ 'H', 'M', 'S' }) do
+        if (option ~= 'H') then
+            imgui.SameLine();
+        end
+
+        if (ClickText(option, (result == option) and valueColor or labelColor) == true) then
+            result = option;
+        end
+    end
+
+    return result;
+end
+
+local function DrawBuffFilterDurationRow(rowId, enabledValue, minutesValue, unitValue)
+    local unitResult = NormalizeTimeUnit(unitValue);
+
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local enabledResult = enabledValue == true;
         local minutesResult = minutesValue;
+        local displayValue = TimeValueFromMinutes(minutesResult, unitResult);
+        local minValue, maxValue, step = TimeUnitLimits(unitResult);
 
         if (imgui.BeginTable('##status_' .. rowId, 4, tableFlags)) then
             imgui.TableSetupColumn('##check', 0, 245);
             imgui.TableSetupColumn('##control', 0, 170);
-            imgui.TableSetupColumn('##unit', 0, 90);
+            imgui.TableSetupColumn('##unit', 0, 70);
             imgui.TableSetupColumn('##spacer', 0, 1);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -411,28 +485,36 @@ local function DrawBuffFilterDurationRow(rowId, enabledValue, minutesValue)
             imgui.TableNextColumn();
 
             if (enabledResult == true) then
-                minutesResult = DrawSliderControl('hide_above_minutes', minutesValue, 1, 1440, 1, 95);
+                displayValue = DrawSliderControl('hide_above_value_' .. unitResult, displayValue, minValue, maxValue, step, 95);
+                minutesResult = MinutesFromTimeValue(displayValue, unitResult);
                 imgui.TableNextColumn();
-                imgui.TextColored(labelColor, 'minutes');
+                local newUnit = DrawTimeUnitButtons(rowId, unitResult);
+
+                if (newUnit ~= unitResult) then
+                    unitResult = newUnit;
+                end
             end
 
             imgui.EndTable();
         end
 
-        return enabledResult, minutesResult;
+        return enabledResult, minutesResult, unitResult;
     end
 
     local enabledResult = DrawCheckbox('Hide buffs longer than', enabledValue);
 
     if (enabledResult == true) then
         imgui.SameLine();
-        local minutesResult = DrawSliderControl('hide_above_minutes', minutesValue, 1, 1440, 1, 95);
+        local displayValue = TimeValueFromMinutes(minutesValue, unitResult);
+        local minValue, maxValue, step = TimeUnitLimits(unitResult);
+        displayValue = DrawSliderControl('hide_above_value_' .. unitResult, displayValue, minValue, maxValue, step, 95);
+        local minutesResult = MinutesFromTimeValue(displayValue, unitResult);
         imgui.SameLine();
-        imgui.TextColored(labelColor, 'minutes');
-        return enabledResult, minutesResult;
+        unitResult = DrawTimeUnitButtons(rowId, unitResult);
+        return enabledResult, minutesResult, unitResult;
     end
 
-    return enabledResult, minutesValue;
+    return enabledResult, minutesValue, unitResult;
 end
 
 local function DrawComboAndSliderRow(rowId, comboLabel, items, selected, comboId, sliderLabel, sliderId, sliderValue, minValue, maxValue, step)
@@ -487,29 +569,26 @@ end
 
 local function DrawStageTimeRow(rowId, settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##status_' .. rowId, 3, tableFlags)) then
+        if (imgui.BeginTable('##status_' .. rowId, 4, tableFlags)) then
             imgui.TableSetupColumn('##stage1', 0, 175);
             imgui.TableSetupColumn('##stage2', 0, 175);
             imgui.TableSetupColumn('##stage3', 0, 175);
+            imgui.TableSetupColumn('##unit', 0, 70);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Stage 1');
             imgui.SameLine();
             settings.timerWarningStage1Seconds = DrawSliderControl('timer_warning_stage_1', settings.timerWarningStage1Seconds, 1, 300, 1, 56);
-            imgui.SameLine();
-            imgui.TextColored(labelColor, 'sec');
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Stage 2');
             imgui.SameLine();
             settings.timerWarningStage2Seconds = DrawSliderControl('timer_warning_stage_2', settings.timerWarningStage2Seconds, 1, settings.timerWarningStage1Seconds, 1, 56);
-            imgui.SameLine();
-            imgui.TextColored(labelColor, 'sec');
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Stage 3');
             imgui.SameLine();
             settings.timerWarningStage3Seconds = DrawSliderControl('timer_warning_stage_3', settings.timerWarningStage3Seconds, 1, settings.timerWarningStage2Seconds, 1, 56);
-            imgui.SameLine();
-            imgui.TextColored(labelColor, 'sec');
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Seconds');
             imgui.EndTable();
         end
 
@@ -521,6 +600,8 @@ local function DrawStageTimeRow(rowId, settings)
     settings.timerWarningStage2Seconds = DrawNumber('Stage 2', settings.timerWarningStage2Seconds, 1, settings.timerWarningStage1Seconds, 1);
     imgui.SameLine();
     settings.timerWarningStage3Seconds = DrawNumber('Stage 3', settings.timerWarningStage3Seconds, 1, settings.timerWarningStage2Seconds, 1);
+    imgui.SameLine();
+    imgui.TextColored(labelColor, 'Seconds');
 end
 
 local function DrawHeaderCheckbox(label, value)
@@ -777,9 +858,15 @@ local function NormalizeTimerWarningSettings(settings, defaults)
     if (settings.timerWarningBoxStage1Color == nil) then settings.timerWarningBoxStage1Color = CopyColor(stage1Color); end
     if (settings.timerWarningBoxStage2Color == nil) then settings.timerWarningBoxStage2Color = CopyColor(stage2Color); end
     if (settings.timerWarningBoxStage3Color == nil) then settings.timerWarningBoxStage3Color = CopyColor(stage3Color); end
+    if (settings.timerWarningBoxBorderStage1Color == nil) then settings.timerWarningBoxBorderStage1Color = CopyColor(stage1Color); end
+    if (settings.timerWarningBoxBorderStage2Color == nil) then settings.timerWarningBoxBorderStage2Color = CopyColor(stage2Color); end
+    if (settings.timerWarningBoxBorderStage3Color == nil) then settings.timerWarningBoxBorderStage3Color = CopyColor(stage3Color); end
     if (settings.timerWarningFontStage1Color == nil) then settings.timerWarningFontStage1Color = CopyColor(defaults.timerWarningFontStage1Color, settings.timerTextColor); end
     if (settings.timerWarningFontStage2Color == nil) then settings.timerWarningFontStage2Color = CopyColor(defaults.timerWarningFontStage2Color, settings.timerTextColor); end
     if (settings.timerWarningFontStage3Color == nil) then settings.timerWarningFontStage3Color = CopyColor(defaults.timerWarningFontStage3Color, settings.timerTextColor); end
+    if (settings.timerWarningOutlineStage1Color == nil) then settings.timerWarningOutlineStage1Color = CopyColor(defaults.timerWarningOutlineStage1Color, settings.timerTextOutlineColor); end
+    if (settings.timerWarningOutlineStage2Color == nil) then settings.timerWarningOutlineStage2Color = CopyColor(defaults.timerWarningOutlineStage2Color, settings.timerTextOutlineColor); end
+    if (settings.timerWarningOutlineStage3Color == nil) then settings.timerWarningOutlineStage3Color = CopyColor(defaults.timerWarningOutlineStage3Color, settings.timerTextOutlineColor); end
     if (settings.timerWarningIconBackgroundStage1Color == nil) then settings.timerWarningIconBackgroundStage1Color = CopyColor(stage1Color); settings.timerWarningIconBackgroundStage1Color[4] = 1.0; end
     if (settings.timerWarningIconBackgroundStage2Color == nil) then settings.timerWarningIconBackgroundStage2Color = CopyColor(stage2Color); settings.timerWarningIconBackgroundStage2Color[4] = 1.0; end
     if (settings.timerWarningIconBackgroundStage3Color == nil) then settings.timerWarningIconBackgroundStage3Color = CopyColor(stage3Color); settings.timerWarningIconBackgroundStage3Color[4] = 1.0; end
@@ -789,6 +876,14 @@ local function NormalizeTimerWarningSettings(settings, defaults)
 
     if (settings.timerWarningBoxColorEnabled == nil) then
         settings.timerWarningBoxColorEnabled = false;
+    end
+
+    if (settings.timerWarningOutlineColorEnabled == nil) then
+        settings.timerWarningOutlineColorEnabled = false;
+    end
+
+    if (settings.timerWarningBoxBorderEnabled == nil) then
+        settings.timerWarningBoxBorderEnabled = false;
     end
 end
 
@@ -911,14 +1006,18 @@ function statusIcons.DrawSettings(settings, context)
     imgui.Separator();
     DrawSectionHeader(itemLabel .. ' settings');
     settings.iconPack = nil;
-    settings.iconSize = DrawSingleSliderRow('icon_size', itemLabel .. ' size', 'icon_size', settings.iconSize, 8, 160, 1);
-
-    settings.growthDirection = DrawComboRow(
+    settings.growthDirection, settings.iconSize = DrawComboAndSliderRow(
+        'icon_size_growth',
         'Growth direction',
         { 'Right', 'Left' },
         settings.growthDirection or defaults.growthDirection or 'Right',
-        nil,
-        'growth_direction_' .. tostring(label)
+        'growth_direction_' .. tostring(label),
+        itemLabel .. ' size',
+        'icon_size',
+        settings.iconSize,
+        8,
+        160,
+        1
     );
 
     settings.offsetX, settings.offsetY = DrawSliderPair(
@@ -964,7 +1063,10 @@ function statusIcons.DrawSettings(settings, context)
     );
 
     imgui.Separator();
-    settings.showTimers, settings.timerUseSmallFont = DrawHeaderCheckboxPair('Timer text', settings.showTimers, 'Use small font', settings.timerUseSmallFont);
+    DrawSectionHeader('Timer settings');
+    settings.showTimers = DrawCheckbox('Show timers', settings.showTimers);
+    imgui.SameLine();
+    settings.timerUseSmallFont = DrawCheckbox('Use small font', settings.timerUseSmallFont);
 
     if (settings.showTimers == true) then
         settings.timerFontSize, settings.timerTextColor, settings.timerTextOutlineSize, settings.timerTextOutlineColor = DrawTextFontRows(
@@ -976,17 +1078,21 @@ function statusIcons.DrawSettings(settings, context)
         settings.timerTextOutline = settings.timerTextOutlineSize > 0;
 
         imgui.Separator();
-        settings.timerBackground = DrawHeaderCheckbox('Timer box', settings.timerBackground);
+        settings.timerBackground = DrawCheckbox('Show timer background', settings.timerBackground);
 
         if (settings.timerBackground == true) then
+            imgui.TextColored(labelColor, 'BG color');
+            imgui.SameLine();
+            settings.timerBackgroundColor = DrawColor('timer_box_bg_color', settings.timerBackgroundColor);
+
             settings.timerBackgroundPaddingX, settings.timerBackgroundPaddingY = DrawSliderPair(
                 'timer_padding',
-                'Padding X',
+                'BG padding X',
                 'timer_pad_x',
                 settings.timerBackgroundPaddingX,
                 0,
                 24,
-                'Padding Y',
+                'BG padding Y',
                 'timer_pad_y',
                 settings.timerBackgroundPaddingY,
                 0,
@@ -995,12 +1101,12 @@ function statusIcons.DrawSettings(settings, context)
 
             settings.timerCornerRadius, settings.timerOffsetY = DrawSliderPair(
                 'timer_corner_spacer',
-                'Corner radius',
+                'BG corner radius',
                 'timer_corner_radius',
                 settings.timerCornerRadius,
                 0,
                 40,
-                'Box spacer',
+                'BG box spacer',
                 'timer_y',
                 settings.timerOffsetY,
                 -40,
@@ -1009,12 +1115,12 @@ function statusIcons.DrawSettings(settings, context)
 
             settings.timerBackgroundBorderSize, settings.timerBackgroundBorderColor = DrawSliderAndColorRow(
                 'timer_box_border',
-                'Box border size',
+                'BG border size',
                 'timer_box_border_size',
                 settings.timerBackgroundBorderSize,
                 0,
                 12,
-                'Box border color',
+                'BG border color',
                 'timer_box_border_color',
                 settings.timerBackgroundBorderColor
             );
@@ -1026,10 +1132,11 @@ function statusIcons.DrawSettings(settings, context)
 
     if (label == 'Buffs') then
         DrawSectionHeader('Buff filtering');
-        settings.hideAboveDurationEnabled, settings.hideAboveDurationMinutes = DrawBuffFilterDurationRow(
+        settings.hideAboveDurationEnabled, settings.hideAboveDurationMinutes, settings.hideAboveDurationUnit = DrawBuffFilterDurationRow(
             'buff_filter_duration',
             settings.hideAboveDurationEnabled,
-            settings.hideAboveDurationMinutes
+            settings.hideAboveDurationMinutes,
+            settings.hideAboveDurationUnit
         );
         DrawHideBuffsMode(settings);
     elseif (label == 'Debuffs') then
@@ -1050,10 +1157,12 @@ function statusIcons.DrawSettings(settings, context)
     imgui.Separator();
     DrawSectionHeader('Duration warning colors:');
     DrawWarningColorSet('Font', 'timerWarningTextColorEnabled', 'timerWarningFont', settings);
+    DrawWarningColorSet('Text outline', 'timerWarningOutlineColorEnabled', 'timerWarningOutline', settings);
     DrawWarningColorSet('Background', 'timerWarningBackgroundEnabled', 'timerWarningIconBackground', settings);
-    DrawWarningColorSet(itemLabel .. ' border', 'timerWarningBorderEnabled', 'timerWarningIconBorder', settings);
+    DrawWarningColorSet('Icon border', 'timerWarningBorderEnabled', 'timerWarningIconBorder', settings);
     if (settings.timerBackground == true) then
         DrawWarningColorSet('Box color', 'timerWarningBoxColorEnabled', 'timerWarningBox', settings);
+        DrawWarningColorSet('Box border', 'timerWarningBoxBorderEnabled', 'timerWarningBoxBorder', settings);
     end
 
     imgui.Separator();

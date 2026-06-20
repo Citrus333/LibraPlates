@@ -10,6 +10,7 @@ local windowLayout = {
         width = nil,
         height = nil,
     },
+    lastSaveCheck = 0,
 };
 
 local function GetDisplaySize()
@@ -91,6 +92,15 @@ function windowLayout.Save()
     if (imgui.GetWindowPos == nil or imgui.GetWindowSize == nil) then
         return;
     end
+
+    local now = os.clock();
+    local active = imgui.IsWindowFocused ~= nil and imgui.IsWindowFocused() == true and imgui.IsMouseDragging ~= nil and imgui.IsMouseDragging(0) == true;
+
+    if (active ~= true and (now - (tonumber(windowLayout.lastSaveCheck) or 0)) < 1.0) then
+        return;
+    end
+
+    windowLayout.lastSaveCheck = now;
 
     local posX, posY = ReadVec2(imgui.GetWindowPos());
     local width, height = ReadVec2(imgui.GetWindowSize());

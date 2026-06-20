@@ -4,7 +4,6 @@ local log = require('core.log');
 local enemyCasts = {};
 local casts = {};
 local interruptedCasts = {};
-local defaultAoeRadius = 10.0;
 local interruptedCastMessages = {
     [84] = true,
     [85] = true,
@@ -386,15 +385,32 @@ local function GetSpellTypeByResource(spell)
     return nil;
 end
 
-local function GetSpellRangeByResource(spell)
+local function NormalizeResourceText(value)
+    return tostring(value or ''):lower():gsub('[%s_%-%p]+', '');
+end
+
+local function HasTargetFlag(flags, flag)
+    flags = tonumber(flags) or 0;
+    flag = tonumber(flag) or 0;
+
+    if (flags <= 0 or flag <= 0 or bit == nil or bit.band == nil) then
+        return false;
+    end
+
+    return bit.band(flags, flag) ~= 0;
+end
+
+local function ReadSpellScalar(spell, keys)
     if (spell == nil) then
         return nil;
     end
 
-    for _, key in ipairs({ 'Range', 'range' }) do
-        local value = tonumber(spell[key]);
+    for _, key in ipairs(keys) do
+        local ok, value = pcall(function()
+            return spell[key];
+        end);
 
-        if (value ~= nil) then
+        if (ok == true and value ~= nil and tostring(value) ~= '' and tostring(value):find('userdata:', 1, true) == nil) then
             return value;
         end
     end
@@ -402,43 +418,73 @@ local function GetSpellRangeByResource(spell)
     return nil;
 end
 
-local function IsDefensiveAoeSpellName(spellName)
-    local name = tostring(spellName or ''):lower():gsub('[%s%-_]+', '');
+local blueMagicSkillId = 43;
+local spellSkillKeys = {
+    'Skill',
+    'skill',
+    'SkillId',
+    'skillId',
+    'SkillID',
+    'skill_id',
+    'MagicSkill',
+    'magicSkill',
+    'magic_skill',
+};
+local blueMagicPointKeys = {
+    'BluPoints',
+    'BLUPoints',
+    'bluPoints',
+    'blu_points',
+    'BlueMagicPoints',
+    'blueMagicPoints',
+    'blue_magic_points',
+};
 
-    if (name == '') then
-        return false;
-    end
+local function IsBlueMagicResource(spell)
+    local spellType = GetSpellTypeByResource(spell);
+    local skillId = tonumber(ReadSpellScalar(spell, spellSkillKeys));
+    local bluPoints = tonumber(ReadSpellScalar(spell, blueMagicPointKeys));
 
-    return (
-        name:find('curaga', 1, true) ~= nil or
-        name:find('protectra', 1, true) ~= nil or
-        name:find('shellra', 1, true) ~= nil or
-        name:find('hastega', 1, true) ~= nil
-    );
+    return NormalizeResourceText(spellType) == 'bluemagic'
+        or skillId == blueMagicSkillId
+        or (bluPoints ~= nil and bluPoints > 0);
 end
 
-local function GetAoeRadiusByResource(spell, spellName)
-    if (IsDefensiveAoeSpellName(spellName) ~= true) then
-        local spellType = GetSpellTypeByResource(spell);
-        local spellRange = GetSpellRangeByResource(spell);
+local function GetSpellAoeRangeByResourceManager(spellId)
+    spellId = tonumber(spellId) or 0;
 
-        if (spellType == 'BlueMagic' and spellRange ~= nil and spellRange > 0) then
-            return spellRange;
-        end
-
+    if (spellId <= 0) then
         return nil;
     end
 
-    return defaultAoeRadius;
+    local resourceManager = AshitaCore:GetResourceManager();
+
+    if (resourceManager == nil or resourceManager.GetSpellRange == nil) then
+        return nil;
+    end
+
+    return SafeCall(nil, function()
+        return resourceManager:GetSpellRange(spellId, true);
+    end);
+end
+
+local function GetAoeRadiusByResource(spell, spellName, spellId)
+    local spellAoeRange = tonumber(GetSpellAoeRangeByResourceManager(spellId));
+
+    if (spellAoeRange ~= nil and spellAoeRange > 0) then
+        return spellAoeRange;
+    end
+
+    return nil;
 end
 
 local function GetAoeKindByResource(spell)
-    if (GetSpellTypeByResource(spell) ~= 'BlueMagic') then
+    if (IsBlueMagicResource(spell) ~= true) then
         return 'all';
     end
 
     local targets = GetSpellTargetsByResource(spell);
-    if (targets == 32) then
+    if (targets == 4 or targets == 32 or HasTargetFlag(targets, 4) == true or HasTargetFlag(targets, 32) == true) then
         return 'enemy';
     end
 
@@ -446,23 +492,18 @@ local function GetAoeKindByResource(spell)
 end
 
 local function GetBlueMagicAoeKind(spell, spellId, spellName)
-    if (GetSpellTypeByResource(spell) ~= 'BlueMagic') then
+    if (IsBlueMagicResource(spell) ~= true) then
         return 'all';
     end
 
     local targets = GetSpellTargetsByResource(spell);
-    if (targets == 32) then
+    if (targets == 4 or targets == 32 or HasTargetFlag(targets, 4) == true or HasTargetFlag(targets, 32) == true) then
         return 'enemy';
-    elseif (targets == 1) then
+    elseif (targets == 1 or targets == 2 or targets == 3 or HasTargetFlag(targets, 1) == true or HasTargetFlag(targets, 2) == true) then
         return 'friendly';
     end
 
-    local normalizedName = tostring(spellName or ''):lower():gsub('[%s%-_]+', '');
-    if (tonumber(spellId) == 584 or normalizedName == 'sheepsong') then
-        return 'enemy';
-    end
-
-    return 'friendly';
+    return 'all';
 end
 
 local function ResolveSpell(candidateIds)
@@ -620,11 +661,10 @@ local function HandleEnemyCastActionPacket(actionPacket)
 
         local spellName = GetSpellNameByResource(spell, spellId);
         local targetServerId = actionPacket.Targets[1].Id;
-        local spellType = GetSpellTypeByResource(spell);
-        local aoeRadius = GetAoeRadiusByResource(spell, spellName);
+        local aoeRadius = GetAoeRadiusByResource(spell, spellName, spellId);
         local aoeCenterIndex = GetIndexFromServerId(targetServerId);
 
-        if (spellType == 'BlueMagic' and aoeRadius ~= nil and aoeRadius > 0) then
+        if (IsBlueMagicResource(spell) == true and aoeRadius ~= nil and aoeRadius > 0) then
             aoeCenterIndex = actionPacket.UserIndex;
         end
 

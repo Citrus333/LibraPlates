@@ -773,10 +773,6 @@ local function GetAutoPlaceAnchorKinds(value)
 end
 
 local function DrawHighlight(drawList, index, context, settings, defaults, cx, cy, scale)
-    if (context ~= nil and tostring(context.entityName or '') == 'NPC') then
-        return nil;
-    end
-
     local textureId = settings.backgroundEnabled ~= false and GetTextureId('backgrounds', settings.backgroundFile) or nil;
 
     if (textureId == nil) then
@@ -870,7 +866,11 @@ local function DrawOne(drawList, index, stateName, offsetY, drawHighlight)
         end
     end
 
-    local settings, defaults = targetModuleMarker.GetSettings(context.entityName, context.layoutStateName, stateName);
+    local targetModuleLayout = (
+        tostring(context.entityName or '') == 'NPC' and
+        (stateName == 'Target' or stateName == 'Subtarget')
+    ) and 'Combat' or context.layoutStateName;
+    local settings, defaults = targetModuleMarker.GetSettings(context.entityName, targetModuleLayout, stateName);
     arrowAnimation.UpgradeLegacySettings(settings);
 
     if (settings.enabled ~= true) then
@@ -914,7 +914,7 @@ local function DrawOne(drawList, index, stateName, offsetY, drawHighlight)
 
     if (ent ~= nil and ent.Name ~= nil and ent.Name ~= '') then
         local globalSettings = state.GetGlobalSettings(globalDefaults);
-        local nameSettings = state.GetWidgetSettings(context.entityName, context.layoutStateName, 'Name', nameDefaults);
+        local nameSettings = state.GetWidgetSettings(context.entityName, targetModuleLayout, 'Name', nameDefaults);
         local _, measuredWidth = gdiTextTexture.GetTexture(tostring(ent.Name), {
             fontFamily = fonts.GetRole(globalSettings, false),
             fontFlags = fonts.GetRoleFlags(globalSettings, false),
@@ -1070,7 +1070,11 @@ local function CanDrawOne(index, stateName)
         end
     end
 
-    local settings = targetModuleMarker.GetSettings(context.entityName, context.layoutStateName, stateName);
+    local targetModuleLayout = (
+        tostring(context.entityName or '') == 'NPC' and
+        (stateName == 'Target' or stateName == 'Subtarget')
+    ) and 'Combat' or context.layoutStateName;
+    local settings = targetModuleMarker.GetSettings(context.entityName, targetModuleLayout, stateName);
     arrowAnimation.UpgradeLegacySettings(settings);
 
     return targetModuleMarker.HasDrawableSettings(context.entityName, settings) == true;
@@ -1096,7 +1100,11 @@ local function DescribeCanDrawOne(index, stateName)
         end
     end
 
-    local settings = targetModuleMarker.GetSettings(context.entityName, context.layoutStateName, stateName);
+    local targetModuleLayout = (
+        tostring(context.entityName or '') == 'NPC' and
+        (stateName == 'Target' or stateName == 'Subtarget')
+    ) and 'Combat' or context.layoutStateName;
+    local settings = targetModuleMarker.GetSettings(context.entityName, targetModuleLayout, stateName);
     arrowAnimation.UpgradeLegacySettings(settings);
     local drawable = targetModuleMarker.HasDrawableSettings(context.entityName, settings) == true;
 
@@ -1106,7 +1114,7 @@ local function DescribeCanDrawOne(index, stateName)
         tostring(index),
         tostring(context.entityName),
         tostring(context.targetType),
-        tostring(context.layoutStateName),
+        tostring(targetModuleLayout),
         tostring(settings ~= nil and settings.enabled),
         tostring(settings ~= nil and settings.arrowFile),
         tostring(settings ~= nil and settings.chevronFile),
@@ -1177,7 +1185,7 @@ function targetOverlay.Render()
         local context = ResolveEntityContext(mainIndex);
         local unknownRawObjectNeedsFallback = IsUnknownRawObjectNpcContext(context) == true and HasNpcObjectWorldPlateRect(mainIndex) ~= true;
 
-        if (context.valid == true and (context.targetType == 'object' or unknownRawObjectNeedsFallback == true)) then
+        if (context.valid == true and (context.targetType == 'npc' or context.targetType == 'object' or unknownRawObjectNeedsFallback == true)) then
             DrawOne(drawList, mainIndex, 'Target', 0, true);
         end
 
@@ -1188,7 +1196,7 @@ function targetOverlay.Render()
         local context = ResolveEntityContext(subIndex);
         local unknownRawObjectNeedsFallback = IsUnknownRawObjectNpcContext(context) == true and HasNpcObjectWorldPlateRect(subIndex) ~= true;
 
-        if (context.valid == true and (context.targetType == 'object' or unknownRawObjectNeedsFallback == true)) then
+        if (context.valid == true and (context.targetType == 'npc' or context.targetType == 'object' or unknownRawObjectNeedsFallback == true)) then
             DrawOne(drawList, subIndex, 'Subtarget', -18, true);
         end
 

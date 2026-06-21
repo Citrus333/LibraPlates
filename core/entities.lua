@@ -1288,21 +1288,19 @@ function entities.GetNearbyTacticalNpcs(maxDistance)
         if (index < 1024 or index > 1791) then
             local ent = GetEntity(index);
             local spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(index); end);
-            local entityType = tonumber(ent ~= nil and ent.Type or nil);
-            local spawnFlagValue = tonumber(spawnFlags) or 0;
-            local hasNpcSpawnFlag = bit.band(spawnFlagValue, 0x02) == 0x02;
-            local isObjectLike = entityType == 2 or entityType == 3;
+            local statusAllowsTactical =
+                tonumber(ent ~= nil and ent.Status or nil) == 1 or
+                IsNpcObjectStatusAllowed(ent ~= nil and ent.Status or nil) == true;
 
             if (
                 ent ~= nil and
                 ent.Name ~= nil and
                 ent.Name ~= '' and
-                (hasNpcSpawnFlag == true or isObjectLike == true) and
                 ent.HPPercent ~= nil and
                 ent.HPPercent > 0 and
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
-                tonumber(ent.Status) == 1 and
+                statusAllowsTactical == true and
                 entities.IsPartyMemberIndex(index) ~= true and
                 entities.IsOwnPetIndex(index) ~= true and
                 entities.IsOwnLuopanIndex(index) ~= true and
@@ -1563,16 +1561,16 @@ function entities.GetEntityDebugInfo(index, maxDistance)
     local partyData = GetPartyMemberDataByTargetIndex(targetIndex);
     local spawnFlagValue = tonumber(spawnFlags) or 0;
     local hasNpcSpawnFlag = bit.band(spawnFlagValue, 0x02) == 0x02;
+    local alliedTacticalInfo = nil;
+    local statusAllowsTactical = tonumber(status) == 1 or IsNpcObjectStatusAllowed(status) == true;
     local tacticalNpcAllowed = indexAllowed == true
-        and isMob ~= true
         and isParty ~= true
         and visible == true
         and ent ~= nil
         and ent.Name ~= nil
         and ent.Name ~= ''
         and inRange == true
-        and (hasNpcSpawnFlag == true or isObject == true)
-        and tonumber(status) == 1
+        and statusAllowsTactical == true
         and tonumber(ent.HPPercent) ~= nil
         and tonumber(ent.HPPercent) > 0
         and entities.IsOwnPetIndex(targetIndex) ~= true
@@ -1617,6 +1615,8 @@ function entities.GetEntityDebugInfo(index, maxDistance)
         statusAllowed = statusAllowed,
         npcScanAllowed = npcScanAllowed,
         tacticalNpcAllowed = tacticalNpcAllowed,
+        alliedTacticalInfo = alliedTacticalInfo,
+        tacticalNpcInfoType = nil,
         layoutStateName = tacticalNpcAllowed == true and 'Combat' or nil,
         partySlot = partyData ~= nil and partyData.slot or nil,
         partyHp = partyData ~= nil and partyData.hp or nil,

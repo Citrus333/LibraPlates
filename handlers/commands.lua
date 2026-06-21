@@ -839,6 +839,43 @@ function commands.Handle(e)
         local value = tostring(args[3] or ''):lower();
         local anonStatus = require('core.anon_status');
 
+        if (value == 'target' or value == '<t>') then
+            local targetIndex = targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
+            local entityManager = entities.GetEntityManager ~= nil and entities.GetEntityManager() or nil;
+            local serverId = GetDebugServerId(entityManager, targetIndex);
+            local ent = GetEntity(targetIndex);
+            local targetValue = tostring(args[4] or 'on'):lower();
+            local enabled = targetValue ~= 'off' and targetValue ~= 'false' and targetValue ~= '0';
+
+            if (anonStatus.SetServerAnonymous(serverId, enabled) == true) then
+                log.Info('Tracked anon ' .. tostring(enabled) .. ' for ' .. tostring(ent ~= nil and ent.Name or targetIndex) .. ' server=' .. tostring(serverId));
+            else
+                log.Warn('Anon target failed: no valid target/server id.');
+            end
+            return;
+        end
+
+        if (value ~= 'on' and value ~= 'off' and value ~= 'true' and value ~= 'false' and value ~= '1' and value ~= '0' and value ~= 'status' and value ~= '') then
+            local wantedName = tostring(args[3] or ''):lower();
+            local targetValue = tostring(args[4] or 'on'):lower();
+            local enabled = targetValue ~= 'off' and targetValue ~= 'false' and targetValue ~= '0';
+            local entityManager = entities.GetEntityManager ~= nil and entities.GetEntityManager() or nil;
+
+            for index = 0, 2303 do
+                local ent = GetEntity(index);
+                if (tonumber(ent ~= nil and ent.Type or nil) == 0 and tostring(ent.Name or ''):lower() == wantedName) then
+                    local serverId = GetDebugServerId(entityManager, index);
+                    if (anonStatus.SetServerAnonymous(serverId, enabled) == true) then
+                        log.Info('Tracked anon ' .. tostring(enabled) .. ' for ' .. tostring(ent.Name) .. ' server=' .. tostring(serverId));
+                        return;
+                    end
+                end
+            end
+
+            log.Warn('Anon name failed: nearby PC not found: ' .. tostring(args[3]));
+            return;
+        end
+
         if (value == 'on' or value == 'true' or value == '1') then
             anonStatus.SetSelfAnonymous(true);
         elseif (value == 'off' or value == 'false' or value == '0') then
@@ -931,6 +968,129 @@ function commands.Handle(e)
             local value = tostring(args[4] or ''):lower();
             blacklistModelReplace.SetDebugEnabled(value == 'on' or value == 'true' or value == '1');
             log.Info(blacklistModelReplace.GetDebugStatusText());
+            return;
+        end
+
+        if (action == 'probe') then
+            local value = tostring(args[4] or 'status'):lower();
+
+            if (value == 'on' or value == 'true' or value == '1') then
+                blacklistModelReplace.SetFomorProbeEnabled(true);
+            elseif (value == 'off' or value == 'false' or value == '0') then
+                blacklistModelReplace.SetFomorProbeEnabled(false);
+            elseif (value == 'target' or value == 't') then
+                local targetIndex = targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
+                local ok, mode = blacklistModelReplace.SetFomorProbeTarget(targetIndex);
+
+                if (ok == true and mode == 'cached') then
+                    log.Info('Used cached Fomor probe for target index=' .. tostring(targetIndex) .. '.');
+                elseif (ok == true) then
+                    log.Info('Armed one-shot Fomor probe for target index=' .. tostring(targetIndex) .. '.');
+                else
+                    log.Warn('Fomor probe target failed: no current target.');
+                end
+                return;
+            elseif (value == 'clear') then
+                blacklistModelReplace.ClearCapturedFomorModels();
+                log.Info('Cleared captured blacklist Fomor models.');
+                return;
+            else
+                log.Info(blacklistModelReplace.GetDebugStatusText());
+                return;
+            end
+
+            log.Info(blacklistModelReplace.GetDebugStatusText());
+            return;
+        end
+
+        if (action == 'costume') then
+            local value = tostring(args[4] or ''):lower();
+
+            if (value == 'off' or value == 'clear' or value == '0') then
+                blacklistModelReplace.SetCostumeModel(0);
+                log.Info('Blacklist costume model disabled.');
+            else
+                log.Warn('Blacklist costume model is disabled after crash-risk tests. Use /lp blmodel watchcostume for packet watching only.');
+            end
+            return;
+        end
+
+        if (action == 'queuecostume' or action == 'seqcostume' or action == 'sequence') then
+            log.Warn('Blacklist live costume sequence is disabled after crash-risk tests.');
+            return;
+        end
+
+        if (action == 'watchcostume' or action == 'costumewatch' or action == 'watch') then
+            local targetText = tostring(args[4] or ''):lower();
+            local targetIndex = nil;
+            local name = nil;
+
+            if (targetText == '' or targetText == 'target' or targetText == 't') then
+                targetIndex = targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
+            elseif (targetText == 'off' or targetText == 'clear') then
+                blacklistModelReplace.ClearCostumeWatch();
+                log.Info('Costume watch cleared.');
+                return;
+            elseif (tonumber(args[4]) ~= nil) then
+                targetIndex = tonumber(args[4]);
+            else
+                name = args[4];
+            end
+
+            local ok, result = blacklistModelReplace.SetCostumeWatch(targetIndex or name);
+
+            if (ok == true) then
+                log.Info('Costume watch armed: ' .. tostring(result) .. '. Put a real costume on that character now.');
+            else
+                log.Warn('Costume watch failed: ' .. tostring(result));
+            end
+            return;
+        end
+
+        if (action == 'looktest' or action == 'dressuptest' or action == 'look') then
+            log.Warn('Blacklist live look test is disabled after crash-risk tests.');
+            return;
+        end
+
+        if (action == 'livecostume' or action == 'live') then
+            log.Warn('Blacklist live costume writes are disabled after crash-risk tests.');
+            return;
+        end
+
+        if (action == 'preserverace' or action == 'preserve') then
+            local value = tostring(args[4] or ''):lower();
+            settings.modelReplacePreserveRace = value ~= 'off' and value ~= 'false' and value ~= '0';
+            state.Save();
+            log.Info('Blacklist Fomor preserve race=' .. tostring(settings.modelReplacePreserveRace == true) .. '.');
+            return;
+        end
+
+        if (action == 'race') then
+            local ok, family, fixedModelId = blacklistModelReplace.SetReplacementRace(args[4]);
+
+            if (ok == true) then
+                log.Info(
+                    'Blacklist forced Fomor family=' .. tostring(family or 'unknown') ..
+                    ' race=' .. tostring(settings.modelReplaceRace) ..
+                    ' fixedId=' .. tostring(fixedModelId or 0) ..
+                    ' preserveRace=false.'
+                );
+            else
+                log.Warn('Usage: /lp blmodel race <hume|elvaan|tarutaru|mithra|galka|1-8>');
+            end
+            return;
+        end
+
+        if (action == 'fomor') then
+            local value = tostring(args[4] or ''):lower();
+            settings.modelReplaceUseFomor = value ~= 'off' and value ~= 'false' and value ~= '0';
+            state.Save();
+            log.Info('Blacklist Fomor packet replacement=' .. tostring(settings.modelReplaceUseFomor == true) .. '.');
+            return;
+        end
+
+        if (action == 'fixed' or action == 'npccostume' or action == 'fixedcostume' or action == 'refresh' or action == 'clearrefresh') then
+            log.Warn('Blacklist fixed NPC/costume refresh paths are disabled; packet-only Fomor replacement remains enabled.');
             return;
         end
 
@@ -1634,6 +1794,7 @@ function commands.Handle(e)
 
     if (subcommand == 'targetdebug') then
         log.Info(targetModuleMarker.GetDebugStatus());
+        log.Info(targetOverlay.GetDebugStatus());
         return;
     end
 
@@ -1728,6 +1889,8 @@ function commands.Handle(e)
             ' statusAllowed=' .. tostring(debug.statusAllowed) ..
             ' npcScanAllowed=' .. tostring(debug.npcScanAllowed) ..
             ' tacticalNpcAllowed=' .. tostring(debug.tacticalNpcAllowed) ..
+            ' alliedTacticalInfo=' .. tostring(debug.alliedTacticalInfo) ..
+            ' tacticalNpcInfoType=' .. tostring(debug.tacticalNpcInfoType) ..
             ' layout=' .. tostring(debug.layoutStateName) ..
             ' resolved=' .. tostring(resolvedEntityName) ..
             ' infoSource=' .. tostring(info ~= nil and info.source or nil) ..
@@ -1743,6 +1906,56 @@ function commands.Handle(e)
             ' r1Bits=' .. DebugFlagList(render1, { 0x8, 0x40, 0x400, 0x800, 0x8000, 0x2000000 }) ..
             ' expectedStar=' .. tostring(expectedStar)
         );
+        return;
+    end
+
+    if (subcommand == 'pcscan' or subcommand == 'pcflags') then
+        local entityManager = entities.GetEntityManager ~= nil and entities.GetEntityManager() or nil;
+        local probeGameMode = require('core.game_mode');
+        local probePlayerIndicators = require('core.player_indicators');
+        local maxDistance = tonumber(args[3]) or 50;
+        local rows = {};
+
+        for index = 0, 2303 do
+            local ent = GetEntity(index);
+            if (tonumber(ent ~= nil and ent.Type or nil) == 0 and tostring(ent.Name or '') ~= '') then
+                local distanceSq = tonumber(ent.Distance);
+                if (distanceSq ~= nil and distanceSq <= (maxDistance * maxDistance)) then
+                    rows[#rows + 1] = {
+                        index = index,
+                        name = ent.Name,
+                        distance = math.sqrt(distanceSq),
+                        serverId = GetDebugServerId(entityManager, index),
+                    };
+                end
+            end
+        end
+
+        table.sort(rows, function(a, b)
+            return (tonumber(a.distance) or 0) < (tonumber(b.distance) or 0);
+        end);
+
+        log.Info('PC scan count=' .. tostring(#rows) .. ' range=' .. tostring(maxDistance));
+
+        for rowIndex = 1, math.min(#rows, 20) do
+            local row = rows[rowIndex];
+            log.Info(
+                'PC scan ' .. tostring(rowIndex) ..
+                ' index=' .. tostring(row.index) ..
+                ' name=' .. tostring(row.name) ..
+                ' serverId=' .. tostring(row.serverId) ..
+                ' dist=' .. string.format('%.1f', tonumber(row.distance) or 0) ..
+                ' renderAll=' .. LibraPlatesFormatRenderFlags(row.index) ..
+                ' mode=' .. tostring(probeGameMode.Resolve(row.index, false)) ..
+                ' anonGuess=' .. tostring(probePlayerIndicators.HasAnonNameColor(row.index) == true) ..
+                ' r0hi=' .. tostring(HasFlag(probeGameMode.ReadRenderFlag(row.index, 0), 0x80000000)) ..
+                ' r1special=' .. tostring(HasFlag(probeGameMode.ReadRenderFlag(row.index, 1), 0x00000800)) ..
+                ' r1anonExtra=' .. tostring(HasFlag(probeGameMode.ReadRenderFlag(row.index, 1), 0x02000000)) ..
+                ' r1hiExtra=' .. tostring(HasFlag(probeGameMode.ReadRenderFlag(row.index, 1), 0x08000000)) ..
+                ' lpNameColorGuess=' .. LibraPlatesResolveNativeNameColorProbe(row.index)
+            );
+        end
+
         return;
     end
 

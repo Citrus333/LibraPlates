@@ -11,6 +11,241 @@ local itemIcons = T{
         note = 'Needs Review.',
     },
 
+    ['Hazy Rune'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Crawlers\' Nest', 'Dangruf Wadi', 'Fei\'Yin', 'Garlaige Citadel', 'Gusgen Mines', 'King Ranperre\'s Tomb', 'Maze of Shakhrami', 'Ordelle\'s Caves', 'Outer Horutoto Ruins', 'Ranguemont Pass', 'The Eldieme Necropolis' },
+        zoneIds = { 166, 190, 191, 193, 194, 195, 196, 197, 198, 200, 204 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Heavy Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'La Vaule [S]' },
+        zoneIds = { 85 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Heavy Iron Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Garlaige Citadel [S]' },
+        zoneIds = { 164 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Heavy Iron Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Reef', 'Bhaflau Thickets', 'Caedarva Mire', 'Garlaige Citadel [S]', 'Mount Zhayolm' },
+        zoneIds = { 52, 54, 61, 79, 164 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Heavy Sliding Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Beadeaux' },
+        zoneIds = { 147 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Heavy Stone Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'King Ranperre\'s Tomb' },
+        zoneIds = { 190 },
+        note = 'Needs Review.',
+    },
+	
+	   ['Iron Bar Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Castle Zvahl Baileys', 'Castle Zvahl Baileys [S]', 'Castle Zvahl Keep', 'Castle Zvahl Keep [S]', 'Heavens Tower' },
+        zoneIds = { 138, 155, 161, 162, 242 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Iron Box'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Oldton Movalpolos' },
+        zoneIds = { 11 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Iron Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Maze of Shakhrami' },
+        zoneIds = { 198 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Iron Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Reef', 'Misareaux Coast', 'Periqia', 'Phomiuna Aqueducts', 'Sacrarium', 'Sealion\'s Den', 'Talacca Cove', 'Beaucedine Glacier' },
+        zoneIds = { 25, 27, 28, 32, 54, 56, 57, 111 },
+        note = 'Needs Review.',
+    },
+
+   ['Reinforced Gateway'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'La Vaule [S]' },
+        zoneIds = { 85 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Reinforced Wooden Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Crawlers\' Nest [S]' },
+        zoneIds = { 171 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Reinforcement'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Batallia Downs [S]', 'Beaucedine Glacier [S]', 'East Ronfaure [S]', 'Fort Karugo-Narugo [S]', 'Grauberg [S]', 'Jugner Forest [S]', 'Meriphataud Mountains [S]', 'North Gustaberg [S]', 'Pashhow Marshlands [S]', 'Rolanberry Fields [S]', 'Sauromugue Champaign [S]', 'Vunkerl Inlet [S]', 'West Sarutabaruta [S]', 'Xarcabard [S]' },
+        zoneIds = { 81, 82, 83, 84, 88, 89, 90, 91, 95, 96, 97, 98, 136, 137 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Reisen Crystal'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Reisenjima Sanctorium' },
+        zoneIds = { 293 },
+        note = 'Needs Review.',
+    },
+	
+	    ['Relentless Storm'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Rala Waterways' },
+        zoneIds = { 258 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Reliquiarium Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Sacrarium' },
+        zoneIds = { 28 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Repair Trunk'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa', 'Abyssea - Konschtat', 'Abyssea - La Theine', 'Abyssea - Misareaux', 'Abyssea - Vunkerl' },
+        zoneIds = { 15, 132, 215, 216, 217 },
+        note = 'Needs Review.',
+    },
+	
+	    ['Wooden Cabinet'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Tavnazian Safehold' },
+        zoneIds = { 26 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Wooden Crates'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Garlaige Citadel [S]' },
+        zoneIds = { 164 },
+        note = 'Needs Review.',
+    },
+    ['Wooden Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Crawlers\' Nest [S]', 'Jugner Forest [S]', 'Phomiuna Aqueducts', 'Sacrarium', 'Temple of Uggalepih' },
+        zoneIds = { 27, 28, 82, 159, 171 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Wooden Ladder'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Phomiuna Aqueducts' },
+        zoneIds = { 27 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Wooden Shutter'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Northern San d\'Oria' },
+        zoneIds = { 231 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Iron Grille'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Castle Oztroja [S]' },
+        zoneIds = { 99 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Iron Portcullis'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Meriphataud Mountains [S]' },
+        zoneIds = { 97 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Iron-framed Oak Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Gusgen Mines' },
+        zoneIds = { 196 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Ironbound Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Reef' },
+        zoneIds = { 54 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Ironbound Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Aht Urhgan Whitegate', 'Beadeaux [S]' },
+        zoneIds = { 50, 92 },
+        note = 'Needs Review.',
+    },
 
     ['Particle Gate'] = {
         type = 'Unknown',

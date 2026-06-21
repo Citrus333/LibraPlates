@@ -370,6 +370,15 @@ local function ClearStatus(serverId, statusId)
     tracked[serverId][statusId] = nil;
 end
 
+local function ClearStatusFromMessage(message)
+    if (message == nil) then
+        return;
+    end
+
+    ClearStatus(message.target, message.param);
+    ClearStatus(message.target, message.value);
+end
+
 local function SafeCall(fallback, fn)
     local ok, result = pcall(fn);
 
@@ -563,9 +572,10 @@ function enemyStatuses.HandlePacketIn(e)
         if (deathMessages:contains(message.message)) then
             tracked[message.target] = nil;
         elseif (statusOffMessages:contains(message.message)) then
-            ClearStatus(message.target, message.param);
+            ClearStatusFromMessage(message);
             if (tonumber(message.target) == GetSelfServerId()) then
                 ClearGeoEnemyAura(message.param);
+                ClearGeoEnemyAura(message.value);
             end
         end
 

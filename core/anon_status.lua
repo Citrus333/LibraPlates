@@ -29,9 +29,22 @@ local function SetSelfAnonymous(value)
     end
 
     local anonymousByServerId = state.GetAnonymousByServerId();
-    -- The native /anon command reports opposite of the visual native-name color state here.
-    anonymousByServerId[tostring(serverId)] = value ~= true or nil;
+    anonymousByServerId[tostring(serverId)] = value == true or nil;
     state.SaveThrottled(0.25);
+end
+
+local function SetServerAnonymous(serverId, value)
+    serverId = tonumber(serverId) or 0;
+
+    if (serverId <= 0) then
+        return false;
+    end
+
+    local anonymousByServerId = state.GetAnonymousByServerId();
+    anonymousByServerId[tostring(serverId)] = value == true or nil;
+    state.SaveThrottled(0.25);
+
+    return true;
 end
 
 local function GetSelfAnonymous()
@@ -43,11 +56,15 @@ local function GetSelfAnonymous()
 
     local anonymousByServerId = state.GetAnonymousByServerId();
 
-    return anonymousByServerId[tostring(serverId)] ~= true and anonymousByServerId[serverId] ~= true;
+    return anonymousByServerId[tostring(serverId)] == true or anonymousByServerId[serverId] == true;
 end
 
 function anonStatus.SetSelfAnonymous(value)
     SetSelfAnonymous(value == true);
+end
+
+function anonStatus.SetServerAnonymous(serverId, value)
+    return SetServerAnonymous(serverId, value == true);
 end
 
 function anonStatus.GetSelfAnonymous()

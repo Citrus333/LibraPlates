@@ -1011,7 +1011,7 @@ function state.GetVisualBlacklist()
         runtime.visualBlacklist.modelReplaceClearGear = true;
     end
     if (runtime.visualBlacklist.modelReplaceUseFomor == nil) then
-        runtime.visualBlacklist.modelReplaceUseFomor = true;
+        runtime.visualBlacklist.modelReplaceUseFomor = false;
     end
 
     return runtime.visualBlacklist;

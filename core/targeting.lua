@@ -14,10 +14,16 @@ local lastFishCommandTime = 0;
 local suppressFishRightMouse = false;
 
 local defaultPlateClickNoGoZones = {
-    { name = 'Chat', enabled = false, x = 0, y = 960, width = 760, height = 480, color = { 1.0, 0.15, 0.15, 1.0 } },
-    { name = 'Bottom bar', enabled = false, x = 760, y = 1160, width = 1160, height = 280, color = { 0.15, 0.75, 1.0, 1.0 } },
-    { name = 'Right UI', enabled = false, x = 1920, y = 0, width = 640, height = 1440, color = { 1.0, 0.80, 0.10, 1.0 } },
-    { name = 'Left UI', enabled = false, x = 0, y = 0, width = 360, height = 960, color = { 0.40, 1.0, 0.25, 1.0 } },
+    { name = 'Screen 1', enabled = false, x = 0, y = 960, width = 760, height = 480, color = { 1.0, 0.15, 0.15, 1.0 } },
+    { name = 'Screen 2', enabled = false, x = 760, y = 1160, width = 1160, height = 280, color = { 0.15, 0.75, 1.0, 1.0 } },
+    { name = 'Screen 3', enabled = false, x = 1920, y = 0, width = 640, height = 1440, color = { 1.0, 0.80, 0.10, 1.0 } },
+    { name = 'Screen 4', enabled = false, x = 0, y = 0, width = 360, height = 960, color = { 0.40, 1.0, 0.25, 1.0 } },
+};
+local oldPlateClickNoGoZoneNames = {
+    Chat = true,
+    ['Bottom bar'] = true,
+    ['Right UI'] = true,
+    ['Left UI'] = true,
 };
 
 local defaultPlateStackingPriority = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
@@ -43,7 +49,7 @@ local function NormalizePlateClickNoGoZones(settings)
             settings.plateClickNoGoZones[index] = zone;
         end
 
-        if (zone.name == nil) then zone.name = defaults.name; end
+        if (zone.name == nil or oldPlateClickNoGoZoneNames[tostring(zone.name)] == true) then zone.name = defaults.name; end
         if (zone.enabled == nil) then zone.enabled = defaults.enabled; end
         if (zone.x == nil) then zone.x = defaults.x; end
         if (zone.y == nil) then zone.y = defaults.y; end
@@ -164,6 +170,10 @@ local function GetTargetingSettings()
 
     if (global.targeting.plateClickNoGoZonesVisible == nil) then
         global.targeting.plateClickNoGoZonesVisible = false;
+    end
+
+    if (global.targeting.plateClickNoGoZonesMask == nil) then
+        global.targeting.plateClickNoGoZonesMask = false;
     end
 
     if (global.targeting.performanceSafetyMode == nil) then
@@ -301,6 +311,18 @@ local function GetTargetingSettings()
         global.targeting.tacticalScreenClampTopPadding = 24;
     end
 
+    if (global.targeting.tacticalScreenClampBottomPadding == nil) then
+        global.targeting.tacticalScreenClampBottomPadding = 24;
+    end
+
+    if (global.targeting.tacticalScreenClampLeftPadding == nil) then
+        global.targeting.tacticalScreenClampLeftPadding = 0;
+    end
+
+    if (global.targeting.tacticalScreenClampRightPadding == nil) then
+        global.targeting.tacticalScreenClampRightPadding = 0;
+    end
+
     if (global.targeting.textureCacheLimit == nil) then
         global.targeting.textureCacheLimit = 96;
     end
@@ -377,6 +399,7 @@ local function GetTargetingSettings()
     global.targeting.hideOtherPlayerPetPlates = global.targeting.hideOtherPlayerPetPlates ~= false;
     global.targeting.plateClickNoGoZonesEnabled = global.targeting.plateClickNoGoZonesEnabled == true;
     global.targeting.plateClickNoGoZonesVisible = global.targeting.plateClickNoGoZonesVisible == true;
+    global.targeting.plateClickNoGoZonesMask = global.targeting.plateClickNoGoZonesMask == true;
     global.targeting.performanceSafetyMode = global.targeting.performanceSafetyMode == true;
     global.targeting.performanceSafetyCombatOnly = global.targeting.performanceSafetyCombatOnly ~= false;
     global.targeting.performanceSafetySkipPc = global.targeting.performanceSafetySkipPc == true;
@@ -478,6 +501,9 @@ local function GetTargetingSettings()
     global.targeting.plateStackFixedBlockerWidthPct = math.max(25, math.min(100, math.floor((tonumber(global.targeting.plateStackFixedBlockerWidthPct) or 72) + 0.5)));
     global.targeting.tacticalScreenClampEnabled = global.targeting.tacticalScreenClampEnabled == true;
     global.targeting.tacticalScreenClampTopPadding = math.max(0, math.min(200, math.floor((tonumber(global.targeting.tacticalScreenClampTopPadding) or 24) + 0.5)));
+    global.targeting.tacticalScreenClampBottomPadding = math.max(0, math.min(400, math.floor((tonumber(global.targeting.tacticalScreenClampBottomPadding) or 24) + 0.5)));
+    global.targeting.tacticalScreenClampLeftPadding = math.max(0, math.min(400, math.floor((tonumber(global.targeting.tacticalScreenClampLeftPadding) or 0) + 0.5)));
+    global.targeting.tacticalScreenClampRightPadding = math.max(0, math.min(400, math.floor((tonumber(global.targeting.tacticalScreenClampRightPadding) or 0) + 0.5)));
     global.targeting.textureCacheLimit = math.max(32, math.min(256, math.floor((tonumber(global.targeting.textureCacheLimit) or 96) + 0.5)));
     NormalizePlateClickNoGoZones(global.targeting);
 

@@ -27,6 +27,16 @@ local function EnsureStore()
     return state.GetVisualBlacklist();
 end
 
+local defaultFixedFomorModels = {
+    hume = 1012,
+    elvaan = 1022,
+    tarutaru = 1026,
+    mithra = 1032,
+    galka = 1038,
+};
+local defaultForcedFomorRace = 7;
+local defaultForcedFomorHair = 5;
+
 local function GetName(player)
     return tostring(player ~= nil and (player.name or player.clickName) or ''):gsub('^%s+', ''):gsub('%s+$', '');
 end
@@ -352,16 +362,39 @@ function playerBlacklist.GetModelReplaceSettings()
         store.modelReplaceEnabled = true;
     end
 
-    store.modelReplaceRace = tonumber(store.modelReplaceRace) or 5;
-    store.modelReplaceHair = tonumber(store.modelReplaceHair) or 2;
+    store.modelReplaceRace = tonumber(store.modelReplaceRace) or defaultForcedFomorRace;
+    store.modelReplaceHair = tonumber(store.modelReplaceHair) or defaultForcedFomorHair;
     if (store.modelReplacePreserveRace == nil) then
-        store.modelReplacePreserveRace = true;
+        store.modelReplacePreserveRace = false;
+    elseif (store.modelReplacePreserveRace == true and store.modelReplaceRace == 5 and store.modelReplaceHair == 2) then
+        store.modelReplacePreserveRace = false;
+        store.modelReplaceRace = defaultForcedFomorRace;
+        store.modelReplaceHair = defaultForcedFomorHair;
     end
     if (store.modelReplaceClearGear == nil) then
         store.modelReplaceClearGear = true;
     end
     if (store.modelReplaceUseFomor == nil) then
         store.modelReplaceUseFomor = true;
+    end
+    store.modelReplaceUseCostume = false;
+    store.modelReplaceCostumeId = tonumber(store.modelReplaceCostumeId) or 0;
+    store.modelReplaceUseNpcCostume = false;
+    if (store.modelReplaceNpcCostumeByRace == nil) then
+        store.modelReplaceNpcCostumeByRace = false;
+    end
+    store.modelReplaceNpcCostumeId = tonumber(store.modelReplaceNpcCostumeId) or 0;
+    if (type(store.modelReplaceCapturedFomorModels) ~= 'table') then
+        store.modelReplaceCapturedFomorModels = {};
+    end
+    if (type(store.modelReplaceFixedFomorModels) ~= 'table') then
+        store.modelReplaceFixedFomorModels = {};
+    end
+    store.modelReplacePacketCache = {};
+    for family, modelId in pairs(defaultFixedFomorModels) do
+        if ((tonumber(store.modelReplaceFixedFomorModels[family]) or 0) <= 0) then
+            store.modelReplaceFixedFomorModels[family] = modelId;
+        end
     end
 
     return store;

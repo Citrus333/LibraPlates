@@ -24,6 +24,14 @@ local function GetAddonPath()
     return installPath .. separator .. 'addons\\LibraPlates\\';
 end
 
+function statusIconTextures.GetPackFolderPath()
+    return GetAddonPath() .. 'assets\\images\\status';
+end
+
+function statusIconTextures.OpenPackFolder()
+    os.execute('start "" "' .. statusIconTextures.GetPackFolderPath() .. '"');
+end
+
 local function NormalizePack(iconPack)
     local pack = tostring(iconPack or 'Native');
 

@@ -2851,9 +2851,18 @@ function LibraPlatesSettingsDrawPlateClickBlocking(settings)
         settings.plateClickNoGoZonesEnabled = value == true;
     end);
 
-    DrawCheckbox('Show no-go zones', settings.plateClickNoGoZonesVisible == true, function(value)
-        settings.plateClickNoGoZonesVisible = value == true;
+    DrawCheckbox('Mask plates in no-go zones', settings.plateClickNoGoZonesMask == true, function(value)
+        settings.plateClickNoGoZonesMask = value == true;
+        if (value ~= true) then
+            settings.plateClickNoGoZonesVisible = false;
+        end
     end);
+
+    if (settings.plateClickNoGoZonesMask == true) then
+        DrawCheckbox('Edit no-go zones', settings.plateClickNoGoZonesVisible == true, function(value)
+            settings.plateClickNoGoZonesVisible = value == true;
+        end);
+    end
 
     uiTooltip.Info('LibraPlates ignores plate clicks inside active screen rectangles so UI clicks do not target plates behind chat, bars, or menus.');
 
@@ -2871,7 +2880,7 @@ function LibraPlatesSettingsDrawPlateClickBlocking(settings)
 
         local name = zone.name;
         if (name == nil) then
-            name = ({ 'Chat', 'Bottom bar', 'Right UI', 'Left UI' })[index] or ('Zone ' .. tostring(index));
+            name = 'Screen ' .. tostring(index);
             zone.name = name;
         end
 
@@ -2884,28 +2893,27 @@ function LibraPlatesSettingsDrawPlateClickBlocking(settings)
             zone.color = ({ { 1.0, 0.15, 0.15, 1.0 }, { 0.15, 0.75, 1.0, 1.0 }, { 1.0, 0.80, 0.10, 1.0 }, { 0.40, 1.0, 0.25, 1.0 } })[index] or { 1.0, 0.15, 0.15, 1.0 };
         end
 
-        imgui.Separator();
-        DrawCheckbox(tostring(name), zone.enabled == true, function(value)
-            zone.enabled = value == true;
-        end);
+        if (settings.plateClickNoGoZonesVisible == true) then
+            DrawCheckbox(tostring(name), zone.enabled == true, function(value)
+                zone.enabled = value == true;
+            end);
 
-        imgui.TextColored(settingsLabelColor, 'Color');
-        imgui.SameLine();
-        local color, colorChanged = DrawInlineColorControl(zone.color, 'PlateClickNoGoColor' .. tostring(index));
-        zone.color = color;
-        zone.color[4] = 1.0;
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            imgui.TextColored(settingsLabelColor, 'color');
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            local color, colorChanged = DrawInlineColorControl(zone.color, 'PlateClickNoGoColor' .. tostring(index));
+            zone.color = color;
+            zone.color[4] = 1.0;
+        end
+    end
 
-        local prefix = 'PlateClickNoGo' .. tostring(index);
-        local x, xChanged, y, yChanged = DrawPlacementPair('X', zone.x, prefix .. 'X', 'Y', zone.y, prefix .. 'Y', 0, 4000, 1);
-        if (xChanged == true) then zone.x = x; end
-        if (yChanged == true) then zone.y = y; end
-
-        local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', zone.width, prefix .. 'Width', 'Height', zone.height, prefix .. 'Height', 1, 4000, 1);
-        if (widthChanged == true) then zone.width = width; end
-        if (heightChanged == true) then zone.height = height; end
+    if (imgui.Dummy ~= nil) then
+        imgui.Dummy({ 1, 14 });
     end
 
     if (settings.plateClickNoGoZonesVisible == true and imgui.GetForegroundDrawList ~= nil) then
+        settingsUi.HandleNoGoZoneOverlayDrag(settings);
+
         local drawList = imgui.GetForegroundDrawList();
 
         if (drawList ~= nil) then
@@ -2917,14 +2925,49 @@ function LibraPlatesSettingsDrawPlateClickBlocking(settings)
                     local y = tonumber(zone.y) or 0;
                     local width = math.max(1, tonumber(zone.width) or 1);
                     local height = math.max(1, tonumber(zone.height) or 1);
-                    local label = tostring(zone.name or ('Zone ' .. tostring(index)));
+                    local label = tostring(zone.name or ('Screen ' .. tostring(index)));
                     local color = zone.color or { 1.0, 0.15, 0.15, 1.0 };
                     local fillColor = imgui.GetColorU32 ~= nil and imgui.GetColorU32({ color[1] or 1.0, color[2] or 0.15, color[3] or 0.15, 0.42 }) or 0xAA0000FF;
                     local borderColor = imgui.GetColorU32 ~= nil and imgui.GetColorU32({ color[1] or 1.0, color[2] or 0.15, color[3] or 0.15, 1.0 }) or 0xFF0000FF;
                     local textColor = imgui.GetColorU32 ~= nil and imgui.GetColorU32({ 1.0, 1.0, 1.0, 1.0 }) or 0xFFFFFFFF;
+                    local handleColor = imgui.GetColorU32 ~= nil and imgui.GetColorU32({ 1.0, 1.0, 1.0, 0.82 }) or 0xDDFFFFFF;
+                    local handleSize = 18;
 
                     drawList:AddRectFilled({ x, y }, { x + width, y + height }, fillColor);
                     drawList:AddRect({ x, y }, { x + width, y + height }, borderColor, 0, 0, 4);
+                    if (drawList.AddTriangleFilled ~= nil) then
+                        drawList:AddTriangleFilled(
+                            { x + width, y + height - handleSize },
+                            { x + width, y + height },
+                            { x + width - handleSize, y + height },
+                            handleColor
+                        );
+                        drawList:AddTriangleFilled(
+                            { x, y + height - handleSize },
+                            { x, y + height },
+                            { x + handleSize, y + height },
+                            handleColor
+                        );
+                        drawList:AddTriangle(
+                            { x + width, y + height - handleSize },
+                            { x + width, y + height },
+                            { x + width - handleSize, y + height },
+                            borderColor,
+                            2
+                        );
+                        drawList:AddTriangle(
+                            { x, y + height - handleSize },
+                            { x, y + height },
+                            { x + handleSize, y + height },
+                            borderColor,
+                            2
+                        );
+                    else
+                        drawList:AddRectFilled({ x + width - handleSize, y + height - handleSize }, { x + width, y + height }, handleColor);
+                        drawList:AddRect({ x + width - handleSize, y + height - handleSize }, { x + width, y + height }, borderColor, 0, 0, 2);
+                        drawList:AddRectFilled({ x, y + height - handleSize }, { x + handleSize, y + height }, handleColor);
+                        drawList:AddRect({ x, y + height - handleSize }, { x + handleSize, y + height }, borderColor, 0, 0, 2);
+                    end
 
                     if (drawList.AddText ~= nil) then
                         drawList:AddText({ x + 6, y + 6 }, textColor, label);
@@ -2932,6 +2975,133 @@ function LibraPlatesSettingsDrawPlateClickBlocking(settings)
                 end
             end
         end
+    end
+end
+
+function settingsUi.GetNoGoZoneMousePosition()
+    if (imgui.GetIO == nil) then
+        return nil, nil;
+    end
+
+    local ok, io = pcall(function()
+        return imgui.GetIO();
+    end);
+
+    if (ok ~= true or io == nil or io.MousePos == nil) then
+        return nil, nil;
+    end
+
+    return
+        tonumber(io.MousePos.x or io.MousePos.X or io.MousePos[1]),
+        tonumber(io.MousePos.y or io.MousePos.Y or io.MousePos[2]);
+end
+
+function settingsUi.GetNoGoZoneDragDelta()
+    if (imgui.GetMouseDragDelta == nil) then
+        return 0, 0;
+    end
+
+    local dragA, dragB = imgui.GetMouseDragDelta(0);
+
+    if (type(dragA) == 'table') then
+        return tonumber(dragA.x or dragA[1]) or 0, tonumber(dragA.y or dragA[2]) or 0;
+    end
+
+    return tonumber(dragA) or 0, tonumber(dragB) or 0;
+end
+
+function settingsUi.HandleNoGoZoneOverlayDrag(settings)
+    if (
+        settings == nil or
+        settings.plateClickNoGoZonesVisible ~= true or
+        type(settings.plateClickNoGoZones) ~= 'table' or
+        imgui.IsMouseClicked == nil or
+        imgui.IsMouseDown == nil
+    ) then
+        settingsUi.activeNoGoZoneDrag = nil;
+        return;
+    end
+
+    local mouseX, mouseY = settingsUi.GetNoGoZoneMousePosition();
+
+    if (mouseX == nil or mouseY == nil) then
+        settingsUi.activeNoGoZoneDrag = nil;
+        return;
+    end
+
+    if (imgui.IsMouseClicked(0) == true) then
+        settingsUi.activeNoGoZoneDrag = nil;
+
+        for index = #settings.plateClickNoGoZones, 1, -1 do
+            local zone = settings.plateClickNoGoZones[index];
+
+            if (type(zone) == 'table' and zone.enabled == true) then
+                local x = tonumber(zone.x) or 0;
+                local y = tonumber(zone.y) or 0;
+                local width = math.max(1, tonumber(zone.width) or 1);
+                local height = math.max(1, tonumber(zone.height) or 1);
+                local handleSize = 18;
+                local inRect = mouseX >= x and mouseX <= x + width and mouseY >= y and mouseY <= y + height;
+                local inRightHandle = mouseX >= x + width - handleSize and mouseX <= x + width and mouseY >= y + height - handleSize and mouseY <= y + height;
+                local inLeftHandle = mouseX >= x and mouseX <= x + handleSize and mouseY >= y + height - handleSize and mouseY <= y + height;
+
+                if (inRightHandle == true or inLeftHandle == true or inRect == true) then
+                    settingsUi.activeNoGoZoneDrag = {
+                        index = index,
+                        mode = inRightHandle == true and 'resize-right' or (inLeftHandle == true and 'resize-left' or 'move'),
+                    };
+
+                    if (imgui.ResetMouseDragDelta ~= nil) then
+                        imgui.ResetMouseDragDelta(0);
+                    end
+
+                    break;
+                end
+            end
+        end
+    end
+
+    if (imgui.IsMouseDown(0) ~= true) then
+        settingsUi.activeNoGoZoneDrag = nil;
+        return;
+    end
+
+    if (settingsUi.activeNoGoZoneDrag == nil) then
+        return;
+    end
+
+    local zone = settings.plateClickNoGoZones[settingsUi.activeNoGoZoneDrag.index];
+
+    if (type(zone) ~= 'table' or zone.enabled ~= true) then
+        settingsUi.activeNoGoZoneDrag = nil;
+        return;
+    end
+
+    local dx, dy = settingsUi.GetNoGoZoneDragDelta();
+
+    if (math.abs(dx) < 0.5 and math.abs(dy) < 0.5) then
+        return;
+    end
+
+    if (settingsUi.activeNoGoZoneDrag.mode == 'resize-right') then
+        zone.width = math.max(20, math.floor((tonumber(zone.width) or 1) + dx + 0.5));
+        zone.height = math.max(20, math.floor((tonumber(zone.height) or 1) + dy + 0.5));
+    elseif (settingsUi.activeNoGoZoneDrag.mode == 'resize-left') then
+        local oldX = tonumber(zone.x) or 0;
+        local oldWidth = math.max(20, tonumber(zone.width) or 20);
+        local newX = math.max(0, math.floor(oldX + dx + 0.5));
+        local newWidth = math.max(20, math.floor(oldWidth - (newX - oldX) + 0.5));
+
+        zone.x = newX;
+        zone.width = newWidth;
+        zone.height = math.max(20, math.floor((tonumber(zone.height) or 1) + dy + 0.5));
+    else
+        zone.x = math.max(0, math.floor((tonumber(zone.x) or 0) + dx + 0.5));
+        zone.y = math.max(0, math.floor((tonumber(zone.y) or 0) + dy + 0.5));
+    end
+
+    if (imgui.ResetMouseDragDelta ~= nil) then
+        imgui.ResetMouseDragDelta(0);
     end
 end
 
@@ -3804,6 +3974,30 @@ function DrawFontFolderLink(label, detailText)
             imgui.Text(detailText);
         end
     end
+end
+
+function DrawStatusIconPackFolderHelp(statusIconTextures)
+    imgui.TextWrapped('Status icon packs are loaded from the icon packs folder.');
+    imgui.Spacing();
+
+    imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Click here');
+
+    if (GetItemRectMin ~= nil and GetItemRectMax ~= nil and imgui.GetWindowDrawList ~= nil) then
+        local minX, minY = GetItemRectMin();
+        local maxX, maxY = GetItemRectMax();
+        local drawList = imgui.GetWindowDrawList();
+
+        if (drawList ~= nil and drawList.AddLine ~= nil) then
+            drawList:AddLine({ minX, maxY }, { maxX, maxY }, { 0.65, 0.90, 1.0, 1.0 }, 1);
+        end
+    end
+
+    if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+        statusIconTextures.OpenPackFolder();
+    end
+
+    imgui.TextWrapped('to open the icon pack folder and save the pack there. The pack folder should contain PNG icons named by status ID, for example:');
+    imgui.TextWrapped('1.png, 2.png, 33.png');
 end
 
 function DrawStatusIconPackPreview(statusIconTextures)
@@ -6836,6 +7030,8 @@ local function DrawGeneralFontSection(global)
     imgui.Spacing();
     imgui.Separator();
     imgui.Spacing();
+    DrawStatusIconPackFolderHelp(statusIconTextures);
+    imgui.Spacing();
     DrawInlineCombo('Status icon pack', statusIconTextures.GetPackNames(), global.statusIcons.iconPack or globalDefaults.statusIcons.iconPack, function(iconPack)
         global.statusIcons.iconPack = statusIconTextures.ResolvePackName(iconPack);
         state.Save();
@@ -6876,12 +7072,12 @@ local function DrawGeneralNativeUiSection(settings)
 
     uiTooltip.Info('When off, LibraPlates applies /names off immediately and again when it loads. This does not change LibraPlates plates.');
 
-    DrawCheckbox('Overwrite native name colors', settings.overwriteNativeNameColors ~= false, function(value)
-        settings.overwriteNativeNameColors = value == true;
+    DrawCheckbox('Use native special name colors', settings.overwriteNativeNameColors == false, function(value)
+        settings.overwriteNativeNameColors = value ~= true;
         state.Save();
     end);
-    uiTooltip.Info('When LibraPlates names are shown, use native special name colors where known, such as CW/UCW orange. Use native names still hides LibraPlates name text.');
-    imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Live: overwrite native name colors = ' .. tostring(targeting.GetSettings().overwriteNativeNameColors ~= false));
+    uiTooltip.Info('When on, LibraPlates names use known native special colors such as /anon blue and CW/UCW orange. Use native names still hides LibraPlates name text.');
+    imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Live: use native special name colors = ' .. tostring(targeting.GetSettings().overwriteNativeNameColors == false));
 
     if (nativeUiForced == true) then
         imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Mog House forces native targeting at runtime.');
@@ -7053,9 +7249,6 @@ local function DrawGeneralMouseSection()
         imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Range includes a small hitbox allowance, matching the old addon behavior.');
     end
 
-    imgui.Separator();
-    DrawSettingsHeader('Plate click blocking');
-    LibraPlatesSettingsDrawPlateClickBlocking(settings);
 end
 
 local function DrawGeneralPerformanceSection(settings)
@@ -7388,46 +7581,11 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
     LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Blacklist' });
     DrawSettingsHeader('Visual blacklist');
 
-    DrawCheckbox('Use Fomor-style placeholder model', blacklistSettings.modelReplaceEnabled == true, function(value)
+    DrawCheckbox('Change blacklisted player names', blacklistSettings.modelReplaceEnabled == true, function(value)
         blacklistSettings.modelReplaceEnabled = value == true;
         state.Save();
     end);
-    uiTooltip.Info('Applies to incoming player model packets. Some already-loaded players may need a model refresh.', true);
-
-    if (blacklistSettings.modelReplaceEnabled == true) then
-        local raceRef = { math.floor(tonumber(blacklistSettings.modelReplaceRace) or 5) };
-        local hairRef = { math.floor(tonumber(blacklistSettings.modelReplaceHair) or 2) };
-
-        DrawCheckbox('Use real Fomor model bytes', blacklistSettings.modelReplaceUseFomor ~= false, function(value)
-            blacklistSettings.modelReplaceUseFomor = value == true;
-            state.Save();
-        end);
-
-        DrawCheckbox('Keep original race', blacklistSettings.modelReplacePreserveRace ~= false, function(value)
-            blacklistSettings.modelReplacePreserveRace = value == true;
-            state.Save();
-        end);
-
-        if (blacklistSettings.modelReplaceUseFomor == false) then
-            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(160); end
-            if (blacklistSettings.modelReplacePreserveRace == false) then
-                if (imgui.SliderInt ~= nil and imgui.SliderInt('Replacement race', raceRef, 1, 8) == true) then
-                    blacklistSettings.modelReplaceRace = raceRef[1];
-                    state.SaveThrottled(0.50);
-                end
-            end
-            if (imgui.SliderInt ~= nil and imgui.SliderInt('Replacement hair', hairRef, 0, 15) == true) then
-                blacklistSettings.modelReplaceHair = hairRef[1];
-                state.SaveThrottled(0.50);
-            end
-            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
-
-            DrawCheckbox('Clear visible gear', blacklistSettings.modelReplaceClearGear == true, function(value)
-                blacklistSettings.modelReplaceClearGear = value == true;
-                state.Save();
-            end);
-        end
-    end
+    uiTooltip.Info('Safe mode: changes the displayed LibraPlates name only. Body model replacement is disabled until a safe costume id is found.', true);
 
     imgui.Separator();
     imgui.TextColored(settingsLabelColor, 'Manual add');
@@ -7815,14 +7973,33 @@ local function DrawGeneralVisibilitySection(settings)
     DrawSettingsHeader('Tactical screen limits');
     DrawVisibilityCheckbox('Keep tactical plates on screen', settings.tacticalScreenClampEnabled == true, function(value)
         settings.tacticalScreenClampEnabled = value == true;
-    end, 'Only affects Target, Subtarget, and tactical marker plates. If a plate would go above the top edge, it is pushed down enough to stay visible.', 'TacticalScreenClampEnabled');
+    end, 'Keeps tactical/safety plates inside the configured screen padding instead of allowing them to disappear off an edge.', 'TacticalScreenClampEnabled');
 
     if (settings.tacticalScreenClampEnabled == true) then
         local topPadding, topPaddingChanged = DrawVisibilityNumber('Top padding', settings.tacticalScreenClampTopPadding or 24, 'TacticalScreenClampTopPadding', 0, 200, 1, 'Screen-space padding kept above tactical plates.');
         if (topPaddingChanged == true) then
             settings.tacticalScreenClampTopPadding = math.max(0, math.min(200, math.floor((tonumber(topPadding) or 24) + 0.5)));
         end
+
+        local bottomPadding, bottomPaddingChanged = DrawVisibilityNumber('Bottom padding', settings.tacticalScreenClampBottomPadding or 24, 'TacticalScreenClampBottomPadding', 0, 400, 1, 'Screen-space padding kept below tactical plates.');
+        if (bottomPaddingChanged == true) then
+            settings.tacticalScreenClampBottomPadding = math.max(0, math.min(400, math.floor((tonumber(bottomPadding) or 24) + 0.5)));
+        end
+
+        local leftPadding, leftPaddingChanged = DrawVisibilityNumber('Left padding', settings.tacticalScreenClampLeftPadding or 0, 'TacticalScreenClampLeftPadding', 0, 400, 1, 'Screen-space padding kept left of tactical plates.');
+        if (leftPaddingChanged == true) then
+            settings.tacticalScreenClampLeftPadding = math.max(0, math.min(400, math.floor((tonumber(leftPadding) or 0) + 0.5)));
+        end
+
+        local rightPadding, rightPaddingChanged = DrawVisibilityNumber('Right padding', settings.tacticalScreenClampRightPadding or 0, 'TacticalScreenClampRightPadding', 0, 400, 1, 'Screen-space padding kept right of tactical plates.');
+        if (rightPaddingChanged == true) then
+            settings.tacticalScreenClampRightPadding = math.max(0, math.min(400, math.floor((tonumber(rightPadding) or 0) + 0.5)));
+        end
     end
+
+    imgui.Separator();
+    DrawSettingsHeader('Screen No-Go Zones');
+    LibraPlatesSettingsDrawPlateClickBlocking(settings);
 end
 
 local function DrawProfileNamePopup(popupName, inputLabel, buttonLabel, buffer, action)

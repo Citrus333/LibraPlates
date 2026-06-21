@@ -353,10 +353,22 @@ function indicators.HasAnonNameColor(targetIndex)
     local anonymousByServerId = state.GetAnonymousByServerId();
 
     if (serverId == (tonumber(GetSelfServerId()) or 0)) then
-        return anonymousByServerId[tostring(serverId)] ~= true and anonymousByServerId[serverId] ~= true;
+        return anonymousByServerId[tostring(serverId)] == true or anonymousByServerId[serverId] == true;
     end
 
-    return anonymousByServerId[tostring(serverId)] == true or anonymousByServerId[serverId] == true;
+    if (anonymousByServerId[tostring(serverId)] == true or anonymousByServerId[serverId] == true) then
+        return true;
+    end
+
+    local entity = GetEntity(targetIndex);
+
+    if (tonumber(entity ~= nil and entity.Type or nil) ~= 0) then
+        return false;
+    end
+
+    return Band(ReadRenderFlag(targetIndex, 0), 0x80000000) ~= 0
+        and Band(ReadRenderFlag(targetIndex, 1), 0x00800000) ~= 0
+        and Band(ReadRenderFlag(targetIndex, 1), 0x00000800) ~= 0;
 end
 
 function indicators.GetAnonNameColor()

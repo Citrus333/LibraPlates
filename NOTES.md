@@ -39,13 +39,18 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 
 - Untargeted neutral PC: `PC + Idle/World`.
 - Party, target-context, or tactical PC: `PC + Combat/Tactical`.
+- Safety rule: party/tactical/target-context PC plates bypass `maxWorldPlateCount`, must not depend on tactical-overlay-only rendering, and draw always-on-top. Idle/social PC plates do not get this protection.
 
 ### Enemy
 
 - Idle enemy: `Enemy + Idle/World`.
 - Engaged, casting, target, or subtarget enemy: `Enemy + Combat/Tactical`.
-- Safety rule: while the player is engaged, Enemy plates outrank PC plates when `maxWorldPlateCount` trims queued world plates.
-- Safety rule: while the player is engaged, idle/non-combat Enemy plates are fixed blockers in plate stacking. They may overlap, but stacking must not move them away from their actor or off the top of the screen.
+- Safety rule: Enemy plates bypass `maxWorldPlateCount`; the cap only trims non-enemy world plates.
+- Safety rule: Idle/World Enemy plates must not be routed through screen-space plate stacking. They stay normal world billboards so overlapping mobs do not disappear/flicker from stacked overlay projection.
+- Safety rule: Enemy plates bypass `maxWorldPlateCount`, but they are allowed to stack. Enemy stacking prefers vertical rows; current target/subtarget can stay fixed with `Keep target fixed`.
+- Safety rule: tactical/important Enemy plates must not depend on tactical-overlay-only rendering, projected-below-viewport hiding, or depth-tested world drawing. Idle/World Enemy plates bypass culling but must remain normal world billboards so they can leave screen edges naturally.
+- Safety rule: tactical PC plates follow the same no-cull/no-overlay-only/no-depth-hide rule. This is for party/tactical/target-context PCs, not idle social PC plates.
+- Tactical screen limits expose top/bottom/left/right padding. Safety plates should clamp into that rectangle rather than only checking the top edge.
 
 ### Trust
 
@@ -85,7 +90,6 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 - Help follow-up: expand User Guide and Troubleshooter over time with exact row-level anchors, more synonyms, and common "why is X not showing/working?" cases as they come up in testing.
 - Future integration idea: incorporate ChatMon / ZoneName / JA-style functionality into LibraPlates.
 - Game mode is not reading properly.
-- Some widget-list names are blue.
 - Settings reset bug: resetting widget settings/position does not appear to reset anchor settings (`anchorTo` / `anchorPoint`).
 - Disable nameplate click-through when clicking game UI such as action bars, chat windows, or menus.
 - Release packaging cleanup: do not ship old debug depth probe plugins (`LibraDepthProbe` / `LibraDepthProbestatus`) with the release package.
@@ -104,6 +108,8 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 - NPC/Object data direction: future zone-scoped loading should wait until data has full zone coverage, then load by zone on zone change with exact-name lookup and cached results.
 - Add a setting for `???`/search objects to show or hide names.
 - Fishing/gathering interaction needs field testing and a decision on Clamming Point, Fish Trap, and other fishing-related objects.
+- Regression: gathering/tool-count bug is back during zoning. This was previously marked fixed on 2026-06-13 (`0` tool-count flash suppressed and baseline reset), but it has returned; re-check login/zone packet reset timing and make the fix harder to regress.
+- Kayeel-Payeel NPC shows up as a Trust in Windurst Waters.
 - Sky aura pots are anchored too high.
 - Object/NPC cutscene suppression added using event-active/interface-hidden flags; needs live cutscene and Hide Menus testing.
 
@@ -111,6 +117,8 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 
 - Peer level should be color-correct to level.
 - Check Conquest War and Union Conquest War naming/colors; CW and UCW have orange names.
+- Regression: /anon native special name color/icon behavior is reversed again. Anon players should use the native anon blue/color/icon behavior only when the native-special-color setting says to use it.
+- Tactical PC game mode icon is not showing.
 - Plate height test: verify Self/PC plate height while mounted, including normal mounts and rental chocobo.
 - Party member puppet claim/enmity bug: another player's puppet getting aggro can flip enemy nameplates to claimed-by-another color.
 
@@ -145,6 +153,7 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 
 - Target/Subtarget module copy/paste is not working or not exposed consistently.
 - Target/Subtarget settings ownership/scoping needs final review: Modules tab vs Plates settings are still confusing, and changes can appear to affect the wrong entity/state. Do not remove Target/Subtarget from the Modules tab without Lila explicitly approving that direction.
+- AOE follow-up: AOE icons can appear when other players use AOE, possibly only party members. This was unintended but could be useful; investigate source detection and split it into separate settings/visual style from the player's own AOE preview.
 - Target/Subtarget chevrons/arrows stop stretching at large sizes, around X 80 / Y 100.
 - Self-target chevrons are not spaced far enough apart on the X axis to contain very wide HP bars, such as 500 width.
 - Distance number idea: draw Target/Subtarget distance on the targeting layer so it remains constant-size and visible through walls.
@@ -162,10 +171,22 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 
 ## Done
 
+- 2026-06-21 - Settings widget-list text colors:
+  - Fixed/closed the issue where some widget-list names were blue.
+
+- 2026-06-21 - No-go zone plate masking:
+  - Added `Mask plates in no-go zones` under `Settings > Mouse`.
+  - Enabled no-go zones can now clip plate textures visually, so a plate half inside a zone is only half drawn.
+
 - 2026-06-20 - Enemy plate combat visibility hardening:
-  - While the player is engaged, Enemy plates now outrank PC plates when the world-plate cap trims queued plates.
-  - Idle/non-combat Enemy plates now act as fixed blockers in plate stacking during combat so the stacker does not shove nearby threats away from their actor.
-  - Stacked Enemy plates are clamped at the top of the screen instead of being allowed to move above the visible viewport.
+  - Enemy plates now bypass the world-plate cap; `maxWorldPlateCount` only trims non-enemy world plates.
+  - Idle/World Enemy plates now opt out of screen-space plate stacking and remain normal world billboards.
+  - Enemy plates can stack again, using vertical rows instead of horizontal spreading. Current target/subtarget can stay fixed with `Keep target fixed`.
+  - Stacked Enemy plates are clamped into the visible screen instead of being allowed to move above or below the viewport.
+  - Tactical/important Enemy plates no longer use tactical-overlay-only/click-only drawing in the world marker path and are drawn always-on-top to prevent model/terrain depth from hiding them. Idle/World Enemy plates remain normal world billboards.
+  - Party/tactical/target-context PC plates now get the same safety treatment; idle/social PC plates remain eligible for normal culling/stacking behavior.
+  - Tactical screen limits now support top, bottom, left, and right padding instead of top-only clamping.
+  - Always-on-top safety drawing now refuses huge close-camera billboard projections so plates do not become screen-filling when passing through enemies.
 
 - 2026-06-19 - Quick Menu flexible sizing:
   - Marked Quick Menu size settings or flexible sizing depending on visible selections as done.

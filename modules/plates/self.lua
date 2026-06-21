@@ -57,6 +57,69 @@ local lagTestSuppressed = false;
 local cachedWorldPlates = {};
 local cachedWorldPlateLimit = 4;
 local cachedWorldTextureKey = 'self-world';
+local restingWidgetStableY = nil;
+local restingWidgetStableClock = nil;
+local restingWidgetDelaySeconds = 0.22;
+local restingWidgetMoveThreshold = 18;
+
+local function GetDisplayHeight()
+    if (imgui.GetIO == nil) then
+        return nil;
+    end
+
+    local ok, io = pcall(function()
+        return imgui.GetIO();
+    end);
+
+    if (ok ~= true or io == nil or io.DisplaySize == nil) then
+        return nil;
+    end
+
+    return tonumber(io.DisplaySize.y or io.DisplaySize.Y or io.DisplaySize[2]);
+end
+
+local function IsBadSelfTransitionCenter(center)
+    local displayHeight = GetDisplayHeight();
+
+    if (
+        center ~= nil and
+        displayHeight ~= nil and
+        (tonumber(center.y) or 0) > (displayHeight * 0.55)
+    ) then
+        return true;
+    end
+
+    return false;
+end
+
+LibraPlatesSelfShouldDrawRestingWidget = function(center, isActive)
+    if (isActive ~= true or center == nil) then
+        restingWidgetStableY = nil;
+        restingWidgetStableClock = nil;
+        return false;
+    end
+
+    local now = os.clock();
+    local centerY = tonumber(center.y);
+
+    if (centerY == nil) then
+        restingWidgetStableY = nil;
+        restingWidgetStableClock = nil;
+        return false;
+    end
+
+    if (
+        restingWidgetStableY == nil or
+        math.abs(centerY - restingWidgetStableY) > restingWidgetMoveThreshold
+    ) then
+        restingWidgetStableY = centerY;
+        restingWidgetStableClock = now;
+        return false;
+    end
+
+    restingWidgetStableY = centerY;
+    return restingWidgetStableClock ~= nil and (now - restingWidgetStableClock) >= restingWidgetDelaySeconds;
+end;
 
 local function ScalarKey(value)
     local valueType = type(value);
@@ -1166,7 +1229,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         crafting.ClearResult();
     end
 
-    if (restingActive == true) then
+    if (restingActive == true and LibraPlatesSelfShouldDrawRestingWidget(center, restingActive) == true) then
         local currentMp = tonumber(center.mp);
         local maxMp = tonumber(center.maxMp) or 0;
         local mpIsFull = mpPercent >= 100 or (currentMp ~= nil and maxMp > 0 and currentMp >= maxMp);
@@ -1238,7 +1301,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 };
             end
         end
-    else
+    elseif (restingActive ~= true) then
+        LibraPlatesSelfShouldDrawRestingWidget(nil, false);
         if (restingTick.ShouldPreserveLogoutTransition() == true) then
             restingTick.Reset();
         else
@@ -1364,6 +1428,10 @@ function selfPlate.Render()
     local center = entities.GetSelfCanvasCenter(canvasDefaults.offsetX, canvasDefaults.offsetY);
 
     if (center == nil) then
+        return;
+    end
+
+    if (IsBadSelfTransitionCenter(center) == true) then
         return;
     end
 

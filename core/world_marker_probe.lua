@@ -34,6 +34,10 @@ ffi.cdef[[
     } lp_world_marker_screen_vertex_t;
 
     typedef struct {
+        long x1, y1, x2, y2;
+    } lp_d3d_rect_t;
+
+    typedef struct {
         float x, y, z;
     } lp_d3dx_vector3_t;
 
@@ -58,6 +62,7 @@ local D3DRS_ALPHAFUNC = 25;
 local D3DRS_ZBIAS = 47;
 local D3DRS_ALPHABLENDENABLE = 27;
 local D3DRS_LIGHTING = 137;
+local D3DRS_COLORWRITEENABLE = 168;
 local D3DCMP_LESSEQUAL = 4;
 local D3DCMP_GREATEREQUAL = 7;
 local D3DCMP_ALWAYS = 8;
@@ -77,6 +82,12 @@ local D3DTOP_DISABLE = 1;
 local D3DTOP_SELECTARG1 = 2;
 local D3DTA_DIFFUSE = 0;
 local D3DTA_TEXTURE = 2;
+local D3DCOLORWRITEENABLE_RED = 1;
+local D3DCOLORWRITEENABLE_GREEN = 2;
+local D3DCOLORWRITEENABLE_BLUE = 4;
+local D3DCOLORWRITEENABLE_ALPHA = 8;
+local D3DBLEND_ZERO = 1;
+local D3DBLEND_ONE = 2;
 local D3DTEXF_POINT = 1;
 local D3DTEXF_LINEAR = 2;
 local D3DTADDRESS_CLAMP = 3;
@@ -916,6 +927,8 @@ local function DrawCanvasDebugWithState(device, wx, wy, wz, width, height, dotSi
     local _, saveBlend = device:GetRenderState(D3DRS_ALPHABLENDENABLE);
     local _, saveSrc = device:GetRenderState(D3DRS_SRCBLEND);
     local _, saveDst = device:GetRenderState(D3DRS_DESTBLEND);
+    local _, saveSrc = device:GetRenderState(D3DRS_SRCBLEND);
+    local _, saveDst = device:GetRenderState(D3DRS_DESTBLEND);
     local _, saveCull = device:GetRenderState(D3DRS_CULLMODE);
     local _, saveAlphaTest = device:GetRenderState(D3DRS_ALPHATESTENABLE);
     local _, saveFvf = device:GetVertexShader();
@@ -1217,6 +1230,7 @@ local function DrawWithState(device, wx, wy, wz, hpPercent, style, color, plate)
     local _, saveDst = device:GetRenderState(D3DRS_DESTBLEND);
     local _, saveCull = device:GetRenderState(D3DRS_CULLMODE);
     local _, saveAlphaTest = device:GetRenderState(D3DRS_ALPHATESTENABLE);
+    local _, saveColorWrite = device:GetRenderState(D3DRS_COLORWRITEENABLE);
     local _, saveFvf = device:GetVertexShader();
     local _, saveTex = device:GetTexture(0);
     local _, savePixelShader = device:GetPixelShader();
@@ -1235,7 +1249,7 @@ local function DrawWithState(device, wx, wy, wz, hpPercent, style, color, plate)
     device:SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
     device:SetRenderState(D3DRS_SRCBLEND, 5);
     device:SetRenderState(D3DRS_DESTBLEND, 6);
-    device:SetRenderState(D3DRS_ZENABLE, (alwaysOnTop == true) and 0 or 1);
+    device:SetRenderState(D3DRS_ZENABLE, 1);
     device:SetRenderState(D3DRS_ZWRITEENABLE, (alwaysOnTop == true) and 0 or 1);
     device:SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
     device:SetRenderState(D3DRS_ZBIAS, 8);
@@ -1281,6 +1295,12 @@ local function DrawWithState(device, wx, wy, wz, hpPercent, style, color, plate)
         print('[LibraPlates] World marker probe draw failed: ' .. tostring(err));
     end
 end
+
+local DrawScreenTextureWithDepth = nil;
+local GetPlateMaskZones = nil;
+local ScreenRectIntersectsPlateMask = nil;
+local DrawPlateOverlayScreen = nil;
+local DrawFixedScreenTexture = nil;
 
 local function DrawTextWithState(device, text, wx, wy, wz, style, mode)
     text = tostring(text or '');
@@ -1366,6 +1386,7 @@ local function DrawTextWithState(device, text, wx, wy, wz, style, mode)
     wx = wx + (rx * (offsetX * offsetWorldScale));
     wy = wy - (uy * (billboardOffsetY * worldScale));
     wz = wz - (uz * (billboardOffsetY * worldScale));
+
     local _, saveLight = device:GetRenderState(D3DRS_LIGHTING);
     local _, saveZ = device:GetRenderState(D3DRS_ZENABLE);
     local _, saveZWrite = device:GetRenderState(D3DRS_ZWRITEENABLE);
@@ -1401,8 +1422,8 @@ local function DrawTextWithState(device, text, wx, wy, wz, style, mode)
     device:SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
     device:SetRenderState(D3DRS_SRCBLEND, 5);
     device:SetRenderState(D3DRS_DESTBLEND, 6);
-    device:SetRenderState(D3DRS_ZENABLE, (alwaysOnTop == true) and 0 or 1);
-    device:SetRenderState(D3DRS_ZWRITEENABLE, (alwaysOnTop == true) and 0 or 1);
+    device:SetRenderState(D3DRS_ZENABLE, 1);
+    device:SetRenderState(D3DRS_ZWRITEENABLE, 1);
     device:SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
     device:SetRenderState(D3DRS_ZBIAS, 8);
     device:SetRenderState(D3DRS_ALPHATESTENABLE, 1);
@@ -1463,7 +1484,208 @@ end
 
 local DrawTextureWithState = nil;
 
-local function DrawScreenTextureWithDepth(device, textureId, wx, wy, wz, offsetX, offsetY, size, height, alwaysOnTop)
+GetPlateMaskZones = function(viewport)
+    local settings = targeting.GetSettings();
+
+    if (
+        settings == nil or
+        settings.plateClickNoGoZonesEnabled ~= true or
+        settings.plateClickNoGoZonesMask ~= true
+    ) then
+        return nil;
+    end
+
+    local zones = {};
+
+    for _, zone in ipairs(settings.plateClickNoGoZones or {}) do
+        if (type(zone) == 'table' and zone.enabled == true) then
+            local left = tonumber(zone.x) or 0;
+            local top = tonumber(zone.y) or 0;
+            local width = math.max(1, tonumber(zone.width) or 1);
+            local height = math.max(1, tonumber(zone.height) or 1);
+
+            zones[#zones + 1] = {
+                left = left,
+                top = top,
+                right = left + width,
+                bottom = top + height,
+            };
+        end
+    end
+
+    return (#zones > 0) and zones or nil;
+end
+
+local function SubtractMaskZone(rects, zone)
+    local out = {};
+
+    for _, rect in ipairs(rects or {}) do
+        local overlapLeft = math.max(rect.left, zone.left);
+        local overlapTop = math.max(rect.top, zone.top);
+        local overlapRight = math.min(rect.right, zone.right);
+        local overlapBottom = math.min(rect.bottom, zone.bottom);
+
+        if (overlapLeft >= overlapRight or overlapTop >= overlapBottom) then
+            out[#out + 1] = rect;
+        else
+            if (rect.top < overlapTop) then
+                out[#out + 1] = { left = rect.left, top = rect.top, right = rect.right, bottom = overlapTop };
+            end
+
+            if (overlapBottom < rect.bottom) then
+                out[#out + 1] = { left = rect.left, top = overlapBottom, right = rect.right, bottom = rect.bottom };
+            end
+
+            if (rect.left < overlapLeft) then
+                out[#out + 1] = { left = rect.left, top = overlapTop, right = overlapLeft, bottom = overlapBottom };
+            end
+
+            if (overlapRight < rect.right) then
+                out[#out + 1] = { left = overlapRight, top = overlapTop, right = rect.right, bottom = overlapBottom };
+            end
+        end
+    end
+
+    return out;
+end
+
+local function GetVisibleScreenTextureRects(left, top, right, bottom, viewport)
+    local rects = { { left = left, top = top, right = right, bottom = bottom } };
+    local zones = GetPlateMaskZones(viewport);
+
+    if (zones == nil) then
+        return rects;
+    end
+
+    for _, zone in ipairs(zones) do
+        rects = SubtractMaskZone(rects, zone);
+
+        if (#rects == 0) then
+            break;
+        end
+    end
+
+    return rects;
+end
+
+ScreenRectIntersectsPlateMask = function(left, top, right, bottom, viewport)
+    local zones = GetPlateMaskZones(viewport);
+
+    if (zones == nil) then
+        return false;
+    end
+
+    for _, zone in ipairs(zones) do
+        if (
+            math.max(left, zone.left) < math.min(right, zone.right) and
+            math.max(top, zone.top) < math.min(bottom, zone.bottom)
+        ) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
+local function ScreenPointInPlateMask(x, y, viewport)
+    local zones = GetPlateMaskZones(viewport);
+
+    if (zones == nil) then
+        return false;
+    end
+
+    x = tonumber(x);
+    y = tonumber(y);
+
+    if (x == nil or y == nil) then
+        return false;
+    end
+
+    for _, zone in ipairs(zones) do
+        if (x >= zone.left and x <= zone.right and y >= zone.top and y <= zone.bottom) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
+local function RectIntersectsNoGoZone(left, top, right, bottom, settings)
+    if (
+        settings == nil or
+        settings.plateClickNoGoZonesEnabled ~= true or
+        settings.plateClickNoGoZonesMask ~= true
+    ) then
+        return false;
+    end
+
+    left = tonumber(left);
+    top = tonumber(top);
+    right = tonumber(right);
+    bottom = tonumber(bottom);
+
+    if (left == nil or top == nil or right == nil or bottom == nil or right <= left or bottom <= top) then
+        return false;
+    end
+
+    for _, zone in ipairs(settings.plateClickNoGoZones or {}) do
+        if (type(zone) == 'table' and zone.enabled == true) then
+            local zoneLeft = tonumber(zone.x) or 0;
+            local zoneTop = tonumber(zone.y) or 0;
+            local zoneRight = zoneLeft + math.max(1, tonumber(zone.width) or 1);
+            local zoneBottom = zoneTop + math.max(1, tonumber(zone.height) or 1);
+
+            if (math.max(left, zoneLeft) < math.min(right, zoneRight) and math.max(top, zoneTop) < math.min(bottom, zoneBottom)) then
+                return true;
+            end
+        end
+    end
+
+    return false;
+end
+
+local function ShouldHardHidePlateByNoGoZone(targetIndex)
+    local settings = targeting.GetSettings();
+    local index = tonumber(targetIndex);
+
+    if (index == nil or settings == nil) then
+        return false;
+    end
+
+    for _, entry in ipairs(pendingClickRects or {}) do
+        if (tonumber(entry.targetIndex) == index and entry.union ~= nil) then
+            return RectIntersectsNoGoZone(entry.union.x1, entry.union.y1, entry.union.x2, entry.union.y2, settings);
+        end
+    end
+
+    return false;
+end
+
+local function DrawScreenTextureRect(device, left, top, right, bottom, rect, z)
+    if (rect == nil or rect.left >= rect.right or rect.top >= rect.bottom) then
+        return;
+    end
+
+    local width = math.max(1, right - left);
+    local height = math.max(1, bottom - top);
+    local u1 = (rect.left - left) / width;
+    local v1 = (rect.top - top) / height;
+    local u2 = (rect.right - left) / width;
+    local v2 = (rect.bottom - top) / height;
+    local color = 0xFFFFFFFF;
+    local vertices = ffi.new('lp_world_marker_screen_vertex_t[6]', {
+        { rect.left,  rect.top,    z, 1, color, u1, v1 },
+        { rect.right, rect.top,    z, 1, color, u2, v1 },
+        { rect.right, rect.bottom, z, 1, color, u2, v2 },
+        { rect.left,  rect.top,    z, 1, color, u1, v1 },
+        { rect.right, rect.bottom, z, 1, color, u2, v2 },
+        { rect.left,  rect.bottom, z, 1, color, u1, v2 },
+    });
+
+    device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, 2, vertices, SCREEN_VERTEX_SIZE);
+end
+
+DrawScreenTextureWithDepth = function(device, textureId, wx, wy, wz, offsetX, offsetY, size, height, alwaysOnTop, rectLeft, rectTop, rectRight, rectBottom)
     textureId = tonumber(textureId);
 
     if (textureId == nil or textureId == 0) then
@@ -1492,6 +1714,15 @@ local function DrawScreenTextureWithDepth(device, textureId, wx, wy, wz, offsetX
     local top = centerY - (drawHeight * 0.5);
     local right = left + drawSize;
     local bottom = top + drawHeight;
+
+    if (rectLeft ~= nil and rectTop ~= nil and rectRight ~= nil and rectBottom ~= nil) then
+        left = tonumber(rectLeft) or left;
+        top = tonumber(rectTop) or top;
+        right = tonumber(rectRight) or right;
+        bottom = tonumber(rectBottom) or bottom;
+    end
+
+    local screenOverlayDraw = alwaysOnTop == true or (rectLeft ~= nil and rectTop ~= nil and rectRight ~= nil and rectBottom ~= nil);
     local texture = ffi.cast('IDirect3DBaseTexture8*', ffi.cast('uintptr_t', textureId));
 
     local _, saveLight = device:GetRenderState(D3DRS_LIGHTING);
@@ -1527,9 +1758,9 @@ local function DrawScreenTextureWithDepth(device, textureId, wx, wy, wz, offsetX
     device:SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
     device:SetRenderState(D3DRS_SRCBLEND, 5);
     device:SetRenderState(D3DRS_DESTBLEND, 6);
-    device:SetRenderState(D3DRS_ZENABLE, (alwaysOnTop == true) and 0 or 1);
+    device:SetRenderState(D3DRS_ZENABLE, screenOverlayDraw == true and 0 or 1);
     device:SetRenderState(D3DRS_ZWRITEENABLE, 0);
-    device:SetRenderState(D3DRS_ZFUNC, (alwaysOnTop == true) and D3DCMP_ALWAYS or D3DCMP_LESSEQUAL);
+    device:SetRenderState(D3DRS_ZFUNC, screenOverlayDraw == true and D3DCMP_ALWAYS or D3DCMP_LESSEQUAL);
     device:SetRenderState(D3DRS_ZBIAS, 0);
     device:SetRenderState(D3DRS_ALPHATESTENABLE, 1);
     device:SetRenderState(D3DRS_ALPHAREF, 0x40);
@@ -1544,17 +1775,17 @@ local function DrawScreenTextureWithDepth(device, textureId, wx, wy, wz, offsetX
     device:SetTextureStageState(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
     device:SetTextureStageState(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
 
-    local color = 0xFFFFFFFF;
-    local vertices = ffi.new('lp_world_marker_screen_vertex_t[6]', {
-        { left,  top,    sz, 1, color, 0, 0 },
-        { right, top,    sz, 1, color, 1, 0 },
-        { right, bottom, sz, 1, color, 1, 1 },
-        { left,  top,    sz, 1, color, 0, 0 },
-        { right, bottom, sz, 1, color, 1, 1 },
-        { left,  bottom, sz, 1, color, 0, 1 },
-    });
-
     local ok = pcall(function()
+        local color = 0xFFFFFFFF;
+        local vertices = ffi.new('lp_world_marker_screen_vertex_t[6]', {
+            { left,  top,    sz, 1, color, 0, 0 },
+            { right, top,    sz, 1, color, 1, 0 },
+            { right, bottom, sz, 1, color, 1, 1 },
+            { left,  top,    sz, 1, color, 0, 0 },
+            { right, bottom, sz, 1, color, 1, 1 },
+            { left,  bottom, sz, 1, color, 0, 1 },
+        });
+
         device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, 2, vertices, SCREEN_VERTEX_SIZE);
     end);
 
@@ -1586,7 +1817,7 @@ local function DrawScreenTextureWithDepth(device, textureId, wx, wy, wz, offsetX
     return ok == true;
 end
 
-local function DrawFixedScreenTexture(device, textureId, centerX, centerY, width, height)
+DrawFixedScreenTexture = function(device, textureId, centerX, centerY, width, height)
     textureId = tonumber(textureId);
 
     if (textureId == nil or textureId == 0) then
@@ -1651,17 +1882,17 @@ local function DrawFixedScreenTexture(device, textureId, centerX, centerY, width
     device:SetTextureStageState(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
     device:SetTextureStageState(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
 
-    local color = 0xFFFFFFFF;
-    local vertices = ffi.new('lp_world_marker_screen_vertex_t[6]', {
-        { left,  top,    0, 1, color, 0, 0 },
-        { right, top,    0, 1, color, 1, 0 },
-        { right, bottom, 0, 1, color, 1, 1 },
-        { left,  top,    0, 1, color, 0, 0 },
-        { right, bottom, 0, 1, color, 1, 1 },
-        { left,  bottom, 0, 1, color, 0, 1 },
-    });
-
     local ok = pcall(function()
+        local color = 0xFFFFFFFF;
+        local vertices = ffi.new('lp_world_marker_screen_vertex_t[6]', {
+            { left,  top,    0, 1, color, 0, 0 },
+            { right, top,    0, 1, color, 1, 0 },
+            { right, bottom, 0, 1, color, 1, 1 },
+            { left,  top,    0, 1, color, 0, 0 },
+            { right, bottom, 0, 1, color, 1, 1 },
+            { left,  bottom, 0, 1, color, 0, 1 },
+        });
+
         device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, 2, vertices, SCREEN_VERTEX_SIZE);
     end);
 
@@ -1712,7 +1943,7 @@ local function DrawCanvasIconWithState(device, wx, wy, wz, style)
     end
 end
 
-local function DrawPlateOverlayScreen(device, textureId, wx, wy, wz, worldWidth, worldHeight, alwaysOnTop, offsetX, offsetY)
+DrawPlateOverlayScreen = function(device, textureId, wx, wy, wz, worldWidth, worldHeight, alwaysOnTop, offsetX, offsetY, requireMaskOverlap)
     local _, view = device:GetTransform(2);
     local _, proj = device:GetTransform(3);
     local _, viewport = device:GetViewport();
@@ -1750,17 +1981,36 @@ local function DrawPlateOverlayScreen(device, textureId, wx, wy, wz, worldWidth,
         return false;
     end
 
+    local screenOffsetX = tonumber(offsetX) or 0;
+    local screenOffsetY = tonumber(offsetY) or 0;
+    local drawLeft = left + screenOffsetX;
+    local drawTop = top + screenOffsetY;
+    local drawRight = right + screenOffsetX;
+    local drawBottom = bottom + screenOffsetY;
+
+    if (requireMaskOverlap == true) then
+        if (ScreenRectIntersectsPlateMask(drawLeft, drawTop, drawRight, drawBottom, viewport) ~= true) then
+            return false;
+        end
+
+        return true;
+    end
+
     return DrawScreenTextureWithDepth(
         device,
         textureId,
         wx,
         wy,
         wz,
-        tonumber(offsetX) or 0,
-        tonumber(offsetY) or 0,
+        screenOffsetX,
+        screenOffsetY,
         math.max(1, right - left),
         math.max(1, bottom - top),
-        alwaysOnTop == true
+        alwaysOnTop == true,
+        drawLeft,
+        drawTop,
+        drawRight,
+        drawBottom
     );
 end
 
@@ -2649,7 +2899,7 @@ local function GetStackPriority(settings, stackType)
     return 99;
 end
 
-local function IsTacticalStackPlate(plate, targetIndex, subTargetIndex)
+local function IsFixedStackAnchor(plate, targetIndex, subTargetIndex)
     local index = tonumber(plate ~= nil and plate.targetIndex) or 0;
     local marker = plate ~= nil and plate.worldMarker ~= nil and plate.worldMarker.targetMarker or nil;
 
@@ -2658,10 +2908,6 @@ local function IsTacticalStackPlate(plate, targetIndex, subTargetIndex)
     end
 
     if (index ~= 0 and (index == tonumber(targetIndex) or index == tonumber(subTargetIndex))) then
-        return true;
-    end
-
-    if (tostring(plate ~= nil and plate.stateName or 'Idle') ~= 'Idle') then
         return true;
     end
 
@@ -2748,6 +2994,33 @@ local function ShiftStackClickEntry(entry, dx, dy)
     end
 end
 
+local function GetImguiDisplaySize()
+    if (imguiApi == nil or imguiApi.GetIO == nil) then
+        return nil, nil;
+    end
+
+    local ok, io = pcall(function()
+        return imguiApi.GetIO();
+    end);
+
+    if (ok ~= true or io == nil or io.DisplaySize == nil) then
+        return nil, nil;
+    end
+
+    return
+        tonumber(io.DisplaySize.x or io.DisplaySize.X or io.DisplaySize[1]),
+        tonumber(io.DisplaySize.y or io.DisplaySize.Y or io.DisplaySize[2]);
+end
+
+local function GetScreenClampPadding(settings)
+    return {
+        top = math.max(0, tonumber(settings ~= nil and settings.tacticalScreenClampTopPadding) or 24),
+        bottom = math.max(0, tonumber(settings ~= nil and settings.tacticalScreenClampBottomPadding) or 24),
+        left = math.max(0, tonumber(settings ~= nil and settings.tacticalScreenClampLeftPadding) or 0),
+        right = math.max(0, tonumber(settings ~= nil and settings.tacticalScreenClampRightPadding) or 0),
+    };
+end
+
 local function ApplyScreenPlateStacking(drawablePlates)
     local settings = targeting.GetSettings();
 
@@ -2796,6 +3069,7 @@ local function ApplyScreenPlateStacking(drawablePlates)
             entry ~= nil and
             entry.union ~= nil and
             stackTypes[stackType] == true and
+            not (stackType == 'enemy' and tostring(plate.stateName or 'Idle') == 'Idle') and
             (stackType ~= 'pc' or playerEngaged == true)
         ) then
             local union = entry.union;
@@ -2803,14 +3077,8 @@ local function ApplyScreenPlateStacking(drawablePlates)
             local y1 = tonumber(union.y1);
             local x2 = tonumber(union.x2);
             local y2 = tonumber(union.y2);
-            local stateName = tostring(plate.stateName or 'Idle');
-            local isCombatIdleEnemy =
-                stackType == 'enemy' and
-                playerEngaged == true and
-                stateName == 'Idle';
             local isFixed =
-                isCombatIdleEnemy == true or
-                (settings.plateStackKeepTacticalFixed ~= false and IsTacticalStackPlate(plate, targetIndex, subTargetIndex));
+                settings.plateStackKeepTacticalFixed ~= false and IsFixedStackAnchor(plate, targetIndex, subTargetIndex);
             local stackX1 = x1;
             local stackX2 = x2;
 
@@ -2878,22 +3146,35 @@ local function ApplyScreenPlateStacking(drawablePlates)
 
                 for _, other in ipairs(placed) do
                     if (StackRectsOverlap(entry, other, horizontalAllowance, verticalAllowance) == true) then
-                        local spreadPct = math.max(0, math.min(250, tonumber(settings.plateStackHorizontalSpreadPct) or 125)) / 100;
-                        local maxSpread = entry.width * spreadPct;
-                        if (spreadPct > 0) then
-                            maxSpread = math.max(maxSpread, entry.width + gap);
+                        if (entry.stackType ~= 'enemy') then
+                            local spreadPct = math.max(0, math.min(250, tonumber(settings.plateStackHorizontalSpreadPct) or 125)) / 100;
+                            local maxSpread = entry.width * spreadPct;
+                            if (spreadPct > 0) then
+                                maxSpread = math.max(maxSpread, entry.width + gap);
+                            end
+                            local nextX = FindBestHorizontalStackX(entry, placed, gap, horizontalAllowance, verticalAllowance, maxSpread);
+
+                            if (nextX ~= nil) then
+                                entry.drawX = nextX;
+                                changed = true;
+                                break;
+                            end
                         end
-                        local nextX = FindBestHorizontalStackX(entry, placed, gap, horizontalAllowance, verticalAllowance, maxSpread);
 
-                        if (nextX ~= nil) then
-                            entry.drawX = nextX;
-                            changed = true;
-                            break;
+                        local nextY;
+                        if (entry.stackType == 'enemy') then
+                            nextY = other.drawY + other.height + gap;
+                            if (nextY <= entry.drawY) then
+                                nextY = other.drawY - entry.height - gap;
+                            end
+                        else
+                            nextY = other.drawY - entry.height - gap;
                         end
 
-                        local nextY = other.drawY - entry.height - gap;
-
-                        if (nextY < entry.drawY) then
+                        if (
+                            (entry.stackType == 'enemy' and nextY ~= entry.drawY) or
+                            (entry.stackType ~= 'enemy' and nextY < entry.drawY)
+                        ) then
                             entry.drawX = entry.baseX;
                             entry.drawY = nextY;
                             changed = true;
@@ -2901,10 +3182,6 @@ local function ApplyScreenPlateStacking(drawablePlates)
                     end
                 end
             end
-        end
-
-        if (entry.stackType == 'enemy' and entry.drawY < 0) then
-            entry.drawY = 0;
         end
 
         local offsetX = entry.drawX - entry.baseX;
@@ -2989,7 +3266,10 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
 
                 if (view ~= nil and proj ~= nil and viewport ~= nil and viewport.Width ~= nil and viewport.Height ~= nil) then
                     local rx, ry, rz, ux, uy, uz = GetBillboardVectors(device);
+                    local left = nil;
                     local top = nil;
+                    local right = nil;
+                    local bottom = nil;
                     local points = {
                         { plateWorldWidth * -0.5, plateWorldHeight * -0.5 },
                         { plateWorldWidth * 0.5, plateWorldHeight * -0.5 },
@@ -3001,18 +3281,78 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
                         local sx, sy = ProjectBillboardPoint(view, proj, viewport, plateX, plateY, plateZ, rx, ry, rz, ux, uy, uz, point[1], point[2]);
 
                         if (sx ~= nil and sy ~= nil) then
+                            left = (left == nil) and sx or math.min(left, sx);
                             top = (top == nil) and sy or math.min(top, sy);
+                            right = (right == nil) and sx or math.max(right, sx);
+                            bottom = (bottom == nil) and sy or math.max(bottom, sy);
                         end
                     end
 
-                    local padding = math.max(0, tonumber(settings.tacticalScreenClampTopPadding) or 24);
+                    local padding = GetScreenClampPadding(settings);
 
-                    if (top ~= nil and top < padding) then
+                    if (left ~= nil and top ~= nil and right ~= nil and bottom ~= nil) then
                         local centerX, centerY = ProjectWithZ(view, proj, viewport.Width, viewport.Height, plateX, plateY, plateZ);
-                        local raisedX, raisedY = ProjectWithZ(view, proj, viewport.Width, viewport.Height, plateX, plateY + 0.10, plateZ);
+                        local rightX, rightY = ProjectWithZ(
+                            view,
+                            proj,
+                            viewport.Width,
+                            viewport.Height,
+                            plateX + (rx * 0.10),
+                            plateY + (ry * 0.10),
+                            plateZ + (rz * 0.10)
+                        );
+                        local upX, upY = ProjectWithZ(
+                            view,
+                            proj,
+                            viewport.Width,
+                            viewport.Height,
+                            plateX + (ux * 0.10),
+                            plateY + (uy * 0.10),
+                            plateZ + (uz * 0.10)
+                        );
 
-                        if (centerX ~= nil and centerY ~= nil and raisedX ~= nil and raisedY ~= nil and raisedY ~= centerY) then
-                            plateY = plateY + ((padding - top) / ((raisedY - centerY) / 0.10));
+                        if (centerX ~= nil and centerY ~= nil) then
+                            local desiredDx = 0;
+                            local desiredDy = 0;
+                            local maxRight = (tonumber(viewport.Width) or 0) - padding.right;
+                            local maxBottom = (tonumber(viewport.Height) or 0) - padding.bottom;
+
+                            if (left < padding.left) then
+                                desiredDx = padding.left - left;
+                            elseif (right > maxRight) then
+                                desiredDx = maxRight - right;
+                            end
+
+                            if (desiredDx ~= 0) then
+                                local screenMidX = (tonumber(viewport.Width) or 0) * 0.5;
+                                local nextCenterX = centerX + desiredDx;
+
+                                if (centerX < screenMidX and nextCenterX > screenMidX) then
+                                    desiredDx = screenMidX - centerX;
+                                elseif (centerX > screenMidX and nextCenterX < screenMidX) then
+                                    desiredDx = screenMidX - centerX;
+                                end
+                            end
+
+                            if (top < padding.top) then
+                                desiredDy = padding.top - top;
+                            elseif (bottom > maxBottom) then
+                                desiredDy = maxBottom - bottom;
+                            end
+
+                            if (desiredDx ~= 0 and rightX ~= nil and rightY ~= nil and rightX ~= centerX) then
+                                local amount = desiredDx / ((rightX - centerX) / 0.10);
+                                plateX = plateX + (rx * amount);
+                                plateY = plateY + (ry * amount);
+                                plateZ = plateZ + (rz * amount);
+                            end
+
+                            if (desiredDy ~= 0 and upX ~= nil and upY ~= nil and upY ~= centerY) then
+                                local amount = desiredDy / ((upY - centerY) / 0.10);
+                                plateX = plateX + (ux * amount);
+                                plateY = plateY + (uy * amount);
+                                plateZ = plateZ + (uz * amount);
+                            end
                         end
                     end
                 end
@@ -3051,13 +3391,21 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
             return;
         end
 
+        if (style.plateAlwaysOnTop == true and style.plateSuppressWorldWhenAlwaysOnTop == true) then
+            return;
+        end
+
         device:SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
 
         local stackScreenOffsetX = tonumber(plate._stackScreenOffsetX) or 0;
         local stackScreenOffsetY = tonumber(plate._stackScreenOffsetY) or 0;
+        if (ShouldHardHidePlateByNoGoZone(plate.targetIndex) == true) then
+            device:SetRenderState(D3DRS_ZFUNC, savePlateZFunc);
+            return;
+        end
 
         if (stackScreenOffsetX ~= 0 or stackScreenOffsetY ~= 0) then
-            DrawPlateOverlayScreen(
+            if (DrawPlateOverlayScreen(
                 device,
                 style.plateTextureId,
                 plateX,
@@ -3067,8 +3415,24 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
                 plateWorldHeight,
                 true,
                 stackScreenOffsetX,
-                stackScreenOffsetY
-            );
+                stackScreenOffsetY,
+                false
+            ) ~= true) then
+                DrawTextureWithState(
+                    device,
+                    style.plateTextureId,
+                    plateX,
+                    plateY,
+                    plateZ,
+                    plateWorldWidth,
+                    0,
+                    0,
+                    0.00175,
+                    false,
+                    plateWorldHeight,
+                    false
+                );
+            end
         else
             DrawTextureWithState(
                 device,
@@ -3177,13 +3541,22 @@ local function GetDrawableQueuedPlates()
 
     local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
     local list = {};
+    local out = {};
+    local reservedCount = 0;
 
     for _, plate in ipairs(queuedPlates) do
-        list[#list + 1] = {
-            plate = plate,
-            priority = GetPlateQueuePriority(plate, targetIndex, subTargetIndex),
-            distance = tonumber(plate.distance) or 9999,
-        };
+        local targetType = tostring(plate ~= nil and plate.clickTargetType or ''):lower();
+
+        if (targetType == 'enemy') then
+            out[#out + 1] = plate;
+            reservedCount = reservedCount + 1;
+        else
+            list[#list + 1] = {
+                plate = plate,
+                priority = GetPlateQueuePriority(plate, targetIndex, subTargetIndex),
+                distance = tonumber(plate.distance) or 9999,
+            };
+        end
     end
 
     table.sort(list, function(left, right)
@@ -3194,8 +3567,8 @@ local function GetDrawableQueuedPlates()
         return left.distance < right.distance;
     end);
 
-    local out = {};
-    for index = 1, math.min(maxCount, #list) do
+    local remaining = math.max(0, maxCount - reservedCount);
+    for index = 1, math.min(remaining, #list) do
         out[#out + 1] = list[index].plate;
     end
 
@@ -3260,7 +3633,6 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
     end
 
     lastDrawCount = 0;
-
     local drawablePlates = GetDrawableQueuedPlates();
 
     for _, plate in ipairs(drawablePlates) do
@@ -3478,7 +3850,7 @@ local function IsPointInNoGoZone(x, y, settings)
                 mouseY >= top and
                 mouseY <= (top + height)
             ) then
-                return true, zone.name or ('Zone ' .. tostring(index));
+                return true, zone.name or ('Screen ' .. tostring(index));
             end
         end
     end

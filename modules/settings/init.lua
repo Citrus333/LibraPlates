@@ -7086,169 +7086,177 @@ end
 
 local function DrawGeneralMouseSection()
     LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Mouse' });
-    DrawSettingsHeader('Cursor');
+
+    local function DrawMousePanel(label, height, render)
+        imgui.Spacing();
+        DrawChild('##MousePanel' .. tostring(label or ''), { 0, height }, true, function()
+            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, tostring(label or ''));
+            imgui.Spacing();
+            render();
+        end);
+    end
 
     local cursorSettings = cursorOverlay.GetSettings();
 
-    DrawCheckbox('Enable mouse adornment', cursorSettings.enabled == true, function(value)
-        cursorOverlay.SetEnabled(value == true);
-        state.Save();
-    end);
+    DrawMousePanel('Cursor', cursorSettings.enabled == true and 210 or 70, function()
+        DrawCheckbox('Enable mouse adornment', cursorSettings.enabled == true, function(value)
+            cursorOverlay.SetEnabled(value == true);
+            state.Save();
+        end);
 
-    imgui.Text('Mouse shape');
-    local cursorShapes = { 'Ring', 'Diamond', 'Corners', 'Dot Ring', 'Crosshair' };
-    for index, shape in ipairs(cursorShapes) do
-        if (index > 1) then
+        if (cursorSettings.enabled == true) then
+            imgui.Text('Mouse shape');
+            local cursorShapes = { 'Ring', 'Diamond', 'Corners', 'Dot Ring', 'Crosshair' };
+            for index, shape in ipairs(cursorShapes) do
+                if (index > 1) then
+                    imgui.SameLine();
+                end
+
+                local isSelected = tostring(cursorSettings.shape or 'Ring') == shape;
+                local label = (isSelected == true and '[' .. shape .. ']' or shape) .. '##CursorShape' .. tostring(index);
+
+                if (imgui.Button(label) == true) then
+                    cursorSettings.shape = shape;
+                    state.Save();
+                end
+            end
+
+            local cursorRadius = { math.floor(tonumber(cursorSettings.radius) or 13) };
+            if (imgui.SliderInt ~= nil) then
+                if (imgui.SliderInt('Size', cursorRadius, 4, 48) == true) then
+                    cursorSettings.radius = math.max(4, math.min(48, tonumber(cursorRadius[1]) or 13));
+                    state.Save();
+                end
+            else
+                imgui.TextColored(settingsLabelColor, 'Size ' .. tostring(cursorSettings.radius or 13));
+            end
+
+            local trailLagReduction = { math.floor(tonumber(cursorSettings.trailLagReduction) or 0) };
+            if (imgui.SliderInt ~= nil) then
+                if (imgui.SliderInt('Trail lag reduction', trailLagReduction, 0, 100) == true) then
+                    cursorSettings.trailLagReduction = math.max(0, math.min(100, tonumber(trailLagReduction[1]) or 0));
+                    state.Save();
+                end
+            else
+                imgui.TextColored(settingsLabelColor, 'Trail lag reduction ' .. tostring(cursorSettings.trailLagReduction or 0));
+            end
+
+            imgui.Text('Elements');
+
+            DrawCheckbox('Outer', cursorSettings.outerEnabled == true, function(value)
+                if (value ~= true and cursorSettings.innerEnabled ~= true and cursorSettings.centerEnabled ~= true) then
+                    cursorSettings.outerEnabled = true;
+                else
+                    cursorSettings.outerEnabled = value == true;
+                end
+                state.Save();
+            end);
+
+            local ringColor = { unpackTable(cursorSettings.ringColor or globalDefaults.cursorOverlay.ringColor) };
             imgui.SameLine();
+            if (imgui.ColorEdit4('##CursorRingColor', ringColor, settingsColorEditFlags) == true) then
+                cursorSettings.ringColor = ringColor;
+                state.Save();
+            end
+
+            imgui.SameLine();
+            DrawCheckbox('Inner', cursorSettings.innerEnabled == true, function(value)
+                if (value ~= true and cursorSettings.outerEnabled ~= true and cursorSettings.centerEnabled ~= true) then
+                    cursorSettings.innerEnabled = true;
+                else
+                    cursorSettings.innerEnabled = value == true;
+                end
+                state.Save();
+            end);
+
+            local accentColor = { unpackTable(cursorSettings.accentColor or globalDefaults.cursorOverlay.accentColor) };
+            imgui.SameLine();
+            if (imgui.ColorEdit4('##CursorAccentColor', accentColor, settingsColorEditFlags) == true) then
+                cursorSettings.accentColor = accentColor;
+                state.Save();
+            end
+
+            imgui.SameLine();
+            DrawCheckbox('Center', cursorSettings.centerEnabled == true, function(value)
+                if (value ~= true and cursorSettings.outerEnabled ~= true and cursorSettings.innerEnabled ~= true) then
+                    cursorSettings.centerEnabled = true;
+                else
+                    cursorSettings.centerEnabled = value == true;
+                    cursorSettings.showCenterMark = cursorSettings.centerEnabled == true;
+                end
+                state.Save();
+            end);
+
+            local centerColor = { unpackTable(cursorSettings.centerColor or globalDefaults.cursorOverlay.centerColor) };
+            imgui.SameLine();
+            if (imgui.ColorEdit4('##CursorCenterColor', centerColor, settingsColorEditFlags) == true) then
+                cursorSettings.centerColor = centerColor;
+                state.Save();
+            end
         end
-
-        local isSelected = tostring(cursorSettings.shape or 'Ring') == shape;
-        local label = (isSelected == true and '[' .. shape .. ']' or shape) .. '##CursorShape' .. tostring(index);
-
-        if (imgui.Button(label) == true) then
-            cursorSettings.shape = shape;
-            state.Save();
-        end
-    end
-
-    local cursorRadius = { math.floor(tonumber(cursorSettings.radius) or 13) };
-    if (imgui.SliderInt ~= nil) then
-        if (imgui.SliderInt('Size', cursorRadius, 4, 48) == true) then
-            cursorSettings.radius = math.max(4, math.min(48, tonumber(cursorRadius[1]) or 13));
-            state.Save();
-        end
-    else
-        imgui.TextColored(settingsLabelColor, 'Size ' .. tostring(cursorSettings.radius or 13));
-    end
-
-    local trailLagReduction = { math.floor(tonumber(cursorSettings.trailLagReduction) or 0) };
-    if (imgui.SliderInt ~= nil) then
-        if (imgui.SliderInt('Trail lag reduction', trailLagReduction, 0, 100) == true) then
-            cursorSettings.trailLagReduction = math.max(0, math.min(100, tonumber(trailLagReduction[1]) or 0));
-            state.Save();
-        end
-    else
-        imgui.TextColored(settingsLabelColor, 'Trail lag reduction ' .. tostring(cursorSettings.trailLagReduction or 0));
-    end
-
-    imgui.Text('Elements');
-
-    DrawCheckbox('Outer element', cursorSettings.outerEnabled == true, function(value)
-        if (value ~= true and cursorSettings.innerEnabled ~= true and cursorSettings.centerEnabled ~= true) then
-            cursorSettings.outerEnabled = true;
-        else
-            cursorSettings.outerEnabled = value == true;
-        end
-        state.Save();
     end);
 
-    local ringColor = { unpackTable(cursorSettings.ringColor or globalDefaults.cursorOverlay.ringColor) };
-    imgui.SameLine();
-    if (imgui.ColorEdit4('##CursorRingColor', ringColor, settingsColorEditFlags) == true) then
-        cursorSettings.ringColor = ringColor;
-        state.Save();
-    end
-
-    DrawCheckbox('Inner element', cursorSettings.innerEnabled == true, function(value)
-        if (value ~= true and cursorSettings.outerEnabled ~= true and cursorSettings.centerEnabled ~= true) then
-            cursorSettings.innerEnabled = true;
-        else
-            cursorSettings.innerEnabled = value == true;
-        end
-        state.Save();
-    end);
-
-    local accentColor = { unpackTable(cursorSettings.accentColor or globalDefaults.cursorOverlay.accentColor) };
-    imgui.SameLine();
-    if (imgui.ColorEdit4('##CursorAccentColor', accentColor, settingsColorEditFlags) == true) then
-        cursorSettings.accentColor = accentColor;
-        state.Save();
-    end
-
-    DrawCheckbox('Center element', cursorSettings.centerEnabled == true, function(value)
-        if (value ~= true and cursorSettings.outerEnabled ~= true and cursorSettings.innerEnabled ~= true) then
-            cursorSettings.centerEnabled = true;
-        else
-            cursorSettings.centerEnabled = value == true;
-            cursorSettings.showCenterMark = cursorSettings.centerEnabled == true;
-        end
-        state.Save();
-    end);
-
-    local centerColor = { unpackTable(cursorSettings.centerColor or globalDefaults.cursorOverlay.centerColor) };
-    imgui.SameLine();
-    if (imgui.ColorEdit4('##CursorCenterColor', centerColor, settingsColorEditFlags) == true) then
-        cursorSettings.centerColor = centerColor;
-        state.Save();
-    end
-
-    imgui.Separator();
-
-    DrawSettingsHeader('Movement');
-    DrawCheckbox('Hold both mouse buttons to move forward', mouseControls.GetBothButtonForwardEnabled(), function(value)
-        mouseControls.SetBothButtonForwardEnabled(value == true);
+    DrawMousePanel('Movement', 70, function()
+        DrawCheckbox('Hold both mouse buttons to move forward', mouseControls.GetBothButtonForwardEnabled(), function(value)
+            mouseControls.SetBothButtonForwardEnabled(value == true);
+        end);
     end);
 
     local settings = targeting.GetSettings();
 
-    imgui.Separator();
-    DrawSettingsHeader('Left click');
-    DrawCheckbox('Left-click enemy target out of combat', settings.enableLeftClickEnemyTargetIdle == true, function(value)
-        settings.enableLeftClickEnemyTargetIdle = value == true;
-    end);
-
-    imgui.Separator();
-    DrawSettingsHeader('Enemy detail range');
-
-    DrawSliderTenths('Enemy plate range', settings.enemyPlateRange, 50, 644, function(value)
-        settings.enemyPlateRange = math.max(5.0, math.min(64.4, tonumber(value) or 49.9));
-    end);
-
-    DrawSliderTenths('Enemy active detail range', settings.enemyActiveDetailRange, 100, 499, function(value)
-        settings.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(value) or 25.0));
-    end);
-
-    local range = tonumber(settings.enemyActiveDetailRange) or 25.0;
-    local tierLabel = 'Balanced';
-    local tierColor = { 0.55, 0.85, 1.0, 1.0 };
-
-    if (range <= 15.0) then
-        tierLabel = 'Performance';
-        tierColor = { 0.35, 1.0, 0.55, 1.0 };
-    elseif (range <= 25.0) then
-        tierLabel = 'Balanced';
-        tierColor = { 0.55, 0.85, 1.0, 1.0 };
-    elseif (range <= 35.0) then
-        tierLabel = 'High';
-        tierColor = { 1.0, 0.84, 0.30, 1.0 };
-    else
-        tierLabel = 'Ultra';
-        tierColor = { 1.0, 0.48, 0.35, 1.0 };
-    end
-
-    imgui.TextColored(tierColor, 'Detail mode: ' .. tierLabel);
-    uiTooltip.Info('Idle enemies beyond this range keep static identity only. Target, subtarget, engaged, casting, and hovered enemies still use full detail.');
-
-    imgui.Separator();
-    DrawSettingsHeader('Right click');
-
-    DrawCheckbox('Right-click attack', settings.enableRightClickAttack == true, function(value)
-        settings.enableRightClickAttack = value == true;
-    end);
-
-    if (settings.enableRightClickAttack == true) then
-        DrawCheckbox('Allow while mounted (can dismount)', settings.enableRightClickAttackWhileMounted == true, function(value)
-            settings.enableRightClickAttackWhileMounted = value == true;
-        end);
-        uiTooltip.Info('When off, right-click attack is blocked while mounted so it will not dismount you.');
-
-        DrawSliderTenths('Right-click attack range', settings.rightClickAttackRange, 30, 299, function(value)
-            settings.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(value) or 4.5));
+    DrawMousePanel('Click Targeting', settings.enableRightClickAttack == true and 160 or 95, function()
+        DrawCheckbox('Left-click enemy target out of combat', settings.enableLeftClickEnemyTargetIdle == true, function(value)
+            settings.enableLeftClickEnemyTargetIdle = value == true;
         end);
 
-        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Range includes a small hitbox allowance, matching the old addon behavior.');
-    end
+        DrawCheckbox('Right-click attack', settings.enableRightClickAttack == true, function(value)
+            settings.enableRightClickAttack = value == true;
+        end);
 
+        if (settings.enableRightClickAttack == true) then
+            DrawCheckbox('Allow while mounted (can dismount)', settings.enableRightClickAttackWhileMounted == true, function(value)
+                settings.enableRightClickAttackWhileMounted = value == true;
+            end);
+            uiTooltip.Info('When off, right-click attack is blocked while mounted so it will not dismount you.');
+
+            DrawSliderTenths('Right-click attack range', settings.rightClickAttackRange, 30, 299, function(value)
+                settings.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(value) or 4.5));
+            end);
+
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Range includes a small hitbox allowance, matching the old addon behavior.');
+        end
+    end);
+
+    DrawMousePanel('Enemy Detail Range', 120, function()
+        DrawSliderTenths('Enemy plate range', settings.enemyPlateRange, 50, 644, function(value)
+            settings.enemyPlateRange = math.max(5.0, math.min(64.4, tonumber(value) or 49.9));
+        end);
+
+        DrawSliderTenths('Enemy active detail range', settings.enemyActiveDetailRange, 100, 499, function(value)
+            settings.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(value) or 49.9));
+        end);
+
+        local range = tonumber(settings.enemyActiveDetailRange) or 49.9;
+        local tierLabel = 'Balanced';
+        local tierColor = { 0.55, 0.85, 1.0, 1.0 };
+
+        if (range <= 15.0) then
+            tierLabel = 'Performance';
+            tierColor = { 0.35, 1.0, 0.55, 1.0 };
+        elseif (range <= 25.0) then
+            tierLabel = 'Balanced';
+            tierColor = { 0.55, 0.85, 1.0, 1.0 };
+        elseif (range <= 35.0) then
+            tierLabel = 'High';
+            tierColor = { 1.0, 0.84, 0.30, 1.0 };
+        else
+            tierLabel = 'Ultra';
+            tierColor = { 1.0, 0.48, 0.35, 1.0 };
+        end
+
+        imgui.TextColored(tierColor, 'Detail mode: ' .. tierLabel);
+        uiTooltip.Info('Idle enemies beyond this range keep static identity only. Target, subtarget, engaged, casting, and hovered enemies still use full detail.');
+    end);
 end
 
 local function DrawGeneralPerformanceSection(settings)
@@ -8239,8 +8247,6 @@ local function DrawGeneralScalingSection(settings)
     imgui.TextWrapped('- Max distance: How far away a plate has to be before it reaches its biggest size.');
     imgui.TextWrapped('- Max scale: Higher values draw larger plates.');
     imgui.Spacing();
-    imgui.TextColored({ 1.0, 0.78, 0.20, 1.0 }, '* Max scale can affect performance.');
-    imgui.Spacing();
     DrawSectionDivider();
 
     local function EnsureEntityDistanceScales()
@@ -8432,6 +8438,9 @@ local function DrawGeneralScalingSection(settings)
         if (type(settings.pcRacePlateAdjustments) ~= 'table') then
             settings.pcRacePlateAdjustments = {};
         end
+        if (settings.pcRacePlateAdjustments.enabled == nil) then
+            settings.pcRacePlateAdjustments.enabled = true;
+        end
 
         local defaults = {
             tarutaru = { y = 0, size = 0 },
@@ -8449,18 +8458,49 @@ local function DrawGeneralScalingSection(settings)
             if (settings.pcRacePlateAdjustments[key].y == nil) then settings.pcRacePlateAdjustments[key].y = value.y; end
             if (settings.pcRacePlateAdjustments[key].size == nil) then settings.pcRacePlateAdjustments[key].size = value.size; end
         end
+
+        if (type(settings.pcRacePlateAdjustments.buckets) ~= 'table') then
+            settings.pcRacePlateAdjustments.buckets = {};
+        end
+
+        local bucketKeys = {
+            'tarutaru_male_small', 'tarutaru_male_medium', 'tarutaru_male_large',
+            'tarutaru_female_small', 'tarutaru_female_medium', 'tarutaru_female_large',
+            'hume_male_small', 'hume_male_medium', 'hume_male_large',
+            'hume_female_small', 'hume_female_medium', 'hume_female_large',
+            'mithra_female_small', 'mithra_female_medium', 'mithra_female_large',
+            'elvaan_male_small', 'elvaan_male_medium', 'elvaan_male_large',
+            'elvaan_female_small', 'elvaan_female_medium', 'elvaan_female_large',
+            'galka_male_small', 'galka_male_medium', 'galka_male_large',
+        };
+
+        local baselineVersion = tonumber(settings.pcRacePlateAdjustments.baselineVersion) or 0;
+        for _, key in ipairs(bucketKeys) do
+            if (type(settings.pcRacePlateAdjustments.buckets[key]) ~= 'table') then
+                settings.pcRacePlateAdjustments.buckets[key] = { y = 0 };
+            elseif (settings.pcRacePlateAdjustments.buckets[key].y == nil) then
+                settings.pcRacePlateAdjustments.buckets[key].y = 0;
+            end
+
+            if (baselineVersion < 3) then
+                settings.pcRacePlateAdjustments.buckets[key].y = 0;
+            else
+                settings.pcRacePlateAdjustments.buckets[key].y = math.max(-100, math.min(100, math.floor((tonumber(settings.pcRacePlateAdjustments.buckets[key].y) or 0) + 0.5)));
+            end
+        end
+        settings.pcRacePlateAdjustments.baselineVersion = 3;
     end
 
     local function DrawPcRacePlateAdjustmentRow(label, key)
         EnsurePcRacePlateAdjustments();
 
-        local race = settings.pcRacePlateAdjustments[key];
-        local yValue = race.y;
+        local bucket = settings.pcRacePlateAdjustments.buckets[key];
+        local yValue = bucket.y;
         local yChanged = false;
 
         if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
             if (imgui.BeginTable('##pc_race_plate_adjust_' .. tostring(key), 2, settingsTableFlagsNoBorders)) then
-                imgui.TableSetupColumn('##race', 0, 74);
+                imgui.TableSetupColumn('##race', 0, 138);
                 imgui.TableSetupColumn('##y', 0, 190);
                 imgui.TableNextRow();
                 imgui.TableNextColumn();
@@ -8476,32 +8516,70 @@ local function DrawGeneralScalingSection(settings)
         end
 
         if (yChanged == true) then
-            race.y = math.max(-100, math.min(100, math.floor((tonumber(yValue) or 0) + 0.5)));
+            bucket.y = math.max(-100, math.min(100, math.floor((tonumber(yValue) or 0) + 0.5)));
         end
         if (yChanged == true) then
             state.Save();
         end
     end
 
+    local function DrawPcHeightBucketGroup(title, rows)
+        imgui.Spacing();
+        imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, tostring(title or ''));
+
+        for _, row in ipairs(rows or {}) do
+            DrawPcRacePlateAdjustmentRow(row[1], row[2]);
+        end
+    end
+
     local function DrawPcRacePlateAdjustmentSettings()
         EnsurePcRacePlateAdjustments();
 
-        DrawSettingsHeader('PC plate heights');
-        DrawCheckbox('Use PC plate heights', settings.pcRacePlateAdjustments.enabled ~= false, function(value)
+        DrawSettingsHeader('Character height adjustments');
+        DrawCheckbox('Use model height adjustments', settings.pcRacePlateAdjustments.enabled ~= false, function(value)
             settings.pcRacePlateAdjustments.enabled = value == true;
             state.Save();
         end);
-        uiTooltip.Info('Fine-tunes other player plate height by detected body family. 0 is the built-in starting point.');
+        uiTooltip.Info('Fine-tunes PC plate height by detected race, sex, and size. 0 means use the hidden built-in baseline for that exact model bucket.');
 
         if (settings.pcRacePlateAdjustments.enabled == false) then
             return;
         end
 
-        DrawPcRacePlateAdjustmentRow('Taru', 'tarutaru');
-        DrawPcRacePlateAdjustmentRow('Mithra', 'mithra');
-        DrawPcRacePlateAdjustmentRow('Human', 'hume');
-        DrawPcRacePlateAdjustmentRow('Elvaan', 'elvaan');
-        DrawPcRacePlateAdjustmentRow('Galka', 'galka');
+        DrawPcHeightBucketGroup('Tarutaru', {
+            { 'Male S', 'tarutaru_male_small' },
+            { 'Male M', 'tarutaru_male_medium' },
+            { 'Male L', 'tarutaru_male_large' },
+            { 'Female S', 'tarutaru_female_small' },
+            { 'Female M', 'tarutaru_female_medium' },
+            { 'Female L', 'tarutaru_female_large' },
+        });
+        DrawPcHeightBucketGroup('Hume', {
+            { 'Male S', 'hume_male_small' },
+            { 'Male M', 'hume_male_medium' },
+            { 'Male L', 'hume_male_large' },
+            { 'Female S', 'hume_female_small' },
+            { 'Female M', 'hume_female_medium' },
+            { 'Female L', 'hume_female_large' },
+        });
+        DrawPcHeightBucketGroup('Mithra', {
+            { 'Female S', 'mithra_female_small' },
+            { 'Female M', 'mithra_female_medium' },
+            { 'Female L', 'mithra_female_large' },
+        });
+        DrawPcHeightBucketGroup('Elvaan', {
+            { 'Male S', 'elvaan_male_small' },
+            { 'Male M', 'elvaan_male_medium' },
+            { 'Male L', 'elvaan_male_large' },
+            { 'Female S', 'elvaan_female_small' },
+            { 'Female M', 'elvaan_female_medium' },
+            { 'Female L', 'elvaan_female_large' },
+        });
+        DrawPcHeightBucketGroup('Galka', {
+            { 'Male S', 'galka_male_small' },
+            { 'Male M', 'galka_male_medium' },
+            { 'Male L', 'galka_male_large' },
+        });
     end
 
     DrawSliderTenths('Start distance', settings.pcDistanceScaleStart, 0, 200, function(value)
@@ -8514,9 +8592,9 @@ local function DrawGeneralScalingSection(settings)
 
     LibraPlatesSettingsDrawTieredSliderTenths('Max scale', settings.pcDistanceScaleMax, 10, 60, {
         { min = 10, max = 25, label = 'Normal', color = { 0.25, 0.85, 0.35, 0.55 } },
-        { min = 25, max = 35, label = 'Large', color = { 0.95, 0.84, 0.25, 0.55 } },
-        { min = 35, max = 45, label = 'Huge', color = { 1.0, 0.55, 0.20, 0.55 } },
-        { min = 45, max = 60, label = 'Extreme', color = { 1.0, 0.22, 0.18, 0.55 } },
+        { min = 25, max = 35, label = 'Readable', color = { 0.95, 0.84, 0.25, 0.55 } },
+        { min = 35, max = 45, label = 'Far', color = { 1.0, 0.55, 0.20, 0.55 } },
+        { min = 45, max = 60, label = 'Very Far', color = { 1.0, 0.42, 0.22, 0.55 } },
     }, function(value)
         StageGlobalDistanceScale(settings.pcDistanceScaleStart, settings.pcDistanceScaleEnd, value, 'max');
     end);
@@ -8576,7 +8654,6 @@ local function DrawGeneralScalingSection(settings)
         DrawEntityOffset('Pet', 'pet');
         DrawEntityOffset('NPC', 'npc');
         DrawEntityOffset('Object', 'object');
-        DrawPcRacePlateAdjustmentSettings();
         return;
     end
 
@@ -8616,9 +8693,9 @@ local function DrawGeneralScalingSection(settings)
 
         LibraPlatesSettingsDrawTieredSliderTenths('Max scale', scale.max, 10, 60, {
             { min = 10, max = 25, label = 'Normal', color = { 0.25, 0.85, 0.35, 0.55 } },
-            { min = 25, max = 35, label = 'Large', color = { 0.95, 0.84, 0.25, 0.55 } },
-            { min = 35, max = 45, label = 'Huge', color = { 1.0, 0.55, 0.20, 0.55 } },
-            { min = 45, max = 60, label = 'Extreme', color = { 1.0, 0.22, 0.18, 0.55 } },
+            { min = 25, max = 35, label = 'Readable', color = { 0.95, 0.84, 0.25, 0.55 } },
+            { min = 35, max = 45, label = 'Far', color = { 1.0, 0.55, 0.20, 0.55 } },
+            { min = 45, max = 60, label = 'Very Far', color = { 1.0, 0.42, 0.22, 0.55 } },
         }, function(value)
             scale.max = math.max(1.0, math.min(6.0, tonumber(value) or 2.65));
         end, 'EntityDistanceScale' .. tostring(key) .. 'Max');
@@ -8706,7 +8783,6 @@ local function DrawGeneralScalingSection(settings)
     DrawEntityOffset('Pet', 'pet');
     DrawEntityOffset('NPC', 'npc');
     DrawEntityOffset('Object', 'object');
-    DrawPcRacePlateAdjustmentSettings();
 end
 
 local function DrawCurrentProfileTopBar()

@@ -2347,11 +2347,161 @@ local function GetPcBodyFamilyFromBounds(bounds)
     return nil;
 end
 
-local function GetPcBodyPlateOffset(actorPointer)
+local function ReadPcRaceId(entityManager, targetIndex)
+    local ent = GetEntity(targetIndex);
+    local direct = tonumber(ent ~= nil and ent.Race or nil);
+
+    if (direct ~= nil and direct >= 1 and direct <= 8) then
+        return direct;
+    end
+
+    if (entityManager ~= nil and entityManager.GetRace ~= nil) then
+        local ok, value = pcall(function()
+            return entityManager:GetRace(targetIndex);
+        end);
+
+        value = tonumber(ok == true and value or nil);
+
+        if (value ~= nil and value >= 1 and value <= 8) then
+            return value;
+        end
+    end
+
+    return nil;
+end
+
+local function GetPcRaceFamilyKeyAndSex(raceId, fallbackFamily)
+    raceId = tonumber(raceId);
+
+    if (raceId == 1) then return 'hume', 'male'; end
+    if (raceId == 2) then return 'hume', 'female'; end
+    if (raceId == 3) then return 'elvaan', 'male'; end
+    if (raceId == 4) then return 'elvaan', 'female'; end
+    if (raceId == 5) then return 'tarutaru', 'male'; end
+    if (raceId == 6) then return 'tarutaru', 'female'; end
+    if (raceId == 7) then return 'mithra', 'female'; end
+    if (raceId == 8) then return 'galka', 'male'; end
+
+    local key = tostring(fallbackFamily or ''):lower();
+
+    if (key == 'tarutaru' or key == 'mithra' or key == 'hume' or key == 'elvaan' or key == 'galka') then
+        return key, key == 'mithra' and 'female' or key == 'galka' and 'male' or 'unknown';
+    end
+
+    return nil, nil;
+end
+
+local function ReadPcSizeScale(actorPointer)
+    if (actorPointer == nil or actorPointer == 0) then
+        return nil;
+    end
+
+    local ok, value = pcall(function()
+        return ashita.memory.read_float(actorPointer + 0x6A0);
+    end);
+
+    if (ok ~= true) then
+        return nil;
+    end
+
+    return tonumber(value);
+end
+
+local function GetPcSizeBucket(sizeScale, familyKey)
+    local scale = tonumber(sizeScale);
+
+    if (scale == nil) then
+        return 'medium';
+    end
+
+    if (tostring(familyKey or '') == 'tarutaru') then
+        if (scale < 0.845) then return 'small'; end
+        if (scale < 0.895) then return 'medium'; end
+        return 'large';
+    end
+
+    if (tostring(familyKey or '') == 'mithra') then
+        if (scale < 0.91) then return 'small'; end
+        if (scale < 0.95) then return 'medium'; end
+        return 'large';
+    end
+
+    if (scale < 0.985) then return 'small'; end
+    if (scale > 1.015) then return 'large'; end
+    return 'medium';
+end
+
+local function GetPcBucketBaselineY(familyKey, sexKey, sizeKey)
+    local baselines = {
+        tarutaru = {
+            male = { small = 64, medium = 63, large = 52 },
+            female = { small = 70, medium = 64, large = 62 },
+        },
+        mithra = {
+            female = { small = 62, medium = 44, large = 42 },
+        },
+        hume = {
+            male = { small = 30, medium = 28, large = 27 },
+            female = { small = 52, medium = 31, large = 29 },
+        },
+        elvaan = {
+            male = { small = 37, medium = 35, large = 33 },
+            female = { small = 48, medium = 38, large = 36 },
+        },
+        galka = {
+            male = { small = 34, medium = 31, large = 28 },
+        },
+    };
+
+    local family = baselines[tostring(familyKey or '')];
+    local sex = family ~= nil and (family[tostring(sexKey or '')] or family.male or family.female) or nil;
+
+    if (sex ~= nil) then
+        return tonumber(sex[tostring(sizeKey or '')]) or tonumber(sex.medium) or 0;
+    end
+
+    local fallback = {
+        tarutaru = 64,
+        mithra = 44,
+        hume = 43,
+        elvaan = 37,
+        galka = 31,
+    };
+
+    return fallback[tostring(familyKey or '')] or 0;
+end
+
+local function GetPcHeightBucketKey(familyKey, sexKey, sizeKey)
+    familyKey = tostring(familyKey or '');
+    sexKey = tostring(sexKey or '');
+    sizeKey = tostring(sizeKey or '');
+
+    if (familyKey == '' or sexKey == '' or sizeKey == '') then
+        return nil;
+    end
+
+    return familyKey .. '_' .. sexKey .. '_' .. sizeKey;
+end
+
+local function GetPcBucketAdjustmentY(adjustments, familyKey, sexKey, sizeKey)
+    local bucketKey = GetPcHeightBucketKey(familyKey, sexKey, sizeKey);
+    local buckets = type(adjustments) == 'table' and adjustments.buckets or nil;
+    local bucket = bucketKey ~= nil and type(buckets) == 'table' and buckets[bucketKey] or nil;
+
+    if (type(bucket) == 'table' and bucket.y ~= nil) then
+        return tonumber(bucket.y) or 0;
+    end
+
+    local race = type(adjustments) == 'table' and type(adjustments[familyKey]) == 'table' and adjustments[familyKey] or nil;
+    return tonumber(race ~= nil and race.y) or 0;
+end
+
+local function GetPcBodyPlateOffset(actorPointer, targetIndex, entityManager)
     local bounds = GetBoneBounds(actorPointer);
     local family = GetPcBodyFamilyFromBounds(bounds);
+    local familyKey, sexKey = GetPcRaceFamilyKeyAndSex(ReadPcRaceId(entityManager, targetIndex), family);
 
-    if (family == nil) then
+    if (familyKey == nil) then
         return 0;
     end
 
@@ -2362,22 +2512,14 @@ local function GetPcBodyPlateOffset(actorPointer)
         return 0;
     end
 
-    local key = string.lower(family);
-    local race = type(adjustments[key]) == 'table' and adjustments[key] or nil;
+    local race = type(adjustments[familyKey]) == 'table' and adjustments[familyKey] or nil;
 
     if (race == nil) then
         return 0;
     end
 
-    local baselineY = {
-        tarutaru = 82,
-        mithra = 77,
-        hume = 60,
-        elvaan = 55,
-        galka = 67,
-    };
-
-    return ((baselineY[key] or 0) + (tonumber(race.y) or 0)) * 0.01;
+    local sizeKey = GetPcSizeBucket(ReadPcSizeScale(actorPointer), familyKey);
+    return (GetPcBucketBaselineY(familyKey, sexKey, sizeKey) + GetPcBucketAdjustmentY(adjustments, familyKey, sexKey, sizeKey)) * 0.01;
 end
 
 local function ReadFloatList(pointer, offsets)
@@ -3239,11 +3381,10 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
     if (style.plateTextureId ~= nil) then
         local plateScale = GetPlateDistanceScale(style, targetIndex, plate.distance or style.distance);
         local plateWorldOffsetX = tonumber(style.plateWorldOffsetX) or 0;
-        local plateWorldOffsetY =
-            (tonumber(style.plateWorldOffsetY) or tonumber(style.nameWorldOffsetY) or 0.78) +
-            ((plateScale - 1.0) * (tonumber(style.plateDistanceScaleOffsetY) or 0));
+        local plateWorldOffsetY = tonumber(style.plateWorldOffsetY) or tonumber(style.nameWorldOffsetY) or 0.78;
         if (style.pcBodyPlateOffsetEnabled == true) then
-            plateWorldOffsetY = plateWorldOffsetY + GetPcBodyPlateOffset(actorPointer);
+            local bodyOffset = GetPcBodyPlateOffset(actorPointer, targetIndex, entityManager);
+            plateWorldOffsetY = plateWorldOffsetY + bodyOffset;
         end
         local plateWorldOffsetZ = tonumber(style.plateWorldOffsetZ) or 0;
         local plateX = wx + plateWorldOffsetX;

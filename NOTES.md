@@ -56,12 +56,14 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 
 - Idle trust: `Trust + Idle/World`.
 - Combat, target, or subtarget trust: `Trust + Combat/Tactical`.
+- Follow-up: add trust job labels/icons without polluting normal NPC lookup. Trust display should be trust-context aware so duplicate names can keep their normal NPC data outside battles.
 
 ### Self
 
 - Normal self plate follows the active self layout.
 - Target/subtarget context uses `Self + Combat/Tactical` target-module behavior.
 - Resting, crafting, fishing, and gathering are module overlays, not separate normal target plate swaps.
+- Regression: shutdown/logout timer is broken again. The countdown/doughnut can reset instead of counting down cleanly; do not touch resting timer behavior while fixing this.
 
 ### Pet And Luopan
 
@@ -116,8 +118,8 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 ### PC / Player
 
 - Peer level should be color-correct to level.
+- Target arrow distance scaling is too large at range; distant target arrows need a smaller/steadier scale.
 - Check Conquest War and Union Conquest War naming/colors; CW and UCW have orange names.
-- Regression: /anon native special name color/icon behavior is reversed again. Anon players should use the native anon blue/color/icon behavior only when the native-special-color setting says to use it.
 - Tactical PC game mode icon is not showing.
 - Plate height test: verify Self/PC plate height while mounted, including normal mounts and rental chocobo.
 - Party member puppet claim/enmity bug: another player's puppet getting aggro can flip enemy nameplates to claimed-by-another color.
@@ -170,6 +172,11 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 - Peer follow-up: consider whether Peer should also support Objects, not only Self / PC / Enemy.
 
 ## Done
+
+- 2026-06-23 - Self `/anon` icon/name color:
+  - Fixed self anon being reversed by removing the guessed/toggled self anon state as the display source.
+  - Probed live self flags: `/anon off` had `renderFlags1=0x8000800`; `/anon on` had `renderFlags1=0x8800800`.
+  - Self anon now reads the real `renderFlags1 0x00800000` bit, while manual anon overrides remain for other PCs only.
 
 - 2026-06-21 - Settings widget-list text colors:
   - Fixed/closed the issue where some widget-list names were blue.

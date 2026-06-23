@@ -351,12 +351,16 @@ function indicators.HasAnonNameColor(targetIndex)
     end
 
     local anonymousByServerId = state.GetAnonymousByServerId();
+    local selfServerId = tonumber(GetSelfServerId()) or 0;
 
-    if (serverId == (tonumber(GetSelfServerId()) or 0)) then
-        return anonymousByServerId[tostring(serverId)] == true or anonymousByServerId[serverId] == true;
+    if (serverId == selfServerId) then
+        return Band(ReadRenderFlag(targetIndex, 1), 0x00800000) ~= 0;
     end
 
-    if (anonymousByServerId[tostring(serverId)] == true or anonymousByServerId[serverId] == true) then
+    if (
+        serverId ~= selfServerId and
+        (anonymousByServerId[tostring(serverId)] == true or anonymousByServerId[serverId] == true)
+    ) then
         return true;
     end
 

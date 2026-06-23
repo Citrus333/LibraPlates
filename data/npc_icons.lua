@@ -1513,7 +1513,7 @@ local npcIcons = T{
     ['Pursuivant']                       = { type = "Ballista Information", icon = "BallistaPursuivant.png", zones = { "Ru'Lude Gardens", "Al Zahbi", "Jeuno", "Outland" }, zoneIds = { 243 }, note = "Notes:\nPursuivants offer information about the game Ballista and can give the upcoming match schedules; they are also able to warp characters to the specific Ballista or Brenner battle areas. When a player chooses to warp back at camp after a death, a specific Pursuivant of your current allegiance (San'dorian, Bastokan, or Windurstian Pursuivant) will offer a Ballista Earring or a Ballista Band, when you talk to him. The Pursuivant in Abdhaljs Isle-Purgonorgo will warp players back to Upper Jeuno. The Pursuivants in Diorama Abdhaljs-Ghelsba will warp players back to Ru'Lude Gardens." },
     ['Radeivepart']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 }, note = "Starts Quests:\n* Northward\n\nInvolved in Quests:\n* Save the Clock Tower\n" },
     ['Rainhard']                         = { type = "Ducal Guard", icon = "Guard.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 }, note = "Notes:\nA Ducal Guard who along with High Wind guards the Archduke's Audience Chamber within the Grand Duke Palace." },
-    ['Sitting Ram']                      = { zones = { "Ru'Lude Gardens" }, zoneIds = { 243 } },
+    ['Sitting Ram']                      = { type = "Child", icon = "Dialogue.png",zones = { "Ru'Lude Gardens" }, zoneIds = { 243 } },
     ['Splintery Chest']                  = { type = "Quest Associate", icon = "QuestAssociate.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 }, note = "Involved in Quests:\n* Trial of the Magians\n* Walk of Echoes Weapon Skill Trials" },
     ['Syndella']                         = { type = "Trust Coordinator", icon = "Trust.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 }, note = "Notes:\nSpeak with her after completing the first Trust quest and after obtaining {{KeyItem" },
     ['Taillegeas']                       = { type = "Trust Coordinator", icon = "Trust.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 }, note = "Starts Quests:\n* Ducal Hospitality\n" },
@@ -3567,7 +3567,7 @@ local npcIcons = T{
     ['Leaufetie, R.K.']                  = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Beaucedine Glacier", "Outland" }, zoneIds = { 111 }, note = "Notes:\nAppears, when Fauregandi is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Fauregandi Supplies for finishing Supply Quest ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer." },
     ['Leigon-Moigon']                    = { zones = { "Beaucedine Glacier" }, zoneIds = { 111 } },
     ['Parledaire, R.K.']                 = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Beaucedine Glacier", "Outland" }, zoneIds = { 111 }, note = "Notes:\nAppears, when Fauregandi is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Fauregandi Supplies for finishing Supply Quest :*Accepts Garrison starting item Tiger Leather Missive ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer." },
-    ['Potete']                           = { zones = { "Beaucedine Glacier" }, zoneIds = { 111 } },
+    ['Potete']                           = { type = "Mission Associate", icon= "MissionNPC.png", zones = { "Beaucedine Glacier" }, zoneIds = { 111 }, note = "Involved in Missions:\n* Promathia Mission 5-2\n" },
     ['Rattling Rain, I.M.']              = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Beaucedine Glacier", "Outland" }, zoneIds = { 111 }, note = "Notes:\nAppears, when Fauregandi is under weekly conquest-control by Bastok ;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts Fauregandi Supplies for finishing Supply Quest ;Notes for characters only without Bastok as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer." },
     ['Ryunchi-Pauchi, W.W.']             = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Beaucedine Glacier", "Outland" }, zoneIds = { 111 }, note = "Notes:\nAppears, when Fauregandi is under weekly conquest-control by Windurst ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Fauregandi Supplies for finishing Supply Quest :*Accepts Garrison starting item Tiger Leather Missive ;Notes for characters only without Windurst as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer." },
     ['Torino-Samarino']                  = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Beaucedine Glacier" }, zoneIds = { 111 }, note = "Involved in Quests:\n* Curses, Foiled A-Golem!?\n* Tuning Out" },
@@ -3608,9 +3608,9 @@ local npcIcons = T{
 -- Bostaunieux Oubliette
 
 
-    ['Chumia']                           = { zones = { "Bostaunieux Oubliette" }, zoneIds = { 167 } },
-    ['Couchatorage']                     = { zones = { "Bostaunieux Oubliette" }, zoneIds = { 167 } },
-    ['Jurgenclaus']                      = { zones = { "Bostaunieux Oubliette" }, zoneIds = { 167 } },
+    ['Chumia']                           = { type = "Defender", icon = "Defender.png", zones = { "Bostaunieux Oubliette" }, zoneIds = { 167 } },
+    ['Couchatorage']                     = { type = "Defender", icon = "Defender.png", zones = { "Bostaunieux Oubliette" }, zoneIds = { 167 } },
+    ['Jurgenclaus']                      = { type = "Prisoner", icon = "Prisoner.png", zones = { "Bostaunieux Oubliette" }, zoneIds = { 167 } },
 
 -- Bostaunieux Oubliette (Patrols along the south side of
 
@@ -3689,7 +3689,7 @@ local npcIcons = T{
     ['Ineuteniace']                      = { type = "Ferry NPC", icon = "TicketSalesperson.png", zones = { "Carpenters' Landing Barge", "Outland" }, note = "Notes:\n* Located on the barge during the route from Central Landing to South Landing via Newtpool, and from South Landing to North Landing. *If Stubborn Dredvodd hops aboard the barge, he will utter a startled warning." },
     ['Laiteconce']                       = { type = "Barge Schedule", icon = "Dialogue.png", zones = { "Carpenters' Landing Barge", "Outland" }, note = "Notes:\nWill report how long until the Barge docks at South Landing and Central Landing." },
     ['Luquillaue']                       = { type = "Barge Schedule", icon = "Dialogue.png", zones = { "Carpenters' Landing Barge", "Outland" }, note = "Notes:\nProvides information about when the barge will land." },
-    ['Roi']                              = { zones = { "Carpenters' Landing Barge", "Outland" } },
+    ['Roi']                              = { type = "Barge Captain", icon = "BargeCaptain.png", zones = { "Carpenters' Landing Barge", "Outland" } },
 
 -- Carpenters' Landing cutscene
 
@@ -3799,29 +3799,29 @@ local npcIcons = T{
     ['Guillaulmilian']                   = { type = "Chocobo Betting", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Takes bets for the chocobo races." },
     ['Gustavo']                          = { type = "Promenade Assistant", icon = "MissionNPC.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Sign players' birds up for entry in Adventurer Races." },
     ['Ilsoire']                          = { type = "Chocobo Racing", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* For either 50 gil, or a Chocobo Circuit grandstand pass, he will allow you into the grandstands to view the current race." },
-    ['Jadamo']                           = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
-    ['Jaicedion']                        = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Jadamo']                           = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Jaicedion']                        = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
     ['Joilevin']                         = { type = "Travel Guide", icon = "WarpNPC.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Guides (warps) player to different area in the Chocobo Circuit." },
-    ['Jolande']                          = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
-    ['Karsten']                          = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Jolande']                          = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Karsten']                          = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
     ['Khatri']                           = { type = "Chocobo Circuit Associate", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Mans the general information counter in the Chocobo Circuit with Luca." },
     ['Laujaquetemps']                    = { type = "Chocobo Betting", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Takes bets for the chocobo races." },
     ['Lengussant']                       = { type = "Chocobo Betting", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Takes bets for the chocobo races." },
     ['Linus']                            = { type = "Chocobo Betting", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Takes bets for the chocobo races." },
     ['Lisette']                          = { type = "Chocobo Circuit Associate", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit", "Chocobo Circuit - Aht Urhgan Whitegate Entry Gate" }, zoneIds = { 70 }, note = "Notes:\n* Mans the Aht Urhgan Whitegate Chocobo Circuit information desk." },
     ['Luca']                             = { type = "Chocobo Circuit Associate", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Mans the general information counter in the Chocobo Circuit with Khatri." },
-    ['Magali']                           = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Magali']                           = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
     ['Maleroune']                        = { type = "Chocobo Betting", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Takes bets for the chocobo races." },
     ['Manfred']                          = { type = "Promenade Assistant", icon = "MissionNPC.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Sign players' birds up for entry in Adventurer Races." },
     ['Markovich']                        = { type = "VCS Chocobo Racing Associate", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit", "Chocobo Races", "Cutscene" }, zoneIds = { 70 } },
-    ['Maxine']                           = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Maxine']                           = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
     ['Mediverchanne']                    = { type = "Warp Guide", icon = "WarpNPC.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Guides (warps) player to different area in the Chocobo Circuit." },
     ['Mercedes']                         = { type = "Promenade Assistant", icon = "MissionNPC.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Sign players' birds up for entry in Adventurer Races." },
     ['Michaela']                         = { type = "Chocobo Circuits", icon = "ChocoboRenter.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* A representative of the CRA, Michaela issues the stands for display of trophies. *The stands available are the CS Bronze Stand, the CS Gold Stand and the CS Mythril Stand. *Michaela will also engrave the stand if required, or trade the trophy and stand for an engraved plaque." },
     ['Mulaitrand']                       = { type = "Chocobo Racing", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* For either 50 gil, or a Chocobo Circuit grandstand pass, he will allow you into the grandstands to view the current race." },
     ['Odersille']                        = { type = "Chocobo Racing", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Will allow adventures back into the main circuit complex from the grandstand area." },
     ['Olega']                            = { type = "Chocobo Betting", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Takes bets for the chocobo races." },
-    ['Olorinda']                         = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Olorinda']                         = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
     ['Ove']                              = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Directs players toward the main area of the Chocobo Circuit." },
     ['Palson']                           = { type = "Chocobo Circuit Attendant", icon = "ChocoboRenter.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Shop inventory changes based on the rank of one's chocobo team. {{verification" },
     ['Perdric']                          = { type = "Chocobo Racing", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Will allow adventures back into the main circuit complex from the grandstand area." },
@@ -3831,18 +3831,18 @@ local npcIcons = T{
     ['Raquel']                           = { type = "Attendant", icon = "Dialogue.png", zones = { "Chocobo Circuit", "Chocobo Circuit Windurst Gate" }, zoneIds = { 70 }, note = "Notes:\n* Directs players toward the main area of the Chocobo Circuit." },
     ['Reinwald']                         = { type = "Chocobo Circuit Promenade Assistant", icon = "ChocoboRenter.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Shop inventory changes based on the rank of one's chocobo team. {{verification" },
     ['Rhap Talashpehn']                  = { type = "Chocobo Betting", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit", "Chocobo Circuit Bastok Area" }, zoneIds = { 70 }, note = "Notes:\n* Takes bets for the chocobo races." },
-    ['Rodrigo']                          = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Rodrigo']                          = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
     ['Roman']                            = { type = "Chocobo Betting", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit", "Chocobo Circuit Bastok Area" }, zoneIds = { 70 }, note = "Notes:\n* Takes bets for the chocobo races." },
     ['Russel']                           = { type = "Promenade Assistant", icon = "MissionNPC.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Sign players' chocobos up for entry in Adventurer Races." },
     ['Saffaullette']                     = { type = "Chocobo Racing", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* For either 50 gil, or a Chocobo Circuit grandstand pass, she will allow you into the grandstands to view the current race." },
     ['Sakura']                           = { type = "VCS Chocobo Racing Associate", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit", "Cutscene" }, zoneIds = { 70 } },
-    ['Sigiswald']                        = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Sigiswald']                        = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
     ['Sudha Rhilimanyme']                = { type = "Chocobo Betting", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit", "Chocobo Circuit Al Zahbi Area" }, zoneIds = { 70 }, note = "Notes:\n* Takes bets for the chocobo races." },
     ['Timothy']                          = { type = "Chocobo Circuit Associate", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit", "Chocobo Circuit Windurst Entry Gate" }, zoneIds = { 70 }, note = "Notes:\n* Mans the Windurst Chocobo Circuit information desk." },
-    ['Uhko Rolinzoh']                    = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
-    ['Urbano']                           = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Uhko Rolinzoh']                    = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Urbano']                           = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
     ['Vaihilique']                       = { type = "Warp Guide", icon = "WarpNPC.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 }, note = "Notes:\n* Guides (warps) player to different area in the Chocobo Circuit. Notice the red beret and the Chocobo Jack Coat Set." },
-    ['Valerio']                          = { zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
+    ['Valerio']                          = { type = "Chocobo Circuit", icon = "VCSChocoboRacingAssociate.png", zones = { "Chocobo Circuit" }, zoneIds = { 70 } },
 
 -- Chocobo Circuit - Bastok Entrance
 
@@ -3891,23 +3891,23 @@ local npcIcons = T{
 
     ['Chefroucauld, T.K.']               = { type = "Campaign", icon = "CampaignArbiter.png", zones = { "Crawlers' Nest (S)", "San d'Oria (S)" }, note = "Notes:\n* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Crawlers' Nest (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign" },
     ['Chodopopo']                        = { type = "Item Deliverer", icon = "ItemDeliverer.png", zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 }, note = "Notes:\n* Item Delivery services are unavailable if Crawlers' Nest (S) is under beastman control or a campaign battle is occurring." },
-    ['Herral-Droal']                     = { zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 } },
+    ['Herral-Droal']                     = { type = "Survivor", icon = "Survivor,png", zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 } },
     ['Kalsu-Kalasu']                     = { type = "Quest Associate", icon = "QuestAssociate.png", zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 }, note = "Involved in Quests:\n* Snake on the Plains\n\nInvolved in Missions:\n* Back to the Beginning" },
     ['Landon, C.A.']                     = { type = "Campaign", icon = "CampaignArbiter.png", zones = { "Crawlers' Nest (S)", "Jeuno (S)" }, zoneIds = { 171 }, note = "Notes:\n* Jeuno affiliated Campaign Arbiter. Present when Beastmen have control of Crawlers' Nest (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign" },
     ['Lollyspox']                        = { type = "Standard Merchant", icon = "Merchant.png", zones = { "Crawlers' Nest (S)", "Outland" }, zoneIds = { 171 }, note = "Notes:\n;Items sold: *Hi-Potion 4,500 gil *Hi-Ether 28,000 gil" },
-    ['Minea-Matea']                      = { zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 } },
+    ['Minea-Matea']                      = { type = "Survivor", icon = "Survivor,png", zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 } },
     ['Mukmimi']                          = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 }, note = "Notes:\n\"Yummy-Yummy-Yummy,I got berries in my tummy!Look at that color!Smell that berry goodness!Are you sure you wouldn'taru like a taste?\"" },
     ['Naiko-Paneiko (S)']                = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 }, note = "Starts Quests:\n* The Weekly Adventurer" },
     ['Nalba-Dalaba']                     = { type = "Standard Merchant", icon = "Merchant.png", zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 }, note = "Notes:\n\"...Ever since the Federal Forces took over the storerooms for their operations, my business has become a literal casualty of war.And the fields are being trompy-stomped from the battles with turtlemen. What's an honestaru merchant to do?\"" },
     ['Penqaqa']                          = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 }, note = "Notes:\n\"As you can probably tell by all the barrels and spigots-wigots, this placed used to be fitted outaru as a brewery.The Federation Forces have taken it over for military purposes.Yes. Military Purposes.The enormous-wormous quantity of wine has nothing to do with its strategic-wegic significance.\"" },
     ['Rodeupansat']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Crawlers' Nest (S)", "San d'Oria (S)" }, note = "Starts Quests:\n* Evil at the Inlet" },
     ['Tucker']                           = { type = "Special Merchant", icon = "Merchant.png", zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 }, note = "Involved in Quests:\n* A Little Knowledge\n" },
-    ['Yuilam-Kailam']                    = { zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 } },
+    ['Yuilam-Kailam']                    = { type = "Survivor", icon = "Survivor,png", zones = { "Crawlers' Nest (S)", "Windurst (S)" }, zoneIds = { 171 } },
 
 -- Crawlers' Nest (S) (Roaming)
 
 
-    ['Khoh Moui']                        = { zones = { "Crawlers' Nest (S) (Roaming)", "Windurst (S)" }, zoneIds = { 171 } },
+    ['Khoh Moui']                        = { type = "Survivor", icon = "Survivor,png", zones = { "Crawlers' Nest (S) (Roaming)", "Windurst (S)" }, zoneIds = { 171 } },
 
 -- Crawlers' Nest (S), (k-8)
 
@@ -4109,15 +4109,15 @@ local npcIcons = T{
 
 
     ['Andelain']                         = { type = "Quest Associate", icon = "QuestAssociate.png", zones = { "East Ronfaure" }, zoneIds = { 101 }, note = "Involved in Quests:\n* The Vicasque's Sermon" },
-    ['Croteillard']                      = { zones = { "East Ronfaure" }, zoneIds = { 101 } },
-    ['Rayochindot']                      = { zones = { "East Ronfaure" }, zoneIds = { 101 } },
+    ['Croteillard']                      = { type = "City Gate Guard", icon = "Guard.png", zones = { "East Ronfaure" }, zoneIds = { 101 } },
+    ['Rayochindot']                      = { type = "City Gate Guard", icon = "Guard.png", zones = { "East Ronfaure" }, zoneIds = { 101 } },
     ['Slabble']                          = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "East Ronfaure", "Outland", "Special Event" }, zoneIds = { 101 }, note = "Involved in Quests:\n* DRAGON QUEST X ONLINE Crossover" },
     ['Stampeding Bison']                 = { type = "Quest Associate", icon = "QuestAssociate.png", zones = { "East Ronfaure" }, zoneIds = { 101 }, note = "Involved in Quests:\n* Starlight Celebration 2009\n* Smilebringer Boot Camp" },
 
 -- East Ronfaure (S)
 
 
-    ['Achtelle']                         = { zones = { "East Ronfaure (S)", "Freelance" }, zoneIds = { 81 } },
+    ['Achtelle']                         = { type = "Defender", icon = "Defender.png", zones = { "East Ronfaure (S)", "Freelance" }, zoneIds = { 81 } },
     ['Arlayse, R.K.']                    = { type = "Campaign", icon = "CampaignArbiter.png", zones = { "East Ronfaure (S)", "San d'Oria (S)" }, zoneIds = { 136 }, note = "Notes:\n* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria has control of East Ronfaure (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign" },
     ['Ihli Llamhya, M.C.']               = { type = "Campaign", icon = "CampaignArbiter.png", zones = { "East Ronfaure (S)", "Windurst (S)" }, zoneIds = { 81 }, note = "Notes:\n* Windurst (S) affliated Campaign Arbiter. Present when Windurst (S) has control of East Ronfaure (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign" },
     ['Maat (S)']                         = { type = "Campaign Freelance", icon = "CampaignArbiter.png", zones = { "East Ronfaure (S)", "Battle", "Freelance" }, zoneIds = { 81 }, note = "Notes:\n* Is sometimes assisted by his training partner Degenhard in battle." },
@@ -4252,13 +4252,13 @@ local npcIcons = T{
 -- Fort Karugo-Narugo (S)
 
 
-    ['Atokoko']                          = { zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
-    ['Aurhi Rhatelo']                    = { zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
+    ['Atokoko']                          = { type = "Citizen", icon = "Dialogue.png", zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
+    ['Aurhi Rhatelo']                    = { type = "Citizen", icon = "Dialogue.png", zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
     ['Caulaise, R.K.']                   = { type = "Campaign", icon = "CampaignArbiter.png", zones = { "Fort Karugo-Narugo (S)", "San d'Oria (S)" }, zoneIds = { 136 }, note = "Notes:\n* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Fort Karugo-Narugo (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign" },
-    ['Eirmomo']                          = { zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
-    ['Erpipi']                           = { zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
-    ['Fekko-Krakko']                     = { zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
-    ['Fului-Molai']                      = { zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
+    ['Eirmomo']                          = { type = "Citizen", icon = "Dialogue.png", zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
+    ['Erpipi']                           = { type = "Child", icon = "Dialogue.png", zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
+    ['Fekko-Krakko']                     = { type = "Citizen", icon = "Dialogue.png", zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
+    ['Fului-Molai']                      = { type = "Defender", icon = "Defender.png", zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
     ['Galco-Ralico']                     = { zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },
     ['Jedh Gibohah']                     = { zones = { "Fort Karugo-Narugo (S)", "Windurst (S)" }, zoneIds = { 96 } },
     ['Kahs Dekahsell']                   = { zones = { "Fort Karugo-Narugo (S)" }, zoneIds = { 96 } },

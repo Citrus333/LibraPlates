@@ -1230,6 +1230,8 @@ function entities.GetNearbyPlayers(maxDistance)
     local maxDistanceSq = (tonumber(maxDistance) or 50) * (tonumber(maxDistance) or 50);
     local entityManager = AshitaCore:GetMemoryManager():GetEntity();
     local selfIndex = GetSelfIndex();
+    local targetIndex = targeting.GetCurrentTargetIndex();
+    local subTargetIndex = targeting.GetCurrentSubTargetIndex();
 
     if (entityManager == nil) then
         return results;
@@ -1238,12 +1240,13 @@ function entities.GetNearbyPlayers(maxDistance)
     for index = 1024, 1791 do
         if (index ~= selfIndex and IsMobIndex(entityManager, index) ~= true and IsVisibleEntity(entityManager, index, true) == true) then
             local ent = GetEntity(index);
+            local isCurrentTargetContext = tonumber(index) == tonumber(targetIndex) or tonumber(index) == tonumber(subTargetIndex);
 
             if (
                 ent ~= nil and
                 ent.Name ~= nil and
                 ent.Name ~= '' and
-                ent.HPPercent ~= nil and
+                (ent.HPPercent ~= nil or isCurrentTargetContext == true) and
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
                 entities.ShouldHideOtherPlayerPet(index, ent.Name) ~= true

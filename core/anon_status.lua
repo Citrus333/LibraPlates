@@ -40,6 +40,11 @@ local function SetServerAnonymous(serverId, value)
         return false;
     end
 
+    if (serverId == GetSelfServerId()) then
+        SetSelfAnonymous(false);
+        return true;
+    end
+
     local anonymousByServerId = state.GetAnonymousByServerId();
     anonymousByServerId[tostring(serverId)] = value == true or nil;
     state.SaveThrottled(0.25);
@@ -77,25 +82,13 @@ end
 
 function anonStatus.HandleCommandText(commandText)
     local text = NormalizeCommand(commandText);
-    local command, rest = text:match('^(%S+)%s*(.-)$');
+    local command = text:match('^(%S+)');
 
     if (command ~= '/anon' and command ~= '/anonymous') then
         return;
     end
 
-    local arg = tostring(rest or ''):match('^(%S+)') or '';
-
-    if (arg == 'on' or arg == '1' or arg == 'true') then
-        SetSelfAnonymous(true);
-        return;
-    end
-
-    if (arg == 'off' or arg == '0' or arg == 'false') then
-        SetSelfAnonymous(false);
-        return;
-    end
-
-    SetSelfAnonymous(GetSelfAnonymous() ~= true);
+    SetSelfAnonymous(false);
 end
 
 return anonStatus;

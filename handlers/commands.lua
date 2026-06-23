@@ -165,6 +165,142 @@ local function ParseDebugList(text)
     return values;
 end
 
+local function FormatEntityScalarProbe(entity)
+    if (type(entity) ~= 'table') then
+        return 'none';
+    end
+
+    local keys = {
+        'Name', 'Type', 'Status', 'HPPercent', 'MPPercent', 'TP', 'Distance',
+        'SpawnFlags', 'RenderFlags0', 'RenderFlags1', 'RenderFlags2', 'RenderFlags3',
+        'RenderFlags4', 'RenderFlags5', 'RenderFlags6', 'RenderFlags7',
+        'LinkshellColor', 'GameMode', 'Flags', 'Flags1', 'Flags2', 'Flags3',
+        'ClaimStatus', 'PetTargetIndex', 'TargetIndex',
+    };
+    local parts = {};
+
+    for _, key in ipairs(keys) do
+        local value = entity[key];
+
+        if (value ~= nil and type(value) ~= 'table' and type(value) ~= 'function') then
+            if (type(value) == 'number') then
+                parts[#parts + 1] = key .. '=' .. tostring(value) .. '/0x' .. string.format('%X', value);
+            else
+                parts[#parts + 1] = key .. '=' .. tostring(value);
+            end
+        end
+    end
+
+    if (#parts == 0) then
+        return 'none';
+    end
+
+    return table.concat(parts, ' ');
+end
+
+local function ReadPartyProbeValue(party, methodName, slot)
+    if (party == nil or party[methodName] == nil) then
+        return nil;
+    end
+
+    return CommandSafeCall(nil, function()
+        return party[methodName](party, slot);
+    end);
+end
+
+local function FormatPartySelfProbe()
+    local party = CommandSafeCall(nil, function()
+        return AshitaCore:GetMemoryManager():GetParty();
+    end);
+
+    if (party == nil) then
+        return 'none';
+    end
+
+    local methodNames = {
+        'GetMemberIsActive',
+        'GetMemberTargetIndex',
+        'GetMemberServerId',
+        'GetMemberStatus',
+        'GetMemberZone',
+        'GetMemberHPPercent',
+        'GetMemberMPPercent',
+        'GetMemberTP',
+        'GetMemberFlags',
+        'GetMemberFlags1',
+        'GetMemberFlags2',
+        'GetMemberFlag',
+        'GetMemberGameMode',
+        'GetMemberLinkshellColor',
+    };
+    local parts = {};
+
+    for _, methodName in ipairs(methodNames) do
+        local value = ReadPartyProbeValue(party, methodName, 0);
+
+        if (value ~= nil and type(value) ~= 'table' and type(value) ~= 'function') then
+            if (type(value) == 'number') then
+                parts[#parts + 1] = methodName .. '=' .. tostring(value) .. '/0x' .. string.format('%X', value);
+            else
+                parts[#parts + 1] = methodName .. '=' .. tostring(value);
+            end
+        end
+    end
+
+    if (#parts == 0) then
+        return 'none';
+    end
+
+    return table.concat(parts, ' ');
+end
+
+function LibraPlatesHandleSelfAnonProbe()
+    local selfEntity = entities.GetSelf();
+    local selfIndex = tonumber(selfEntity ~= nil and selfEntity.index) or 0;
+
+    if (selfIndex == 0) then
+        log.Warn('Self anon probe failed: self index missing.');
+        return;
+    end
+
+    local entityManager = entities.GetEntityManager ~= nil and entities.GetEntityManager() or nil;
+    local entity = GetEntity(selfIndex);
+    local debug = entities.GetEntityDebugInfo(selfIndex, targeting.GetSettings().enemyPlateRange);
+    local probeGameMode = require('core.game_mode');
+    local probePlayerIndicators = require('core.player_indicators');
+    local flagParts = {};
+
+    for flagIndex = 0, 7 do
+        local value = tonumber(debug ~= nil and debug.renderFlags ~= nil and debug.renderFlags[flagIndex]) or 0;
+        flagParts[#flagParts + 1] = 'r' .. tostring(flagIndex) .. '=0x' .. string.format('%X', value);
+    end
+
+    log.Info(
+        'Self anon probe main' ..
+        ' index=' .. tostring(selfIndex) ..
+        ' name=' .. tostring(selfEntity ~= nil and selfEntity.name or nil) ..
+        ' serverId=' .. tostring(GetDebugServerId(entityManager, selfIndex)) ..
+        ' status=' .. tostring(selfEntity ~= nil and selfEntity.status or nil) ..
+        ' type=' .. tostring(debug ~= nil and debug.type or nil) ..
+        ' spawn=0x' .. string.format('%X', tonumber(debug ~= nil and debug.spawnFlags or 0) or 0) ..
+        ' flags=' .. table.concat(flagParts, ' ') ..
+        ' mode=' .. tostring(probeGameMode.Resolve(selfIndex, false)) ..
+        ' anonGuess=' .. tostring(probePlayerIndicators.HasAnonNameColor(selfIndex) == true) ..
+        ' lpNameColorGuess=' .. LibraPlatesResolveNativeNameColorProbe(selfIndex)
+    );
+
+    log.Info(
+        'Self anon probe bits' ..
+        ' r0=' .. DebugFlagList(probeGameMode.ReadRenderFlag(selfIndex, 0), { 0x200, 0x800, 0x2000, 0x4000, 0x8000, 0x400000, 0x800000, 0x40000000, 0x80000000 }) ..
+        ' r1=' .. DebugFlagList(probeGameMode.ReadRenderFlag(selfIndex, 1), { 0x8, 0x40, 0x400, 0x800, 0x8000, 0x800000, 0x1000000, 0x2000000, 0x4000000, 0x8000000, 0x10000000 }) ..
+        ' r2=' .. DebugFlagList(probeGameMode.ReadRenderFlag(selfIndex, 2), { 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800, 0x1000 }) ..
+        ' r4=' .. DebugFlagList(probeGameMode.ReadRenderFlag(selfIndex, 4), { 0x1000, 0x2000, 0x4000, 0x8000, 0x10000, 0x20000 })
+    );
+
+    log.Info('Self anon probe entity ' .. FormatEntityScalarProbe(entity));
+    log.Info('Self anon probe party ' .. FormatPartySelfProbe());
+end
+
 local function GetPcRaceGuess(modelKey)
     modelKey = tonumber(modelKey);
 
@@ -221,6 +357,383 @@ local function GetPcBodyGuess(debug)
     return 'unknown';
 end
 
+local function GetPcHeightSizeBucket(sizeScale, familyKey)
+    local scale = tonumber(sizeScale);
+
+    if (scale == nil) then
+        return 'unknown';
+    end
+
+    if (tostring(familyKey or '') == 'tarutaru') then
+        if (scale < 0.845) then
+            return 'Small';
+        end
+
+        if (scale < 0.895) then
+            return 'Medium';
+        end
+
+        return 'Large';
+    end
+
+    if (tostring(familyKey or '') == 'mithra') then
+        if (scale < 0.91) then
+            return 'Small';
+        end
+
+        if (scale < 0.95) then
+            return 'Medium';
+        end
+
+        return 'Large';
+    end
+
+    if (scale < 0.985) then
+        return 'Small';
+    end
+
+    if (scale > 1.015) then
+        return 'Large';
+    end
+
+    return 'Medium';
+end
+
+local function GetPcHeightFamilyKey(family)
+    family = tostring(family or ''):lower();
+
+    if (family == 'tarutaru') then
+        return 'tarutaru';
+    elseif (family == 'mithra') then
+        return 'mithra';
+    elseif (family == 'hume') then
+        return 'hume';
+    elseif (family == 'elvaan') then
+        return 'elvaan';
+    elseif (family == 'galka') then
+        return 'galka';
+    end
+
+    return nil;
+end
+
+local function GetPcHeightBaselineY(familyKey, sex, sizeBucket)
+    local sizeKey = tostring(sizeBucket or ''):lower();
+    local sexKey = tostring(sex or ''):lower();
+    local baselines = {
+        tarutaru = {
+            male = { small = 64, medium = 63, large = 52 },
+            female = { small = 70, medium = 64, large = 62 },
+        },
+        mithra = {
+            female = { small = 62, medium = 44, large = 42 },
+        },
+        hume = {
+            male = { small = 30, medium = 28, large = 27 },
+            female = { small = 52, medium = 31, large = 29 },
+        },
+        elvaan = {
+            male = { small = 37, medium = 35, large = 33 },
+            female = { small = 48, medium = 38, large = 36 },
+        },
+        galka = {
+            male = { small = 34, medium = 31, large = 28 },
+        },
+    };
+    local family = baselines[tostring(familyKey or '')];
+    local bySex = family ~= nil and (family[sexKey] or family.male or family.female) or nil;
+
+    if (bySex ~= nil) then
+        return tonumber(bySex[sizeKey]) or tonumber(bySex.medium) or 0;
+    end
+
+    return 0;
+end
+
+local function GetPcHeightBucketKey(familyKey, sex, sizeBucket)
+    local sexKey = tostring(sex or ''):lower();
+    local sizeKey = tostring(sizeBucket or ''):lower();
+
+    if (familyKey == nil or sexKey == '' or sizeKey == '') then
+        return nil;
+    end
+
+    return tostring(familyKey) .. '_' .. sexKey .. '_' .. sizeKey;
+end
+
+local function GetPcHeightAdjustmentY(adjustments, familyKey, sex, sizeBucket)
+    local bucketKey = GetPcHeightBucketKey(familyKey, sex, sizeBucket);
+    local bucket = bucketKey ~= nil and type(adjustments.buckets) == 'table' and adjustments.buckets[bucketKey] or nil;
+
+    if (type(bucket) == 'table' and bucket.y ~= nil) then
+        return tonumber(bucket.y) or 0, bucketKey;
+    end
+
+    local race = familyKey ~= nil and type(adjustments[familyKey]) == 'table' and adjustments[familyKey] or nil;
+    return tonumber(race ~= nil and race.y) or 0, bucketKey;
+end
+
+local EnsurePcHeightSettings = nil;
+
+local function GetPcHeightReferenceText(familyKey, sizeBucket)
+    familyKey = tostring(familyKey or '');
+    sizeBucket = tostring(sizeBucket or '');
+
+    local sizeIndex = ({ Small = 1, Medium = 2, Large = 3 })[sizeBucket];
+
+    if (sizeIndex == nil) then
+        return 'unknown';
+    end
+
+    local heights = {
+        tarutaru = { '2ft10/86cm', '3ft0/91cm', '3ft2/97cm' },
+        mithra = { '5ft4/163cm', '5ft7/170cm', '5ft10/178cm' },
+        galka = { '7ft0/213cm', '7ft5/226cm', '7ft10/239cm' },
+        humeFemale = { '5ft2/157cm', '5ft5/165cm', '5ft8/173cm' },
+        humeMale = { '5ft7/170cm', '5ft10/178cm', '6ft1/185cm' },
+        elvaanFemale = { '6ft1/185cm', '6ft5/196cm', '6ft9/206cm' },
+        elvaanMale = { '6ft6/198cm', '6ft10/208cm', '7ft2/218cm' },
+    };
+
+    if (familyKey == 'hume') then
+        return 'female=' .. heights.humeFemale[sizeIndex] .. '/male=' .. heights.humeMale[sizeIndex];
+    elseif (familyKey == 'elvaan') then
+        return 'female=' .. heights.elvaanFemale[sizeIndex] .. '/male=' .. heights.elvaanMale[sizeIndex];
+    elseif (heights[familyKey] ~= nil) then
+        return heights[familyKey][sizeIndex];
+    end
+
+    return 'unknown';
+end
+
+local function GetRaceInfoFromId(raceId)
+    raceId = tonumber(raceId);
+
+    local races = {
+        [1] = { name = 'Hume', sex = 'Male' },
+        [2] = { name = 'Hume', sex = 'Female' },
+        [3] = { name = 'Elvaan', sex = 'Male' },
+        [4] = { name = 'Elvaan', sex = 'Female' },
+        [5] = { name = 'Tarutaru', sex = 'Male' },
+        [6] = { name = 'Tarutaru', sex = 'Female' },
+        [7] = { name = 'Mithra', sex = 'Female' },
+        [8] = { name = 'Galka', sex = 'Male' },
+        [29] = { name = 'Mithra Child', sex = 'Female' },
+        [30] = { name = 'Elvaan/Hume Child', sex = 'Female' },
+        [31] = { name = 'Elvaan/Hume Child', sex = 'Male' },
+    };
+
+    return races[raceId];
+end
+
+local function ReadHeightProbeMethod(object, methodName, index)
+    if (object == nil or object[methodName] == nil) then
+        return nil;
+    end
+
+    return CommandSafeCall(nil, function()
+        return object[methodName](object, index);
+    end);
+end
+
+local function BuildHeightProbeRaceReads(entityManager, entity, targetIndex)
+    local reads = {};
+    local directKeys = { 'Race', 'RaceId', 'ModelRace', 'LookRace', 'ModelId', 'Model', 'Look', 'Face' };
+
+    for _, key in ipairs(directKeys) do
+        local value = entity ~= nil and entity[key] or nil;
+
+        if (value ~= nil and type(value) ~= 'table' and type(value) ~= 'function') then
+            reads[#reads + 1] = key .. '=' .. tostring(value);
+        end
+    end
+
+    local entityMethods = { 'GetRace', 'GetRaceId', 'GetModelRace', 'GetModelId', 'GetModel', 'GetLook', 'GetFace' };
+
+    for _, methodName in ipairs(entityMethods) do
+        local value = ReadHeightProbeMethod(entityManager, methodName, targetIndex);
+
+        if (value ~= nil and type(value) ~= 'table' and type(value) ~= 'function') then
+            reads[#reads + 1] = methodName .. '=' .. tostring(value);
+        end
+    end
+
+    if (#reads == 0) then
+        return 'none';
+    end
+
+    return table.concat(reads, ' ');
+end
+
+local function ReadHeightProbeRaceId(entityManager, entity, targetIndex)
+    local directKeys = { 'Race', 'RaceId', 'ModelRace', 'LookRace' };
+
+    for _, key in ipairs(directKeys) do
+        local value = tonumber(entity ~= nil and entity[key] or nil);
+
+        if (value ~= nil and GetRaceInfoFromId(value) ~= nil) then
+            return value, key;
+        end
+    end
+
+    local entityMethods = { 'GetRace', 'GetRaceId', 'GetModelRace' };
+
+    for _, methodName in ipairs(entityMethods) do
+        local value = tonumber(ReadHeightProbeMethod(entityManager, methodName, targetIndex));
+
+        if (value ~= nil and GetRaceInfoFromId(value) ~= nil) then
+            return value, methodName;
+        end
+    end
+
+    return nil, nil;
+end
+
+local function GetPcHeightModelIdentity(modelKey, family)
+    modelKey = tonumber(modelKey);
+    family = tostring(family or '');
+
+    local known = {
+        [0xDA01] = { race = 'Tarutaru', sex = 'Female' },
+    };
+
+    if (modelKey ~= nil and known[modelKey] ~= nil and known[modelKey].race == family) then
+        return known[modelKey].race, known[modelKey].sex, 'known-model';
+    end
+
+    if (family == 'Mithra') then
+        return 'Mithra', 'Female', 'family-default';
+    end
+
+    return family ~= '' and family or 'unknown', 'unknown', 'family';
+end
+
+function LibraPlatesHandleHeightProbe(selector)
+    local requested = tostring(selector or ''):gsub('^%s+', ''):gsub('%s+$', '');
+    local requestedLower = requested:lower();
+    local showRaw = requestedLower == 'raw';
+    if (showRaw == true) then
+        requested = '';
+        requestedLower = '';
+    end
+    local entityManager = entities.GetEntityManager ~= nil and entities.GetEntityManager() or nil;
+    local targetIndex = nil;
+    local source = 'target';
+
+    if (requestedLower == 'self') then
+        local selfEntity = entities.GetSelf();
+        targetIndex = tonumber(selfEntity ~= nil and selfEntity.index) or 0;
+        source = 'self';
+    elseif (tonumber(requested) ~= nil) then
+        targetIndex = tonumber(requested);
+        source = 'index';
+    elseif (requested ~= '') then
+        local wantedName = requestedLower;
+
+        for index = 0, 2303 do
+            local ent = GetEntity(index);
+
+            if (
+                tonumber(ent ~= nil and ent.Type or nil) == 0 and
+                tostring(ent.Name or ''):lower() == wantedName
+            ) then
+                targetIndex = index;
+                source = 'name';
+                break;
+            end
+        end
+    else
+        targetIndex = targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
+    end
+
+    local entity = targetIndex ~= nil and GetEntity(targetIndex) or nil;
+
+    if (targetIndex == nil or entity == nil or tostring(entity.Name or '') == '' or tonumber(entity.Type or -1) ~= 0) then
+        local selfEntity = entities.GetSelf();
+        targetIndex = tonumber(selfEntity ~= nil and selfEntity.index) or 0;
+        entity = targetIndex > 0 and GetEntity(targetIndex) or nil;
+        source = 'self';
+    end
+
+    if (targetIndex == nil or targetIndex == 0 or entity == nil) then
+        log.Warn('Height probe failed: target a PC, use /lp heightprobe self, /lp heightprobe <index>, or /lp heightprobe <name>.');
+        return;
+    end
+
+    local modelDebug, modelErr = worldMarkerProbe.GetVisibilityDebug(targetIndex, entities.GetEntityManager, entities.GetBone);
+
+    if (modelDebug == nil) then
+        log.Warn('Height probe failed: ' .. tostring(modelErr) .. ' target=' .. tostring(targetIndex));
+        return;
+    end
+
+    local actorInts = ParseDebugList(modelDebug.actorInts);
+    local actorFloats = ParseDebugList(modelDebug.actorScalars);
+    local modelKey = tonumber(actorInts['20']);
+    local sizeScale = tonumber(actorFloats['6A0']);
+    local raceGuess = GetPcRaceGuess(modelKey);
+    local family = GetPcBodyGuess(modelDebug);
+    local raceId, raceIdSource = ReadHeightProbeRaceId(entityManager, entity, targetIndex);
+    local raceInfo = GetRaceInfoFromId(raceId);
+    local displayRace, displaySex, identitySource = nil, nil, nil;
+
+    if (raceInfo ~= nil) then
+        displayRace = raceInfo.name;
+        displaySex = raceInfo.sex == 'Male' and 'Male' or raceInfo.sex == 'Female' and 'Female' or raceInfo.sex;
+        identitySource = 'race-id:' .. tostring(raceIdSource);
+    else
+        displayRace, displaySex, identitySource = GetPcHeightModelIdentity(modelKey, family);
+    end
+
+    local familyKey = GetPcHeightFamilyKey(displayRace) or GetPcHeightFamilyKey(family);
+    local sizeBucket = GetPcHeightSizeBucket(sizeScale, familyKey);
+    local raceReads = BuildHeightProbeRaceReads(entityManager, entity, targetIndex);
+    local settings = targeting.GetSettings();
+
+    local adjustments = type(settings.pcRacePlateAdjustments) == 'table' and settings.pcRacePlateAdjustments or {};
+    local enabled = adjustments.enabled ~= false;
+    local baselineY = GetPcHeightBaselineY(familyKey, displaySex, sizeBucket);
+    local userY, bucketKey = GetPcHeightAdjustmentY(adjustments, familyKey, displaySex, sizeBucket);
+    local finalY = enabled == true and (baselineY + userY) or 0;
+    local bucket = tostring(displayRace or family or 'unknown') .. ' ' .. tostring(displaySex or 'unknown') .. ' ' .. tostring(sizeBucket);
+    local finalWorldOffset = finalY * 0.01;
+
+    log.Info(
+        'Height probe: ' .. tostring(entity.Name or '') ..
+        ' [' .. tostring(targetIndex) .. ', ' .. source .. ']' ..
+        ' -> ' .. bucket ..
+        ' (ref ' .. GetPcHeightReferenceText(familyKey, sizeBucket) .. ')' ..
+        ' model=0x' .. string.format('%X', tonumber(modelKey) or 0) ..
+        ' id=' .. tostring(identitySource)
+    );
+
+    log.Info(
+        'Height adjustment: feature ' .. (enabled == true and 'on' or 'off') ..
+        ', bucket ' .. tostring(bucketKey) ..
+        ', hidden baseline ' .. tostring(baselineY) ..
+        ', hidden bucket adjustment ' .. tostring(userY) ..
+        ', applied ' .. tostring(finalY) ..
+        ' (' .. string.format('%.2f', finalWorldOffset) .. ' world Y)' ..
+        ', idle total ' .. string.format('%.2f', 0.05 + finalWorldOffset)
+    );
+
+    log.Info(
+        'Height model: scale ' .. tostring(sizeScale) ..
+        ', bones ' .. tostring(modelDebug.boneCount) ..
+        ', zSpan ' .. tostring(modelDebug.boneSpanZ) ..
+        ', ySpan ' .. tostring(modelDebug.boneSpanY) ..
+        ', race reads ' .. raceReads ..
+        '. Use /lp heightprobe raw for raw actor data.'
+    );
+
+    if (showRaw == true) then
+        log.Info(
+            'Height raw actorInts=' .. tostring(modelDebug.actorInts) ..
+            ' actorScalars=' .. tostring(modelDebug.actorScalars)
+        );
+    end
+end
+
 local function NormalizePcHeightFamily(value)
     value = tostring(value or ''):lower();
 
@@ -239,12 +752,95 @@ local function NormalizePcHeightFamily(value)
     return nil, nil;
 end
 
-local function EnsurePcHeightSettings(settings)
+local function NormalizePcHeightSex(value)
+    value = tostring(value or ''):lower();
+
+    if (value == 'm' or value == 'male') then
+        return 'male', 'Male';
+    elseif (value == 'f' or value == 'female') then
+        return 'female', 'Female';
+    end
+
+    return nil, nil;
+end
+
+local function NormalizePcHeightSize(value)
+    value = tostring(value or ''):lower();
+
+    if (value == 's' or value == 'small') then
+        return 'small', 'S';
+    elseif (value == 'm' or value == 'medium' or value == 'med') then
+        return 'medium', 'M';
+    elseif (value == 'l' or value == 'large') then
+        return 'large', 'L';
+    end
+
+    return nil, nil;
+end
+
+local function GetPcHeightBucketKeys()
+    return {
+        'tarutaru_male_small', 'tarutaru_male_medium', 'tarutaru_male_large',
+        'tarutaru_female_small', 'tarutaru_female_medium', 'tarutaru_female_large',
+        'hume_male_small', 'hume_male_medium', 'hume_male_large',
+        'hume_female_small', 'hume_female_medium', 'hume_female_large',
+        'mithra_female_small', 'mithra_female_medium', 'mithra_female_large',
+        'elvaan_male_small', 'elvaan_male_medium', 'elvaan_male_large',
+        'elvaan_female_small', 'elvaan_female_medium', 'elvaan_female_large',
+        'galka_male_small', 'galka_male_medium', 'galka_male_large',
+    };
+end
+
+local function EnsurePcHeightBuckets(settings)
+    if (type(settings.pcRacePlateAdjustments.buckets) ~= 'table') then
+        settings.pcRacePlateAdjustments.buckets = {};
+    end
+
+    local baselineVersion = tonumber(settings.pcRacePlateAdjustments.baselineVersion) or 0;
+    for _, key in ipairs(GetPcHeightBucketKeys()) do
+        if (type(settings.pcRacePlateAdjustments.buckets[key]) ~= 'table') then
+            settings.pcRacePlateAdjustments.buckets[key] = { y = 0 };
+        elseif (settings.pcRacePlateAdjustments.buckets[key].y == nil) then
+            settings.pcRacePlateAdjustments.buckets[key].y = 0;
+        end
+
+        if (baselineVersion < 3) then
+            settings.pcRacePlateAdjustments.buckets[key].y = 0;
+        else
+            settings.pcRacePlateAdjustments.buckets[key].y = math.max(-100, math.min(100, math.floor((tonumber(settings.pcRacePlateAdjustments.buckets[key].y) or 0) + 0.5)));
+        end
+    end
+end
+
+local function IsPcHeightBucketKey(value)
+    value = tostring(value or ''):lower();
+
+    for _, key in ipairs(GetPcHeightBucketKeys()) do
+        if (value == key) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
+local PcHeightCommand = {
+    NormalizeFamily = NormalizePcHeightFamily,
+    NormalizeSex = NormalizePcHeightSex,
+    NormalizeSize = NormalizePcHeightSize,
+    GetBucketKey = GetPcHeightBucketKey,
+    GetBucketKeys = GetPcHeightBucketKeys,
+    IsBucketKey = IsPcHeightBucketKey,
+};
+
+EnsurePcHeightSettings = function(settings)
     if (type(settings.pcRacePlateAdjustments) ~= 'table') then
         settings.pcRacePlateAdjustments = {};
     end
 
-    settings.pcRacePlateAdjustments.enabled = true;
+    if (settings.pcRacePlateAdjustments.enabled == nil) then
+        settings.pcRacePlateAdjustments.enabled = true;
+    end
     local baselines = {
         tarutaru = 82,
         mithra = 77,
@@ -269,7 +865,7 @@ local function EnsurePcHeightSettings(settings)
         if (settings.pcRacePlateAdjustments[key].y == nil) then settings.pcRacePlateAdjustments[key].y = value.y; end
         if (settings.pcRacePlateAdjustments[key].size == nil) then settings.pcRacePlateAdjustments[key].size = value.size; end
 
-        if (settings.pcRacePlateAdjustments.baselineVersion ~= 2) then
+        if ((tonumber(settings.pcRacePlateAdjustments.baselineVersion) or 0) < 2) then
             local yValue = tonumber(settings.pcRacePlateAdjustments[key].y) or 0;
             local baseline = baselines[key] or 0;
             if (math.abs(yValue - baseline) <= 1) then
@@ -282,7 +878,8 @@ local function EnsurePcHeightSettings(settings)
         end
     end
 
-    settings.pcRacePlateAdjustments.baselineVersion = 2;
+    EnsurePcHeightBuckets(settings);
+    settings.pcRacePlateAdjustments.baselineVersion = 3;
 end
 
 local function ApplyPcHeightDefaults(settings)
@@ -300,7 +897,11 @@ local function ApplyPcHeightDefaults(settings)
         settings.pcRacePlateAdjustments[key].y = value.y;
         settings.pcRacePlateAdjustments[key].size = value.size;
     end
-    settings.pcRacePlateAdjustments.baselineVersion = 2;
+    EnsurePcHeightBuckets(settings);
+    for _, key in ipairs(GetPcHeightBucketKeys()) do
+        settings.pcRacePlateAdjustments.buckets[key].y = 0;
+    end
+    settings.pcRacePlateAdjustments.baselineVersion = 3;
 end
 
 local function AddChangedField(parts, label, a, b)
@@ -876,18 +1477,18 @@ function commands.Handle(e)
             return;
         end
 
-        if (value == 'on' or value == 'true' or value == '1') then
-            anonStatus.SetSelfAnonymous(true);
-        elseif (value == 'off' or value == 'false' or value == '0') then
-            anonStatus.SetSelfAnonymous(false);
-        elseif (value == 'status') then
-            log.Info('Self anon tracked=' .. tostring(anonStatus.GetSelfAnonymous() == true));
-            return;
-        else
-            anonStatus.SetSelfAnonymous(anonStatus.GetSelfAnonymous() ~= true);
+        anonStatus.SetSelfAnonymous(false);
+
+        local selfEntity = entities.GetSelf();
+        local selfIndex = tonumber(selfEntity ~= nil and selfEntity.index) or 0;
+        local liveAnon = false;
+
+        if (selfIndex > 0) then
+            local playerIndicators = require('core.player_indicators');
+            liveAnon = playerIndicators.HasAnonNameColor(selfIndex) == true;
         end
 
-        log.Info('Self anon tracked=' .. tostring(anonStatus.GetSelfAnonymous() == true));
+        log.Info('Self anon uses live render flags; manual self override cleared. live=' .. tostring(liveAnon));
         return;
     end
 
@@ -1395,37 +1996,68 @@ function commands.Handle(e)
         if (action == 'default' or action == 'defaults' or action == 'reset') then
             ApplyPcHeightDefaults(settings);
             state.Save();
-            log.Info('PC height adjustments reset to 0. Zero now means the built-in race baseline.');
+            log.Info('PC height adjustments reset to 0. Zero now means the built-in race/sex/size baseline.');
             return;
         end
 
-        local familyKey, familyLabel = NormalizePcHeightFamily(args[3]);
+        local familyKey, familyLabel = PcHeightCommand.NormalizeFamily(args[3]);
+        local directBucketKey = PcHeightCommand.IsBucketKey(args[3]) == true and tostring(args[3]):lower() or nil;
+
+        if (directBucketKey ~= nil) then
+            local yValue = tonumber(args[4]);
+            local bucket = settings.pcRacePlateAdjustments.buckets[directBucketKey];
+
+            if (yValue == nil) then
+                log.Info('PC height ' .. directBucketKey .. ' y=' .. tostring(bucket.y) .. '. 0 is the built-in bucket baseline; positive lowers more.');
+                return;
+            end
+
+            bucket.y = math.max(-100, math.min(100, math.floor(yValue + 0.5)));
+            state.Save();
+            log.Info('PC height ' .. directBucketKey .. ' set y=' .. tostring(bucket.y) .. '.');
+            return;
+        end
 
         if (familyKey == nil) then
             local parts = {};
-            for _, key in ipairs({ 'hume', 'tarutaru', 'mithra', 'elvaan', 'galka' }) do
-                local race = settings.pcRacePlateAdjustments[key] or {};
-                parts[#parts + 1] = key .. '=' .. tostring(race.y);
+            for _, key in ipairs(PcHeightCommand.GetBucketKeys()) do
+                local bucket = settings.pcRacePlateAdjustments.buckets[key] or {};
+                if (tonumber(bucket.y) ~= 0) then
+                    parts[#parts + 1] = key .. '=' .. tostring(bucket.y);
+                end
             end
 
-            log.Info('PC height adjustments enabled=' .. tostring(settings.pcRacePlateAdjustments.enabled ~= false) .. ' ' .. table.concat(parts, ' | '));
-            log.Info('Usage: /lp pcheight human <y> | /lp pcheight defaults. 0 is the built-in baseline; positive lowers more.');
+            log.Info('PC height adjustments enabled=' .. tostring(settings.pcRacePlateAdjustments.enabled ~= false) .. ' changed buckets=' .. (next(parts) ~= nil and table.concat(parts, ' | ') or 'none'));
+            log.Info('Usage: /lp pcheight taru female small <y> | /lp pcheight hume_male_medium <y> | /lp pcheight defaults. 0 is the built-in bucket baseline; positive lowers more.');
             return;
         end
 
-        local yValue = tonumber(args[4]);
+        local sexKey, sexLabel = PcHeightCommand.NormalizeSex(args[4]);
+        local sizeKey, sizeLabel = PcHeightCommand.NormalizeSize(args[5]);
+        local yValue = tonumber(args[6]);
+
+        if (sexKey == nil or sizeKey == nil) then
+            log.Info('PC height ' .. familyLabel .. ' uses race/sex/size buckets. Usage: /lp pcheight ' .. tostring(args[3]) .. ' female small <y> or adjust in settings.');
+            return;
+        end
+
+        local bucketKey = PcHeightCommand.GetBucketKey(familyKey, sexKey, sizeKey);
+        local bucket = bucketKey ~= nil and settings.pcRacePlateAdjustments.buckets[bucketKey] or nil;
+
+        if (bucket == nil) then
+            log.Warn('No PC height bucket exists for ' .. tostring(familyLabel) .. ' ' .. tostring(sexLabel) .. ' ' .. tostring(sizeLabel) .. '.');
+            return;
+        end
 
         if (yValue == nil) then
-            local race = settings.pcRacePlateAdjustments[familyKey] or {};
-            log.Info('PC height ' .. familyLabel .. ' y=' .. tostring(race.y) .. '. 0 is the built-in baseline; positive lowers more. Usage: /lp pcheight ' .. tostring(args[3]) .. ' <y>');
+            log.Info('PC height ' .. familyLabel .. ' ' .. tostring(sexLabel) .. ' ' .. tostring(sizeLabel) .. ' y=' .. tostring(bucket.y) .. '. 0 is the built-in bucket baseline; positive lowers more.');
             return;
         end
 
-        local race = settings.pcRacePlateAdjustments[familyKey];
-        race.y = math.max(-100, math.min(100, math.floor(yValue + 0.5)));
+        bucket.y = math.max(-100, math.min(100, math.floor(yValue + 0.5)));
 
         state.Save();
-        log.Info('PC height ' .. familyLabel .. ' set y=' .. tostring(race.y) .. '.');
+        log.Info('PC height ' .. familyLabel .. ' ' .. tostring(sexLabel) .. ' ' .. tostring(sizeLabel) .. ' set y=' .. tostring(bucket.y) .. '.');
         return;
     end
 
@@ -2099,6 +2731,16 @@ function commands.Handle(e)
             ' useNativeNames=' .. tostring(targeting.GetSettings().hideNativeNamesOnLoad ~= true)
         );
 
+        return;
+    end
+
+    if (subcommand == 'selfanonprobe' or subcommand == 'anonprobe') then
+        LibraPlatesHandleSelfAnonProbe();
+        return;
+    end
+
+    if (subcommand == 'heightprobe' or subcommand == 'plateheightprobe') then
+        LibraPlatesHandleHeightProbe();
         return;
     end
 

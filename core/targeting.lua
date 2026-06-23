@@ -12,7 +12,6 @@ local lastGatheringToolPoll = 0;
 local suppressGatheringDisplayUntil = 0;
 local lastFishCommandTime = 0;
 local suppressFishRightMouse = false;
-
 local defaultPlateClickNoGoZones = {
     { name = 'Screen 1', enabled = false, x = 0, y = 960, width = 760, height = 480, color = { 1.0, 0.15, 0.15, 1.0 } },
     { name = 'Screen 2', enabled = false, x = 760, y = 1160, width = 1160, height = 280, color = { 0.15, 0.75, 1.0, 1.0 } },
@@ -34,6 +33,17 @@ local defaultPlateStackingTypes = {
     pet = false,
     npc = false,
     object = false,
+};
+
+local pcHeightBucketKeys = {
+    'tarutaru_male_small', 'tarutaru_male_medium', 'tarutaru_male_large',
+    'tarutaru_female_small', 'tarutaru_female_medium', 'tarutaru_female_large',
+    'hume_male_small', 'hume_male_medium', 'hume_male_large',
+    'hume_female_small', 'hume_female_medium', 'hume_female_large',
+    'mithra_female_small', 'mithra_female_medium', 'mithra_female_large',
+    'elvaan_male_small', 'elvaan_male_medium', 'elvaan_male_large',
+    'elvaan_female_small', 'elvaan_female_medium', 'elvaan_female_large',
+    'galka_male_small', 'galka_male_medium', 'galka_male_large',
 };
 
 local function NormalizePlateClickNoGoZones(settings)
@@ -101,7 +111,7 @@ local function GetTargetingSettings()
     end
 
     if (global.targeting.enemyActiveDetailRange == nil) then
-        global.targeting.enemyActiveDetailRange = 25.0;
+        global.targeting.enemyActiveDetailRange = 49.9;
     end
 
     if (global.targeting.pcDistanceScaleStart == nil) then
@@ -329,7 +339,7 @@ local function GetTargetingSettings()
 
     global.targeting.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(global.targeting.rightClickAttackRange) or 4.5));
     global.targeting.enemyPlateRange = math.max(5.0, math.min(64.4, tonumber(global.targeting.enemyPlateRange) or 49.9));
-    global.targeting.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(global.targeting.enemyActiveDetailRange) or 25.0));
+    global.targeting.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(global.targeting.enemyActiveDetailRange) or 49.9));
     global.targeting.pcDistanceScaleStart = math.max(0.0, math.min(20.0, tonumber(global.targeting.pcDistanceScaleStart) or 2.0));
     global.targeting.pcDistanceScaleEnd = math.max(1.0, math.min(40.0, tonumber(global.targeting.pcDistanceScaleEnd) or 8.0));
     if (global.targeting.pcDistanceScaleEnd <= global.targeting.pcDistanceScaleStart) then
@@ -364,7 +374,7 @@ local function GetTargetingSettings()
         end
 
         local yValue = tonumber(pcRaceAdjustments[key].y) or defaults.y;
-        if (pcRaceAdjustments.baselineVersion ~= 2) then
+        if ((tonumber(pcRaceAdjustments.baselineVersion) or 0) < 2) then
             local baseline = pcRaceBaselines[key] or 0;
             if (math.abs(yValue - baseline) <= 1) then
                 yValue = 0;
@@ -376,7 +386,20 @@ local function GetTargetingSettings()
         pcRaceAdjustments[key].y = math.max(-100, math.min(100, math.floor(yValue + 0.5)));
         pcRaceAdjustments[key].size = math.max(-100, math.min(100, math.floor((tonumber(pcRaceAdjustments[key].size) or defaults.size) + 0.5)));
     end
-    pcRaceAdjustments.baselineVersion = 2;
+    if (type(pcRaceAdjustments.buckets) ~= 'table') then
+        pcRaceAdjustments.buckets = {};
+    end
+    local pcHeightBaselineVersion = tonumber(pcRaceAdjustments.baselineVersion) or 0;
+    for _, key in ipairs(pcHeightBucketKeys) do
+        if (type(pcRaceAdjustments.buckets[key]) ~= 'table') then
+            pcRaceAdjustments.buckets[key] = { y = 0 };
+        elseif (pcHeightBaselineVersion < 3) then
+            pcRaceAdjustments.buckets[key].y = 0;
+        else
+            pcRaceAdjustments.buckets[key].y = math.max(-100, math.min(100, math.floor((tonumber(pcRaceAdjustments.buckets[key].y) or 0) + 0.5)));
+        end
+    end
+    pcRaceAdjustments.baselineVersion = 3;
     for _, entityName in ipairs({ 'self', 'pc', 'trust', 'enemy', 'npc', 'object', 'pet' }) do
         if (type(global.targeting.plateDistanceScales[entityName]) ~= 'table') then
             global.targeting.plateDistanceScales[entityName] = {};

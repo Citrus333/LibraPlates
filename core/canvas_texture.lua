@@ -577,25 +577,7 @@ local function DrawTargetMarker(device, centerX, centerY, marker, pass)
     local chevronColor = ColorToD3D(marker.chevronColor or marker.color, { 1.0, 0.82, 0.10, 0.90 });
     local thickness = math.max(1, tonumber(marker.thickness) or 3);
     local corner = math.max(8, tonumber(marker.cornerLength) or 18);
-    local distance = tonumber(marker.distance);
     local distanceScale = 1.0;
-
-    if (distance ~= nil and distance > 0) then
-        local minScale = tonumber(marker.arrowMinScale) or 0.45;
-        local farMinDistance = math.max(1.0, tonumber(marker.arrowFarMinDistance) or 10.0);
-        local farMinScale = math.max(minScale, math.min(tonumber(marker.arrowFarMinScale) or 6.0, 6.0));
-        local farFullDistance = math.max(farMinDistance, tonumber(marker.arrowFarFullDistance) or 50.0);
-        local maxScale = math.max(tonumber(marker.arrowMaxScale) or 10.00, farMinScale);
-
-        maxScale = math.max(minScale, math.min(maxScale, 64.0));
-
-        if (marker.arrowLockFarMinSize ~= false) then
-            local t = math.max(0.0, math.min(1.0, (distance - 1.0) / (farFullDistance - 1.0)));
-            distanceScale = math.min(maxScale, minScale + ((farMinScale - minScale) * t));
-        elseif (marker.arrowScaleWithDistance == true) then
-            distanceScale = math.max(minScale, math.min(maxScale, distance / farMinDistance));
-        end
-    end
 
     if (pass ~= 'foreground' and marker.showBackground == true) then
         local bgW = tonumber(marker.backgroundWidth) or targetW;
@@ -2069,29 +2051,6 @@ local function AddTargetMarkerBackgroundRect(rects, centerX, centerY, marker)
 end
 
 local function GetTargetMarkerDistanceScale(marker)
-    local distance = tonumber(marker.distance);
-
-    if (distance == nil or distance <= 0) then
-        return 1.0;
-    end
-
-    local minScale = tonumber(marker.arrowMinScale) or 0.45;
-    local farMinDistance = math.max(1.0, tonumber(marker.arrowFarMinDistance) or 10.0);
-    local farMinScale = math.max(minScale, math.min(tonumber(marker.arrowFarMinScale) or 6.0, 6.0));
-    local farFullDistance = math.max(farMinDistance, tonumber(marker.arrowFarFullDistance) or 50.0);
-    local maxScale = math.max(tonumber(marker.arrowMaxScale) or 10.00, farMinScale);
-
-    maxScale = math.max(minScale, math.min(maxScale, 64.0));
-
-    if (marker.arrowLockFarMinSize ~= false) then
-        local t = math.max(0.0, math.min(1.0, (distance - 1.0) / (farFullDistance - 1.0)));
-        return math.min(maxScale, minScale + ((farMinScale - minScale) * t));
-    end
-
-    if (marker.arrowScaleWithDistance == true) then
-        return math.max(minScale, math.min(maxScale, distance / farMinDistance));
-    end
-
     return 1.0;
 end
 

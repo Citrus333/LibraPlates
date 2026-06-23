@@ -262,6 +262,7 @@ end
 
 local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layoutStateName, plateTextureId, textureWidth, textureHeight, plateClickRects)
     local targetingSettings = targeting.GetSettings();
+    local plateWorldOffsetY = (tonumber(center.status) == 85) and (0.05 - mountedPlateLift) or 0.05;
 
     worldMarkerProbe.QueuePlate({
         targetIndex = center.index,
@@ -281,7 +282,8 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
             plateTacticalOverlayOnly = true,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
-            plateWorldOffsetY = (tonumber(center.status) == 85) and (0.72 - mountedPlateLift) or 0.72,
+            plateWorldOffsetY = plateWorldOffsetY,
+            pcBodyPlateOffsetEnabled = true,
             plateDistanceScaleOffsetY = -0.12,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
@@ -291,7 +293,7 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
             clickTargetType = 'self',
             clickName = center.name,
             layoutStateName = layoutStateName,
-        }, 'self', 0, (tonumber(center.status) == 85) and (0.72 - mountedPlateLift) or 0.72),
+        }, 'self', 0, plateWorldOffsetY),
     });
 end
 

@@ -111,7 +111,7 @@ local function GetTargetingSettings()
     end
 
     if (global.targeting.enemyActiveDetailRange == nil) then
-        global.targeting.enemyActiveDetailRange = 49.9;
+        global.targeting.enemyActiveDetailRange = 25.0;
     end
 
     if (global.targeting.pcDistanceScaleStart == nil) then
@@ -339,7 +339,7 @@ local function GetTargetingSettings()
 
     global.targeting.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(global.targeting.rightClickAttackRange) or 4.5));
     global.targeting.enemyPlateRange = math.max(5.0, math.min(64.4, tonumber(global.targeting.enemyPlateRange) or 49.9));
-    global.targeting.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(global.targeting.enemyActiveDetailRange) or 49.9));
+    global.targeting.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(global.targeting.enemyActiveDetailRange) or 25.0));
     global.targeting.pcDistanceScaleStart = math.max(0.0, math.min(20.0, tonumber(global.targeting.pcDistanceScaleStart) or 2.0));
     global.targeting.pcDistanceScaleEnd = math.max(1.0, math.min(40.0, tonumber(global.targeting.pcDistanceScaleEnd) or 8.0));
     if (global.targeting.pcDistanceScaleEnd <= global.targeting.pcDistanceScaleStart) then

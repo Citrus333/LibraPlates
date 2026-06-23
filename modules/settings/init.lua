@@ -7233,10 +7233,10 @@ local function DrawGeneralMouseSection()
         end);
 
         DrawSliderTenths('Enemy active detail range', settings.enemyActiveDetailRange, 100, 499, function(value)
-            settings.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(value) or 49.9));
+            settings.enemyActiveDetailRange = math.max(10.0, math.min(49.9, tonumber(value) or 25.0));
         end);
 
-        local range = tonumber(settings.enemyActiveDetailRange) or 49.9;
+        local range = tonumber(settings.enemyActiveDetailRange) or 25.0;
         local tierLabel = 'Balanced';
         local tierColor = { 0.55, 0.85, 1.0, 1.0 };
 

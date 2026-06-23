@@ -937,6 +937,15 @@ local function DrawOne(drawList, index, stateName, offsetY, drawHighlight)
     local autoPlaceArrow = settings.autoPlaceArrow ~= false;
     local arrowW = Clamp(settings.arrowWidth, 20, 1, 200) * scale;
     local arrowH = Clamp(settings.arrowHeight, 20, 1, 200) * scale;
+    local overlayArrowMaxSize = 32 * scale;
+    local arrowLargestSide = math.max(arrowW, arrowH);
+
+    if (arrowLargestSide > overlayArrowMaxSize) then
+        local arrowClampScale = overlayArrowMaxSize / arrowLargestSide;
+        arrowW = arrowW * arrowClampScale;
+        arrowH = arrowH * arrowClampScale;
+    end
+
     local arrowOffsetX = Number(settings, 'arrowOffsetX', 0) * scale;
     local arrowOffsetY = Number(settings, 'arrowOffsetY', 0) * scale;
     local arrowX = cx - (arrowW * 0.5) + arrowOffsetX;

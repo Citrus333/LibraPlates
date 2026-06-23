@@ -18,7 +18,7 @@ return {
         enableRightClickAttackWhileMounted = false,
         rightClickAttackRange = 4.5,
         enemyPlateRange = 49.9,
-        enemyActiveDetailRange = 49.9,
+        enemyActiveDetailRange = 25.0,
         pcDistanceScaleStart = 2.0,
         pcDistanceScaleEnd = 8.0,
         pcDistanceScaleMax = 2.65,

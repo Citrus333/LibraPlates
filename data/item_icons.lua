@@ -6396,18 +6396,6 @@ local itemIcons = T{
 
     ['Harvest Point']            = { type = 'Harvest Point', icon = 'HarvestPoint.png' },
 
-    ['Home Point #1']            = { type = 'Home Point', icon = 'HomePoint1.png', worldOffsetZ = -1.5, offsetX = 40 },
-
-    ['Home Point #2']            = { type = 'Home Point', icon = 'HomePoint2.png', offsetY = -210, offsetX = 55 },
-
-    ['Home Point #3']            = { type = 'Home Point', icon = 'HomePoint3.png', offsetY = -210, offsetX = 55 },
-
-    ['Home Point #4']            = { type = 'Home Point', icon = 'HomePoint4.png', offsetY = -210, offsetX = 55 },
-
-    ['Home Point #5']            = { type = 'Home Point', icon = 'HomePoint5.png', offsetY = -210, offsetX = 55 },
-
-    ['Home Point #6']            = { type = 'Home Point', icon = 'HomePoint6.png', offsetY = -210, offsetX = 55 },
-
     ['Mining Point']             = { type = 'Mining Point', icon = 'MiningPoint.png' },
 
     ['Monument']                 = { type = 'Monument', icon = 'Monument.png' },
@@ -6444,5 +6432,11 @@ local itemIcons = T{
 
 }
 };
+
+itemIcons['Home Point #1'] = { displayName = 'Home Point', type = '#1', icon = 'HomePoint1.png', worldOffsetY = -1 };
+itemIcons['Home Point #2'] = { displayName = 'Home Point', type = '#2', icon = 'HomePoint2.png', worldOffsetY = -1 };
+itemIcons['Home Point #3'] = { displayName = 'Home Point', type = '#3', icon = 'HomePoint3.png', worldOffsetY = -1 };
+itemIcons['Home Point #4'] = { displayName = 'Home Point', type = '#4', icon = 'HomePoint4.png', worldOffsetY = -1 };
+itemIcons['Home Point #5'] = { displayName = 'Home Point', type = '#5', icon = 'HomePoint5.png', worldOffsetY = -1 };
 
 return itemIcons;

@@ -15,6 +15,7 @@ local lagTest = require('core.lag_test');
 local cursorOverlay = require('core.cursor_overlay');
 local jobChange = require('core.job_change');
 local enemyCasts = require('core.enemy_casts');
+local enemyAlerts = require('core.enemy_alerts');
 local imgui = require('imgui');
 
 -- ============================================================
@@ -318,6 +319,7 @@ function modules.Render()
 
     if (perfIsolation.overlays ~= true) then
         cursorOverlay.Render();
+        enemyAlerts.Render();
     end
 
     perfMeter.Stop('total', totalStart);

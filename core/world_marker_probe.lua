@@ -1076,8 +1076,23 @@ local function DrawWorldResourceBar(device, wx, wy, wz, rx, ry, rz, ux, uy, uz, 
     local centerY = wy + (ry * offsetX) - (uy * offsetY);
     local centerZ = wz + (rz * offsetX) - (uz * offsetY);
     local fillColor = ColorTableToD3D(barStyle.color, { 0.22, 0.95, 0.38, 0.93 });
+    local backgroundColor = ColorTableToD3D(barStyle.backgroundColor, { 0.0, 0.0, 0.0, 0.0 });
     local fillProgress = Clamp01(progress);
     local fillWidth = width * fillProgress;
+
+    if (barStyle.backgroundColor ~= nil) then
+        DrawQuad(
+            device,
+            centerX,
+            centerY,
+            centerZ,
+            rx, ry, rz,
+            ux, uy, uz,
+            width * 0.5,
+            height * 0.5,
+            backgroundColor
+        );
+    end
 
     if (fillWidth > 0.001) then
         local fillCenterOffset = ((fillWidth - width) * 0.5);
@@ -3554,7 +3569,7 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
                 plateZ,
                 plateWorldWidth,
                 plateWorldHeight,
-                true,
+                style.plateAlwaysOnTop == true,
                 stackScreenOffsetX,
                 stackScreenOffsetY,
                 false

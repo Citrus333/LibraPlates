@@ -39,6 +39,23 @@ local function NormalizeName(name)
     return text;
 end
 
+local function GetHomePointKey(name)
+    local text = NormalizeName(name);
+    local lower = string.lower(text);
+    local number = lower:match('home%s*point%s*#?%s*(%d+)')
+        or lower:match('home%s*point.-(%d+)');
+
+    if (number ~= nil and itemIcons['Home Point #' .. tostring(number)] ~= nil) then
+        return 'Home Point #' .. tostring(number);
+    end
+
+    return nil;
+end
+
+local function IsHomePointName(name)
+    return GetHomePointKey(name) ~= nil;
+end
+
 local function NormalizeZoneName(zoneName)
     local text = tostring(zoneName or '');
 
@@ -163,6 +180,7 @@ local function ReadEntry(sourceName, entry, ignoreZone)
     end
 
     local infoType = tostring(entry.type or '');
+    local displayName = tostring(entry.displayName or '');
     local icon = tostring(entry.icon or '');
     local link = tostring(entry.link or '');
     local note = tostring(entry.note or '');
@@ -177,13 +195,14 @@ local function ReadEntry(sourceName, entry, ignoreZone)
         info = note;
     end
 
-    if (infoType == '' and icon == '' and link == '' and note == '' and info == '' and worldOffsetX == nil and worldOffsetY == nil and worldOffsetZ == nil and anchorBone == nil) then
+    if (infoType == '' and displayName == '' and icon == '' and link == '' and note == '' and info == '' and worldOffsetX == nil and worldOffsetY == nil and worldOffsetZ == nil and anchorBone == nil) then
         return nil;
     end
 
     return {
         source = sourceName,
         type = infoType,
+        displayName = displayName,
         icon = icon,
         link = link,
         info = info,
@@ -306,11 +325,14 @@ function npcInfo.Find(name, entityType, options)
     local kind = tostring(entityType or ''):lower();
     local cleanName = CleanName(name);
     local ignoreZone = type(options) == 'table' and options.ignoreZone == true;
+    local homePointKey = GetHomePointKey(name);
+    local itemLookupName = homePointKey or name;
+    local forceItemZoneMatchOff = homePointKey ~= nil;
 
     if (kind == 'object') then
-        local item = FindIn(name, 'catseye_item', catseyeItemIcons, ignoreZone, options)
-            or FindScopedIn(name, 'item', itemIcons, ignoreZone, options)
-            or FindIn(name, 'item', itemIcons, ignoreZone, options);
+        local item = FindIn(itemLookupName, 'catseye_item', catseyeItemIcons, ignoreZone or forceItemZoneMatchOff, options)
+            or FindScopedIn(itemLookupName, 'item', itemIcons, ignoreZone or forceItemZoneMatchOff, options)
+            or FindIn(itemLookupName, 'item', itemIcons, ignoreZone or forceItemZoneMatchOff, options);
         local npc = FindIn(name, 'catseye_npc', catseyeNpcIcons, ignoreZone, options)
             or FindScopedIn(name, 'npc', npcIcons, ignoreZone, options)
             or (ignoreZone ~= true and cleanName == 'Moogle' and FindMogHouseMoogleAlias('npc', npcIcons) or nil)
@@ -329,10 +351,20 @@ function npcInfo.Find(name, entityType, options)
 end
 
 function npcInfo.ResolveKind(name, entityType, options)
-    local catseyeItemInfo = FindIn(name, 'catseye_item', catseyeItemIcons, false, options);
+    local homePointKey = GetHomePointKey(name);
+    local itemLookupName = homePointKey or name;
+    local forceItemZoneMatchOff = homePointKey ~= nil;
+    local catseyeItemInfo = FindIn(itemLookupName, 'catseye_item', catseyeItemIcons, forceItemZoneMatchOff, options);
 
     if (catseyeItemInfo ~= nil) then
         return 'Object', catseyeItemInfo;
+    end
+
+    local itemInfo = FindScopedIn(itemLookupName, 'item', itemIcons, forceItemZoneMatchOff, options)
+        or FindIn(itemLookupName, 'item', itemIcons, forceItemZoneMatchOff, options);
+
+    if (itemInfo ~= nil and forceItemZoneMatchOff == true) then
+        return 'Object', itemInfo;
     end
 
     local info = npcInfo.Find(name, entityType, options);
@@ -346,9 +378,10 @@ function npcInfo.ResolveKind(name, entityType, options)
         return 'NPC', info;
     end
 
-    local itemInfo = FindIn(name, 'catseye_item', catseyeItemIcons, false, options)
-        or FindScopedIn(name, 'item', itemIcons, false, options)
-        or FindIn(name, 'item', itemIcons, false, options);
+    itemInfo = FindIn(itemLookupName, 'catseye_item', catseyeItemIcons, forceItemZoneMatchOff, options)
+        or itemInfo
+        or FindScopedIn(itemLookupName, 'item', itemIcons, forceItemZoneMatchOff, options)
+        or FindIn(itemLookupName, 'item', itemIcons, forceItemZoneMatchOff, options);
 
     if (itemInfo ~= nil) then
         return 'Object', itemInfo;

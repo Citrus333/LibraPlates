@@ -746,6 +746,7 @@ local enemyCombatWidgets = T{
     'Enmity (module)',
     'Target (module)',
     'Subtarget (module)',
+    'Enemy Alerts (module)',
     'AOE range (module)',
     'Cast bar',
     'Special icon',
@@ -959,6 +960,7 @@ local widgetKeys = {
     ['Resting (module)'] = 'Resting',
     ['Quick Menu (module)'] = 'Quick Menu',
     ['AOE range (module)'] = 'AOE range',
+    ['Enemy Alerts (module)'] = 'Enemy Alerts',
     ['Mounted (module)'] = 'Mounted',
     ['Crafting (module)'] = 'Crafting',
     ['Fishing (module)'] = 'Fishing',
@@ -9502,6 +9504,109 @@ local function DrawSelectedEditorPlatesModules()
         return;
     end
 
+    if (selectedWidget == 'Enemy Alerts (module)') then
+        local enemyAlerts = require('core.enemy_alerts');
+        local alertSounds = require('core.alert_sounds');
+        local global = state.GetGlobalSettings(globalDefaults);
+        global.enemyAlerts = global.enemyAlerts or {};
+        local settings = global.enemyAlerts;
+        for key, value in pairs(globalDefaults.enemyAlerts or {}) do
+            if (settings[key] == nil) then
+                settings[key] = value;
+            end
+        end
+
+        local function DrawLane(label, prefix, enabledKey)
+            DrawSettingsHeader(label);
+
+            if (enabledKey ~= nil) then
+                DrawCheckbox('Enabled', settings[enabledKey] ~= false, function(value)
+                    settings[enabledKey] = value == true;
+                    state.Save();
+                end);
+            end
+
+            local fontSize, fontChanged = DrawPlacementNumber('Font size', settings[prefix .. 'FontSize'] or settings.fontSize or 34, 12, 80, 1, 'EnemyAlertsPlate' .. label .. 'FontSize');
+            if (fontChanged == true) then
+                settings[prefix .. 'FontSize'] = fontSize;
+                state.Save();
+            end
+
+            local color, colorChanged = DrawSettingsColor('Font color', settings[prefix .. 'Color'] or settings.color, 'EnemyAlertsPlate' .. label .. 'Color');
+            if (colorChanged == true) then
+                settings[prefix .. 'Color'] = color;
+                state.Save();
+            end
+
+            local outlineColor, outlineChanged = DrawSettingsColor('Outline color', settings[prefix .. 'OutlineColor'] or settings.outlineColor, 'EnemyAlertsPlate' .. label .. 'OutlineColor');
+            if (outlineChanged == true) then
+                settings[prefix .. 'OutlineColor'] = outlineColor;
+                state.Save();
+            end
+
+            DrawCheckbox('Sound', settings[prefix .. 'SoundEnabled'] == true, function(value)
+                settings[prefix .. 'SoundEnabled'] = value == true;
+                state.Save();
+            end);
+
+            local soundFile = alertSounds.ResolveFile(settings[prefix .. 'SoundFile'], settings.soundFile or 'Alert01.wav');
+
+            DrawInlineComboRow('Sound file', alertSounds.GetFiles(), soundFile, function(value)
+                settings[prefix .. 'SoundFile'] = value;
+                state.Save();
+            end, 'EnemyAlertsPlate' .. label .. 'SoundFile');
+
+            if (imgui.Button ~= nil and imgui.Button('Preview sound##EnemyAlertsPlate' .. label .. 'SoundPreview') == true) then
+                alertSounds.Play(soundFile);
+            elseif (imgui.Button == nil and ClickText('Preview sound', uiAccent) == true) then
+                alertSounds.Play(soundFile);
+            end
+        end
+
+        DrawSettingsHeader('Enemy Alerts');
+        DrawCheckbox('Enabled', settings.enabled == true, function(value)
+            settings.enabled = value == true;
+            state.Save();
+        end);
+        DrawCheckbox('Magic casts', settings.showMagic ~= false, function(value)
+            settings.showMagic = value == true;
+            state.Save();
+        end);
+        DrawCheckbox('Job abilities', settings.showAbilities == true, function(value)
+            settings.showAbilities = value == true;
+            state.Save();
+        end);
+
+        local duration, durationChanged = DrawPlacementNumber('Duration', settings.duration or 3, 1, 10, 0.5, 'EnemyAlertsPlateDuration');
+        if (durationChanged == true) then
+            settings.duration = duration;
+            state.Save();
+        end
+
+        local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawPlacementPair('Offset X', settings.offsetX or 0, 'EnemyAlertsPlateOffsetX', 'Offset Y', settings.offsetY or 0, 'EnemyAlertsPlateOffsetY', -900, 900, 5);
+        if (offsetXChanged == true or offsetYChanged == true) then
+            settings.offsetX = offsetX;
+            settings.offsetY = offsetY;
+            state.Save();
+        end
+
+        DrawSectionDivider();
+        DrawLane('Offensive magic', 'offensive', 'offensiveMagicEnabled');
+        DrawSectionDivider();
+        DrawLane('Defensive magic', 'defensive', 'defensiveMagicEnabled');
+        DrawSectionDivider();
+        DrawLane('Job abilities', 'ability');
+
+        if (imgui.Button ~= nil and imgui.Button('Test alert##EnemyAlertsPlateTest') == true) then
+            enemyAlerts.Test();
+        elseif (imgui.Button == nil and ClickText('Test alert', uiAccent) == true) then
+            enemyAlerts.Test();
+        end
+
+        imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, enemyAlerts.GetStatusText());
+        return;
+    end
+
     if (selectedWidget == 'AOE range (module)') then
         local settings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), LibraPlatesSettingsToStorageStateName(selectedState), widgetKeys[selectedWidget], aoeRangeDefaults);
 
@@ -9880,6 +9985,12 @@ function settingsUi.Render()
     if (state.GetConfigOpen() ~= true) then
         LibraPlatesSettingsWindowLayout.ResetAppearing();
         return;
+    end
+
+    if (ListContains(tabs, selectedTab) ~= true) then
+        selectedTab = 'Plates';
+        EnsureSelectedStateAllowed();
+        EnsureSelectedWidgetAllowed();
     end
 
     windowOpen[1] = true;

@@ -81,15 +81,42 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 
 ## To DO
 
+### Wiped / Rebuild After 2026-06-24 Reset
+
+- Rebuild recent NPC/item data edits that were lost after the hard reset. Only `data/npc_icons.lua` was partly recovered from a Git blob; Lila's morning data pass needs redoing/rechecking.
+- Reapply the cleaned NPC zone-name data pass: remove embedded map/location text from `zones = { ... }` entries so zone names stay plain.
+- Live-test Home Point zone/id data and crystal-top placement in `data/item_icons.lua`; the item/object handling and normal object world lift have been restored.
+- Reapply Trust Regen II / Regen III status-icon mapping fix: Trust-only Regen II/III were showing Refresh icon and not clearing properly.
+- Recheck Trust status-icon mapping for higher-level Regen spells and any related refresh/regen aliases.
+- Recheck Trust debuff support: missing Trust debuffs noted include DEX Down, VIT Down, Bio; Poison II was seen.
+- Recheck Trust plate policy: Trust buffs/debuffs decision was marked done before reset.
+- Recheck Trust nameplate height for very large Trusts; note was added before reset.
+- Recheck peer level color-correct-to-level fix; it was marked done before reset.
+- Recheck pet settings cleanup: pet previews/settings should be percent-only for HP/MP and should not expose `Show HP value`.
+- Recheck pet static panel cleanup idea: drag/resize on-screen instead of many X/Y settings.
+- Recheck rental chocobo/self quick menu: mounted rental chocobo should show Dismount, not Mount: Random.
+- Recheck mounted buff timer: it appeared after zoning with delay and was marked fixed, but needs verification after reset.
+- Recheck mounted plate height on rental chocobo and normal mounts.
+- Recheck plate stacking fixes/settings: target plate should not be hidden behind non-target plates, and settings should visibly affect enemy stacking.
+- Recheck tactical screen limits/stacking UI cleanup; settings felt confusing and may not be applying.
+- Recheck Enemy Alerts integration after restore: current files are restored, but live MA/JA, offensive/defensive split, font settings, sound dropdown, and preview all need testing.
+- Keep Enemy Alerts under `Plates > Enemy > Tactical`; do not bring back the old visible Modules tab.
+- Recheck logout/shutdown countdown fix separately from resting tick timer. Resting tick sync should keep working; logout/shutdown should be a flat countdown and not reset from chat/ticks.
+- Recheck/remove BST chat spam if that fix was actually done before reset; status is uncertain.
+- Recheck Catseye/player profile confusion from reset day before blaming runtime classification.
+- Recheck all other small "marked done" items from the reset day before moving them back to Done.
+
 ### Priority
 
 - Clean action queue logging format and remove duplicate spam before any logic changes.
 - Keep `/st` range queue/packet parsing disabled until stability checks are green.
 - Only next: rework action-range parsing if still needed.
+- FPS mode follow-up: keep the current FPS behavior for now; ask Tork/Torkson before changing the `Keep current` handling.
 
 ### General / Settings
 
 - Help follow-up: expand User Guide and Troubleshooter over time with exact row-level anchors, more synonyms, and common "why is X not showing/working?" cases as they come up in testing.
+- Profile follow-up: add/consider auto-switching profiles per role.
 - Future integration idea: incorporate ChatMon / ZoneName / JA-style functionality into LibraPlates.
 - Game mode is not reading properly.
 - Settings reset bug: resetting widget settings/position does not appear to reset anchor settings (`anchorTo` / `anchorPoint`).
@@ -172,6 +199,15 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 - Peer follow-up: consider whether Peer should also support Objects, not only Self / PC / Enemy.
 
 ## Done
+
+- 2026-06-24 - Home Point item/object handling:
+  - Restored Home Point rows through `data/item_icons.lua` item/object data and set their world Y lift back to the normal object-style placement so the plate is above the crystal instead of down inside it.
+
+- 2026-06-24 - Caliburn Traveler icon:
+  - Confirmed/fixed Caliburn / Traveler icon behavior in Windurst Waters.
+
+- 2026-06-24 - Kayeel-Payeel NPC classification:
+  - Confirmed/fixed Kayeel-Payeel no longer shows as a Trust in Windurst Waters.
 
 - 2026-06-23 - Self `/anon` icon/name color:
   - Fixed self anon being reversed by removing the guessed/toggled self anon state as the display source.

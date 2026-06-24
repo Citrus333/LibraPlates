@@ -656,7 +656,7 @@ local function ShouldLoadStatusRows(settings, widgetName, isEngaged)
     return true;
 end
 
-local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue)
+local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle)
     if (cached == nil or cached.texture == nil) then
         return false;
     end
@@ -684,7 +684,9 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
         stateName = targetStateName,
         clickTargetType = 'pc',
         worldMarker = targeting.ApplyPlateScalingSettings({
-            hpBar = { enabled = false },
+            hpBar = hpBarStyle or cached.hpBar or { enabled = false },
+            mpBar = mpBarStyle or cached.mpBar or { enabled = false },
+            tpBar = tpBarStyle or cached.tpBar or { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,
@@ -707,7 +709,7 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
     return true;
 end
 
-local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue)
+local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle)
     if (targetStateName ~= 'Idle' or useTargetOverlay == true or state.GetConfigOpen() == true) then
         return false;
     end
@@ -732,7 +734,7 @@ local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, la
         return false;
     end
 
-    if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true) then
+    if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle) == true) then
         perfMeter.Count('pc.cache.directHit', 1);
         return true;
     end
@@ -1115,6 +1117,40 @@ local function QueuePlayer(player)
         tpColor = tpBarSettings.lowColor or tpColor;
     end
 
+    local liveHpColor = hpColor;
+
+    if (hpBarOutOfRange == true) then
+        local source = hpBarSettings.outOfRangeColor or { 0.02, 0.08, 0.12, 1.0 };
+        liveHpColor = {
+            tonumber(source[1]) or 1.0,
+            tonumber(source[2]) or 1.0,
+            tonumber(source[3]) or 1.0,
+            1.0,
+        };
+    end
+
+    local function makeLiveBarStyle(settings, color, defaultWidth, defaultHeight, defaultOffsetY)
+        settings = settings or {};
+
+        if (settings.enabled ~= true) then
+            return { enabled = false };
+        end
+
+        return {
+            enabled = true,
+            worldWidth = math.max(0.04, (tonumber(settings.width) or defaultWidth or 180) / 430),
+            worldHeight = math.max(0.006, (tonumber(settings.height) or defaultHeight or 12) / 260),
+            worldOffsetX = (tonumber(settings.offsetX) or 0) / 430,
+            worldOffsetY = (tonumber(settings.offsetY) or defaultOffsetY or 0) / 260,
+            color = color,
+            backgroundColor = settings.backgroundColor,
+        };
+    end
+
+    local liveHpBarStyle = hpBarLoads == true and makeLiveBarStyle(hpBarSettings, liveHpColor, 180, 12, 0) or { enabled = false };
+    local liveMpBarStyle = mpBarLoads == true and makeLiveBarStyle(mpBarSettings, mpColor, 180, 8, 16) or { enabled = false };
+    local liveTpBarStyle = tpBarLoads == true and makeLiveBarStyle(tpBarSettings, tpColor, 180, 6, 28) or { enabled = false };
+
     local iconsTimer = perfMeter.BeginDetail('pc.icons');
     local gameModeIconTextureId = nil;
     local linkshellIconTextureId = nil;
@@ -1206,6 +1242,26 @@ local function QueuePlayer(player)
     local isEngaged = tonumber(player.status) == 1;
     local buffsLoad = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(buffsSettings, 'Buffs', isEngaged);
     local debuffsLoad = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(debuffsSettings, 'Debuffs', isEngaged);
+    local buffRows = buffsLoad == true and partyStatuses.GetMemberRows(player.serverId, 'buff') or {};
+    local debuffRows = debuffsLoad == true and partyStatuses.GetMemberRows(player.serverId, 'debuff') or {};
+
+    local function statusRowsSignature(rows)
+        local parts = {};
+
+        for index, row in ipairs(rows or {}) do
+            local statusId = type(row) == 'table' and row.id or row;
+            local seconds = type(row) == 'table' and tonumber(row.seconds) or nil;
+
+            parts[#parts + 1] = tostring(statusId or '');
+
+            if (seconds ~= nil and seconds >= 0) then
+                parts[#parts] = parts[#parts] .. ':' .. tostring(math.floor(seconds + 0.5));
+            end
+        end
+
+        return table.concat(parts, ',');
+    end
+
     local nameAoeActive = isPartyPlayer == true and aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(player.index, 'pc') == true;
     local enmityAllyDraws = layoutStateName == 'Combat' and enmity.ShouldDrawAlly(player, globalSettings) == true;
     local targetMarkerDraws = targetMarker ~= nil and targetMarker.enabled == true;
@@ -1231,9 +1287,6 @@ local function QueuePlayer(player)
     end
 
     local cacheEligible = targetStateName == 'Idle'
-        and isPartyPlayer ~= true
-        and isTacticalPlayer ~= true
-        and useTargetOverlay ~= true
         and state.GetConfigOpen() ~= true
         and distanceText == nil;
 
@@ -1253,13 +1306,14 @@ local function QueuePlayer(player)
             'anonNameColor=' .. tostring(playerAnonNameColor),
             'statusIconPack=' .. tostring(globalSettings ~= nil and globalSettings.statusIcons ~= nil and globalSettings.statusIcons.iconPack or ''),
             'name=' .. tostring(player.name or ''),
+            'layout=' .. tostring(layoutStateName or ''),
+            'overlay=' .. (useTargetOverlay == true and '1' or '0'),
+            'targetState=' .. tostring(targetStateName or 'Idle'),
             'status=' .. tostring(player.status or ''),
-            'engaged=' .. BoolKey(currentPlayerEngaged),
-            'hp=' .. tostring(hasHp == true and hpPercent or ''),
-            'hpValue=' .. tostring(player.hp or '') .. '/' .. tostring(player.maxHp or ''),
-            'mp=' .. tostring(hasMp == true and mpPercent or ''),
-            'mpValue=' .. tostring(player.mp or '') .. '/' .. tostring(player.maxMp or ''),
-            'tp=' .. tostring(hasTp == true and tpValue or ''),
+            'engaged=' .. (currentPlayerEngaged == true and '1' or '0'),
+            'hasHp=' .. (hasHp == true and '1' or '0'),
+            'hasMp=' .. (hasMp == true and '1' or '0'),
+            'hasTp=' .. (hasTp == true and '1' or '0'),
             'distance=' .. tostring(distanceText or ''),
             'game=' .. tostring(gameModeIconTextureId or ''),
             'linkshell=' .. tostring(linkshellIconTextureId or ''),
@@ -1272,6 +1326,8 @@ local function QueuePlayer(player)
             'new=' .. tostring(newAdventurerIconTextureId or ''),
             'staff=' .. tostring(staffIconTextureId or '') .. ':' .. tostring(staffInfo ~= nil and staffInfo.type or ''),
             'aoe=' .. (isPartyPlayer == true and aoeNameHighlight.GetSignature(player.index, 'pc') or 'aoe-name:0'),
+            'buffs=' .. statusRowsSignature(buffRows),
+            'debuffs=' .. statusRowsSignature(debuffRows),
             'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
@@ -1284,7 +1340,7 @@ local function QueuePlayer(player)
         staleCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
         local cached = indexed ~= nil and indexed.signature == signature and staleCached or nil;
 
-        if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true) then
+        if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle) == true) then
             cached.lastFullRefresh = os.clock();
             perfMeter.Count('pc.cache.hit', 1);
             return;
@@ -1294,7 +1350,7 @@ local function QueuePlayer(player)
             adaptivePerformance.ShouldThrottleBackground() == true and
             staleCached ~= nil and
             (os.clock() - (tonumber(staleCached.lastUsed) or 0)) < 1.00 and
-            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true
+            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle) == true
         ) then
             perfMeter.Count('pc.cache.smooth', 1);
             return;
@@ -1315,7 +1371,7 @@ local function QueuePlayer(player)
     ) then
         if (
             staleCached ~= nil and
-            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true
+            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle) == true
         ) then
             perfMeter.Count('pc.cache.deferred', 1);
         else
@@ -1370,6 +1426,9 @@ local function QueuePlayer(player)
         globalSettings = globalSettings,
         aoeRangeSettings = aoeRangeSettings,
     });
+    plateData.hpBar = { enabled = false };
+    plateData.mpBar = { enabled = false };
+    plateData.tpBar = { enabled = false };
 
     if (jobLoads == true) then
         AddJobToPlate(plateData, GetJobText(player.mainJob), jobSettings, globalSettings);
@@ -1403,11 +1462,11 @@ local function QueuePlayer(player)
     local statusTimer = perfMeter.BeginDetail('pc.status');
 
     if (buffsLoad == true) then
-        AddStatusIconsToPlate(plateData, partyStatuses.GetMemberRows(player.serverId, 'buff'), buffsSettings, isEngaged, globalSettings, 'buffs');
+        AddStatusIconsToPlate(plateData, buffRows, buffsSettings, isEngaged, globalSettings, 'buffs');
     end
 
     if (debuffsLoad == true) then
-        AddStatusIconsToPlate(plateData, partyStatuses.GetMemberRows(player.serverId, 'debuff'), debuffsSettings, isEngaged, globalSettings, 'debuffs');
+        AddStatusIconsToPlate(plateData, debuffRows, debuffsSettings, isEngaged, globalSettings, 'debuffs');
     end
     perfMeter.EndDetail(statusTimer);
 
@@ -1457,12 +1516,15 @@ local function QueuePlayer(player)
             textureKey = textureKey,
             lastUsed = os.clock(),
             lastFullRefresh = os.clock(),
-            hasDynamicVisuals = hpBarLoads == true or (distanceText ~= nil and distanceText ~= ''),
+            hasDynamicVisuals = buffsLoad == true or debuffsLoad == true or (distanceText ~= nil and distanceText ~= ''),
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = elementRects,
             plateWorldWidth = 2.35,
             plateWorldOffsetY = (tonumber(player.status) == 85) and (0.05 - mountedPlateLift) or 0.05,
+            hpBar = liveHpBarStyle,
+            mpBar = liveMpBarStyle,
+            tpBar = liveTpBarStyle,
         };
         indexCache[tonumber(player.index) or 0] = {
             cacheKey = cacheKey,
@@ -1488,7 +1550,9 @@ local function QueuePlayer(player)
         stateName = targetStateName,
         clickTargetType = 'pc',
         worldMarker = targeting.ApplyPlateScalingSettings({
-            hpBar = { enabled = false },
+            hpBar = liveHpBarStyle,
+            mpBar = liveMpBarStyle,
+            tpBar = liveTpBarStyle,
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,

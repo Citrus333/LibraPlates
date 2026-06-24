@@ -20,6 +20,7 @@ local targeting = require('core.targeting');
 local engagedEnemies = require('core.engaged_enemies');
 local enmity = require('core.enmity');
 local enemyCasts = require('core.enemy_casts');
+local enemyAlerts = require('core.enemy_alerts');
 local enemyStatuses = require('core.enemy_statuses');
 local partyStatuses = require('core.party_statuses');
 local trustStatusIcons = require('core.trust_status_icons');
@@ -142,6 +143,7 @@ ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
     engagedEnemies.HandlePacketIn(e);
     enmity.HandlePacketIn(e);
     enemyCasts.HandlePacketIn(e);
+    enemyAlerts.HandlePacketIn(e);
     enemyStatuses.HandlePacketIn(e);
     partyStatuses.HandlePacketIn(e);
     trustStatusIcons.HandlePacketIn(e);
@@ -160,6 +162,7 @@ end);
 ashita.events.register('text_in', 'libraplates_text_in', function(e)
     fishing.HandleTextIn(e);
     restingTick.HandleTextIn(e);
+    enemyAlerts.HandleTextIn(e);
     enemyStatuses.HandleTextIn(e);
     quickMenu.HandleTextIn(e);
 end);

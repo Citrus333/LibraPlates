@@ -291,11 +291,12 @@ local function BuildTargetMarkerKey(marker)
     }, '|');
 end
 
-local function BuildPlateSignature(displayName, resolvedEntityName, targetStateName, npcInfo, settings, values)
+local function BuildPlateSignature(displayName, renderedDisplayName, resolvedEntityName, targetStateName, npcInfo, settings, values)
     local parts = {
         'v=1',
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'name=' .. tostring(displayName or ''),
+        'renderedName=' .. tostring(renderedDisplayName or ''),
         'entity=' .. tostring(resolvedEntityName or ''),
         'targetState=' .. tostring(targetStateName or 'Idle'),
         'infoType=' .. tostring(npcInfo ~= nil and npcInfo.type or ''),
@@ -358,7 +359,7 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = isTacticalTarget == true or isAlwaysReadableGatheringPoint == true,
-            plateSuppressWorldWhenAlwaysOnTop = isTacticalTarget == true,
+            plateSuppressWorldWhenAlwaysOnTop = isTacticalTarget == true and clickTargetType ~= 'object',
             plateTacticalOverlayOnly = false,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
@@ -405,6 +406,12 @@ local function QueueNpcObject(entity)
     end
 
     local resolvedEntityName, npcInfo = npcObjectInfo.ResolveKind(displayName, entityName, { targetIndex = entity.index });
+    local renderedDisplayName = tostring(npcInfo ~= nil and npcInfo.displayName or '');
+
+    if (renderedDisplayName == '') then
+        renderedDisplayName = displayName;
+    end
+
     local settingsEntityName = resolvedEntityName;
     local clickTargetType = string.lower(resolvedEntityName);
     local targetStateName = targeting.GetTargetStateName(entity.index);
@@ -493,7 +500,7 @@ local function QueueNpcObject(entity)
         targetStateName,
         tostring(distanceText or ''),
     }, ':');
-    local signature = BuildPlateSignature(displayName, resolvedEntityName, targetStateName, npcInfo, {
+    local signature = BuildPlateSignature(displayName, renderedDisplayName, resolvedEntityName, targetStateName, npcInfo, {
         background = backgroundSettings,
         name = nameSettings,
         distance = distanceSettings,
@@ -521,7 +528,7 @@ local function QueueNpcObject(entity)
     perfMeter.EndDetail(signatureTimer);
 
     local plateData = {
-        name = (nameSettings.enabled == true and (targetStateName == 'Idle' or HasReadableDisplayName(displayName) == true)) and ShortenName(displayName, nameSettings.shortenName) or '',
+        name = (nameSettings.enabled == true and (targetStateName == 'Idle' or HasReadableDisplayName(renderedDisplayName) == true)) and ShortenName(renderedDisplayName, nameSettings.shortenName) or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
         nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
@@ -696,7 +703,7 @@ local function QueueNpcObject(entity)
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = isTacticalTarget == true or isAlwaysReadableGatheringPoint == true,
-            plateSuppressWorldWhenAlwaysOnTop = isTacticalTarget == true,
+            plateSuppressWorldWhenAlwaysOnTop = isTacticalTarget == true and clickTargetType ~= 'object',
             plateTacticalOverlayOnly = false,
             anchorBone = anchorBone,
             plateWorldWidth = 2.35,

@@ -7,6 +7,7 @@ local buffsDefaults = require('config.widgets.buffs');
 local debuffsDefaults = require('config.widgets.debuffs');
 local aoeRangeDefaults = require('config.widgets.aoe_range');
 local globalDefaults = require('config.global');
+local npcIcons = require('data.npc_icons');
 local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
@@ -164,6 +165,47 @@ local function NumberKey(value)
     end
 
     return string.format('%.3f', number);
+end
+
+local function CleanTrustName(name)
+    return tostring(name or ''):gsub('\170', ''):gsub('^%s+', ''):gsub('%s+$', '');
+end
+
+local trustIconAliases = nil;
+
+local function NormalizeTrustLookupName(name)
+    return CleanTrustName(name):lower():gsub('%s+', '');
+end
+
+local function GetTrustIconAliases()
+    if (trustIconAliases ~= nil) then
+        return trustIconAliases;
+    end
+
+    trustIconAliases = {};
+
+    for key, entry in pairs(npcIcons or {}) do
+        local trustName = tostring(key or ''):match('^Trust:%s*(.+)$');
+
+        if (trustName ~= nil and trustName ~= '') then
+            trustIconAliases[NormalizeTrustLookupName(trustName)] = entry;
+        end
+    end
+
+    return trustIconAliases;
+end
+
+local function ResolveTrustPlateWorldOffsetY(name)
+    local cleanName = CleanTrustName(name);
+    local entry = npcIcons['Trust: ' .. cleanName];
+
+    if (entry == nil) then
+        entry = GetTrustIconAliases()[NormalizeTrustLookupName(cleanName)];
+    end
+
+    local offsetY = tonumber(entry ~= nil and entry.worldOffsetY);
+
+    return offsetY or 0.50;
 end
 
 local function BuildTargetMarkerKey(marker)
@@ -455,6 +497,7 @@ local function QueueTrust(trust)
     local enmityEnabled = enmity.ShouldDrawAlly(trust, globalSettings) == true;
     local buffRows = suppressExpensiveWorldWidgets ~= true and trustStatusIcons.GetRows(trust.serverId, 'buff') or {};
     local debuffRows = suppressExpensiveWorldWidgets ~= true and trustStatusIcons.GetRows(trust.serverId, 'debuff') or {};
+    local plateWorldOffsetY = ResolveTrustPlateWorldOffsetY(trust.name);
     local cacheEligible = state.GetConfigOpen() ~= true;
     local cacheKey = nil;
     local signature = nil;
@@ -469,6 +512,7 @@ local function QueueTrust(trust)
             'layout=' .. tostring(layoutStateName or ''),
             'status=' .. tostring(trust.status or ''),
             'target=' .. tostring(targetStateName or ''),
+            'plateWorldOffsetY=' .. NumberKey(plateWorldOffsetY),
             'hp=' .. tostring(hpPercent),
             'mp=' .. tostring(mpPercent),
             'tp=' .. tostring(tpValue),
@@ -662,7 +706,7 @@ local function QueueTrust(trust)
             elementRects = plateClickRects,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
-            plateWorldOffsetY = 0.50,
+            plateWorldOffsetY = plateWorldOffsetY,
         };
         indexCache[tonumber(trust.index) or 0] = {
             cacheKey = cacheKey,
@@ -691,7 +735,7 @@ local function QueueTrust(trust)
             plateTacticalOverlayOnly = useTargetOverlay == true,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
-            plateWorldOffsetY = 0.50,
+            plateWorldOffsetY = plateWorldOffsetY,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
@@ -699,7 +743,7 @@ local function QueueTrust(trust)
             clickTargetType = 'trust',
             clickName = trust.name,
             layoutStateName = layoutStateName,
-        }, 'trust', 0, 0.50),
+        }, 'trust', 0, plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 end

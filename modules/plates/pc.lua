@@ -1078,6 +1078,12 @@ local function QueuePlayer(player)
         if (WidgetLoads(earlyDistanceSettings, 'Distance') == true) then
             canUseFreshIdleCache = false;
         end
+
+        local earlyHpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'HP Bar', barDefaults);
+
+        if (WidgetLoads(earlyHpBarSettings, 'HP Bar') == true) then
+            canUseFreshIdleCache = false;
+        end
     end
 
     if (
@@ -1325,7 +1331,8 @@ local function QueuePlayer(player)
 
     local cacheEligible = targetStateName == 'Idle'
         and state.GetConfigOpen() ~= true
-        and distanceText == nil;
+        and distanceText == nil
+        and hpBarLoads ~= true;
 
     local cacheKey = nil;
     local signature = nil;

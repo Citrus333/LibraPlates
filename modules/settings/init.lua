@@ -7096,7 +7096,13 @@ local function DrawGeneralMouseSection()
         imgui.Spacing();
 
         if (imgui.BeginTable ~= nil) then
-            if (imgui.BeginTable('##MousePanel' .. tostring(label or ''), 1, (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersOuter or 0))) then
+            local colorCount = 0;
+            if (imgui.PushStyleColor ~= nil) then
+                if (_G.ImGuiCol_TableRowBg ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_TableRowBg, { 0.20, 0.23, 0.27, 1.0 }); colorCount = colorCount + 1; end
+                if (_G.ImGuiCol_TableRowBgAlt ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_TableRowBgAlt, { 0.20, 0.23, 0.27, 1.0 }); colorCount = colorCount + 1; end
+            end
+
+            if (imgui.BeginTable('##MousePanel' .. tostring(label or ''), 1, (_G.ImGuiTableFlags_SizingStretchSame or 0) + (_G.ImGuiTableFlags_RowBg or 0))) then
                 imgui.TableSetupColumn('##card', 0, math.max(260, select(1, GetContentRegionAvail()) - 8));
                 imgui.TableNextRow();
                 imgui.TableNextColumn();
@@ -7108,6 +7114,10 @@ local function DrawGeneralMouseSection()
                 if (imgui.Unindent ~= nil) then imgui.Unindent(8); end
                 imgui.Spacing();
                 imgui.EndTable();
+            end
+
+            if (colorCount > 0 and imgui.PopStyleColor ~= nil) then
+                imgui.PopStyleColor(colorCount);
             end
 
             return;
@@ -10066,21 +10076,27 @@ function settingsUi.Render()
 
                 imgui.SameLine();
 
-                DrawChild('##right_panel', { math.max(280, availWidth - selectorWidth - 12), math.max(260, availHeight - 24) }, false, function()
-                    if (selectedTab == 'Settings' or selectedTab == 'Help') then
-                        DrawSelectedEditor();
-                    else
-                        DrawRightPanel();
+                do
+                    local pushedRightPanelBg = 0;
+                    if (imgui.PushStyleColor ~= nil and _G.ImGuiCol_ChildBg ~= nil) then
+                        imgui.PushStyleColor(_G.ImGuiCol_ChildBg, { 0.01, 0.01, 0.01, 1.0 });
+                        pushedRightPanelBg = 1;
                     end
-                end);
+
+                    DrawChild('##right_panel', { math.max(280, availWidth - selectorWidth - 12), math.max(260, availHeight - 24) }, false, function()
+                        if (selectedTab == 'Settings' or selectedTab == 'Help') then
+                            DrawSelectedEditor();
+                        else
+                            DrawRightPanel();
+                        end
+                    end);
+
+                    if (pushedRightPanelBg > 0 and imgui.PopStyleColor ~= nil) then
+                        imgui.PopStyleColor(pushedRightPanelBg);
+                    end
+                end
             else
                 DrawSelectedEditor();
-            end
-
-            DrawYellowHeader('Close');
-
-            if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
-                windowOpen[1] = false;
             end
         end);
 

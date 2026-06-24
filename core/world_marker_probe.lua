@@ -3606,6 +3606,10 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
             );
         end
 
+        if (style.liveResourceBars == true) then
+            DrawSelfResourceBars(device, plateX, plateY, plateZ, plate);
+        end
+
         device:SetRenderState(D3DRS_ZFUNC, savePlateZFunc);
 
         return;

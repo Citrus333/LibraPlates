@@ -723,6 +723,7 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             hpBar = hpBarStyle or cached.hpBar or { enabled = false },
             mpBar = mpBarStyle or cached.mpBar or { enabled = false },
             tpBar = tpBarStyle or cached.tpBar or { enabled = false },
+            liveResourceBars = true,
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,
@@ -1462,9 +1463,11 @@ local function QueuePlayer(player)
         globalSettings = globalSettings,
         aoeRangeSettings = aoeRangeSettings,
     });
-    plateData.hpBar = { enabled = false };
-    plateData.mpBar = { enabled = false };
-    plateData.tpBar = { enabled = false };
+    if (cacheEligible == true) then
+        plateData.hpBar = { enabled = false };
+        plateData.mpBar = { enabled = false };
+        plateData.tpBar = { enabled = false };
+    end
 
     if (jobLoads == true) then
         AddJobToPlate(plateData, GetJobText(player.mainJob), jobSettings, globalSettings);
@@ -1545,6 +1548,9 @@ local function QueuePlayer(player)
         return;
     end
 
+    local playerMounted = require('core.mounted').IsStatus(player.status);
+    local plateWorldOffsetY = playerMounted and (0.05 - mountedPlateLift) or 0.05;
+
     if (cacheEligible == true and cacheKey ~= nil and signature ~= nil) then
         plateCache[cacheKey] = {
             signature = signature,
@@ -1560,7 +1566,7 @@ local function QueuePlayer(player)
             textureHeight = textureHeight,
             elementRects = elementRects,
             plateWorldWidth = 2.35,
-            plateWorldOffsetY = (tonumber(player.status) == 85) and (0.05 - mountedPlateLift) or 0.05,
+            plateWorldOffsetY = plateWorldOffsetY,
             hpBar = liveHpBarStyle,
             mpBar = liveMpBarStyle,
             tpBar = liveTpBarStyle,
@@ -1574,7 +1580,6 @@ local function QueuePlayer(player)
     end
 
     local queueTimer = perfMeter.BeginDetail('pc.queue');
-    local plateWorldOffsetY = (tonumber(player.status) == 85) and (0.05 - mountedPlateLift) or 0.05;
     local targetingSettings = targeting.GetSettings();
 
     worldMarkerProbe.QueuePlate({
@@ -1592,6 +1597,7 @@ local function QueuePlayer(player)
             hpBar = liveHpBarStyle,
             mpBar = liveMpBarStyle,
             tpBar = liveTpBarStyle,
+            liveResourceBars = cacheEligible == true,
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,

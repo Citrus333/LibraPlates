@@ -47,6 +47,7 @@ local restingTick = require('core.resting_tick');
 local fishing = require('core.fishing');
 local crafting = require('core.crafting');
 local enemyCasts = require('core.enemy_casts');
+local mounted = require('core.mounted');
 local worldDepthPlate = require('core.world_depth_plate');
 local worldMarkerProbe = require('core.world_marker_probe');
 local widgets = require('modules.widgets.init');
@@ -262,7 +263,7 @@ end
 
 local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layoutStateName, plateTextureId, textureWidth, textureHeight, plateClickRects)
     local targetingSettings = targeting.GetSettings();
-    local plateWorldOffsetY = (tonumber(center.status) == 85) and (0.05 - mountedPlateLift) or 0.05;
+    local plateWorldOffsetY = mounted.IsStatus(center.status) and (0.05 - mountedPlateLift) or 0.05;
 
     worldMarkerProbe.QueuePlate({
         targetIndex = center.index,
@@ -834,7 +835,11 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         if (crafting.IsCraftingStatus(center.status) ~= true) then
             crafting.ClearResult();
         end
-        restingTick.ResetAll();
+        if (restingTick.ShouldPreserveLogoutTransition() == true) then
+            restingTick.Reset();
+        else
+            restingTick.ResetAll();
+        end
         ClearWorldPlateCache();
         return;
     end

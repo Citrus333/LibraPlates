@@ -1,6 +1,7 @@
 local targeting = {};
 local bit = require('bit');
 local state = require('core.state');
+local mounted = require('core.mounted');
 local globalDefaults = require('config.global');
 local pendingGatheringCommand = nil;
 local pendingGatheringWatch = nil;
@@ -1010,25 +1011,7 @@ function targeting.AttackEnemyTarget(targetIndex, serverId, distance, modelHitbo
 end
 
 function targeting.IsPlayerMounted()
-    local ok, status = pcall(function()
-        local memory = AshitaCore:GetMemoryManager();
-        local party = memory:GetParty();
-        local selfIndex = party ~= nil and party:GetMemberTargetIndex(0) or nil;
-
-        if (selfIndex == nil or selfIndex <= 0) then
-            return nil;
-        end
-
-        local entity = memory:GetEntity();
-
-        if (entity == nil or entity.GetStatus == nil) then
-            return nil;
-        end
-
-        return entity:GetStatus(selfIndex);
-    end);
-
-    return ok == true and tonumber(status) == 85;
+    return mounted.IsSelfMounted();
 end
 
 local gatheringActions = {

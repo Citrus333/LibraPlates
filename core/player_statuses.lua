@@ -1,11 +1,14 @@
 local statusEffects = require('core.status_effects');
 local partyStatuses = require('core.party_statuses');
+local mounted = require('core.mounted');
 
 local playerStatuses = {};
 local INFINITE_STATUS_DURATION = 0x7FFFFFFF;
 local MIN_INITIAL_TIMER_SECONDS = 3;
+local MOUNTED_STATUS_EFFECT_ID = 252;
 local realUtcStampPointer = nil;
 local selfTimerSeenLong = {};
+local mountedTimerExpiresAt = nil;
 local levelSyncStatusIds = {
     [269] = true,
 };
@@ -195,6 +198,55 @@ local function PruneSelfTimerSeen(activeStatusIds)
     end
 end
 
+local function GetCachedMountedTimerSeconds()
+    if (mountedTimerExpiresAt == nil) then
+        return nil;
+    end
+
+    local remaining = mountedTimerExpiresAt - os.clock();
+
+    if (remaining <= 0) then
+        mountedTimerExpiresAt = nil;
+        return nil;
+    end
+
+    return remaining;
+end
+
+local function TrackMountedTimer(statusId, seconds)
+    if ((tonumber(statusId) or 0) ~= MOUNTED_STATUS_EFFECT_ID) then
+        return;
+    end
+
+    seconds = tonumber(seconds);
+
+    if (seconds ~= nil and seconds > 0) then
+        mountedTimerExpiresAt = os.clock() + seconds;
+    end
+end
+
+local function EnsureMountedBuffRow(rows, activeStatusIds, kind)
+    if (kind ~= 'buff') then
+        return;
+    end
+
+    if (mounted.IsSelfMounted() ~= true) then
+        mountedTimerExpiresAt = nil;
+        return;
+    end
+
+    if (activeStatusIds[MOUNTED_STATUS_EFFECT_ID] == true) then
+        return;
+    end
+
+    activeStatusIds[MOUNTED_STATUS_EFFECT_ID] = true;
+    rows[#rows + 1] = {
+        id = MOUNTED_STATUS_EFFECT_ID,
+        seconds = GetCachedMountedTimerSeconds(),
+        order = 0,
+    };
+end
+
 local function CopySelfTimersToPartyRows(selfRows, partyRows)
     local selfTimers = {};
 
@@ -297,9 +349,14 @@ function playerStatuses.GetSelfRows(kind)
                 seconds = NormalizeSelfTimer(statusId, GetTimerSeconds(statusTimers, index)),
                 order = offset + 1,
             };
+            if (statusId == MOUNTED_STATUS_EFFECT_ID and rows[#rows].seconds == nil) then
+                rows[#rows].seconds = GetCachedMountedTimerSeconds();
+            end
+            TrackMountedTimer(statusId, rows[#rows].seconds);
         end
     end
 
+    EnsureMountedBuffRow(rows, activeStatusIds, kind);
     PruneSelfTimerSeen(activeStatusIds);
 
     if (kind == 'buff' or kind == 'debuff') then

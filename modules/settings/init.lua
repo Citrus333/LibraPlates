@@ -1245,10 +1245,12 @@ function IsPetStorageEntity(entity)
     local entityName = tostring(entity or '');
 
     return (
+        entityName == 'Pet' or
         entityName == 'Pet (BST)' or
         entityName == 'Pet (SMN)' or
         entityName == 'Wyvern' or
-        entityName == 'Automaton'
+        entityName == 'Automaton' or
+        entityName == 'Luopan'
     );
 end
 
@@ -7090,18 +7092,40 @@ end
 local function DrawGeneralMouseSection()
     LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Mouse' });
 
-    local function DrawMousePanel(label, height, render)
+    local function DrawMousePanel(label, render)
         imgui.Spacing();
-        DrawChild('##MousePanel' .. tostring(label or ''), { 0, height }, true, function()
+
+        if (imgui.BeginTable ~= nil) then
+            if (imgui.BeginTable('##MousePanel' .. tostring(label or ''), 1, (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersOuter or 0))) then
+                imgui.TableSetupColumn('##card', 0, math.max(260, select(1, GetContentRegionAvail()) - 8));
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+                imgui.Spacing();
+                if (imgui.Indent ~= nil) then imgui.Indent(8); end
+                imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, tostring(label or ''));
+                imgui.Spacing();
+                render();
+                if (imgui.Unindent ~= nil) then imgui.Unindent(8); end
+                imgui.Spacing();
+                imgui.EndTable();
+            end
+
+            return;
+        end
+
+        DrawSectionDivider();
+        if (imgui.Indent ~= nil) then imgui.Indent(8); end
+        do
             imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, tostring(label or ''));
             imgui.Spacing();
             render();
-        end);
+        end
+        if (imgui.Unindent ~= nil) then imgui.Unindent(8); end
     end
 
     local cursorSettings = cursorOverlay.GetSettings();
 
-    DrawMousePanel('Cursor', cursorSettings.enabled == true and 210 or 70, function()
+    DrawMousePanel('Cursor', function()
         DrawCheckbox('Enable mouse adornment', cursorSettings.enabled == true, function(value)
             cursorOverlay.SetEnabled(value == true);
             state.Save();
@@ -7199,7 +7223,7 @@ local function DrawGeneralMouseSection()
         end
     end);
 
-    DrawMousePanel('Movement', 70, function()
+    DrawMousePanel('Movement', function()
         DrawCheckbox('Hold both mouse buttons to move forward', mouseControls.GetBothButtonForwardEnabled(), function(value)
             mouseControls.SetBothButtonForwardEnabled(value == true);
         end);
@@ -7207,7 +7231,7 @@ local function DrawGeneralMouseSection()
 
     local settings = targeting.GetSettings();
 
-    DrawMousePanel('Click Targeting', settings.enableRightClickAttack == true and 160 or 95, function()
+    DrawMousePanel('Click Targeting', function()
         DrawCheckbox('Left-click enemy target out of combat', settings.enableLeftClickEnemyTargetIdle == true, function(value)
             settings.enableLeftClickEnemyTargetIdle = value == true;
         end);
@@ -7230,7 +7254,7 @@ local function DrawGeneralMouseSection()
         end
     end);
 
-    DrawMousePanel('Enemy Detail Range', 120, function()
+    DrawMousePanel('Enemy Detail Range', function()
         DrawSliderTenths('Enemy plate range', settings.enemyPlateRange, 50, 644, function(value)
             settings.enemyPlateRange = math.max(5.0, math.min(64.4, tonumber(value) or 49.9));
         end);
@@ -9828,13 +9852,13 @@ local function DrawSelectedEditorPlates()
                 defaults = smnHpBarDefaults;
             end
             resourceName = 'HP';
-            showValue = storageEntity ~= 'Pet (BST)' and storageEntity ~= 'Automaton';
+            showValue = IsPetStorageEntity(storageEntity) ~= true;
         elseif (selectedWidget == 'MP Bar') then
             if (storageEntity == 'Pet (SMN)') then
                 defaults = smnMpBarDefaults;
             end
             resourceName = 'MP';
-            showValue = storageEntity ~= 'Automaton';
+            showValue = IsPetStorageEntity(storageEntity) ~= true;
         elseif (selectedWidget == 'TP Bar') then
             if (storageEntity == 'Pet (SMN)') then
                 defaults = smnTpBarDefaults;

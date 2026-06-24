@@ -14,7 +14,6 @@ local logoutState = {
     startClock = nil,
     endClock = nil,
     duration = 30,
-    seenResting = false,
     label = 'Logout',
 };
 
@@ -41,16 +40,11 @@ local function ClearLogout()
     logoutState.startClock = nil;
     logoutState.endClock = nil;
     logoutState.duration = 30;
-    logoutState.seenResting = false;
     logoutState.label = 'Logout';
 end
 
 local function ShouldPreserveLogoutTransition()
-    if (logoutState.active ~= true or logoutState.startClock == nil) then
-        return false;
-    end
-
-    return logoutState.seenResting ~= true and (os.clock() - logoutState.startClock) < 2.50;
+    return logoutState.active == true and logoutState.endClock ~= nil;
 end
 
 local function GetLogoutCountdown(settings)
@@ -135,14 +129,29 @@ function restingTick.HandleTextIn(e)
     end
 
     if (seconds ~= nil) then
+        local now = os.clock();
         local duration = math.max(1, tonumber(seconds) or 30);
+        local label = (tostring(action or 'logout') == 'shutdown') and 'Shutdown' or 'Logout';
+        local proposedEndClock = now + duration;
+
+        if (logoutState.active == true and logoutState.endClock ~= nil and logoutState.label == label) then
+            local remaining = logoutState.endClock - now;
+
+            if (remaining > 0) then
+                if (proposedEndClock < logoutState.endClock) then
+                    logoutState.endClock = proposedEndClock;
+                    logoutState.duration = math.max(duration, tonumber(logoutState.duration) or duration);
+                end
+
+                return;
+            end
+        end
 
         logoutState.active = true;
-        logoutState.startClock = os.clock();
+        logoutState.startClock = now;
         logoutState.endClock = logoutState.startClock + duration;
         logoutState.duration = duration;
-        logoutState.seenResting = false;
-        logoutState.label = (tostring(action or 'logout') == 'shutdown') and 'Shutdown' or 'Logout';
+        logoutState.label = label;
         return;
     end
 
@@ -161,22 +170,12 @@ function restingTick.Get(status, hp, mp, maxMp, settings)
 
     if (settings.enabled == false) then
         Reset();
-        ClearLogout();
         return nil;
     end
 
     if (IsResting(status) ~= true) then
         Reset();
-
-        if (ShouldPreserveLogoutTransition() ~= true) then
-            ClearLogout();
-        end
-
-        return nil;
-    end
-
-    if (logoutState.active == true) then
-        logoutState.seenResting = true;
+        return GetLogoutCountdown(settings);
     end
 
     local logoutCountdown = GetLogoutCountdown(settings);

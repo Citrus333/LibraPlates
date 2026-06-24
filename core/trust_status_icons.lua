@@ -1,6 +1,7 @@
 require('common');
 
 local statusEffects = require('core.status_effects');
+local actionRelevance = require('core.action_relevance');
 
 local trustStatusIcons = {};
 local activeStatuses = {};
@@ -230,7 +231,7 @@ local function TrackStatus(serverId, statusId, duration)
     statusId = tonumber(statusId) or 0;
     duration = tonumber(duration) or GetTrustStatusDuration(statusId);
 
-    if (serverId == 0 or statusId <= 0) then
+    if (serverId == 0 or statusId <= 0 or actionRelevance.IsPartyOrAllianceServerId(serverId) ~= true) then
         return;
     end
 
@@ -257,7 +258,7 @@ local function ClearStatus(serverId, statusId)
     serverId = tonumber(serverId) or 0;
     statusId = tonumber(statusId) or 0;
 
-    if (serverId == 0 or statusId <= 0 or activeStatuses[serverId] == nil) then
+    if (serverId == 0 or statusId <= 0 or actionRelevance.IsPartyOrAllianceServerId(serverId) ~= true or activeStatuses[serverId] == nil) then
         return;
     end
 
@@ -266,6 +267,10 @@ end
 
 local function HandleActionPacket(packet)
     if (packet == nil) then
+        return;
+    end
+
+    if (actionRelevance.ShouldIgnoreOutsideFriendlyCaster(packet) == true) then
         return;
     end
 
@@ -296,6 +301,10 @@ function trustStatusIcons.HandlePacketIn(e)
         local message = ParseMessagePacket(e);
 
         if (message ~= nil) then
+            if (actionRelevance.IsPartyOrAllianceServerId(message.target) ~= true) then
+                return;
+            end
+
             if (deathMessages:contains(message.message)) then
                 activeStatuses[tonumber(message.target) or 0] = nil;
             elseif (statusOffMessages:contains(message.message)) then

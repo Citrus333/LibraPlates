@@ -8,10 +8,22 @@ local targeting = require('core.targeting');
 local aoeNameHighlight = {};
 local automaticNameSize = 18;
 local aoeEdgeAllowance = 0.9;
+local highlightCacheSeconds = 0.03;
+local highlightCache = {
+    clock = 0,
+    positions = {},
+    results = {},
+    liveAoe = nil,
+    activeCasts = nil,
+    partySlotByIndex = nil,
+    selfIndex = nil,
+    petIndex = nil,
+};
 local Distance2D = nil;
 local suppressUntil = 0;
 local suppressReason = nil;
 local recentCommandAction = nil;
+local GetLiveActionAoe = nil;
 
 local function SafeNumber(fn)
     local ok, value = pcall(fn);
@@ -21,6 +33,23 @@ local function SafeNumber(fn)
     end
 
     return tonumber(value);
+end
+
+local function GetHighlightCache()
+    local now = os.clock();
+
+    if ((now - (tonumber(highlightCache.clock) or 0)) > highlightCacheSeconds) then
+        highlightCache.clock = now;
+        highlightCache.positions = {};
+        highlightCache.results = {};
+        highlightCache.liveAoe = nil;
+        highlightCache.activeCasts = nil;
+        highlightCache.partySlotByIndex = nil;
+        highlightCache.selfIndex = nil;
+        highlightCache.petIndex = nil;
+    end
+
+    return highlightCache;
 end
 
 local function GetWorldPosition(index)
@@ -51,22 +80,56 @@ local function GetWorldPosition(index)
     return { x = x, y = y, z = z };
 end
 
+local function GetCachedWorldPosition(index)
+    index = tonumber(index) or 0;
+
+    if (index <= 0) then
+        return nil;
+    end
+
+    local cache = GetHighlightCache();
+    local cached = cache.positions[index];
+
+    if (cached ~= nil) then
+        return cached ~= false and cached or nil;
+    end
+
+    local position = GetWorldPosition(index);
+    cache.positions[index] = position or false;
+    return position;
+end
+
 local function GetSelfIndex()
+    local cache = GetHighlightCache();
+
+    if (cache.selfIndex ~= nil) then
+        return cache.selfIndex;
+    end
+
     local memory = AshitaCore:GetMemoryManager();
     local party = memory ~= nil and memory:GetParty() or nil;
 
     if (party == nil) then
+        cache.selfIndex = 0;
         return 0;
     end
 
-    return SafeNumber(function() return party:GetMemberTargetIndex(0); end) or 0;
+    cache.selfIndex = SafeNumber(function() return party:GetMemberTargetIndex(0); end) or 0;
+    return cache.selfIndex;
 end
 
 local function GetOwnPetIndex()
+    local cache = GetHighlightCache();
+
+    if (cache.petIndex ~= nil) then
+        return cache.petIndex;
+    end
+
     if (entities ~= nil and entities.GetOwnPetTargetIndex ~= nil) then
         local petIndex = SafeNumber(function() return entities.GetOwnPetTargetIndex(); end);
 
         if (petIndex ~= nil and petIndex > 0) then
+            cache.petIndex = petIndex;
             return petIndex;
         end
     end
@@ -74,6 +137,7 @@ local function GetOwnPetIndex()
     local selfIndex = GetSelfIndex();
 
     if (selfIndex == nil or selfIndex <= 0) then
+        cache.petIndex = 0;
         return 0;
     end
 
@@ -81,16 +145,32 @@ local function GetOwnPetIndex()
     local entityManager = memory ~= nil and memory:GetEntity() or nil;
 
     if (entityManager == nil) then
+        cache.petIndex = 0;
         return 0;
     end
 
-    return SafeNumber(function()
+    cache.petIndex = SafeNumber(function()
         local entity = entityManager:GetEntity(selfIndex);
         return entity ~= nil and entity.PetTargetIndex or 0;
     end) or 0;
+    return cache.petIndex;
 end
 
 local function GetPartySlotForIndex(index)
+    index = tonumber(index) or 0;
+
+    if (index <= 0) then
+        return nil;
+    end
+
+    local cache = GetHighlightCache();
+
+    if (cache.partySlotByIndex ~= nil) then
+        return cache.partySlotByIndex[index];
+    end
+
+    cache.partySlotByIndex = {};
+
     local memory = AshitaCore:GetMemoryManager();
     local party = memory ~= nil and memory:GetParty() or nil;
 
@@ -102,12 +182,12 @@ local function GetPartySlotForIndex(index)
         local active = SafeNumber(function() return party:GetMemberIsActive(slot); end) or 0;
         local memberIndex = SafeNumber(function() return party:GetMemberTargetIndex(slot); end) or 0;
 
-        if (active == 1 and tonumber(memberIndex) == tonumber(index)) then
-            return slot;
+        if (active == 1 and memberIndex > 0) then
+            cache.partySlotByIndex[memberIndex] = slot;
         end
     end
 
-    return nil;
+    return cache.partySlotByIndex[index];
 end
 
 local function HasTargetFlag(flags, flag)
@@ -753,6 +833,29 @@ local function PlateMatchesAoeKind(index, plateKind, aoeKind)
     return true;
 end
 
+local function GetCachedLiveActionAoe()
+    local cache = GetHighlightCache();
+
+    if (cache.liveAoe ~= nil) then
+        return cache.liveAoe ~= false and cache.liveAoe or nil;
+    end
+
+    local liveAoe = GetLiveActionAoe();
+    cache.liveAoe = liveAoe or false;
+    return liveAoe;
+end
+
+local function GetCachedActiveAoeCasts()
+    local cache = GetHighlightCache();
+
+    if (cache.activeCasts ~= nil) then
+        return cache.activeCasts;
+    end
+
+    cache.activeCasts = enemyCasts.GetActiveAoeCasts();
+    return cache.activeCasts;
+end
+
 local function GetDebugPlateKind(index)
     index = tonumber(index) or 0;
 
@@ -824,7 +927,7 @@ local function GetResolvedActionTargetIndex(spellInfo, targetManager)
     return actionTargetIndex;
 end
 
-local function GetLiveActionAoe()
+GetLiveActionAoe = function()
     if (IsSuppressed() == true) then
         return nil;
     end
@@ -1183,45 +1286,57 @@ function aoeNameHighlight.IsHighlighted(index, plateKind)
         return false;
     end
 
-    local liveAoe = GetLiveActionAoe();
+    local cache = GetHighlightCache();
+    local resultKey = tostring(index) .. ':' .. tostring(plateKind or '');
+
+    if (cache.results[resultKey] ~= nil) then
+        return cache.results[resultKey] == true;
+    end
+
+    local liveAoe = GetCachedLiveActionAoe();
 
     if (liveAoe ~= nil and tonumber(liveAoe.range) ~= nil and tonumber(liveAoe.range) > 0 and PlateMatchesAoeKind(index, plateKind, liveAoe.kind) == true) then
         local centerIndex = tonumber(liveAoe.centerIndex) or GetSelfIndex();
 
         if (index == centerIndex) then
+            cache.results[resultKey] = true;
             return true;
         end
 
-        local subjectPosition = GetWorldPosition(index);
-        local centerPosition = GetWorldPosition(centerIndex);
+        local subjectPosition = GetCachedWorldPosition(index);
+        local centerPosition = GetCachedWorldPosition(centerIndex);
         local distance = Distance2D(subjectPosition, centerPosition);
 
         if (distance ~= nil and distance <= (tonumber(liveAoe.range) + aoeEdgeAllowance)) then
+            cache.results[resultKey] = true;
             return true;
         end
     end
 
     local subjectPosition = nil;
 
-    for _, castData in ipairs(enemyCasts.GetActiveAoeCasts()) do
+    for _, castData in ipairs(GetCachedActiveAoeCasts()) do
         local radius = tonumber(castData.aoeRadius) or 0;
         local targetIndex = tonumber(castData.aoeCenterIndex or castData.targetIndex) or 0;
 
         if (radius > 0 and targetIndex > 0 and PlateMatchesAoeKind(index, plateKind, castData.aoeKind) == true) then
             if (targetIndex == index) then
+                cache.results[resultKey] = true;
                 return true;
             end
 
-            subjectPosition = subjectPosition or GetWorldPosition(index);
-            local targetPosition = GetWorldPosition(targetIndex);
+            subjectPosition = subjectPosition or GetCachedWorldPosition(index);
+            local targetPosition = GetCachedWorldPosition(targetIndex);
             local distance = Distance2D(subjectPosition, targetPosition);
 
             if (distance ~= nil and distance <= (radius + aoeEdgeAllowance)) then
+                cache.results[resultKey] = true;
                 return true;
             end
         end
     end
 
+    cache.results[resultKey] = false;
     return false;
 end
 
@@ -1244,7 +1359,7 @@ function aoeNameHighlight.GetSignature(index, plateKind)
 end
 
 function aoeNameHighlight.HasLiveAoe()
-    return GetLiveActionAoe() ~= nil;
+    return GetCachedLiveActionAoe() ~= nil;
 end
 
 return aoeNameHighlight;

@@ -154,7 +154,7 @@ return {
         tacticalScreenClampBottomPadding = 24,
         tacticalScreenClampLeftPadding = 0,
         tacticalScreenClampRightPadding = 0,
-        textureCacheLimit = 96,
+        textureCacheLimit = 128,
     },
     mouseControls = {
         enableBothButtonForward = false,

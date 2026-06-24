@@ -58,6 +58,9 @@ local plateWorkGateCache = {
     clock = 0,
     result = true,
 };
+local idleDirectCacheSeconds = 2.00;
+local layoutSettingsCacheSeconds = 0.05;
+local layoutSettingsCache = {};
 local nonCombatZoneIds = {
     [26] = true, -- Tavnazian Safehold
     [50] = true, -- Aht Urhgan Whitegate
@@ -563,6 +566,31 @@ local function AddEnemyMobInfoWidgetIcons(plateData, iconNames, iconSettings, de
         };
         x = x + size + gap;
     end
+end
+
+local function GetEnemyIdentityKey(enemy)
+    local serverId = tonumber(enemy ~= nil and enemy.serverId) or 0;
+    local name = tostring(enemy ~= nil and enemy.name or '');
+
+    if (serverId > 0) then
+        return 'sid:' .. tostring(serverId);
+    end
+
+    return 'name:' .. name:lower():gsub('[^%w]', '');
+end
+
+local function CachedEnemyIdentityMatches(enemy, cached)
+    if (cached == nil) then
+        return false;
+    end
+
+    local identityKey = GetEnemyIdentityKey(enemy);
+
+    if (cached.identityKey ~= nil) then
+        return cached.identityKey == identityKey;
+    end
+
+    return tostring(cached.name or '') == tostring(enemy ~= nil and enemy.name or '');
 end
 
 local function GetEnemyMobInfoIconWidgetSettings(layoutStateName)
@@ -1496,6 +1524,10 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
         return false;
     end
 
+    if (CachedEnemyIdentityMatches(enemy, cached) ~= true) then
+        return false;
+    end
+
     TouchPlateCacheEntry(cached);
 
     local plateTextureId = canvasTexture.GetTextureId(cached.texture);
@@ -1540,8 +1572,90 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
     return true;
 end
 
+local function QueueFreshIdleCache(enemy)
+    if (state.GetConfigOpen() == true) then
+        return false;
+    end
+
+    if (targeting.GetTargetStateName(enemy.index) ~= 'Idle') then
+        return false;
+    end
+
+    if (
+        enemyCasts.GetActiveCast(enemy.serverId) ~= nil or
+        engagedEnemies.IsEngaged(enemy.index) == true or
+        worldMarkerProbe.IsPlateHovered(enemy.index, 'enemy') == true or
+        aoeNameHighlight.HasLiveAoe() == true
+    ) then
+        return false;
+    end
+
+    local indexed = indexCache[tonumber(enemy.index) or 0];
+
+    if (indexed == nil) then
+        return false;
+    end
+
+    local cached = plateCache[indexed.cacheKey];
+
+    if (cached == nil or cached.texture == nil) then
+        return false;
+    end
+
+    if ((os.clock() - (tonumber(cached.lastFullRefresh) or 0)) >= idleDirectCacheSeconds) then
+        return false;
+    end
+
+    if (QueueCachedEnemy(enemy, cached, 'Idle', false, ClampPercent(enemy.hpPercent, 100)) == true) then
+        perfMeter.Count('enemy.cache.directHit', 1);
+        return true;
+    end
+
+    return false;
+end
+
 local function ResolveAoeRangeSettings()
     return state.GetWidgetSettings('Enemy', 'Combat', 'AOE range', aoeRangeDefaults);
+end
+
+local function GetCachedLayoutSettings(layoutStateName)
+    local now = os.clock();
+    local key = tostring(layoutStateName or 'Idle');
+    local cached = layoutSettingsCache[key];
+
+    if (
+        state.GetConfigOpen() ~= true and
+        cached ~= nil and
+        (now - (tonumber(cached.clock) or 0)) < layoutSettingsCacheSeconds
+    ) then
+        return cached.settings;
+    end
+
+    local settings = {
+        name = state.GetWidgetSettings('Enemy', layoutStateName, 'Name', nameDefaults),
+        background = state.GetWidgetSettings('Enemy', layoutStateName, 'Background', backgroundDefaults),
+        hpBar = state.GetWidgetSettings('Enemy', layoutStateName, 'HP Bar', barDefaults),
+        job = state.GetWidgetSettings('Enemy', layoutStateName, 'Job', jobDefaults),
+        level = state.GetWidgetSettings('Enemy', layoutStateName, 'Level', levelDefaults),
+        id = state.GetWidgetSettings('Enemy', layoutStateName, 'ID', idDefaults),
+        distance = state.GetWidgetSettings('Enemy', layoutStateName, 'Distance', distanceDefaults),
+        specialIcon = state.GetWidgetSettings('Enemy', layoutStateName, 'Special icon', enemySpecialIconDefaults),
+        mobInfoIcon = GetEnemyMobInfoIconWidgetSettings(layoutStateName),
+        buffs = state.GetWidgetSettings('Enemy', layoutStateName, 'Buffs', buffsDefaults),
+        debuffs = state.GetWidgetSettings('Enemy', layoutStateName, 'Debuffs', debuffsDefaults),
+        aoeRange = ResolveAoeRangeSettings(),
+        peer = state.GetWidgetSettings('Enemy', layoutStateName, 'Peer', { enabled = true }),
+        castBar = state.GetWidgetSettings('Enemy', layoutStateName, 'Cast bar', castBarDefaults),
+        global = state.GetGlobalSettings(globalDefaults),
+        targeting = targeting.GetSettings(),
+    };
+
+    layoutSettingsCache[key] = {
+        clock = now,
+        settings = settings,
+    };
+
+    return settings;
 end
 
 local function BuildEnemyQueueContext(enemy)
@@ -1550,22 +1664,23 @@ local function BuildEnemyQueueContext(enemy)
     local isEngaged = engagedEnemies.IsEngaged(enemy.index) == true;
     local claimCategory = engagedEnemies.GetClaimCategory(enemy.index);
     local layoutStateName = (stateName ~= 'Idle' or isEngaged == true or castData ~= nil) and 'Combat' or 'Idle';
-    local nameSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Name', nameDefaults);
-    local backgroundSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Background', backgroundDefaults);
-    local hpBarSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'HP Bar', barDefaults);
-    local jobSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Job', jobDefaults);
-    local levelSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Level', levelDefaults);
-    local idSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'ID', idDefaults);
-    local distanceSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Distance', distanceDefaults);
-    local specialIconSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Special icon', enemySpecialIconDefaults);
-    local mobInfoIconWidgetSettings = GetEnemyMobInfoIconWidgetSettings(layoutStateName);
-    local buffsSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Buffs', buffsDefaults);
-    local debuffsSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Debuffs', debuffsDefaults);
-    local aoeRangeSettings = ResolveAoeRangeSettings();
-    local peerPlateSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Peer', { enabled = true });
-    local castBarSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Cast bar', castBarDefaults);
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
-    local targetingSettings = targeting.GetSettings();
+    local cachedSettings = GetCachedLayoutSettings(layoutStateName);
+    local nameSettings = cachedSettings.name;
+    local backgroundSettings = cachedSettings.background;
+    local hpBarSettings = cachedSettings.hpBar;
+    local jobSettings = cachedSettings.job;
+    local levelSettings = cachedSettings.level;
+    local idSettings = cachedSettings.id;
+    local distanceSettings = cachedSettings.distance;
+    local specialIconSettings = cachedSettings.specialIcon;
+    local mobInfoIconWidgetSettings = cachedSettings.mobInfoIcon;
+    local buffsSettings = cachedSettings.buffs;
+    local debuffsSettings = cachedSettings.debuffs;
+    local aoeRangeSettings = cachedSettings.aoeRange;
+    local peerPlateSettings = cachedSettings.peer;
+    local castBarSettings = cachedSettings.castBar;
+    local globalSettings = cachedSettings.global;
+    local targetingSettings = cachedSettings.targeting;
     local hpPercent = ClampPercent(enemy.hpPercent, 100);
     local hpColor = hpBarSettings.color or { 0.90, 0.20, 0.20, 1.0 };
     local isTacticalTarget = stateName ~= 'Idle';
@@ -1636,7 +1751,7 @@ local function BuildEnemyQueueContext(enemy)
         peerPlateSettings = peerPlateSettings,
         castBarSettings = castBarSettings,
         globalSettings = globalSettings,
-        targetingSettings = targeting.GetSettings(),
+        targetingSettings = targetingSettings,
         hpPercent = hpPercent,
         hpColor = hpColor,
         isTacticalTarget = isTacticalTarget,
@@ -1804,6 +1919,10 @@ local function ApplyEnemyStatusWidgets(context, plateData)
 end
 
 local function QueueEnemy(enemy)
+    if (QueueFreshIdleCache(enemy) == true) then
+        return;
+    end
+
     local settingsTimer = perfMeter.BeginDetail('enemy.settings');
     local context = BuildEnemyQueueContext(enemy);
 
@@ -1820,7 +1939,7 @@ local function QueueEnemy(enemy)
     local signature = nil;
 
     if (cacheEligible == true) then
-        cacheKey = 'enemy:' .. tostring(enemy.index);
+        cacheKey = 'enemy:' .. tostring(enemy.index) .. ':' .. GetEnemyIdentityKey(enemy);
         signature = BuildEnemyCacheSignature(context);
 
         local indexed = indexCache[tonumber(enemy.index) or 0];
@@ -1885,7 +2004,7 @@ local function QueueEnemy(enemy)
 
     local canvasTimer = perfMeter.BeginDetail('enemy.canvas');
     local hasCatseyeSpecialNameIcon = IsCatseyeSpecialNameIcon(enemy) == true;
-    local textureKey = 'enemy-v8-' .. tostring(enemy.index) .. (hasCatseyeSpecialNameIcon == true and '-catseye-star' or '') .. (plateData.canvasWidth ~= nil and '-aoe' or '');
+    local textureKey = 'enemy-v8-' .. tostring(enemy.index) .. '-' .. GetEnemyIdentityKey(enemy):gsub('[^%w%-_]', '-') .. (hasCatseyeSpecialNameIcon == true and '-catseye-star' or '') .. (plateData.canvasWidth ~= nil and '-aoe' or '');
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
     local plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
@@ -1934,7 +2053,11 @@ local function QueueEnemy(enemy)
             signature = signature,
             texture = plateTexture,
             textureKey = textureKey,
+            identityKey = GetEnemyIdentityKey(enemy),
+            serverId = enemy.serverId,
+            name = enemy.name,
             lastUsed = os.clock(),
+            lastFullRefresh = os.clock(),
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = plateClickRects,

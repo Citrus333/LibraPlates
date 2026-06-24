@@ -808,6 +808,7 @@ local trustIdleWidgets = T{
 local trustCombatWidgets = T{
     'Background',
     'Name',
+    'Job',
     'HP Bar',
     'MP Bar',
     'TP Bar',
@@ -7349,7 +7350,7 @@ local function DrawGeneralPerformanceSection(settings)
                 hideDistantWorldPlates = true,
                 worldPlateDistanceLimit = 40.0,
                 disableExpensiveWorldWidgets = false,
-                textureCacheLimit = 96,
+                textureCacheLimit = 128,
             },
             High = {
                 performanceMode = 'Quality',
@@ -7534,7 +7535,7 @@ local function DrawGeneralPerformanceSection(settings)
     end, 'Drops expensive idle world-only extras such as status/social icons and detail text while keeping target, subtarget, party/tactical, engaged, casting, and hovered plates detailed.', 'DisableExpensiveWorldWidgets');
 
     DrawSettingsHeader('Texture cache');
-    local cacheLimit, cacheLimitChanged = DrawPerformanceNumber('Texture cache limit', settings.textureCacheLimit or 96, 'TextureCacheLimit', 32, 256, 1, 'Maximum number of generated plate/icon textures LibraPlates keeps cached before older textures can be evicted.');
+    local cacheLimit, cacheLimitChanged = DrawPerformanceNumber('Texture cache limit', settings.textureCacheLimit or 128, 'TextureCacheLimit', 32, 256, 1, 'Maximum number of generated plate/icon textures LibraPlates keeps cached before older textures can be evicted.');
     if (cacheLimitChanged == true) then
         settings.performancePreset = 'Custom';
         settings.textureCacheLimit = canvasTexture.SetCacheLimit(cacheLimit);

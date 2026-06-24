@@ -656,8 +656,44 @@ local function ShouldLoadStatusRows(settings, widgetName, isEngaged)
     return true;
 end
 
+local function GetPlayerIdentityKey(player)
+    local serverId = tonumber(player ~= nil and player.serverId) or 0;
+    local name = tostring(player ~= nil and player.name or '');
+
+    if (serverId > 0) then
+        return 'sid:' .. tostring(serverId);
+    end
+
+    return 'name:' .. name:lower():gsub('[^%w]', '');
+end
+
+local function CachedPlayerIdentityMatches(player, cached)
+    if (cached == nil) then
+        return false;
+    end
+
+    local identityKey = GetPlayerIdentityKey(player);
+
+    if (cached.identityKey ~= nil) then
+        return cached.identityKey == identityKey;
+    end
+
+    local cachedServerId = tonumber(cached.serverId) or 0;
+    local playerServerId = tonumber(player ~= nil and player.serverId) or 0;
+
+    if (cachedServerId > 0 or playerServerId > 0) then
+        return cachedServerId == playerServerId;
+    end
+
+    return tostring(cached.name or '') == tostring(player ~= nil and player.name or '');
+end
+
 local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle)
     if (cached == nil or cached.texture == nil) then
+        return false;
+    end
+
+    if (CachedPlayerIdentityMatches(player, cached) ~= true) then
         return false;
     end
 
@@ -1296,7 +1332,7 @@ local function QueuePlayer(player)
     local blacklistSignature = require('core.player_blacklist').GetSignature(player);
 
     if (cacheEligible == true) then
-        cacheKey = 'pc:' .. tostring(player.index);
+        cacheKey = 'pc:' .. tostring(player.index) .. ':' .. GetPlayerIdentityKey(player);
         signature = table.concat({
             'v=1',
             'policy=' .. canvasTexture.GetRenderPolicyKey(),
@@ -1499,7 +1535,7 @@ local function QueuePlayer(player)
     perfMeter.EndDetail(buildTimer);
 
     local canvasTimer = perfMeter.BeginDetail('pc.canvas');
-    local textureKey = 'pc-' .. tostring(player.index) .. (plateData.canvasWidth ~= nil and '-aoe' or '');
+    local textureKey = 'pc-' .. tostring(player.index) .. '-' .. GetPlayerIdentityKey(player):gsub('[^%w%-_]', '-') .. (plateData.canvasWidth ~= nil and '-aoe' or '');
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
     local elementRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
@@ -1514,6 +1550,9 @@ local function QueuePlayer(player)
             signature = signature,
             texture = plateTexture,
             textureKey = textureKey,
+            identityKey = GetPlayerIdentityKey(player),
+            serverId = player.serverId,
+            name = player.name,
             lastUsed = os.clock(),
             lastFullRefresh = os.clock(),
             hasDynamicVisuals = buffsLoad == true or debuffsLoad == true or (distanceText ~= nil and distanceText ~= ''),

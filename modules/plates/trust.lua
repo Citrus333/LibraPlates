@@ -3,11 +3,13 @@ local nameDefaults = require('config.widgets.name');
 local barDefaults = require('config.widgets.bar');
 local mpBarDefaults = require('config.widgets.mp_bar');
 local tpBarDefaults = require('config.widgets.tp_bar');
+local jobDefaults = require('config.widgets.job');
 local buffsDefaults = require('config.widgets.buffs');
 local debuffsDefaults = require('config.widgets.debuffs');
 local aoeRangeDefaults = require('config.widgets.aoe_range');
 local globalDefaults = require('config.global');
 local npcIcons = require('data.npc_icons');
+local trustJobs = require('data.trust_jobs');
 local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
@@ -15,6 +17,7 @@ local barTextures = require('core.bar_textures');
 local barAnimations = require('core.bar_animations');
 local backgroundTextures = require('core.background_textures');
 local statusIconTextures = require('core.status_icon_textures');
+local jobIconTextures = require('core.job_icon_textures');
 local entities = require('core.entities');
 local state = require('core.state');
 local trustStatusIcons = require('core.trust_status_icons');
@@ -45,6 +48,30 @@ local plateWorkGateCache = {
     result = true,
 };
 local nearbyTrustScanCacheSeconds = 0.20;
+local jobAbbreviations = {
+    [1] = 'WAR',
+    [2] = 'MNK',
+    [3] = 'WHM',
+    [4] = 'BLM',
+    [5] = 'RDM',
+    [6] = 'THF',
+    [7] = 'PLD',
+    [8] = 'DRK',
+    [9] = 'BST',
+    [10] = 'BRD',
+    [11] = 'RNG',
+    [12] = 'SAM',
+    [13] = 'NIN',
+    [14] = 'DRG',
+    [15] = 'SMN',
+    [16] = 'BLU',
+    [17] = 'COR',
+    [18] = 'PUP',
+    [19] = 'DNC',
+    [20] = 'SCH',
+    [21] = 'GEO',
+    [22] = 'RUN',
+};
 
 for key, value in pairs(buffsDefaults) do
     trustBuffDefaults[key] = value;
@@ -172,9 +199,37 @@ local function CleanTrustName(name)
 end
 
 local trustIconAliases = nil;
+local trustJobAliases = nil;
+local trustOffsetNameAliases = {
+    aaev = 'arkev',
+    aagk = 'arkgk',
+    aahm = 'arkhm',
+    aamr = 'arkmr',
+    aatt = 'arktt',
+    arkmk = 'aamr',
+    arkangelev = 'aaev',
+    arkev = 'aaev',
+    arkangelgk = 'aagk',
+    arkgk = 'aagk',
+    arkangelhm = 'aahm',
+    arkhm = 'aahm',
+    arkangelmk = 'aamr',
+    arkangelmr = 'aamr',
+    arkmr = 'aamr',
+    arkangeltt = 'aatt',
+    arktt = 'aatt',
+    dominashantotto = 'dshantotto',
+    ferreouscoffi = 'ferreouscoffin',
+    ishielduc = 'invincibleshielduc',
+    jakohuc = 'jakohwahcondalouc',
+    kayeel = 'kayeelpayeel',
+    makki = 'makkichebukki',
+    najauc = 'najasalaheemuc',
+    pieujeuc = 'pieujeuc',
+};
 
 local function NormalizeTrustLookupName(name)
-    return CleanTrustName(name):lower():gsub('%s+', '');
+    return CleanTrustName(name):lower():gsub('[^%w]', '');
 end
 
 local function GetTrustIconAliases()
@@ -189,23 +244,156 @@ local function GetTrustIconAliases()
 
         if (trustName ~= nil and trustName ~= '') then
             trustIconAliases[NormalizeTrustLookupName(trustName)] = entry;
+            if (type(entry) == 'table') and (type(entry.aliases) == 'table') then
+                for _, alias in pairs(entry.aliases) do
+                    local normalizedAlias = NormalizeTrustLookupName(alias);
+                    if (normalizedAlias ~= '') then
+                        trustIconAliases[normalizedAlias] = entry;
+                    end
+                end
+            end
         end
     end
 
     return trustIconAliases;
 end
 
-local function ResolveTrustPlateWorldOffsetY(name)
+local function GetTrustJobAliases()
+    if (trustJobAliases ~= nil) then
+        return trustJobAliases;
+    end
+
+    trustJobAliases = {};
+
+    for key, entry in pairs(trustJobs or {}) do
+        trustJobAliases[NormalizeTrustLookupName(key)] = entry;
+    end
+
+    return trustJobAliases;
+end
+
+local function ResolveTrustAliasEntry(aliases, normalizedName)
+    if (aliases == nil or normalizedName == nil) then
+        return nil;
+    end
+
+    local entry = aliases[normalizedName];
+
+    if (entry ~= nil) then
+        return entry;
+    end
+
+    local aliasName = trustOffsetNameAliases[normalizedName];
+
+    if (aliasName ~= nil) then
+        entry = aliases[aliasName];
+
+        if (entry ~= nil) then
+            return entry;
+        end
+
+        local secondAliasName = trustOffsetNameAliases[aliasName];
+
+        if (secondAliasName ~= nil) then
+            return aliases[secondAliasName];
+        end
+    end
+
+    return nil;
+end
+
+local function ResolveTrustIconEntry(name)
     local cleanName = CleanTrustName(name);
     local entry = npcIcons['Trust: ' .. cleanName];
 
     if (entry == nil) then
-        entry = GetTrustIconAliases()[NormalizeTrustLookupName(cleanName)];
+        local normalizedName = NormalizeTrustLookupName(cleanName);
+        local aliases = GetTrustIconAliases();
+
+        entry = ResolveTrustAliasEntry(aliases, normalizedName);
     end
 
+    return entry;
+end
+
+local function ResolveTrustPlateWorldOffsetY(name)
+    local entry = ResolveTrustIconEntry(name);
     local offsetY = tonumber(entry ~= nil and entry.worldOffsetY);
 
     return offsetY or 0.50;
+end
+
+local function GetJobText(job)
+    local jobId = tonumber(job);
+
+    if (jobId == nil) then
+        return tostring(job or ''):upper();
+    end
+
+    local text = nil;
+
+    pcall(function()
+        text = AshitaCore:GetResourceManager():GetString('jobs.names_abbr', jobId);
+    end);
+
+    text = tostring(text or '');
+
+    if (text == '' or text == 'nil') then
+        text = jobAbbreviations[jobId] or '';
+    end
+
+    return text;
+end
+
+local function ResolveTrustJobText(name)
+    local entry = ResolveTrustIconEntry(name);
+    local normalizedName = NormalizeTrustLookupName(name);
+    local jobAliases = GetTrustJobAliases();
+    local jobEntry = trustJobs[CleanTrustName(name)] or ResolveTrustAliasEntry(jobAliases, normalizedName);
+
+    if (entry == nil and jobEntry == nil) then
+        return '';
+    end
+
+    return GetJobText((entry ~= nil and (entry.job or entry.mainJob)) or (jobEntry ~= nil and (jobEntry.job or jobEntry.mainJob)));
+end
+
+local function AddJobToPlate(plateData, jobText, jobSettings, globalSettings)
+    if (jobSettings == nil or jobSettings.enabled ~= true or jobText == nil or tostring(jobText) == '') then
+        return;
+    end
+
+    if ((tonumber(jobSettings.displayModeIndex) or 1) == 2) then
+        local textureId = jobIconTextures.GetTextureId(jobText, jobSettings.iconTheme);
+
+        if (textureId ~= nil) then
+            plateData.icons = plateData.icons or {};
+            plateData.icons[#plateData.icons + 1] = {
+                kind = 'job',
+                textureId = textureId,
+                size = math.max(8, math.min(160, tonumber(jobSettings.iconSize) or 16)),
+                offsetX = tonumber(jobSettings.offsetX) or 0,
+                offsetY = tonumber(jobSettings.offsetY) or -54,
+                anchorTo = jobSettings.anchorTo or jobDefaults.anchorTo,
+                anchorPoint = jobSettings.anchorPoint or jobDefaults.anchorPoint,
+            };
+
+            return;
+        end
+    end
+
+    plateData.jobText = tostring(jobText);
+    plateData.jobFontFamily = fonts.GetRole(globalSettings, true);
+    plateData.jobFontFlags = fonts.GetRoleFlags(globalSettings, true);
+    plateData.jobFontSize = textScale.ToTextureFontSize(jobSettings.textSize, jobDefaults.textSize);
+    plateData.jobColor = jobSettings.color or jobDefaults.color;
+    plateData.jobOutlineEnabled = jobSettings.outlineEnabled == true;
+    plateData.jobOutlineColor = jobSettings.outlineColor or jobDefaults.outlineColor;
+    plateData.jobOutlineSize = tonumber(jobSettings.outlineSize) or jobDefaults.outlineSize;
+    plateData.jobOffsetX = tonumber(jobSettings.offsetX) or 0;
+    plateData.jobOffsetY = tonumber(jobSettings.offsetY) or -54;
+    plateData.jobAnchorTo = jobSettings.anchorTo or jobDefaults.anchorTo;
+    plateData.jobAnchorPoint = jobSettings.anchorPoint or jobDefaults.anchorPoint;
 end
 
 local function BuildTargetMarkerKey(marker)
@@ -461,6 +649,7 @@ local function QueueTrust(trust)
     local hpBarSettings = state.GetWidgetSettings('Trust', layoutStateName, 'HP Bar', barDefaults);
     local mpBarSettings = state.GetWidgetSettings('Trust', layoutStateName, 'MP Bar', mpBarDefaults);
     local tpBarSettings = state.GetWidgetSettings('Trust', layoutStateName, 'TP Bar', tpBarDefaults);
+    local jobSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Job', jobDefaults);
     local buffsSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Buffs', trustBuffDefaults);
     local debuffsSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Debuffs', debuffsDefaults);
     local aoeRangeSettings = ResolveFriendlyAoeRangeSettings();
@@ -498,6 +687,8 @@ local function QueueTrust(trust)
     local buffRows = suppressExpensiveWorldWidgets ~= true and trustStatusIcons.GetRows(trust.serverId, 'buff') or {};
     local debuffRows = suppressExpensiveWorldWidgets ~= true and trustStatusIcons.GetRows(trust.serverId, 'debuff') or {};
     local plateWorldOffsetY = ResolveTrustPlateWorldOffsetY(trust.name);
+    local jobText = ResolveTrustJobText(trust.name);
+    local jobLoads = layoutStateName == 'Combat' and suppressExpensiveWorldWidgets ~= true and jobSettings.enabled == true and jobText ~= '';
     local cacheEligible = state.GetConfigOpen() ~= true;
     local cacheKey = nil;
     local signature = nil;
@@ -513,6 +704,7 @@ local function QueueTrust(trust)
             'status=' .. tostring(trust.status or ''),
             'target=' .. tostring(targetStateName or ''),
             'plateWorldOffsetY=' .. NumberKey(plateWorldOffsetY),
+            'jobText=' .. tostring(jobText or ''),
             'hp=' .. tostring(hpPercent),
             'mp=' .. tostring(mpPercent),
             'tp=' .. tostring(tpValue),
@@ -521,6 +713,7 @@ local function QueueTrust(trust)
             'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
+            'job:' .. SettingKey(jobSettings, { 'enabled', 'displayModeIndex', 'iconTheme', 'iconSize', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
             'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
             'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
@@ -680,6 +873,9 @@ local function QueueTrust(trust)
     if (plateData.aoeNameActive == true) then
         aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
     end
+    if (jobLoads == true) then
+        AddJobToPlate(plateData, jobText, jobSettings, globalSettings);
+    end
     perfMeter.EndDetail(buildTimer);
 
     local canvasTimer = perfMeter.BeginDetail('trust.canvas');
@@ -761,6 +957,7 @@ local function AnyTrustWidgetCanLoadForState(layoutStateName)
     return
         TrustWidgetEnabled(layoutStateName, 'Background', backgroundDefaults) == true or
         TrustWidgetEnabled(layoutStateName, 'Name', nameDefaults) == true or
+        (layoutStateName == 'Combat' and TrustWidgetEnabled(layoutStateName, 'Job', jobDefaults) == true) or
         TrustWidgetEnabled(layoutStateName, 'HP Bar', barDefaults) == true or
         TrustWidgetEnabled(layoutStateName, 'MP Bar', mpBarDefaults) == true or
         TrustWidgetEnabled(layoutStateName, 'TP Bar', tpBarDefaults) == true or

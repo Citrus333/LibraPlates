@@ -2363,7 +2363,7 @@ local function BuildPlate(entityName, stateName, context)
         pupManeuvers.AddIcons(plateData, maneuverSettings, globalSettings, pupManeuvers.GetPreviewState());
     end
 
-    if ((entityName == 'Enemy' or (entityName == 'PC' and stateName == 'Combat')) and jobSettings ~= nil and jobSettings.enabled == true) then
+    if ((entityName == 'Enemy' or ((entityName == 'PC' or entityName == 'Trust') and stateName == 'Combat')) and jobSettings ~= nil and jobSettings.enabled == true) then
         local jobText = 'BLM';
 
         if ((tonumber(jobSettings.displayModeIndex) or 1) == 2) then

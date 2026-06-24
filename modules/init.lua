@@ -8,6 +8,7 @@ local worldMarkerProbe = require('core.world_marker_probe');
 local nativeTargetArrow = require('core.native_target_arrow');
 local targetModuleMarker = require('core.target_module_marker');
 local quickMenu = require('core.quick_menu');
+local canvasTexture = require('core.canvas_texture');
 local peerInspector = require('modules.peer_inspector');
 local perfMeter = require('core.perf_meter');
 local diagnostics = require('core.diagnostics');
@@ -223,6 +224,7 @@ end
 
 function modules.Load()
     jobChange.Cancel();
+    canvasTexture.SetCacheLimit(targeting.GetSettings().textureCacheLimit);
     worldMarkerProbe.SetImgui(imgui);
     worldMarkerProbe.SetEnabled(true);
     worldMarkerProbe.SetReplacePlates(true);

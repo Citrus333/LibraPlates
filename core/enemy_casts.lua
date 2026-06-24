@@ -1,5 +1,6 @@
 local ffi = require('ffi');
 local log = require('core.log');
+local actionRelevance = require('core.action_relevance');
 
 local enemyCasts = {};
 local casts = {};
@@ -612,6 +613,12 @@ end
 
 local function HandleEnemyCastActionPacket(actionPacket)
     if (actionPacket == nil or actionPacket.UserId == nil) then
+        return;
+    end
+
+    if (actionRelevance.ShouldIgnoreOutsideFriendlyCaster(actionPacket) == true) then
+        casts[actionPacket.UserId] = nil;
+        AddDebugLine('ignore-outside-friendly user=' .. tostring(actionPacket.UserId) .. ' index=' .. tostring(actionPacket.UserIndex) .. ' name=' .. tostring(actionRelevance.GetEntityName(actionPacket.UserIndex)), true);
         return;
     end
 

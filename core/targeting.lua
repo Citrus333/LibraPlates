@@ -334,7 +334,7 @@ local function GetTargetingSettings()
     end
 
     if (global.targeting.textureCacheLimit == nil) then
-        global.targeting.textureCacheLimit = 96;
+        global.targeting.textureCacheLimit = 128;
     end
 
     global.targeting.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(global.targeting.rightClickAttackRange) or 4.5));
@@ -442,6 +442,9 @@ local function GetTargetingSettings()
         performancePreset = 'Custom';
     end
     global.targeting.performancePreset = performancePreset;
+    if (performancePreset == 'Mid' and tonumber(global.targeting.textureCacheLimit) == 96) then
+        global.targeting.textureCacheLimit = 128;
+    end
     local gameFpsMode = tostring(global.targeting.gameFpsMode or 'Keep current');
     if (
         gameFpsMode ~= 'Keep current' and
@@ -527,7 +530,7 @@ local function GetTargetingSettings()
     global.targeting.tacticalScreenClampBottomPadding = math.max(0, math.min(400, math.floor((tonumber(global.targeting.tacticalScreenClampBottomPadding) or 24) + 0.5)));
     global.targeting.tacticalScreenClampLeftPadding = math.max(0, math.min(400, math.floor((tonumber(global.targeting.tacticalScreenClampLeftPadding) or 0) + 0.5)));
     global.targeting.tacticalScreenClampRightPadding = math.max(0, math.min(400, math.floor((tonumber(global.targeting.tacticalScreenClampRightPadding) or 0) + 0.5)));
-    global.targeting.textureCacheLimit = math.max(32, math.min(256, math.floor((tonumber(global.targeting.textureCacheLimit) or 96) + 0.5)));
+    global.targeting.textureCacheLimit = math.max(32, math.min(256, math.floor((tonumber(global.targeting.textureCacheLimit) or 128) + 0.5)));
     NormalizePlateClickNoGoZones(global.targeting);
 
     return global.targeting;

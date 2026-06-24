@@ -2,6 +2,7 @@ require('common');
 
 local statusEffects = require('core.status_effects');
 local playerStatuses = require('core.player_statuses');
+local actionRelevance = require('core.action_relevance');
 
 local enemyStatuses = {};
 local tracked = {};
@@ -475,6 +476,10 @@ local function HandleActionPacket(packet)
         return;
     end
 
+    if (actionRelevance.ShouldIgnoreOutsideFriendlyCaster(packet) == true) then
+        return;
+    end
+
     local now = os.time();
 
     for _, target in ipairs(packet.Targets or {}) do
@@ -566,6 +571,10 @@ function enemyStatuses.HandlePacketIn(e)
         local message = ParseMessagePacket(e);
 
         if (message == nil) then
+            return;
+        end
+
+        if (actionRelevance.IsOutsideFriendlyIndex(actionRelevance.GetIndexFromServerId(message.sender)) == true) then
             return;
         end
 

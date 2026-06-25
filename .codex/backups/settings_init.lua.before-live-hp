@@ -1491,14 +1491,6 @@ function GetChecklistActiveSettings(widget)
         if (global.resting.enabled == nil) then global.resting.enabled = true; end
         return global.resting;
     end
-
-    if (widget == 'Enemy Alerts (module)') then
-        local global = state.GetGlobalSettings(globalDefaults);
-        global.enemyAlerts = global.enemyAlerts or {};
-        if (global.enemyAlerts.enabled == nil) then global.enemyAlerts.enabled = false; end
-        return global.enemyAlerts;
-    end
-
     if (widget == 'Fishing (module)') then
         local global = state.GetGlobalSettings(globalDefaults);
         global.fishing = global.fishing or {};

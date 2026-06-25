@@ -1061,39 +1061,6 @@ local function GetPlateDistanceScale(style, targetIndex, fallbackDistance)
     return 1.0 + ((maxScale - 1.0) * progress);
 end
 
-local DrawTextureWithState = nil;
-
-local function DrawWorldResourceBarText(device, centerX, centerY, centerZ, rx, ry, rz, ux, uy, uz, barStyle)
-    local text = tostring(barStyle ~= nil and barStyle.text or '');
-
-    if (text == '' or DrawTextureWithState == nil) then
-        return;
-    end
-
-    local textureId, textureWidth, textureHeight = gdiTextTexture.GetTexture(text, {
-        fontFamily = barStyle.fontFamily or 'Arial',
-        fontSize = math.max(10, tonumber(barStyle.fontSize) or 16),
-        color = barStyle.textColor or { 1.0, 1.0, 1.0, 1.0 },
-        outlineEnabled = barStyle.textOutlineEnabled == true,
-        outlineColor = barStyle.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
-        outlineSize = tonumber(barStyle.textOutlineSize) or 0,
-    });
-
-    if (textureId == nil or tonumber(textureWidth) == nil or tonumber(textureHeight) == nil or textureWidth <= 0 or textureHeight <= 0) then
-        return;
-    end
-
-    local textOffsetX = tonumber(barStyle.textWorldOffsetX) or 0;
-    local textOffsetY = tonumber(barStyle.textWorldOffsetY) or 0;
-    local textX = centerX + (rx * textOffsetX) - (ux * textOffsetY);
-    local textY = centerY + (ry * textOffsetX) - (uy * textOffsetY);
-    local textZ = centerZ + (rz * textOffsetX) - (uz * textOffsetY);
-    local worldHeight = math.max(0.028, (tonumber(textureHeight) or 16) * (tonumber(barStyle.textWorldScale) or 0.0011));
-    local worldWidth = math.max(0.04, worldHeight * ((tonumber(textureWidth) or 1) / math.max(1, tonumber(textureHeight) or 1)));
-
-    DrawTextureWithState(device, textureId, textX, textY, textZ, worldWidth, 0, 0, 0.00175, false, worldHeight, barStyle.alwaysOnTop == true);
-end
-
 local function DrawWorldResourceBar(device, wx, wy, wz, rx, ry, rz, ux, uy, uz, progress, barStyle)
     barStyle = barStyle or {};
 
@@ -1110,24 +1077,8 @@ local function DrawWorldResourceBar(device, wx, wy, wz, rx, ry, rz, ux, uy, uz, 
     local centerZ = wz + (rz * offsetX) - (uz * offsetY);
     local fillColor = ColorTableToD3D(barStyle.color, { 0.22, 0.95, 0.38, 0.93 });
     local backgroundColor = ColorTableToD3D(barStyle.backgroundColor, { 0.0, 0.0, 0.0, 0.0 });
-    local borderSize = math.max(0, tonumber(barStyle.borderWorldSize) or 0);
-    local borderColor = ColorTableToD3D(barStyle.borderColor, { 0.0, 0.0, 0.0, 1.0 });
     local fillProgress = Clamp01(progress);
     local fillWidth = width * fillProgress;
-
-    if (borderSize > 0) then
-        DrawQuad(
-            device,
-            centerX,
-            centerY,
-            centerZ,
-            rx, ry, rz,
-            ux, uy, uz,
-            (width * 0.5) + borderSize,
-            (height * 0.5) + borderSize,
-            borderColor
-        );
-    end
 
     if (barStyle.backgroundColor ~= nil) then
         DrawQuad(
@@ -1158,8 +1109,6 @@ local function DrawWorldResourceBar(device, wx, wy, wz, rx, ry, rz, ux, uy, uz, 
             fillColor
         );
     end
-
-    DrawWorldResourceBarText(device, centerX, centerY, centerZ, rx, ry, rz, ux, uy, uz, barStyle);
 end
 
 local function CopyBarStyleWithOffset(barStyle, worldOffsetY)
@@ -1547,6 +1496,8 @@ end
 local function DrawNameWithState(device, name, distance, wx, wy, wz, style)
     DrawTextWithState(device, name, wx, wy, wz, style, 'name');
 end
+
+local DrawTextureWithState = nil;
 
 GetPlateMaskZones = function(viewport)
     local settings = targeting.GetSettings();

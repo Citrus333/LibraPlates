@@ -1030,33 +1030,6 @@ local function BuildPcPlateData(context)
 end
 
 local function QueuePlayer(player)
-    local function canUseLiveResourceBarSettings(settings)
-        settings = settings or {};
-
-        if (settings.enabled ~= true) then
-            return false;
-        end
-
-        if (settings.showPercent == true or settings.showValue == true) then
-            return false;
-        end
-
-        if ((tonumber(settings.borderSize) or 0) > 0) then
-            return false;
-        end
-
-        if (settings.lowAnimationEnabled == true) then
-            return false;
-        end
-
-        if ((tonumber(settings.showAtPercent) or 100) < 100) then
-            return false;
-        end
-
-        local texture = tostring(settings.texture or 'Solid');
-        return texture == '' or texture == 'Solid';
-    end
-
     local targetStateName = targeting.GetTargetStateName(player.index);
 
     if (entities.ShouldHideOtherPlayerPet(player.index, player.name) == true) then
@@ -1108,10 +1081,9 @@ local function QueuePlayer(player)
 
         local earlyHpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'HP Bar', barDefaults);
 
-        if (WidgetLoads(earlyHpBarSettings, 'HP Bar') == true and canUseLiveResourceBarSettings(earlyHpBarSettings) ~= true) then
+        if (WidgetLoads(earlyHpBarSettings, 'HP Bar') == true) then
             canUseFreshIdleCache = false;
         end
-
     end
 
     if (
@@ -1203,7 +1175,7 @@ local function QueuePlayer(player)
     local function makeLiveBarStyle(settings, color, defaultWidth, defaultHeight, defaultOffsetY)
         settings = settings or {};
 
-        if (canUseLiveResourceBarSettings(settings) ~= true) then
+        if (settings.enabled ~= true) then
             return { enabled = false };
         end
 
@@ -1360,7 +1332,7 @@ local function QueuePlayer(player)
     local cacheEligible = targetStateName == 'Idle'
         and state.GetConfigOpen() ~= true
         and distanceText == nil
-        and (hpBarLoads ~= true or liveHpBarStyle.enabled == true);
+        and hpBarLoads ~= true;
 
     local cacheKey = nil;
     local signature = nil;

@@ -1,5 +1,10 @@
 local itemIcons = T{
+-- Mog Garden (Rearing Grounds)
 
+
+    ['Bulging Crate']                    = { zones = { "Mog Garden (Rearing Grounds)" } },
+	
+	
     -------------------------------------------------------------------------------
     -- Multi-Zone
     -------------------------------------------------------------------------------
@@ -142,6 +147,15 @@ local itemIcons = T{
         note = 'Needs Review.',
     },
 
+
+
+    ['Treasure Caskets'] = {
+        type = '',
+        icon = 'TreasureCasket.png',
+        zones = { '' },
+        zoneIds = { },
+        note = '',
+    },
 
     ['Reliquiarium Gate'] = {
         type = 'Unknown',

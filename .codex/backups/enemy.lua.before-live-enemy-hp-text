@@ -1611,17 +1611,7 @@ local function QueueFreshIdleCache(enemy)
         return false;
     end
 
-    local liveHpBarStyle = cached.hpBar;
-    if (liveHpBarStyle ~= nil and liveHpBarStyle.enabled == true and tostring(liveHpBarStyle.text or '') ~= '') then
-        local copy = {};
-        for key, value in pairs(liveHpBarStyle) do
-            copy[key] = value;
-        end
-        copy.text = tostring(math.floor(ClampPercent(enemy.hpPercent, 100) + 0.5)) .. '%';
-        liveHpBarStyle = copy;
-    end
-
-    if (QueueCachedEnemy(enemy, cached, 'Idle', false, ClampPercent(enemy.hpPercent, 100), liveHpBarStyle) == true) then
+    if (QueueCachedEnemy(enemy, cached, 'Idle', false, ClampPercent(enemy.hpPercent, 100), cached.hpBar) == true) then
         perfMeter.Count('enemy.cache.directHit', 1);
         return true;
     end
@@ -1787,7 +1777,7 @@ local function BuildEnemyQueueContext(enemy)
     };
 end
 
-local function BuildEnemyCacheSignature(context, useLiveHpBar)
+local function BuildEnemyCacheSignature(context)
     local enemy = context.enemy;
     local function StatusRowsKey(rows)
         local parts = {};
@@ -1808,7 +1798,7 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
         'server=' .. tostring(enemy.serverId or ''),
         'spawn=' .. tostring(enemy.spawnFlags or ''),
         'render1=' .. tostring(enemy.renderFlags1 or ''),
-        'hp=' .. (context.hpBarSettings.enabled == true and useLiveHpBar ~= true and tostring(math.floor((tonumber(context.hpPercent) or 0) + 0.5)) or ''),
+        'hp=' .. (context.hpBarSettings.enabled == true and tostring(math.floor((tonumber(context.hpPercent) or 0) + 0.5)) or ''),
         'dist=' .. tostring(context.distanceText or ''),
         'job=' .. tostring(context.jobText or ''),
         'level=' .. tostring(context.levelText or ''),
@@ -1933,7 +1923,11 @@ local function CanUseLiveHpBar(settings)
         return false;
     end
 
-    if (settings.showValue == true) then
+    if (settings.showPercent == true or settings.showValue == true) then
+        return false;
+    end
+
+    if ((tonumber(settings.borderSize) or 0) > 0) then
         return false;
     end
 
@@ -1949,7 +1943,7 @@ local function CanUseLiveHpBar(settings)
     return texture == '' or texture == 'Solid';
 end
 
-local function MakeLiveHpBarStyle(settings, color, hpPercent, globalSettings)
+local function MakeLiveHpBarStyle(settings, color)
     settings = settings or {};
 
     if (CanUseLiveHpBar(settings) ~= true) then
@@ -1964,17 +1958,6 @@ local function MakeLiveHpBarStyle(settings, color, hpPercent, globalSettings)
         worldOffsetY = (tonumber(settings.offsetY) or 0) / 260,
         color = color,
         backgroundColor = settings.backgroundColor,
-        borderColor = settings.borderColor,
-        borderWorldSize = math.max(0, (tonumber(settings.borderSize) or 0) / 260),
-        text = (settings.showPercent == true) and (tostring(math.floor((tonumber(hpPercent) or 0) + 0.5)) .. '%') or '',
-        textWorldOffsetX = (tonumber(settings.textOffsetX) or 0) / 430,
-        textWorldOffsetY = (tonumber(settings.textOffsetY) or 0) / 260,
-        fontFamily = fonts.GetRole(globalSettings or {}, settings.useSmallFont == true),
-        fontSize = textScale.ToTextureFontSize(settings.fontSize, barDefaults.fontSize),
-        textColor = settings.textColor or { 1.0, 1.0, 1.0, 1.0 },
-        textOutlineEnabled = settings.textOutlineEnabled == true,
-        textOutlineColor = settings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
-        textOutlineSize = tonumber(settings.textOutlineSize) or 0,
     };
 end
 
@@ -1992,7 +1975,7 @@ local function QueueEnemy(enemy)
 
     local settingsTimer = perfMeter.BeginDetail('enemy.settings');
     local context = BuildEnemyQueueContext(enemy);
-    local liveHpBarStyle = MakeLiveHpBarStyle(context.hpBarSettings, context.hpColor, context.hpPercent, context.globalSettings);
+    local liveHpBarStyle = MakeLiveHpBarStyle(context.hpBarSettings, context.hpColor);
     local useLiveHpBar = context.stateName == 'Idle' and liveHpBarStyle.enabled == true;
 
     local cacheSkipReason = nil;
@@ -2009,13 +1992,13 @@ local function QueueEnemy(enemy)
 
     if (cacheEligible == true) then
         cacheKey = 'enemy:' .. tostring(enemy.index) .. ':' .. GetEnemyIdentityKey(enemy);
-        signature = BuildEnemyCacheSignature(context, useLiveHpBar);
+        signature = BuildEnemyCacheSignature(context);
 
         local indexed = indexCache[tonumber(enemy.index) or 0];
         local staleCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
         local cached = indexed ~= nil and indexed.signature == signature and staleCached or nil;
 
-        local cachedLiveHpBar = liveHpBarStyle;
+        local cachedLiveHpBar = cached ~= nil and cached.hpBar or liveHpBarStyle;
         if (QueueCachedEnemy(enemy, cached, context.stateName, context.importantAlwaysOnTop, context.hpPercent, cachedLiveHpBar) == true) then
             perfMeter.Count('enemy.cache.hit', 1);
             perfMeter.EndDetail(settingsTimer);

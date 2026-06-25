@@ -47,6 +47,10 @@ local function GetSettings()
     return settings;
 end
 
+local function IsEnabled()
+    return GetSettings().enabled == true;
+end
+
 local function IsDebugEnabled()
     if (debugUntil ~= nil and os.clock() >= debugUntil) then
         debugEnabled = false;
@@ -495,6 +499,11 @@ function enemyAlerts.HandlePacketIn(e)
         return;
     end
 
+    if (IsEnabled() ~= true) then
+        alerts = {};
+        return;
+    end
+
     HandleActionPacket(ParseActionPacket(e));
 end
 
@@ -565,6 +574,11 @@ end
 function enemyAlerts.Render()
     local settings = GetSettings();
 
+    if (settings.enabled ~= true) then
+        alerts = {};
+        return;
+    end
+
     if (#alerts == 0) then
         return;
     end
@@ -617,11 +631,16 @@ function enemyAlerts.Test()
 end
 
 function enemyAlerts.SetEnabled(value)
-    GetSettings().enabled = value == true;
+    local enabled = value == true;
+    GetSettings().enabled = enabled;
+
+    if (enabled ~= true) then
+        alerts = {};
+    end
 end
 
 function enemyAlerts.GetEnabled()
-    return GetSettings().enabled == true;
+    return IsEnabled();
 end
 
 function enemyAlerts.SetDebugEnabled(value, seconds)

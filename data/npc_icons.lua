@@ -4417,7 +4417,7 @@ local npcIcons = T{
     ['Beastman Ensign']                  = { type = "Campaign Ops", icon = "TacticalAssessment.png", zones = { "Grauberg (S)", "Beastman Confederate" }, zoneIds = { 89 }, note = "Notes:\n* Used in Campaign Ops." },
     ['Black Mine (Mob)']                 = { type = "Notorious Monster", icon = "GoalTracker.png", zones = { "Grauberg (S)", "North Gustaberg (S)" }, zoneIds = { 88, 89 }, note = "Notes:\n* Can be summoned by players by using a Black Mine *Uses Mine Blast and then despawns" },
     ['Childerich']                       = { type = "Quest Associate", icon = "QuestAssociate.png", zones = { "Grauberg (S)" }, zoneIds = { 89 }, note = "Involved in Quests:\n* Message on the Wind" },
-    ['Emmerich']                         = { zones = { "Grauberg (S)" }, zoneIds = { 89 } },
+    ['Emmerich']                         = { type = "Quest Associate", icon = "QuestAssociate.png", zones =  { "Grauberg (S)" }, zoneIds = { 89 }, note = "Involved in Quest:\n* Witchfire Glen" },
     ['Myuhn Rohli, M.C.']                = { type = "Campaign", icon = "CampaignArbiter.png", zones = { "Grauberg (S)", "Windurst (S)" }, zoneIds = { 89 }, note = "Notes:\n* Windurst (S) affliated Campaign Arbiter. Present when Windurst (S) has control of Grauberg (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign" },
     ['Ulaciont, R.K.']                   = { type = "Campaign", icon = "CampaignArbiter.png", zones = { "Grauberg (S)", "San d'Oria (S)" }, zoneIds = { 136 }, note = "Notes:\n* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Grauberg (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign" },
     ['Vanja']                            = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Grauberg (S)" }, zoneIds = { 89 }, note = "Notes:\n\"There's a place in these mountains known as Witchfire Glen. They say it's the home of fairies and sprites... Wait a minute, where's your uniform? Who are you!?\"" },
@@ -4829,10 +4829,7 @@ local npcIcons = T{
     ['Swipostik']                        = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "Mine Shaft #2716" }, zoneIds = { 13 }, note = "Involved in Missions:\n* Promathia Mission 5-3: Three Paths\n* Past Sins (Louverance Path)\n* Promathia Mission 8-4: Dawn\n" },
     ['Trikotrak']                        = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "Mine Shaft #2716" }, zoneIds = { 13 }, note = "Involved in Missions:\n* Promathia Mission 5-3: Three Paths\n* Past Sins (Louverance Path)\n* Promathia Mission 8-4: Dawn\n" },
 
--- Mog Garden (Rearing Grounds)
 
-
-    ['Bulging Crate']                    = { zones = { "Mog Garden (Rearing Grounds)" } },
 
 -- Monastic Cavern
 

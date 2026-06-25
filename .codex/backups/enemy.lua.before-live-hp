@@ -1519,7 +1519,7 @@ local function ShouldLoadStatusRows(iconSettings, isEngaged, hasActiveDetail)
     return true;
 end
 
-local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, hpPercent, liveHpBarStyle)
+local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, hpPercent)
     if (cached == nil or cached.texture == nil) then
         return false;
     end
@@ -1549,8 +1549,7 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
         stateName = stateName,
         clickTargetType = 'enemy',
         worldMarker = targeting.ApplyPlateScalingSettings({
-            hpBar = liveHpBarStyle or { enabled = false },
-            liveResourceBars = liveHpBarStyle ~= nil and liveHpBarStyle.enabled == true,
+            hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = importantAlwaysOnTop,
             plateTacticalOverlayOnly = importantAlwaysOnTop,
@@ -1582,6 +1581,11 @@ local function QueueFreshIdleCache(enemy)
         return false;
     end
 
+    local hpBarSettings = state.GetWidgetSettings('Enemy', 'Idle', 'HP Bar', barDefaults);
+    if (hpBarSettings ~= nil and hpBarSettings.enabled == true) then
+        return false;
+    end
+
     if (
         enemyCasts.GetActiveCast(enemy.serverId) ~= nil or
         engagedEnemies.IsEngaged(enemy.index) == true or
@@ -1607,21 +1611,7 @@ local function QueueFreshIdleCache(enemy)
         return false;
     end
 
-    if (cached.dynamicHpBar == true) then
-        return false;
-    end
-
-    local liveHpBarStyle = cached.hpBar;
-    if (liveHpBarStyle ~= nil and liveHpBarStyle.enabled == true and tostring(liveHpBarStyle.text or '') ~= '') then
-        local copy = {};
-        for key, value in pairs(liveHpBarStyle) do
-            copy[key] = value;
-        end
-        copy.text = tostring(math.floor(ClampPercent(enemy.hpPercent, 100) + 0.5)) .. '%';
-        liveHpBarStyle = copy;
-    end
-
-    if (QueueCachedEnemy(enemy, cached, 'Idle', false, ClampPercent(enemy.hpPercent, 100), liveHpBarStyle) == true) then
+    if (QueueCachedEnemy(enemy, cached, 'Idle', false, ClampPercent(enemy.hpPercent, 100)) == true) then
         perfMeter.Count('enemy.cache.directHit', 1);
         return true;
     end
@@ -1787,7 +1777,7 @@ local function BuildEnemyQueueContext(enemy)
     };
 end
 
-local function BuildEnemyCacheSignature(context, useLiveHpBar)
+local function BuildEnemyCacheSignature(context)
     local enemy = context.enemy;
     local function StatusRowsKey(rows)
         local parts = {};
@@ -1808,7 +1798,7 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
         'server=' .. tostring(enemy.serverId or ''),
         'spawn=' .. tostring(enemy.spawnFlags or ''),
         'render1=' .. tostring(enemy.renderFlags1 or ''),
-        'hp=' .. (context.hpBarSettings.enabled == true and useLiveHpBar ~= true and tostring(math.floor((tonumber(context.hpPercent) or 0) + 0.5)) or ''),
+        'hp=' .. (context.hpBarSettings.enabled == true and tostring(context.hpPercent) or ''),
         'dist=' .. tostring(context.distanceText or ''),
         'job=' .. tostring(context.jobText or ''),
         'level=' .. tostring(context.levelText or ''),
@@ -1926,58 +1916,6 @@ local function BuildEnemyPlateData(context)
     return plateData;
 end
 
-local function CanUseLiveHpBar(settings)
-    settings = settings or {};
-
-    if (settings.enabled ~= true) then
-        return false;
-    end
-
-    if (settings.showValue == true) then
-        return false;
-    end
-
-    if (settings.lowAnimationEnabled == true) then
-        return false;
-    end
-
-    if ((tonumber(settings.showAtPercent) or 100) < 100) then
-        return false;
-    end
-
-    local texture = tostring(settings.texture or 'Solid');
-    return texture == '' or texture == 'Solid';
-end
-
-local function MakeLiveHpBarStyle(settings, color, hpPercent, globalSettings)
-    settings = settings or {};
-
-    if (CanUseLiveHpBar(settings) ~= true) then
-        return { enabled = false };
-    end
-
-    return {
-        enabled = true,
-        worldWidth = math.max(0.04, (tonumber(settings.width) or 180) / 430),
-        worldHeight = math.max(0.006, (tonumber(settings.height) or 12) / 260),
-        worldOffsetX = (tonumber(settings.offsetX) or 0) / 430,
-        worldOffsetY = (tonumber(settings.offsetY) or 0) / 260,
-        color = color,
-        backgroundColor = settings.backgroundColor,
-        borderColor = settings.borderColor,
-        borderWorldSize = math.max(0, (tonumber(settings.borderSize) or 0) / 260),
-        text = (settings.showPercent == true) and (tostring(math.floor((tonumber(hpPercent) or 0) + 0.5)) .. '%') or '',
-        textWorldOffsetX = (tonumber(settings.textOffsetX) or 0) / 430,
-        textWorldOffsetY = (tonumber(settings.textOffsetY) or 0) / 260,
-        fontFamily = fonts.GetRole(globalSettings or {}, settings.useSmallFont == true),
-        fontSize = textScale.ToTextureFontSize(settings.fontSize, barDefaults.fontSize),
-        textColor = settings.textColor or { 1.0, 1.0, 1.0, 1.0 },
-        textOutlineEnabled = settings.textOutlineEnabled == true,
-        textOutlineColor = settings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
-        textOutlineSize = tonumber(settings.textOutlineSize) or 0,
-    };
-end
-
 local function ApplyEnemyStatusWidgets(context, plateData)
     AddStatusIconsToPlate(plateData, context.buffRows, context.buffsSettings, context.isEngaged, context.globalSettings, 'buffs');
     AddStatusIconsToPlate(plateData, context.debuffRows, context.debuffsSettings, context.isEngaged, context.globalSettings, 'debuffs');
@@ -1992,31 +1930,30 @@ local function QueueEnemy(enemy)
 
     local settingsTimer = perfMeter.BeginDetail('enemy.settings');
     local context = BuildEnemyQueueContext(enemy);
-    local liveHpBarStyle = MakeLiveHpBarStyle(context.hpBarSettings, context.hpColor, context.hpPercent, context.globalSettings);
-    local useLiveHpBar = context.stateName == 'Idle' and liveHpBarStyle.enabled == true;
 
     local cacheSkipReason = nil;
     local hasDynamicDistance = context.distanceText ~= nil and context.distanceText ~= '';
+    local hasDynamicHpBar = context.hpBarSettings ~= nil and context.hpBarSettings.enabled == true;
     local cacheEligible = context.stateName == 'Idle'
         and context.castData == nil
         and #context.buffRows == 0
         and #context.debuffRows == 0
         and context.isHovered ~= true
         and aoeNameHighlight.HasLiveAoe() ~= true
-        and hasDynamicDistance ~= true;
+        and hasDynamicDistance ~= true
+        and hasDynamicHpBar ~= true;
     local cacheKey = nil;
     local signature = nil;
 
     if (cacheEligible == true) then
         cacheKey = 'enemy:' .. tostring(enemy.index) .. ':' .. GetEnemyIdentityKey(enemy);
-        signature = BuildEnemyCacheSignature(context, useLiveHpBar);
+        signature = BuildEnemyCacheSignature(context);
 
         local indexed = indexCache[tonumber(enemy.index) or 0];
         local staleCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
         local cached = indexed ~= nil and indexed.signature == signature and staleCached or nil;
 
-        local cachedLiveHpBar = liveHpBarStyle;
-        if (QueueCachedEnemy(enemy, cached, context.stateName, context.importantAlwaysOnTop, context.hpPercent, cachedLiveHpBar) == true) then
+        if (QueueCachedEnemy(enemy, cached, context.stateName, context.importantAlwaysOnTop, context.hpPercent) == true) then
             perfMeter.Count('enemy.cache.hit', 1);
             perfMeter.EndDetail(settingsTimer);
             return;
@@ -2047,6 +1984,8 @@ local function QueueEnemy(enemy)
             cacheSkipReason = 'aoe';
         elseif (hasDynamicDistance == true) then
             cacheSkipReason = 'distance';
+        elseif (hasDynamicHpBar == true) then
+            cacheSkipReason = 'hpbar';
         else
             cacheSkipReason = 'other';
         end
@@ -2057,9 +1996,6 @@ local function QueueEnemy(enemy)
 
     local buildTimer = perfMeter.BeginDetail('enemy.build');
     local plateData = BuildEnemyPlateData(context);
-    if (useLiveHpBar == true) then
-        plateData.hpBar = { enabled = false };
-    end
     perfMeter.EndDetail(buildTimer);
 
     local statusTimer = perfMeter.BeginDetail('enemy.status');
@@ -2136,8 +2072,6 @@ local function QueueEnemy(enemy)
             elementRects = plateClickRects,
             plateWorldWidth = 2.35 * plateScale,
             plateWorldHeight = 1.18 * plateScale,
-            hpBar = liveHpBarStyle,
-            dynamicHpBar = context.hpBarSettings.enabled == true and useLiveHpBar ~= true,
         };
         indexCache[tonumber(enemy.index) or 0] = {
             cacheKey = cacheKey,
@@ -2159,8 +2093,7 @@ local function QueueEnemy(enemy)
         stateName = context.stateName,
         clickTargetType = 'enemy',
         worldMarker = targeting.ApplyPlateScalingSettings({
-            hpBar = useLiveHpBar == true and liveHpBarStyle or { enabled = false },
-            liveResourceBars = useLiveHpBar == true,
+            hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = context.importantAlwaysOnTop,
             plateTacticalOverlayOnly = context.importantAlwaysOnTop,

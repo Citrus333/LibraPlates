@@ -75,7 +75,11 @@ end
 local function UpdateNativeTargetStartupBurst()
     local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
     local hasAnyTarget = targetIndex ~= nil or subTargetIndex ~= nil;
-    if (previousHadAnyTarget ~= true and hasAnyTarget == true) then
+    local targetChanged =
+        tonumber(previousTargetIndex or 0) ~= tonumber(targetIndex or 0) or
+        tonumber(previousSubTargetIndex or 0) ~= tonumber(subTargetIndex or 0);
+
+    if ((previousHadAnyTarget ~= true or targetChanged == true) and hasAnyTarget == true) then
         nativeTargetStartupBurstFrames = nativeTargetStartupBurstMaxFrames;
         nativeTargetStartupTransitions = nativeTargetStartupTransitions + 1;
         nativeTargetLastTransitionClock = os.clock();

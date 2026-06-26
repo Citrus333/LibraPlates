@@ -189,6 +189,17 @@ function adaptivePerformance.GetWorldPlateUpdateInterval()
     return 1;
 end
 
+function adaptivePerformance.GetWorldRefreshSeconds(kind)
+    local global = state.GetGlobalSettings(globalDefaults);
+    local targeting = global ~= nil and global.targeting or {};
+    local key = tostring(kind or 'pc'):lower() .. 'WorldRefreshRate';
+    local refreshPerSecond = tonumber(targeting[key]) or 1.0;
+
+    refreshPerSecond = math.max(0.2, math.min(10.0, refreshPerSecond));
+
+    return 1.0 / refreshPerSecond;
+end
+
 function adaptivePerformance.ShouldUpdateWorldPlate(key, protected)
     if (protected == true) then
         return true;

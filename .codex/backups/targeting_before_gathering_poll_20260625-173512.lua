@@ -243,22 +243,6 @@ local function GetTargetingSettings()
         global.targeting.worldPlateUpdateRate = 'Full';
     end
 
-    if (global.targeting.pcWorldRefreshRate == nil) then
-        global.targeting.pcWorldRefreshRate = 1.0;
-    end
-
-    if (global.targeting.enemyWorldRefreshRate == nil) then
-        global.targeting.enemyWorldRefreshRate = 1.0;
-    end
-
-    if (global.targeting.npcWorldRefreshRate == nil) then
-        global.targeting.npcWorldRefreshRate = 1.0;
-    end
-
-    if (global.targeting.objectWorldRefreshRate == nil) then
-        global.targeting.objectWorldRefreshRate = 1.0;
-    end
-
     if (global.targeting.hideDistantWorldPlates == nil) then
         global.targeting.hideDistantWorldPlates = false;
     end
@@ -488,10 +472,6 @@ local function GetTargetingSettings()
         updateRate = 'Full';
     end
     global.targeting.worldPlateUpdateRate = updateRate;
-    global.targeting.pcWorldRefreshRate = math.max(0.2, math.min(10.0, tonumber(global.targeting.pcWorldRefreshRate) or 1.0));
-    global.targeting.enemyWorldRefreshRate = math.max(0.2, math.min(10.0, tonumber(global.targeting.enemyWorldRefreshRate) or 1.0));
-    global.targeting.npcWorldRefreshRate = math.max(0.2, math.min(10.0, tonumber(global.targeting.npcWorldRefreshRate) or 1.0));
-    global.targeting.objectWorldRefreshRate = math.max(0.2, math.min(10.0, tonumber(global.targeting.objectWorldRefreshRate) or 1.0));
     global.targeting.hideDistantWorldPlates = global.targeting.hideDistantWorldPlates == true;
     global.targeting.worldPlateDistanceLimit = math.max(5.0, math.min(64.4, tonumber(global.targeting.worldPlateDistanceLimit) or 49.9));
     global.targeting.disableExpensiveWorldWidgets = global.targeting.disableExpensiveWorldWidgets == true;
@@ -1389,7 +1369,6 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
             iconFile = GetGatheringToolIconFile(action.tool),
             previousCount = tonumber(count) or 0,
             started = os.clock(),
-            nextPoll = os.clock() + 0.35,
         };
         lastGatheringInteractStatus =
             'queued ' .. action.command ..
@@ -1502,15 +1481,9 @@ function targeting.ShouldShowGatheringPoint(name)
 end
 
 function targeting.Update()
+    UpdateGatheringToolCounts();
+
     if (pendingGatheringWatch ~= nil) then
-        local now = os.clock();
-
-        if (now < (tonumber(pendingGatheringWatch.nextPoll) or 0)) then
-            return;
-        end
-
-        pendingGatheringWatch.nextPoll = now + 0.35;
-
         local hasTool, _, _, count = HasInventoryItem(pendingGatheringWatch.toolName);
         local currentCount = tonumber(count) or 0;
         local previousCount = tonumber(pendingGatheringWatch.previousCount) or 0;
@@ -1530,7 +1503,7 @@ function targeting.Update()
                 ' ' .. tostring(previousCount) ..
                 ' -> ' .. tostring(currentCount);
             pendingGatheringWatch = nil;
-        elseif ((now - (pendingGatheringWatch.started or now)) > 20.0) then
+        elseif ((os.clock() - (pendingGatheringWatch.started or os.clock())) > 20.0) then
             pendingGatheringWatch = nil;
         end
     end

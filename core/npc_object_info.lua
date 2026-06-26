@@ -56,6 +56,51 @@ local function IsHomePointName(name)
     return GetHomePointKey(name) ~= nil;
 end
 
+local gatheringPointNames = {
+    ['Excavation Point'] = true,
+    ['Excav. Point'] = true,
+    ['Harvest Point'] = true,
+    ['Harvesting Point'] = true,
+    ['Logging Point'] = true,
+    ['Mining Point'] = true,
+};
+
+local gatheringPointFallbacks = {
+    ['Excavation Point'] = { type = 'Excavation Point', icon = 'ExcavationPoint.png' },
+    ['Excav. Point'] = { type = 'Excavation Point', icon = 'ExcavationPoint.png' },
+    ['Harvest Point'] = { type = 'Harvest Point', icon = 'HarvestPoint.png' },
+    ['Harvesting Point'] = { type = 'Harvest Point', icon = 'HarvestPoint.png' },
+    ['Logging Point'] = { type = 'Logging Point', icon = 'LoggingPoint.png' },
+    ['Mining Point'] = { type = 'Mining Point', icon = 'MiningPoint.png' },
+};
+
+local function IsGatheringPointName(name)
+    return gatheringPointNames[NormalizeName(name)] == true;
+end
+
+local function GetGatheringPointFallback(name)
+    local entry = gatheringPointFallbacks[NormalizeName(name)];
+
+    if (entry == nil) then
+        return nil;
+    end
+
+    return {
+        source = 'item',
+        type = entry.type,
+        displayName = '',
+        icon = entry.icon,
+        link = '',
+        info = '',
+        note = '',
+        zones = nil,
+        worldOffsetX = nil,
+        worldOffsetY = nil,
+        worldOffsetZ = nil,
+        anchorBone = nil,
+    };
+end
+
 local function NormalizeZoneName(zoneName)
     local text = tostring(zoneName or '');
 
@@ -332,7 +377,8 @@ function npcInfo.Find(name, entityType, options)
     if (kind == 'object') then
         local item = FindIn(itemLookupName, 'catseye_item', catseyeItemIcons, ignoreZone or forceItemZoneMatchOff, options)
             or FindScopedIn(itemLookupName, 'item', itemIcons, ignoreZone or forceItemZoneMatchOff, options)
-            or FindIn(itemLookupName, 'item', itemIcons, ignoreZone or forceItemZoneMatchOff, options);
+            or FindIn(itemLookupName, 'item', itemIcons, ignoreZone or forceItemZoneMatchOff, options)
+            or GetGatheringPointFallback(name);
         local npc = FindIn(name, 'catseye_npc', catseyeNpcIcons, ignoreZone, options)
             or FindScopedIn(name, 'npc', npcIcons, ignoreZone, options)
             or (ignoreZone ~= true and cleanName == 'Moogle' and FindMogHouseMoogleAlias('npc', npcIcons) or nil)
@@ -363,8 +409,14 @@ function npcInfo.ResolveKind(name, entityType, options)
     local itemInfo = FindScopedIn(itemLookupName, 'item', itemIcons, forceItemZoneMatchOff, options)
         or FindIn(itemLookupName, 'item', itemIcons, forceItemZoneMatchOff, options);
 
-    if (itemInfo ~= nil and forceItemZoneMatchOff == true) then
+    if (itemInfo ~= nil and (forceItemZoneMatchOff == true or IsGatheringPointName(name) == true)) then
         return 'Object', itemInfo;
+    end
+
+    local gatheringFallback = GetGatheringPointFallback(name);
+
+    if (gatheringFallback ~= nil) then
+        return 'Object', gatheringFallback;
     end
 
     local info = npcInfo.Find(name, entityType, options);

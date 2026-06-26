@@ -516,6 +516,65 @@ local function SetSelfClickRectFromBillboard(device, targetIndex, wx, wy, wz, wo
     AddPlateClickRects(targetIndex, 'self', { rect }, rect);
 end
 
+local function SetPlateClickRectFromBillboard(device, targetIndex, targetType, wx, wy, wz, worldWidth, worldHeight, metadata)
+    if (device == nil or targetIndex == nil or targetIndex == 0) then
+        return;
+    end
+
+    local _, view = device:GetTransform(2);
+    local _, proj = device:GetTransform(3);
+    local _, viewport = device:GetViewport();
+
+    if (view == nil or proj == nil or viewport == nil or viewport.Width == nil or viewport.Height == nil) then
+        return;
+    end
+
+    local rx, ry, rz, ux, uy, uz = GetBillboardVectors(device);
+    local halfWidth = (tonumber(worldWidth) or 0.84) * 0.5;
+    local halfHeight = (tonumber(worldHeight) or 0.315) * 0.5;
+    local points = {
+        { wx, wy, wz },
+        { wx - (rx * halfWidth), wy - (ry * halfWidth), wz - (rz * halfWidth) },
+        { wx + (rx * halfWidth), wy + (ry * halfWidth), wz + (rz * halfWidth) },
+        { wx - (ux * halfHeight), wy - (uy * halfHeight), wz - (uz * halfHeight) },
+        { wx + (ux * halfHeight), wy + (uy * halfHeight), wz + (uz * halfHeight) },
+    };
+    local left = nil;
+    local top = nil;
+    local right = nil;
+    local bottom = nil;
+
+    for _, point in ipairs(points) do
+        local sx, sy = ProjectWithZ(view, proj, viewport.Width, viewport.Height, point[1], point[2], point[3]);
+
+        if (sx ~= nil and sy ~= nil) then
+            left = (left == nil) and sx or math.min(left, sx);
+            top = (top == nil) and sy or math.min(top, sy);
+            right = (right == nil) and sx or math.max(right, sx);
+            bottom = (bottom == nil) and sy or math.max(bottom, sy);
+        end
+    end
+
+    if (left == nil or top == nil or right == nil or bottom == nil) then
+        return;
+    end
+
+    local padding = 10;
+    local rect = {
+        targetIndex = targetIndex,
+        targetType = tostring(targetType or 'pc'),
+        serverId = metadata ~= nil and metadata.serverId or nil,
+        name = metadata ~= nil and metadata.name or nil,
+        layoutStateName = metadata ~= nil and metadata.layoutStateName or nil,
+        x1 = left - padding,
+        y1 = top - padding,
+        x2 = right + padding,
+        y2 = bottom + padding,
+    };
+
+    AddPlateClickRects(targetIndex, tostring(targetType or 'pc'), { rect }, rect, metadata);
+end
+
 local function ProjectBillboardPoint(view, proj, viewport, wx, wy, wz, rx, ry, rz, ux, uy, uz, offsetX, offsetY)
     return ProjectWithZ(
         view,
@@ -1098,6 +1157,13 @@ local function DrawWorldResourceBar(device, wx, wy, wz, rx, ry, rz, ux, uy, uz, 
     barStyle = barStyle or {};
 
     if (barStyle.enabled ~= true) then
+        return;
+    end
+
+    local percent = Clamp01(progress) * 100;
+    local showAtPercent = tonumber(barStyle.showAtPercent);
+
+    if (showAtPercent ~= nil and percent > math.max(0, math.min(300, showAtPercent))) then
         return;
     end
 
@@ -3664,6 +3730,60 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         return;
     end
 
+    if (style.liveResourceBars == true) then
+        local plateScale = GetPlateDistanceScale(style, targetIndex, plate.distance or style.distance);
+        local plateWorldOffsetX = tonumber(style.plateWorldOffsetX) or 0;
+        local plateWorldOffsetY = tonumber(style.plateWorldOffsetY) or tonumber(style.nameWorldOffsetY) or 0.78;
+        if (style.pcBodyPlateOffsetEnabled == true) then
+            local bodyOffset = GetPcBodyPlateOffset(actorPointer, targetIndex, entityManager);
+            plateWorldOffsetY = plateWorldOffsetY + bodyOffset;
+        end
+        local plateWorldOffsetZ = tonumber(style.plateWorldOffsetZ) or 0;
+        local plateX = wx + plateWorldOffsetX;
+        local plateY = wz + verticalOffset + plateWorldOffsetY - nameVerticalOffset;
+        local plateZ = wy + plateWorldOffsetZ;
+        local plateWorldWidth = (tonumber(style.plateWorldWidth) or 0.84) * plateScale;
+        local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
+        local _, savePlateZFunc = device:GetRenderState(D3DRS_ZFUNC);
+
+        if (ShouldHideProjectedBelowViewportPlate(device, entityManager, style, plateX, plateY, plateZ) == true) then
+            return;
+        end
+
+        style.clickTargetType = plate.clickTargetType or style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy');
+        style.serverId = plate.serverId or style.serverId;
+        style.distance = plate.distance or style.distance;
+        style.modelHitboxSize = plate.modelHitboxSize or style.modelHitboxSize;
+
+        if (updateClickOnly == true) then
+            SetPlateClickRectFromBillboard(device, targetIndex, style.clickTargetType, plateX, plateY, plateZ, plateWorldWidth, plateWorldHeight, {
+                targetIndex = targetIndex,
+                targetType = style.clickTargetType,
+                serverId = style.serverId,
+                name = plate.clickName or style.clickName,
+                layoutStateName = style.layoutStateName,
+            });
+            return;
+        end
+
+        device:SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+
+        if (ShouldHardHidePlateByNoGoZone(plate.targetIndex) ~= true) then
+            DrawSelfResourceBars(device, plateX, plateY, plateZ, plate);
+            SetPlateClickRectFromBillboard(device, targetIndex, style.clickTargetType, plateX, plateY, plateZ, plateWorldWidth, plateWorldHeight, {
+                targetIndex = targetIndex,
+                targetType = style.clickTargetType,
+                serverId = style.serverId,
+                name = plate.clickName or style.clickName,
+                layoutStateName = style.layoutStateName,
+            });
+        end
+
+        device:SetRenderState(D3DRS_ZFUNC, savePlateZFunc);
+
+        return;
+    end
+
     if (plate.isSelf == true) then
         local _, view = device:GetTransform(2);
         local _, proj = device:GetTransform(3);
@@ -4390,17 +4510,22 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
     elseif (
         message == 516 and
         interactTarget ~= nil and
-        entry.targetType == 'object'
+        (entry.targetType == 'object' or targeting.IsGatheringPointName(entry.name) == true)
     ) then
         local ok = false;
+        local interactType = (targeting.IsGatheringPointName(entry.name) == true) and 'object' or entry.targetType;
 
         pcall(function ()
-            ok = interactTarget(entry.targetIndex, entry.targetType, entry.distance);
+            ok = interactTarget(entry.targetIndex, interactType, entry.distance);
         end);
 
-        lastClickStatus = 'right interact ' .. tostring(ok) .. ' ' .. tostring(entry.targetType) .. ' message=' .. tostring(message) .. ' target=' .. tostring(entry.targetIndex) .. ' distance=' .. tostring(entry.distance);
+        lastClickStatus = 'right interact ' .. tostring(ok) .. ' ' .. tostring(interactType) .. ' message=' .. tostring(message) .. ' target=' .. tostring(entry.targetIndex) .. ' distance=' .. tostring(entry.distance) .. ' name=' .. tostring(entry.name or '');
 
         if (ok == true) then
+            return true;
+        end
+
+        if (targeting.IsGatheringPointName(entry.name) == true) then
             return true;
         end
 

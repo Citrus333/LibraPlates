@@ -58,12 +58,6 @@ local plateWorkGateCache = {
     clock = 0,
     result = true,
 };
-local scanCache = {
-    clock = 0,
-    range = nil,
-    enemies = nil,
-};
-local idleScanCacheSeconds = 0.20;
 local idleDirectCacheSeconds = 2.00;
 local layoutSettingsCacheSeconds = 0.05;
 local layoutSettingsCache = {};
@@ -1609,7 +1603,7 @@ local function QueueFreshIdleCache(enemy)
         return false;
     end
 
-    if ((os.clock() - (tonumber(cached.lastFullRefresh) or 0)) >= adaptivePerformance.GetWorldRefreshSeconds('enemy')) then
+    if ((os.clock() - (tonumber(cached.lastFullRefresh) or 0)) >= idleDirectCacheSeconds) then
         return false;
     end
 
@@ -2341,35 +2335,12 @@ function enemyPlate.Render(importantOnly)
     end
 
     if (IsNonCombatZone() == true) then
-        scanCache.enemies = nil;
         return;
     end
 
-    local range = targeting.GetWorldPlateRange();
-    local now = os.clock();
-    local canUseScanCache = state.GetConfigOpen() ~= true;
-    local enemies = nil;
-
-    if (
-        canUseScanCache == true and
-        scanCache.enemies ~= nil and
-        scanCache.range == range and
-        (now - (tonumber(scanCache.clock) or 0)) < adaptivePerformance.GetWorldRefreshSeconds('enemy')
-    ) then
-        enemies = scanCache.enemies;
-    else
-        local scanTimer = perfMeter.BeginDetail('enemy.scan');
-        enemies = entities.GetNearbyEnemies(range);
-        perfMeter.EndDetail(scanTimer);
-
-        if (canUseScanCache == true) then
-            scanCache.clock = now;
-            scanCache.range = range;
-            scanCache.enemies = enemies;
-        else
-            scanCache.enemies = nil;
-        end
-    end
+    local scanTimer = perfMeter.BeginDetail('enemy.scan');
+    local enemies = entities.GetNearbyEnemies(targeting.GetWorldPlateRange());
+    perfMeter.EndDetail(scanTimer);
 
     for _, enemy in ipairs(enemies) do
         if (queued[enemy.index] == true) then

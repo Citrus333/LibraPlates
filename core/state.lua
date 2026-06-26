@@ -14,6 +14,7 @@ local state = {
     lastBackupPrune = 0,
     characterProfileCacheName = nil,
     characterProfileCacheClock = 0,
+    revision = 0,
 };
 
 local settingsFileName = 'settings.lua';
@@ -564,6 +565,14 @@ ApplyLoadedWorldEnabled = function(profile)
     end
 end
 
+local function BumpRevision()
+    state.revision = (tonumber(state.revision) or 0) + 1;
+end
+
+function state.GetRevision()
+    return tonumber(state.revision) or 0;
+end
+
 local function RefreshCharacterProfile()
     local profileName = GetCharacterProfileName();
 
@@ -780,6 +789,7 @@ function state.Load()
     end
 
     ApplyLoadedWorldEnabled(state.profile);
+    BumpRevision();
 
 end
 
@@ -846,6 +856,7 @@ function state.Save()
     local metadata = GetProfileMetadata(state.profileManifest, state.profileManifest.activeProfile);
     metadata.modified = GetTimestamp();
     SaveProfileManifest();
+    BumpRevision();
 
     return true;
 end

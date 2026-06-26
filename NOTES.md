@@ -63,6 +63,7 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 - Normal self plate follows the active self layout.
 - Target/subtarget context uses `Self + Combat/Tactical` target-module behavior.
 - Resting, crafting, fishing, and gathering are module overlays, not separate normal target plate swaps.
+- Follow-up: move Quick Menu job-change favorite presets to a Self-facing settings location, or add a clear Self shortcut, because users look for personal job-change favorites under Self rather than NPC/Object Quick Menu.
 - Regression: shutdown/logout timer is broken again. The countdown/doughnut can reset instead of counting down cleanly; do not touch resting timer behavior while fixing this.
 
 ### Pet And Luopan

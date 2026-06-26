@@ -625,10 +625,6 @@ end
 local function BuildPreviewTargetMarker(entityName, stateName, context, hpBarSettings)
     local marker = BuildTargetMarker(context, hpBarSettings);
 
-    if (marker == nil and tostring(entityName or '') == 'Luopan') then
-        marker = targetModuleMarker.Build('Luopan', tostring(stateName or 'Luopan'), 'Target', hpBarSettings, 0, { previewMode = true });
-    end
-
     if (marker ~= nil) then
         marker.anchorKinds = { 'name', 'hp' };
         marker.arrowAnchorKinds = { 'name' };
@@ -901,9 +897,23 @@ local function GetPlayerPreviewIconSettings(storageEntityName, stateName)
     };
 end
 
-local function AddPlayerPreviewIcons(icons, playerIconSettings)
-    AddIcon(icons, playerIconSettings.allianceLeader, LoadWidgetIcon('alliance_leader.png'), -120, -54, 'allianceLeaderIcon');
-    AddIcon(icons, playerIconSettings.partyLeader, LoadWidgetIcon('party_leader.png'), -96, -54, 'partyLeaderIcon');
+local function AddPlayerPreviewIcons(icons, playerIconSettings, entityName, stateName)
+    if (entityName == 'Trust') then
+        return;
+    end
+
+    if (entityName == 'Self' and stateName ~= 'Idle' and stateName ~= 'Combat') then
+        return;
+    end
+
+    local pcWorldPreview = entityName == 'PC' and stateName ~= 'Combat';
+    local worldPreview = pcWorldPreview == true;
+
+    if (worldPreview ~= true) then
+        AddIcon(icons, playerIconSettings.allianceLeader, LoadWidgetIcon('alliance_leader.png'), -120, -54, 'allianceLeaderIcon');
+        AddIcon(icons, playerIconSettings.partyLeader, LoadWidgetIcon('party_leader.png'), -96, -54, 'partyLeaderIcon');
+    end
+
     AddIcon(icons, playerIconSettings.gameMode, gameMode.GetIconTextureId('ACE'), -72, -54, 'gameModeIcon');
     AddIcon(icons, playerIconSettings.linkshell, LoadWidgetIcon('linkshell.png'), 48, -54, 'linkshellIcon');
     AddIcon(icons, playerIconSettings.bazaar, LoadWidgetIcon('bazaar.png'), 72, -54, 'bazaarIcon');
@@ -911,7 +921,11 @@ local function AddPlayerPreviewIcons(icons, playerIconSettings)
     AddIcon(icons, playerIconSettings.disconnect, LoadWidgetIcon('dc.png'), 144, -54, 'disconnectIcon');
     AddIcon(icons, playerIconSettings.anon, LoadWidgetIcon('anon.png'), -120, -54, 'anonIcon');
     AddIcon(icons, playerIconSettings.stars, LoadWidgetIcon('stars.png'), -48, -54, 'starsIcon');
-    AddIcon(icons, playerIconSettings.levelSync, LoadWidgetIcon('lvsync.png'), -24, -54, 'levelSyncIcon');
+
+    if (worldPreview ~= true) then
+        AddIcon(icons, playerIconSettings.levelSync, LoadWidgetIcon('lvsync.png'), -24, -54, 'levelSyncIcon');
+    end
+
     AddIcon(icons, playerIconSettings.newAdventurer, LoadWidgetIcon('new_adventurer.png'), 24, -54, 'newAdventurerIcon');
 end
 
@@ -2132,7 +2146,7 @@ local function BuildPlate(entityName, stateName, context)
     end
 
     if (entityName == 'Self' or entityName == 'PC' or entityName == 'Trust') then
-        AddPlayerPreviewIcons(icons, playerIconSettings);
+        AddPlayerPreviewIcons(icons, playerIconSettings, entityName, stateName);
     end
 
     if ((entityName == 'Enemy' or entityName == 'Self' or entityName == 'Trust' or (entityName == 'PC' and stateName == 'Combat')) and (context == nil or context.widgetKey ~= 'Peer')) then

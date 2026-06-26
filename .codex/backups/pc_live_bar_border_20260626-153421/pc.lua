@@ -765,7 +765,7 @@ local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, la
 
     local now = os.clock();
     local lastRefresh = tonumber(cached.lastFullRefresh) or 0;
-    local maxAge = adaptivePerformance.GetWorldRefreshSeconds('pc');
+    local maxAge = cached.hasDynamicVisuals == true and idleDirectDynamicCacheSeconds or idleDirectStaticCacheSeconds;
 
     if ((now - lastRefresh) >= maxAge) then
         return false;
@@ -877,35 +877,6 @@ local function AnyPcPlateWorkCanLoad()
     plateWorkGateCache.result = result == true;
 
     return result == true;
-end
-
-local function AnyPcWorldPlateWorkCanLoad()
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
-    local enmitySettings = globalSettings ~= nil and globalSettings.enmity or nil;
-
-    return
-        AnyPcWidgetCanLoadForState('Idle') == true or
-        AnyPcWidgetCanLoadForState('Combat') == true or
-        (enmitySettings ~= nil and enmitySettings.enabled == true);
-end
-
-local function AnyPcTargetModuleCanLoad()
-    return
-        TargetMarkerCanDraw('Combat', 'Target') == true or
-        TargetMarkerCanDraw('Combat', 'Subtarget') == true;
-end
-
-local function AnyPcIdleWorldPlateWorkCanLoad()
-    return AnyPcWidgetCanLoadForState('Idle') == true;
-end
-
-local function AnyPcPartyPlateWorkCanLoad()
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
-    local enmitySettings = globalSettings ~= nil and globalSettings.enmity or nil;
-
-    return
-        AnyPcWidgetCanLoadForState('Combat') == true or
-        (enmitySettings ~= nil and enmitySettings.enabled == true);
 end
 
 local function BuildPcPlateData(context)
@@ -1070,11 +1041,15 @@ local function QueuePlayer(player)
             return false;
         end
 
+        if ((tonumber(settings.borderSize) or 0) > 0) then
+            return false;
+        end
+
         if (settings.lowAnimationEnabled == true) then
             return false;
         end
 
-        if (tostring(settings.anchorTo or 'Plate') ~= 'Plate') then
+        if ((tonumber(settings.showAtPercent) or 100) < 100) then
             return false;
         end
 
@@ -1095,8 +1070,7 @@ local function QueuePlayer(player)
 
     local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isProtectedPlate);
     local useTargetOverlay = isTacticalPlayer == true or isTargetContext == true;
-    local layoutStateName = isTacticalPlayer == true and 'Combat' or 'Idle';
-    local targetModuleStateName = (isTacticalPlayer == true or isTargetContext == true) and 'Combat' or layoutStateName;
+    local layoutStateName = (isTacticalPlayer == true or isTargetContext == true) and 'Combat' or 'Idle';
     local hasHp = player.hpPercent ~= nil or (player.hp ~= nil and player.maxHp ~= nil and tonumber(player.maxHp) > 0);
     local playerMaxMp = tonumber(player.maxMp);
     local playerMainJob = tonumber(player.mainJob);
@@ -1176,7 +1150,7 @@ local function QueuePlayer(player)
     local nativeUiPolicy = require('core.native_ui_policy');
     local targetMarker = targetStateName ~= 'Idle'
         and nativeUiPolicy.ShouldDrawLibraTargetingSystem() == true
-        and targetModuleMarker.Build('PC', targetModuleStateName, targetStateName, hpBarSettings, player.distance)
+        and targetModuleMarker.Build('PC', layoutStateName, targetStateName, hpBarSettings, player.distance)
         or { enabled = false };
 
     local globalSettings = state.GetGlobalSettings(globalDefaults);
@@ -1233,20 +1207,14 @@ local function QueuePlayer(player)
             return { enabled = false };
         end
 
-        local barHeight = tonumber(settings.height) or defaultHeight or 12;
-        local offsetY = tonumber(settings.offsetY) or defaultOffsetY or 0;
-
         return {
             enabled = true,
             worldWidth = math.max(0.04, (tonumber(settings.width) or defaultWidth or 180) / 430),
-            worldHeight = math.max(0.006, barHeight / 260),
+            worldHeight = math.max(0.006, (tonumber(settings.height) or defaultHeight or 12) / 260),
             worldOffsetX = (tonumber(settings.offsetX) or 0) / 430,
-            worldOffsetY = offsetY / 260,
+            worldOffsetY = (tonumber(settings.offsetY) or defaultOffsetY or 0) / 260,
             color = color,
             backgroundColor = settings.backgroundColor,
-            borderColor = settings.borderColor,
-            borderWorldSize = math.max(0, tonumber(settings.borderSize) or 0) / 260,
-            showAtPercent = tonumber(settings.showAtPercent) or 100,
         };
     end
 
@@ -1389,76 +1357,15 @@ local function QueuePlayer(player)
         return;
     end
 
-    local resourceOnlyLivePlate =
-        (liveHpBarStyle.enabled == true or liveMpBarStyle.enabled == true or liveTpBarStyle.enabled == true) and
-        backgroundLoads ~= true and
-        nameLoads ~= true and
-        jobLoads ~= true and
-        levelLoads ~= true and
-        buffsLoad ~= true and
-        debuffsLoad ~= true and
-        distanceText == nil and
-        #icons == 0 and
-        targetMarkerDraws ~= true and
-        enmityAllyDraws ~= true and
-        nameAoeActive ~= true;
-
-    if (resourceOnlyLivePlate == true) then
-        local playerMounted = require('core.mounted').IsStatus(player.status);
-        local plateWorldOffsetY = playerMounted and (0.05 - mountedPlateLift) or 0.05;
-        local queueTimer = perfMeter.BeginDetail('pc.queue');
-
-        worldMarkerProbe.QueuePlate({
-            targetIndex = player.index,
-            serverId = player.serverId,
-            distance = player.distance,
-            hp = hasHp == true and hpPercent or 100,
-            mp = hasMp == true and mpPercent or nil,
-            tp = hasTp == true and tpValue or nil,
-            name = '',
-            isSelf = false,
-            stateName = targetStateName,
-            clickTargetType = 'pc',
-            clickName = player.name,
-            worldMarker = targeting.ApplyPlateScalingSettings({
-                hpBar = liveHpBarStyle,
-                mpBar = liveMpBarStyle,
-                tpBar = liveTpBarStyle,
-                liveResourceBars = true,
-                plateTextureId = nil,
-                plateAlwaysOnTop = useTargetOverlay == true,
-                plateTacticalOverlayOnly = false,
-                useExactNameplateAnchor = true,
-                plateWorldWidth = 2.35,
-                plateWorldHeight = 1.18,
-                plateWorldOffsetY = plateWorldOffsetY,
-                plateDistanceScaleOffsetY = 0.28,
-                pcBodyPlateOffsetEnabled = true,
-                clickTargetType = 'pc',
-                clickName = player.name,
-                layoutStateName = layoutStateName,
-            }, 'pc', 0, plateWorldOffsetY),
-        });
-        perfMeter.EndDetail(queueTimer);
-        indexCache[tonumber(player.index) or 0] = nil;
-        return;
-    end
-
     local cacheEligible = targetStateName == 'Idle'
         and state.GetConfigOpen() ~= true
         and distanceText == nil
-        and (hpBarLoads ~= true or liveHpBarStyle.enabled == true or hpAnimationEnabled ~= true)
-        and (mpBarLoads ~= true or liveMpBarStyle.enabled == true or mpAnimationEnabled ~= true)
-        and (tpBarLoads ~= true or liveTpBarStyle.enabled == true);
+        and (hpBarLoads ~= true or liveHpBarStyle.enabled == true);
 
     local cacheKey = nil;
     local signature = nil;
     local staleCached = nil;
     local blacklistSignature = require('core.player_blacklist').GetSignature(player);
-    local canUseStaleCachedPlate =
-        (hpBarLoads ~= true or liveHpBarStyle.enabled == true) and
-        (mpBarLoads ~= true or liveMpBarStyle.enabled == true) and
-        (tpBarLoads ~= true or liveTpBarStyle.enabled == true);
 
     if (cacheEligible == true) then
         cacheKey = 'pc:' .. tostring(player.index) .. ':' .. GetPlayerIdentityKey(player);
@@ -1477,15 +1384,8 @@ local function QueuePlayer(player)
             'status=' .. tostring(player.status or ''),
             'engaged=' .. (currentPlayerEngaged == true and '1' or '0'),
             'hasHp=' .. (hasHp == true and '1' or '0'),
-            'hpPercent=' .. tostring(hpPercent or ''),
-            'hpValue=' .. tostring(player.hp or ''),
-            'hpMax=' .. tostring(player.maxHp or ''),
             'hasMp=' .. (hasMp == true and '1' or '0'),
-            'mpPercent=' .. tostring(mpPercent or ''),
-            'mpValue=' .. tostring(player.mp or ''),
-            'mpMax=' .. tostring(player.maxMp or ''),
             'hasTp=' .. (hasTp == true and '1' or '0'),
-            'tpValue=' .. tostring(tpValue or ''),
             'distance=' .. tostring(distanceText or ''),
             'game=' .. tostring(gameModeIconTextureId or ''),
             'linkshell=' .. tostring(linkshellIconTextureId or ''),
@@ -1504,7 +1404,7 @@ local function QueuePlayer(player)
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'dist:' .. SettingKey(distanceSettings, { 'enabled', 'loadMode', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint' }),
-            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
+            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
             'icons=' .. tostring(#icons),
         }, '\n');
 
@@ -1519,7 +1419,6 @@ local function QueuePlayer(player)
         end
 
         if (
-            canUseStaleCachedPlate == true and
             adaptivePerformance.ShouldThrottleBackground() == true and
             staleCached ~= nil and
             (os.clock() - (tonumber(staleCached.lastUsed) or 0)) < 1.00 and
@@ -1534,7 +1433,6 @@ local function QueuePlayer(player)
 
     if (
         cacheEligible == true and
-        canUseStaleCachedPlate == true and
         (
             ShouldDeferIdlePcCanvasBuild(cacheEligible) == true or
             (
@@ -1601,17 +1499,9 @@ local function QueuePlayer(player)
         aoeRangeSettings = aoeRangeSettings,
     });
     if (cacheEligible == true) then
-        if (liveHpBarStyle.enabled == true) then
-            plateData.hpBar = { enabled = false };
-        end
-
-        if (liveMpBarStyle.enabled == true) then
-            plateData.mpBar = { enabled = false };
-        end
-
-        if (liveTpBarStyle.enabled == true) then
-            plateData.tpBar = { enabled = false };
-        end
+        plateData.hpBar = { enabled = false };
+        plateData.mpBar = { enabled = false };
+        plateData.tpBar = { enabled = false };
     end
 
     if (jobLoads == true) then
@@ -1791,51 +1681,12 @@ function pcPlate.Render()
 
     currentPlayerEngaged = targeting.IsPlayerEngaged() == true;
 
-    local canRenderWorldPlayers = AnyPcIdleWorldPlateWorkCanLoad() == true;
-    local canRenderPartyPlayers = AnyPcPartyPlateWorkCanLoad() == true;
-    local canRenderTargetPlayers = AnyPcTargetModuleCanLoad() == true;
-
-    if (canRenderWorldPlayers ~= true and canRenderPartyPlayers ~= true and canRenderTargetPlayers ~= true) then
+    if (AnyPcPlateWorkCanLoad() ~= true) then
         scanCache.players = nil;
         return;
     end
 
     local range = targeting.GetWorldPlateRange();
-    local queuedSpecialPlayers = {};
-
-    if (canRenderPartyPlayers == true) then
-        for _, player in ipairs(entities.GetPartyPlayers(range)) do
-            queuedSpecialPlayers[tonumber(player.index) or 0] = true;
-            QueuePlayer(player);
-        end
-    end
-
-    if (canRenderTargetPlayers == true) then
-        local queuedTargets = {};
-        local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
-        local targetIndexes = { targetIndex, subTargetIndex };
-
-        for targetSlot = 1, 2 do
-            local index = targetIndexes[targetSlot];
-            index = tonumber(index);
-
-            if (index ~= nil and queuedTargets[index] ~= true) then
-                queuedTargets[index] = true;
-
-                local player = entities.GetPlayerByIndex(index, range);
-                if (player ~= nil) then
-                    queuedSpecialPlayers[tonumber(player.index) or 0] = true;
-                    QueuePlayer(player);
-                end
-            end
-        end
-    end
-
-    if (canRenderWorldPlayers ~= true) then
-        scanCache.players = nil;
-        return;
-    end
-
     local now = os.clock();
     local canUseScanCache = currentPlayerEngaged ~= true
         and state.GetConfigOpen() ~= true;
@@ -1845,7 +1696,7 @@ function pcPlate.Render()
         canUseScanCache == true and
         scanCache.players ~= nil and
         scanCache.range == range and
-        (now - (tonumber(scanCache.clock) or 0)) < adaptivePerformance.GetWorldRefreshSeconds('pc')
+        (now - (tonumber(scanCache.clock) or 0)) < idleScanCacheSeconds
     ) then
         perfMeter.Count('pc.scan.cacheHit', 1);
         players = scanCache.players;
@@ -1876,7 +1727,7 @@ function pcPlate.Render()
     end
 
     for _, player in ipairs(players) do
-        if (queuedSpecialPlayers[tonumber(player.index) or 0] ~= true and entities.IsOwnPetIndex(player.index) ~= true) then
+        if (entities.IsOwnPetIndex(player.index) ~= true) then
             QueuePlayer(player);
         end
     end

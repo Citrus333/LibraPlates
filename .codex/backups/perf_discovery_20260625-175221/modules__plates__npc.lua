@@ -31,9 +31,6 @@ local scanCache = {
     clock = 0,
     range = nil,
     entities = nil,
-    tacticalClock = 0,
-    tacticalRange = nil,
-    tacticalEntities = nil,
 };
 local plateWorkGateCache = {
     clock = 0,
@@ -857,9 +854,13 @@ local function AnyNpcObjectPlateWorkCanLoad()
         return plateWorkGateCache.result == true;
     end
 
+    local npcTargetSettings = targetModuleMarker.GetSettings('NPC', 'Combat', 'Target');
+    local npcSubtargetSettings = targetModuleMarker.GetSettings('NPC', 'Combat', 'Subtarget');
     local result =
         AnyNpcObjectWidgetCanLoadForEntity('NPC') == true or
-        AnyNpcObjectWidgetCanLoadForEntity('Object') == true;
+        AnyNpcObjectWidgetCanLoadForEntity('Object') == true or
+        targetModuleMarker.HasDrawableSettings('NPC', npcTargetSettings) == true or
+        targetModuleMarker.HasDrawableSettings('NPC', npcSubtargetSettings) == true;
 
     plateWorkGateCache.clock = now;
     plateWorkGateCache.result = result == true;
@@ -867,21 +868,17 @@ local function AnyNpcObjectPlateWorkCanLoad()
     return result == true;
 end
 
-local function AnyTacticalNpcWidgetCanLoad()
+local function AnyTacticalNpcPlateWorkCanLoad()
     local hpBarSettings = state.GetWidgetSettings('NPC', 'Combat', 'HP Bar', barDefaults);
     local nameSettings = state.GetWidgetSettings('NPC', 'Combat', 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('NPC', 'Combat', 'Background', backgroundDefaults);
-
-    return hpBarSettings.enabled == true or
-        nameSettings.enabled == true or
-        backgroundSettings.enabled == true;
-end
-
-local function AnyNpcTargetModuleCanLoad()
     local npcTargetSettings = targetModuleMarker.GetSettings('NPC', 'Combat', 'Target');
     local npcSubtargetSettings = targetModuleMarker.GetSettings('NPC', 'Combat', 'Subtarget');
 
-    return targetModuleMarker.HasDrawableSettings('NPC', npcTargetSettings) == true or
+    return hpBarSettings.enabled == true or
+        nameSettings.enabled == true or
+        backgroundSettings.enabled == true or
+        targetModuleMarker.HasDrawableSettings('NPC', npcTargetSettings) == true or
         targetModuleMarker.HasDrawableSettings('NPC', npcSubtargetSettings) == true;
 end
 
@@ -917,17 +914,14 @@ function npcPlate.Render()
 
     if (clientVisibility.ShouldHideNpcObjectPlates() == true) then
         scanCache.entities = nil;
-        scanCache.tacticalEntities = nil;
         return;
     end
 
     local canRenderNpcObjects = AnyNpcObjectPlateWorkCanLoad() == true;
-    local canRenderTacticalNpcs = AnyTacticalNpcWidgetCanLoad() == true;
-    local canRenderTargetNpcs = AnyNpcTargetModuleCanLoad() == true;
+    local canRenderTacticalNpcs = AnyTacticalNpcPlateWorkCanLoad() == true;
 
-    if (canRenderNpcObjects ~= true and canRenderTacticalNpcs ~= true and canRenderTargetNpcs ~= true) then
+    if (canRenderNpcObjects ~= true and canRenderTacticalNpcs ~= true) then
         scanCache.entities = nil;
-        scanCache.tacticalEntities = nil;
         return;
     end
 
@@ -936,31 +930,7 @@ function npcPlate.Render()
     local now = os.clock();
     local canUseScanCache = playerEngaged ~= true
         and state.GetConfigOpen() ~= true;
-    local worldNpcObjectRefreshSeconds = math.min(
-        adaptivePerformance.GetWorldRefreshSeconds('npc'),
-        adaptivePerformance.GetWorldRefreshSeconds('object')
-    );
     local entitiesList = nil;
-
-    if (canRenderTargetNpcs == true) then
-        local queuedTargets = {};
-        local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
-        local targetIndexes = { targetIndex, subTargetIndex };
-
-        for targetSlot = 1, 2 do
-            local index = targetIndexes[targetSlot];
-            index = tonumber(index);
-
-            if (index ~= nil and queuedTargets[index] ~= true) then
-                queuedTargets[index] = true;
-
-                local tacticalEntity = entities.GetTacticalNpcByIndex(index, range);
-                if (tacticalEntity ~= nil and IsAlliedTacticalNpc(tacticalEntity) == true) then
-                    QueueTacticalNpc(tacticalEntity);
-                end
-            end
-        end
-    end
 
     if (canRenderNpcObjects ~= true) then
         entitiesList = {};
@@ -969,7 +939,7 @@ function npcPlate.Render()
         canUseScanCache == true and
         scanCache.entities ~= nil and
         scanCache.range == range and
-        (now - (tonumber(scanCache.clock) or 0)) < worldNpcObjectRefreshSeconds
+        (now - (tonumber(scanCache.clock) or 0)) < idleScanCacheSeconds
     ) then
         entitiesList = scanCache.entities;
     else
@@ -986,34 +956,8 @@ function npcPlate.Render()
         end
     end
 
-    local tacticalEntities = nil;
-
-    if (canRenderTacticalNpcs ~= true) then
-        tacticalEntities = {};
-        scanCache.tacticalEntities = nil;
-    elseif (
-        canUseScanCache == true and
-        scanCache.tacticalEntities ~= nil and
-        scanCache.tacticalRange == range and
-        (now - (tonumber(scanCache.tacticalClock) or 0)) < idleScanCacheSeconds
-    ) then
-        tacticalEntities = scanCache.tacticalEntities;
-    else
-        local tacticalScanTimer = perfMeter.BeginDetail('npc.tactical.scan');
-        tacticalEntities = entities.GetNearbyTacticalNpcs(range);
-        perfMeter.EndDetail(tacticalScanTimer);
-
-        if (canUseScanCache == true) then
-            scanCache.tacticalClock = now;
-            scanCache.tacticalRange = range;
-            scanCache.tacticalEntities = tacticalEntities;
-        else
-            scanCache.tacticalEntities = nil;
-        end
-    end
-
     local tacticalNpcIndexes = {};
-    for _, entity in ipairs(tacticalEntities) do
+    for _, entity in ipairs(entities.GetNearbyTacticalNpcs(range)) do
         if (IsAlliedTacticalNpc(entity) == true) then
             tacticalNpcIndexes[tonumber(entity.index) or 0] = true;
             QueueTacticalNpc(entity);

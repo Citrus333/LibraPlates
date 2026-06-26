@@ -7,6 +7,7 @@ local log = require('core.log');
 local jobChange = require('core.job_change');
 local jobIconTextures = require('core.job_icon_textures');
 local mounts = require('core.mounts');
+local targeting = require('core.targeting');
 local playerBlacklist = require('core.player_blacklist');
 local widgetDefaults = { enabled = true };
 local quickMenuPresetCount = 10;
@@ -1370,6 +1371,10 @@ function quickMenu.OpenForPlate(entry, x, y)
 
     if (name == '') then
         name = GetEntityName(entry.targetIndex, entry.name);
+    end
+
+    if (targeting.IsGatheringPointName(name) == true) then
+        return false;
     end
 
     if ((targetType == 'trust' or targetType == 'object') and jobChange.IsJobChangeNpcName(name) == true) then

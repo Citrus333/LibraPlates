@@ -8,6 +8,2549 @@ local itemIcons = T{
     -------------------------------------------------------------------------------
     -- Multi-Zone
     -------------------------------------------------------------------------------
+    ['Atomos'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Beaucedine Glacier [S]', 'Hall of Transference', 'La Theine Plateau' },
+        zoneIds = { 14, 102, 136 },
+        note = 'Needs Review.',
+    },
+
+    ['Auroral Updraft'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Al\'Taieu' },
+        zoneIds = { 33 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Aurum Strongbox'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Walk of Echoes [P1]', 'Walk of Echoes [P2]' },
+        zoneIds = { 279, 298 },
+        note = 'Needs Review.',
+    },
+	
+    ['Backfilled Pit'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Xarcabard [S]' },
+        zoneIds = { 137 },
+        note = 'Needs Review.',
+    },
+	
+
+    ['Banishing Gate #1'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Garlaige Citadel', 'Garlaige Citadel [S]' },
+        zoneIds = { 164, 200 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Banishing Gate #2'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Garlaige Citadel', 'Garlaige Citadel [S]' },
+        zoneIds = { 164, 200 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Banishing Gate #3'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Garlaige Citadel', 'Garlaige Citadel [S]' },
+        zoneIds = { 164, 200 },
+        note = 'Needs Review.',
+    },
+
+    ['Barnacled Box'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Valkurm Dunes' },
+        zoneIds = { 103 },
+        note = 'Needs Review.',
+    },
+
+    ['Beastmen\'s Banner'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Beaucedine Glacier', 'Buburimu Peninsula', 'Cape Teriggan', 'Eastern Altepa Desert', 'Jugner Forest', 'Meriphataud Mountains', 'Pashhow Marshlands', 'Qufim Island', 'Qulun Dome', 'The Sanctuary of Zi\'Tah', 'Valkurm Dunes', 'Xarcabard', 'Yhoator Jungle', 'Yuhtunga Jungle' },
+        zoneIds = { 103, 104, 109, 111, 112, 113, 114, 118, 119, 121, 123, 124, 126, 148 },
+        note = 'Needs Review.',
+    },
+
+
+
+    ['Blockaded Path'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Kamihr Drifts' },
+        zoneIds = { 267 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Bloodstained Glove'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Foret de Hennetiel' },
+        zoneIds = { 262 },
+        note = 'Needs Review.',
+    },
+
+
+
+    ['Blue Rafflesia'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Yuhtunga Jungle' },
+        zoneIds = { 123 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Bottomless Box'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Tahrongi' },
+        zoneIds = { 45 },
+        note = 'Needs Review.',
+    },
+
+    ['Brash Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Outer Ra\'Kaznar' },
+        zoneIds = { 274 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Brass Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Castle Oztroja', 'Castle Oztroja [S]' },
+        zoneIds = { 99, 151 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Brass Gong'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Navukgo Execution Chamber' },
+        zoneIds = { 64 },
+        note = 'Needs Review.',
+    },
+	
+
+    ['Bridge'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Spire of Vahzl' },
+        zoneIds = { 23 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Bridge Switch'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Periqia' },
+        zoneIds = { 56 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Bulwark Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Sauromugue Champaign [S]' },
+        zoneIds = { 98 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Buried Treasure'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Ruhotz Silvermines' },
+        zoneIds = { 93 },
+        note = 'Needs Review.',
+    },
+	
+
+    ['Cage Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Reef' },
+        zoneIds = { 54 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cage Fence'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'The Colosseum' },
+        zoneIds = { 71 },
+        note = 'Needs Review.',
+    },
+	
+    ['Camp Remnants'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Reef' },
+        zoneIds = { 54 },
+        note = 'Needs Review.',
+    },
+	
+
+    ['Cargo Crate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cargo Ship Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Open Sea Route to Al Zahbi', 'Open Sea Route to Mhaura', 'Ship Bound for Mhaura', 'Ship Bound for Mhaura (Pirates)', 'Ship Bound for Selbina', 'Ship Bound for Selbina (Pirates)', 'Silver Sea Route to Al Zahbi', 'Silver Sea Route to Nashmau' },
+        zoneIds = { 46, 47, 58, 59, 220, 221, 227, 228 },
+        note = 'Needs Review.',
+    },
+	
+
+    ['Cast Bronze Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Halvung', 'Navukgo Execution Chamber' },
+        zoneIds = { 62, 64 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cast Bronze Hatch'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Halvung' },
+        zoneIds = { 62 },
+        note = 'Needs Review.',
+    },
+	
+
+
+
+    ['Cavalry Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Fort Karugo-Narugo [S]' },
+        zoneIds = { 96 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cavalry Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Fort Karugo-Narugo [S]' },
+        zoneIds = { 96 },
+        note = 'Needs Review.',
+    },
+	
+	
+    ['Celestial Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'The Celestial Nexus' },
+        zoneIds = { 181 },
+        note = 'Needs Review.',
+    },
+	
+
+    ['Cermet Alcove'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Grand Palace of Hu\'Xzoi' },
+        zoneIds = { 34 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cermet Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Chamber of Oracles', 'Crawlers\' Nest', 'Dangruf Wadi', 'Fei\'Yin', 'Garlaige Citadel', 'Gusgen Mines', 'King Ranperre\'s Tomb', 'La\'Loff Amphitheater', 'Lower Delkfutt\'s Tower', 'Maze of Shakhrami', 'Ordelle\'s Caves', 'Outer Horutoto Ruins', 'Ranguemont Pass', 'Sacrificial Chamber', 'The Eldieme Necropolis', 'The Shrine of Ru\'Avitau', 'Upper Delkfutt\'s Tower', 'Ve\'Lugannon Palace' },
+        zoneIds = { 158, 163, 166, 168, 177, 178, 180, 184, 190, 191, 193, 194, 195, 196, 197, 198, 200, 204 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cermet Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Fei\'Yin', 'Hall of Transference' },
+        zoneIds = { 14, 204 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cermet Grate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Hall of The Gods' },
+        zoneIds = { 251 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cermet Headstone'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Behemoth\'s Dominion', 'Cape Teriggan', 'Cloister of Frost', 'La Theine Plateau', 'The Sanctuary of Zi\'Tah', 'Western Altepa Desert', 'Yuhtunga Jungle' },
+        zoneIds = { 102, 113, 121, 123, 125, 127, 203 },
+        note = 'Needs Review.',
+    },
+	
+    ['Chamnaet Spring'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Uleguerand Range' },
+        zoneIds = { 5 },
+        note = 'Needs Review.',
+    },
+	
+
+    ['Cheval River'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'East Ronfaure' },
+        zoneIds = { 101 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Chocobo Spoor'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Chocobo Tracks'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'La Theine Plateau' },
+        zoneIds = { 102 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Claw Mark'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Ceizak Battlegrounds' },
+        zoneIds = { 261 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Clay'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Gusgen Mines' },
+        zoneIds = { 196 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Clone Ward'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Attohwa', 'Abyssea - Misareaux', 'Abyssea - Vunkerl' },
+        zoneIds = { 215, 216, 217 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cloud of Darkness'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Reisenjima Sanctorium' },
+        zoneIds = { 293 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Coastal Fishing Net'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Mog Garden' },
+        zoneIds = { 280 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Collapsing Floor'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Castle Oztroja [S]' },
+        zoneIds = { 99 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Colorful Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Fort Karugo-Narugo [S]' },
+        zoneIds = { 96 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Compressed Snow'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Beaucedine Glacier [S]' },
+        zoneIds = { 136 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Congregation Site'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Cirdas Caverns' },
+        zoneIds = { 270 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Conquest Debug'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'GM Home' },
+        zoneIds = { 210 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Contemplation Site'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Western Adoulin' },
+        zoneIds = { 256 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Corroded Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Pashhow Marshlands [S]' },
+        zoneIds = { 90 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Corroded Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Beadeaux [S]', 'Pashhow Marshlands [S]' },
+        zoneIds = { 90, 92 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cracked Wall'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Inner Horutoto Ruins', 'Outer Horutoto Ruins' },
+        zoneIds = { 192, 194 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cradle of Rebirth'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Attohwa Chasm' },
+        zoneIds = { 7 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Craggy Pillar'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Castle Zvahl Keep' },
+        zoneIds = { 162 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Crawling Cave'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Kamihr Drifts' },
+        zoneIds = { 267 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Crematory Hatch'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Garlaige Citadel', 'Garlaige Citadel [S]' },
+        zoneIds = { 164, 200 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Crying Wind'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Grauberg' },
+        zoneIds = { 254 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Crypt Door'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Batallia Downs [S]' },
+        zoneIds = { 84 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Crystalline Field'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Al\'Taieu' },
+        zoneIds = { 33 },
+        note = 'Needs Review.',
+    },
+
+    ['Augural Conveyor'] = {
+        type = "Skirmish Waypoint",
+        icon = "Map.png",
+        zones = { 'Rala Waterways', 'Cirdas Caverns', 'Yorcia Weald', 'Outer Ra\'Kaznar' },
+        zoneIds = { 258, 263, 270, 274 },
+        note = "Ancient teleportation and skirmish entry structure. Serves as a destination point for the Adoulin regional waypoints network and as the entry node for Skirmish/Alluvion Skirmish battlefields.",
+    },
+	
+    ['Crystwater Spring'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Jugner Forest' },
+        zoneIds = { 104 },
+        note = 'Needs Review.',
+    },
+
+    ['Babbling Brook'] = {
+        type = "Mission Target",
+        icon = "Map.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "Involved in Mission:\n* The Voracious Resurgence",
+    },
+
+    ['Barricade'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'North Gustaberg [S]' },
+        zoneIds = { 88 },
+        note = 'Needs Review.',
+    },
+	
+    ['Bestiary'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Celennia Memorial Library' },
+        zoneIds = { 284 },
+        note = 'Needs Review.',
+    },
+	
+    ['Bibliomaniac\'s Lair'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Marjami Ravine' },
+        zoneIds = { 266 },
+        note = 'Needs Review.',
+    },
+	
+    ['bigwinch'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Davoi', 'Fort Ghelsba' },
+        zoneIds = { 141, 149 },
+        note = "OBJECT: Targetable structural stronghold winch element. Interacting with it manipulates heavy locking gates or tactical security barriers within Orcish military camps.",
+    },
+	
+    ['Bunglabiq'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Ruhotz Silvermines' },
+        zoneIds = { 93 },
+        note = "OBJECT: Targetable structural fixture or Goblin instance actor found deep inside the mines. Coordinates local layouts and room validation checks for the Moblin Maze Mongers (MMM) system maps.",
+    },
+	
+    ['Chaos'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Castle Zvahl Keep', 'Throne Room' },
+        zoneIds = { 162, 165 },
+        note = "OBJECT: Targetable manifestation node or custom server script engine entity linked directly to the ultimate shadow boss fights during classic Shadow Lord core mission battlefields.",
+    },
+	
+    ['Clandestine Marking'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Ghelsba Outpost' },
+        zoneIds = { 140 },
+        note = "OBJECT: Hidden checkpoint mark hidden inside the stronghold. Interacting with it allows players who fail the local battlefield trial to retrieve a replacement Orcish infiltration costume kit.",
+    },
+
+    ['Delivery Crate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Ru\'Lude Gardens' },
+        zoneIds = { 243 },
+        note = 'Needs Review.',
+    },
+	
+
+    -- OBJECT: Sortie Teleport Device
+    ['Diaphanous Bitzer'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Targetable ancient teleportation device located within the Sortie instance. Allows players to warp between distinct wings or sectors of the layout.",
+    },
+
+    -- OBJECT: Sortie Teleport Device
+    ['Diaphanous Bitzer #A'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Area A teleport device. Requires the temporary key item Ra'Kaznar Sheet #A to activate, allowing party transport between Area A and Area E.",
+    },
+
+    -- OBJECT: Sortie Teleport Device
+    ['Diaphanous Bitzer #B'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Area B teleport device. Requires the temporary key item Ra'Kaznar Sheet #B to activate, allowing party transport between Area B and Area F.",
+    },
+
+    -- OBJECT: Sortie Teleport Device
+    ['Diaphanous Bitzer #C'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Area C teleport device. Requires the temporary key item Ra'Kaznar Sheet #C to activate, allowing party transport between Area C and Area G.",
+    },
+
+    -- OBJECT: Sortie Teleport Device
+    ['Diaphanous Bitzer #D'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Area D teleport device. Requires the temporary key item Ra'Kaznar Sheet #D to activate, allowing party transport between Area D and Area H.",
+    },
+	
+    -- OBJECT: Sortie Objective Node
+    ['Diaphanous Device'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Targetable ancient device located within the Sortie instance. Allows players to examine or manipulate objectives inside the instance layout.",
+    },
+
+    -- OBJECT: Sortie Objective Node
+    ['Diaphanous Device #A'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Area A checkpoint node. Interacting with it evaluates specific combat objectives or conditions met within the A wing of Sortie.",
+    },
+
+    -- OBJECT: Sortie Objective Node
+    ['Diaphanous Device #B'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Area B checkpoint node. Interacting with it evaluates specific combat objectives or conditions met within the B wing of Sortie.",
+    },
+
+    -- OBJECT: Sortie Objective Node
+    ['Diaphanous Device #C'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Area C checkpoint node. Interacting with it evaluates specific combat objectives or conditions met within the C wing of Sortie.",
+    },
+
+    -- OBJECT: Sortie Objective Node
+    ['Diaphanous Device #D'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Area D checkpoint node. Interacting with it evaluates specific combat objectives or conditions met within the D wing of Sortie.",
+    },
+	
+     -- OBJECT: Sortie Interaction Mechanism
+    ['Diaphanous Gadget'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Targetable structural mechanism located within the Sortie instance. Allows players to examine or manipulate localized mechanical nodes.",
+    },
+
+    -- OBJECT: Sortie Interaction Mechanism
+    ['Diaphanous Gadget #?'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Unknown or variable sector interactive mechanic node used within Sortie instanced maps to process custom parameter validations.",
+    },
+
+    -- OBJECT: Sortie Interaction Mechanism
+    ['Diaphanous Gadget #A'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Sector A interactive device. Interacting with it handles conditions related to unlocking Area A paths or spawning specialized lockboxes.",
+    },
+
+    -- OBJECT: Sortie Interaction Mechanism
+    ['Diaphanous Gadget #B'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Sector B interactive device. Interacting with it handles conditions related to unlocking Area B paths or spawning specialized lockboxes.",
+    },
+
+    -- OBJECT: Sortie Interaction Mechanism
+    ['Diaphanous Gadget #C'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Sector C interactive device. Interacting with it handles conditions related to unlocking Area C paths or spawning specialized lockboxes.",
+    },
+
+     -- OBJECT: Sortie Interaction Mechanism
+    ['Diaphanous Gadget #D'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Sector D interactive device. Interacting with it handles conditions related to unlocking Area D paths or spawning specialized lockboxes.",
+    },
+
+    -- OBJECT: Sortie Interaction Mechanism
+    ['Diaphanous Gadget #E'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Sector E (Lower Tier) interactive device. Handles conditions for unlocking lower-level paths or spawning high-tier objective chests.",
+    },
+
+    -- OBJECT: Sortie Interaction Mechanism
+    ['Diaphanous Gadget #F'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Sector F (Lower Tier) interactive device. Handles conditions for unlocking lower-level paths or spawning high-tier objective chests.",
+    },
+
+    -- OBJECT: Sortie Interaction Mechanism
+    ['Diaphanous Gadget #G'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Sector G (Lower Tier) interactive device. Handles conditions for unlocking lower-level paths or spawning high-tier objective chests.",
+    },
+
+    -- OBJECT: Sortie Interaction Mechanism
+    ['Diaphanous Gadget #H'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
+        zoneIds = { 133, 189, 275 },
+        note = "OBJECT: Sector H (Lower Tier) interactive device. Handles conditions for unlocking lower-level paths or spawning high-tier objective chests.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Diary'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Southern San d\'Oria' },
+        zoneIds = { 230 },
+        note = "OBJECT: Targetable personal book log located inside a residential room. Interacting with it updates quest logs or plays historical flavor text lines.",
+    },
+
+    -- OBJECT: Regional Gateway Barrier
+    ['Dilapidated Gate'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Misareaux Coast', 'Abyssea - Misareaux' },
+        zoneIds = { 25, 216 },
+        note = "OBJECT: Targetable structural barricade gate node. Interacting with it handles zone navigation or serves as an entry checkpoint for dynamic regional combat triggers.",
+    },
+
+    -- OBJECT: Puzzle Interaction Mechanism
+    ['Displaced Block'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Castle Zvahl Keep [S]' },
+        zoneIds = { 155 },
+        note = "OBJECT: Targetable stone wall block mechanism found inside the beastman stronghold. Interacting with it manipulates security path gates or reveals hidden spatial pathways.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Disturbed Dirt'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Zeruhn Mines' },
+        zoneIds = { 172 },
+        note = "OBJECT: Targetable structural ground patch located inside the mines. Interacting with it updates quest logs or plays historical flavor text lines.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Disturbed Earth'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'East Sarutabaruta' },
+        zoneIds = { 116 },
+        note = "OBJECT: Targetable overworld ground mound found at (H-11). Interacting with it while on the proper quest steps triggers event cutscenes or item gathering checks.",
+    },
+
+    -- OBJECT: Quest Interaction Mechanism
+    ['Disused Well'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Davoi' },
+        zoneIds = { 149 },
+        note = "OBJECT: Targetable ancient village water well asset located at (E-10). Used during specific San d'Orian quest pathways or artifact item validation steps.",
+    },
+	
+    -- OBJECT: Mechanical Interaction Device
+    ['Dock Lever'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Palborough Mines' },
+        zoneIds = { 143 },
+        note = "OBJECT: Targetable structural floor lever located at the lower boat docks at (H-8). Interacting with it activates the automated transit boat mechanism, allowing transport to the hidden sections of the mines.",
+    },
+	
+    -- OBJECT: Salvage Portal Actor
+    ['Dormant Rampart'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Bhaflau Remnants' },
+        zoneIds = { 75 },
+        note = "OBJECT: Ancient targetable stone portal structure. Spawns on the 3rd floor of the Salvage instance after simultaneously defeating the Archaic Gears on the east and west sides. Examining it permits further spatial progression.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Dreamrose'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Western Altepa Desert' },
+        zoneIds = { 125 },
+        note = "OBJECT: Targetable desert flower node located at the small lake near Revelation Rock (G-7). Examining it triggers the Sabotender Enamorado Notorious Monster fight for San d'Oria Mission 6-1 ('Leaute's Last Wishes').",
+    },
+
+    -- OBJECT: Structural Gate Puzzle
+    ['Drop Gate'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Den of Rancor' },
+        zoneIds = { 160 },
+        note = "OBJECT: Targetable dungeon security gate. Interacting with it handles the structural opening or closing scripts required to navigate through the deep caverns.",
+    },
+
+    -- OBJECT: Battle Reward Node
+    ['Dullness Crate'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Qu\'Bia Arena' },
+        zoneIds = { 206 },
+        note = "OBJECT: Targetable reward coffer chest spawned inside the arena. Interacting with it distributes items such as the Ullegore Statue following successful battlefield progression.",
+    },
+
+    -- OBJECT: Custom Private Server Element
+    ['Dungeon Shop'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Sauromugue Champaign' },
+        zoneIds = { 120 },
+        note = "OBJECT: Custom private server interaction node. Interacting with it directly invokes a specialized programmatic shop subroutine, allowing players to purchase items out in the field.",
+    },
+	
+    -- OBJECT: Map Portal Landmark
+    ['Dungeon_Entrance'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Batallia Downs', 'Sauromugue Champaign' },
+        zoneIds = { 105, 120 },
+        note = "OBJECT: Custom private server interaction node. Serves as a physical, selectable zoning anchor point to instantly transport players into specific custom high-tier dungeon instances.",
+    },
+
+    -- OBJECT: Mission Interaction Node
+    ['Duskbrood Gate'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Ra\'Kaznar' },
+        zoneIds = { 274 },
+        note = "OBJECT: Targetable ancient gate barrier located at (L-7). Interacting with it handles structural path lockings or triggers story-progression cutscenes during Seekers of Adoulin end-tier missions.",
+    },
+	
+    -- OBJECT: Core Expansion Avatar / Battlefield Gateway
+    ['Earth Protocrystal'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Cloister of Tremors' },
+        zoneIds = { 209 },
+        note = "OBJECT: Large elemental crystal formation. Interacting with it serves as the physical gateway to enter Titan's prime avatar battlefields or trial instances.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Earthen Mound'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Ceizak Battlegrounds' },
+        zoneIds = { 261 },
+        note = "OBJECT: Targetable patch of upturned soil located in the wilderness. Examining it processes active side quests, geo-exploration checkpoints, or custom resource gathering checks.",
+    },
+
+    -- OBJECT: Endgame Instance Portal
+    ['Earthly Concrescence'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: Swirling dimensional stone structure located at (F-5) near Ingress #1. Consumes a Mystical Canteen key item to transport parties directly into the Omen endgame battlefield instance.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Earthy Mound'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Grauberg' },
+        zoneIds = { 254 },
+        note = "OBJECT: Targetable dirt landmark located inside the alternate-dimension crags. Interacting with it handles spatial puzzle progressions or triggers localized quest flag steps.",
+    },
+	
+    -- OBJECT: Puzzle Interaction Gate
+    ['East Plate'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'The Eldieme Necropolis [S]', 'The Eldieme Necropolis' },
+        zoneIds = { 175, 195 },
+        note = "OBJECT: Targetable crypt gate platform switch. Interacting with it drops or raises corresponding regional heavy metal blocking gates to open new passageways.",
+    },
+
+    -- OBJECT: Mission Interaction Node
+    ['Ebon Door'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Sauromugue Champaign [S]' },
+        zoneIds = { 98 },
+        note = "OBJECT: Targetable ancient door barrier located at (F-6). Examining it triggers critical campaign storyline cutscenes during Wings of the Goddess expansion missions.",
+    },
+
+    -- OBJECT: Puzzle Interaction Mechanism
+    ['Ebon Panel'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Grand Palace of Hu\'Xzoi', 'The Garden of Ru\'Hmet' },
+        zoneIds = { 34, 35 },
+        note = "OBJECT: Targetable ancient wall device. Interacting with it manipulates spatial layout puzzles or shifts security locks inside the sky palace towers.",
+    },
+
+    -- OBJECT: Puzzle Interaction Gate
+    ['Ebony Door'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Mamook', 'Jade Sepulcher' },
+        zoneIds = { 65, 67 },
+        note = "OBJECT: Heavy architectural beastman gate. Interacting with it handles structural pathway openings or checks key item permissions to navigate deeper layouts.",
+    },
+
+    -- OBJECT: Mission Interaction Node
+    ['Effigy of Sealing'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Ra\'Kaznar' },
+        zoneIds = { 274 },
+        note = "OBJECT: Selectable ancient stone statue barrier found at (G-7). Examining it checks key item requirements or triggers progression cutscenes during Seekers of Adoulin end-tier storylines.",
+    },
+	
+    -- OBJECT: Voidwatch Campaign Controller
+    ['Echo Disseminator'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Walk of Echoes' },
+        zoneIds = { 182 },
+        note = "OBJECT: Targetable ancient tuning apparatus located near the entrance. Interacting with it manages Voidstone stock reserves and allows players to adjust battle parameters for high-tier Voidwatch campaign operations.",
+    },
+	
+    -- OBJECT: Quest Interaction Point
+    ['Egg Discovery Site'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'The Eldieme Necropolis [S]' },
+        zoneIds = { 175 },
+        note = "OBJECT: Targetable patch of earth located inside the catacombs at (J-9). Interacting with it progresses specific past-timeline campaign side quests or handles seasonal event progression checks.",
+    },
+	
+    -- OBJECT: Seasonal Event Prop
+    ['Elated Ixion'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'West Ronfaure', 'La Theine Plateau', 'Valkurm Dunes', 'Batallia Downs', 'North Gustaberg', 'Konschtat Highlands', 'Rolanberry Fields', 'Beaucedine Glacier', 'West Sarutabaruta', 'Tahrongi Canyon', 'Sauromugue Champaign', 'Yuhtunga Jungle', 'Western Altepa Desert' },
+        zoneIds = { 100, 102, 103, 105, 106, 108, 110, 111, 115, 117, 120, 123, 125 },
+        note = "OBJECT: Untargetable mini-Ixion colt escort accompanying Mirthful Ixion during the annual New Year festival. Functions as a non-interactive holiday atmospheric prop.",
+    },
+
+    -- OBJECT: Mechanical Elevator Platform
+    ['Elevator'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Upper Delkfutt\'s Tower' },
+        zoneIds = { 158 },
+        note = "OBJECT: Targetable moving elevator lift platform. Interacting with the platform boundaries shifts active players between different vertical structural floors of the giant's tower.",
+    },
+
+    -- OBJECT: Elevator Control Switch
+    ['Elevator Button'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Ru\'Lude Gardens' },
+        zoneIds = { 243 },
+        note = "OBJECT: Selectable mechanical wall apparatus located inside the Grand Palace of Ru'Lude Gardens at (H-6). Activating it calls the palace lift to transition players to the audience chambers.",
+    },
+	
+    -- OBJECT: Mechanical Elevator Switch
+    ['Elevator Lever'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Fort Ghelsba', 'Palborough Mines', 'Davoi' },
+        zoneIds = { 141, 143, 149 },
+        note = "OBJECT: Targetable structural floor lever switch. Activating it triggers hydraulic elevator lift platforms, granting access to vertical floor tiers within industrial mining sites and strongholds.",
+    },
+	
+    -- OBJECT: Geas Fete Event Node
+    ['Emblazoned Reliquary'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Escha - Zi\'Tah', 'Escha - Ru\'Aun', 'Reisenjima' },
+        zoneIds = { 288, 289, 291 },
+        note = "OBJECT: Targetable celestial floating container structure. Interacting with it handles Geas Fete battle entries, prints combat objective records, and dispenses high-tier equipment spoils.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Emerald Column'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Western Altepa Desert' },
+        zoneIds = { 125 },
+        note = "OBJECT: Ancient targetable stone column landmark located at (G-7). Examining it progresses specialized geographical trials or handles expansion quest flag validation checks.",
+    },
+
+    -- OBJECT: Mythic Weapon Quest Inscription
+    ['Engraved Tablet'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Wajaom Woodlands', 'Mount Zhayolm', 'Caedarva Mire' },
+        zoneIds = { 51, 61, 79 },
+        note = "OBJECT: Targetable ancient stone tablet. Interacting with it handles the grueling recording subroutines, runic translations, and validation steps required to forge Mythic weapons.",
+    },
+	
+    -- OBJECT: Promathia Teleportation Node
+    ['Enigmatic Sphere'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Spire of Holla', 'Spire of Dem', 'Spire of Mea', 'Spire of Vahzl' },
+        zoneIds = { 17, 19, 21, 23 },
+        note = "OBJECT: High-tier dimensional metallic sphere device. Interacting with it serves as the physical gateway to launch core Promathia expansion mission battlefields or teleport across map layers.",
+    },
+
+    -- OBJECT: Puzzle Interaction Gate
+    ['Ensorcelled Door'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Ro\'Maeve' },
+        zoneIds = { 122 },
+        note = "OBJECT: Targetable ancient sanctuary door barrier. Interacting with it handles layout path restrictions or evaluates specific structural quest progression conditions.",
+    },
+
+    -- OBJECT: Map Portal Landmark
+    ['Entrance: Coliseum'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Rala Waterways' },
+        zoneIds = { 258 },
+        note = "OBJECT: Custom private server interaction node. Serves as a physical, selectable zoning checkpoint to instantly transport players into specific custom PvP or coliseum instances.",
+    },
+
+    -- OBJECT: Structural Gate Mechanism
+    ['Entry Gate'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Aht Urhgan Whitegate', 'Hazhalm Testing Grounds' },
+        zoneIds = { 50, 78 },
+        note = "OBJECT: Heavy security barrier gate. Interacting with it handles structural path transitions or evaluates entry ticket checks for high-tier expansion battlegrounds.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Entwined Roots'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Ra\'Kaznar' },
+        zoneIds = { 274 },
+        note = "OBJECT: Targetable overworld vegetation landmark. Examining it triggers event cutscenes or handles specialized path validation checks during expansion exploration loops.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Eonnite\'s Revelations'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Tavnazian Safehold' },
+        zoneIds = { 26 },
+        note = "OBJECT: Targetable ancient book asset located at (G-7). Examining it plays extensive historical lore texts detailing the ancient civilizations of Vana'diel.",
+    },
+
+    -- OBJECT: Geomancy Node
+    ['Ergon Locus'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Ceizak Battlegrounds', 'Yahse Hunting Grounds', 'Foret de Hennetiel', 'Cirdas Caverns', 'Morimar Basalt Fields', 'Marjami Ravine', 'Kamihr Drifts', 'Yorcia Weald', 'Sih Gates', 'Moh Gates', 'Dho Gates', 'Woh Gates' },
+        zoneIds = { 260, 261, 262, 263, 265, 266, 270, 274, 267, 268, 269, 273 },
+        note = "OBJECT: Natural concentration of elemental energy. Geomancers stand in close proximity to accumulate Ergon Energy and complete localized geographic survey tasks.",
+    },
+
+    -- OBJECT: Quest Target Node
+    ['Ergon Locus ???'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'La Theine Plateau', 'Konschtat Highlands', 'Tahrongi Canyon', 'Morimar Basalt Fields', 'Yorcia Weald' },
+        zoneIds = { 102, 108, 117, 265, 274 },
+        note = "OBJECT: Targetable quest interaction checkpoint. Investigated during specialized Geomancer (GEO) artifact armor paths and legendary weapon attunements.",
+    },
+
+    -- OBJECT: Assault Evacuation Node
+    ['Escape Route'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Al Zahbi' },
+        zoneIds = { 48 },
+        note = "OBJECT: Invisible server interaction target point. Dynamis / Besieged emergency anchor point used behind the scenes to calculate path validations for fleeing civilians.",
+    },
+
+    -- OBJECT: Mission Interaction Node
+    ['Etched Rock'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima', 'Reisenjima Sanctorium' },
+        zoneIds = { 291, 293 },
+        note = "OBJECT: Targetable sacred stone structure located at (K-9). Interacting with it handles critical cutscene checkpoints and serves as the physical gateway to launch Reisenjima Sanctorium mission battlefields.",
+    },
+
+    -- OBJECT: Key Item Resource Node
+    ['Eternal Ice'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Uleguerand Range' },
+        zoneIds = { 5 },
+        note = "OBJECT: Targetable frozen formation found on the mountain shelves. Touching it grants the temporary Key Item: Mystic Ice, which allows players who fall into underground crevices to shoot back up via wind geysers.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima Henge' },
+        zoneIds = { 292 },
+        note = "OBJECT: Ancient crystal teleportation node. Interacting with it manipulates Escha regional travel subroutines to instantly warp parties across specific localized map sectors.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress #1'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: Primary fast travel nexus waypoint located at the entrance plaza (G-11). Serves as the central point for currency exchanges, Curio Moogle shops, and primary hub transitions.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress #10'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: High-tier sector teleportation waypoint. Interacting with it manipulates Reisenjima regional fast travel layouts to warp parties instantly across active map nodes.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress #2'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: High-tier sector teleportation waypoint. Interacting with it manipulates Reisenjima regional fast travel layouts to warp parties instantly across active map nodes.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress #3'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: High-tier sector teleportation waypoint. Interacting with it manipulates Reisenjima regional fast travel layouts to warp parties instantly across active map nodes.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress #4'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: High-tier sector teleportation waypoint. Interacting with it manipulates Reisenjima regional fast travel layouts to warp parties instantly across active map nodes.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress #5'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: High-tier sector teleportation waypoint. Interacting with it manipulates Reisenjima regional fast travel layouts to warp parties instantly across active map nodes.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress #6'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: High-tier sector teleportation waypoint. Interacting with it manipulates Reisenjima regional fast travel layouts to warp parties instantly across active map nodes.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress #7'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: High-tier sector teleportation waypoint. Interacting with it manipulates Reisenjima regional fast travel layouts to warp parties instantly across active map nodes.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress #8'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: High-tier sector teleportation waypoint. Interacting with it manipulates Reisenjima regional fast travel layouts to warp parties instantly across active map nodes.",
+    },
+
+    -- OBJECT: High-Tier Spatial Fast Travel Waypoint
+    ['Ethereal Ingress #9'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Reisenjima' },
+        zoneIds = { 291 },
+        note = "OBJECT: High-tier sector teleportation waypoint. Interacting with it manipulates Reisenjima regional fast travel layouts to warp parties instantly across active map nodes.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Ethereal Spout'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Castle Oztroja [S]' },
+        zoneIds = { 99 },
+        note = "OBJECT: Selectable mist cloud node found at (H-11) on the past timeline map. Examining it triggers event cutscenes to advance specific Wings of the Goddess campaign side quests.",
+    },
+
+    -- OBJECT: Seasonal Event Prop
+    ['Euphoric Ixion'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'West Ronfaure', 'La Theine Plateau', 'Valkurm Dunes', 'Batallia Downs', 'North Gustaberg', 'Konschtat Highlands', 'Rolanberry Fields', 'Beaucedine Glacier', 'West Sarutabaruta', 'Tahrongi Canyon', 'Sauromugue Champaign', 'Yuhtunga Jungle', 'Western Altepa Desert' },
+        zoneIds = { 100, 102, 103, 105, 106, 108, 110, 111, 115, 117, 120, 123, 125 },
+        note = "OBJECT: Untargetable mini-Ixion colt escort accompanying Mirthful Ixion during the annual New Year festival. Functions as a non-interactive holiday atmospheric prop.",
+    },	
+
+    -- OBJECT: Custom Private Server Element
+    ['Event Master'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Konschtat', 'Abyssea - Tahrongi', 'Abyssea - Altepa', 'Abyssea - Attohwa', 'Abyssea - Misareaux', 'Abyssea - Vunkerl', 'Abyssea - Grauberg', 'Abyssea - Uleguerand' },
+        zoneIds = { 15, 45, 215, 216, 217, 218, 253, 254 },
+        note = "OBJECT: Custom private server automated event manager node. Interacting with it calls up server-side scripts to run high-tier custom rewards or check player credentials across Abyssea mirrors.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Excavated Snow'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Xarcabard [S]' },
+        zoneIds = { 137 },
+        note = "OBJECT: Targetable snow mound located at (H-9) or (I-9). Examining it processes past-timeline expansion campaigns or checks localized holiday event scripts.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Excavation Site'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Aydeewa Subterrane' },
+        zoneIds = { 68 },
+        note = "OBJECT: Targetable archaeological ground checkpoint. Interacting with it handles exploration routines, artifact digging records, or localized side quest validations.",
+    },
+
+    -- OBJECT: Instance Exit Node
+    ['Exit'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Apollyon', 'Desuetia - Empyreal Paradox', 'Ra\'Kaznar Turris', 'Reisenjima Sanctorium' },
+        zoneIds = { 38, 277, 290, 293 },
+        note = "OBJECT: Targetable exit portal marker. Interacting with it allows players to immediately vacate endgame battlefields or custom server instance layers.",
+    },
+	
+    -- OBJECT: Quest Interaction Point
+    ['Faint Glister'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Grauberg' },
+        zoneIds = { 254 },
+        note = "OBJECT: Targetable glowing overworld anomaly node. Interacting with it handles spatial puzzle progressions or checks dynamic quest flag steps inside Abyssea regions.",
+    },
+	
+    -- OBJECT: Quest Interaction Point
+    ['Fallen Egg'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'La Theine Plateau' },
+        zoneIds = { 102 },
+        note = "OBJECT: Targetable structural ground element. Examining it while on the correct progression paths triggers localized event cutscenes or quest item validation checks.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Fay Pond'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Grauberg' },
+        zoneIds = { 254 },
+        note = "OBJECT: Swirling overworld water node located within the crags. Interacting with it handles spatial exploration loops, temporary Key Item progression checkpoints, or custom server reward rules.",
+    },
+
+    -- OBJECT: Server Mechanics Event Node
+    ['Fay Spring'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Grauberg [S]' },
+        zoneIds = { 89 },
+        note = "OBJECT: Large mystical waterfall spring located at (F-6). Used to trade a Bottled Pixie to increment global server pixie populations or to fulfill Trial of the Magians weapon conditions.",
+    },
+
+    -- OBJECT: Mission Interaction Node
+    ['Felled Trees'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Jugner Forest [S]' },
+        zoneIds = { 82 },
+        note = "OBJECT: Pile of chopped timber logs located at the western edge of (G-7). Examining it plays crucial storyline cutscenes to officially launch the Wings of the Goddess quest 'The Price of Valor'.",
+    },
+	
+    -- OBJECT: Quest Interaction Point
+    ['Ferric Stench'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Beaucedine Glacier' },
+        zoneIds = { 111 },
+        note = "OBJECT: Targetable invisible geographic spot at (F-7) near the Batallia exit. Examining it prompts cutscenes or handles specialized item checks during localized quest lines.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Fervent Horizon'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Western Adoulin' },
+        zoneIds = { 256 },
+        note = "OBJECT: Targetable spatial vantage point or dynamic interaction node. Checked during Seekers of Adoulin quest lines or geographic surveys.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Fey Blossoms'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Grauberg [S]' },
+        zoneIds = { 89 },
+        note = "OBJECT: Targetable patch of mystical overworld flora. Interacting with it processes past-timeline campaign quest lines or handles specialized dynamic geographic surveys.",
+    },
+
+    -- OBJECT: High-Tier Avatar Gateway
+    ['Fire Protocrystal'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Cloister of Flames' },
+        zoneIds = { 207 },
+        note = "OBJECT: Large elemental crystal formation. Interacting with it serves as the physical entry gateway to launch Ifrit's prime avatar battlefields or high-tier trial instances.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Firebloom Tree Root'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Yuhtunga Jungle' },
+        zoneIds = { 123 },
+        note = "OBJECT: Targetable prominent jungle tree base element. Examining it while on the correct quest paths triggers localized event cutscenes or handles item validation checks.",
+    },
+	
+    -- OBJECT: Abyssea Quest Interaction Node
+    ['Fish'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - La Theine' },
+        zoneIds = { 132 },
+        note = "OBJECT: Targetable structural field asset or visible water element node. Examining it handles dynamic local puzzle tracking, Abyssea time extension mechanics, or localized quest step logging.",
+    },
+
+    -- OBJECT: Environmental Navigation Landmark
+    ['Fissure'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Uleguerand Range' },
+        zoneIds = { 5 },
+        note = "OBJECT: Deep mountain canyon fissure crack. Interacting with it handles vertical map layer navigation, letting players coordinate slipping safely down or escaping up specific cliffsides.",
+    },
+
+    -- OBJECT: A Shantotto Ascension Mission Checkpoint
+    ['Flame of Fate'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Castle Zvahl Baileys' },
+        zoneIds = { 161 },
+        note = "OBJECT: Selectable mystical fire element located at (G-8) within the castle outskirts. Interacting with it during the mini-expansion mission 'A Moogle Kupo d'Etat' yields essential storyline key items.",
+    },
+
+    -- OBJECT: High-Tier Dungeon Hazard / Puzzle Element
+    ['Flame Spout'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Ifrit\'s Cauldron' },
+        zoneIds = { 205 },
+        note = "OBJECT: Intermittent volcanic fire geyser obstacle. Interacting with nearby nodes or coordinating group positioning allows players to safely bypass the intense lava spouts blocking narrow corridors.",
+    },
+	
+    -- OBJECT: Brenner PvP Structure
+    ['Flammen-Brenner'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abdhaljs Isle-Purgonorgo' },
+        zoneIds = { 44 },
+        note = "OBJECT: The primary team flame burner structure used during Brenner PvP Conflict matches. Seizing 'Flamme' elements from the opposing team allows players to ignite and protect this burner to score match points.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Flap'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Castle Zvahl Baileys [S]' },
+        zoneIds = { 138 },
+        note = "OBJECT: Targetable structural point or hidden mechanical hinge found inside the past timeline fortress. Examining it advances specific Wings of the Goddess campaign quests or checks situational parameters.",
+    },
+
+    -- OBJECT: Mog Garden Resource Node
+    ['Flotsam'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Mog Garden' },
+        zoneIds = { 280 },
+        note = "OBJECT: Interactive shoreline resource spot. Checking it daily allows players to collect random washed-up items, driftwood, and aquatic synthesis materials to build up their personal island rank.",
+    },
+
+    -- OBJECT: City Landmark Fountain
+    ['Fontis Xanira'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Western Adoulin' },
+        zoneIds = { 256 },
+        note = "OBJECT: The grand central fountain located at Platea Triumphus (H-9). Examining this landmark during the Seekers of Adoulin mission 'A Curse from the Past' provides players with a Vial of Untainted Holy Water.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Foreboding Presence'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Sih Gates' },
+        zoneIds = { 268 },
+        note = "OBJECT: Targetable invisible vortex node located inside the underground tunnels. Interacting with it updates quest logs or plays dynamic flavor text lines to advance Seekers of Adoulin content.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Foreboding Vineprints'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Foret de Hennetiel' },
+        zoneIds = { 262 },
+        note = "OBJECT: Targetable structural ground indentation or vegetation asset. Examining it while on the correct progression paths triggers localized event cutscenes or quest flag validations.",
+    },
+
+    -- OBJECT: Quest Gathering Node
+    ['Fossil Rock'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Maze of Shakhrami' },
+        zoneIds = { 198 },
+        note = "OBJECT: Selectable mineral outcropping. Interacting with it while equipped with a pickaxe extracts dynamic crafting components, historical fossils, or fulfills localized quest steps.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Fouled Sands'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Foret de Hennetiel' },
+        zoneIds = { 262 },
+        note = "OBJECT: Targetable beach terrain checkpoint located at (H-11). Interacting with it handles exploration routines, dynamic gathering loops, or active side quest parameters.",
+    },
+
+    -- OBJECT: Abyssea Quest Interaction Node
+    ['Fragmented Nutshell'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Tahrongi' },
+        zoneIds = { 45 },
+        note = "OBJECT: Targetable field asset shell remnant. Examining it evaluates Abyssea time extension mechanics, processes local puzzle tracking, or checks dynamic quest parameters.",
+    },
+
+    ['Fransont'] = {
+        type = "Citizen",
+        icon = "Dialogue.png",
+        zones = { 'Jugner Forest' },
+        zoneIds = { 104 },
+        note = "Elvaan male resident located out at the overworld staging outposts or logging camps. Provides localized ambient flavor lines and background lore text regarding forestry life.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Fresh Snowfall'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Uleguerand' },
+        zoneIds = { 253 },
+        note = "OBJECT: Targetable snowy field node. Examining it handles Abyssea puzzle progressions, dynamic side quest conditions, or localized key item validation checks.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Fresh Snowmelt'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Batallia Downs [S]' },
+        zoneIds = { 84 },
+        note = "OBJECT: Targetable water patch node found at (I-11). Interacting with it is required during past-timeline campaign side quests to harvest environmental resources.",
+    },
+
+    -- OBJECT: Quest Interaction Node
+    ['Frigid Confluence'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Bostaunieux Oubliette' },
+        zoneIds = { 167 },
+        note = "OBJECT: Targetable frosty atmospheric distortion spot at (F-7). Checked during specialized high-tier magic quests or artifact attunement paths.",
+    },
+
+    -- OBJECT: Casual Interactive Game Device
+    ['Game Table'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Nashmau', 'Southern San d\'Oria', 'Northern San d\'Oria', 'Port Bastok', 'Windurst Waters', 'Windurst Woods', 'Upper Jeuno', 'Lower Jeuno', 'Port Jeuno' },
+        zoneIds = { 53, 230, 231, 236, 238, 241, 244, 245, 246 },
+        note = "OBJECT: Targetable tavern gambling table asset. Interacting with it calls up the programmatic regional mini-games (such as the classic high-low card game 'Double Down') used for parsing recreational point exchanges.",
+    },
+	
+    -- OBJECT: Mog Garden Harvesting Node
+    ['Garden Furrow'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Mog Garden' },
+        zoneIds = { 280 },
+        note = "OBJECT: Primary agricultural field soil plot. Interacting with it handles planting seeds, applying fertilizers, and harvesting seasonal crops to raise island progression rankings.",
+    },
+
+    -- OBJECT: Mog Garden Harvesting Node
+    ['Garden Furrow #2'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Mog Garden' },
+        zoneIds = { 280 },
+        note = "OBJECT: Secondary agricultural field soil plot. Interacting with it handles planting seeds, applying fertilizers, and harvesting seasonal crops to raise island progression rankings.",
+    },
+
+    -- OBJECT: Mog Garden Harvesting Node
+    ['Garden Furrow #3'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Mog Garden' },
+        zoneIds = { 280 },
+        note = "OBJECT: Tertiary agricultural field soil plot. Interacting with it handles planting seeds, applying fertilizers, and harvesting seasonal crops to raise island progression rankings.",
+    },
+
+    -- OBJECT: Mog Garden Storage Container
+    ['Garden Strongbox'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Mog Garden' },
+        zoneIds = { 280 },
+        note = "OBJECT: Selectable storage chest utility located on the personal island. Interacting with it manages local inventory spaces, seeds, and harvested items directly inside the instance.",
+    },
+
+    -- OBJECT: Quest / Puzzle Interaction Node
+    ['Gasponia'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Attohwa' },
+        zoneIds = { 215 },
+        note = "OBJECT: Targetable poisonous flora mechanism. Interacting with it handles specialized zone exploration puzzles, dynamic time extension loops, or [An Acrididaen Anodyne](https://www.bg-wiki.com/ffxi/An_Acrididaen_Anodyne) quest validations.",
+    },
+
+    -- OBJECT: Quest Interaction Chest
+    ['Gauger Trunk'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Uleguerand' },
+        zoneIds = { 253 },
+        note = "OBJECT: Targetable structural storage chest. Examining it processes active Abyssea exploration loops, checks dynamic local side quests, or handles key item retrieval checks.",
+    },
+	
+    -- OBJECT: Geographic Inscription Book
+    ['Geography'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Celennia Memorial Library' },
+        zoneIds = { 284 },
+        note = "OBJECT: Targetable lore book asset resting on the library shelves. Examining it reveals extensive geographical data mappings and history strings regarding the Ulbuka continent.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Geomantic Fumes'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Ra\'Kaznar' },
+        zoneIds = { 274 },
+        note = "OBJECT: Swirling atmospheric anomaly node. Interacting with it evaluates specialized geographical surveys or progresses late-tier Seekers of Adoulin class artifact quests.",
+    },
+
+    -- OBJECT: Ergon Weapon Attunement Point
+    ['Geomantic Reservoir'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'East Ronfaure', 'La Theine Plateau', 'Batallia Downs', 'Konschtat Highlands', 'Rolanberry Fields', 'Beaucedine Glacier', 'Xarcabard', 'Tahrongi Canyon', 'Sauromugue Champaign', 'Qufim Island', 'Behemoth\'s Dominion', 'Beadeaux', 'Davoi', 'Castle Oztroja', 'Upper Delkfutt\'s Tower', 'Bostaunieux Oubliette', 'Lower Delkfutt\'s Tower', 'The Eldieme Necropolis', 'Crawlers\' Nest', 'Gusgen Mines', 'Garlaige Citadel', 'Fei\'Yin', 'Ceizak Battlegrounds', 'Yahse Hunting Grounds', 'Foret de Hennetiel', 'Morimar Basalt Fields', 'Marjami Ravine' },
+        zoneIds = { 101, 102, 105, 108, 110, 111, 112, 117, 120, 126, 127, 147, 149, 151, 158, 167, 184, 195, 196, 197, 200, 204, 260, 261, 262, 265, 266 },
+        note = "OBJECT: Massive concentrations of telluric energy. Selectable overworld nodes checked extensively to channel and harvest energy points during the high-tier legendary Ergon Weapon forging trials.",
+    },
+	
+    -- OBJECT: Quest Interaction Point
+    ['Giant Clam'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Korroloka Tunnel' },
+        zoneIds = { 173 },
+        note = "OBJECT: Targetable subaquatic shell structure. Interacting with it handles specialized item gathering tasks or checks dynamic quest flag steps.",
+    },
+
+    -- OBJECT: Quest Interaction / Fishing Node
+    ['Giddeus Spring'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Giddeus' },
+        zoneIds = { 145 },
+        note = "OBJECT: Interactive fresh water source located at (E-12) or (K-12). Trading a Key Item Flask here secures Giddeus名水 (Giddeus Water) for the Windurst Rhinostery quest 'Magic Water', and functions as an active overworld fishing spot.",
+    },
+
+    -- OBJECT: Salvage Instance Pathway
+    ['Gilded Doors'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Alzadaal Undersea Ruins', 'Arrapago Remnants', 'Bhaflau Remnants', 'Nyzul Isle', 'Silver Sea Remnants', 'Zhayolm Remnants' },
+        zoneIds = { 72, 73, 74, 75, 76, 77 },
+        note = "OBJECT: Targetable ornate doorway barriers. Interacting with them handles sector layout path restrictions or evaluates specific operational conditions inside endgame Salvage and Nyzul Isle Investigation instances.",
+    },
+
+    -- OBJECT: Salvage Instance Portal
+    ['Gilded Gateway'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Alzadaal Undersea Ruins', 'Arrapago Remnants', 'Bhaflau Remnants', 'Nyzul Isle', 'Silver Sea Remnants', 'Zhayolm Remnants' },
+        zoneIds = { 72, 73, 74, 75, 76, 77 },
+        note = "OBJECT: Structural instance portal mechanism. Interacting with it processes spatial fast travel transitions or verifies progressive floor clears inside high-tier Treasures of Aht Urhgan battle remnants.",
+    },
+	
+    -- OBJECT: Regional Strategic Landmark
+    ['Giwahb Watchtower'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Wajaom Woodlands' },
+        zoneIds = { 51 },
+        note = "OBJECT: Targetable defensive military outpost structure at (H-11). Interacting with it or checking nearby parameters manages player tactical reports during Besieged campaign operations.",
+    },
+
+    -- OBJECT: Voidwatch Campaign Reward Coffer
+    ['Glimmering Trove'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Provenance' },
+        zoneIds = { 222 },
+        note = "OBJECT: Targetable high-tier reward chest spawned after victorious battlefield clears. Interacting with it processes progressive reward distributions and dispenses legendary Voidwatch equipment.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Glowing Pebbles'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Jugner Forest [S]' },
+        zoneIds = { 82 },
+        note = "OBJECT: Targetable geographical field node at (I-6). Examining it while on the correct progression paths triggers critical past-timeline campaign event cutscenes or quest item checks.",
+    },
+
+    -- OBJECT: Abyssea Quest Interaction Node
+    ['Gnarled Root'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Tahrongi' },
+        zoneIds = { 45 },
+        note = "OBJECT: Targetable field vegetation asset. Examining it evaluates Abyssea time extension mechanics, processes local puzzle tracking, or checks dynamic quest parameters.",
+    },
+	
+    -- OBJECT: Seasonal Event Prop
+    ['Goblin Festival Site'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Batallia Downs' },
+        zoneIds = { 105 },
+        note = "OBJECT: Interactive holiday structure or decorative props. Spawns out in the field layout parameters during specific annual seasonal celebrations to coordinate custom server mini-games.",
+    },
+	
+    -- OBJECT: Puzzle Interaction Gate
+    ['Granite Door'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Temple of Uggalepih', 'Ranguemont Pass' },
+        zoneIds = { 159, 166 },
+        note = "OBJECT: Heavy architectural barrier gate. Interacting with it handles structural pathway openings or checks specific key item permissions to navigate deeper layouts.",
+    },
+
+    -- OBJECT: Past Timeline Stronghold Gate
+    ['Granite Gate'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Fort Karugo-Narugo [S]' },
+        zoneIds = { 96 },
+        note = "OBJECT: Targetable structural military defense barrier. Interacting with it handles tactical fortress pathway closures or checks positional campaign conditions.",
+    },
+
+    -- OBJECT: Abyssea Quest Interaction Node
+    ['Grassy Mound'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Misareaux' },
+        zoneIds = { 216 },
+        note = "OBJECT: Targetable overworld ground anomaly node. Interacting with it handles spatial puzzle progressions or checks dynamic quest flag steps inside Abyssea regions.",
+    },
+
+    -- OBJECT: Quest Interaction Landmark
+    ['Gravestone'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'The Eldieme Necropolis [S]', 'The Eldieme Necropolis' },
+        zoneIds = { 175, 195 },
+        note = "OBJECT: Targetable structural cemetery grave landmark. Examining it while on the correct progression paths triggers localized event cutscenes or quest item checks.",
+    },
+	
+    -- OBJECT: Spatial fast travel waypoint
+    ['Grimslight'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Escha - Zi\'Tah', 'Escha - Ru\'Aun', 'Reisenjima' },
+        zoneIds = { 288, 289, 291 },
+        note = "OBJECT: Ethereal dynamic rift portal node. Interacting with it manipulates spatial layoutfast travel menus, instantly shifting parties between structural coordinates inside Escha and Reisenjima systems.",
+    },
+
+    -- OBJECT: Quest Interaction Node
+    ['Groaning Pond'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Davoi' },
+        zoneIds = { 149 },
+        note = "OBJECT: Targetable murky swamp puddle located at (H-6). Examining it while on the correct progression paths plays cutscenes or validates key items for San d'Orian quests.",
+    },
+	
+    -- OBJECT: Grounds of Valor Training Book
+    ['Grounds Tome'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Lower Delkfutt\'s Tower', 'King Ranperre\'s Tomb', 'Dangruf Wadi', 'Inner Horutoto Ruins', 'Ordelle\'s Caves', 'Outer Horutoto Ruins', 'The Eldieme Necropolis', 'Gusgen Mines', 'Crawlers\' Nest', 'Garlaige Citadel', 'Fei\'Yin', 'Quicksand Caves', 'Ifrit\'s Cauldron', 'Bostaunieux Oubliette', 'Den of Rancor', 'Ranguemont Pass', 'Bostaunieux Oubliette', 'Korroloka Tunnel', 'Kuftal Tunnel', 'Sea Serpent Grotto', 'Ve\'Lugannon Palace', 'The Temple of Uggalepih', 'Labyrinth of Onzozo', 'The Boyahda Tree', 'Gustav Tunnel', 'The Shrine of Ru\'Avitau', 'Toraimarai Canal', 'Upper Delkfutt\'s Tower', 'Middle Delkfutt\'s Tower', 'Zeruhn Mines' },
+        zoneIds = { 153, 157, 158, 159, 160, 166, 167, 169, 172, 173, 174, 176, 177, 178, 184, 190, 191, 192, 193, 194, 195, 196, 197, 198, 200, 204, 205, 208, 212, 213 },
+        note = "OBJECT: Floating magical training ledger. Interacting with it allows players to sign up for Grounds of Valor automated hunting regimes, secure experience point boosts, and buy support enhancements.",
+    },
+	
+    -- OBJECT: Castle Oztroja Hidden Lever Trap
+    ['Handle'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Castle Oztroja [S]', 'Castle Oztroja' },
+        zoneIds = { 99, 151 },
+        note = "OBJECT: Targetable wall handle switch at (I-8). Pulling the handle either opens hidden structural vault doors or drops players down a mechanical pit trap based on current parameters.",
+    },
+
+    -- OBJECT: Assault Interactive Bridge Platform
+    ['Hanging Bridge'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Periqia' },
+        zoneIds = { 56 },
+        note = "OBJECT: Targetable structural rope bridge segment. Interacting with it handles dynamic floor mechanics or triggers tactical traversal scripts during specialized Assault operations.",
+    },
+	
+    -- OBJECT: Past Timeline Structural Asset
+    ['Hanging Cage'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Bastok Markets [S]', 'Southern San d\'Oria [S]' },
+        zoneIds = { 87, 136 },
+        note = "OBJECT: Targetable structural mesh cage element hanging in public squares. Interacting with it handles atmospheric flavor dialogue or holiday event script parsing.",
+    },
+	
+    -- OBJECT: High-Tier Mission Portal Checkpoint
+    ['Heroes\' Gambit'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Xarcabard' },
+        zoneIds = { 112 },
+        note = "OBJECT: Targetable high-tier localized dimensional rift node at (J-9). Interacting with it manages party battlefield entry checks for the final chapters of The Voracious Resurgence expansion.",
+    },
+	
+    -- OBJECT: Dungeon Secret Door Switch
+    ['Hide Flap'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Davoi' },
+        zoneIds = { 149 },
+        note = "OBJECT: Targetable architectural hide material switch hanging over doorways at (I-8). Interacting with it manipulates Orcish security gates or toggles dynamic barrier conditions inside the stronghold.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Hiding Place'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Cirdas Caverns' },
+        zoneIds = { 270 },
+        note = "OBJECT: Targetable geographical wall gap or ground indentation. Examining it while on the correct progression paths triggers localized event cutscenes or quest flag validations.",
+    },
+	
+    -- OBJECT: Abyssea Quest Interaction Node
+    ['Frostbloom'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Uleguerand' },
+        zoneIds = { 253 },
+        note = "OBJECT: Targetable frozen flora node. Examining it updates dynamic Abyssea side quests, handles time extension loops, or validates localized event steps.",
+    },
+
+    -- OBJECT: Beastman Offering Target
+    ['Fruit'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Mamook' },
+        zoneIds = { 65 },
+        note = "OBJECT: Targetable basket of wild fruit. Interacting with it or sacrificing specific components alters Mamool Ja alertness behaviors or feeds localized instance mechanics.",
+    },
+
+    -- OBJECT: Abyssea Fast Travel / Lore Checkpoint
+    ['Hieroglyphics'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Tavnazian Safehold', 'Valkurm Dunes', 'Buburimu Peninsula', 'Qufim Island' },
+        zoneIds = { 26, 103, 118, 126 },
+        note = "OBJECT: Targetable ancient carvings inscribed on walls and monuments. Interacting with them processes localized background lore or updates specific Abyssea dimensional travel validations.",
+    },
+
+    -- OBJECT: Geographic Inscription Book
+    ['History'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Celennia Memorial Library' },
+        zoneIds = { 284 },
+        note = "OBJECT: Targetable lore book asset resting on the library shelves. Examining it reveals extensive historical data records and chronological text strings regarding the Ulbuka continent.",
+    },
+	
+    -- OBJECT: Past Timeline Quest Target Node
+    ['Hoarfang'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Beaucedine Glacier [S]' },
+        zoneIds = { 136 },
+        note = "OBJECT: Targetable structural wall anomaly or landscape element located at (F-10). Examining it processes progression checks to resolve the past-timeline Bastok campaign quest 'Beneath the Mask'.",
+    },
+
+    -- OBJECT: Adoulin Mission Battlefield Entrance
+    ['Hollowed Pathway'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Kamihr Drifts', 'Cirdas Caverns [U]' },
+        zoneIds = { 271, 267 },
+        note = "OBJECT: Targetable wall opening located at the southwest corner of (G-11). Activating it triggers the battlefield instance 'The Third Enemy' during Seekers of Adoulin Mission 4-6-6.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Hostage Tent'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Marjami Ravine' },
+        zoneIds = { 266 },
+        note = "OBJECT: Targetable structural Velkk camp tent located at the northwest corner of (G-10). Interacting with it spawns a Velkk Sentinel during the Adoulin side quest 'The Good, the Bad, the Clement'.",
+    },
+
+    -- OBJECT: Pioneer Utility Landmark
+    ['Hot Spring'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Morimar Basalt Fields' },
+        zoneIds = { 265 },
+        note = "OBJECT: Targetable open volcanic spring pool. Interacting with the node cleanses severe environmental debuffs or updates specific localized geographic survey logs.",
+    },
+
+    -- OBJECT: Quest Interaction Node
+    ['Hot Springs'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Horlais Peak' },
+        zoneIds = { 139 },
+        note = "OBJECT: Targetable boiling water checkpoint found near the peak crags. Checked during specialized old-world subaquatic gathering trials or artifact weapon attunement scripts.",
+    },
+
+    -- OBJECT: Quest Interaction Node
+    ['Howling Pond'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Davoi' },
+        zoneIds = { 149 },
+        note = "OBJECT: Targetable swamp water puddle located at (H-6). Examining it while on the correct progression paths plays cutscenes or validates key items for San d'Orian quests.",
+    },
+
+    -- OBJECT: Teleportation Monument Array
+    ['Huge Crystal'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Ghelsba Outpost', 'Palborough Mines', 'Giddeus', 'Beadeaux', 'Davoi', 'Castle Oztroja' },
+        zoneIds = { 140, 143, 145, 147, 149, 151 },
+        note = "OBJECT: Massive floating elemental teleporter crystal structures. Interacting with them processes custom private server travel scripts or maps regional fast travel shortcuts.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Hume Bones'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'The Eldieme Necropolis' },
+        zoneIds = { 195 },
+        note = "OBJECT: Targetable skeletal remains found resting inside the catacomb walls. Interacting with it evaluates specific quest or mission parameters to trigger story cutscenes.",
+    },
+
+    -- OBJECT: Mission Interaction Node
+    ['Humus-rich Earth'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Jugner Forest [S]', 'Jugner Forest' },
+        zoneIds = { 82, 104 },
+        note = "OBJECT: Targetable patch of rich fertile soil at Maiden's Spring (E-6). Used in Wings of the Goddess Mission 10 ('Daughter of a Knight') to trade items and trigger the Treant NM Cernunnos fight.",
+    },
+
+    -- OBJECT: A.M.A.N. Notorious Monster Registry Ledger
+    ['Hunt Registry'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Tavnazian Safehold', 'Aht Urhgan Whitegate', 'Nashmau', 'Southern San d\'Oria [S]', 'Bastok Markets [S]', 'Windurst Waters [S]', 'Northern San d\'Oria', 'Bastok Mines', 'Port Windurst', 'Ru\'Lude Gardens', 'Rabao', 'Kazham', 'Norg' },
+        zoneIds = { 26, 50, 53, 80, 87, 94, 231, 234, 240, 243, 247, 250, 252 },
+        note = "OBJECT: Open book ledger sponsored by A.M.A.N. and S.M.A.N.. Interacting with it handles specialized Notorious Monster hunt registrations, Scyld point allocations, and Evolith upgrades.",
+    },
+
+    -- OBJECT: Puzzle Interaction Gate
+    ['Hut Door'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Diorama Abdhaljs-Ghelsba', 'Ghelsba Outpost' },
+        zoneIds = { 43, 140 },
+        note = "OBJECT: Structural door barrier on Orc huts. Interacting with it handles pathway transitions or validates entry checks for battlefield instances.",
+    },
+
+    -- OBJECT: Assault Objective Barrier
+    ['Ice Cage'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Leujaoam Sanctum' },
+        zoneIds = { 69 },
+        note = "OBJECT: Targetable frozen block barrier encountered during Leujaoam Sanctum Assault operations. Melting or shattering it frees trapped structural targets.",
+    },
+
+    -- OBJECT: Core Expansion Avatar / Battlefield Gateway
+    ['Ice Protocrystal'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Cloister of Frost' },
+        zoneIds = { 203 },
+        note = "OBJECT: Large elemental crystal formation. Interacting with it serves as the physical gateway to enter Shiva's prime avatar battlefields or trial instances.",
+    },
+	
+    -- OBJECT: Quest Interaction Point
+    ['Illusory Image'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Chamber of Oracles' },
+        zoneIds = { 168 },
+        note = "OBJECT: Targetable structural shimmering visual phenomenon node. Examining it while on the correct progression paths triggers specialized quest event cutscenes.",
+    },
+	
+    -- OBJECT: Rune Fencer Relic Armor Quest Node
+    ['Inconspicuous Barrel'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Western Adoulin', 'Rala Waterways' },
+        zoneIds = { 256, 258 },
+        note = "OBJECT: Targetable wooden barrel at (I-4) in town or hidden deep in the sewer grids. Examining it coordinates cutscenes with the hidden dynamic entity Yestin-Ovestin to process Rune Fencer Relic Armor paths.",
+    },
+
+    -- OBJECT: Scholar Artifact Armor Quest Milestone
+    ['Indescript Markings'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Vunkerl Inlet [S]', 'Grauberg [S]', 'Pashhow Marshlands [S]', 'Fort Karugo-Narugo [S]', 'Meriphataud Mountains [S]', 'Sauromugue Champaign [S]', 'Xarcabard' },
+        zoneIds = { 83, 89, 90, 96, 97, 98, 112 },
+        note = "OBJECT: Targetable ancient carvings hidden across multiple past-timeline maps. Selectable milestone points examined exclusively on the Scholar job to locate hidden professors and secure job Artifact Armor items.",
+    },
+
+    -- OBJECT: Sinister Reign Battle Entry Nexus
+    ['Infernal Transposer'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Ra\'Kaznar Inner Court' },
+        zoneIds = { 276 },
+        note = "OBJECT: High-tier ancient machinery portal apparatus found at (I-8). Serves as the official queue system check point used to configure parameters and launch parties directly into Sinister Reign skirmish instances.",
+    },
+
+    -- OBJECT: Mission Interaction Node
+    ['Inlet of Whispers'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Dho Gates' },
+        zoneIds = { 272 },
+        note = "OBJECT: Targetable overworld cave pathway or localized spatial landmark node. Interacting with it evaluates expansion exploration parameters or flags critical storyline progression cutscenes.",
+    },
+	
+    -- OBJECT: Geographic Inscription Book
+    ['Institutions'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Celennia Memorial Library' },
+        zoneIds = { 284 },
+        note = "OBJECT: Targetable lore book asset resting on the library shelves. Examining it reveals extensive organizational records and civic text strings regarding the Ulbuka continent.",
+    },
+	
+    -- OBJECT: Custom Private Server Element
+    ['Item_box'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Diorama Abdhaljs-Ghelsba', 'Ru\'Lude Gardens' },
+        zoneIds = { 43, 243 },
+        note = "OBJECT: Custom private server storage or reward node. Interacting with it handles temporary item distributions, inventory expansions, or localized event item checks.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Jade Etui'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Buburimu Peninsula' },
+        zoneIds = { 118 },
+        note = "OBJECT: Targetable container prop hidden at (F-9). Examining it while on the correct progression paths triggers specialized quest event cutscenes or artifact gathering item validations.",
+    },
+
+    -- OBJECT: Abyssea Quest Interaction Node
+    ['Jagged Cliff'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - La Theine' },
+        zoneIds = { 132 },
+        note = "OBJECT: Targetable structural cliff terrain landmark. Interacting with it handles spatial puzzle progressions or checks dynamic quest flag steps inside Abyssea regions.",
+    },
+
+    -- OBJECT: Puzzle Interaction Gate
+    ['Jail Door'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Beadeaux' },
+        zoneIds = { 147 },
+        note = "OBJECT: Heavy beastman dungeon iron gate. Interacting with it handles structural prison cell pathway openings or checks specific key item permissions to navigate deeper layouts.",
+    },
+	
+    -- OBJECT: Quest Interaction Point
+    ['Jar'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Davoi' },
+        zoneIds = { 149 },
+        note = "OBJECT: Targetable structural pottery container at (E-10). Examining it handles dynamic collection paths or checks specific key item permissions during localized Orc stronghold quests.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Jazaraat\'s Headstone'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Caedarva Mire' },
+        zoneIds = { 79 },
+        note = "OBJECT: Targetable burial tomb monument located at (G-11). Interacting with it handles progressive milestone checks and checks artifact weapon attunement requirements.",
+    },
+	
+    -- OBJECT: Quest Interaction Point
+    ['Journey\'s End'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Quicksand Caves' },
+        zoneIds = { 208 },
+        note = "OBJECT: Targetable structural chamber waypoint found at (E-6) inside the shifting desert ruins. Interacting with it handles baseline map navigation or processes seasonal holiday progression checks.",
+    },
+	
+    -- OBJECT: Custom Private Server Element
+    ['Juno_item'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'GM Home' },
+        zoneIds = { 210 },
+        note = "OBJECT: Custom private server testing container node. Injected strictly inside the developer map layer to troubleshoot item distribution properties, menu strings, and inventory subroutines.",
+    },
+	
+    -- OBJECT: Quest Interaction Well
+    ['Knightwell'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'West Ronfaure' },
+        zoneIds = { 100 },
+        note = "OBJECT: Targetable historic stone well located at (E-8). Interacting with it processes San d'Orian quests, clears Trial of the Magians conditions, or trades localized items.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Knotty Oak'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'La Theine Plateau' },
+        zoneIds = { 102 },
+        note = "OBJECT: Targetable ancient overworld tree trunk at (F-7). Examining it while on the correct progression paths triggers specialized quest event cutscenes or artifact gathering item checks.",
+    },
+	
+    -- OBJECT: Map Zoning Target Node
+    ['Korroloka Tunnel'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Zeruhn Mines' },
+        zoneIds = { 172 },
+        note = "OBJECT: Custom private server entry checkpoint node. Serves as a physical, selectable environmental zoning anchor point to transition players directly into the Korroloka Tunnel network.",
+    },
+	
+    -- OBJECT: Abyssea Tactical Water Pump
+    ['KS-01 Martello'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - Konschtat' },
+        zoneIds = { 15 },
+        note = "OBJECT: Large mechanical tactical water pump mechanism. Consumes an automated vial of clear water to replenish dynamic local player sanity meters (Cruor/Imprimaturs) inside Abyssea regions.",
+    },
+	
+    -- OBJECT: MMM Maze Mechanism / Exit Portal
+    ['Lacuna Whorl'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Everbloom Hollow', 'Ghoyu\'s Reverie', 'Ruhotz Silvermines' },
+        zoneIds = { 86, 93, 129 },
+        note = "OBJECT: Targetable shimmering spatial distortion vortex. Functions as the internal exit checkpoint or secondary spatial node used to navigate dynamic layers inside Moblin Maze Mongers instances.",
+    },
+
+    -- OBJECT: MMM Infiltration Objective / Jail Escape Switch
+    ['Ladder of Liberty'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Ruhotz Silvermines' },
+        zoneIds = { 93 },
+        note = "OBJECT: Targetable cell ladder mechanism spawning inside Moblin Maze Mongers Appropriation Team instances (Voucher 06). Interacting with it lets captured players escape from the isolated prison cell map segment.",
+    },
+
+    -- OBJECT: Spatial Navigation Checkpoint
+    ['Lake Tepokalipuka'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'East Sarutabaruta' },
+        zoneIds = { 116 },
+        note = "OBJECT: Invisible server interaction waypoint anchored at the edge of the regional body of water at (G-7). Handles parameter checks for custom overworld content or tracks localized event lines.",
+    },
+	
+    -- OBJECT: Den of Rancor Unlit Lantern Checkpoint
+    ['Lantern'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Den of Rancor' },
+        zoneIds = { 160 },
+        note = "OBJECT: Targetable ritual lighting pillar apparatus. Interacting with it consumes an active Paintbrush of Souls or structural lighting key items to manipulate hidden temple block layout parameters.",
+    },
+	
+    -- OBJECT: Quest Interaction Point
+    ['Large Animal Track'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Woh Gates' },
+        zoneIds = { 273 },
+        note = "OBJECT: Targetable track on the floor. Interacting with it handles exploration routines, dynamic tracking loops, or active side quest parameters.",
+    },
+
+    -- OBJECT: Sacrarium Puzzle Core Mechanic
+    ['Large Keyhole'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Sacrarium' },
+        zoneIds = { 28 },
+        note = "OBJECT: Interactive gate locking apparatus found at (H-7). Requires coordinating two separate parties to turn complementary sub-keys simultaneously to drop the structural maze walls.",
+    },
+
+    -- OBJECT: Puzzle Interaction Gate
+    ['Large Stone Door'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Toraimarai Canal' },
+        zoneIds = { 169 },
+        note = "OBJECT: Heavy ancient stone structural barrier door. Interacting with it handles layout path restrictions or evaluates specific structural quest progression conditions.",
+    },
+
+    -- OBJECT: Bastok Rank Mission Checkpoint
+    ['Large Switch'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Metalworks' },
+        zoneIds = { 237 },
+        note = "OBJECT: Selectable engine wall switch device at (F-7) inside the laboratory. Activating it progresses historical Republic scenarios or verifies specific manufacturing quest flags.",
+    },
+
+    -- OBJECT: Custom Private Server Warp Nexus
+    ['Layer Reserve'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'La Theine Plateau', 'Castle Zvahl Keep', 'Southern San d\'Oria', 'Bastok Mines', 'Windurst Walls', 'Ru\'Lude Gardens', 'Rabao', 'Selbina', 'Mhaura', 'Reisenjima' },
+        zoneIds = { 102, 162, 230, 234, 239, 243, 247, 248, 249, 291 },
+        note = "OBJECT: Custom private server automated layer transition node. Interacting with it manipulates background network threads to shift player parties across instanced layer shards safely.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Leafy Patch'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Vunkerl Inlet [S]' },
+        zoneIds = { 83 },
+        note = "OBJECT: Targetable overworld shrubbery checkpoint located at (F-6). Examining it processes past-timeline campaign resource collections or handles specialized side quest steps.",
+    },
+
+    -- OBJECT: High-Tier BGM Jukebox Mechanism
+    ['Legion Libretto'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Maquette Abdhaljs-Legion A', 'Maquette Abdhaljs-Legion B' },
+        zoneIds = { 183, 287 },
+        note = "OBJECT: Battle antechamber jukebox podium ledger. Allows alliance leaders to actively choose and override the custom background music (fanfare themes) played during upcoming Legion matches.",
+    },
+
+    -- OBJECT: Legion Endgame Battle Gateway
+    ['Legion Tome'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Rolanberry Fields', 'Maquette Abdhaljs-Legion A', 'Maquette Abdhaljs-Legion B' },
+        zoneIds = { 110, 183, 287 },
+        note = "OBJECT: Targetable ancient text register standing at (K-5). Serves as the central staging mechanic to trade entry slips, verify level metrics, and teleport alliances into Legion instances.",
+    },
+
+    -- OBJECT: Puzzle Interaction Gate
+    ['Leviathan\'s Gate'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'The Eldieme Necropolis [S]', 'The Eldieme Necropolis' },
+        zoneIds = { 175, 195 },
+        note = "OBJECT: Heavy underground structural tomb barrier. Interacting with it handles layout pathway restrictions or evaluates specific structural puzzle conditions.",
+    },
+
+    -- OBJECT: Geographic Inscription Book
+    ['Liber Daemonium'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Celennia Memorial Library' },
+        zoneIds = { 284 },
+        note = "OBJECT: Targetable lore book asset resting on the library shelves. Examining it reveals extensive historical demonology records and background data context text strings.",
+    },
+
+    -- OBJECT: Quest Interaction Point
+    ['Library book'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Windurst Waters' },
+        zoneIds = { 238 },
+        note = "OBJECT: Targetable book prop located inside the Optistry or Rhinostery layouts. Examining it while on the correct progression paths validates active Windurstian side quests.",
+    },
+
+
+
+    -- OBJECT: Core Expansion Avatar / Battlefield Gateway
+    ['Lightning Protocrystal'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Cloister of Storms' },
+        zoneIds = { 202 },
+        note = "OBJECT: Large elemental crystal formation. Interacting with it serves as the physical gateway to enter Ramuh's prime avatar battlefields or trial instances.",
+    },
+
+    -- OBJECT: Adoulin Continent Zone Portal
+    ['Liseran Door: Entrance'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Kamihr Drifts', 'Woh Gates' },
+        zoneIds = { 267, 273 },
+        note = "OBJECT: Ancient structural gateway located at (F-8) in the drifts. Interacting with it handles layout checks and serves as the physical overworld entry portal to transition player parties into Outer Ra'Kaznar.",
+    },
+
+    -- OBJECT: Adoulin Continent Zone Portal
+    ['Liseran Door: Exit'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Ra\'Kaznar' },
+        zoneIds = { 274 },
+        note = "OBJECT: Targetable internal exit gateway mechanism. Interacting with it processes progressive floor departures and teleports active players back to the overworld boundaries.",
+    },
+
+    -- OBJECT: Alluvion Skirmish Elevation Checkpoint
+    ['Living Cairn'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Rala Waterways [U]', 'Yorcia Weald [U]', 'Cirdas Caverns [U]' },
+        zoneIds = { 259, 264, 271 },
+        note = "OBJECT: Targetable structural crystal pillar that activates upon completing primary instance objectives. Examining it teleports the group to the next progressive floor tier of the Alluvion Skirmish.",
+    },
+
+	
+	
+    ['Demonic Architrave'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Outer Ra\'Kaznar' },
+        zoneIds = { 274 },
+        note = "OBJECT: Ancient targetable stone framework found on the lower levels at (C-8). Examining it triggers critical cutscenes and progresses Seekers of Adoulin Mission 4-3-2 ('A New Power').",
+    },
+	
+    ['Darkened Crevice'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Woh Gates' },
+        zoneIds = { 273 },
+        note = "OBJECT: Inconspicuous wall crevice located at the (G-7)/(G-8) border. Examining it triggers critical cutscenes and acts as the battlefield entry point for Seekers of Adoulin Mission 4-3 ('The Gates').",
+    },
+	
+    ['Daunting Emanation'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Morimar Basalt Fields' },
+        zoneIds = { 265 },
+        note = "OBJECT: Targetable swirling energy node or private server interaction point. Interacting with it progresses specific Seekers of Adoulin side quests or handles high-tier geographic mechanics.",
+    },
+	
+    ['Deathborne Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Outer Ra\'Kaznar' },
+        zoneIds = { 274 },
+        note = 'Needs Review.',
+    },
+
+    ['Decorative Bronze Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Halvung', 'Navukgo Execution Chamber' },
+        zoneIds = { 62, 64 },
+        note = 'Needs Review.',
+    },
+
+    ['Dark Fissure'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Abyssea - La Theine' },
+        zoneIds = { 132 },
+        note = "OBJECT: Targetable ground fissure node located at (H-6). Checked during Abyssea exploration loops to unlock spatial progression puzzles or custom private server scripts.",
+    },
+
+
+    ['Dark Miasma'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Boneyard Gully', 'Abyssea - Attohwa' },
+        zoneIds = { 215, 8 },
+        note = "OBJECT: Toxic environmental barrier node. Blocks safe passage unless dispersed using a Miasmal Counteragent or specialized key items like the Miasma Filter.",
+    },
+
+    ['Dampsoil'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Aydeewa Subterrane' },
+        zoneIds = { 68 },
+        note = "OBJECT: Targetable patch of earth located at hidden checkpoints in the underground caves. Interacting with it is required during regional gathering tasks or specific expansion quest loops.",
+    },
+	
+	    ['Cryptexphere'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Monastic Cavern' },
+        zoneIds = { 150 },
+        note = "OBJECT: Ancient artifact device located at (F-6). Interacting with it while equipped with an Orc Helm triggers the 7 Orc Notorious Monsters fight for the quest 'An Understanding Overlord?'.",
+    },
+
+    ['Crystal Receptor'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Pso\'Xja' },
+        zoneIds = { 9 },
+        note = "OBJECT: Targetable ancient wall apparatus found at (G-8) in the uncapped tower. Activating it temporarily creates platforms on the floor below for 120 seconds, allowing traversal to the Avatar Gate.",
+    },
+	
+    ['Brass Statue'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'Castle Oztroja' },
+        zoneIds = { 151 },
+        note = "OBJECT: Ancient stone statues found at hidden checkpoints inside the castle. Interacting with them reveals the daily rotating passwords required to unlock the high-tier trapdoors for Maat's limit break quest.",
+    },
+
+
+    ['Brazier'] = {
+        type = "Target Point",
+        icon = "Dialogue.png",
+        zones = { 'The Eldieme Necropolis' },
+        zoneIds = { 195 },
+        note = "OBJECT: Large ancient torches positioned at dead ends. Interacting with them activates a directional short-range teleport sequence, shifting players up to the isolated plateau zones of Batallia Downs.",
+    },
+	
+    ['Cushion'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Aht Urhgan Whitegate' },
+        zoneIds = { 50 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cutter'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Arrapago Reef' },
+        zoneIds = { 54 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Cyclopean Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Abyssea - Vunkerl', 'Vunkerl Inlet [S]' },
+        zoneIds = { 83, 217 },
+        note = 'Needs Review.',
+    },
+    ['Charred Firewood'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Beaucedine Glacier [S]' },
+        zoneIds = { 136 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Chat Manual'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Bastok Mines', 'Northern San d\'Oria', 'Windurst Walls' },
+        zoneIds = { 231, 234, 239 },
+        note = 'Needs Review.',
+    },
+
+	
+    ['Avatar Gate'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Pso\'Xja' },
+        zoneIds = { 9 },
+        note = 'Needs Review.',
+    },
+    ['Aged Stump'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Leafallia' },
+        zoneIds = { 281 },
+        note = 'Needs Review.',
+    },
+	
+
+    ['Alluring Plant'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Rala Waterways' },
+        zoneIds = { 258 },
+        note = 'Needs Review.',
+    },
+
+
+    ['Alpine Trail'] = {
+        type = 'Unknown',
+        icon = 'Dialogue.png',
+        zones = { 'Kamihr Drifts' },
+        zoneIds = { 267 },
+        note = 'Needs Review.',
+    },
+	
+	
+	
+	
+	
     ['Parchment'] = {
         type = 'Unknown',
         icon = 'Dialogue.png',

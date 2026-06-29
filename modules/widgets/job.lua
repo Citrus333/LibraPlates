@@ -610,40 +610,32 @@ function job.DrawSettings(settings, context)
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawToggle('Active', settings.enabled);
     end
-    DrawAnchorControls(settings, context);
-    DrawDisplayRow(settings);
-    settings.offsetX, settings.offsetY = DrawPlacementPair('Position X', settings.offsetX, 'offset_x', 'Position Y', settings.offsetY, 'offset_y', -400, 400, 1);
+    if (context == nil or context.skipPlacement ~= true) then
+        DrawAnchorControls(settings, context);
+    end
 
-    if ((tonumber(settings.displayModeIndex) or 1) == 2) then
-        settings.iconSize = DrawSingleSlider('Icon size', 'icon_size', settings.iconSize, 8, 160, 1);
-    else
-        settings.textSize, settings.color = DrawSliderAndColorRow(
-            'Font size',
-            'text_size',
-            textScale.NormalizeSetting(settings.textSize, defaults.textSize),
-            textScale.GetMinVisualSize(),
-            textScale.GetMaxVisualSize(),
-            'Font color',
-            'text_color',
-            settings.color
-        );
-        if (context ~= nil and context.entity == 'Enemy') then
-            settings.outlineSize, settings.outlineColor = DrawSliderAndColorRow(
-                'Outline size',
-                'outline_size',
-                settings.outlineSize,
-                0,
-                8,
-                'Outline color',
-                'outline_color',
-                settings.outlineColor,
-                122
-            );
-            settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
+    if (context ~= nil and context.onlyPlacement == true) then
+        return;
+    end
+
+    local function DrawBody()
+        DrawDisplayRow(settings);
+        settings.offsetX, settings.offsetY = DrawPlacementPair('Position X', settings.offsetX, 'offset_x', 'Position Y', settings.offsetY, 'offset_y', -400, 400, 1);
+
+        if ((tonumber(settings.displayModeIndex) or 1) == 2) then
+            settings.iconSize = DrawSingleSlider('Icon size', 'icon_size', settings.iconSize, 8, 160, 1);
         else
-            settings.outlineEnabled = DrawToggle('Text outline', settings.outlineEnabled);
-
-            if (settings.outlineEnabled == true) then
+            settings.textSize, settings.color = DrawSliderAndColorRow(
+                'Font size',
+                'text_size',
+                textScale.NormalizeSetting(settings.textSize, defaults.textSize),
+                textScale.GetMinVisualSize(),
+                textScale.GetMaxVisualSize(),
+                'Font color',
+                'text_color',
+                settings.color
+            );
+            if (context ~= nil and context.entity == 'Enemy') then
                 settings.outlineSize, settings.outlineColor = DrawSliderAndColorRow(
                     'Outline size',
                     'outline_size',
@@ -655,11 +647,39 @@ function job.DrawSettings(settings, context)
                     settings.outlineColor,
                     122
                 );
+                settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
+            else
+                settings.outlineEnabled = DrawToggle('Text outline', settings.outlineEnabled);
+
+                if (settings.outlineEnabled == true) then
+                    settings.outlineSize, settings.outlineColor = DrawSliderAndColorRow(
+                        'Outline size',
+                        'outline_size',
+                        settings.outlineSize,
+                        0,
+                        8,
+                        'Outline color',
+                        'outline_color',
+                        settings.outlineColor,
+                        122
+                    );
+                end
             end
         end
     end
 
-    imgui.Separator();
+    if (context ~= nil and context.boxed == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then
+        _G.LibraPlatesSettingsDrawBoxedPanel('Job', DrawBody, true);
+    else
+        DrawBody();
+    end
+
+    if (context ~= nil and context.boxed == true) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        imgui.Separator();
+    end
 
     if (DrawActionButton('Reset Job position') == true) then
         settings.offsetX = defaults.offsetX;

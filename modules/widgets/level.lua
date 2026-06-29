@@ -404,52 +404,83 @@ function level.DrawSettings(settings, context)
 
     ApplyDefaults(settings);
 
-    DrawSectionHeader('Level settings');
+    if ((context == nil or context.onlyPlacement ~= true) and (context == nil or context.boxed ~= true)) then
+        DrawSectionHeader('Level settings');
+    end
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end
-    DrawAnchorControls(settings, context);
-    settings.offsetX, settings.offsetY = DrawSliderPair(
-        'position',
-        'Position X',
-        'offset_x',
-        settings.offsetX,
-        -400,
-        400,
-        'Position Y',
-        'offset_y',
-        settings.offsetY,
-        -400,
-        400
-    );
-    DrawFontRow(settings);
-    DrawOutlineRow(settings);
-    settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
+    if (context == nil or context.skipPlacement ~= true) then
+        DrawAnchorControls(settings, context);
+    end
+
+    if (context ~= nil and context.onlyPlacement == true) then
+        return;
+    end
+    local boxed = context ~= nil and context.boxed == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil;
+
+    local function DrawPanel(label, render, first)
+        if (boxed == true) then
+            _G.LibraPlatesSettingsDrawBoxedPanel(label, render, first);
+        else
+            if (first ~= true) then
+                imgui.Separator();
+                DrawSectionHeader(label);
+            end
+            render();
+        end
+    end
+
+    DrawPanel('Level', function()
+        settings.offsetX, settings.offsetY = DrawSliderPair(
+            'position',
+            'Position X',
+            'offset_x',
+            settings.offsetX,
+            -400,
+            400,
+            'Position Y',
+            'offset_y',
+            settings.offsetY,
+            -400,
+            400
+        );
+        DrawFontRow(settings);
+        DrawOutlineRow(settings);
+        settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
+    end, true);
 
     if (context ~= nil and context.entity == 'Enemy') then
-        imgui.Separator();
-        DrawSectionHeader('Difficulty font colors');
-        settings.difficultyColorsEnabled = DrawToggle('Use difficulty font colors', settings.difficultyColorsEnabled);
+        DrawPanel('Difficulty font colors', function()
+            settings.difficultyColorsEnabled = DrawToggle('Use difficulty font colors', settings.difficultyColorsEnabled);
+
+            if (settings.difficultyColorsEnabled == true) then
+                settings.twColor = DrawDifficultyColor('TW', settings.twColor, true);
+                settings.epColor = DrawDifficultyColor('EP', settings.epColor, true);
+                settings.dcColor = DrawDifficultyColor('DC', settings.dcColor, true);
+                settings.emColor = DrawDifficultyColor('EM', settings.emColor, true);
+                settings.tColor = DrawDifficultyColor('T', settings.tColor, true);
+                settings.vtColor = DrawDifficultyColor('VT', settings.vtColor, true);
+                settings.itColor = DrawDifficultyColor('IT', settings.itColor, false);
+            end
+        end);
 
         if (settings.difficultyColorsEnabled == true) then
-            settings.twColor = DrawDifficultyColor('TW', settings.twColor, true);
-            settings.epColor = DrawDifficultyColor('EP', settings.epColor, true);
-            settings.dcColor = DrawDifficultyColor('DC', settings.dcColor, true);
-            settings.emColor = DrawDifficultyColor('EM', settings.emColor, true);
-            settings.tColor = DrawDifficultyColor('T', settings.tColor, true);
-            settings.vtColor = DrawDifficultyColor('VT', settings.vtColor, true);
-            settings.itColor = DrawDifficultyColor('IT', settings.itColor, false);
-
-            imgui.Separator();
-            DrawSectionHeader('Difficulty outline colors');
-            settings.twOutlineColor = DrawDifficultyOutlineColor('TW', settings.twOutlineColor, true);
-            settings.epOutlineColor = DrawDifficultyOutlineColor('EP', settings.epOutlineColor, true);
-            settings.dcOutlineColor = DrawDifficultyOutlineColor('DC', settings.dcOutlineColor, true);
-            settings.emOutlineColor = DrawDifficultyOutlineColor('EM', settings.emOutlineColor, true);
-            settings.tOutlineColor = DrawDifficultyOutlineColor('T', settings.tOutlineColor, true);
-            settings.vtOutlineColor = DrawDifficultyOutlineColor('VT', settings.vtOutlineColor, true);
-            settings.itOutlineColor = DrawDifficultyOutlineColor('IT', settings.itOutlineColor, false);
+            DrawPanel('Difficulty outline colors', function()
+                settings.twOutlineColor = DrawDifficultyOutlineColor('TW', settings.twOutlineColor, true);
+                settings.epOutlineColor = DrawDifficultyOutlineColor('EP', settings.epOutlineColor, true);
+                settings.dcOutlineColor = DrawDifficultyOutlineColor('DC', settings.dcOutlineColor, true);
+                settings.emOutlineColor = DrawDifficultyOutlineColor('EM', settings.emOutlineColor, true);
+                settings.tOutlineColor = DrawDifficultyOutlineColor('T', settings.tOutlineColor, true);
+                settings.vtOutlineColor = DrawDifficultyOutlineColor('VT', settings.vtOutlineColor, true);
+                settings.itOutlineColor = DrawDifficultyOutlineColor('IT', settings.itOutlineColor, false);
+            end);
         end
+    end
+
+    if (context ~= nil and context.boxed == true) then
+        imgui.Spacing();
+        imgui.Spacing();
     end
 
     if (DrawActionButton('Reset Level position') == true) then

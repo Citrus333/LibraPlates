@@ -1317,7 +1317,26 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         end
     end
 
-    local cacheEligible = aoeNameHighlight.HasLiveAoe() ~= true and enmityActive ~= true;
+    local function HasActiveBarAnimation(bar)
+        return bar ~= nil and bar.animationEnabled == true;
+    end
+
+    local animatedBarActive =
+        HasActiveBarAnimation(plateData.hpBar) or
+        HasActiveBarAnimation(plateData.mpBar) or
+        HasActiveBarAnimation(plateData.tpBar) or
+        HasActiveBarAnimation(plateData.castBar);
+
+    if (animatedBarActive ~= true) then
+        for _, extraBar in ipairs(plateData.extraBars or {}) do
+            if (HasActiveBarAnimation(extraBar) == true) then
+                animatedBarActive = true;
+                break;
+            end
+        end
+    end
+
+    local cacheEligible = animatedBarActive ~= true and aoeNameHighlight.HasLiveAoe() ~= true and enmityActive ~= true;
     local signature = nil;
     local vitalSignature = nil;
     local cacheKey = GetWorldCacheKey(stateName, targetStateName, layoutStateName, plateData.canvasWidth ~= nil);

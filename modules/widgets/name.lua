@@ -218,9 +218,9 @@ local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, left
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##name_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 145);
+            imgui.TableSetupColumn('##label_left', 0, 120);
             imgui.TableSetupColumn('##control_left', 0, 170);
-            imgui.TableSetupColumn('##label_right', 0, 145);
+            imgui.TableSetupColumn('##label_right', 0, 120);
             imgui.TableSetupColumn('##control_right', 0, 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -395,10 +395,10 @@ local function DrawFontRow(settings, context)
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##name_font_row', showColor == true and 4 or 2, tableFlags)) then
-            imgui.TableSetupColumn('##font_size_label', 0, 145);
+            imgui.TableSetupColumn('##font_size_label', 0, 120);
             imgui.TableSetupColumn('##font_size_control', 0, 170);
             if (showColor == true) then
-                imgui.TableSetupColumn('##font_color_label', 0, 145);
+                imgui.TableSetupColumn('##font_color_label', 0, 120);
                 imgui.TableSetupColumn('##font_color_control', 0, 170);
             end
             imgui.TableNextRow();
@@ -423,9 +423,9 @@ end
 local function DrawOutlineRow(settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##name_outline_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##outline_size_label', 0, 145);
+            imgui.TableSetupColumn('##outline_size_label', 0, 120);
             imgui.TableSetupColumn('##outline_size_control', 0, 170);
-            imgui.TableSetupColumn('##outline_color_label', 0, 145);
+            imgui.TableSetupColumn('##outline_color_label', 0, 120);
             imgui.TableSetupColumn('##outline_color_control', 0, 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -653,35 +653,71 @@ function name.DrawSettings(settings, context)
         settings.textSize = 40;
     end
 
-    DrawAnchorControls(settings, context);
+    local function DrawPanel(panelLabel, render, first)
+        if (context ~= nil and context.boxed == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then
+            _G.LibraPlatesSettingsDrawBoxedPanel(panelLabel, render, first);
+            return;
+        end
 
-    settings.offsetX, settings.offsetY = DrawSliderPair(
-        'position',
-        'Position X',
-        'offset_x',
-        settings.offsetX,
-        -400,
-        400,
-        'Position Y',
-        'offset_y',
-        settings.offsetY,
-        -400,
-        400
-    );
-    DrawFontRow(settings, context);
-    DrawOutlineRow(settings);
-    settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
-
-    if (context ~= nil and context.entity == 'Enemy') then
-        imgui.Separator();
-        DrawSectionHeader('Claim colors');
-        settings.claimUnclaimedColor, settings.claimUnclaimedOutlineColor = DrawClaimColorRow('Unclaimed', settings.claimUnclaimedColor, settings.claimUnclaimedOutlineColor);
-        settings.claimPartyColor, settings.claimPartyOutlineColor = DrawClaimColorRow('Claimed', settings.claimPartyColor, settings.claimPartyOutlineColor);
-        settings.claimOtherColor, settings.claimOtherOutlineColor = DrawClaimColorRow('Claimed by others', settings.claimOtherColor, settings.claimOtherOutlineColor);
-        settings.claimCallForHelpColor, settings.claimCallForHelpOutlineColor = DrawClaimColorRow('Call for help', settings.claimCallForHelpColor, settings.claimCallForHelpOutlineColor);
+        if (first ~= true and imgui.Spacing ~= nil) then
+            imgui.Spacing();
+        end
+        DrawSectionHeader(panelLabel);
+        render();
     end
 
-    imgui.Separator();
+    if (context == nil or context.skipPlacement ~= true) then
+        DrawAnchorControls(settings, context);
+    end
+
+    if (context ~= nil and context.onlyPlacement == true) then
+        return;
+    end
+
+    DrawPanel('Name', function()
+        settings.offsetX, settings.offsetY = DrawSliderPair(
+            'position',
+            'Position X',
+            'offset_x',
+            settings.offsetX,
+            -400,
+            400,
+            'Position Y',
+            'offset_y',
+            settings.offsetY,
+            -400,
+            400
+        );
+
+        if (imgui.Spacing ~= nil) then
+            imgui.Spacing();
+        end
+        DrawFontRow(settings, context);
+
+        if (imgui.Spacing ~= nil) then
+            imgui.Spacing();
+        end
+        DrawOutlineRow(settings);
+        settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
+
+        if (context ~= nil and context.entity == 'Enemy') then
+            if (imgui.Spacing ~= nil) then
+                imgui.Spacing();
+            end
+            DrawSectionHeader('Claim colors');
+            settings.claimUnclaimedColor, settings.claimUnclaimedOutlineColor = DrawClaimColorRow('Unclaimed', settings.claimUnclaimedColor, settings.claimUnclaimedOutlineColor);
+            settings.claimPartyColor, settings.claimPartyOutlineColor = DrawClaimColorRow('Claimed', settings.claimPartyColor, settings.claimPartyOutlineColor);
+            settings.claimOtherColor, settings.claimOtherOutlineColor = DrawClaimColorRow('Claimed by others', settings.claimOtherColor, settings.claimOtherOutlineColor);
+            settings.claimCallForHelpColor, settings.claimCallForHelpOutlineColor = DrawClaimColorRow('Call for help', settings.claimCallForHelpColor, settings.claimCallForHelpOutlineColor);
+        end
+    end, true);
+
+    if (context ~= nil and context.boxed == true) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        imgui.Separator();
+    end
 
     if (DrawActionButton('Reset Name position') == true) then
         RequestReset('position', 'Name position');

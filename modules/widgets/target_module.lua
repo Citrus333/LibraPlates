@@ -1,6 +1,7 @@
 local imgui = require('imgui');
 local uiTooltip = require('core.ui_tooltip');
 local arrowAnimation = require('core.target_arrow_animation');
+local targetTextures = require('core.target_textures');
 local state = require('core.state');
 local globalDefaults = require('config.global');
 
@@ -9,6 +10,24 @@ local unpackTable = table.unpack or unpack;
 local labelColor = { 0.92, 0.92, 0.90, 1.0 };
 local valueColor = { 0.65, 0.90, 1.0, 1.0 };
 local actionColor = { 1.0, 0.84, 0.0, 1.0 };
+local shellBg = { 0.094, 0.094, 0.094, 1.0 };
+local panelBg = { 0.145, 0.145, 0.145, 1.0 };
+local boxedPanelSerial = 0;
+
+local function GetContentRegionAvail()
+    if (imgui.GetContentRegionAvail == nil) then
+        return 640, 480;
+    end
+
+    local availA, availB = imgui.GetContentRegionAvail();
+
+    if (type(availA) == 'table') then
+        return tonumber(availA.x or availA[1]) or 640, tonumber(availA.y or availA[2]) or 480;
+    end
+
+    return tonumber(availA) or 640, tonumber(availB) or 480;
+end
+
 local function DrawSectionHeader(label)
     if (imgui.SetWindowFontScale ~= nil) then
         imgui.SetWindowFontScale(1.18);
@@ -20,78 +39,75 @@ local function DrawSectionHeader(label)
         imgui.SetWindowFontScale(1.0);
     end
 end
-local fileCache = {};
+
+local function DrawBoxedPanel(label, render, first)
+    boxedPanelSerial = boxedPanelSerial + 1;
+
+    local panelGap = 8;
+    local panelPadX = 16;
+    local panelPadY = 10;
+    local topGap = (first == true) and 2 or panelGap;
+
+    if (imgui.Dummy ~= nil) then
+        imgui.Dummy({ 1, topGap });
+    elseif (first ~= true and imgui.Spacing ~= nil) then
+        imgui.Spacing();
+    end
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local availWidth = select(1, GetContentRegionAvail());
+        local cardWidth = math.max(260, (tonumber(availWidth) or 260) - 16);
+        local colorCount = 0;
+
+        if (imgui.PushStyleColor ~= nil) then
+            if (_G.ImGuiCol_TableRowBg ~= nil) then
+                imgui.PushStyleColor(_G.ImGuiCol_TableRowBg, panelBg);
+                colorCount = colorCount + 1;
+            end
+            if (_G.ImGuiCol_TableRowBgAlt ~= nil) then
+                imgui.PushStyleColor(_G.ImGuiCol_TableRowBgAlt, panelBg);
+                colorCount = colorCount + 1;
+            end
+        end
+
+        if (imgui.BeginTable('##TargetModulePanel' .. tostring(boxedPanelSerial), 1, (_G.ImGuiTableFlags_RowBg or 0), { cardWidth, 0 })) then
+            imgui.TableSetupColumn('##card', 0, cardWidth);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+
+            if (imgui.Dummy ~= nil) then imgui.Dummy({ 1, panelPadY }); end
+            if (imgui.Indent ~= nil) then imgui.Indent(panelPadX); end
+
+            if (label ~= nil and label ~= '') then
+                DrawSectionHeader(label);
+                if (imgui.Spacing ~= nil) then imgui.Spacing(); end
+            end
+
+            render();
+
+            if (imgui.Unindent ~= nil) then imgui.Unindent(panelPadX); end
+            if (imgui.Dummy ~= nil) then imgui.Dummy({ 1, panelPadY }); end
+            imgui.EndTable();
+        end
+
+        if (colorCount > 0 and imgui.PopStyleColor ~= nil) then
+            imgui.PopStyleColor(colorCount);
+        end
+
+        return;
+    end
+
+    if (label ~= nil and label ~= '') then
+        DrawSectionHeader(label);
+    end
+    render();
+end
 local heldButtonState = {};
 local targetModuleTableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local autoPlaceAnchorOptions = T{ 'Widest element', 'Name', 'HP Bar' };
 local colorEditFlags = bit ~= nil and bit.bor ~= nil
     and bit.bor(_G.ImGuiColorEditFlags_NoAlpha or 0, _G.ImGuiColorEditFlags_NoInputs or 0)
     or ((_G.ImGuiColorEditFlags_NoAlpha or 0) + (_G.ImGuiColorEditFlags_NoInputs or 0));
-
-local function GetAddonPath()
-    local ok, path = pcall(function()
-        return AshitaCore:GetInstallPath() .. '\\addons\\LibraPlates\\';
-    end);
-
-    if (ok == true and path ~= nil) then
-        return tostring(path);
-    end
-
-    return '.\\';
-end
-
-local function GetTargetAssetPath(category)
-    return GetAddonPath() .. 'assets\\images\\target\\' .. tostring(category or '') .. '\\';
-end
-
-local function AddFile(files, category, name)
-    name = tostring(name or ''):gsub('^.*[\\/]', '');
-
-    if (name == '' or string.lower(name):match('%.png$') == nil) then
-        return;
-    end
-
-    if (category == 'arrows' and arrowAnimation.GetDropdownFileName(name) ~= name) then
-        return;
-    end
-
-    for _, existing in ipairs(files) do
-        if (existing == name) then
-            return;
-        end
-    end
-
-    files[#files + 1] = name;
-end
-
-local function GetFiles(category)
-    category = tostring(category or 'arrows');
-
-    if (fileCache[category] ~= nil) then
-        return fileCache[category];
-    end
-
-    local files = T{ 'None' };
-    local folder = GetTargetAssetPath(category);
-    local pipe = io.popen('dir /b "' .. folder .. '*.png" 2>nul');
-
-    if (pipe ~= nil) then
-        for line in pipe:lines() do
-            AddFile(files, category, line);
-        end
-
-        pipe:close();
-    end
-
-    table.sort(files, function(a, b)
-        if (a == 'None') then return true; end
-        if (b == 'None') then return false; end
-        return string.lower(tostring(a)) < string.lower(tostring(b));
-    end);
-
-    fileCache[category] = files;
-    return files;
-end
 
 local function ClickText(label, color)
     imgui.TextColored(color or valueColor, label);
@@ -277,9 +293,10 @@ local function DrawNumberPair(leftLabel, leftValue, rightLabel, rightValue, minV
         local left = leftValue;
         local right = rightValue;
 
-        if (imgui.BeginTable('##target_module_pair_' .. tostring(leftId) .. '_' .. tostring(rightId), 4, targetModuleTableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 104);
+        if (imgui.BeginTable('##target_module_pair_' .. tostring(leftId) .. '_' .. tostring(rightId), 5, targetModuleTableFlags)) then
+            imgui.TableSetupColumn('##label_left', 0, 122);
             imgui.TableSetupColumn('##control_left', 0, 124);
+            imgui.TableSetupColumn('##spacer', 0, 28);
             imgui.TableSetupColumn('##label_right', 0, 104);
             imgui.TableSetupColumn('##control_right', 0, 124);
             imgui.TableNextRow();
@@ -287,6 +304,8 @@ local function DrawNumberPair(leftLabel, leftValue, rightLabel, rightValue, minV
             imgui.TextColored(labelColor, leftLabel);
             imgui.TableNextColumn();
             left = DrawNumberControl(leftValue, minValue, maxValue, step, leftId, 58);
+            imgui.TableNextColumn();
+            if (imgui.Dummy ~= nil) then imgui.Dummy({ 28, 1 }); end
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, rightLabel);
             imgui.TableNextColumn();
@@ -506,6 +525,53 @@ local function DrawColor(label, color)
     return color;
 end
 
+local function DrawColorLabelFirst(label, color)
+    color = color or { 1.0, 1.0, 1.0, 1.0 };
+    color[1] = tonumber(color[1]) or 1.0;
+    color[2] = tonumber(color[2]) or 1.0;
+    color[3] = tonumber(color[3]) or 1.0;
+    color[4] = tonumber(color[4]) or 1.0;
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##target_module_color_label_first_' .. tostring(label or 'Color'), 2, targetModuleTableFlags)) then
+            imgui.TableSetupColumn('##label', 0, 132);
+            imgui.TableSetupColumn('##control', 0, 48);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, label);
+            imgui.TableNextColumn();
+
+            if (imgui.ColorEdit4 ~= nil) then
+                imgui.ColorEdit4('##' .. tostring(label or 'Color'), color, colorEditFlags);
+            else
+                imgui.TextColored(color, '#');
+            end
+
+            imgui.EndTable();
+        end
+
+        return color;
+    end
+
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+
+    if (imgui.ColorEdit4 ~= nil) then
+        imgui.ColorEdit4('##' .. tostring(label or 'Color'), color, colorEditFlags);
+        return color;
+    end
+
+    imgui.TextColored(color, '#');
+
+    local colorId = tostring(label or 'Color'):gsub('[^%w_]', '_');
+    color[1] = DrawNumber('Red', color[1], 0, 1, 0.05, colorId .. 'Red');
+    color[2] = DrawNumber('Green', color[2], 0, 1, 0.05, colorId .. 'Green');
+    color[3] = DrawNumber('Blue', color[3], 0, 1, 0.05, colorId .. 'Blue');
+    color[4] = DrawNumber('Alpha', color[4], 0, 1, 0.05, colorId .. 'Alpha');
+
+    return color;
+end
+
 local function GetOpacityPercent(color, fallback)
     color = color or {};
     return math.max(0, math.min(100, math.floor((((tonumber(color[4]) or fallback or 1.0) * 100) + 0.5))));
@@ -517,57 +583,192 @@ local function SetOpacityPercent(color, value)
     return color;
 end
 
-local function DrawFile(label, category, current)
-    local files = GetFiles(category);
+local function ContainsValue(options, value)
+    for _, option in ipairs(options or {}) do
+        if (option == value) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
+local function GetFirstRealFile(options)
+    for _, option in ipairs(options or {}) do
+        if (option ~= 'None') then
+            return option;
+        end
+    end
+
+    return 'None';
+end
+
+local function FormatArrowChoiceName(fileName)
+    local value = tostring(fileName or 'None');
+
+    if (value == 'None') then
+        return value;
+    end
+
+    value = value:gsub('%.png$', '');
+    local simpleArrow = value:match('^arrow_([%d]+)$');
+
+    if (simpleArrow ~= nil) then
+        return 'Arrow ' .. tostring(tonumber(simpleArrow) or simpleArrow);
+    end
+
+    value = value:gsub('^arrow_', '');
+    value = value:gsub('^Arrow_', '');
+    value = value:gsub('_%d%d$', '');
+    value = value:gsub('_', ' ');
+    value = value:gsub('(%a)([%w]*)', function(first, rest)
+        return string.upper(first) .. string.lower(rest);
+    end);
+
+    if (value == '') then
+        return tostring(fileName or '');
+    end
+
+    return value;
+end
+
+local function FormatLockChoiceName(fileName)
+    local value = tostring(fileName or 'None');
+
+    if (value == 'None') then
+        return value;
+    end
+
+    value = value:gsub('%.png$', '');
+    value = value:gsub('_%d%d$', '');
+    value = value:gsub('_', ' ');
+    value = value:gsub('(%a)([%w]*)', function(first, rest)
+        return string.upper(first) .. string.lower(rest);
+    end);
+
+    if (value == '') then
+        return tostring(fileName or '');
+    end
+
+    return value;
+end
+
+local function DrawFile(label, category, current, filesOverride, displayNameFn)
+    local files = filesOverride or targetTextures.GetFiles(category);
     local value = tostring(current or files[1] or 'None');
 
     if (category == 'arrows') then
         value = arrowAnimation.GetDropdownFileName(value);
     end
 
-    imgui.TextColored(labelColor, label);
-    imgui.SameLine();
+    if ((category == 'arrows' or filesOverride ~= nil) and ContainsValue(files, value) ~= true) then
+        value = GetFirstRealFile(files);
+    end
 
-    if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
-        if (imgui.BeginCombo('##' .. label .. category, value) == true) then
-            for _, file in ipairs(files) do
-                local selected = (file == value);
+    local function GetDisplayName(fileName)
+        if (displayNameFn ~= nil) then
+            return displayNameFn(fileName);
+        end
 
-                if (imgui.Selectable(tostring(file), selected) == true) then
-                    value = file;
+        return tostring(fileName or '');
+    end
+
+    local function DrawPreviewTooltip(fileName)
+        if (imgui.IsItemHovered == nil or imgui.IsItemHovered() ~= true) then
+            return;
+        end
+
+        local textureId = targetTextures.GetTextureId(category, fileName);
+        local previewSize = (category == 'backgrounds') and { 220, 110 } or { 110, 110 };
+
+        if (
+            textureId ~= nil and
+            imgui.BeginTooltip ~= nil and
+            imgui.EndTooltip ~= nil and
+            imgui.Image ~= nil
+        ) then
+            imgui.BeginTooltip();
+            imgui.Text(tostring(fileName or ''));
+            imgui.Image(textureId, previewSize, { 0, 0 }, { 1, 1 });
+            imgui.EndTooltip();
+        elseif (imgui.SetTooltip ~= nil) then
+            imgui.SetTooltip(tostring(fileName or ''));
+        end
+    end
+
+    local function DrawCombo()
+        if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+            if (imgui.PushItemWidth ~= nil) then
+                imgui.PushItemWidth(300);
+            end
+
+            local comboOpen = imgui.BeginCombo('##' .. label .. category, GetDisplayName(value)) == true;
+            DrawPreviewTooltip(value);
+
+            if (comboOpen == true) then
+                for _, file in ipairs(files) do
+                    local selected = (file == value);
+
+                    if (imgui.Selectable(GetDisplayName(file), selected) == true) then
+                        value = file;
+                    end
+                    DrawPreviewTooltip(file);
+
+                    if (selected == true and imgui.SetItemDefaultFocus ~= nil) then
+                        imgui.SetItemDefaultFocus();
+                    end
                 end
 
-                if (selected == true and imgui.SetItemDefaultFocus ~= nil) then
-                    imgui.SetItemDefaultFocus();
+                imgui.EndCombo();
+            end
+
+            if (imgui.PopItemWidth ~= nil) then
+                imgui.PopItemWidth();
+            end
+
+            return;
+        end
+
+        imgui.TextColored(valueColor, '[' .. value .. ' v]');
+
+        if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+            local index = 1;
+
+            for i, file in ipairs(files) do
+                if (file == value) then
+                    index = i;
+                    break;
                 end
             end
 
-            imgui.EndCombo();
+            index = index + 1;
+
+            if (index > #files) then
+                index = 1;
+            end
+
+            value = files[index] or value;
+        end
+    end
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##target_module_file_' .. tostring(label) .. tostring(category), 2, targetModuleTableFlags)) then
+            imgui.TableSetupColumn('##label', 0, 150);
+            imgui.TableSetupColumn('##control', 0, 318);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, label);
+            imgui.TableNextColumn();
+            DrawCombo();
+            imgui.EndTable();
         end
 
         return value;
     end
 
-    imgui.TextColored(valueColor, '[' .. value .. ' v]');
-
-    if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
-        local index = 1;
-
-        for i, file in ipairs(files) do
-            if (file == value) then
-                index = i;
-                break;
-            end
-        end
-
-        index = index + 1;
-
-        if (index > #files) then
-            index = 1;
-        end
-
-        value = files[index] or value;
-    end
+    imgui.TextColored(labelColor, label);
+    imgui.SameLine();
+    DrawCombo();
 
     return value;
 end
@@ -626,6 +827,8 @@ function targetModule.DrawSettings(settings, context)
         return;
     end
 
+    boxedPanelSerial = 0;
+
     local defaults = context ~= nil and context.defaults or {};
     local label = tostring(context ~= nil and context.widget or 'Target Module');
     local entityName = tostring(context ~= nil and context.entity or '');
@@ -646,50 +849,70 @@ function targetModule.DrawSettings(settings, context)
         settings.arrowDistanceColoring = false;
     end
 
-    DrawSectionHeader(label .. ' settings');
-    imgui.SameLine();
-    imgui.TextColored((settings.enabled ~= false) and valueColor or { 0.20, 0.65, 0.67, 1.0 }, (settings.enabled ~= false) and 'ON' or 'OFF');
-    uiTooltip.Info('This controls only the LibraPlates custom target/subtarget module. The native game target arrow is controlled globally in General > Targeting.');
+    local function DrawLockOnIconPanel()
+        DrawBoxedPanel('Lock-on icon', function()
+            settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
 
-    if (lockOnly ~= true) then
-        DrawCopySettings(settings, context, label);
+            if (settings.lockEnabled ~= false) then
+                local lockTypeOptions = T{ 'Still image', 'Animation' };
+                local lockType = settings.lockSprite == true and 'Animation' or 'Still image';
+                lockType = DrawOption('Lock-on type', lockTypeOptions, lockType, 'TargetModuleLockType');
+                settings.lockSprite = lockType == 'Animation';
 
-        if (_G.LibraPlatesSettingsDrawContextLoadMode ~= nil) then
-            _G.LibraPlatesSettingsDrawContextLoadMode(settings, context);
-        end
+                if (settings.lockSprite == true) then
+                    settings.lockFile = DrawFile('Lock-on animation', 'lock', settings.lockFile, targetTextures.GetAnimationFiles('lock'), FormatLockChoiceName);
+
+                    if (tostring(settings.lockFile or 'None') ~= 'None') then
+                        settings.lockAnimationSpeed = DrawNumber('Animation speed', settings.lockAnimationSpeed, 1, 60, 1, 'TargetModuleLockAnimationSpeed');
+                    end
+                else
+                    settings.lockFile = DrawFile('Lock-on image', 'lock', settings.lockFile, targetTextures.GetStillFiles('lock'), FormatLockChoiceName);
+                end
+
+                settings.lockWidth, settings.lockHeight = DrawNumberPair(
+                    'Width',
+                    settings.lockWidth,
+                    'Height',
+                    settings.lockHeight,
+                    1,
+                    200,
+                    1,
+                    'TargetModuleLockWidth',
+                    'TargetModuleLockHeight'
+                );
+                settings.lockOffsetX, settings.lockOffsetY = DrawNumberPair(
+                    'Position X',
+                    settings.lockOffsetX,
+                    'Position Y',
+                    settings.lockOffsetY,
+                    -500,
+                    500,
+                    1,
+                    'TargetModuleLockX',
+                    'TargetModuleLockY'
+                );
+                settings.lockColor = DrawColorLabelFirst('Lock-on tint', settings.lockColor);
+            end
+        end);
+    end
+
+    if (context == nil or context.boxed ~= true) then
+        DrawBoxedPanel(label .. ' settings', function()
+            imgui.TextColored((settings.enabled ~= false) and valueColor or { 0.20, 0.65, 0.67, 1.0 }, (settings.enabled ~= false) and 'ON' or 'OFF');
+            uiTooltip.Info('This controls only the LibraPlates custom target/subtarget module. The native game target arrow is controlled globally in General > Targeting.');
+
+            if (lockOnly ~= true) then
+                DrawCopySettings(settings, context, label);
+
+                if (_G.LibraPlatesSettingsDrawContextLoadMode ~= nil) then
+                    _G.LibraPlatesSettingsDrawContextLoadMode(settings, context);
+                end
+            end
+        end, true);
     end
 
     if (lockOnly == true) then
-        imgui.Separator();
-        DrawSectionHeader('Lock-on icon');
-        settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
-
-        if (settings.lockEnabled ~= false) then
-            settings.lockWidth, settings.lockHeight = DrawNumberPair(
-                'Width',
-                settings.lockWidth,
-                'Height',
-                settings.lockHeight,
-                1,
-                200,
-                1,
-                'TargetModuleLockWidth',
-                'TargetModuleLockHeight'
-            );
-            settings.lockOffsetX, settings.lockOffsetY = DrawNumberPair(
-                'Position X',
-                settings.lockOffsetX,
-                'Position Y',
-                settings.lockOffsetY,
-                -500,
-                500,
-                1,
-                'TargetModuleLockX',
-                'TargetModuleLockY'
-            );
-            settings.lockColor = DrawColor('Lock-on tint', settings.lockColor);
-            uiTooltip.Info('Shown on the target marker while lock-on is active.');
-        end
+        DrawLockOnIconPanel();
 
         return;
     end
@@ -702,15 +925,16 @@ function targetModule.DrawSettings(settings, context)
             globalSettings.targeting.enablePetPlateTargeting = true;
         end
 
-        imgui.Separator();
-        local enabled = DrawToggle('Allow pet plate targeting', globalSettings.targeting.enablePetPlateTargeting ~= false);
+        DrawBoxedPanel('Pet targeting', function()
+            local enabled = DrawToggle('Allow pet plate targeting', globalSettings.targeting.enablePetPlateTargeting ~= false);
 
-        if (enabled ~= (globalSettings.targeting.enablePetPlateTargeting ~= false)) then
-            globalSettings.targeting.enablePetPlateTargeting = enabled == true;
-            state.Save();
-        end
+            if (enabled ~= (globalSettings.targeting.enablePetPlateTargeting ~= false)) then
+                globalSettings.targeting.enablePetPlateTargeting = enabled == true;
+                state.Save();
+            end
 
-        uiTooltip.Info('When off, pet plates stay visible but LibraPlates will not target the pet from plate clicks and will suppress the pet Target module overlay.');
+            uiTooltip.Info('When off, pet plates stay visible but LibraPlates will not target the pet from plate clicks and will suppress the pet Target module overlay.');
+        end);
 
         if (globalSettings.targeting.enablePetPlateTargeting == false) then
             return;
@@ -718,182 +942,162 @@ function targetModule.DrawSettings(settings, context)
     end
 
     if (allowHighlight == true) then
-        imgui.Separator();
-        DrawSectionHeader('Highlight');
-        settings.backgroundFile = DrawFile('Highlight image', 'backgrounds', settings.backgroundFile);
-        if (tostring(settings.backgroundFile or 'None') == 'None') then
-            settings.backgroundEnabled = false;
-            settings.showBackground = false;
-        elseif (settings.showBackground == true and settings.backgroundEnabled == false) then
-            settings.backgroundEnabled = true;
-        end
-
-        if (tostring(settings.backgroundFile or 'None') ~= 'None') then
-            settings.autoPlaceBackground = DrawToggle('Auto place highlight', settings.autoPlaceBackground ~= false);
-            uiTooltip.Info('When enabled, the highlight image follows the selected plate element. Size expands it outward from the anchor edges. Turn it off to use manual highlight width, height, and position.');
-
-            if (settings.autoPlaceBackground ~= false) then
-                settings.backgroundAutoPlaceAnchor = DrawOption('Auto place by', autoPlaceAnchorOptions, settings.backgroundAutoPlaceAnchor or 'Widest element', 'TargetModuleBackgroundAnchorMode');
-                settings.backgroundSpacing = DrawNumber('Size', settings.backgroundSpacing, 0, 300, 1, 'TargetModuleBackgroundSpacing');
-            else
-                settings.backgroundWidth, settings.backgroundHeight = DrawNumberPair(
-                    'Width',
-                    settings.backgroundWidth,
-                    'Height',
-                    settings.backgroundHeight,
-                    8,
-                    1000,
-                    5,
-                    'TargetModuleBackgroundWidth',
-                    'TargetModuleBackgroundHeight'
-                );
-                settings.backgroundOffsetX = DrawNumber('Position X', settings.backgroundOffsetX, -350, 350, 5, 'TargetModuleBackgroundX');
-
-                local backgroundHeight = tonumber(settings.backgroundHeight) or 90;
-                settings.backgroundOffsetY = DrawNumber(
-                    'Position Y',
-                    ClampOffsetToVisibleEdge(settings.backgroundOffsetY, backgroundHeight, 512, 24),
-                    -500,
-                    500,
-                    5,
-                    'TargetModuleBackgroundY'
-                );
-                settings.backgroundOffsetY = ClampOffsetToVisibleEdge(settings.backgroundOffsetY, backgroundHeight, 512, 24);
+        DrawBoxedPanel('Highlight', function()
+            settings.backgroundFile = DrawFile('Highlight image', 'backgrounds', settings.backgroundFile);
+            if (tostring(settings.backgroundFile or 'None') == 'None') then
+                settings.backgroundEnabled = false;
+                settings.showBackground = false;
+            elseif (settings.showBackground == true and settings.backgroundEnabled == false) then
+                settings.backgroundEnabled = true;
             end
-            settings.backgroundColor = DrawColor('Highlight tint', settings.backgroundColor);
-            settings.backgroundColor = SetOpacityPercent(settings.backgroundColor, GetOpacityPercent(settings.backgroundColor, 0.95));
-            local backgroundOpacity = DrawNumber('Opacity', GetOpacityPercent(settings.backgroundColor, 0.95), 0, 100, 1, 'TargetModuleBackgroundOpacity');
-            settings.backgroundColor = SetOpacityPercent(settings.backgroundColor, backgroundOpacity);
-        end
+
+            if (tostring(settings.backgroundFile or 'None') ~= 'None') then
+                settings.autoPlaceBackground = DrawToggle('Auto place highlight', settings.autoPlaceBackground ~= false);
+                uiTooltip.Info('When enabled, the highlight image follows the selected plate element. Size expands it outward from the anchor edges. Turn it off to use manual highlight width, height, and position.');
+
+                if (settings.autoPlaceBackground ~= false) then
+                    settings.backgroundAutoPlaceAnchor = DrawOption('Auto place by', autoPlaceAnchorOptions, settings.backgroundAutoPlaceAnchor or 'Widest element', 'TargetModuleBackgroundAnchorMode');
+                    settings.backgroundSpacing = DrawNumber('Size', settings.backgroundSpacing, 0, 300, 1, 'TargetModuleBackgroundSpacing');
+                    settings.backgroundOffsetY = DrawNumber('Position Y', settings.backgroundOffsetY, -100, 100, 1, 'TargetModuleBackgroundAutoY');
+                else
+                    settings.backgroundWidth, settings.backgroundHeight = DrawNumberPair(
+                        'Width',
+                        settings.backgroundWidth,
+                        'Height',
+                        settings.backgroundHeight,
+                        8,
+                        1000,
+                        5,
+                        'TargetModuleBackgroundWidth',
+                        'TargetModuleBackgroundHeight'
+                    );
+                    settings.backgroundOffsetX = DrawNumber('Position X', settings.backgroundOffsetX, -350, 350, 5, 'TargetModuleBackgroundX');
+
+                    local backgroundHeight = tonumber(settings.backgroundHeight) or 90;
+                    settings.backgroundOffsetY = DrawNumber(
+                        'Position Y',
+                        ClampOffsetToVisibleEdge(settings.backgroundOffsetY, backgroundHeight, 512, 24),
+                        -500,
+                        500,
+                        5,
+                        'TargetModuleBackgroundY'
+                    );
+                    settings.backgroundOffsetY = ClampOffsetToVisibleEdge(settings.backgroundOffsetY, backgroundHeight, 512, 24);
+                end
+                settings.backgroundColor = DrawColorLabelFirst('Highlight tint', settings.backgroundColor);
+                settings.backgroundColor = SetOpacityPercent(settings.backgroundColor, GetOpacityPercent(settings.backgroundColor, 0.95));
+                local backgroundOpacity = DrawNumber('Opacity', GetOpacityPercent(settings.backgroundColor, 0.95), 0, 100, 1, 'TargetModuleBackgroundOpacity');
+                settings.backgroundColor = SetOpacityPercent(settings.backgroundColor, backgroundOpacity);
+            end
+        end);
     end
 
-    imgui.Separator();
-    DrawSectionHeader('Arrow');
-    settings.arrowFile = DrawFile('Arrow image', 'arrows', settings.arrowFile);
-    uiTooltip.Info('None disables the LibraPlates arrow. Still images use names like arrow_1.png and arrow_2.png. Sprite animations use two-digit frames like arrow_classic_01.png, arrow_classic_02.png, and arrow_classic_03.png; the dropdown shows the first frame and Animate cycles the rest.');
-
-    if (tostring(settings.arrowFile or 'None') ~= 'None') then
-        settings.arrowWidth, settings.arrowHeight = DrawNumberPair(
-            'Width',
-            settings.arrowWidth,
-            'Height',
-            settings.arrowHeight,
-            8,
-            200,
-            1,
-            'TargetModuleArrowWidth',
-            'TargetModuleArrowHeight'
-        );
+    DrawBoxedPanel('Arrow', function()
         arrowAnimation.UpgradeLegacySettings(settings);
-        local hasSpriteFrames = arrowAnimation.HasSpriteFrames(settings.arrowFile) == true;
-        if (hasSpriteFrames == true) then
-            settings.arrowSprite = DrawToggle('Animate', settings.arrowSprite == true);
-            if (settings.arrowSprite == true) then
+
+        local arrowTypeOptions = T{ 'Still image', 'Animation' };
+        local arrowType = settings.arrowSprite == true and 'Animation' or 'Still image';
+        arrowType = DrawOption('Arrow type', arrowTypeOptions, arrowType, 'TargetModuleArrowType');
+        settings.arrowSprite = arrowType == 'Animation';
+
+        if (settings.arrowSprite == true) then
+            local animationFiles = targetTextures.GetArrowAnimationFiles();
+
+            settings.arrowFile = DrawFile('Arrow animation', 'arrows', settings.arrowFile, animationFiles, FormatArrowChoiceName);
+            uiTooltip.Info('Choose an animation set. The dropdown shows one entry per animation, not every frame.');
+
+            if (tostring(settings.arrowFile or 'None') ~= 'None') then
                 settings.arrowAnimationSpeed = DrawNumber('Animation speed', settings.arrowAnimationSpeed, 1, 60, 1, 'TargetModuleArrowAnimationSpeed');
             end
         else
-            settings.arrowSprite = false;
-            imgui.TextColored(labelColor, 'Animate');
-            imgui.SameLine();
-            imgui.TextColored({ 0.45, 0.60, 0.62, 1.0 }, 'Off');
-            uiTooltip.Info('The selected arrow image is a still image. Choose a sprite-frame arrow like arrow_classic_01.png to animate it.');
+            local stillFiles = targetTextures.GetArrowStillFiles();
+
+            settings.arrowFile = DrawFile('Arrow image', 'arrows', settings.arrowFile, stillFiles, FormatArrowChoiceName);
+            uiTooltip.Info('Choose a still arrow image. Switch Arrow type to Animation for animated arrows.');
         end
 
-        settings.arrowOffsetX, settings.arrowOffsetY = DrawNumberPair(
-            'Position X',
-            settings.arrowOffsetX,
-            'Position Y',
-            settings.arrowOffsetY,
-            -500,
-            500,
-            5,
-            'TargetModuleArrowX',
-            'TargetModuleArrowY'
-        );
-        if (isSubtargetModule == true and entityName ~= 'Self') then
-            imgui.Separator();
-            DrawSectionHeader('Range colors');
-            settings.arrowDistanceColoring = true;
-            settings.arrowOutOfRangeColor = DrawColor('Out-of-range tint', settings.arrowOutOfRangeColor);
-            settings.arrowWarningColor = DrawColor('Warning tint', settings.arrowWarningColor);
-            settings.arrowInRangeColor = DrawColor('In-range tint', settings.arrowInRangeColor);
-            uiTooltip.Info('Used by the Subtarget arrow when LibraPlates has a queued spell, ability, or weapon skill range from Ashita resources.');
-        else
-            if (isSubtargetModule == true) then
-                settings.arrowDistanceColoring = false;
-            end
-            settings.arrowColor = DrawColor('Arrow tint', settings.arrowColor);
-        end
-    else
-        settings.arrowSprite = false;
-    end
-
-    if (isSubtargetModule ~= true) then
-        imgui.Separator();
-        DrawSectionHeader('Lock-on icon');
-        settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
-
-        if (settings.lockEnabled ~= false) then
-            settings.lockWidth, settings.lockHeight = DrawNumberPair(
+        if (tostring(settings.arrowFile or 'None') ~= 'None') then
+            settings.arrowWidth, settings.arrowHeight = DrawNumberPair(
                 'Width',
-                settings.lockWidth,
+                settings.arrowWidth,
                 'Height',
-                settings.lockHeight,
-                1,
+                settings.arrowHeight,
+                8,
                 200,
                 1,
-                'TargetModuleLockWidth',
-                'TargetModuleLockHeight'
+                'TargetModuleArrowWidth',
+                'TargetModuleArrowHeight'
             );
-            settings.lockOffsetX, settings.lockOffsetY = DrawNumberPair(
+
+            settings.arrowOffsetX, settings.arrowOffsetY = DrawNumberPair(
                 'Position X',
-                settings.lockOffsetX,
+                settings.arrowOffsetX,
                 'Position Y',
-                settings.lockOffsetY,
+                settings.arrowOffsetY,
                 -500,
                 500,
-                1,
-                'TargetModuleLockX',
-                'TargetModuleLockY'
+                5,
+                'TargetModuleArrowX',
+                'TargetModuleArrowY'
             );
-            settings.lockColor = DrawColor('Lock-on tint', settings.lockColor);
-            uiTooltip.Info('Shown on the target marker while lock-on is active.');
+            if (isSubtargetModule == true and entityName ~= 'Self') then
+                DrawBoxedPanel('Range colors', function()
+                    settings.arrowDistanceColoring = true;
+                    settings.arrowOutOfRangeColor = DrawColor('Out-of-range tint', settings.arrowOutOfRangeColor);
+                    settings.arrowWarningColor = DrawColor('Warning tint', settings.arrowWarningColor);
+                    settings.arrowInRangeColor = DrawColor('In-range tint', settings.arrowInRangeColor);
+                    uiTooltip.Info('Used by the Subtarget arrow when LibraPlates has a queued spell, ability, or weapon skill range from Ashita resources.');
+                end);
+            else
+                if (isSubtargetModule == true) then
+                    settings.arrowDistanceColoring = false;
+                end
+                settings.arrowColor = DrawColorLabelFirst('Arrow tint', settings.arrowColor);
+            end
+        else
+            settings.arrowSprite = false;
         end
+    end);
+
+    DrawBoxedPanel('Chevrons', function()
+        settings.chevronFile = DrawFile('Chevron image', 'chevrons', ResolveChevronFile(settings, defaults));
+        settings.chevronEnabled = tostring(settings.chevronFile or 'None') ~= 'None';
+
+        if (tostring(settings.chevronFile or 'None') ~= 'None') then
+            settings.chevronWidth, settings.chevronHeight = DrawNumberPair(
+                'Width',
+                settings.chevronWidth,
+                'Height',
+                settings.chevronHeight,
+                8,
+                200,
+                1,
+                'TargetModuleChevronsWidth',
+                'TargetModuleChevronsHeight'
+            );
+            settings.autoPlaceChevrons = DrawToggle('Auto place chevrons', settings.autoPlaceChevrons ~= false);
+            uiTooltip.Info('When enabled, chevrons are placed outside the full measured plate width for the current enemy state. Chevron spacing then adds extra distance outward from that edge. Turn it off only when you want to shift chevrons manually with Chevrons X.');
+            if (settings.autoPlaceChevrons ~= false) then
+                settings.chevronAutoPlaceAnchor = DrawOption('Auto place by', autoPlaceAnchorOptions, settings.chevronAutoPlaceAnchor or 'Widest element', 'TargetModuleChevronsAnchorMode');
+            end
+            settings.chevronSpacing = DrawNumber('Chevron spacing', settings.chevronSpacing, 0, 900, 5, 'TargetModuleChevronsSpacing');
+
+            if (settings.autoPlaceChevrons == false) then
+                settings.chevronOffsetX = DrawNumber('Position X', settings.chevronOffsetX, -350, 350, 5, 'TargetModuleChevronsX');
+            end
+
+            settings.chevronOffsetY = DrawNumber('Position Y', settings.chevronOffsetY, -500, 500, 5, 'TargetModuleChevronsY');
+            settings.chevronColor = DrawColorLabelFirst('Chevron tint', settings.chevronColor);
+        end
+    end);
+
+    if (isSubtargetModule ~= true) then
+        DrawLockOnIconPanel();
     end
 
-    imgui.Separator();
-    DrawSectionHeader('Chevrons');
-    settings.chevronFile = DrawFile('Chevron image', 'chevrons', ResolveChevronFile(settings, defaults));
-    settings.chevronEnabled = nil;
-
-    if (tostring(settings.chevronFile or 'None') ~= 'None') then
-        settings.chevronWidth, settings.chevronHeight = DrawNumberPair(
-            'Width',
-            settings.chevronWidth,
-            'Height',
-            settings.chevronHeight,
-            8,
-            200,
-            1,
-            'TargetModuleChevronsWidth',
-            'TargetModuleChevronsHeight'
-        );
-        settings.autoPlaceChevrons = DrawToggle('Auto place chevrons', settings.autoPlaceChevrons ~= false);
-        uiTooltip.Info('When enabled, chevrons are placed outside the full measured plate width for the current enemy state. Chevron spacing then adds extra distance outward from that edge. Turn it off only when you want to shift chevrons manually with Chevrons X.');
-        if (settings.autoPlaceChevrons ~= false) then
-            settings.chevronAutoPlaceAnchor = DrawOption('Auto place by', autoPlaceAnchorOptions, settings.chevronAutoPlaceAnchor or 'Widest element', 'TargetModuleChevronsAnchorMode');
-        end
-        settings.chevronSpacing = DrawNumber('Chevron spacing', settings.chevronSpacing, 0, 900, 5, 'TargetModuleChevronsSpacing');
-
-        if (settings.autoPlaceChevrons == false) then
-            settings.chevronOffsetX = DrawNumber('Position X', settings.chevronOffsetX, -350, 350, 5, 'TargetModuleChevronsX');
-        end
-
-        settings.chevronOffsetY = DrawNumber('Position Y', settings.chevronOffsetY, -500, 500, 5, 'TargetModuleChevronsY');
-        settings.chevronColor = DrawColor('Chevron tint', settings.chevronColor);
+    if (imgui.Spacing ~= nil) then
+        imgui.Spacing();
     end
-
-    imgui.Separator();
 
     if (DrawActionButton('Reset ' .. label .. ' position') == true) then
         settings.backgroundOffsetX = defaults.backgroundOffsetX;

@@ -424,28 +424,49 @@ function gameModeIcon.DrawSettings(settings, context)
 
     ApplyDefaults(settings);
 
-    DrawSectionHeader('Game mode icon settings');
+    if ((context == nil or context.onlyPlacement ~= true) and (context == nil or context.boxed ~= true)) then
+        DrawSectionHeader('Game mode icon settings');
+    end
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end
-    DrawAnchorControls(settings, context);
-    settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, 6, 64, 1);
-    settings.offsetX, settings.offsetY = DrawSliderPair(
-        'position',
-        'Position X',
-        'offset_x',
-        settings.offsetX,
-        -400,
-        400,
-        'Position Y',
-        'offset_y',
-        settings.offsetY,
-        -400,
-        400,
-        5
-    );
+    if (context == nil or context.skipPlacement ~= true) then
+        DrawAnchorControls(settings, context);
+    end
 
-    imgui.Separator();
+    if (context ~= nil and context.onlyPlacement == true) then
+        return;
+    end
+    local function DrawBody()
+        settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, 6, 64, 1);
+        settings.offsetX, settings.offsetY = DrawSliderPair(
+            'position',
+            'Position X',
+            'offset_x',
+            settings.offsetX,
+            -400,
+            400,
+            'Position Y',
+            'offset_y',
+            settings.offsetY,
+            -400,
+            400,
+            5
+        );
+    end
+
+    if (context ~= nil and context.boxed == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then
+        _G.LibraPlatesSettingsDrawBoxedPanel('Game mode icon', DrawBody, true);
+    else
+        DrawBody();
+    end
+
+    if (context ~= nil and context.boxed == true) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        imgui.Separator();
+    end
 
     if (DrawActionButton('Reset Game mode icon position') == true) then
         RequestReset('position', 'Game mode icon position');

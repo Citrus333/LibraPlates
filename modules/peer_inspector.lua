@@ -10,6 +10,7 @@ local adaptivePerformance = require('core.adaptive_performance');
 local gameMode = require('core.game_mode');
 local playerIndicators = require('core.player_indicators');
 local state = require('core.state');
+local targeting = require('core.targeting');
 local globalDefaults = require('config.global');
 
 local iconCache = {};
@@ -52,6 +53,40 @@ local function IsModifierActive(peerSettings)
     end
 
     return IsVirtualKeyDown(0x10);
+end
+
+local function NormalizeLoadMode(value)
+    local mode = tostring(value or 'Always');
+
+    if (mode == 'OutOfCombat') then return 'Out of combat'; end
+    if (mode == 'InCombat') then return 'In combat'; end
+    if (mode == 'Always' or mode == 'Out of combat' or mode == 'In combat' or mode == 'Never') then return mode; end
+
+    return 'Always';
+end
+
+local function PeerWidgetLoads(peerWidgetSettings)
+    if (peerWidgetSettings == nil or peerWidgetSettings.enabled ~= true) then
+        return false;
+    end
+
+    local mode = NormalizeLoadMode(peerWidgetSettings.loadMode);
+
+    if (mode == 'Never') then
+        return false;
+    end
+
+    local isEngaged = targeting.IsPlayerEngaged() == true;
+
+    if (mode == 'Out of combat') then
+        return isEngaged ~= true;
+    end
+
+    if (mode == 'In combat') then
+        return isEngaged == true;
+    end
+
+    return true;
 end
 
 local function SanitizeIconStyle(style)
@@ -948,7 +983,7 @@ end
 
 GetPeerInspectorWidth = function(peerSettings, fallback)
     local width = tonumber(peerSettings ~= nil and peerSettings.inspectorWidth) or tonumber(fallback) or 430;
-    return math.max(220, math.min(800, width));
+    return math.max(120, math.min(800, width));
 end
 
 GetEnemyPeerTextInspectorHeight = function(peerSettings)
@@ -1260,7 +1295,7 @@ function peerInspector.Render()
         local layoutStateName = tostring(hovered.layoutStateName or 'Idle');
         local selfPeerSettings = state.GetWidgetSettings('Self', layoutStateName, 'Peer', { enabled = true });
 
-        if (selfPeerSettings ~= nil and selfPeerSettings.enabled == true) then
+        if (PeerWidgetLoads(selfPeerSettings) == true) then
             DrawSelfInspector(GetSelfPeerData(), peerSettings);
         end
 
@@ -1271,7 +1306,7 @@ function peerInspector.Render()
         local layoutStateName = tostring(hovered.layoutStateName or 'Idle');
         local playerPeerSettings = state.GetWidgetSettings('PC', layoutStateName, 'Peer', { enabled = true });
 
-        if (playerPeerSettings ~= nil and playerPeerSettings.enabled == true) then
+        if (PeerWidgetLoads(playerPeerSettings) == true) then
             local player = GetPlayerPeerData(hovered.targetIndex, peerSettings);
 
             if (player ~= nil) then
@@ -1283,6 +1318,13 @@ function peerInspector.Render()
     end
 
     if (targetType ~= 'enemy') then
+        return;
+    end
+
+    local layoutStateName = tostring(hovered.layoutStateName or 'Combat');
+    local enemyPeerSettings = state.GetWidgetSettings('Enemy', layoutStateName, 'Peer', { enabled = true });
+
+    if (PeerWidgetLoads(enemyPeerSettings) ~= true) then
         return;
     end
 

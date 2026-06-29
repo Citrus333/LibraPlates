@@ -33,20 +33,27 @@ local function ToStoredValue(value)
     return tostring(value or 'Plate');
 end
 
-local function DrawCombo(id, current, choices, width)
+local function DrawCombo(id, current, choices, width, compactLabels)
     local value = ToDisplayValue(current);
+    local function DisplayChoice(choice)
+        local text = tostring(choice or '');
+        if (compactLabels == true) then
+            text = text:gsub('%s+icon$', '');
+        end
+        return text;
+    end
 
     if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
         if (imgui.PushItemWidth ~= nil) then
             imgui.PushItemWidth(width or 140);
         end
 
-        if (imgui.BeginCombo('##anchor_' .. tostring(id), value) == true) then
+        if (imgui.BeginCombo('##anchor_' .. tostring(id), DisplayChoice(value)) == true) then
             for _, choice in ipairs(choices or {}) do
                 local choiceValue = tostring(choice);
                 local selected = value == choiceValue;
 
-                if (imgui.Selectable(choiceValue, selected) == true) then
+                if (imgui.Selectable(DisplayChoice(choiceValue), selected) == true) then
                     value = choiceValue;
                 end
 
@@ -68,6 +75,19 @@ local function DrawCombo(id, current, choices, width)
     return ToStoredValue(value);
 end
 
+local function GetAvailableWidth(fallback)
+    if (imgui.GetContentRegionAvail == nil) then
+        return tonumber(fallback) or 260;
+    end
+
+    local availA, availB = imgui.GetContentRegionAvail();
+    if (type(availA) == 'table') then
+        return tonumber(availA.x or availA[1]) or tonumber(fallback) or 260;
+    end
+
+    return tonumber(availA) or tonumber(availB) or tonumber(fallback) or 260;
+end
+
 local function Release(settings)
     settings.anchorTo = 'Plate';
     settings.anchorPoint = nil;
@@ -76,28 +96,7 @@ local function Release(settings)
 end
 
 local function GetAnchorTooltip(settings)
-    if (tostring(settings.anchorTo or 'Plate') == 'Plate') then
-        return table.concat({
-            'Anchor',
-            'Choose a target widget to attach this one to.',
-        }, '\n');
-    end
-
-    return table.concat({
-        'Anchor',
-        'Anchored to ' .. tostring(settings.anchorTo) .. ' at ' .. tostring(settings.anchorPoint or 'Center') .. '.',
-        '',
-        'Direction',
-        'Left: attach to the target\'s left edge.',
-        'Right: attach to the target\'s right edge.',
-        'Top / Bottom: attach to that side of the target.',
-        '',
-        'Result',
-        'This widget appears on the outside of that side.',
-        '',
-        'Missing parent',
-        'If the parent widget is missing, anchored children use that parent\'s position slot so rows can collapse cleanly.',
-    }, '\n');
+    return 'Bind this element to a specific spot on the nameplate so they move together.';
 end
 
 local function DrawReleaseConfirm(settings, key)
@@ -182,9 +181,17 @@ local function DrawCopySettings(settings, context, label)
         selectedCopySourceKey[key] = tostring(selectedSource.key or '');
     end
 
-    imgui.Separator();
+    if (context.suppressHeaderSeparators ~= true) then
+        imgui.Separator();
+    end
 
-    if (imgui.GetWindowDrawList ~= nil and imgui.GetCursorScreenPos ~= nil and imgui.GetContentRegionAvail ~= nil and imgui.GetColorU32 ~= nil) then
+    if (
+        context.suppressHeaderSeparators ~= true and
+        imgui.GetWindowDrawList ~= nil and
+        imgui.GetCursorScreenPos ~= nil and
+        imgui.GetContentRegionAvail ~= nil and
+        imgui.GetColorU32 ~= nil
+    ) then
         local posA, posB = imgui.GetCursorScreenPos();
         local availA = imgui.GetContentRegionAvail();
         local x = 0;
@@ -213,13 +220,36 @@ local function DrawCopySettings(settings, context, label)
         );
     end
 
-    imgui.TextColored(labelColor, 'Copy ' .. labelText .. ' settings from');
-    imgui.SameLine();
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+    local rowX = nil;
+    local rowY = nil;
+    if (context.suppressHeaderSeparators == true and GetCursorScreenPos ~= nil) then
+        local posA, posB = GetCursorScreenPos();
+        if (type(posA) == 'table') then
+            rowX = tonumber(posA.x or posA[1]);
+            rowY = tonumber(posA.y or posA[2]);
+        else
+            rowX = tonumber(posA);
+            rowY = tonumber(posB);
+        end
+    end
+
+    imgui.TextColored(labelColor, 'Copy settings');
+    if (rowX ~= nil and rowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+        imgui.SetCursorScreenPos({ rowX + (tonumber(context.headerControlOffset) or 140), rowY });
+    else
+        imgui.SameLine();
+    end
 
     local sourceLabel = tostring(selectedSource.label or 'Unknown');
+    local copyComboWidth = 180;
+    if (context.suppressHeaderSeparators == true) then
+        copyComboWidth = math.max(104, math.min(180, GetAvailableWidth(240) - 84));
+    end
+
     if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
         if (imgui.PushItemWidth ~= nil) then
-            imgui.PushItemWidth(200);
+            imgui.PushItemWidth(copyComboWidth);
         end
 
         if (imgui.BeginCombo('##copy_' .. key, sourceLabel) == true) then
@@ -266,7 +296,7 @@ local function DrawCopySettings(settings, context, label)
     end
 
     imgui.SameLine();
-    uiTooltip.Info('Copies the selected source settings into this ' .. labelText .. ' widget. You will get a confirmation before anything is replaced.');
+    uiTooltip.Info('Copy settings from the selected source.');
 
     if (pendingCopy[key] == nil) then
         return;
@@ -321,20 +351,80 @@ function anchorControls.Draw(settings, context, label)
     local key = tostring(context.widget or label or 'anchor'):gsub('[^%w_]+', '_');
     local choices = context.anchorChoices or { 'None' };
     local points = context.anchorPoints or anchorPoints;
+    local headerRowX = nil;
+
+    if (context.suppressHeaderSeparators == true and GetCursorScreenPos ~= nil) then
+        local posA = GetCursorScreenPos();
+        if (type(posA) == 'table') then
+            headerRowX = tonumber(posA.x or posA[1]);
+        else
+            headerRowX = tonumber(posA);
+        end
+    end
 
     DrawCopySettings(settings, context, label);
 
     if (_G.LibraPlatesSettingsDrawContextLoadMode ~= nil) then
         _G.LibraPlatesSettingsDrawContextLoadMode(settings, context);
     end
-    imgui.Separator();
+    if (context.suppressHeaderSeparators ~= true) then
+        imgui.Separator();
+    end
+
+    if (headerRowX ~= nil and imgui.SetCursorScreenPos ~= nil and GetCursorScreenPos ~= nil) then
+        local posA, posB = GetCursorScreenPos();
+        local y = nil;
+        if (type(posA) == 'table') then
+            y = tonumber(posA.y or posA[2]);
+        else
+            y = tonumber(posB);
+        end
+        imgui.SetCursorScreenPos({ headerRowX, y or 0 });
+    end
+
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+    local anchorRowX = nil;
+    local anchorRowY = nil;
+    if (context.suppressHeaderSeparators == true and GetCursorScreenPos ~= nil) then
+        local posA, posB = GetCursorScreenPos();
+        if (type(posA) == 'table') then
+            anchorRowX = tonumber(posA.x or posA[1]);
+            anchorRowY = tonumber(posA.y or posA[2]);
+        else
+            anchorRowX = tonumber(posA);
+            anchorRowY = tonumber(posB);
+        end
+    end
 
     imgui.TextColored(labelColor, 'Anchor to');
-    imgui.SameLine();
+    if (anchorRowX ~= nil and anchorRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+        imgui.SetCursorScreenPos({ anchorRowX + (tonumber(context.headerControlOffset) or 140), anchorRowY });
+    else
+        imgui.SameLine();
+    end
 
-    local anchorTo = DrawCombo(key .. '_to', settings.anchorTo or 'Plate', choices, 230);
-    imgui.SameLine();
-    uiTooltip.Info(GetAnchorTooltip(settings));
+    local hasAnchorPoint = tostring(settings.anchorTo or 'Plate') ~= 'Plate';
+    local anchorComboWidth = 180;
+    local pointComboWidth = 155;
+
+    if (context.suppressHeaderSeparators == true) then
+        local remainingWidth = GetAvailableWidth(320);
+        local maxHeaderWidth = tonumber(context.headerMaxControlWidth);
+        if (maxHeaderWidth ~= nil) then
+            remainingWidth = math.min(remainingWidth, maxHeaderWidth);
+        end
+
+        if (hasAnchorPoint == true) then
+            local reservedWidth = 88;
+            pointComboWidth = math.max(58, math.min(155, math.floor((remainingWidth - reservedWidth) * 0.34)));
+            anchorComboWidth = math.max(70, math.min(180, remainingWidth - pointComboWidth - reservedWidth));
+        else
+            anchorComboWidth = math.max(80, math.min(180, remainingWidth - 30));
+        end
+    end
+
+    local compactAnchorLabels = context.suppressHeaderSeparators == true;
+    local anchorTo = DrawCombo(key .. '_to', settings.anchorTo or 'Plate', choices, anchorComboWidth, compactAnchorLabels);
 
     if (anchorTo ~= settings.anchorTo) then
         settings.anchorTo = anchorTo;
@@ -348,20 +438,27 @@ function anchorControls.Draw(settings, context, label)
 
     if (tostring(settings.anchorTo or 'Plate') ~= 'Plate') then
         imgui.SameLine();
-        settings.anchorPoint = DrawCombo(key .. '_point', settings.anchorPoint or 'Center', points, 155);
+        settings.anchorPoint = DrawCombo(key .. '_point', settings.anchorPoint or 'Center', points, pointComboWidth, false);
         imgui.SameLine();
 
         if (imgui.Button ~= nil) then
-            if (imgui.Button('Release anchor##' .. key)) then
+            if (imgui.Button('Release##' .. key)) then
                 pendingRelease[key] = true;
             end
         else
-            imgui.TextColored(warningColor, 'Release anchor');
+            imgui.TextColored(warningColor, 'Release');
         end
+        imgui.SameLine();
+        uiTooltip.Info(GetAnchorTooltip(settings));
 
         DrawReleaseConfirm(settings, key);
+    else
+        imgui.SameLine();
+        uiTooltip.Info(GetAnchorTooltip(settings));
     end
-    imgui.Separator();
+    if (context.suppressHeaderSeparators ~= true) then
+        imgui.Separator();
+    end
 end
 
 return anchorControls;

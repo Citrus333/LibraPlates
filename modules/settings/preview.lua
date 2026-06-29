@@ -557,6 +557,10 @@ local function LoadQuickMenuIcon(fileName)
         exists = ashita.fs.exists(path);
     end);
 
+    if (exists ~= true and name == 'emote-trusts-on.png') then
+        return LoadQuickMenuIcon('emote-trusts-off.png');
+    end
+
     if (exists ~= true) then
         quickMenuMissingIcons[name] = true;
         return nil;
@@ -566,12 +570,20 @@ local function LoadQuickMenuIcon(fileName)
         return textureLoader.Load(path);
     end);
 
+    if ((ok ~= true or texture == nil) and name == 'emote-trusts-on.png') then
+        return LoadQuickMenuIcon('emote-trusts-off.png');
+    end
+
     if (ok ~= true or texture == nil) then
         quickMenuMissingIcons[name] = true;
         return nil;
     end
 
     quickMenuIconCache[name] = textureLoader.ToTextureId(texture);
+
+    if (quickMenuIconCache[name] == nil and name == 'emote-trusts-on.png') then
+        return LoadQuickMenuIcon('emote-trusts-off.png');
+    end
 
     if (quickMenuIconCache[name] == nil) then
         quickMenuMissingIcons[name] = true;
@@ -1061,13 +1073,23 @@ local function AddCraftingPreviewWidget(plateData, globalSettings, context)
 end
 
 local function AddGatheringPreviewWidget(plateData, globalSettings, context)
-    if (plateData == nil or context == nil or context.widgetKey ~= 'Gathering') then
+    if (plateData == nil or context == nil) then
         return;
     end
 
     globalSettings.gathering = globalSettings.gathering or {};
 
     if (globalSettings.gathering.enabled == false) then
+        return;
+    end
+
+    local isGatheringPage = context.widgetKey == 'Gathering';
+    local isSelfWorldPreview = tostring(context.entityName or '') == 'Self' and (
+        tostring(context.stateName or '') == 'Idle' or
+        tostring(context.stateName or '') == 'World'
+    );
+
+    if (isGatheringPage ~= true and isSelfWorldPreview ~= true) then
         return;
     end
 
@@ -1091,12 +1113,23 @@ local function AddGatheringPreviewWidget(plateData, globalSettings, context)
 end
 
 local function AddRestingPreviewBar(plateData, globalSettings, context)
-    if (plateData == nil or context == nil or context.widgetKey ~= 'Resting') then
+    if (plateData == nil or context == nil) then
         return;
     end
 
     local resting = globalSettings.resting or {};
     if (resting.enabled == false) then
+        return;
+    end
+
+    local isRestingPage = context.widgetKey == 'Resting';
+    local isSelfRestingPreview = tostring(context.entityName or '') == 'Self' and (
+        tostring(context.stateName or '') == 'Idle' or
+        tostring(context.stateName or '') == 'World' or
+        tostring(context.stateName or '') == 'Resting'
+    );
+
+    if (isRestingPage ~= true and isSelfRestingPreview ~= true) then
         return;
     end
 
@@ -3288,13 +3321,16 @@ local function GetQuickMenuPreviewRows(entityName, menu)
     if (entity == 'Self') then
         local rows = {};
 
-        if (menu.self.acceptInvite == true or menu.self.declineInvite == true) then rows[#rows + 1] = { 'Accept Invite', 'accept-invite.png' }; end
+        if (menu.self.acceptInvite == true) then rows[#rows + 1] = { 'Accept Invite', 'accept-invite.png' }; end
+        if (menu.self.declineInvite == true) then rows[#rows + 1] = { 'Decline Invite', 'decline-invite.png' }; end
         if (menu.self.leaveParty == true) then rows[#rows + 1] = { 'Leave Party', 'LeaveParty.png' }; end
+        if (menu.self.leaveAlliance == true) then rows[#rows + 1] = { 'Leave Alliance', 'LeaveAlliance.png' }; end
         if (menu.self.cancelPartyRequest == true) then rows[#rows + 1] = { 'Cancel Party Request', 'cancel-party-request.png' }; end
         if (menu.self.aceTownMog == true) then rows[#rows + 1] = { 'ACE Mog House', 'catseye.png' }; end
-        if (menu.self.mount == true or menu.self.ignoreTrust == true or menu.self.hideTrust == true or menu.self.emoteTrust == true) then
-            rows[#rows + 1] = { 'Field-only actions hidden in town', nil };
-        end
+        if (menu.self.mount == true) then rows[#rows + 1] = { 'Mount/Dismount', 'mount.png' }; end
+        if (menu.self.ignoreTrust == true) then rows[#rows + 1] = { 'Ignore Other Trusts', 'ignore-trust-on.png' }; end
+        if (menu.self.hideTrust == true) then rows[#rows + 1] = { 'Hide Other Trusts', 'hide-other-trusts-on.png' }; end
+        if (menu.self.emoteTrust == true) then rows[#rows + 1] = { 'Emote Trust', 'emote-trusts-on.png' }; end
 
         return 'Libra', 'Player.png', rows;
     end
@@ -3379,6 +3415,10 @@ local function GetQuickMenuPreviewRows(entityName, menu)
     if (menu.pc.follow == true) then rows[#rows + 1] = { 'Follow', 'Follow.png' }; end
     if (menu.pc.inviteToParty == true) then rows[#rows + 1] = { 'Invite to Party', 'InviteToParty.png' }; end
     if (menu.pc.requestJoinParty == true) then rows[#rows + 1] = { 'Request to Join Party', 'request-to-join-party.png' }; end
+    if (menu.pc.invitePartyToAlliance == true) then rows[#rows + 1] = { 'Invite Party to Alliance', 'InviteToParty.png' }; end
+    if (menu.pc.passPartyLeader == true) then rows[#rows + 1] = { 'Pass Party Leader', 'Player.png' }; end
+    if (menu.pc.passAllianceLeader == true) then rows[#rows + 1] = { 'Pass Alliance Leader', 'Player.png' }; end
+    if (menu.pc.blacklist == true) then rows[#rows + 1] = { 'Add to blacklist', 'blacklist.png' }; end
 
     return 'Libranya', 'Player.png', rows;
 end
@@ -3396,12 +3436,25 @@ local function DrawQuickMenuPreview(drawList, x, y, previewWidth, previewHeight,
     local rowHeight = math.max(24, iconSize + 4);
     local textRowHeight = 17;
     local height = 44;
+    local actionRowCount = 0;
+
+    for _, row in ipairs(rows) do
+        if (row.kind ~= 'spacer') then
+            actionRowCount = actionRowCount + 1;
+        end
+    end
+
+    if (actionRowCount > 0 and (height + (actionRowCount * rowHeight)) > (previewHeight - 16)) then
+        rowHeight = math.max(20, math.floor((previewHeight - 60) / actionRowCount));
+    end
 
     for _, row in ipairs(rows) do
         height = height + (row.kind == 'spacer' and 8 or ((row[2] ~= nil or row[3] ~= nil) and rowHeight or textRowHeight));
     end
     local menuX = x + math.max(12, math.floor((previewWidth - width) * 0.5));
-    local menuY = y + math.max(32, math.floor((previewHeight - height) * 0.5));
+    local preferredTop = math.max(32, math.floor((previewHeight - height) * 0.5));
+    local maxTop = math.max(8, previewHeight - height - 10);
+    local menuY = y + math.max(8, math.min(preferredTop, maxTop));
     local bgColor = ColorToU32(menu.backgroundColor, { 0.02, 0.02, 0.07, 0.96 });
     local borderColor = ColorToU32(menu.borderColor, { 0.25, 0.25, 0.36, 1.0 });
     local textColor = ColorToU32(GetQuickMenuReadableTextColor(menu), { 1.0, 1.0, 1.0, 1.0 });
@@ -3532,17 +3585,39 @@ local function DrawPreviewPeerPanelBox(drawList, x, y, w, h, peerSettings)
 end
 
 local function GetPreviewPeerInspectorWidth(peerSettings, entityName)
-    local entity = tostring(entityName or '');
-    local width = nil;
+    local width = tonumber(peerSettings ~= nil and peerSettings.inspectorWidth) or 430;
+    return math.max(120, math.min(800, width));
+end
 
-    if (entity == 'Self') then
-        width = tonumber(peerSettings ~= nil and peerSettings.selfInspectorWidth);
-    elseif (entity == 'PC') then
-        width = tonumber(peerSettings ~= nil and peerSettings.pcInspectorWidth);
+local function GetPreviewPeerPanelPosition(previewX, previewY, previewWidth, previewHeight, panelW, panelH)
+    local x = previewX + math.floor((previewWidth - panelW) * 0.5);
+    local y = previewY + math.floor((previewHeight - panelH) * 0.5);
+    local rightLimit = previewX + previewWidth - 12;
+    local bottomLimit = previewY + previewHeight - 12;
+
+    if ((y + panelH) > bottomLimit) then
+        y = bottomLimit - panelH;
     end
 
-    width = width or tonumber(peerSettings ~= nil and peerSettings.inspectorWidth) or 430;
-    return math.max(220, math.min(800, width));
+    x = math.max(previewX + 12, x);
+    y = math.max(previewY + 12, y);
+
+    return x, y;
+end
+
+local function GetPreviewSelfPeerPanelPosition(previewX, previewY, previewWidth, previewHeight, panelW, panelH)
+    local x = previewX + math.floor((previewWidth - panelW) * 0.5);
+    local y = previewY + math.floor((previewHeight - panelH) * 0.5);
+    local bottomLimit = previewY + previewHeight - 24;
+
+    if ((y + panelH) > bottomLimit) then
+        y = bottomLimit - panelH;
+    end
+
+    x = math.max(previewX + 12, x);
+    y = math.max(previewY + 12, y);
+
+    return x, y;
 end
 
 local function GetPreviewEnemyPeerTextInspectorHeight(peerSettings)
@@ -3705,18 +3780,20 @@ local function DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight)
     local showStats = peerSettings.showHpValue ~= false;
     local showAttackDefense = peerSettings.showWeakTo ~= false;
     local showResists = peerSettings.showResists ~= false;
+    local rowStep = 20;
+    local attackDefenseStep = 24;
+    local resistRowStep = 19;
     local panelHeight = 12 +
-        (showName and 22 or 0) +
-        (showJobLine and 22 or 0) +
-        (showStats and (7 * 22) or 0) +
-        ((showAttackDefense or showResists) and 16 or 0) +
-        (showAttackDefense and 26 or 0) +
-        (showResists and 46 or 0) +
+        (showName and rowStep or 0) +
+        (showJobLine and rowStep or 0) +
+        (showStats and (7 * rowStep) or 0) +
+        ((showAttackDefense or showResists) and 14 or 0) +
+        (showAttackDefense and attackDefenseStep or 0) +
+        (showResists and ((2 * resistRowStep) + 18) or 0) +
         12;
     local panelW = math.min(GetPreviewPeerInspectorWidth(peerSettings, 'Self'), previewWidth - 36);
-    local panelH = math.min(math.max(52, panelHeight), previewHeight - 28);
-    local panelX = x + math.floor((previewWidth - panelW) * 0.5);
-    local panelY = y + math.floor((previewHeight - panelH) * 0.5);
+    local panelH = math.min(math.max(52, panelHeight + 18), previewHeight - 24);
+    local panelX, panelY = GetPreviewSelfPeerPanelPosition(x, y, previewWidth, previewHeight, panelW, panelH);
     local textColor = ColorToU32(peerSettings.textColor, { 0.94, 0.94, 0.90, 1.0 });
     local outlineColor = ColorToU32(peerSettings.textOutlineColor, { 0.0, 0.0, 0.0, 1.0 });
     local outlineSize = tonumber(peerSettings.textOutlineSize) or 0;
@@ -3727,7 +3804,6 @@ local function DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight)
     local labelX = panelX + 14;
     local valueX = panelX + 84;
     local rowY = panelY + 12;
-    local rowStep = 22;
 
     DrawPreviewPeerPanelBox(drawList, panelX, panelY, panelW, panelH, peerSettings);
 
@@ -3782,13 +3858,13 @@ local function DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight)
         if (drawList.AddLine ~= nil) then
             drawList:AddLine({ panelX + 10, rowY }, { panelX + panelW - 10, rowY }, ColorToU32({ 0.62, 0.67, 0.72, 0.55 }), 1);
         end
-        rowY = rowY + 12;
+        rowY = rowY + 10;
     end
 
     if (showAttackDefense == true) then
         DrawPreviewText(drawList, labelX, rowY, textColor, 'Attack 278', outlineSize, outlineColor);
         DrawPreviewText(drawList, labelX + 126, rowY, textColor, 'Defense 326', outlineSize, outlineColor);
-        rowY = rowY + 26;
+        rowY = rowY + attackDefenseStep;
     end
 
     local iconSize = 15;
@@ -3809,7 +3885,7 @@ local function DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight)
             local col = (i - 1) % 4;
             local row = math.floor((i - 1) / 4);
             local iconX = startX + (col * 58);
-            local iconY = rowY + (row * 23);
+            local iconY = rowY + (row * resistRowStep);
             local textureId = LoadSelfElementIcon(element.icon);
             local valueXOffset = iconSize + 4;
 
@@ -3832,9 +3908,8 @@ local function DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight)
     local settings = state.GetGlobalSettings(globalDefaults);
     local peerSettings = settings.peer or {};
     local panelW = math.min(GetPreviewPeerInspectorWidth(peerSettings, 'PC'), previewWidth - 36);
-    local panelH = math.min(136, previewHeight - 28);
-    local panelX = x + math.floor((previewWidth - panelW) * 0.5);
-    local panelY = y + math.floor((previewHeight - panelH) * 0.5);
+    local panelH = math.min(136, previewHeight - 8);
+    local panelX, panelY = GetPreviewPeerPanelPosition(x, y, previewWidth, previewHeight, panelW, panelH);
     local textColor = ColorToU32(peerSettings.textColor, { 0.94, 0.94, 0.90, 1.0 });
     local outlineColor = ColorToU32(peerSettings.textOutlineColor, { 0.0, 0.0, 0.0, 1.0 });
     local outlineSize = tonumber(peerSettings.textOutlineSize) or 0;

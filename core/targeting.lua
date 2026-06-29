@@ -259,6 +259,30 @@ local function GetTargetingSettings()
         global.targeting.objectWorldRefreshRate = 1.0;
     end
 
+    if (global.targeting.worldCriticalRefreshRate == nil) then
+        global.targeting.worldCriticalRefreshRate = 3.0;
+    end
+
+    if (global.targeting.worldMediumRefreshRate == nil) then
+        global.targeting.worldMediumRefreshRate = 2.0;
+    end
+
+    if (global.targeting.worldStaticRefreshRate == nil) then
+        global.targeting.worldStaticRefreshRate = 1.0;
+    end
+
+    if (global.targeting.tacticalCriticalRefreshRate == nil) then
+        global.targeting.tacticalCriticalRefreshRate = 5.0;
+    end
+
+    if (global.targeting.tacticalMediumRefreshRate == nil) then
+        global.targeting.tacticalMediumRefreshRate = 5.0;
+    end
+
+    if (global.targeting.tacticalStaticRefreshRate == nil) then
+        global.targeting.tacticalStaticRefreshRate = 1.0;
+    end
+
     if (global.targeting.hideDistantWorldPlates == nil) then
         global.targeting.hideDistantWorldPlates = false;
     end
@@ -492,6 +516,12 @@ local function GetTargetingSettings()
     global.targeting.enemyWorldRefreshRate = math.max(0.2, math.min(10.0, tonumber(global.targeting.enemyWorldRefreshRate) or 1.0));
     global.targeting.npcWorldRefreshRate = math.max(0.2, math.min(10.0, tonumber(global.targeting.npcWorldRefreshRate) or 1.0));
     global.targeting.objectWorldRefreshRate = math.max(0.2, math.min(10.0, tonumber(global.targeting.objectWorldRefreshRate) or 1.0));
+    global.targeting.worldCriticalRefreshRate = math.max(0.2, math.min(15.0, tonumber(global.targeting.worldCriticalRefreshRate) or 3.0));
+    global.targeting.worldMediumRefreshRate = math.max(0.2, math.min(15.0, tonumber(global.targeting.worldMediumRefreshRate) or 2.0));
+    global.targeting.worldStaticRefreshRate = math.max(0.2, math.min(15.0, tonumber(global.targeting.worldStaticRefreshRate) or 1.0));
+    global.targeting.tacticalCriticalRefreshRate = math.max(0.2, math.min(15.0, tonumber(global.targeting.tacticalCriticalRefreshRate) or 5.0));
+    global.targeting.tacticalMediumRefreshRate = math.max(0.2, math.min(15.0, tonumber(global.targeting.tacticalMediumRefreshRate) or 5.0));
+    global.targeting.tacticalStaticRefreshRate = math.max(0.2, math.min(15.0, tonumber(global.targeting.tacticalStaticRefreshRate) or 1.0));
     global.targeting.hideDistantWorldPlates = global.targeting.hideDistantWorldPlates == true;
     global.targeting.worldPlateDistanceLimit = math.max(5.0, math.min(64.4, tonumber(global.targeting.worldPlateDistanceLimit) or 49.9));
     global.targeting.disableExpensiveWorldWidgets = global.targeting.disableExpensiveWorldWidgets == true;

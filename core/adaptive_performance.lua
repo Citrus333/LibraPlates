@@ -192,10 +192,44 @@ end
 function adaptivePerformance.GetWorldRefreshSeconds(kind)
     local global = state.GetGlobalSettings(globalDefaults);
     local targeting = global ~= nil and global.targeting or {};
-    local key = tostring(kind or 'pc'):lower() .. 'WorldRefreshRate';
-    local refreshPerSecond = tonumber(targeting[key]) or 1.0;
+    local legacyKey = tostring(kind or 'pc'):lower() .. 'WorldRefreshRate';
+    local refreshPerSecond = tonumber(targeting.worldStaticRefreshRate) or tonumber(targeting[legacyKey]) or 1.0;
 
     refreshPerSecond = math.max(0.2, math.min(10.0, refreshPerSecond));
+
+    return 1.0 / refreshPerSecond;
+end
+
+function adaptivePerformance.GetPlateRefreshSeconds(context, group)
+    local global = state.GetGlobalSettings(globalDefaults);
+    local targeting = global ~= nil and global.targeting or {};
+    local contextText = tostring(context or 'world'):lower();
+    local groupText = tostring(group or 'static'):lower();
+    local defaults = {
+        world = {
+            critical = 3.0,
+            medium = 2.0,
+            static = 1.0,
+        },
+        tactical = {
+            critical = 5.0,
+            medium = 5.0,
+            static = 1.0,
+        },
+    };
+
+    if (contextText ~= 'tactical') then
+        contextText = 'world';
+    end
+
+    if (groupText ~= 'critical' and groupText ~= 'medium' and groupText ~= 'static') then
+        groupText = 'static';
+    end
+
+    local key = contextText .. groupText:gsub('^%l', string.upper) .. 'RefreshRate';
+    local refreshPerSecond = tonumber(targeting[key]) or defaults[contextText][groupText] or 1.0;
+
+    refreshPerSecond = math.max(0.2, math.min(15.0, refreshPerSecond));
 
     return 1.0 / refreshPerSecond;
 end

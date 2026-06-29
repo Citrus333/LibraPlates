@@ -4,6 +4,7 @@ local barAnimations = {};
 local options = T{
     'Important',
     'Pandemic',
+    'Blink',
 };
 local files = {
     Important = 'important.png',
@@ -16,7 +17,13 @@ function barAnimations.GetOptions()
 end
 
 function barAnimations.GetTextureId(style)
-    local fileName = files[tostring(style or 'Important')];
+    style = tostring(style or 'Important');
+
+    if (style == 'Blink') then
+        return -1;
+    end
+
+    local fileName = files[style];
 
     if (fileName == nil) then
         return nil;

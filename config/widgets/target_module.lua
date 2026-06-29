@@ -23,6 +23,8 @@ return {
     arrowSpacing = 10,
     arrowSprite = false,
     arrowAnimationSpeed = 12,
+    lockSprite = false,
+    lockAnimationSpeed = 12,
     arrowScaleWithDistance = true,
     arrowMinScale = 0.70,
     arrowMaxScale = 32.00,

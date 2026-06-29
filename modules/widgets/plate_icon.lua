@@ -411,8 +411,10 @@ function plateIcon.DrawSettings(settings, context)
 
     ApplyDefaults(settings, defaults);
 
-    DrawSectionHeader(label .. ' settings');
-    if (tonumber(defaults.minIconSize) == 0) then
+    if ((context == nil or context.onlyPlacement ~= true) and (context == nil or context.boxed ~= true)) then
+        DrawSectionHeader(label .. ' settings');
+    end
+    if ((context == nil or context.onlyPlacement ~= true) and tonumber(defaults.minIconSize) == 0) then
         imgui.TextColored(labelColor, 'Icon size 0 follows the plate font size.');
     end
 
@@ -420,25 +422,44 @@ function plateIcon.DrawSettings(settings, context)
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end
 
-    DrawAnchorControls(settings, context, label);
+    if (context == nil or context.skipPlacement ~= true) then
+        DrawAnchorControls(settings, context, label);
+    end
 
-    settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, tonumber(defaults.minIconSize) or 6, tonumber(defaults.maxIconSize) or 64, 1);
-    settings.offsetX, settings.offsetY = DrawSliderPair(
-        'position',
-        'Position X',
-        'offset_x',
-        settings.offsetX,
-        -400,
-        400,
-        'Position Y',
-        'offset_y',
-        settings.offsetY,
-        -400,
-        400,
-        1
-    );
+    if (context ~= nil and context.onlyPlacement == true) then
+        return;
+    end
 
-    imgui.Separator();
+    local function DrawBody()
+        settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, tonumber(defaults.minIconSize) or 6, tonumber(defaults.maxIconSize) or 64, 1);
+        settings.offsetX, settings.offsetY = DrawSliderPair(
+            'position',
+            'Position X',
+            'offset_x',
+            settings.offsetX,
+            -400,
+            400,
+            'Position Y',
+            'offset_y',
+            settings.offsetY,
+            -400,
+            400,
+            1
+        );
+    end
+
+    if (context ~= nil and context.boxed == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then
+        _G.LibraPlatesSettingsDrawBoxedPanel(label, DrawBody, true);
+    else
+        DrawBody();
+    end
+
+    if (context ~= nil and context.boxed == true) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        imgui.Separator();
+    end
 
     if (DrawActionButton('Reset ' .. label .. ' position') == true) then
         RequestReset('position', label .. ' position');

@@ -781,6 +781,58 @@ local function GetPartyMemberDataByTargetIndex(index)
     return nil;
 end
 
+local function BuildPartyMemberDataByTargetIndex()
+    local byIndex = {};
+    local party = AshitaCore:GetMemoryManager():GetParty();
+
+    if (party == nil) then
+        return byIndex;
+    end
+
+    for slot = 0, 17 do
+        local active = 0;
+        local memberIndex = 0;
+
+        pcall(function()
+            active = party:GetMemberIsActive(slot);
+        end);
+
+        pcall(function()
+            memberIndex = party:GetMemberTargetIndex(slot);
+        end);
+
+        memberIndex = tonumber(memberIndex) or 0;
+
+        if (active == 1 and memberIndex > 0) then
+            local data = {
+                slot = slot,
+            };
+
+            data.hp = TryPartyNumber(party, slot, { 'GetMemberHP' });
+            data.maxHp = TryPartyNumber(party, slot, { 'GetMemberMaxHP' });
+            data.hpPercent = TryPartyNumber(party, slot, { 'GetMemberHPPercent' });
+            data.mp = TryPartyNumber(party, slot, { 'GetMemberMP' });
+            data.maxMp = TryPartyNumber(party, slot, { 'GetMemberMaxMP' });
+            data.mpPercent = TryPartyNumber(party, slot, { 'GetMemberMPPercent' });
+            data.tp = TryPartyNumber(party, slot, { 'GetMemberTP' });
+            data.mainJob = TryPartyNumber(party, slot, { 'GetMemberMainJob', 'GetMemberMainJobId', 'GetMemberJob', 'GetMemberJobId' });
+            data.mainJobLevel = TryPartyNumber(party, slot, { 'GetMemberMainJobLevel', 'GetMemberMainLevel', 'GetMemberLevel' });
+
+            if ((data.hpPercent == nil or data.hpPercent <= 0) and data.hp ~= nil and data.maxHp ~= nil and data.maxHp > 0) then
+                data.hpPercent = math.floor(((data.hp / data.maxHp) * 100) + 0.5);
+            end
+
+            if ((data.mpPercent == nil or data.mpPercent <= 0) and data.mp ~= nil and data.maxMp ~= nil and data.maxMp > 0) then
+                data.mpPercent = math.floor(((data.mp / data.maxMp) * 100) + 0.5);
+            end
+
+            byIndex[memberIndex] = data;
+        end
+    end
+
+    return byIndex;
+end
+
 function entities.GetPlayerMainJobId()
     local party = AshitaCore:GetMemoryManager():GetParty();
     local job = nil;
@@ -1232,6 +1284,7 @@ function entities.GetNearbyPlayers(maxDistance)
     local selfIndex = GetSelfIndex();
     local targetIndex = targeting.GetCurrentTargetIndex();
     local subTargetIndex = targeting.GetCurrentSubTargetIndex();
+    local partyDataByIndex = BuildPartyMemberDataByTargetIndex();
 
     if (entityManager == nil) then
         return results;
@@ -1260,7 +1313,7 @@ function entities.GetNearbyPlayers(maxDistance)
                     hpPercent = ent.HPPercent or 100,
                 };
 
-                local partyData = GetPartyMemberDataByTargetIndex(index);
+                local partyData = partyDataByIndex[index];
 
                 if (partyData ~= nil) then
                     for key, value in pairs(partyData) do
@@ -1278,7 +1331,7 @@ function entities.GetNearbyPlayers(maxDistance)
     return results;
 end
 
-function entities.GetPlayerByIndex(index, maxDistance)
+function entities.GetPlayerByIndex(index, maxDistance, partyDataByIndex)
     index = tonumber(index);
     local entityManager = AshitaCore:GetMemoryManager():GetEntity();
     local selfIndex = GetSelfIndex();
@@ -1313,7 +1366,7 @@ function entities.GetPlayerByIndex(index, maxDistance)
         hpPercent = ent.HPPercent or 100,
     };
 
-    local partyData = GetPartyMemberDataByTargetIndex(index);
+    local partyData = partyDataByIndex ~= nil and partyDataByIndex[index] or GetPartyMemberDataByTargetIndex(index);
     if (partyData ~= nil) then
         for key, value in pairs(partyData) do
             result[key] = value;
@@ -1327,6 +1380,7 @@ function entities.GetPartyPlayers(maxDistance)
     local results = {};
     local seen = {};
     local party = AshitaCore:GetMemoryManager():GetParty();
+    local partyDataByIndex = BuildPartyMemberDataByTargetIndex();
 
     if (party == nil) then
         return results;
@@ -1349,7 +1403,7 @@ function entities.GetPartyPlayers(maxDistance)
         if (active == 1 and memberIndex > 0 and seen[memberIndex] ~= true) then
             seen[memberIndex] = true;
 
-            local player = entities.GetPlayerByIndex(memberIndex, maxDistance);
+            local player = entities.GetPlayerByIndex(memberIndex, maxDistance, partyDataByIndex);
             if (player ~= nil) then
                 results[#results + 1] = player;
             end
@@ -1367,6 +1421,9 @@ function entities.GetNearbyTacticalNpcs(maxDistance)
     local results = {};
     local maxDistanceSq = (tonumber(maxDistance) or 50) * (tonumber(maxDistance) or 50);
     local entityManager = AshitaCore:GetMemoryManager():GetEntity();
+    local partyIndexes = BuildPartyMemberIndexSet();
+    local ownPetIndex = entities.GetOwnPetTargetIndex();
+    local playerMainJobId = entities.GetPlayerMainJobId();
 
     if (entityManager == nil) then
         return results;
@@ -1375,7 +1432,6 @@ function entities.GetNearbyTacticalNpcs(maxDistance)
     for index = 0, 2303 do
         if (index < 1024 or index > 1791) then
             local ent = GetEntity(index);
-            local spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(index); end);
             local statusAllowsTactical =
                 tonumber(ent ~= nil and ent.Status or nil) == 1 or
                 IsNpcObjectStatusAllowed(ent ~= nil and ent.Status or nil) == true;
@@ -1389,11 +1445,13 @@ function entities.GetNearbyTacticalNpcs(maxDistance)
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
                 statusAllowsTactical == true and
-                entities.IsPartyMemberIndex(index) ~= true and
-                entities.IsOwnPetIndex(index) ~= true and
-                entities.IsOwnLuopanIndex(index) ~= true and
+                partyIndexes[index] ~= true and
+                tonumber(index) ~= tonumber(ownPetIndex) and
+                (playerMainJobId ~= geoMainJobId or tonumber(index) ~= tonumber(ownPetIndex)) and
                 IsVisibleEntity(entityManager, index, false) == true
             ) then
+                local spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(index); end);
+
                 results[#results + 1] = {
                     index = index,
                     serverId = SafeCall(nil, function() return entityManager:GetServerId(index); end),

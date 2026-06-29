@@ -12,6 +12,7 @@ local actionColor = { 1.0, 0.84, 0.0, 1.0 };
 local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local DrawChoice = nil;
 local DrawColor = nil;
+local DrawBarTextureChoice = nil;
 local function DrawSectionHeader(label)
     if (imgui.SetWindowFontScale ~= nil) then
         imgui.SetWindowFontScale(1.18);
@@ -215,33 +216,33 @@ local function DrawColorTextureRow(rowId, fillColor, backgroundColor, texture)
         local nextBackground = backgroundColor;
         local nextTexture = texture;
 
-        if (imgui.BeginTable('##cast_bar_' .. rowId, 6, tableFlags)) then
-            imgui.TableSetupColumn('##fill_label', 0, 118);
-            imgui.TableSetupColumn('##fill_control', 0, 60);
-            imgui.TableSetupColumn('##bg_label', 0, 86);
-            imgui.TableSetupColumn('##bg_control', 0, 60);
-            imgui.TableSetupColumn('##texture_label', 0, 92);
-            imgui.TableSetupColumn('##texture_control', 0, 170);
+        if (imgui.BeginTable('##cast_bar_' .. rowId, 4, tableFlags)) then
+            imgui.TableSetupColumn('##left_label', 0, 118);
+            imgui.TableSetupColumn('##left_control', 0, 170);
+            imgui.TableSetupColumn('##right_label', 0, 118);
+            imgui.TableSetupColumn('##right_control', 0, 170);
+
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Fill color');
             imgui.TableNextColumn();
             nextFill = DrawColor('##fill_color', fillColor);
-            imgui.TableNextColumn();
+            imgui.SameLine(nil, 20);
             imgui.TextColored(labelColor, 'BG color');
-            imgui.TableNextColumn();
+            imgui.SameLine(nil, 8);
             nextBackground = DrawColor('##bg_color', backgroundColor);
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Texture');
             imgui.TableNextColumn();
-            nextTexture = DrawChoice('##texture', texture, barTextures.GetOptions());
+            nextTexture = DrawBarTextureChoice(texture, 'texture', 170);
+
             imgui.EndTable();
         end
 
         return nextFill, nextBackground, nextTexture;
     end
 
-    return DrawColor('Fill color', fillColor), DrawColor('BG color', backgroundColor), DrawChoice('Texture', texture, barTextures.GetOptions());
+    return DrawColor('Fill color', fillColor), DrawColor('BG color', backgroundColor), DrawBarTextureChoice(texture, 'texture', 170);
 end
 
 local function DrawBorderRow(rowId, borderColor, borderSize)
@@ -338,7 +339,16 @@ local function DrawInterruptBarSettingsRows(settings, defaults)
     settings.interruptedColor = DrawColor('##interrupt_color', settings.interruptedColor or defaults.interruptedColor);
 end
 
-local function DrawInterruptTextSettingsRows(settings, defaults)
+local function SyncInterruptTextStyle(settings)
+    settings.interruptUseSmallFont = settings.useSmallFont == true;
+    settings.interruptFontSize = settings.fontSize;
+    settings.interruptTextColor = settings.textColor;
+    settings.interruptTextOutlineSize = settings.textOutlineSize;
+    settings.interruptTextOutlineEnabled = settings.textOutlineEnabled == true;
+    settings.interruptTextOutlineColor = settings.textOutlineColor;
+end
+
+local function DrawInterruptTextSettingsRows(settings, defaults, compact)
     if (settings.interruptBarEnabled ~= true) then
         return;
     end
@@ -346,6 +356,34 @@ local function DrawInterruptTextSettingsRows(settings, defaults)
     settings.interruptTextEnabled = DrawToggle('Interrupt text', settings.interruptTextEnabled == true);
 
     if (settings.interruptTextEnabled ~= true) then
+        return;
+    end
+
+    if (compact == true) then
+        SyncInterruptTextStyle(settings);
+
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            if (imgui.BeginTable('##cast_bar_interrupt_compact_settings', 4, tableFlags)) then
+                imgui.TableSetupColumn('##left_label', 0, 118);
+                imgui.TableSetupColumn('##left_control', 0, 170);
+                imgui.TableSetupColumn('##right_label', 0, 118);
+                imgui.TableSetupColumn('##right_control', 0, 170);
+
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+                imgui.TextColored(labelColor, 'Text');
+                imgui.TableNextColumn();
+                settings.interruptedText = DrawTextInput('interrupt_text', settings.interruptedText or defaults.interruptedText or 'Interrupted', 64);
+                imgui.TableNextColumn();
+                imgui.TableNextColumn();
+
+                imgui.EndTable();
+            end
+
+            return;
+        end
+
+        settings.interruptedText = DrawTextInput('interrupt_text', settings.interruptedText or defaults.interruptedText or 'Interrupted', 64);
         return;
     end
 
@@ -589,6 +627,79 @@ DrawColor = function(label, color)
     return color;
 end
 
+local function DrawBarTexturePreviewTooltip(style)
+    if (imgui.IsItemHovered == nil or imgui.IsItemHovered() ~= true) then
+        return;
+    end
+
+    local textureId = barTextures.GetTextureId(style);
+
+    if (
+        textureId ~= nil and
+        imgui.BeginTooltip ~= nil and
+        imgui.EndTooltip ~= nil and
+        imgui.Image ~= nil
+    ) then
+        imgui.BeginTooltip();
+        imgui.Text(tostring(style or ''));
+        imgui.Image(textureId, { 220, 32 }, { 0, 0 }, { 1, 1 });
+        imgui.EndTooltip();
+    elseif (imgui.SetTooltip ~= nil) then
+        imgui.SetTooltip(tostring(style or ''));
+    end
+end
+
+DrawBarTextureChoice = function(value, id, width)
+    local options = barTextures.GetOptions();
+    local current = tostring(value or options[1] or 'Solid');
+    local currentAllowed = false;
+
+    for _, option in ipairs(options) do
+        if (option == current) then
+            currentAllowed = true;
+            break;
+        end
+    end
+
+    if (currentAllowed ~= true) then
+        current = options[1] or 'Solid';
+    end
+
+    if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+        if (imgui.PushItemWidth ~= nil) then
+            imgui.PushItemWidth(width or 170);
+        end
+
+        local comboOpen = imgui.BeginCombo('##cast_bar_' .. tostring(id or 'texture'), current) == true;
+        DrawBarTexturePreviewTooltip(current);
+
+        if (comboOpen == true) then
+            for _, option in ipairs(options) do
+                local selected = option == current;
+
+                if (imgui.Selectable(tostring(option), selected) == true) then
+                    current = option;
+                end
+                DrawBarTexturePreviewTooltip(option);
+
+                if (selected == true and imgui.SetItemDefaultFocus ~= nil) then
+                    imgui.SetItemDefaultFocus();
+                end
+            end
+
+            imgui.EndCombo();
+        end
+
+        if (imgui.PopItemWidth ~= nil) then
+            imgui.PopItemWidth();
+        end
+
+        return current;
+    end
+
+    return DrawChoice('Texture', value, options);
+end
+
 local function ApplyDefaults(settings, defaults)
     for key, value in pairs(defaults or {}) do
         if (settings[key] == nil) then
@@ -609,6 +720,7 @@ function castBar.DrawSettings(settings, context)
     end
 
     local defaults = context ~= nil and context.defaults or {};
+    local boxed = context ~= nil and context.boxed == true;
 
     ApplyDefaults(settings, defaults);
 
@@ -616,36 +728,63 @@ function castBar.DrawSettings(settings, context)
         settings.enabled = DrawToggle('Active', settings.enabled);
     end
 
-    DrawAnchorControls(settings, context);
-
-    imgui.Separator();
-    DrawSectionHeader('Bar settings');
-    settings.width, settings.height = DrawPairedNumberRow('size', 'Width', 'width', settings.width, 20, 600, 'Height', 'height', settings.height, 2, 80);
-    settings.offsetX, settings.offsetY = DrawPairedNumberRow('position', 'Position X', 'offset_x', settings.offsetX, -400, 400, 'Position Y', 'offset_y', settings.offsetY, -400, 400);
-    settings.color, settings.backgroundColor, settings.texture = DrawColorTextureRow('colors_texture', settings.color, settings.backgroundColor, settings.texture);
-    settings.borderColor, settings.borderSize = DrawBorderRow('border', settings.borderColor, settings.borderSize);
-    DrawInterruptBarSettingsRows(settings, defaults);
-
-    imgui.Separator();
-    DrawSectionHeader('Text settings');
-    settings.showSpellName = DrawToggle('Show spell name', settings.showSpellName ~= false);
-
-    if (settings.showSpellName ~= false) then
-        settings.useSmallFont = true;
-        DrawTextSettingsRows(settings, defaults);
+    if (context == nil or context.skipPlacement ~= true) then
+        DrawAnchorControls(settings, context);
     end
 
-    DrawInterruptTextSettingsRows(settings, defaults);
-
-    imgui.Separator();
-    DrawSectionHeader('Spell icon');
-    settings.showSpellIcon = DrawToggle('Show spell icon', settings.showSpellIcon);
-
-    if (settings.showSpellIcon == true) then
-        DrawSpellIconRows(settings);
+    if (context ~= nil and context.onlyPlacement == true) then
+        return;
     end
 
-    imgui.Separator();
+    local function DrawPanel(label, render, first)
+        if (boxed == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then
+            _G.LibraPlatesSettingsDrawBoxedPanel(label, render, first);
+            return;
+        end
+
+        if (first ~= true) then
+            imgui.Separator();
+        elseif (boxed ~= true) then
+            imgui.Separator();
+        end
+
+        DrawSectionHeader(label);
+        render();
+    end
+
+    DrawPanel('Bar Settings', function()
+        settings.width, settings.height = DrawPairedNumberRow('size', 'Width', 'width', settings.width, 20, 600, 'Height', 'height', settings.height, 2, 80);
+        settings.offsetX, settings.offsetY = DrawPairedNumberRow('position', 'Position X', 'offset_x', settings.offsetX, -400, 400, 'Position Y', 'offset_y', settings.offsetY, -400, 400);
+        settings.color, settings.backgroundColor, settings.texture = DrawColorTextureRow('colors_texture', settings.color, settings.backgroundColor, settings.texture);
+        settings.borderColor, settings.borderSize = DrawBorderRow('border', settings.borderColor, settings.borderSize);
+        DrawInterruptBarSettingsRows(settings, defaults);
+    end, true);
+
+    DrawPanel('Text Settings', function()
+        settings.showSpellName = DrawToggle('Show spell name', settings.showSpellName ~= false);
+
+        if (settings.showSpellName ~= false) then
+            settings.useSmallFont = true;
+            DrawTextSettingsRows(settings, defaults);
+        end
+
+        DrawInterruptTextSettingsRows(settings, defaults, boxed);
+    end);
+
+    DrawPanel('Spell Icon', function()
+        settings.showSpellIcon = DrawToggle('Show spell icon', settings.showSpellIcon);
+
+        if (settings.showSpellIcon == true) then
+            DrawSpellIconRows(settings);
+        end
+    end);
+
+    if (boxed == true) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        imgui.Separator();
+    end
 
     if (DrawActionButton('Reset Cast bar position') == true) then
         settings.offsetX = defaults.offsetX;

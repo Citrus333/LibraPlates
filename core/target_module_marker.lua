@@ -1,6 +1,7 @@
 local state = require('core.state');
 local textureLoader = require('core.texture_loader');
 local arrowAnimation = require('core.target_arrow_animation');
+local targetTextures = require('core.target_textures');
 local targetModuleDefaults = require('config.widgets.target_module');
 local subtargetModuleDefaults = require('config.widgets.subtarget_module');
 local perfMeter = require('core.perf_meter');
@@ -14,6 +15,14 @@ local textureIds = {};
 local lastDebug = 'target module marker has not built yet';
 local lastActiveDebug = 'target module marker has not built an active target/subtarget yet';
 local recentActiveDebug = {};
+local legacyTextureNames = {
+    backgrounds = {
+        ['glow-100.png'] = 'Soft_Glow_Rectangle.png',
+        ['glow_100.png'] = 'Soft_Glow_Rectangle.png',
+        ['background_01.png'] = 'Soft_Glow_Rectangle.png',
+        ['brackets.png'] = 'Brackets_Short.png',
+    },
+};
 
 local function PushActiveDebug(text)
     text = tostring(text or '');
@@ -48,14 +57,20 @@ local function GetTextureId(category, fileName)
         return nil;
     end
 
-    local key = tostring(category) .. '/' .. fileName;
+    local categoryName = tostring(category or '');
+    local legacyCategory = legacyTextureNames[categoryName];
+    if (legacyCategory ~= nil) then
+        fileName = legacyCategory[string.lower(fileName)] or fileName;
+    end
+
+    local key = categoryName .. '/' .. fileName;
 
     if (textureIds[key] ~= nil) then
         return textureIds[key];
     end
 
     textureIds[key] = textureLoader.ToTextureId(textureLoader.Load(
-        GetAddonPath() .. 'assets\\images\\target\\' .. tostring(category or '') .. '\\' .. fileName
+        GetAddonPath() .. 'assets\\images\\target\\' .. categoryName .. '\\' .. fileName
     ));
 
     return textureIds[key];
@@ -357,7 +372,10 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         lockOn = targeting.GetIsTargetLockedOn() == true;
     end
 
-    local lockTextureId = (tostring(entityName or '') == 'Enemy' and targetStateName == 'Target' and settings.lockEnabled ~= false and lockOn == true) and GetTextureId('lock', settings.lockFile or 'lock.png') or nil;
+    local lockAnimated = settings.lockEnabled ~= false and settings.lockSprite == true and targetTextures.HasSpriteFrames('lock', settings.lockFile) == true;
+    local lockTextureId = (tostring(entityName or '') == 'Enemy' and targetStateName == 'Target' and settings.lockEnabled ~= false and lockOn == true)
+        and targetTextures.GetAnimatedTextureId('lock', settings.lockFile or 'lock.png', lockAnimated, Number(settings, 'lockAnimationSpeed', 12))
+        or nil;
     local backgroundTextureId = backgroundEnabled == true and GetTextureId('backgrounds', settings.backgroundFile) or nil;
     local chevronTextureId = GetTextureId('chevrons', GetChevronFile(settings));
     local showArrow = arrowTextureId ~= nil;
@@ -390,8 +408,8 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         showArrow = showArrow,
         showLock = showLock,
         showChevrons = showChevrons,
-        backgroundOffsetX = autoPlaceBackground == true and 0 or Number(settings, 'backgroundOffsetX', 0),
-        backgroundOffsetY = autoPlaceBackground == true and 0 or Number(settings, 'backgroundOffsetY', 0),
+        backgroundOffsetX = Number(settings, 'backgroundOffsetX', 0),
+        backgroundOffsetY = Number(settings, 'backgroundOffsetY', 0),
         arrowOffsetX = Number(settings, 'arrowOffsetX', 0),
         arrowOffsetY = Number(settings, 'arrowOffsetY', 0),
         chevronOffsetX = settings.autoPlaceChevrons ~= false and 0 or Number(settings, 'chevronOffsetX', 0),

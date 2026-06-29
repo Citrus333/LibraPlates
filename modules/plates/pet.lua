@@ -37,6 +37,8 @@ local petPlate = {};
 local bstPetTimer = {};
 local jugIconTextureId = nil;
 local petStateIconTextureIds = {};
+local staticPanelEditDrag = nil;
+local DrawStaticPlateTexture = nil;
 local petAnchorBone = 12;
 local petWorldOffsetY = 0.16;
 local wyvernRestingAnchorBone = 0;
@@ -158,6 +160,88 @@ local function CopySettingsWith(settings, overrides)
     end
 
     return copy;
+end
+
+local function ColorKey(color)
+    if (type(color) ~= 'table') then
+        return '';
+    end
+
+    return table.concat({
+        tostring(color[1] or ''),
+        tostring(color[2] or ''),
+        tostring(color[3] or ''),
+        tostring(color[4] or ''),
+    }, ',');
+end
+
+local function BuildStaticPetBackground(targetingSettings, prefix, plateBackground, staticScale)
+    local settings = targetingSettings[prefix .. 'PetStaticBackgroundSettings'];
+    if (type(settings) ~= 'table') then
+        local defaults = (globalDefaults.targeting or {})[prefix .. 'PetStaticBackgroundSettings'];
+        settings = type(defaults) == 'table' and defaults or plateBackground or backgroundDefaults;
+    end
+
+    local scaleInverse = 1 / math.max(0.10, tonumber(staticScale) or 1.0);
+
+    return {
+        enabled = settings.enabled ~= false,
+        width = (tonumber(settings.width) or backgroundDefaults.width) * scaleInverse,
+        height = (tonumber(settings.height) or backgroundDefaults.height) * scaleInverse,
+        offsetX = (tonumber(settings.offsetX) or backgroundDefaults.offsetX) * scaleInverse,
+        offsetY = (tonumber(settings.offsetY) or backgroundDefaults.offsetY) * scaleInverse,
+        color = settings.color or backgroundDefaults.color,
+        borderColor = settings.borderColor or backgroundDefaults.borderColor,
+        borderSize = (tonumber(settings.borderSize) or backgroundDefaults.borderSize) * scaleInverse,
+        texture = settings.texture or backgroundDefaults.texture,
+        textureId = backgroundTextures.GetTextureId(settings.texture or backgroundDefaults.texture),
+    };
+end
+
+local function BuildStaticPetTextureKey(prefix, petIndex, background)
+    return table.concat({
+        tostring(prefix) .. '-pet-static',
+        tostring(petIndex),
+        'bg=' .. tostring(background.enabled),
+        'w=' .. tostring(background.width),
+        'h=' .. tostring(background.height),
+        'x=' .. tostring(background.offsetX),
+        'y=' .. tostring(background.offsetY),
+        'tex=' .. tostring(background.texture),
+        'color=' .. ColorKey(background.color),
+        'border=' .. ColorKey(background.borderColor),
+        'bs=' .. tostring(background.borderSize),
+    }, '|');
+end
+
+local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targetingSettings, windowId)
+    local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings[prefix .. 'PetStaticScale']) or 35) / 100));
+    local staticBackground = BuildStaticPetBackground(targetingSettings, prefix, plateData.background, staticScale);
+    local staticPlateData = CopySettingsWith(plateData, {
+        background = staticBackground,
+    });
+    local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, BuildStaticPetTextureKey(prefix, petIndex, staticBackground));
+    local staticTextureId = canvasTexture.GetTextureId(staticTexture);
+
+    if (staticTextureId == nil or staticTextureWidth == nil or staticTextureHeight == nil) then
+        return;
+    end
+
+    DrawStaticPlateTexture(
+        staticTextureId,
+        tonumber(targetingSettings[prefix .. 'PetStaticX']) or 170,
+        tonumber(targetingSettings[prefix .. 'PetStaticY']) or 690,
+        staticTextureWidth * staticScale,
+        staticTextureHeight * staticScale,
+        windowId,
+        targetingSettings[prefix .. 'PetStaticEditFrame'] == true,
+        function(nextX, nextY, nextW)
+            targetingSettings[prefix .. 'PetStaticX'] = nextX;
+            targetingSettings[prefix .. 'PetStaticY'] = nextY;
+            targetingSettings[prefix .. 'PetStaticScale'] = math.max(10, math.min(200, math.floor(((tonumber(nextW) or staticTextureWidth) / math.max(1, staticTextureWidth) * 100) + 0.5)));
+            state.Save();
+        end
+    );
 end
 
 local readyBarDefaults = {
@@ -967,7 +1051,141 @@ local function BuildNameOnlyPlateData(source, nameText)
     };
 end
 
-local function DrawStaticPlateTexture(textureId, centerX, centerY, width, height, windowId)
+local function ReadImguiVec2(first, second)
+    if (type(first) == 'table') then
+        return tonumber(first.x or first[1]) or 0, tonumber(first.y or first[2]) or 0;
+    end
+
+    return tonumber(first) or 0, tonumber(second) or 0;
+end
+
+local function GetMousePosition()
+    if (imgui.GetIO == nil) then
+        return nil, nil;
+    end
+
+    local ok, io = pcall(function()
+        return imgui.GetIO();
+    end);
+
+    if (ok ~= true or io == nil or io.MousePos == nil) then
+        return nil, nil;
+    end
+
+    return
+        tonumber(io.MousePos.x or io.MousePos.X or io.MousePos[1]),
+        tonumber(io.MousePos.y or io.MousePos.Y or io.MousePos[2]);
+end
+
+local function GetMouseDragDelta()
+    if (imgui.GetMouseDragDelta == nil) then
+        return 0, 0;
+    end
+
+    return ReadImguiVec2(imgui.GetMouseDragDelta(0));
+end
+
+local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, onEdited)
+    if (
+        imgui.GetForegroundDrawList == nil or
+        imgui.GetColorU32 == nil or
+        imgui.IsMouseClicked == nil or
+        imgui.IsMouseDown == nil
+    ) then
+        return;
+    end
+
+    local id = tostring(windowId or 'static_pet');
+    local handleSize = 18;
+    local x = tonumber(left) or 0;
+    local y = tonumber(top) or 0;
+    local w = math.max(1, tonumber(width) or 1);
+    local h = math.max(1, tonumber(height) or 1);
+    local mouseX, mouseY = GetMousePosition();
+
+    if (mouseX ~= nil and mouseY ~= nil and imgui.IsMouseClicked(0) == true) then
+        staticPanelEditDrag = nil;
+
+        local inRect = mouseX >= x and mouseX <= x + w and mouseY >= y and mouseY <= y + h;
+        local inRightHandle = mouseX >= x + w - handleSize and mouseX <= x + w and mouseY >= y + h - handleSize and mouseY <= y + h;
+        local inLeftHandle = mouseX >= x and mouseX <= x + handleSize and mouseY >= y + h - handleSize and mouseY <= y + h;
+
+        if (inRightHandle == true or inLeftHandle == true or inRect == true) then
+            staticPanelEditDrag = {
+                id = id,
+                mode = inRightHandle == true and 'resize-right' or (inLeftHandle == true and 'resize-left' or 'move'),
+            };
+
+            if (imgui.ResetMouseDragDelta ~= nil) then
+                imgui.ResetMouseDragDelta(0);
+            end
+        end
+    end
+
+    if (imgui.IsMouseDown(0) ~= true) then
+        staticPanelEditDrag = nil;
+    elseif (staticPanelEditDrag ~= nil and staticPanelEditDrag.id == id and type(onEdited) == 'function') then
+        local dx, dy = GetMouseDragDelta();
+
+        if (math.abs(dx) >= 0.5 or math.abs(dy) >= 0.5) then
+            if (staticPanelEditDrag.mode == 'move') then
+                onEdited(math.floor(x + (w * 0.5) + dx + 0.5), math.floor(y + (h * 0.5) + dy + 0.5), w);
+            elseif (staticPanelEditDrag.mode == 'resize-left') then
+                local right = x + w;
+                local nextW = math.max(20, w - dx);
+                onEdited(math.floor(right - (nextW * 0.5) + 0.5), math.floor(y + (h * 0.5) + 0.5), nextW);
+            else
+                local nextW = math.max(20, w + dx);
+                onEdited(math.floor(x + (nextW * 0.5) + 0.5), math.floor(y + (h * 0.5) + 0.5), nextW);
+            end
+
+            if (imgui.ResetMouseDragDelta ~= nil) then
+                imgui.ResetMouseDragDelta(0);
+            end
+        end
+    end
+
+    local drawList = imgui.GetForegroundDrawList();
+    if (drawList == nil) then
+        return;
+    end
+
+    local fillColor = imgui.GetColorU32({ 1.0, 0.80, 0.10, 0.28 });
+    local borderColor = imgui.GetColorU32({ 1.0, 0.80, 0.10, 1.0 });
+    local textColor = imgui.GetColorU32({ 1.0, 1.0, 1.0, 1.0 });
+    local handleColor = imgui.GetColorU32({ 1.0, 1.0, 1.0, 0.82 });
+
+    drawList:AddRectFilled({ x, y }, { x + w, y + h }, fillColor);
+    drawList:AddRect({ x, y }, { x + w, y + h }, borderColor, 0, 0, 4);
+
+    if (drawList.AddTriangleFilled ~= nil) then
+        drawList:AddTriangleFilled(
+            { x + w, y + h - handleSize },
+            { x + w, y + h },
+            { x + w - handleSize, y + h },
+            handleColor
+        );
+        drawList:AddTriangleFilled(
+            { x, y + h - handleSize },
+            { x, y + h },
+            { x + handleSize, y + h },
+            handleColor
+        );
+        drawList:AddTriangle({ x + w, y + h - handleSize }, { x + w, y + h }, { x + w - handleSize, y + h }, borderColor, 2);
+        drawList:AddTriangle({ x, y + h - handleSize }, { x, y + h }, { x + handleSize, y + h }, borderColor, 2);
+    else
+        drawList:AddRectFilled({ x + w - handleSize, y + h - handleSize }, { x + w, y + h }, handleColor);
+        drawList:AddRect({ x + w - handleSize, y + h - handleSize }, { x + w, y + h }, borderColor, 0, 0, 2);
+        drawList:AddRectFilled({ x, y + h - handleSize }, { x + handleSize, y + h }, handleColor);
+        drawList:AddRect({ x, y + h - handleSize }, { x + handleSize, y + h }, borderColor, 0, 0, 2);
+    end
+
+    if (drawList.AddText ~= nil) then
+        drawList:AddText({ x + 6, y + 6 }, textColor, 'Detached avatar');
+    end
+end
+
+DrawStaticPlateTexture = function(textureId, centerX, centerY, width, height, windowId, editEnabled, onEdited)
     if (imgui == nil or textureId == nil) then
         return false;
     end
@@ -982,13 +1200,15 @@ local function DrawStaticPlateTexture(textureId, centerX, centerY, width, height
     local top = (tonumber(centerY) or 0) - (drawH * 0.5);
     local flags =
         (_G.ImGuiWindowFlags_NoTitleBar or 0) +
-        (_G.ImGuiWindowFlags_NoResize or 0) +
-        (_G.ImGuiWindowFlags_NoMove or 0) +
         (_G.ImGuiWindowFlags_NoScrollbar or 0) +
         (_G.ImGuiWindowFlags_NoScrollWithMouse or 0) +
         (_G.ImGuiWindowFlags_NoSavedSettings or 0) +
-        (_G.ImGuiWindowFlags_NoInputs or 0) +
         (_G.ImGuiWindowFlags_NoBackground or 0);
+
+    flags = flags +
+        (_G.ImGuiWindowFlags_NoResize or 0) +
+        (_G.ImGuiWindowFlags_NoMove or 0) +
+        (_G.ImGuiWindowFlags_NoInputs or 0);
 
     if (imgui.SetNextWindowPos ~= nil) then
         imgui.SetNextWindowPos({ left, top }, _G.ImGuiCond_Always or 1);
@@ -1012,12 +1232,17 @@ local function DrawStaticPlateTexture(textureId, centerX, centerY, width, height
         end
 
         imgui.Image(textureId, { drawW, drawH }, { 0, 0 }, { 1, 1 });
+
     end
 
     imgui.End();
 
     if (pushedPadding == true and imgui.PopStyleVar ~= nil) then
         imgui.PopStyleVar();
+    end
+
+    if (editEnabled == true) then
+        DrawStaticPanelEditOverlay(windowId, left, top, drawW, drawH, onEdited);
     end
 
     return true;
@@ -1216,25 +1441,7 @@ local function QueueBstPet(pet)
     local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (petPlateMode ~= 'Normal') then
-        local staticPlateData = CopySettingsWith(plateData, {
-            background = CopySettingsWith(plateData.background, {
-                enabled = targetingSettings.bstPetStaticBackground ~= false,
-            }),
-        });
-        local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, 'bst-pet-static-' .. tostring(pet.index));
-        local staticTextureId = canvasTexture.GetTextureId(staticTexture);
-
-        if (staticTextureId ~= nil and staticTextureWidth ~= nil and staticTextureHeight ~= nil) then
-            local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings.bstPetStaticScale) or 35) / 100));
-            DrawStaticPlateTexture(
-                staticTextureId,
-                tonumber(targetingSettings.bstPetStaticX) or 170,
-                tonumber(targetingSettings.bstPetStaticY) or 690,
-                staticTextureWidth * staticScale,
-                staticTextureHeight * staticScale,
-                'static_bst_pet_' .. tostring(pet.index)
-            );
-        end
+        DrawDetachedStaticPetFrame('bst', pet.index, plateData, targetingSettings, 'static_bst_pet_' .. tostring(pet.index));
     end
 
     if (petPlateMode == 'Detach from pet') then
@@ -1505,25 +1712,7 @@ local function QueueSmnPet(pet)
     local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (petPlateMode ~= 'Normal') then
-        local staticPlateData = CopySettingsWith(plateData, {
-            background = CopySettingsWith(plateData.background, {
-                enabled = targetingSettings.smnPetStaticBackground ~= false,
-            }),
-        });
-        local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, 'smn-pet-static-' .. tostring(pet.index));
-        local staticTextureId = canvasTexture.GetTextureId(staticTexture);
-
-        if (staticTextureId ~= nil and staticTextureWidth ~= nil and staticTextureHeight ~= nil) then
-            local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings.smnPetStaticScale) or 35) / 100));
-            DrawStaticPlateTexture(
-                staticTextureId,
-                tonumber(targetingSettings.smnPetStaticX) or 170,
-                tonumber(targetingSettings.smnPetStaticY) or 690,
-                staticTextureWidth * staticScale,
-                staticTextureHeight * staticScale,
-                'static_smn_pet_' .. tostring(pet.index)
-            );
-        end
+        DrawDetachedStaticPetFrame('smn', pet.index, plateData, targetingSettings, 'static_smn_pet_' .. tostring(pet.index));
     end
 
     if (petPlateMode == 'Detach from pet') then
@@ -1727,25 +1916,7 @@ local function QueueWyvernPet(pet)
     local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (petPlateMode ~= 'Normal') then
-        local staticPlateData = CopySettingsWith(plateData, {
-            background = CopySettingsWith(plateData.background, {
-                enabled = targetingSettings.drgPetStaticBackground ~= false,
-            }),
-        });
-        local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, 'drg-pet-static-' .. tostring(pet.index));
-        local staticTextureId = canvasTexture.GetTextureId(staticTexture);
-
-        if (staticTextureId ~= nil and staticTextureWidth ~= nil and staticTextureHeight ~= nil) then
-            local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings.drgPetStaticScale) or 35) / 100));
-            DrawStaticPlateTexture(
-                staticTextureId,
-                tonumber(targetingSettings.drgPetStaticX) or 170,
-                tonumber(targetingSettings.drgPetStaticY) or 690,
-                staticTextureWidth * staticScale,
-                staticTextureHeight * staticScale,
-                'static_drg_pet_' .. tostring(pet.index)
-            );
-        end
+        DrawDetachedStaticPetFrame('drg', pet.index, plateData, targetingSettings, 'static_drg_pet_' .. tostring(pet.index));
     end
 
     if (petPlateMode == 'Detach from pet') then
@@ -1989,25 +2160,7 @@ local function QueuePupPet(pet)
     local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (petPlateMode ~= 'Normal') then
-        local staticPlateData = CopySettingsWith(plateData, {
-            background = CopySettingsWith(plateData.background, {
-                enabled = targetingSettings.pupPetStaticBackground ~= false,
-            }),
-        });
-        local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, 'pup-pet-static-' .. tostring(pet.index));
-        local staticTextureId = canvasTexture.GetTextureId(staticTexture);
-
-        if (staticTextureId ~= nil and staticTextureWidth ~= nil and staticTextureHeight ~= nil) then
-            local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings.pupPetStaticScale) or 35) / 100));
-            DrawStaticPlateTexture(
-                staticTextureId,
-                tonumber(targetingSettings.pupPetStaticX) or 170,
-                tonumber(targetingSettings.pupPetStaticY) or 690,
-                staticTextureWidth * staticScale,
-                staticTextureHeight * staticScale,
-                'static_pup_pet_' .. tostring(pet.index)
-            );
-        end
+        DrawDetachedStaticPetFrame('pup', pet.index, plateData, targetingSettings, 'static_pup_pet_' .. tostring(pet.index));
     end
 
     if (petPlateMode == 'Detach from pet') then

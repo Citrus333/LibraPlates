@@ -754,6 +754,14 @@ local function DrawScrollingBarOverlay(device, barX, barY, barW, barH, progress,
     end
 
     local fillW = barW * progress;
+    if (textureId == -1) then
+        local speed = tonumber(bar.animationSpeed) or 40;
+        local rate = math.max(0.2, speed / 40);
+        local pulse = 0.10 + (0.30 * ((math.sin(os.clock() * rate * math.pi * 2) + 1) * 0.5));
+        DrawRect(device, barX, barY, fillW, barH, ColorToD3D({ 1.0, 1.0, 1.0, pulse }, { 1.0, 1.0, 1.0, 0.25 }));
+        return;
+    end
+
     local tileW = math.max(barH, barH * 3.64);
     local speed = tonumber(bar.animationSpeed) or 40;
     local offset = (os.clock() * speed) % tileW;

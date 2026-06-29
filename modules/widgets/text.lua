@@ -506,30 +506,49 @@ function textWidget.DrawSettings(settings, context)
 
     local showSmallFontToggle = (context ~= nil and context.showSmallFontToggle == true) or label == 'Distance';
 
-    DrawAnchorControls(settings, context, label);
-
-    settings.offsetX, settings.offsetY = DrawSliderPair(
-        'position',
-        'Position X',
-        'offset_x',
-        settings.offsetX,
-        -400,
-        400,
-        'Position Y',
-        'offset_y',
-        settings.offsetY,
-        -400,
-        400
-    );
-    DrawFontRow(settings, defaults, showSmallFontToggle);
-    DrawOutlineRow(settings);
-    settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
-
-    if (context ~= nil and type(context.extraBeforeReset) == 'function') then
-        context.extraBeforeReset(settings, defaults);
+    if (context == nil or context.skipPlacement ~= true) then
+        DrawAnchorControls(settings, context, label);
     end
 
-    imgui.Separator();
+    if (context ~= nil and context.onlyPlacement == true) then
+        return;
+    end
+
+    local function DrawBody()
+        settings.offsetX, settings.offsetY = DrawSliderPair(
+            'position',
+            'Position X',
+            'offset_x',
+            settings.offsetX,
+            -400,
+            400,
+            'Position Y',
+            'offset_y',
+            settings.offsetY,
+            -400,
+            400
+        );
+        DrawFontRow(settings, defaults, showSmallFontToggle);
+        DrawOutlineRow(settings);
+        settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
+
+        if (context ~= nil and type(context.extraBeforeReset) == 'function') then
+            context.extraBeforeReset(settings, defaults);
+        end
+    end
+
+    if (context ~= nil and context.boxed == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then
+        _G.LibraPlatesSettingsDrawBoxedPanel(label, DrawBody, true);
+    else
+        DrawBody();
+    end
+
+    if (context ~= nil and context.boxed == true) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        imgui.Separator();
+    end
 
     if (DrawActionButton('Reset ' .. label .. ' position') == true) then
         RequestReset('position', label .. ' position');

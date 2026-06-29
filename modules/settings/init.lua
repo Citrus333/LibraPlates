@@ -91,6 +91,7 @@ local profileSubJobOptions = T{ 'Any', 'BLM', 'BLU', 'BRD', 'BST', 'COR', 'DNC',
 local quickMenuPresetMainJobOptions = T{ 'None', 'BLM', 'BLU', 'BRD', 'BST', 'COR', 'DNC', 'DRG', 'DRK', 'GEO', 'MNK', 'NIN', 'PLD', 'PUP', 'RDM', 'RNG', 'RUN', 'SAM', 'SCH', 'SMN', 'THF', 'WAR', 'WHM' };
 local quickMenuPresetSubJobOptions = T{ 'None', 'BLM', 'BLU', 'BRD', 'BST', 'COR', 'DNC', 'DRG', 'DRK', 'GEO', 'MNK', 'NIN', 'PLD', 'PUP', 'RDM', 'RNG', 'RUN', 'SAM', 'SCH', 'SMN', 'THF', 'WAR', 'WHM' };
 local quickMenuPresetCount = 10;
+LibraPlatesSettingsBoxedModuleCopySourceKey = LibraPlatesSettingsBoxedModuleCopySourceKey or {};
 local settingsWindowNoMoveFlag = _G.ImGuiWindowFlags_NoMove or 0;
 local settingsColorEditFlags = bit ~= nil and bit.bor ~= nil
     and bit.bor(_G.ImGuiColorEditFlags_NoAlpha or 0, _G.ImGuiColorEditFlags_NoInputs or 0)
@@ -177,18 +178,21 @@ end
 local function DrawQuickMenuPresetRows(menu)
     EnsureQuickMenuPresets(menu);
 
+    local function DrawHideInfoControl()
+        DrawCheckbox('Hide info', menu.presets.hideInfo == true, function(value)
+            menu.presets.hideInfo = value == true;
+            state.Save();
+        end);
+        uiTooltip.Info('When job changing at a Mog House or Nomad Moogle, show only the job swap rows and hide the Moogle info and wiki link.');
+    end
+
     DrawInlineComboRow('Icon theme', jobIconTextures.GetThemeNames(), menu.presets.iconTheme or 'FFXI', function(value)
         menu.presets.iconTheme = value;
         state.Save();
-    end, 'QuickMenuPresetTheme');
+    end, 'QuickMenuPresetTheme', settingsLabelColor, 96, nil, 210);
 
-    DrawCheckbox('Hide info', menu.presets.hideInfo == true, function(value)
-        menu.presets.hideInfo = value == true;
-        state.Save();
-    end);
-    uiTooltip.Info('When the quick menu can show job change presets, hide the NPC type, info, and wiki link so only job swap rows are shown.');
-
-    imgui.TextWrapped('Quick change favorites. Style 000 means no /lockstyleset command.');
+    imgui.TextColored(settingsLabelColor, 'Quick change favorites');
+    uiTooltip.Info('Style 000 means no /lockstyleset command.');
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##quick_menu_presets', 6, settingsTableFlagsNoBorders)) then
@@ -248,6 +252,7 @@ local function DrawQuickMenuPresetRows(menu)
             end
 
             imgui.EndTable();
+            DrawHideInfoControl();
             return;
         end
     end
@@ -274,6 +279,8 @@ local function DrawQuickMenuPresetRows(menu)
         imgui.SameLine();
         LibraPlatesSettingsDrawLockstyleSetControl('QuickMenuPresetLockstyleFallback' .. tostring(index), entry);
     end
+
+    DrawHideInfoControl();
 end
 
 local petTimerDefaults = {
@@ -826,6 +833,7 @@ local trustCombatWidgets = T{
 };
 local bstCharmedPetWidgets = T{
     'Background',
+    'Detached frame',
     'Name',
     'Pet timer',
     'Pet state',
@@ -839,6 +847,7 @@ local bstCharmedPetWidgets = T{
 };
 local bstJugPetWidgets = T{
     'Background',
+    'Detached frame',
     'Name',
     'Pet timer',
     'Pet state',
@@ -852,6 +861,7 @@ local bstJugPetWidgets = T{
 };
 local avatarEditWidgets = T{
     'Background',
+    'Detached frame',
     'Name',
     'Ward timer',
     'Rage timer',
@@ -863,6 +873,7 @@ local avatarEditWidgets = T{
 };
 local spiritEditWidgets = T{
     'Background',
+    'Detached frame',
     'Name',
     'HP Bar',
     'MP Bar',
@@ -873,6 +884,7 @@ local spiritEditWidgets = T{
 };
 local wyvernEditWidgets = T{
     'Background',
+    'Detached frame',
     'Name',
     'Distance',
     'HP Bar',
@@ -883,6 +895,7 @@ local wyvernEditWidgets = T{
 };
 local automatonEditWidgets = T{
     'Background',
+    'Detached frame',
     'Name',
     'Distance',
     'HP Bar',
@@ -982,6 +995,7 @@ local widgetKeys = {
     ['Pet state'] = 'Pet state',
     ['Ward timer'] = 'Ward timer',
     ['Rage timer'] = 'Rage timer',
+    ['Detached frame'] = 'Detached frame',
     ['Cast bar'] = 'Cast bar',
     ['Maneuvers'] = 'Maneuvers',
     ['Buffs'] = 'Buffs',
@@ -1246,6 +1260,91 @@ function LibraPlatesSettingsCopyNameSettingsFromSource(settings, source)
     LibraPlatesSettingsCopySettingsFromSource(settings, source, nameDefaults);
 end
 
+function LibraPlatesSettingsDrawBoxedModuleCopyHeaderRow(settings, entity, stateName, widgetName, defaults, headerRowX, labelWidth)
+    if (settings == nil) then
+        return;
+    end
+
+    local sources = LibraPlatesSettingsBuildWidgetCopySources(entity, stateName, widgetName);
+    if (sources == nil or #sources == 0) then
+        return;
+    end
+
+    local contextKey = tostring(entity or '') .. '|' .. tostring(stateName or '') .. '|' .. tostring(widgetName or '');
+    local copySourceKeys = LibraPlatesSettingsBoxedModuleCopySourceKey;
+    local selectedKey = tostring(copySourceKeys[contextKey] or '');
+    local selectedSource = nil;
+
+    for _, source in ipairs(sources) do
+        if (selectedKey == tostring(source.key or '')) then
+            selectedSource = source;
+            break;
+        end
+    end
+
+    if (selectedSource == nil) then
+        selectedSource = sources[1];
+        copySourceKeys[contextKey] = tostring(selectedSource.key or '');
+    end
+
+    local rowY = nil;
+    if (GetCursorScreenPos ~= nil) then
+        local posA, posB = GetCursorScreenPos();
+        if (type(posA) == 'table') then
+            rowY = tonumber(posA.y or posA[2]);
+        else
+            rowY = tonumber(posB);
+        end
+    end
+
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+    imgui.TextColored({ 1.0, 1.0, 1.0, 1.0 }, 'Copy settings');
+
+    if (headerRowX ~= nil and rowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+        imgui.SetCursorScreenPos({ headerRowX + (tonumber(labelWidth) or 120), rowY });
+    else
+        imgui.SameLine();
+    end
+
+    if (imgui.PushItemWidth ~= nil) then
+        imgui.PushItemWidth(180);
+    end
+
+    if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+        if (imgui.BeginCombo('##BoxedModuleCopySource' .. contextKey, tostring(selectedSource.label or '')) == true) then
+            for _, source in ipairs(sources) do
+                local sourceKey = tostring(source.key or '');
+                local isSelected = sourceKey == tostring(copySourceKeys[contextKey] or '');
+                if (imgui.Selectable(tostring(source.label or ''), isSelected) == true) then
+                    copySourceKeys[contextKey] = sourceKey;
+                    selectedSource = source;
+                end
+                if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                    imgui.SetItemDefaultFocus();
+                end
+            end
+            imgui.EndCombo();
+        end
+    else
+        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(selectedSource.label or ''));
+    end
+
+    if (imgui.PopItemWidth ~= nil) then
+        imgui.PopItemWidth();
+    end
+
+    imgui.SameLine();
+    if (imgui.Button ~= nil) then
+        if (imgui.Button('Copy##BoxedModuleCopy' .. contextKey) == true) then
+            LibraPlatesSettingsCopySettingsFromSource(settings, selectedSource, defaults or {});
+        end
+    elseif (ClickText('Copy', uiAccent) == true) then
+        LibraPlatesSettingsCopySettingsFromSource(settings, selectedSource, defaults or {});
+    end
+
+    uiTooltip.Info('Copy the settings from the selected source.');
+end
+
 function IsPetStorageEntity(entity)
     local entityName = tostring(entity or '');
 
@@ -1257,6 +1356,41 @@ function IsPetStorageEntity(entity)
         entityName == 'Automaton' or
         entityName == 'Luopan'
     );
+end
+
+function LibraPlatesSettingsHasResourceValueControl(entity, stateName, widgetName)
+    local entityName = GetStorageEntity(entity);
+    local normalizedState = NormalizeStateName(stateName);
+    local widget = tostring(widgetName or '');
+
+    if (IsPetStorageEntity(entityName) == true) then
+        return false;
+    end
+
+    if (widget == 'HP Bar' and entityName == 'PC' and normalizedState == 'World') then
+        return false;
+    end
+
+    return true;
+end
+
+function settingsUi.GetDetachedFramePrefix()
+    local entityName = NormalizeEntityName(selectedEntity);
+
+    if (entityName == 'Pet (BST)') then
+        return 'bst';
+    end
+    if (entityName == 'Pet (SMN)') then
+        return 'smn';
+    end
+    if (entityName == 'Pet (DRG)') then
+        return 'drg';
+    end
+    if (entityName == 'Pet (PUP)') then
+        return 'pup';
+    end
+
+    return nil;
 end
 
 function GetStates(entity)
@@ -1481,6 +1615,18 @@ function GetChecklistActiveSettings(widget)
 
     if (key == nil) then
         return nil;
+    end
+
+    if (widget == 'Detached frame') then
+        local settings = targeting.GetSettings();
+        local prefix = settingsUi.GetDetachedFramePrefix ~= nil and settingsUi.GetDetachedFramePrefix() or nil;
+        if (prefix == nil) then
+            return nil;
+        end
+        return {
+            enabled = tostring(settings[prefix .. 'PetPlateMode'] or 'Normal') ~= 'Normal',
+            _detachedFrame = true,
+        };
     end
 
     if (widget == 'Enmity (module)') then
@@ -1920,14 +2066,15 @@ function DrawInlineCombo(label, items, selected, onSelect, displayLabelFn)
     DrawCombo(label, items, current, onSelect, displayLabelFn);
 end
 
-function DrawInlineComboRow(label, items, selected, onSelect, id, labelColorOverride, labelWidth, tableFlagsOverride)
+function DrawInlineComboRow(label, items, selected, onSelect, id, labelColorOverride, labelWidth, tableFlagsOverride, controlWidthOverride)
     local current = tostring(selected or items[1] or 'Default');
     local comboId = '##' .. tostring(id or label or 'combo');
+    local controlWidth = tonumber(controlWidthOverride) or 260;
 
 function DrawControl()
         if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
             if (imgui.PushItemWidth ~= nil) then
-                imgui.PushItemWidth(260);
+                imgui.PushItemWidth(controlWidth);
             end
 
             if (imgui.BeginCombo(comboId, current) == true) then
@@ -1967,15 +2114,17 @@ function DrawControl()
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##settings_combo_' .. tostring(id or label or 'combo'), 2, tableFlagsOverride or settingsTableFlags)) then
             imgui.TableSetupColumn('##label', 0, tonumber(labelWidth) or 78);
-            imgui.TableSetupColumn('##control', 0, 260);
+            imgui.TableSetupColumn('##control', 0, controlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(labelColorOverride or { 1.0, 0.84, 0.0, 1.0 }, label);
             imgui.TableNextColumn();
             DrawControl();
             imgui.EndTable();
         end
     else
+        if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
         imgui.TextColored(labelColorOverride or { 1.0, 0.84, 0.0, 1.0 }, label);
         imgui.SameLine();
         DrawControl();
@@ -2460,16 +2609,18 @@ function DrawRestingPlacementPair(leftLabel, leftValue, leftId, rightLabel, righ
         local rightChanged = false;
 
         if (imgui.BeginTable('##resting_placement_' .. tostring(leftId) .. '_' .. tostring(rightId), 4, settingsTableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 150);
+            imgui.TableSetupColumn('##label_left', 0, 132);
             imgui.TableSetupColumn('##control_left', 0, 124);
-            imgui.TableSetupColumn('##label_right', 0, 150);
+            imgui.TableSetupColumn('##label_right', 0, 160);
             imgui.TableSetupColumn('##control_right', 0, 124);
             imgui.TableNextRow();
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(settingsLabelColor, leftLabel);
             imgui.TableNextColumn();
             leftResult, leftChanged = DrawPlacementControl(leftValue, minValue, maxValue, step, leftId, 58);
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(settingsLabelColor, rightLabel);
             imgui.TableNextColumn();
             rightResult, rightChanged = DrawPlacementControl(rightValue, minValue, maxValue, step, rightId, 58);
@@ -2490,16 +2641,18 @@ function DrawRestingPlacementAndColorRow(leftLabel, leftValue, leftId, minValue,
         local colorChanged = false;
 
         if (imgui.BeginTable('##resting_placement_color_' .. tostring(leftId) .. '_' .. tostring(colorId), 4, settingsTableFlags)) then
-            imgui.TableSetupColumn('##value_label', 0, 150);
+            imgui.TableSetupColumn('##value_label', 0, 132);
             imgui.TableSetupColumn('##value_control', 0, 124);
-            imgui.TableSetupColumn('##color_label', 0, 150);
-            imgui.TableSetupColumn('##color_control', 0, 60);
+            imgui.TableSetupColumn('##color_label', 0, 160);
+            imgui.TableSetupColumn('##color_control', 0, 64);
             imgui.TableNextRow();
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(settingsLabelColor, leftLabel);
             imgui.TableNextColumn();
             valueResult, valueChanged = DrawPlacementControl(leftValue, minValue, maxValue, step, leftId, 58);
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(settingsLabelColor, rightLabel);
             imgui.TableNextColumn();
             colorResult, colorChanged = DrawInlineColorControl(colorValue, colorId);
@@ -2520,16 +2673,18 @@ function DrawRestingColorPair(leftLabel, leftValue, leftId, rightLabel, rightVal
         local rightChanged = false;
 
         if (imgui.BeginTable('##resting_color_pair_' .. tostring(leftId) .. '_' .. tostring(rightId), 4, settingsTableFlags)) then
-            imgui.TableSetupColumn('##left_label', 0, 150);
-            imgui.TableSetupColumn('##left_control', 0, 60);
-            imgui.TableSetupColumn('##right_label', 0, 150);
-            imgui.TableSetupColumn('##right_control', 0, 60);
+            imgui.TableSetupColumn('##left_label', 0, 132);
+            imgui.TableSetupColumn('##left_control', 0, 124);
+            imgui.TableSetupColumn('##right_label', 0, 160);
+            imgui.TableSetupColumn('##right_control', 0, 64);
             imgui.TableNextRow();
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(settingsLabelColor, leftLabel);
             imgui.TableNextColumn();
             leftResult, leftChanged = DrawInlineColorControl(leftValue, leftId);
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(settingsLabelColor, rightLabel);
             imgui.TableNextColumn();
             rightResult, rightChanged = DrawInlineColorControl(rightValue, rightId);
@@ -2553,16 +2708,18 @@ function DrawRestingColorPlacementRow(leftLabel, colorValue, colorId, rightLabel
         local valueChanged = false;
 
         if (imgui.BeginTable('##resting_color_placement_' .. tostring(colorId) .. '_' .. tostring(rightId), 4, settingsTableFlags)) then
-            imgui.TableSetupColumn('##color_label', 0, 150);
-            imgui.TableSetupColumn('##color_control', 0, 60);
-            imgui.TableSetupColumn('##value_label', 0, 150);
+            imgui.TableSetupColumn('##color_label', 0, 132);
+            imgui.TableSetupColumn('##color_control', 0, 124);
+            imgui.TableSetupColumn('##value_label', 0, 160);
             imgui.TableSetupColumn('##value_control', 0, 124);
             imgui.TableNextRow();
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(settingsLabelColor, leftLabel);
             imgui.TableNextColumn();
             colorResult, colorChanged = DrawInlineColorControl(colorValue, colorId);
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(settingsLabelColor, rightLabel);
             imgui.TableNextColumn();
             valueResult, valueChanged = DrawPlacementControl(rightValue, minValue, maxValue, step, rightId, 58);
@@ -2578,8 +2735,8 @@ end
 function DrawRestingCheckboxPair(leftLabel, leftValue, leftOnChange, rightLabel, rightValue, rightOnChange)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##resting_checkbox_pair_' .. tostring(leftLabel) .. '_' .. tostring(rightLabel), 2, settingsTableFlagsNoBorders)) then
-            imgui.TableSetupColumn('##left', 0, 180);
-            imgui.TableSetupColumn('##right', 0, 180);
+            imgui.TableSetupColumn('##left', 0, 256);
+            imgui.TableSetupColumn('##right', 0, 344);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             DrawCheckbox(leftLabel, leftValue, leftOnChange);
@@ -3338,6 +3495,14 @@ function DrawResetActionButton(label, id)
     return ClickText(label, { 1.0, 0.84, 0.0, 1.0 });
 end
 
+function DrawResetFooterBottomPadding()
+    if (imgui.Dummy ~= nil) then
+        imgui.Dummy({ 1, 10 });
+    elseif (imgui.Spacing ~= nil) then
+        imgui.Spacing();
+    end
+end
+
 function DrawTargetModuleResetConfirm(settings, defaults)
     if (targetModulePendingReset == nil) then
         return;
@@ -3578,6 +3743,7 @@ function DrawManeuverSettings(settings)
         RequestManeuverReset('settings');
     end
 
+    DrawResetFooterBottomPadding();
     DrawManeuverResetConfirm(settings);
 end
 
@@ -3937,6 +4103,7 @@ function DrawTargetModulePlacementSettings(settings, defaults, label, entityName
         RequestTargetModuleReset('settings', tostring(label or 'Target Module') .. ' settings');
     end
 
+    DrawResetFooterBottomPadding();
     DrawTargetModuleResetConfirm(settings, defaults or {});
 end
 
@@ -4521,6 +4688,23 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         return;
     end
 
+    if (normalizedKind == 'gathering') then
+        local global = state.GetGlobalSettings(globalDefaults);
+        global.gathering = global.gathering or {};
+        global.gathering.offsetX = math.max(-500, math.min(500, (tonumber(global.gathering.offsetX) or 0) + deltaX));
+        global.gathering.offsetY = math.max(-500, math.min(500, (tonumber(global.gathering.offsetY) or 38) + deltaY));
+
+        if (selectedTab == 'Modules') then
+            selectedModuleWidget = 'Gathering';
+        elseif (selectedTab == 'Plates' and ListContains(GetEditWidgets(), 'Gathering (module)') == true) then
+            selectedWidget = 'Gathering (module)';
+        end
+
+        PersistUiSelection();
+        state.Save();
+        return;
+    end
+
     local widgetByKind = {
         background = 'Background',
         name = 'Name',
@@ -4877,7 +5061,18 @@ function DrawPlatesSelector()
             end
 
             if (changed == true and settings ~= nil and protectedTargetModule ~= true) then
-                if (isLockOnIconWidget == true) then
+                if (widget == 'Detached frame') then
+                    local targetingSettings = targeting.GetSettings();
+                    local prefix = settingsUi.GetDetachedFramePrefix();
+                    if (ref[1] == true) then
+                        if (prefix ~= nil and (targetingSettings[prefix .. 'PetPlateMode'] == nil or tostring(targetingSettings[prefix .. 'PetPlateMode']) == 'Normal')) then
+                            targetingSettings[prefix .. 'PetPlateMode'] = 'Detach from pet';
+                        end
+                    elseif (prefix ~= nil) then
+                        targetingSettings[prefix .. 'PetPlateMode'] = 'Normal';
+                        targetingSettings[prefix .. 'PetStaticEditFrame'] = false;
+                    end
+                elseif (isLockOnIconWidget == true) then
                     settings.lockEnabled = ref[1] == true;
                 else
                     settings.enabled = ref[1] == true;
@@ -4888,7 +5083,18 @@ function DrawPlatesSelector()
         else
             imgui.TextColored(protectedTargetModule == true and { 0.65, 0.90, 1.0, 0.85 } or { 0.92, 0.92, 0.90, 1.0 }, '[' .. ((active or protectedTargetModule) and 'x' or ' ') .. ']');
             if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true and settings ~= nil and protectedTargetModule ~= true) then
-                if (isLockOnIconWidget == true) then
+                if (widget == 'Detached frame') then
+                    local targetingSettings = targeting.GetSettings();
+                    local prefix = settingsUi.GetDetachedFramePrefix();
+                    if (active ~= true) then
+                        if (prefix ~= nil and (targetingSettings[prefix .. 'PetPlateMode'] == nil or tostring(targetingSettings[prefix .. 'PetPlateMode']) == 'Normal')) then
+                            targetingSettings[prefix .. 'PetPlateMode'] = 'Detach from pet';
+                        end
+                    elseif (prefix ~= nil) then
+                        targetingSettings[prefix .. 'PetPlateMode'] = 'Normal';
+                        targetingSettings[prefix .. 'PetStaticEditFrame'] = false;
+                    end
+                elseif (isLockOnIconWidget == true) then
                     settings.lockEnabled = not active;
                 else
                     settings.enabled = not active;
@@ -4985,8 +5191,8 @@ function LibraPlatesSettingsDrawBoxedBreadcrumb(parts)
 
     local items = parts or {};
     local x, y = GetCursorScreenPos();
-    local width = math.max(1, select(1, GetContentRegionAvail()));
-    local height = 28;
+    local width = math.max(1, (select(1, GetContentRegionAvail()) or 1) - 16);
+    local height = 18;
     local drawList = imgui.GetWindowDrawList();
 
     drawList:AddRectFilled(
@@ -4996,7 +5202,7 @@ function LibraPlatesSettingsDrawBoxedBreadcrumb(parts)
         0
     );
 
-    imgui.SetCursorScreenPos({ x + 14, y + 7 });
+    imgui.SetCursorScreenPos({ x + 3, y + 1 });
     imgui.TextColored({ 1.0, 1.0, 1.0, 1.0 }, 'Selected: ');
 
     if (imgui.SameLine ~= nil) then
@@ -5014,7 +5220,7 @@ function LibraPlatesSettingsDrawBoxedBreadcrumb(parts)
         end
     end
 
-    imgui.SetCursorScreenPos({ x, y + height });
+    imgui.SetCursorScreenPos({ x, y + height + 8 });
 end
 
 function LibraPlatesSettingsDrawBoxedPanel(label, render, first)
@@ -5075,6 +5281,7 @@ end
 
 function LibraPlatesSettingsDrawBoxedPage(childId, render)
     local pageWidth, pageHeight = GetContentRegionAvail();
+    local childPadX = 16;
     local pushedPageBg = 0;
 
     if (imgui.PushStyleColor ~= nil and _G.ImGuiCol_ChildBg ~= nil) then
@@ -5083,14 +5290,41 @@ function LibraPlatesSettingsDrawBoxedPage(childId, render)
     end
 
     imgui.BeginChild('##' .. tostring(childId or 'SettingsBoxedPage'), { math.max(280, tonumber(pageWidth) or 280), math.max(260, tonumber(pageHeight) or 260) }, false);
-    if (imgui.Indent ~= nil) then imgui.Indent(16); end
-    render();
-    if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+    if (imgui.Indent ~= nil) then imgui.Indent(childPadX); end
+    render(math.max(1, (tonumber(pageWidth) or 280) - (childPadX * 2)));
+    if (imgui.Unindent ~= nil) then imgui.Unindent(childPadX); end
     imgui.EndChild();
 
     if (pushedPageBg > 0 and imgui.PopStyleColor ~= nil) then
         imgui.PopStyleColor(pushedPageBg);
     end
+end
+
+function LibraPlatesSettingsDrawPlatesHeaderBand(render, heightOverride)
+    local panelPadX = 12;
+    local panelPadY = 8;
+
+    if (imgui.GetWindowDrawList == nil or imgui.GetColorU32 == nil or imgui.SetCursorScreenPos == nil) then
+        render();
+        return;
+    end
+
+    local availWidth = GetContentRegionAvail();
+    local cardWidth = math.max(260, (tonumber(availWidth) or 260) - 16);
+    local height = tonumber(heightOverride) or 108;
+    local x, y = GetCursorScreenPos();
+    local drawList = imgui.GetWindowDrawList();
+
+    drawList:AddRectFilled(
+        { x, y - 3 },
+        { x + cardWidth, y + height },
+        imgui.GetColorU32({ 0.25, 0.29, 0.36, 1.0 }),
+        0
+    );
+
+    imgui.SetCursorScreenPos({ x + panelPadX, y + panelPadY });
+    render(math.max(1, cardWidth - (panelPadX * 2)));
+    imgui.SetCursorScreenPos({ x, y + height });
 end
 
 function GetPeerIconStyles()
@@ -5652,8 +5886,6 @@ end
 function LibraPlatesSettingsEnsurePeerInspectorDefaults(peer)
     if (peer.displayMode == nil) then peer.displayMode = 'Text'; end
     if (peer.inspectorWidth == nil) then peer.inspectorWidth = 430; end
-    if (peer.selfInspectorWidth == nil) then peer.selfInspectorWidth = peer.inspectorWidth; end
-    if (peer.pcInspectorWidth == nil) then peer.pcInspectorWidth = peer.inspectorWidth; end
     if (peer.textFontSize == nil) then peer.textFontSize = 14; end
     if (peer.textColor == nil) then peer.textColor = { 0.94, 0.94, 0.90, 1.0 }; end
     if (peer.textOutlineSize == nil) then peer.textOutlineSize = 1; end
@@ -5670,8 +5902,6 @@ function LibraPlatesSettingsEnsurePeerInspectorDefaults(peer)
 end
 
 function LibraPlatesSettingsDrawPeerInspectorBackgroundSettings(peer)
-    DrawYellowHeader('Background');
-
     local fillColor, fillChanged, opacity, opacityChanged = DrawColorAndPlacementRow('Fill color', peer.backgroundColor, 'PeerInspectorBackgroundColor', 'Opacity', peer.backgroundOpacity, 'PeerInspectorBackgroundOpacity', 0, 100, 1);
     fillColor[4] = 1.0;
     peer.backgroundColor = fillColor;
@@ -5696,8 +5926,6 @@ function LibraPlatesSettingsDrawPeerSectionCheckbox(peer, label, key)
 end
 
 function LibraPlatesSettingsDrawPeerSectionList(peer)
-    DrawYellowHeader('Sections');
-
     local rows = T{
         T{
             { label = 'Name', key = 'showName' },
@@ -5755,14 +5983,6 @@ end
 function LibraPlatesSettingsDrawPeerModuleSettings(settings, options)
     options = options or {};
     settings.peer = settings.peer or {};
-    local peerEntity = tostring(options.entity or '');
-    local inspectorWidthKey = 'inspectorWidth';
-
-    if (peerEntity == 'Self') then
-        inspectorWidthKey = 'selfInspectorWidth';
-    elseif (peerEntity == 'PC') then
-        inspectorWidthKey = 'pcInspectorWidth';
-    end
 
     if (settings.peer.activationModifier == nil) then settings.peer.activationModifier = 'Shift'; end
     if (settings.peer.maxRange == nil) then settings.peer.maxRange = 49.9; end
@@ -5794,70 +6014,75 @@ function LibraPlatesSettingsDrawPeerModuleSettings(settings, options)
     if (settings.peer.modifierValueOutlineSize == nil) then settings.peer.modifierValueOutlineSize = 2; end
     if (settings.peer.modifierValueOutlineColor == nil) then settings.peer.modifierValueOutlineColor = { 0.0, 0.0, 0.0, 1.0 }; end
 
-    DrawInlineComboRow('Modifier', T{ 'Shift', 'Ctrl', 'Alt', 'None' }, settings.peer.activationModifier, function(value)
-        settings.peer.activationModifier = value;
-        state.Save();
-    end, 'PeerModifier');
-    uiTooltip.Info('Peer opens while hovering a plate and holding this modifier. None means hover alone can open Peer.');
+    LibraPlatesSettingsDrawBoxedPanel('Peer settings', function()
+        DrawInlineComboRow('Modifier', T{ 'Shift', 'Ctrl', 'Alt', 'None' }, settings.peer.activationModifier, function(value)
+            settings.peer.activationModifier = value;
+            state.Save();
+        end, 'PeerModifier', settingsLabelColor, 104, nil, 210);
+        uiTooltip.Info('Peer opens while hovering a plate and holding this modifier. None means hover alone can open Peer.');
 
-    local inspectorWidth, inspectorWidthChanged = DrawPlacementSingle('Window width', settings.peer[inspectorWidthKey], 'PeerInspectorWidth' .. inspectorWidthKey, 220, 800, 1, 104, 124, 58);
-    if (inspectorWidthChanged == true) then
-        settings.peer[inspectorWidthKey] = inspectorWidth;
-        state.Save();
-    end
+        local inspectorWidth, inspectorWidthChanged = DrawPlacementSingle('Window width', settings.peer.inspectorWidth, 'PeerInspectorWidth', 120, 800, 1, 104, 124, 58);
+        if (inspectorWidthChanged == true) then
+            settings.peer.inspectorWidth = inspectorWidth;
+            state.Save();
+        end
+
+        if (options.hideDisplayMode ~= true) then
+            DrawInlineComboRow('Display', T{ 'Text', 'Icons' }, settings.peer.displayMode, function(value)
+                settings.peer.displayMode = value;
+                state.Save();
+            end, 'PeerDisplayMode', settingsLabelColor, 104, nil, 210);
+        end
+    end, true);
 
     if (options.hideDisplayMode ~= true) then
-        DrawInlineComboRow('Display', T{ 'Text', 'Icons' }, settings.peer.displayMode, function(value)
-            settings.peer.displayMode = value;
-            state.Save();
-        end, 'PeerDisplayMode');
+        LibraPlatesSettingsDrawBoxedPanel('Display', function()
+            if (tostring(settings.peer.displayMode or 'Icons') == 'Text') then
+            local textColor, textColorChanged = DrawSettingsColor('Font color', settings.peer.textColor, 'PeerTextColor');
+            settings.peer.textColor = textColor;
+            if (textColorChanged == true) then state.Save(); end
+
+            local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawPlacementAndColorRow(
+                'Outline size',
+                settings.peer.textOutlineSize,
+                'PeerTextOutlineSize',
+                0,
+                4,
+                1,
+                'Outline color',
+                settings.peer.textOutlineColor,
+                'PeerTextOutlineColor'
+            );
+            settings.peer.textOutlineColor = outlineColor;
+            if (outlineSizeChanged == true or outlineColorChanged == true) then
+                settings.peer.textOutlineSize = outlineSize;
+                state.Save();
+            end
+            else
+            DrawInlineComboRow('Icon pack', GetPeerIconStyles(), settings.peer.iconStyle, function(value)
+                settings.peer.iconStyle = value;
+                state.Save();
+            end, 'PeerIconStyle', settingsLabelColor, 104, nil, 210);
+
+            local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.peer.iconSize, 'PeerInspectorIconSize', 6, 64, 1, 104, 124, 58);
+            if (iconSizeChanged == true) then
+                settings.peer.iconSize = iconSize;
+                state.Save();
+            end
+            end
+        end);
     end
 
-    imgui.Separator();
-
-    if (options.hideDisplayMode == true) then
-        -- Self Peer uses a fixed text layout with its own elemental icons.
-    elseif (tostring(settings.peer.displayMode or 'Icons') == 'Text') then
-        local textColor, textColorChanged = DrawSettingsColor('Font color', settings.peer.textColor, 'PeerTextColor');
-        settings.peer.textColor = textColor;
-        if (textColorChanged == true) then state.Save(); end
-
-        local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawPlacementAndColorRow(
-            'Outline size',
-            settings.peer.textOutlineSize,
-            'PeerTextOutlineSize',
-            0,
-            4,
-            1,
-            'Outline color',
-            settings.peer.textOutlineColor,
-            'PeerTextOutlineColor'
-        );
-        settings.peer.textOutlineColor = outlineColor;
-        if (outlineSizeChanged == true or outlineColorChanged == true) then
-            settings.peer.textOutlineSize = outlineSize;
-            state.Save();
-        end
-    else
-        DrawInlineComboRow('Icon pack', GetPeerIconStyles(), settings.peer.iconStyle, function(value)
-            settings.peer.iconStyle = value;
-            state.Save();
-        end, 'PeerIconStyle');
-
-        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.peer.iconSize, 'PeerInspectorIconSize', 6, 64, 1, 104, 124, 58);
-        if (iconSizeChanged == true) then
-            settings.peer.iconSize = iconSize;
-            state.Save();
-        end
-    end
-
-    imgui.Separator();
-    LibraPlatesSettingsDrawPeerInspectorBackgroundSettings(settings.peer);
+    LibraPlatesSettingsDrawBoxedPanel('Background', function()
+        LibraPlatesSettingsDrawPeerInspectorBackgroundSettings(settings.peer);
+    end);
 
     if (options.hideSections ~= true) then
-        imgui.Separator();
-        LibraPlatesSettingsDrawPeerSectionList(settings.peer);
+        LibraPlatesSettingsDrawBoxedPanel('Sections', function()
+            LibraPlatesSettingsDrawPeerSectionList(settings.peer);
+        end);
     end
+
 end
 
 function EnsureEnmitySettings(settings)
@@ -6078,171 +6303,251 @@ function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
     local displayMode = tostring(settings.resting.displayMode or 'Bar');
     local displayChoice = (displayMode == 'Ring') and 'Doughnut' or 'Bar';
 
-    DrawRestingSectionHeader(displayChoice);
+    LibraPlatesSettingsDrawBoxedPanel(displayChoice, function()
+        DrawInlineComboRow('Display', T{ 'Bar', 'Doughnut' }, displayChoice, function(value)
+            settings.resting.displayMode = (value == 'Doughnut') and 'Ring' or 'Bar';
+            state.Save();
+        end, 'RestingDisplayMode', { 1.0, 1.0, 1.0, 1.0 }, 132);
 
-    DrawInlineComboRow('Display', T{ 'Bar', 'Doughnut' }, displayChoice, function(value)
-        settings.resting.displayMode = (value == 'Doughnut') and 'Ring' or 'Bar';
-        state.Save();
-    end, 'RestingDisplayMode', { 1.0, 1.0, 1.0, 1.0 }, 150);
+        if (tostring(settings.resting.displayMode or 'Bar') == 'Ring') then
+            local ringSize, ringSizeChanged, ringThickness, ringThicknessChanged = DrawRestingPlacementPair('Doughnut size', settings.resting.ringSize, 'RestingRingSize', 'Thickness', settings.resting.ringThickness, 'RestingRingThickness', 1, 300, 1);
+            if (ringSizeChanged == true or ringThicknessChanged == true) then
+                settings.resting.ringSize = ringSize;
+                settings.resting.ringThickness = ringThickness;
+                state.Save();
+            end
+        else
+            local width, widthChanged, height, heightChanged = DrawRestingPlacementPair('Width', settings.resting.width, 'RestingWidth', 'Height', settings.resting.height, 'RestingHeight', 1, 900, 1);
+            if (widthChanged == true or heightChanged == true) then
+                settings.resting.width = width;
+                settings.resting.height = height;
+                state.Save();
+            end
+        end
+    end, true);
 
-    if (tostring(settings.resting.displayMode or 'Bar') == 'Ring') then
-        local ringSize, ringSizeChanged, ringThickness, ringThicknessChanged = DrawRestingPlacementPair('Doughnut size', settings.resting.ringSize, 'RestingRingSize', 'Thickness', settings.resting.ringThickness, 'RestingRingThickness', 1, 300, 1);
-        if (ringSizeChanged == true or ringThicknessChanged == true) then
-            settings.resting.ringSize = ringSize;
-            settings.resting.ringThickness = ringThickness;
+    LibraPlatesSettingsDrawBoxedPanel('Position and appearance', function()
+        local x, xChanged, y, yChanged = DrawRestingPlacementPair('Position X', settings.resting.offsetX, 'RestingX', 'Position Y', settings.resting.offsetY, 'RestingY', -500, 500, 1);
+        if (xChanged == true or yChanged == true) then
+            settings.resting.offsetX = x;
+            settings.resting.offsetY = y;
             state.Save();
         end
-    else
-        local width, widthChanged, height, heightChanged = DrawRestingPlacementPair('Width', settings.resting.width, 'RestingWidth', 'Height', settings.resting.height, 'RestingHeight', 1, 900, 1);
-        if (widthChanged == true or heightChanged == true) then
-            settings.resting.width = width;
-            settings.resting.height = height;
+
+        local fillColor, fillChanged, backgroundColor, backgroundChanged = DrawRestingColorPair(
+            'Fill color',
+            settings.resting.color,
+            'RestingFillColor',
+            'Background color',
+            settings.resting.backgroundColor,
+            'RestingBackgroundColor'
+        );
+        if (fillChanged == true or backgroundChanged == true) then
+            settings.resting.color = fillColor;
+            settings.resting.backgroundColor = backgroundColor;
             state.Save();
         end
-    end
 
-    DrawRestingSectionHeader('Position');
+        local borderColor, borderChanged, borderSize, borderSizeChanged = DrawRestingColorPlacementRow(
+            'Border color',
+            settings.resting.borderColor,
+            'RestingBorderColor',
+            'Border size',
+            settings.resting.borderSize,
+            'RestingBorderSize',
+            0,
+            24,
+            1
+        );
+        if (borderChanged == true or borderSizeChanged == true) then
+            settings.resting.borderColor = borderColor;
+            settings.resting.borderSize = borderSize;
+            state.Save();
+        end
 
-    local x, xChanged, y, yChanged = DrawRestingPlacementPair('Position X', settings.resting.offsetX, 'RestingX', 'Position Y', settings.resting.offsetY, 'RestingY', -500, 500, 1);
-    if (xChanged == true or yChanged == true) then
-        settings.resting.offsetX = x;
-        settings.resting.offsetY = y;
-        state.Save();
-    end
-
-    local fillColor, fillChanged, backgroundColor, backgroundChanged = DrawRestingColorPair(
-        'Fill color',
-        settings.resting.color,
-        'RestingFillColor',
-        'Background color',
-        settings.resting.backgroundColor,
-        'RestingBackgroundColor'
-    );
-    if (fillChanged == true or backgroundChanged == true) then
-        settings.resting.color = fillColor;
-        settings.resting.backgroundColor = backgroundColor;
-        state.Save();
-    end
-
-    local borderColor, borderChanged, borderSize, borderSizeChanged = DrawRestingColorPlacementRow(
-        'Border color',
-        settings.resting.borderColor,
-        'RestingBorderColor',
-        'Border size',
-        settings.resting.borderSize,
-        'RestingBorderSize',
-        0,
-        24,
-        1
-    );
-    if (borderChanged == true or borderSizeChanged == true) then
-        settings.resting.borderColor = borderColor;
-        settings.resting.borderSize = borderSize;
-        state.Save();
-    end
-
-    DrawRestingCheckboxPair('Hide at full HP', settings.resting.hideAtFullHp == true, function(value)
-        settings.resting.hideAtFullHp = value == true;
-        state.Save();
-    end, 'Hide at full MP', settings.resting.hideAtFullMp == true, function(value)
-        settings.resting.hideAtFullMp = value == true;
-        state.Save();
+        DrawRestingCheckboxPair('Hide at full HP', settings.resting.hideAtFullHp == true, function(value)
+            settings.resting.hideAtFullHp = value == true;
+            state.Save();
+        end, 'Hide at full MP', settings.resting.hideAtFullMp == true, function(value)
+            settings.resting.hideAtFullMp = value == true;
+            state.Save();
+        end);
     end);
 
-    DrawRestingSectionHeader('Timer text');
-
-    local fontSize, fontSizeChanged, textColor, textColorChanged = DrawRestingPlacementAndColorRow(
-        'Size',
-        settings.resting.fontSize,
-        'RestingFontSize',
-        6,
-        48,
-        1,
-        'Text color',
-        settings.resting.textColor,
-        'RestingTextColor'
-    );
-    if (fontSizeChanged == true or textColorChanged == true) then
-        settings.resting.fontSize = fontSize;
-        settings.resting.textColor = textColor;
-        state.Save();
-    end
-
-    local textX, textXChanged, textY, textYChanged = DrawRestingPlacementPair('Text X', settings.resting.textOffsetX, 'RestingTextX', 'Text Y', settings.resting.textOffsetY, 'RestingTextY', -400, 400, 1);
-    if (textXChanged == true or textYChanged == true) then
-        settings.resting.textOffsetX = textX;
-        settings.resting.textOffsetY = textY;
-        state.Save();
-    end
-
-    local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawRestingPlacementAndColorRow(
-        'Outline size',
-        settings.resting.textOutlineSize,
-        'RestingOutlineSize',
-        0,
-        12,
-        1,
-        'Outline color',
-        settings.resting.textOutlineColor,
-        'RestingOutlineColor'
-    );
-    if (outlineSizeChanged == true or outlineColorChanged == true) then
-        settings.resting.textOutlineSize = outlineSize;
-        settings.resting.textOutlineColor = outlineColor;
-        settings.resting.textOutlineEnabled = outlineSize > 0;
-        state.Save();
-    end
-
-    DrawRestingSectionHeader('Logout/shutdown countdown');
-
-    DrawCheckbox('Enable logout/shutdown countdown', settings.resting.enableLogoutCountdown ~= false, function(value)
-        settings.resting.enableLogoutCountdown = value == true;
-        state.Save();
-    end);
-
-    if (settings.resting.enableLogoutCountdown ~= false) then
-        local countdownFontSize, countdownFontSizeChanged, countdownTextColor, countdownTextColorChanged = DrawRestingPlacementAndColorRow(
+    LibraPlatesSettingsDrawBoxedPanel('Timer text', function()
+        local fontSize, fontSizeChanged, textColor, textColorChanged = DrawRestingPlacementAndColorRow(
             'Size',
-            settings.resting.countdownFontSize,
-            'RestingCountdownFontSize',
+            settings.resting.fontSize,
+            'RestingFontSize',
             6,
             48,
             1,
             'Text color',
-            settings.resting.countdownTextColor,
-            'RestingCountdownTextColor'
+            settings.resting.textColor,
+            'RestingTextColor'
         );
-        if (countdownFontSizeChanged == true or countdownTextColorChanged == true) then
-            settings.resting.countdownFontSize = countdownFontSize;
-            settings.resting.countdownTextColor = countdownTextColor;
+        if (fontSizeChanged == true or textColorChanged == true) then
+            settings.resting.fontSize = fontSize;
+            settings.resting.textColor = textColor;
             state.Save();
         end
 
-        local countdownTextX, countdownTextXChanged, countdownTextY, countdownTextYChanged = DrawRestingPlacementPair('Text X', settings.resting.countdownTextOffsetX, 'RestingCountdownTextX', 'Text Y', settings.resting.countdownTextOffsetY, 'RestingCountdownTextY', -400, 400, 1);
-        if (countdownTextXChanged == true or countdownTextYChanged == true) then
-            settings.resting.countdownTextOffsetX = countdownTextX;
-            settings.resting.countdownTextOffsetY = countdownTextY;
+        local textX, textXChanged, textY, textYChanged = DrawRestingPlacementPair('Text X', settings.resting.textOffsetX, 'RestingTextX', 'Text Y', settings.resting.textOffsetY, 'RestingTextY', -400, 400, 1);
+        if (textXChanged == true or textYChanged == true) then
+            settings.resting.textOffsetX = textX;
+            settings.resting.textOffsetY = textY;
             state.Save();
         end
 
-        local countdownOutlineSize, countdownOutlineSizeChanged, countdownOutlineColor, countdownOutlineColorChanged = DrawRestingPlacementAndColorRow(
+        local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawRestingPlacementAndColorRow(
             'Outline size',
-            settings.resting.countdownTextOutlineSize,
-            'RestingCountdownOutlineSize',
+            settings.resting.textOutlineSize,
+            'RestingOutlineSize',
             0,
             12,
             1,
             'Outline color',
-            settings.resting.countdownTextOutlineColor,
-            'RestingCountdownOutlineColor'
+            settings.resting.textOutlineColor,
+            'RestingOutlineColor'
         );
-        if (countdownOutlineSizeChanged == true or countdownOutlineColorChanged == true) then
-            settings.resting.countdownTextOutlineSize = countdownOutlineSize;
-            settings.resting.countdownTextOutlineColor = countdownOutlineColor;
-            settings.resting.countdownTextOutlineEnabled = countdownOutlineSize > 0;
+        if (outlineSizeChanged == true or outlineColorChanged == true) then
+            settings.resting.textOutlineSize = outlineSize;
+            settings.resting.textOutlineColor = outlineColor;
+            settings.resting.textOutlineEnabled = outlineSize > 0;
             state.Save();
         end
+    end);
+
+    LibraPlatesSettingsDrawBoxedPanel('Logout/shutdown countdown', function()
+        DrawCheckbox('Enable logout/shutdown countdown', settings.resting.enableLogoutCountdown ~= false, function(value)
+            settings.resting.enableLogoutCountdown = value == true;
+            state.Save();
+        end);
+
+        if (settings.resting.enableLogoutCountdown ~= false) then
+            local countdownFontSize, countdownFontSizeChanged, countdownTextColor, countdownTextColorChanged = DrawRestingPlacementAndColorRow(
+                'Size',
+                settings.resting.countdownFontSize,
+                'RestingCountdownFontSize',
+                6,
+                48,
+                1,
+                'Text color',
+                settings.resting.countdownTextColor,
+                'RestingCountdownTextColor'
+            );
+            if (countdownFontSizeChanged == true or countdownTextColorChanged == true) then
+                settings.resting.countdownFontSize = countdownFontSize;
+                settings.resting.countdownTextColor = countdownTextColor;
+                state.Save();
+            end
+
+            local countdownTextX, countdownTextXChanged, countdownTextY, countdownTextYChanged = DrawRestingPlacementPair('Text X', settings.resting.countdownTextOffsetX, 'RestingCountdownTextX', 'Text Y', settings.resting.countdownTextOffsetY, 'RestingCountdownTextY', -400, 400, 1);
+            if (countdownTextXChanged == true or countdownTextYChanged == true) then
+                settings.resting.countdownTextOffsetX = countdownTextX;
+                settings.resting.countdownTextOffsetY = countdownTextY;
+                state.Save();
+            end
+
+            local countdownOutlineSize, countdownOutlineSizeChanged, countdownOutlineColor, countdownOutlineColorChanged = DrawRestingPlacementAndColorRow(
+                'Outline size',
+                settings.resting.countdownTextOutlineSize,
+                'RestingCountdownOutlineSize',
+                0,
+                12,
+                1,
+                'Outline color',
+                settings.resting.countdownTextOutlineColor,
+                'RestingCountdownOutlineColor'
+            );
+            if (countdownOutlineSizeChanged == true or countdownOutlineColorChanged == true) then
+                settings.resting.countdownTextOutlineSize = countdownOutlineSize;
+                settings.resting.countdownTextOutlineColor = countdownOutlineColor;
+                settings.resting.countdownTextOutlineEnabled = countdownOutlineSize > 0;
+                state.Save();
+            end
+        end
+    end);
+
+    if (imgui.Spacing ~= nil) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        DrawSectionDivider();
     end
+
+    if (DrawResetActionButton('Reset Resting position', 'resting_position') == true) then
+        settings.resting.offsetX = globalDefaults.resting.offsetX;
+        settings.resting.offsetY = globalDefaults.resting.offsetY;
+        settings.resting.textOffsetX = globalDefaults.resting.textOffsetX;
+        settings.resting.textOffsetY = globalDefaults.resting.textOffsetY;
+        settings.resting.countdownTextOffsetX = globalDefaults.resting.countdownTextOffsetX;
+        settings.resting.countdownTextOffsetY = globalDefaults.resting.countdownTextOffsetY;
+        state.Save();
+    end
+
+    if (DrawResetActionButton('Reset Resting settings', 'resting_settings') == true) then
+        settings.resting.displayMode = globalDefaults.resting.displayMode;
+        settings.resting.width = globalDefaults.resting.width;
+        settings.resting.height = globalDefaults.resting.height;
+        settings.resting.ringSize = globalDefaults.resting.ringSize;
+        settings.resting.ringThickness = globalDefaults.resting.ringThickness;
+        settings.resting.enableLogoutCountdown = globalDefaults.resting.enableLogoutCountdown;
+        settings.resting.hideAtFullHp = globalDefaults.resting.hideAtFullHp;
+        settings.resting.hideAtFullMp = globalDefaults.resting.hideAtFullMp;
+        settings.resting.color = {
+            globalDefaults.resting.color[1],
+            globalDefaults.resting.color[2],
+            globalDefaults.resting.color[3],
+            globalDefaults.resting.color[4],
+        };
+        settings.resting.backgroundColor = {
+            globalDefaults.resting.backgroundColor[1],
+            globalDefaults.resting.backgroundColor[2],
+            globalDefaults.resting.backgroundColor[3],
+            globalDefaults.resting.backgroundColor[4],
+        };
+        settings.resting.borderColor = {
+            globalDefaults.resting.borderColor[1],
+            globalDefaults.resting.borderColor[2],
+            globalDefaults.resting.borderColor[3],
+            globalDefaults.resting.borderColor[4],
+        };
+        settings.resting.borderSize = globalDefaults.resting.borderSize;
+        settings.resting.fontSize = globalDefaults.resting.fontSize;
+        settings.resting.textColor = {
+            globalDefaults.resting.textColor[1],
+            globalDefaults.resting.textColor[2],
+            globalDefaults.resting.textColor[3],
+            globalDefaults.resting.textColor[4],
+        };
+        settings.resting.textOutlineColor = {
+            globalDefaults.resting.textOutlineColor[1],
+            globalDefaults.resting.textOutlineColor[2],
+            globalDefaults.resting.textOutlineColor[3],
+            globalDefaults.resting.textOutlineColor[4],
+        };
+        settings.resting.textOutlineSize = globalDefaults.resting.textOutlineSize;
+        settings.resting.textOutlineEnabled = globalDefaults.resting.textOutlineEnabled;
+        settings.resting.countdownFontSize = globalDefaults.resting.countdownFontSize;
+        settings.resting.countdownTextColor = {
+            globalDefaults.resting.countdownTextColor[1],
+            globalDefaults.resting.countdownTextColor[2],
+            globalDefaults.resting.countdownTextColor[3],
+            globalDefaults.resting.countdownTextColor[4],
+        };
+        settings.resting.countdownTextOutlineColor = {
+            globalDefaults.resting.countdownTextOutlineColor[1],
+            globalDefaults.resting.countdownTextOutlineColor[2],
+            globalDefaults.resting.countdownTextOutlineColor[3],
+            globalDefaults.resting.countdownTextOutlineColor[4],
+        };
+        settings.resting.countdownTextOutlineSize = globalDefaults.resting.countdownTextOutlineSize;
+        settings.resting.countdownTextOutlineEnabled = globalDefaults.resting.countdownTextOutlineEnabled;
+        state.Save();
+    end
+
+    DrawResetFooterBottomPadding();
 end
 
 function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive)
@@ -6408,110 +6713,121 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
         return;
     end
 
-    DrawInlineComboRow('Display mode', T{ 'Tool only', 'Count only', 'Tool + count' }, settings.gathering.displayMode or 'Tool + count', function(value)
-        settings.gathering.displayMode = value;
-        state.Save();
-    end, 'GatheringDisplayMode', nil, 120);
+    local function DrawPanel(label, render, first)
+        LibraPlatesSettingsDrawBoxedPanel(label, render, first);
+    end
 
-    local anchorTargets = T{ 'None' };
-    for _, widgetName in ipairs(GetEditWidgetsFor('Self', 'World')) do
-        if (widgetName ~= 'Gathering (module)') then
-            anchorTargets[#anchorTargets + 1] = widgetName;
+    DrawPanel('Gathering', function()
+        DrawInlineComboRow('Display mode', T{ 'Tool only', 'Count only', 'Tool + count' }, settings.gathering.displayMode or 'Tool + count', function(value)
+            settings.gathering.displayMode = value;
+            state.Save();
+        end, 'GatheringDisplayMode', nil, 120);
+
+        local anchorTargets = T{ 'None' };
+        for _, widgetName in ipairs(GetEditWidgetsFor('Self', 'World')) do
+            if (widgetName ~= 'Gathering (module)') then
+                anchorTargets[#anchorTargets + 1] = widgetName;
+            end
         end
-    end
 
-    local beforeAnchorTo = settings.gathering.anchorTo;
-    local beforeAnchorPoint = settings.gathering.anchorPoint;
-    local beforeOffsetX = settings.gathering.offsetX;
-    local beforeOffsetY = settings.gathering.offsetY;
+        local beforeAnchorTo = settings.gathering.anchorTo;
+        local beforeAnchorPoint = settings.gathering.anchorPoint;
+        local beforeOffsetX = settings.gathering.offsetX;
+        local beforeOffsetY = settings.gathering.offsetY;
 
-    anchorControls.Draw(settings.gathering, {
-        entity = 'Self',
-        state = 'World',
-        widget = 'Gathering',
-        defaults = globalDefaults.gathering,
-        anchorChoices = anchorTargets,
-    }, 'Gathering');
-    if (
-        beforeAnchorTo ~= settings.gathering.anchorTo or
-        beforeAnchorPoint ~= settings.gathering.anchorPoint or
-        beforeOffsetX ~= settings.gathering.offsetX or
-        beforeOffsetY ~= settings.gathering.offsetY
-    ) then
-        state.Save();
-    end
+        anchorControls.Draw(settings.gathering, {
+            entity = 'Self',
+            state = 'World',
+            widget = 'Gathering',
+            defaults = globalDefaults.gathering,
+            anchorChoices = anchorTargets,
+            suppressHeaderSeparators = true,
+            headerControlOffset = 90,
+        }, 'Gathering');
+        if (
+            beforeAnchorTo ~= settings.gathering.anchorTo or
+            beforeAnchorPoint ~= settings.gathering.anchorPoint or
+            beforeOffsetX ~= settings.gathering.offsetX or
+            beforeOffsetY ~= settings.gathering.offsetY
+        ) then
+            state.Save();
+        end
+    end, true);
 
-    DrawSectionDivider();
-    DrawYellowHeader('Icon');
+    DrawPanel('Icon', function()
+        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.gathering.iconSize, 'GatheringIconSize', 1, 200, 1, 120, 124, 58);
+        if (iconSizeChanged == true) then
+            settings.gathering.iconSize = iconSize;
+            state.Save();
+        end
 
-    local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.gathering.iconSize, 'GatheringIconSize', 1, 200, 1, 120, 124, 58);
-    if (iconSizeChanged == true) then
-        settings.gathering.iconSize = iconSize;
-        state.Save();
-    end
-
-    local x, xChanged, y, yChanged = DrawPlacementPairWide('Position X', settings.gathering.offsetX, 'GatheringX', 'Position Y', settings.gathering.offsetY, 'GatheringY', -500, 500, 1);
-    if (xChanged == true or yChanged == true) then
-        settings.gathering.offsetX = x;
-        settings.gathering.offsetY = y;
-        state.Save();
-    end
-
-    DrawSectionDivider();
-    DrawYellowHeader('Text');
-
-    DrawCheckbox('Display remaining tools in inventory on break', settings.gathering.showCount == true, function(value)
-        settings.gathering.showCount = value == true;
-        state.Save();
-    end);
-    imgui.SameLine();
-    DrawCheckbox('Use small font', settings.gathering.countUseSmallFont == true, function(value)
-        settings.gathering.countUseSmallFont = value == true;
-        state.Save();
+        local x, xChanged, y, yChanged = DrawPlacementPairWide('Position X', settings.gathering.offsetX, 'GatheringX', 'Position Y', settings.gathering.offsetY, 'GatheringY', -500, 500, 1);
+        if (xChanged == true or yChanged == true) then
+            settings.gathering.offsetX = x;
+            settings.gathering.offsetY = y;
+            state.Save();
+        end
     end);
 
-    local countSize, countSizeChanged, countColor, countColorChanged = DrawPlacementAndColorRow(
-        'Font size',
-        settings.gathering.countFontSize,
-        'GatheringCountSize',
-        1,
-        200,
-        1,
-        'Font color',
-        settings.gathering.countColor,
-        'GatheringCountColor'
-    );
-    if (countSizeChanged == true or countColorChanged == true) then
-        settings.gathering.countFontSize = countSize;
-        settings.gathering.countColor = countColor;
-        state.Save();
-    end
+    DrawPanel('Text', function()
+        DrawCheckbox('Display remaining tools in inventory on break', settings.gathering.showCount == true, function(value)
+            settings.gathering.showCount = value == true;
+            state.Save();
+        end);
+        imgui.SameLine();
+        DrawCheckbox('Use small font', settings.gathering.countUseSmallFont == true, function(value)
+            settings.gathering.countUseSmallFont = value == true;
+            state.Save();
+        end);
 
-    local countX, countXChanged, countY, countYChanged = DrawPlacementPairWide('Text X', settings.gathering.countOffsetX, 'GatheringCountX', 'Text Y', settings.gathering.countOffsetY, 'GatheringCountY', -500, 500, 1);
-    if (countXChanged == true or countYChanged == true) then
-        settings.gathering.countOffsetX = countX;
-        settings.gathering.countOffsetY = countY;
-        state.Save();
-    end
+        local countSize, countSizeChanged, countColor, countColorChanged = DrawPlacementAndColorRow(
+            'Font size',
+            settings.gathering.countFontSize,
+            'GatheringCountSize',
+            1,
+            200,
+            1,
+            'Font color',
+            settings.gathering.countColor,
+            'GatheringCountColor'
+        );
+        if (countSizeChanged == true or countColorChanged == true) then
+            settings.gathering.countFontSize = countSize;
+            settings.gathering.countColor = countColor;
+            state.Save();
+        end
 
-    local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawPlacementAndColorRow(
-        'Outline size',
-        settings.gathering.countOutlineSize,
-        'GatheringCountOutlineSize',
-        0,
-        12,
-        1,
-        'Outline color',
-        settings.gathering.countOutlineColor,
-        'GatheringCountOutlineColor'
-    );
-    if (outlineSizeChanged == true or outlineColorChanged == true) then
-        settings.gathering.countOutlineSize = outlineSize;
-        settings.gathering.countOutlineColor = outlineColor;
-        state.Save();
-    end
+        local countX, countXChanged, countY, countYChanged = DrawPlacementPairWide('Text X', settings.gathering.countOffsetX, 'GatheringCountX', 'Text Y', settings.gathering.countOffsetY, 'GatheringCountY', -500, 500, 1);
+        if (countXChanged == true or countYChanged == true) then
+            settings.gathering.countOffsetX = countX;
+            settings.gathering.countOffsetY = countY;
+            state.Save();
+        end
 
-    DrawSectionDivider();
+        local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawPlacementAndColorRow(
+            'Outline size',
+            settings.gathering.countOutlineSize,
+            'GatheringCountOutlineSize',
+            0,
+            12,
+            1,
+            'Outline color',
+            settings.gathering.countOutlineColor,
+            'GatheringCountOutlineColor'
+        );
+        if (outlineSizeChanged == true or outlineColorChanged == true) then
+            settings.gathering.countOutlineSize = outlineSize;
+            settings.gathering.countOutlineColor = outlineColor;
+            state.Save();
+        end
+    end);
+
+    if (imgui.Spacing ~= nil) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        DrawSectionDivider();
+    end
 
     if (DrawResetActionButton('Reset Gathering position', 'gathering_position') == true) then
         settings.gathering.anchorTo = globalDefaults.gathering.anchorTo;
@@ -6548,6 +6864,8 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
         settings.gathering.countOutlineSize = globalDefaults.gathering.countOutlineSize;
         state.Save();
     end
+
+    DrawResetFooterBottomPadding();
 end
 
 function LibraPlatesSettingsDrawCraftingModuleSettings(settings, hideActive)
@@ -6677,11 +6995,7 @@ local function DrawQuickMenuIconRow(menu)
     end);
 
     if (menu.iconsEnabled == true) then
-        imgui.SameLine();
-        imgui.TextColored(settingsLabelColor, 'Icon size');
-        imgui.SameLine();
-
-        local iconSize, iconSizeChanged = DrawPlacementControl(menu.iconSize, 8, 64, 1, 'QuickMenuIconSize', 58);
+        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', menu.iconSize, 'QuickMenuIconSize', 8, 64, 1, 130, 124, 58);
         if (iconSizeChanged == true) then
             menu.iconSize = iconSize;
             state.Save();
@@ -6758,33 +7072,6 @@ local function DrawQuickMenuColorRow(menu)
             local bgOpacity, bgOpacityChanged = DrawPlacementControl(GetOpacity(menu.backgroundColor), 0, 100, 1, 'QuickMenuBackgroundOpacity', 58);
             if (bgOpacityChanged == true) then
                 menu.backgroundColor = SetOpacity(menu.backgroundColor, bgOpacity);
-                changed = true;
-            end
-
-            imgui.TableNextColumn();
-            imgui.TextColored(settingsLabelColor, 'Opacity');
-            imgui.TableNextColumn();
-            local headerOpacity, headerOpacityChanged = DrawPlacementControl(GetOpacity(menu.headerColor), 0, 100, 1, 'QuickMenuHeaderOpacity', 58);
-            if (headerOpacityChanged == true) then
-                menu.headerColor = SetOpacity(menu.headerColor, headerOpacity);
-                changed = true;
-            end
-
-            imgui.TableNextColumn();
-            imgui.TextColored(settingsLabelColor, 'Opacity');
-            imgui.TableNextColumn();
-            local textOpacity, textOpacityChanged = DrawPlacementControl(GetOpacity(menu.textColor), 0, 100, 1, 'QuickMenuTextOpacity', 58);
-            if (textOpacityChanged == true) then
-                menu.textColor = SetOpacity(menu.textColor, textOpacity);
-                changed = true;
-            end
-
-            imgui.TableNextColumn();
-            imgui.TextColored(settingsLabelColor, 'Opacity');
-            imgui.TableNextColumn();
-            local linkOpacity, linkOpacityChanged = DrawPlacementControl(GetOpacity(menu.linkColor), 0, 100, 1, 'QuickMenuLinkOpacity', 58);
-            if (linkOpacityChanged == true) then
-                menu.linkColor = SetOpacity(menu.linkColor, linkOpacity);
                 changed = true;
             end
 
@@ -6878,34 +7165,70 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
         return;
     end
 
-    DrawInlineComboRow('Modifier', T{ 'None', 'Shift', 'Ctrl', 'Alt' }, menu.modifier or 'None', function(value)
-        menu.modifier = value;
-        state.Save();
-    end, 'QuickMenuModifier');
-    uiTooltip.Info('Controls whether right-click opens the quick menu. If a modifier is selected, hold that modifier and right-click. If the modifier is None, right-click opens the quick menu directly.');
-
-    local width, widthChanged = DrawPlacementSingle('Menu width', menu.width, 'QuickMenuWidth', 160, 520, 1, 154, 124, 58);
-    if (widthChanged == true) then
-        menu.width = width;
-        state.Save();
+    local function DrawJobChangePresetsPanel()
+        LibraPlatesSettingsDrawBoxedPanel('', function()
+            DrawYellowHeader('Job change presets');
+            uiTooltip.Info('Quick change job favorites at Mog Moogle, Nomad Moogles or in town (ACE).');
+            imgui.Spacing();
+            imgui.Spacing();
+            DrawQuickMenuPresetRows(menu);
+        end);
     end
 
-    DrawQuickMenuIconRow(menu);
+    LibraPlatesSettingsDrawBoxedPanel('Menu settings', function()
+        DrawInlineComboRow('Modifier', T{ 'None', 'Shift', 'Ctrl', 'Alt' }, menu.modifier or 'None', function(value)
+            menu.modifier = value;
+            state.Save();
+        end, 'QuickMenuModifier', settingsLabelColor, 92, nil, 260);
+        uiTooltip.Info('Controls whether right-click opens the quick menu. If a modifier is selected, hold that modifier and right-click. If the modifier is None, right-click opens the quick menu directly.');
 
-    local borderColor, borderChanged, borderSize, borderSizeChanged = DrawColorAndPlacementRow('Border color', menu.borderColor, 'QuickMenuBorder', 'Border size', menu.borderSize, 'QuickMenuBorderSize', 0, 12, 1);
-    if (borderChanged == true or borderSizeChanged == true) then
-        menu.borderColor = borderColor;
-        menu.borderSize = borderSize;
-        state.Save();
-    end
+        local width, widthChanged = DrawPlacementSingle('Menu width', menu.width, 'QuickMenuWidth', 160, 520, 1, 130, 124, 58);
+        if (widthChanged == true) then
+            menu.width = width;
+            state.Save();
+        end
 
-    imgui.Separator();
-    DrawYellowHeader('Color settings');
-    DrawQuickMenuColorRow(menu);
+        DrawQuickMenuIconRow(menu);
+
+        local borderSize = menu.borderSize;
+        local borderColor = menu.borderColor;
+        local borderSizeChanged = false;
+        local borderChanged = false;
+
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            if (imgui.BeginTable('##QuickMenuBorderRow', 4, settingsTableFlags)) then
+                imgui.TableSetupColumn('##border_size_label', 0, 130);
+                imgui.TableSetupColumn('##border_size_control', 0, 124);
+                imgui.TableSetupColumn('##border_color_label', 0, 122);
+                imgui.TableSetupColumn('##border_color_control', 0, 60);
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+                imgui.TextColored(settingsLabelColor, 'Border size');
+                imgui.TableNextColumn();
+                borderSize, borderSizeChanged = DrawPlacementControl(menu.borderSize, 0, 12, 1, 'QuickMenuBorderSize', 58);
+                imgui.TableNextColumn();
+                imgui.TextColored(settingsLabelColor, 'Border color');
+                imgui.TableNextColumn();
+                borderColor, borderChanged = DrawInlineColorControl(menu.borderColor, 'QuickMenuBorder');
+                imgui.EndTable();
+            end
+        else
+            borderSize, borderSizeChanged, borderColor, borderChanged = DrawPlacementAndColorRow('Border size', menu.borderSize, 'QuickMenuBorderSize', 0, 12, 1, 'Border color', menu.borderColor, 'QuickMenuBorder');
+        end
+
+        if (borderChanged == true or borderSizeChanged == true) then
+            menu.borderColor = borderColor;
+            menu.borderSize = borderSize;
+            state.Save();
+        end
+    end, true);
+
+    LibraPlatesSettingsDrawBoxedPanel('Colors', function()
+        DrawQuickMenuColorRow(menu);
+    end);
 
     if (scopedEntity == nil or scopedEntity == 'PC') then
-        imgui.Separator();
-        DrawYellowHeader('PC actions');
+        LibraPlatesSettingsDrawBoxedPanel('PC actions', function()
 
     DrawCheckbox('Examine', menu.pc.examine == true, function(value)
         menu.pc.examine = value == true;
@@ -6951,11 +7274,14 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
             menu.pc.blacklist = value == true;
             state.Save();
         end);
+        end);
     end
 
     if (scopedEntity == nil or scopedEntity == 'Self') then
-        imgui.Separator();
-        DrawYellowHeader('Self actions');
+        LibraPlatesSettingsDrawBoxedPanel('', function()
+            DrawYellowHeader('Self actions');
+            uiTooltip.Info('Mount actions only appear in your quick menu when you are outside town.');
+            imgui.Spacing();
 
     DrawCheckbox('Invite responses', menu.self.acceptInvite == true or menu.self.declineInvite == true, function(value)
         menu.self.acceptInvite = value == true;
@@ -6990,19 +7316,42 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
 
     if (menu.self.mount == true) then
         local ownedMountChoices = require('core.mounts').GetOwnedChoices();
+        local currentMount = tostring(menu.self.selectedMount or ownedMountChoices[1] or '');
 
-        DrawInlineComboRow('Mount', ownedMountChoices, menu.self.selectedMount or '', function(value)
-            menu.self.selectedMount = value;
-            state.Save();
-        end, 'QuickMenuSelfMount');
+        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+        if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(180); end
 
-        if (#ownedMountChoices == 0) then
-            uiTooltip.Info('No owned mounts found yet. Use /mount "Raptor" once, or any mount you own, and LibraPlates will add it after you mount successfully.');
+            if (imgui.BeginCombo('##QuickMenuSelfMount', currentMount) == true) then
+                for _, mountName in ipairs(ownedMountChoices) do
+                    local isSelected = tostring(mountName) == currentMount;
+
+                    if (imgui.Selectable(tostring(mountName), isSelected) == true) then
+                        menu.self.selectedMount = mountName;
+                        state.Save();
+                    end
+
+                    if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                        imgui.SetItemDefaultFocus();
+                    end
+                end
+
+                imgui.EndCombo();
+            end
+
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+        else
+            imgui.TextColored(settingsLabelColor, '[' .. currentMount .. ' v]');
         end
-    end
 
-    imgui.Separator();
-    DrawYellowHeader('Trust filters');
+        uiTooltip.Info('A mount only appears in this list after you use it at least once in game.');
+    end
+        end);
+
+    LibraPlatesSettingsDrawBoxedPanel('', function()
+        DrawYellowHeader('Trust actions');
+        uiTooltip.Info('Trust actions only appear in your quick menu when you are outside town.');
+        imgui.Spacing();
 
     DrawCheckbox('Ignore other Trusts', menu.self.ignoreTrust == true, function(value)
         menu.self.ignoreTrust = value == true;
@@ -7018,12 +7367,16 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
             menu.self.emoteTrust = value == true;
             state.Save();
         end);
+    end);
+
+        if (scopedEntity == 'Self') then
+            DrawJobChangePresetsPanel();
+        end
 
     end
 
     if (scopedEntity == nil or scopedEntity == 'Trust') then
-        imgui.Separator();
-        DrawYellowHeader('Trust actions');
+        LibraPlatesSettingsDrawBoxedPanel('Trust actions', function()
 
     DrawCheckbox('Dismiss This Trust', menu.trust.dismiss == true, function(value)
         menu.trust.dismiss = value == true;
@@ -7041,11 +7394,11 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
                 state.Save();
             end);
         end
+        end);
     end
 
     if (scopedEntity == nil or scopedEntity == 'NPC' or scopedEntity == 'Object') then
-        imgui.Separator();
-        DrawYellowHeader('NPC actions');
+        LibraPlatesSettingsDrawBoxedPanel('NPC actions', function()
 
     DrawCheckbox('Show type', menu.npc.showType == true, function(value)
         menu.npc.showType = value == true;
@@ -7061,14 +7414,33 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
             menu.npc.openLink = value == true;
             state.Save();
         end);
+        end);
 
-        imgui.Separator();
-        DrawYellowHeader('Job change presets');
-        imgui.TextWrapped('Quick change favorites for Mog House and Nomad Moogles.');
-        imgui.Spacing();
-        DrawQuickMenuPresetRows(menu);
+        DrawJobChangePresetsPanel();
 
     end
+
+    if (imgui.Spacing ~= nil) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        DrawSectionDivider();
+    end
+
+    if (DrawResetActionButton('Reset Quick Menu position', 'quick_menu_position') == true) then
+        menu.anchorTo = globalDefaults.quickMenu.anchorTo;
+        menu.anchorPoint = globalDefaults.quickMenu.anchorPoint;
+        menu.offsetX = globalDefaults.quickMenu.offsetX;
+        menu.offsetY = globalDefaults.quickMenu.offsetY;
+        state.Save();
+    end
+
+    if (DrawResetActionButton('Reset Quick Menu settings', 'quick_menu_settings') == true) then
+        settings.quickMenu = LibraPlatesSettingsCopyTable(globalDefaults.quickMenu);
+        state.Save();
+    end
+
+    DrawResetFooterBottomPadding();
 end
 
 local function LibraPlatesSettingsToStorageStateName(value)
@@ -7508,74 +7880,12 @@ local function DrawGeneralMouseSection()
 end
 
 local function DrawGeneralPerformanceSection(settings)
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Performance' });
     perfMeter.SetCompactOverlayEnabled(settings.performanceMonitorCompact ~= false);
-    DrawSettingsHeader('Performance monitor');
-    imgui.TextWrapped('Use the monitor while testing changes, then turn it off for normal play.');
-    imgui.Spacing();
 
-    local monitorEnabled = perfMeter.GetOverlayEnabled() == true;
-    if (imgui.Button((monitorEnabled and 'Hide performance monitor' or 'Show performance monitor') .. '##PerformanceMonitorToggle')) then
-        perfMeter.SetOverlayEnabled(monitorEnabled ~= true);
-    end
-
-    local selectedMonitorMode = (settings.performanceMonitorCompact ~= false and perfMeter.GetDetailEnabled() ~= true) and 'Compact' or 'Detailed';
-    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Monitor mode');
-    if (imgui.RadioButton ~= nil) then
-        if (imgui.RadioButton('Compact##PerformanceMonitorCompact', selectedMonitorMode == 'Compact') == true) then
-            settings.performanceMonitorCompact = true;
-            perfMeter.SetCompactOverlayEnabled(true);
-            perfMeter.SetDetailEnabled(false);
-        end
-        imgui.SameLine();
-        if (imgui.RadioButton('Detailed##PerformanceMonitorDetailed', selectedMonitorMode == 'Detailed') == true) then
-            settings.performanceMonitorCompact = false;
-            perfMeter.SetCompactOverlayEnabled(false);
-            perfMeter.SetDetailEnabled(true);
-        end
-    else
-        if (imgui.Button((selectedMonitorMode == 'Compact' and '[Compact]' or 'Compact') .. '##PerformanceMonitorCompact')) then
-            settings.performanceMonitorCompact = true;
-            perfMeter.SetCompactOverlayEnabled(true);
-            perfMeter.SetDetailEnabled(false);
-        end
-        imgui.SameLine();
-        if (imgui.Button((selectedMonitorMode == 'Detailed' and '[Detailed]' or 'Detailed') .. '##PerformanceMonitorDetailed')) then
-            settings.performanceMonitorCompact = false;
-            perfMeter.SetCompactOverlayEnabled(false);
-            perfMeter.SetDetailEnabled(true);
-        end
-    end
-
-    DrawSettingsHeader('Game FPS');
     local function CheckGameFpsMode()
         detectedGameFpsMode = gameFps.DetectCurrentMode();
         log.Info('Current game FPS mode: ' .. tostring(detectedGameFpsMode or 'Unknown') .. '.');
     end
-
-    DrawInlineComboRow('Mode', gameFps.GetModeChoices(), settings.gameFpsMode or 'Keep current', function(value)
-        settings.gameFpsMode = gameFps.NormalizeMode(value);
-        local ok, message = gameFps.ApplyMode(settings.gameFpsMode);
-        if (ok == true) then
-            if (settings.gameFpsMode == 'Keep current') then
-                log.Info('Game FPS setting changed to Keep current.');
-            else
-                detectedGameFpsMode = settings.gameFpsMode;
-                log.Info('Game FPS set to ' .. tostring(settings.gameFpsMode) .. '.');
-            end
-        else
-            log.Warn('Game FPS change failed: ' .. tostring(message or 'unknown error'));
-        end
-    end, 'GameFpsMode');
-    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Current mode: ' .. tostring(detectedGameFpsMode or 'Unknown'));
-    imgui.SameLine();
-    if (imgui.Button('Check##GameFpsDetect')) then
-        CheckGameFpsMode();
-    end
-    imgui.TextWrapped('FFXI\'s native frame rate is 30 FPS. FPS2 uses the game\'s original 30 FPS timing and is the recommended setting for normal play. FPS1 runs at 60 FPS, which increases rendering work and can make some animation or timing behavior less consistent with the original client.');
-
-    DrawSettingsHeader('Performance preset');
-    imgui.TextWrapped('Pick a preset, or choose Custom to tune each performance setting.');
 
     local function ApplyPerformancePreset(presetName)
         local presets = {
@@ -7583,6 +7893,12 @@ local function DrawGeneralPerformanceSection(settings)
                 performanceMode = 'Performance',
                 maxWorldPlateCount = 20,
                 worldPlateUpdateRate = 'Low',
+                worldCriticalRefreshRate = 2.0,
+                worldMediumRefreshRate = 1.0,
+                worldStaticRefreshRate = 0.5,
+                tacticalCriticalRefreshRate = 5.0,
+                tacticalMediumRefreshRate = 3.0,
+                tacticalStaticRefreshRate = 1.0,
                 hideDistantWorldPlates = true,
                 worldPlateDistanceLimit = 25.0,
                 disableExpensiveWorldWidgets = true,
@@ -7592,6 +7908,12 @@ local function DrawGeneralPerformanceSection(settings)
                 performanceMode = 'Balanced',
                 maxWorldPlateCount = 40,
                 worldPlateUpdateRate = 'Balanced',
+                worldCriticalRefreshRate = 3.0,
+                worldMediumRefreshRate = 2.0,
+                worldStaticRefreshRate = 1.0,
+                tacticalCriticalRefreshRate = 5.0,
+                tacticalMediumRefreshRate = 5.0,
+                tacticalStaticRefreshRate = 1.0,
                 hideDistantWorldPlates = true,
                 worldPlateDistanceLimit = 40.0,
                 disableExpensiveWorldWidgets = false,
@@ -7601,6 +7923,12 @@ local function DrawGeneralPerformanceSection(settings)
                 performanceMode = 'Quality',
                 maxWorldPlateCount = 80,
                 worldPlateUpdateRate = 'Full',
+                worldCriticalRefreshRate = 5.0,
+                worldMediumRefreshRate = 3.0,
+                worldStaticRefreshRate = 1.0,
+                tacticalCriticalRefreshRate = 8.0,
+                tacticalMediumRefreshRate = 6.0,
+                tacticalStaticRefreshRate = 1.0,
                 hideDistantWorldPlates = false,
                 worldPlateDistanceLimit = 49.9,
                 disableExpensiveWorldWidgets = false,
@@ -7610,6 +7938,12 @@ local function DrawGeneralPerformanceSection(settings)
                 performanceMode = 'Quality',
                 maxWorldPlateCount = 0,
                 worldPlateUpdateRate = 'Full',
+                worldCriticalRefreshRate = 10.0,
+                worldMediumRefreshRate = 8.0,
+                worldStaticRefreshRate = 2.0,
+                tacticalCriticalRefreshRate = 15.0,
+                tacticalMediumRefreshRate = 10.0,
+                tacticalStaticRefreshRate = 2.0,
                 hideDistantWorldPlates = false,
                 worldPlateDistanceLimit = 64.4,
                 disableExpensiveWorldWidgets = false,
@@ -7626,28 +7960,17 @@ local function DrawGeneralPerformanceSection(settings)
         settings.performanceMode = adaptivePerformance.SetSelectedMode(preset.performanceMode);
         settings.maxWorldPlateCount = preset.maxWorldPlateCount;
         settings.worldPlateUpdateRate = preset.worldPlateUpdateRate;
+        settings.worldCriticalRefreshRate = preset.worldCriticalRefreshRate;
+        settings.worldMediumRefreshRate = preset.worldMediumRefreshRate;
+        settings.worldStaticRefreshRate = preset.worldStaticRefreshRate;
+        settings.tacticalCriticalRefreshRate = preset.tacticalCriticalRefreshRate;
+        settings.tacticalMediumRefreshRate = preset.tacticalMediumRefreshRate;
+        settings.tacticalStaticRefreshRate = preset.tacticalStaticRefreshRate;
         settings.hideDistantWorldPlates = preset.hideDistantWorldPlates;
         settings.worldPlateDistanceLimit = preset.worldPlateDistanceLimit;
         settings.disableExpensiveWorldWidgets = preset.disableExpensiveWorldWidgets;
         settings.textureCacheLimit = canvasTexture.SetCacheLimit(preset.textureCacheLimit);
-    end
-
-    local selectedPreset = settings.performancePreset or 'Custom';
-    for _, presetName in ipairs({ 'Performance', 'Mid', 'High', 'Ultra', 'Custom' }) do
-        local label = (selectedPreset == presetName and '[' .. presetName .. ']' or presetName) .. '##PerformancePreset' .. presetName;
-        if (imgui.Button(label)) then
-            ApplyPerformancePreset(presetName);
-            selectedPreset = presetName;
-        end
-
-        if (presetName ~= 'Custom') then
-            imgui.SameLine();
-        end
-    end
-
-    if (selectedPreset ~= 'Custom') then
-        imgui.TextWrapped('Preset controls world plate count, distance limit, update rate, and cache size. Choose Custom to edit them.');
-        return;
+        state.Save();
     end
 
     local performanceLabelWidth = 270;
@@ -7730,12 +8053,12 @@ local function DrawGeneralPerformanceSection(settings)
     end
 
     local function DrawPerformanceRate(label, key, id, tooltip)
-        local value = math.max(0.2, math.min(10.0, tonumber(settings[key]) or 1.0));
-        local result, changed = DrawPerformanceNumber(label, value, id, 0.2, 10.0, 0.1, tooltip);
+        local value = math.max(0.2, math.min(15.0, tonumber(settings[key]) or 1.0));
+        local result, changed = DrawPerformanceNumber(label, value, id, 0.2, 15.0, 0.1, tooltip);
 
         if (changed == true) then
             settings.performancePreset = 'Custom';
-            settings[key] = math.max(0.2, math.min(10.0, tonumber(result) or 1.0));
+            settings[key] = math.max(0.2, math.min(15.0, tonumber(result) or 1.0));
         end
     end
 
@@ -7752,62 +8075,155 @@ local function DrawGeneralPerformanceSection(settings)
         end, tooltip);
     end
 
-    imgui.Spacing();
-    DrawSettingsHeader('Custom settings');
-    DrawPerformanceCombo('Adaptive mode', T{ 'Auto', 'Quality', 'Balanced', 'Performance' }, settings.performanceMode or 'Auto', function(value)
-        settings.performancePreset = 'Custom';
-        settings.performanceMode = adaptivePerformance.SetSelectedMode(value);
-    end, 'PerformanceMode', 'Auto adjusts background work from the current framerate. Quality favors visuals. Performance favors lighter world plates.');
+    LibraPlatesSettingsDrawBoxedBreadcrumb(T{ 'Settings', 'Performance' });
 
-    DrawSettingsHeader('World plates');
-    local maxCount, maxCountChanged = DrawPerformanceNumber('Max world plate count', settings.maxWorldPlateCount or 0, 'MaxWorldPlateCount', 0, 300, 1, '0 means unlimited. When limited, Self, target, subtarget, and tactical plates are kept first.');
-    if (maxCountChanged == true) then
-        settings.performancePreset = 'Custom';
-        settings.maxWorldPlateCount = math.max(0, math.min(300, math.floor((tonumber(maxCount) or 0) + 0.5)));
-    end
+    LibraPlatesSettingsDrawBoxedPage('PerformancePageContent', function()
+        LibraPlatesSettingsDrawBoxedPanel('Performance monitor', function()
+            imgui.TextWrapped('Use the monitor while testing changes, then turn it off for normal play.');
+            imgui.Spacing();
 
-    DrawPerformanceCombo('Update rate', T{ 'Full', 'Balanced', 'Low' }, settings.worldPlateUpdateRate or 'Full', function(value)
-        settings.performancePreset = 'Custom';
-        settings.worldPlateUpdateRate = value;
-    end, 'WorldPlateUpdateRate', 'Throttles idle/non-tactical world plate refresh. Target, subtarget, party/tactical, engaged, casting, hovered, and important plates stay smooth.');
+            local monitorEnabled = perfMeter.GetOverlayEnabled() == true;
+            if (imgui.Button((monitorEnabled and 'Hide performance monitor' or 'Show performance monitor') .. '##PerformanceMonitorToggle')) then
+                perfMeter.SetOverlayEnabled(monitorEnabled ~= true);
+            end
 
-    DrawPerformanceRate('PC world refresh/sec', 'pcWorldRefreshRate', 'PcWorldRefreshRate', 'How often outside-party PC world plates refresh. Party, alliance, target, and subtarget plates stay tactical.');
-    DrawPerformanceRate('Enemy world refresh/sec', 'enemyWorldRefreshRate', 'EnemyWorldRefreshRate', 'How often non-protected enemy world plates refresh. Target, subtarget, engaged, casting, and important enemy plates stay tactical.');
-    DrawPerformanceRate('NPC world refresh/sec', 'npcWorldRefreshRate', 'NpcWorldRefreshRate', 'How often NPC world plates refresh. Target/subtarget tactical NPC plates stay responsive.');
-    DrawPerformanceRate('Object world refresh/sec', 'objectWorldRefreshRate', 'ObjectWorldRefreshRate', 'How often object world plates refresh.');
+            local selectedMonitorMode = (settings.performanceMonitorCompact ~= false and perfMeter.GetDetailEnabled() ~= true) and 'Compact' or 'Detailed';
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Monitor mode');
+            if (imgui.RadioButton ~= nil) then
+                if (imgui.RadioButton('Compact##PerformanceMonitorCompact', selectedMonitorMode == 'Compact') == true) then
+                    settings.performanceMonitorCompact = true;
+                    perfMeter.SetCompactOverlayEnabled(true);
+                    perfMeter.SetDetailEnabled(false);
+                end
+                imgui.SameLine();
+                if (imgui.RadioButton('Detailed##PerformanceMonitorDetailed', selectedMonitorMode == 'Detailed') == true) then
+                    settings.performanceMonitorCompact = false;
+                    perfMeter.SetCompactOverlayEnabled(false);
+                    perfMeter.SetDetailEnabled(true);
+                end
+            else
+                if (imgui.Button((selectedMonitorMode == 'Compact' and '[Compact]' or 'Compact') .. '##PerformanceMonitorCompact')) then
+                    settings.performanceMonitorCompact = true;
+                    perfMeter.SetCompactOverlayEnabled(true);
+                    perfMeter.SetDetailEnabled(false);
+                end
+                imgui.SameLine();
+                if (imgui.Button((selectedMonitorMode == 'Detailed' and '[Detailed]' or 'Detailed') .. '##PerformanceMonitorDetailed')) then
+                    settings.performanceMonitorCompact = false;
+                    perfMeter.SetCompactOverlayEnabled(false);
+                    perfMeter.SetDetailEnabled(true);
+                end
+            end
+        end, true);
 
-    DrawPerformanceCheckbox('Hide distant world plates', settings.hideDistantWorldPlates == true, function(value)
-        settings.performancePreset = 'Custom';
-        settings.hideDistantWorldPlates = value == true;
-    end, 'Hides world plates past the distance limit. Target, subtarget, and tactical plates are kept.', 'HideDistantWorldPlates');
+        LibraPlatesSettingsDrawBoxedPanel('Game FPS', function()
+            DrawInlineComboRow('Mode', gameFps.GetModeChoices(), settings.gameFpsMode or 'Keep current', function(value)
+                settings.gameFpsMode = gameFps.NormalizeMode(value);
+                local ok, message = gameFps.ApplyMode(settings.gameFpsMode);
+                if (ok == true) then
+                    if (settings.gameFpsMode == 'Keep current') then
+                        log.Info('Game FPS setting changed to Keep current.');
+                    else
+                        detectedGameFpsMode = settings.gameFpsMode;
+                        log.Info('Game FPS set to ' .. tostring(settings.gameFpsMode) .. '.');
+                    end
+                else
+                    log.Warn('Game FPS change failed: ' .. tostring(message or 'unknown error'));
+                end
+            end, 'GameFpsMode');
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Current mode: ' .. tostring(detectedGameFpsMode or 'Unknown'));
+            imgui.SameLine();
+            if (imgui.Button('Check##GameFpsDetect')) then
+                CheckGameFpsMode();
+            end
+            imgui.TextWrapped('FFXI\'s native frame rate is 30 FPS. FPS2 uses the game\'s original 30 FPS timing and is the recommended setting for normal play. FPS1 runs at 60 FPS, which increases rendering work and can make some animation or timing behavior less consistent with the original client.');
+        end);
 
-    if (settings.hideDistantWorldPlates == true) then
-        local distanceLimit, distanceLimitChanged = DrawPerformanceNumber('Distance limit', settings.worldPlateDistanceLimit or 49.9, 'WorldPlateDistanceLimit', 5, 64.4, 1, 'World plates farther away than this distance are hidden when Hide distant world plates is enabled. Target, subtarget, and tactical plates are kept.');
-        if (distanceLimitChanged == true) then
-            settings.performancePreset = 'Custom';
-            settings.worldPlateDistanceLimit = math.max(5.0, math.min(64.4, tonumber(distanceLimit) or 49.9));
+        local selectedPreset = settings.performancePreset or 'Custom';
+        LibraPlatesSettingsDrawBoxedPanel('Performance preset', function()
+            imgui.TextWrapped('Pick a preset, or choose Custom to tune each performance setting.');
+            imgui.Spacing();
+
+            for _, presetName in ipairs({ 'Performance', 'Mid', 'High', 'Ultra', 'Custom' }) do
+                local label = (selectedPreset == presetName and '[' .. presetName .. ']' or presetName) .. '##PerformancePreset' .. presetName;
+                if (imgui.Button(label)) then
+                    ApplyPerformancePreset(presetName);
+                    selectedPreset = presetName;
+                end
+
+                if (presetName ~= 'Custom') then
+                    imgui.SameLine();
+                end
+            end
+
+            if (selectedPreset ~= 'Custom') then
+                imgui.TextWrapped('Preset controls world plate count, distance limit, update rate, and cache size. Choose Custom to edit them.');
+            end
+        end);
+
+        if (selectedPreset == 'Custom') then
+            LibraPlatesSettingsDrawBoxedPanel('Custom settings', function()
+                DrawPerformanceCombo('Adaptive mode', T{ 'Auto', 'Quality', 'Balanced', 'Performance' }, settings.performanceMode or 'Auto', function(value)
+                    settings.performancePreset = 'Custom';
+                    settings.performanceMode = adaptivePerformance.SetSelectedMode(value);
+                end, 'PerformanceMode', 'Auto adjusts background work from the current framerate. Quality favors visuals. Performance favors lighter world plates.');
+            end);
+
+            LibraPlatesSettingsDrawBoxedPanel('World plates', function()
+                local maxCount, maxCountChanged = DrawPerformanceNumber('Max world plate count', settings.maxWorldPlateCount or 0, 'MaxWorldPlateCount', 0, 300, 1, '0 means unlimited. When limited, Self, target, subtarget, and tactical plates are kept first.');
+                if (maxCountChanged == true) then
+                    settings.performancePreset = 'Custom';
+                    settings.maxWorldPlateCount = math.max(0, math.min(300, math.floor((tonumber(maxCount) or 0) + 0.5)));
+                end
+
+                DrawPerformanceCombo('Update rate', T{ 'Full', 'Balanced', 'Low' }, settings.worldPlateUpdateRate or 'Full', function(value)
+                    settings.performancePreset = 'Custom';
+                    settings.worldPlateUpdateRate = value;
+                end, 'WorldPlateUpdateRate', 'Throttles idle/non-tactical world plate refresh. Target, subtarget, party/tactical, engaged, casting, hovered, and important plates stay smooth.');
+
+                DrawPerformanceRate('World critical/sec', 'worldCriticalRefreshRate', 'WorldCriticalRefreshRate', 'How often World plate critical data refreshes. Only applies to critical widgets that actually exist on that World plate, such as HP when enabled.');
+                DrawPerformanceRate('World medium/sec', 'worldMediumRefreshRate', 'WorldMediumRefreshRate', 'How often World plate medium data refreshes, such as distance and mouse hit zones.');
+                DrawPerformanceRate('World static/sec', 'worldStaticRefreshRate', 'WorldStaticRefreshRate', 'How often World plate static identity refreshes, such as names, backgrounds, job/level, icons, and static cache rebuilds.');
+                DrawPerformanceRate('Tactical critical/sec', 'tacticalCriticalRefreshRate', 'TacticalCriticalRefreshRate', 'How often Tactical plate critical data refreshes, such as HP, MP, TP, buffs, debuffs, enmity warnings, and cast/action info when that plate supports them.');
+                DrawPerformanceRate('Tactical medium/sec', 'tacticalMediumRefreshRate', 'TacticalMediumRefreshRate', 'How often Tactical plate medium data refreshes, such as distance, range/opacity helpers, AOE name highlight, and mouse hit zones where supported.');
+                DrawPerformanceRate('Tactical static/sec', 'tacticalStaticRefreshRate', 'TacticalStaticRefreshRate', 'How often Tactical plate static identity refreshes, such as names, backgrounds, job/level, icons, and static cache rebuilds.');
+
+                DrawPerformanceCheckbox('Hide distant world plates', settings.hideDistantWorldPlates == true, function(value)
+                    settings.performancePreset = 'Custom';
+                    settings.hideDistantWorldPlates = value == true;
+                end, 'Hides world plates past the distance limit. Target, subtarget, and tactical plates are kept.', 'HideDistantWorldPlates');
+
+                if (settings.hideDistantWorldPlates == true) then
+                    local distanceLimit, distanceLimitChanged = DrawPerformanceNumber('Distance limit', settings.worldPlateDistanceLimit or 49.9, 'WorldPlateDistanceLimit', 5, 64.4, 1, 'World plates farther away than this distance are hidden when Hide distant world plates is enabled. Target, subtarget, and tactical plates are kept.');
+                    if (distanceLimitChanged == true) then
+                        settings.performancePreset = 'Custom';
+                        settings.worldPlateDistanceLimit = math.max(5.0, math.min(64.4, tonumber(distanceLimit) or 49.9));
+                    end
+                end
+
+                DrawPerformanceCheckbox('Disable expensive widgets', settings.disableExpensiveWorldWidgets == true, function(value)
+                    settings.performancePreset = 'Custom';
+                    settings.disableExpensiveWorldWidgets = value == true;
+                end, 'Drops expensive idle world-only extras such as status/social icons and detail text while keeping target, subtarget, party/tactical, engaged, casting, and hovered plates detailed.', 'DisableExpensiveWorldWidgets');
+            end);
+
+            LibraPlatesSettingsDrawBoxedPanel('Texture cache', function()
+                local cacheLimit, cacheLimitChanged = DrawPerformanceNumber('Texture cache limit', settings.textureCacheLimit or 128, 'TextureCacheLimit', 32, 256, 1, 'Maximum number of generated plate/icon textures LibraPlates keeps cached before older textures can be evicted.');
+                if (cacheLimitChanged == true) then
+                    settings.performancePreset = 'Custom';
+                    settings.textureCacheLimit = canvasTexture.SetCacheLimit(cacheLimit);
+                end
+
+                local cacheStats = canvasTexture.GetCacheStats();
+                imgui.TextColored(
+                    { 0.92, 0.92, 0.90, 1.0 },
+                    'Cached textures: ' .. tostring(cacheStats.count) .. '/' .. tostring(cacheStats.max) ..
+                        '  Evictions/min: ' .. string.format('%.1f', tonumber(cacheStats.evictionsPerMinute) or 0)
+                );
+                DrawPerformanceInfo('Shows how many cached plate textures are in use and whether old textures are being evicted from the cache.');
+            end);
         end
-    end
-
-    DrawPerformanceCheckbox('Disable expensive widgets', settings.disableExpensiveWorldWidgets == true, function(value)
-        settings.performancePreset = 'Custom';
-        settings.disableExpensiveWorldWidgets = value == true;
-    end, 'Drops expensive idle world-only extras such as status/social icons and detail text while keeping target, subtarget, party/tactical, engaged, casting, and hovered plates detailed.', 'DisableExpensiveWorldWidgets');
-
-    DrawSettingsHeader('Texture cache');
-    local cacheLimit, cacheLimitChanged = DrawPerformanceNumber('Texture cache limit', settings.textureCacheLimit or 128, 'TextureCacheLimit', 32, 256, 1, 'Maximum number of generated plate/icon textures LibraPlates keeps cached before older textures can be evicted.');
-    if (cacheLimitChanged == true) then
-        settings.performancePreset = 'Custom';
-        settings.textureCacheLimit = canvasTexture.SetCacheLimit(cacheLimit);
-    end
-
-    local cacheStats = canvasTexture.GetCacheStats();
-    imgui.TextColored(
-        { 0.92, 0.92, 0.90, 1.0 },
-        'Cached textures: ' .. tostring(cacheStats.count) .. '/' .. tostring(cacheStats.max) ..
-            '  Evictions/min: ' .. string.format('%.1f', tonumber(cacheStats.evictionsPerMinute) or 0)
-    );
-    DrawPerformanceInfo('Shows how many cached plate textures are in use and whether old textures are being evicted from the cache.');
+    end);
 end
 
 function LibraPlatesSettingsFormatBlacklistTime(value)
@@ -7849,129 +8265,135 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
     local blacklistAddReasonBuffer = _G.LibraPlatesBlacklistAddReasonBuffer;
     local blacklistSettings = playerBlacklist.GetModelReplaceSettings();
 
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Blacklist' });
-    DrawSettingsHeader('Visual blacklist');
+    LibraPlatesSettingsDrawBoxedBreadcrumb(T{ 'Settings', 'Blacklist' });
 
-    DrawCheckbox('Change blacklisted player names', blacklistSettings.modelReplaceEnabled == true, function(value)
-        blacklistSettings.modelReplaceEnabled = value == true;
-        state.Save();
-    end);
-    uiTooltip.Info('Safe mode: changes the displayed LibraPlates name only. Body model replacement is disabled until a safe costume id is found.', true);
+    LibraPlatesSettingsDrawBoxedPage('BlacklistPageContent', function()
+        LibraPlatesSettingsDrawBoxedPanel('Visual blacklist', function()
+            DrawCheckbox('Change blacklisted player names', blacklistSettings.modelReplaceEnabled == true, function(value)
+                blacklistSettings.modelReplaceEnabled = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('Safe mode: changes the displayed LibraPlates name only. Body model replacement is disabled until a safe costume id is found.', true);
+        end, true);
 
-    imgui.Separator();
-    imgui.TextColored(settingsLabelColor, 'Manual add');
+        LibraPlatesSettingsDrawBoxedPanel('Manual add', function()
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(150); end
+            if (imgui.InputText ~= nil) then
+                imgui.InputText('Name##BlacklistAddName', blacklistAddNameBuffer, 32);
+            end
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
 
-    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(150); end
-    if (imgui.InputText ~= nil) then
-        imgui.InputText('Name##BlacklistAddName', blacklistAddNameBuffer, 32);
-    end
-    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+            imgui.SameLine();
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(260); end
+            if (imgui.InputText ~= nil) then
+                imgui.InputText('Reason##BlacklistAddReason', blacklistAddReasonBuffer, 128);
+            end
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
 
-    imgui.SameLine();
-    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(260); end
-    if (imgui.InputText ~= nil) then
-        imgui.InputText('Reason##BlacklistAddReason', blacklistAddReasonBuffer, 128);
-    end
-    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+            imgui.SameLine();
+            if (imgui.Button ~= nil and imgui.Button('Add##BlacklistManualAdd') == true) then
+                local name = tostring(blacklistAddNameBuffer[1] or ''):gsub('^%s+', ''):gsub('%s+$', '');
+                local reason = tostring(blacklistAddReasonBuffer[1] or '');
+                local ok, err = playerBlacklist.AddName(name, reason, 'settings');
 
-    imgui.SameLine();
-    if (imgui.Button ~= nil and imgui.Button('Add##BlacklistManualAdd') == true) then
-        local name = tostring(blacklistAddNameBuffer[1] or ''):gsub('^%s+', ''):gsub('%s+$', '');
-        local reason = tostring(blacklistAddReasonBuffer[1] or '');
-        local ok, err = playerBlacklist.AddName(name, reason, 'settings');
-
-        if (ok == true) then
-            LibraPlatesSettingsQueueNativeBlacklistCommand('add', name);
-            blacklistAddNameBuffer[1] = '';
-            blacklistAddReasonBuffer[1] = '';
-            log.Info('Added ' .. name .. ' to LibraPlates blacklist.');
-        else
-            log.Warn(tostring(err or 'Blacklist add failed.'));
-        end
-    end
-
-    uiTooltip.Info('Name-only entries become ID-backed when LibraPlates sees that player nearby.');
-    imgui.Separator();
-
-    local rows = playerBlacklist.List();
-    imgui.TextColored(settingsHeaderColor, 'Entries: ' .. tostring(#rows));
-
-    if (#rows == 0) then
-        imgui.TextColored({ 0.72, 0.72, 0.70, 1.0 }, 'No LibraPlates blacklist entries yet.');
-        return;
-    end
-
-    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        local flags = settingsTableFlags + (_G.ImGuiTableFlags_RowBg or 0);
-        if (imgui.BeginTable('##visual_blacklist_entries', 7, flags)) then
-            imgui.TableSetupColumn('Name', 0, 116);
-            imgui.TableSetupColumn('ID', 0, 74);
-            imgui.TableSetupColumn('Reason', 0, 250);
-            imgui.TableSetupColumn('Added', 0, 118);
-            imgui.TableSetupColumn('Seen', 0, 118);
-            imgui.TableSetupColumn('Source', 0, 92);
-            imgui.TableSetupColumn('', 0, 72);
-            if (imgui.TableHeadersRow ~= nil) then imgui.TableHeadersRow(); end
-
-            for index, row in ipairs(rows) do
-                local rowId = tostring(row.serverId or row.name or index);
-                _G.LibraPlatesBlacklistReasonBuffers = _G.LibraPlatesBlacklistReasonBuffers or {};
-                if (_G.LibraPlatesBlacklistReasonBuffers[rowId] == nil) then
-                    _G.LibraPlatesBlacklistReasonBuffers[rowId] = { tostring(row.reason or '') };
+                if (ok == true) then
+                    LibraPlatesSettingsQueueNativeBlacklistCommand('add', name);
+                    blacklistAddNameBuffer[1] = '';
+                    blacklistAddReasonBuffer[1] = '';
+                    log.Info('Added ' .. name .. ' to LibraPlates blacklist.');
+                else
+                    log.Warn(tostring(err or 'Blacklist add failed.'));
                 end
-                local reasonRef = _G.LibraPlatesBlacklistReasonBuffers[rowId];
+            end
 
-                imgui.TableNextRow();
-                imgui.TableNextColumn();
-                imgui.TextColored(settingsLabelColor, tostring(row.name or ''));
-                imgui.TableNextColumn();
-                imgui.TextColored({ 0.72, 0.86, 1.0, 1.0 }, tostring(row.serverId or 'pending'));
-                imgui.TableNextColumn();
-                if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(240); end
-                if (imgui.InputText ~= nil and imgui.InputText('##BlacklistReason' .. rowId, reasonRef, 128) == true) then
-                    playerBlacklist.SetReason(row, reasonRef[1]);
-                end
-                if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
-                imgui.TableNextColumn();
-                imgui.TextColored({ 0.82, 0.82, 0.80, 1.0 }, LibraPlatesSettingsFormatBlacklistTime(row.addedAt));
-                imgui.TableNextColumn();
-                imgui.TextColored({ 0.82, 0.82, 0.80, 1.0 }, LibraPlatesSettingsFormatBlacklistTime(row.lastSeenAt));
-                imgui.TableNextColumn();
-                imgui.TextColored({ 0.82, 0.82, 0.80, 1.0 }, tostring(row.source or ''));
-                imgui.TableNextColumn();
-                if (imgui.Button ~= nil and imgui.Button('Remove##BlacklistRemove' .. rowId) == true) then
-                    if (playerBlacklist.RemoveEntry(row) == true) then
-                        if (_G.LibraPlatesBlacklistReasonBuffers ~= nil) then
-                            _G.LibraPlatesBlacklistReasonBuffers[rowId] = nil;
+            uiTooltip.Info('Name-only entries become ID-backed when LibraPlates sees that player nearby.');
+        end);
+
+        LibraPlatesSettingsDrawBoxedPanel('Entries', function()
+            local rows = playerBlacklist.List();
+            imgui.TextColored(settingsHeaderColor, 'Entries: ' .. tostring(#rows));
+
+            if (#rows == 0) then
+                imgui.TextColored({ 0.72, 0.72, 0.70, 1.0 }, 'No LibraPlates blacklist entries yet.');
+                return;
+            end
+
+            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                local flags = settingsTableFlags + (_G.ImGuiTableFlags_RowBg or 0);
+                if (imgui.BeginTable('##visual_blacklist_entries', 7, flags)) then
+                    imgui.TableSetupColumn('Name', 0, 116);
+                    imgui.TableSetupColumn('ID', 0, 74);
+                    imgui.TableSetupColumn('Reason', 0, 250);
+                    imgui.TableSetupColumn('Added', 0, 118);
+                    imgui.TableSetupColumn('Seen', 0, 118);
+                    imgui.TableSetupColumn('Source', 0, 92);
+                    imgui.TableSetupColumn('', 0, 72);
+                    if (imgui.TableHeadersRow ~= nil) then imgui.TableHeadersRow(); end
+
+                    for index, row in ipairs(rows) do
+                        local rowId = tostring(row.serverId or row.name or index);
+                        _G.LibraPlatesBlacklistReasonBuffers = _G.LibraPlatesBlacklistReasonBuffers or {};
+                        if (_G.LibraPlatesBlacklistReasonBuffers[rowId] == nil) then
+                            _G.LibraPlatesBlacklistReasonBuffers[rowId] = { tostring(row.reason or '') };
                         end
-                        LibraPlatesSettingsQueueNativeBlacklistCommand('delete', row.name);
-                        log.Info('Removed ' .. tostring(row.name or '') .. ' from LibraPlates blacklist.');
+                        local reasonRef = _G.LibraPlatesBlacklistReasonBuffers[rowId];
+
+                        imgui.TableNextRow();
+                        imgui.TableNextColumn();
+                        imgui.TextColored(settingsLabelColor, tostring(row.name or ''));
+                        imgui.TableNextColumn();
+                        imgui.TextColored({ 0.72, 0.86, 1.0, 1.0 }, tostring(row.serverId or 'pending'));
+                        imgui.TableNextColumn();
+                        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(240); end
+                        if (imgui.InputText ~= nil and imgui.InputText('##BlacklistReason' .. rowId, reasonRef, 128) == true) then
+                            playerBlacklist.SetReason(row, reasonRef[1]);
+                        end
+                        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+                        imgui.TableNextColumn();
+                        imgui.TextColored({ 0.82, 0.82, 0.80, 1.0 }, LibraPlatesSettingsFormatBlacklistTime(row.addedAt));
+                        imgui.TableNextColumn();
+                        imgui.TextColored({ 0.82, 0.82, 0.80, 1.0 }, LibraPlatesSettingsFormatBlacklistTime(row.lastSeenAt));
+                        imgui.TableNextColumn();
+                        imgui.TextColored({ 0.82, 0.82, 0.80, 1.0 }, tostring(row.source or ''));
+                        imgui.TableNextColumn();
+                        if (imgui.Button ~= nil and imgui.Button('Remove##BlacklistRemove' .. rowId) == true) then
+                            if (playerBlacklist.RemoveEntry(row) == true) then
+                                if (_G.LibraPlatesBlacklistReasonBuffers ~= nil) then
+                                    _G.LibraPlatesBlacklistReasonBuffers[rowId] = nil;
+                                end
+                                LibraPlatesSettingsQueueNativeBlacklistCommand('delete', row.name);
+                                log.Info('Removed ' .. tostring(row.name or '') .. ' from LibraPlates blacklist.');
+                            end
+                        end
+                    end
+
+                    imgui.EndTable();
+                end
+            else
+                for index, row in ipairs(rows) do
+                    imgui.TextColored(settingsLabelColor, tostring(index) .. '. ' .. tostring(row.name or '') .. ' [' .. tostring(row.serverId or 'pending') .. ']');
+                    imgui.SameLine();
+                    if (imgui.Button ~= nil and imgui.Button('Remove##BlacklistRemoveFallback' .. tostring(index)) == true) then
+                        if (playerBlacklist.RemoveEntry(row) == true) then
+                            LibraPlatesSettingsQueueNativeBlacklistCommand('delete', row.name);
+                        end
                     end
                 end
             end
-
-            imgui.EndTable();
-        end
-    else
-        for index, row in ipairs(rows) do
-            imgui.TextColored(settingsLabelColor, tostring(index) .. '. ' .. tostring(row.name or '') .. ' [' .. tostring(row.serverId or 'pending') .. ']');
-            imgui.SameLine();
-            if (imgui.Button ~= nil and imgui.Button('Remove##BlacklistRemoveFallback' .. tostring(index)) == true) then
-                if (playerBlacklist.RemoveEntry(row) == true) then
-                    LibraPlatesSettingsQueueNativeBlacklistCommand('delete', row.name);
-                end
-            end
-        end
-    end
+        end);
+    end);
 end
 
 local function DrawGeneralVisibilitySection(settings)
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Visibility' });
+    LibraPlatesSettingsDrawBoxedBreadcrumb(T{ 'Settings', 'Visibility' });
 
     local visibilityLabelWidth = 270;
     local visibilityControlWidth = 280;
     local visibilityInfoWidth = 34;
     local visibilitySliderWidth = 72;
+    local visibilityPanelGap = 8;
+    local visibilityPanelPadX = 16;
+    local visibilityPanelPadY = 10;
 
     local function DrawVisibilityInfo(text, sameLine)
         uiTooltip.Info(text, sameLine);
@@ -8013,264 +8435,304 @@ local function DrawGeneralVisibilitySection(settings)
     end
 
     local function DrawVisibilityCheckbox(label, value, onChange, tooltip, id)
-        DrawVisibilityRow(label, id, function()
+        local checkboxId = tostring(id or label);
+        local function DrawVisibilityCheckboxControl()
             local ref = { value == true };
+
             if (imgui.Checkbox ~= nil) then
-                if (imgui.Checkbox('##' .. tostring(id or label), ref) == true) then
+                if (imgui.Checkbox('##' .. checkboxId, ref) == true) then
                     onChange(ref[1] == true);
                 end
             else
-                DrawCheckbox('##' .. tostring(id or label), value, onChange);
+                DrawCheckbox('##' .. checkboxId, value, onChange);
             end
-        end, tooltip);
-    end
-
-    DrawSettingsHeader('World plate filters');
-    DrawVisibilityCheckbox("Hide other players' pet plates", settings.hideOtherPlayerPetPlates ~= false, function(value)
-        settings.hideOtherPlayerPetPlates = value == true;
-    end, "Hides plates for pets that do not belong to you, such as avatars, wyverns, and jug pets. Your own pet plate stays visible.", 'HideOtherPlayerPetPlates');
-
-    DrawSettingsHeader('Pet static panel');
-    settings.bstPetPlateMode = settings.bstPetPlateMode or 'Normal';
-    DrawVisibilityRow('BST pet plate mode', 'BstPetPlateMode', function()
-        DrawInlineComboRow('', T{ 'Normal', 'Detach from pet', 'Both' }, settings.bstPetPlateMode, function(value)
-            settings.bstPetPlateMode = value;
-        end, 'BstPetPlateModeCombo', nil, 0);
-    end, 'Normal shows the full plate on the pet. Detach from pet keeps the name on the pet and shows bars as a static screen panel. Both shows both copies.');
-
-    if (settings.bstPetPlateMode ~= 'Normal') then
-        if (settings.bstPetStaticBackground == nil) then
-            settings.bstPetStaticBackground = true;
         end
 
-        DrawVisibilityCheckbox('BST static panel background', settings.bstPetStaticBackground == true, function(value)
-            settings.bstPetStaticBackground = value == true;
-        end, 'Uses the Pet (BST) Background style on the static screen panel only.', 'BstPetStaticBackground');
-
-        local x, xChanged = DrawVisibilityNumber('BST static panel X', settings.bstPetStaticX or 170, 'BstPetStaticX', -4000, 4000, 1, 'Screen X position for the BST static pet panel.');
-        if (xChanged == true) then
-            settings.bstPetStaticX = math.floor((tonumber(x) or 170) + 0.5);
-        end
-
-        local y, yChanged = DrawVisibilityNumber('BST static panel Y', settings.bstPetStaticY or 690, 'BstPetStaticY', -4000, 4000, 1, 'Screen Y position for the BST static pet panel.');
-        if (yChanged == true) then
-            settings.bstPetStaticY = math.floor((tonumber(y) or 690) + 0.5);
-        end
-
-        local scale, scaleChanged = DrawVisibilityNumber('BST static panel scale', settings.bstPetStaticScale or 35, 'BstPetStaticScale', 10, 200, 1, 'Percent size for the BST static pet panel.');
-        if (scaleChanged == true) then
-            settings.bstPetStaticScale = math.max(10, math.min(200, math.floor((tonumber(scale) or 35) + 0.5)));
-        end
-    end
-
-    settings.smnPetPlateMode = settings.smnPetPlateMode or 'Normal';
-    DrawVisibilityRow('SMN pet plate mode', 'SmnPetPlateMode', function()
-        DrawInlineComboRow('', T{ 'Normal', 'Detach from pet', 'Both' }, settings.smnPetPlateMode, function(value)
-            settings.smnPetPlateMode = value;
-        end, 'SmnPetPlateModeCombo', nil, 0);
-    end, 'Normal shows the full plate on the pet. Detach from pet keeps the name on the pet and shows bars as a static screen panel. Both shows both copies.');
-
-    if (settings.smnPetPlateMode ~= 'Normal') then
-        if (settings.smnPetStaticBackground == nil) then
-            settings.smnPetStaticBackground = true;
-        end
-
-        DrawVisibilityCheckbox('Static panel background', settings.smnPetStaticBackground == true, function(value)
-            settings.smnPetStaticBackground = value == true;
-        end, 'Uses the Pet (SMN) Background style on the static screen panel only.', 'SmnPetStaticBackground');
-
-        local x, xChanged = DrawVisibilityNumber('Static panel X', settings.smnPetStaticX or 170, 'SmnPetStaticX', -4000, 4000, 1, 'Screen X position for the SMN static pet panel.');
-        if (xChanged == true) then
-            settings.smnPetStaticX = math.floor((tonumber(x) or 170) + 0.5);
-        end
-
-        local y, yChanged = DrawVisibilityNumber('Static panel Y', settings.smnPetStaticY or 690, 'SmnPetStaticY', -4000, 4000, 1, 'Screen Y position for the SMN static pet panel.');
-        if (yChanged == true) then
-            settings.smnPetStaticY = math.floor((tonumber(y) or 690) + 0.5);
-        end
-
-        local scale, scaleChanged = DrawVisibilityNumber('Static panel scale', settings.smnPetStaticScale or 35, 'SmnPetStaticScale', 10, 200, 1, 'Percent size for the SMN static pet panel.');
-        if (scaleChanged == true) then
-            settings.smnPetStaticScale = math.max(10, math.min(200, math.floor((tonumber(scale) or 35) + 0.5)));
-        end
-    end
-
-    settings.drgPetPlateMode = settings.drgPetPlateMode or 'Normal';
-    DrawVisibilityRow('DRG pet plate mode', 'DrgPetPlateMode', function()
-        DrawInlineComboRow('', T{ 'Normal', 'Detach from pet', 'Both' }, settings.drgPetPlateMode, function(value)
-            settings.drgPetPlateMode = value;
-        end, 'DrgPetPlateModeCombo', nil, 0);
-    end, 'Normal shows the full plate on the wyvern. Detach from pet keeps the name on the wyvern and shows bars as a static screen panel. Both shows both copies.');
-
-    if (settings.drgPetPlateMode ~= 'Normal') then
-        if (settings.drgPetStaticBackground == nil) then
-            settings.drgPetStaticBackground = true;
-        end
-
-        DrawVisibilityCheckbox('DRG static panel background', settings.drgPetStaticBackground == true, function(value)
-            settings.drgPetStaticBackground = value == true;
-        end, 'Uses the Wyvern Background style on the static screen panel only.', 'DrgPetStaticBackground');
-
-        local x, xChanged = DrawVisibilityNumber('DRG static panel X', settings.drgPetStaticX or 170, 'DrgPetStaticX', -4000, 4000, 1, 'Screen X position for the DRG static pet panel.');
-        if (xChanged == true) then
-            settings.drgPetStaticX = math.floor((tonumber(x) or 170) + 0.5);
-        end
-
-        local y, yChanged = DrawVisibilityNumber('DRG static panel Y', settings.drgPetStaticY or 690, 'DrgPetStaticY', -4000, 4000, 1, 'Screen Y position for the DRG static pet panel.');
-        if (yChanged == true) then
-            settings.drgPetStaticY = math.floor((tonumber(y) or 690) + 0.5);
-        end
-
-        local scale, scaleChanged = DrawVisibilityNumber('DRG static panel scale', settings.drgPetStaticScale or 35, 'DrgPetStaticScale', 10, 200, 1, 'Percent size for the DRG static pet panel.');
-        if (scaleChanged == true) then
-            settings.drgPetStaticScale = math.max(10, math.min(200, math.floor((tonumber(scale) or 35) + 0.5)));
-        end
-    end
-
-    settings.pupPetPlateMode = settings.pupPetPlateMode or 'Normal';
-    DrawVisibilityRow('PUP pet plate mode', 'PupPetPlateMode', function()
-        DrawInlineComboRow('', T{ 'Normal', 'Detach from pet', 'Both' }, settings.pupPetPlateMode, function(value)
-            settings.pupPetPlateMode = value;
-        end, 'PupPetPlateModeCombo', nil, 0);
-    end, 'Normal shows the full plate on the automaton. Detach from pet keeps the name on the automaton and shows bars as a static screen panel. Both shows both copies.');
-
-    if (settings.pupPetPlateMode ~= 'Normal') then
-        if (settings.pupPetStaticBackground == nil) then
-            settings.pupPetStaticBackground = true;
-        end
-
-        DrawVisibilityCheckbox('PUP static panel background', settings.pupPetStaticBackground == true, function(value)
-            settings.pupPetStaticBackground = value == true;
-        end, 'Uses the Automaton Background style on the static screen panel only.', 'PupPetStaticBackground');
-
-        local x, xChanged = DrawVisibilityNumber('PUP static panel X', settings.pupPetStaticX or 170, 'PupPetStaticX', -4000, 4000, 1, 'Screen X position for the PUP static pet panel.');
-        if (xChanged == true) then
-            settings.pupPetStaticX = math.floor((tonumber(x) or 170) + 0.5);
-        end
-
-        local y, yChanged = DrawVisibilityNumber('PUP static panel Y', settings.pupPetStaticY or 690, 'PupPetStaticY', -4000, 4000, 1, 'Screen Y position for the PUP static pet panel.');
-        if (yChanged == true) then
-            settings.pupPetStaticY = math.floor((tonumber(y) or 690) + 0.5);
-        end
-
-        local scale, scaleChanged = DrawVisibilityNumber('PUP static panel scale', settings.pupPetStaticScale or 35, 'PupPetStaticScale', 10, 200, 1, 'Percent size for the PUP static pet panel.');
-        if (scaleChanged == true) then
-            settings.pupPetStaticScale = math.max(10, math.min(200, math.floor((tonumber(scale) or 35) + 0.5)));
-        end
-    end
-
-    DrawSettingsHeader('Plate stacking');
-    DrawVisibilityCheckbox('Stack overlapping plates', settings.plateStackingEnabled ~= false, function(value)
-        settings.plateStackingEnabled = value == true;
-    end, 'Moves lower-priority world plates upward when they overlap another plate.', 'PlateStackingEnabled');
-
-    if (settings.plateStackingEnabled ~= false) then
-        local stackTypeLabels = {
-            pc = 'PC',
-            enemy = 'Enemy',
-            trust = 'Trust',
-            pet = 'Pet',
-            npc = 'NPC',
-            object = 'Object',
-        };
-        local stackTypeOrder = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
-
-        if (type(settings.plateStackingTypes) ~= 'table') then
-            settings.plateStackingTypes = {};
-        end
-        if (type(settings.plateStackingPriority) ~= 'table') then
-            settings.plateStackingPriority = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
-        end
-
-        for _, key in ipairs(stackTypeOrder) do
-            DrawVisibilityCheckbox('Stack ' .. stackTypeLabels[key], settings.plateStackingTypes[key] == true, function(value)
-                settings.plateStackingTypes[key] = value == true;
-            end, stackTypeLabels[key] .. ' plates can be moved by stacking when enabled. NPC/Object are available for testing but are off by default.', 'PlateStackType' .. key);
-        end
-
-        DrawVisibilityCheckbox('Closest plates on top', settings.plateStackClosestOnTop == true, function(value)
-            settings.plateStackClosestOnTop = value == true;
-        end, 'Within the same priority group, closer plates stay in front and farther plates move first.', 'PlateStackClosestOnTop');
-
-        DrawVisibilityCheckbox('Keep target fixed', settings.plateStackKeepTacticalFixed ~= false, function(value)
-            settings.plateStackKeepTacticalFixed = value == true;
-        end, 'Keeps Self, Target, Subtarget, and tactical marker plates anchored while other stackable plates move around them.', 'PlateStackKeepTacticalFixed');
-
-        DrawVisibilityRow('Priority order', 'PlateStackingPriority', function()
-            for index, key in ipairs(settings.plateStackingPriority) do
-                local keyText = tostring(key or '');
-                local label = stackTypeLabels[keyText] or keyText;
-                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(index) .. '. ' .. label);
-                imgui.SameLine(110);
-                if (imgui.Button('Up##PlateStackPriorityUp' .. keyText) and index > 1) then
-                    settings.plateStackingPriority[index], settings.plateStackingPriority[index - 1] = settings.plateStackingPriority[index - 1], settings.plateStackingPriority[index];
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            if (imgui.BeginTable('##visibility_checkbox_' .. checkboxId, 2, settingsTableFlagsNoBorders)) then
+                imgui.TableSetupColumn('##check', 0, 30);
+                imgui.TableSetupColumn('##text', 0, 300);
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+                DrawVisibilityCheckboxControl();
+                imgui.TableNextColumn();
+                imgui.TextColored(settingsLabelColor, label);
+                if (tooltip ~= nil and tooltip ~= '') then
+                    DrawVisibilityInfo(tooltip, true);
                 end
-                imgui.SameLine();
-                if (imgui.Button('Down##PlateStackPriorityDown' .. keyText) and index < #settings.plateStackingPriority) then
-                    settings.plateStackingPriority[index], settings.plateStackingPriority[index + 1] = settings.plateStackingPriority[index + 1], settings.plateStackingPriority[index];
+                imgui.EndTable();
+                return;
+            end
+        end
+
+        DrawVisibilityCheckboxControl();
+        imgui.SameLine();
+        imgui.TextColored(settingsLabelColor, label);
+        if (tooltip ~= nil and tooltip ~= '') then
+            DrawVisibilityInfo(tooltip, true);
+        end
+    end
+
+    local function DrawVisibilityPanel(label, render, first)
+        local topGap = (first == true) and 2 or visibilityPanelGap;
+
+        if (imgui.Dummy ~= nil) then
+            imgui.Dummy({ 1, topGap });
+        else
+            imgui.Spacing();
+        end
+
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            local availWidth = select(1, GetContentRegionAvail());
+            local cardWidth = math.max(260, (tonumber(availWidth) or 260) - 16);
+            local colorCount = 0;
+
+            if (imgui.PushStyleColor ~= nil) then
+                if (_G.ImGuiCol_TableRowBg ~= nil) then
+                    imgui.PushStyleColor(_G.ImGuiCol_TableRowBg, LibraPlatesSettingsPalette.panelBg);
+                    colorCount = colorCount + 1;
+                end
+                if (_G.ImGuiCol_TableRowBgAlt ~= nil) then
+                    imgui.PushStyleColor(_G.ImGuiCol_TableRowBgAlt, LibraPlatesSettingsPalette.panelBg);
+                    colorCount = colorCount + 1;
                 end
             end
-        end, 'Controls which stackable plate types stay anchored first. Self, Target, Subtarget, and tactical marker plates are handled separately by Keep target fixed.');
 
-        local stackGap, stackGapChanged = DrawVisibilityNumber('Stack spacing', settings.plateStackGap or 4, 'PlateStackGap', 0, 160, 1, 'Pixel space kept between stacked plates. 20 means about 20 px between plates.');
-        if (stackGapChanged == true) then
-            settings.plateStackGap = math.max(0, math.min(160, math.floor((tonumber(stackGap) or 4) + 0.5)));
+            if (imgui.BeginTable('##VisibilityPanel' .. tostring(label or ''), 1, (_G.ImGuiTableFlags_RowBg or 0), { cardWidth, 0 })) then
+                imgui.TableSetupColumn('##card', 0, cardWidth);
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+
+                if (imgui.Dummy ~= nil) then imgui.Dummy({ 1, visibilityPanelPadY }); end
+                if (imgui.Indent ~= nil) then imgui.Indent(visibilityPanelPadX); end
+
+                DrawYellowHeader(tostring(label or ''));
+                imgui.Spacing();
+
+                local pushedWrap = 0;
+                if (imgui.PushTextWrapPos ~= nil) then
+                    local x = select(1, GetCursorScreenPos());
+                    imgui.PushTextWrapPos(x + math.max(160, cardWidth - (visibilityPanelPadX * 2) - 8));
+                    pushedWrap = 1;
+                end
+
+                render();
+
+                if (pushedWrap > 0 and imgui.PopTextWrapPos ~= nil) then
+                    imgui.PopTextWrapPos();
+                end
+
+                if (imgui.Unindent ~= nil) then imgui.Unindent(visibilityPanelPadX); end
+                if (imgui.Dummy ~= nil) then imgui.Dummy({ 1, visibilityPanelPadY }); end
+                imgui.EndTable();
+            end
+
+            if (colorCount > 0 and imgui.PopStyleColor ~= nil) then
+                imgui.PopStyleColor(colorCount);
+            end
+
+            return;
         end
 
-        local overlapValue = tonumber(settings.plateStackVerticalOverlap) or tonumber(settings.plateStackHorizontalOverlap);
-        if (overlapValue == nil or (overlapValue > 0 and overlapValue <= 1)) then
-            overlapValue = 2;
-        end
-        local overlap, overlapChanged = DrawVisibilityNumber('Allowed overlap', math.floor(overlapValue + 0.5), 'PlateStackOverlap', 0, 80, 1, 'Screen pixels plates may overlap before stacking reacts. 2 means about 2 px overlap is allowed.');
-        if (overlapChanged == true) then
-            local value = math.max(0, math.min(80, math.floor((tonumber(overlap) or 2) + 0.5)));
-            settings.plateStackHorizontalOverlap = value;
-            settings.plateStackVerticalOverlap = value;
-        end
-
-        local spreadValue = tonumber(settings.plateStackHorizontalSpreadPct) or 125;
-        local spread, spreadChanged = DrawVisibilityNumber('Horizontal spread', math.floor(spreadValue + 0.5), 'PlateStackHorizontalSpreadPct', 0, 250, 5, 'How far stacked plates may fan left or right before they stack upward. 0 means mostly vertical; 125 means about one plate width.');
-        if (spreadChanged == true) then
-            settings.plateStackHorizontalSpreadPct = math.max(0, math.min(250, math.floor((tonumber(spread) or 125) + 0.5)));
-        end
-
-        local blockerValue = tonumber(settings.plateStackFixedBlockerWidthPct) or 72;
-        local blockerWidth, blockerChanged = DrawVisibilityNumber('Target blocker width', math.floor(blockerValue + 0.5), 'PlateStackFixedBlockerWidthPct', 25, 100, 1, 'How wide fixed Target/Subtarget plates feel to the stacker. Lower values let nearby plates sit closer.');
-        if (blockerChanged == true) then
-            settings.plateStackFixedBlockerWidthPct = math.max(25, math.min(100, math.floor((tonumber(blockerWidth) or 72) + 0.5)));
-        end
+        DrawYellowHeader(tostring(label or ''));
+        render();
     end
 
-    DrawSettingsHeader('Tactical screen limits');
-    DrawVisibilityCheckbox('Keep tactical plates on screen', settings.tacticalScreenClampEnabled == true, function(value)
-        settings.tacticalScreenClampEnabled = value == true;
-    end, 'Keeps tactical/safety plates inside the configured screen padding instead of allowing them to disappear off an edge.', 'TacticalScreenClampEnabled');
-
-    if (settings.tacticalScreenClampEnabled == true) then
-        local topPadding, topPaddingChanged = DrawVisibilityNumber('Top padding', settings.tacticalScreenClampTopPadding or 24, 'TacticalScreenClampTopPadding', 0, 200, 1, 'Screen-space padding kept above tactical plates.');
-        if (topPaddingChanged == true) then
-            settings.tacticalScreenClampTopPadding = math.max(0, math.min(200, math.floor((tonumber(topPadding) or 24) + 0.5)));
-        end
-
-        local bottomPadding, bottomPaddingChanged = DrawVisibilityNumber('Bottom padding', settings.tacticalScreenClampBottomPadding or 24, 'TacticalScreenClampBottomPadding', 0, 400, 1, 'Screen-space padding kept below tactical plates.');
-        if (bottomPaddingChanged == true) then
-            settings.tacticalScreenClampBottomPadding = math.max(0, math.min(400, math.floor((tonumber(bottomPadding) or 24) + 0.5)));
-        end
-
-        local leftPadding, leftPaddingChanged = DrawVisibilityNumber('Left padding', settings.tacticalScreenClampLeftPadding or 0, 'TacticalScreenClampLeftPadding', 0, 400, 1, 'Screen-space padding kept left of tactical plates.');
-        if (leftPaddingChanged == true) then
-            settings.tacticalScreenClampLeftPadding = math.max(0, math.min(400, math.floor((tonumber(leftPadding) or 0) + 0.5)));
-        end
-
-        local rightPadding, rightPaddingChanged = DrawVisibilityNumber('Right padding', settings.tacticalScreenClampRightPadding or 0, 'TacticalScreenClampRightPadding', 0, 400, 1, 'Screen-space padding kept right of tactical plates.');
-        if (rightPaddingChanged == true) then
-            settings.tacticalScreenClampRightPadding = math.max(0, math.min(400, math.floor((tonumber(rightPadding) or 0) + 0.5)));
-        end
+    local pageWidth, pageHeight = GetContentRegionAvail();
+    local pushedPageBg = 0;
+    if (imgui.PushStyleColor ~= nil and _G.ImGuiCol_ChildBg ~= nil) then
+        imgui.PushStyleColor(_G.ImGuiCol_ChildBg, LibraPlatesSettingsPalette.shellBg);
+        pushedPageBg = 1;
     end
 
-    imgui.Separator();
-    DrawSettingsHeader('Screen No-Go Zones');
-    LibraPlatesSettingsDrawPlateClickBlocking(settings);
+    imgui.BeginChild('##VisibilityPageContent', { math.max(280, tonumber(pageWidth) or 280), math.max(260, tonumber(pageHeight) or 260) }, false);
+    if (imgui.Indent ~= nil) then imgui.Indent(16); end
+
+    DrawVisibilityPanel('World plate filters', function()
+        DrawVisibilityCheckbox("Hide other players' pet plates", settings.hideOtherPlayerPetPlates ~= false, function(value)
+            settings.hideOtherPlayerPetPlates = value == true;
+        end, "Hides plates for pets that do not belong to you, such as avatars, wyverns, and jug pets. Your own pet plate stays visible.", 'HideOtherPlayerPetPlates');
+    end, true);
+
+    DrawVisibilityPanel('Plate stacking', function()
+        DrawVisibilityCheckbox('Stack overlapping plates', settings.plateStackingEnabled ~= false, function(value)
+            settings.plateStackingEnabled = value == true;
+        end, 'Moves lower-priority world plates upward when they overlap another plate.', 'PlateStackingEnabled');
+
+        if (settings.plateStackingEnabled ~= false) then
+            local stackTypeLabels = {
+                pc = 'PC',
+                enemy = 'Enemy',
+                trust = 'Trust',
+                pet = 'Pet',
+                npc = 'NPC',
+                object = 'Object',
+            };
+            local stackTypeOrder = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
+
+            if (type(settings.plateStackingTypes) ~= 'table') then
+                settings.plateStackingTypes = {};
+            end
+            if (type(settings.plateStackingPriority) ~= 'table') then
+                settings.plateStackingPriority = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
+            end
+
+            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                if (imgui.BeginTable('##PlateStackTypesGrid', 3, settingsTableFlags)) then
+                    imgui.TableSetupColumn('##stack_col_1', 0, 170);
+                    imgui.TableSetupColumn('##stack_col_2', 0, 190);
+                    imgui.TableSetupColumn('##stack_col_3', 0, 190);
+
+                    for row = 0, 1 do
+                        imgui.TableNextRow();
+
+                        for column = 1, 3 do
+                            local key = stackTypeOrder[(row * 3) + column];
+                            if (key ~= nil) then
+                                imgui.TableNextColumn();
+                                DrawCheckbox('Stack ' .. stackTypeLabels[key], settings.plateStackingTypes[key] == true, function(value)
+                                    settings.plateStackingTypes[key] = value == true;
+                                end);
+                            end
+                        end
+                    end
+
+                    imgui.EndTable();
+                end
+            else
+                for _, key in ipairs(stackTypeOrder) do
+                    DrawVisibilityCheckbox('Stack ' .. stackTypeLabels[key], settings.plateStackingTypes[key] == true, function(value)
+                        settings.plateStackingTypes[key] = value == true;
+                    end, stackTypeLabels[key] .. ' plates can be moved by stacking when enabled. NPC/Object are available for testing but are off by default.', 'PlateStackType' .. key);
+                end
+            end
+
+            DrawVisibilityCheckbox('Closest plates on top', settings.plateStackClosestOnTop == true, function(value)
+                settings.plateStackClosestOnTop = value == true;
+            end, 'Within the same priority group, closer plates stay in front and farther plates move first.', 'PlateStackClosestOnTop');
+
+            DrawVisibilityCheckbox('Keep target fixed', settings.plateStackKeepTacticalFixed ~= false, function(value)
+                settings.plateStackKeepTacticalFixed = value == true;
+            end, 'Keeps Self, Target, Subtarget, and tactical marker plates anchored while other stackable plates move around them.', 'PlateStackKeepTacticalFixed');
+
+            DrawYellowHeader('Priority order');
+            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                if (imgui.BeginTable('##PlateStackPriorityGrid', 3, settingsTableFlagsNoBorders)) then
+                    imgui.TableSetupColumn('##priority_label', 0, 160);
+                    imgui.TableSetupColumn('##priority_up', 0, 54);
+                    imgui.TableSetupColumn('##priority_down', 0, 70);
+
+                    for index, key in ipairs(settings.plateStackingPriority) do
+                        local keyText = tostring(key or '');
+                        local label = stackTypeLabels[keyText] or keyText;
+
+                        imgui.TableNextRow();
+                        imgui.TableNextColumn();
+                        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(index) .. '. ' .. label);
+                        imgui.TableNextColumn();
+                        if (imgui.Button('Up##PlateStackPriorityUp' .. keyText) and index > 1) then
+                            settings.plateStackingPriority[index], settings.plateStackingPriority[index - 1] = settings.plateStackingPriority[index - 1], settings.plateStackingPriority[index];
+                        end
+                        imgui.TableNextColumn();
+                        if (imgui.Button('Down##PlateStackPriorityDown' .. keyText) and index < #settings.plateStackingPriority) then
+                            settings.plateStackingPriority[index], settings.plateStackingPriority[index + 1] = settings.plateStackingPriority[index + 1], settings.plateStackingPriority[index];
+                        end
+                    end
+
+                    imgui.EndTable();
+                end
+            else
+                for index, key in ipairs(settings.plateStackingPriority) do
+                    local keyText = tostring(key or '');
+                    local label = stackTypeLabels[keyText] or keyText;
+                    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(index) .. '. ' .. label);
+                    imgui.SameLine(160);
+                    if (imgui.Button('Up##PlateStackPriorityUp' .. keyText) and index > 1) then
+                        settings.plateStackingPriority[index], settings.plateStackingPriority[index - 1] = settings.plateStackingPriority[index - 1], settings.plateStackingPriority[index];
+                    end
+                    imgui.SameLine();
+                    if (imgui.Button('Down##PlateStackPriorityDown' .. keyText) and index < #settings.plateStackingPriority) then
+                        settings.plateStackingPriority[index], settings.plateStackingPriority[index + 1] = settings.plateStackingPriority[index + 1], settings.plateStackingPriority[index];
+                    end
+                    if (imgui.Dummy ~= nil) then imgui.Dummy({ 1, 2 }); end
+                end
+            end
+            uiTooltip.Info('Controls which stackable plate types stay anchored first. Self, Target, Subtarget, and tactical marker plates are handled separately by Keep target fixed.');
+
+            local stackGap, stackGapChanged = DrawVisibilityNumber('Stack spacing', settings.plateStackGap or 4, 'PlateStackGap', 0, 160, 1, 'Pixel space kept between stacked plates. 20 means about 20 px between plates.');
+            if (stackGapChanged == true) then
+                settings.plateStackGap = math.max(0, math.min(160, math.floor((tonumber(stackGap) or 4) + 0.5)));
+            end
+
+            local horizontalOverlapValue = tonumber(settings.plateStackHorizontalOverlap) or 2;
+            if (horizontalOverlapValue > 0 and horizontalOverlapValue <= 1) then
+                horizontalOverlapValue = 2;
+            end
+            local horizontalOverlap, horizontalOverlapChanged = DrawVisibilityNumber('Horizontal overlap', math.floor(horizontalOverlapValue + 0.5), 'PlateStackHorizontalOverlap', 0, 80, 1, 'How much plates may overlap left/right before stacking reacts.');
+            if (horizontalOverlapChanged == true) then
+                settings.plateStackHorizontalOverlap = math.max(0, math.min(80, math.floor((tonumber(horizontalOverlap) or 2) + 0.5)));
+            end
+
+            local verticalOverlapValue = tonumber(settings.plateStackVerticalOverlap) or 2;
+            if (verticalOverlapValue > 0 and verticalOverlapValue <= 1) then
+                verticalOverlapValue = 2;
+            end
+            local verticalOverlap, verticalOverlapChanged = DrawVisibilityNumber('Vertical overlap', math.floor(verticalOverlapValue + 0.5), 'PlateStackVerticalOverlap', 0, 80, 1, 'How much plates may overlap up/down before stacking reacts.');
+            if (verticalOverlapChanged == true) then
+                settings.plateStackVerticalOverlap = math.max(0, math.min(80, math.floor((tonumber(verticalOverlap) or 2) + 0.5)));
+            end
+
+            local spreadValue = tonumber(settings.plateStackHorizontalSpreadPct) or 125;
+            local spread, spreadChanged = DrawVisibilityNumber('Horizontal spread', math.floor(spreadValue + 0.5), 'PlateStackHorizontalSpreadPct', 0, 250, 5, 'How far stacked plates may fan left or right before they stack upward. 0 means mostly vertical; 125 means about one plate width.');
+            if (spreadChanged == true) then
+                settings.plateStackHorizontalSpreadPct = math.max(0, math.min(250, math.floor((tonumber(spread) or 125) + 0.5)));
+            end
+
+            local blockerValue = tonumber(settings.plateStackFixedBlockerWidthPct) or 72;
+            local blockerWidth, blockerChanged = DrawVisibilityNumber('Target blocker width', math.floor(blockerValue + 0.5), 'PlateStackFixedBlockerWidthPct', 25, 100, 1, 'How wide fixed Target/Subtarget plates feel to the stacker. Lower values let nearby plates sit closer.');
+            if (blockerChanged == true) then
+                settings.plateStackFixedBlockerWidthPct = math.max(25, math.min(100, math.floor((tonumber(blockerWidth) or 72) + 0.5)));
+            end
+        end
+    end);
+
+    DrawVisibilityPanel('Tactical screen limits', function()
+        DrawVisibilityCheckbox('Keep tactical plates on screen', settings.tacticalScreenClampEnabled == true, function(value)
+            settings.tacticalScreenClampEnabled = value == true;
+        end, 'Keeps tactical/safety plates inside the configured screen padding instead of allowing them to disappear off an edge.', 'TacticalScreenClampEnabled');
+
+        if (settings.tacticalScreenClampEnabled == true) then
+            local topPadding, topPaddingChanged = DrawVisibilityNumber('Top padding', settings.tacticalScreenClampTopPadding or 24, 'TacticalScreenClampTopPadding', 0, 200, 1, 'Screen-space padding kept above tactical plates.');
+            if (topPaddingChanged == true) then
+                settings.tacticalScreenClampTopPadding = math.max(0, math.min(200, math.floor((tonumber(topPadding) or 24) + 0.5)));
+            end
+
+            local bottomPadding, bottomPaddingChanged = DrawVisibilityNumber('Bottom padding', settings.tacticalScreenClampBottomPadding or 24, 'TacticalScreenClampBottomPadding', 0, 400, 1, 'Screen-space padding kept below tactical plates.');
+            if (bottomPaddingChanged == true) then
+                settings.tacticalScreenClampBottomPadding = math.max(0, math.min(400, math.floor((tonumber(bottomPadding) or 24) + 0.5)));
+            end
+
+            local leftPadding, leftPaddingChanged = DrawVisibilityNumber('Left padding', settings.tacticalScreenClampLeftPadding or 0, 'TacticalScreenClampLeftPadding', 0, 400, 1, 'Screen-space padding kept left of tactical plates.');
+            if (leftPaddingChanged == true) then
+                settings.tacticalScreenClampLeftPadding = math.max(0, math.min(400, math.floor((tonumber(leftPadding) or 0) + 0.5)));
+            end
+
+            local rightPadding, rightPaddingChanged = DrawVisibilityNumber('Right padding', settings.tacticalScreenClampRightPadding or 0, 'TacticalScreenClampRightPadding', 0, 400, 1, 'Screen-space padding kept right of tactical plates.');
+            if (rightPaddingChanged == true) then
+                settings.tacticalScreenClampRightPadding = math.max(0, math.min(400, math.floor((tonumber(rightPadding) or 0) + 0.5)));
+            end
+        end
+    end);
+
+    DrawVisibilityPanel('Screen No-Go Zones', function()
+        LibraPlatesSettingsDrawPlateClickBlocking(settings);
+    end);
+
+    if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+    imgui.EndChild();
+    if (pushedPageBg > 0 and imgui.PopStyleColor ~= nil) then
+        imgui.PopStyleColor(pushedPageBg);
+    end
 end
 
 local function DrawProfileNamePopup(popupName, inputLabel, buttonLabel, buffer, action)
@@ -8564,15 +9026,7 @@ local function DrawGeneralProfilesSection()
 end
 
 local function DrawGeneralScalingSection(settings)
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'Settings', 'Scaling' });
-    DrawSettingsHeader('Global distance scaling');
-    imgui.TextWrapped('Distance scaling makes far-away world plates easier to read by slowly making them bigger after a set distance.');
-    imgui.Spacing();
-    imgui.TextWrapped('- Start distance: How far away a plate has to be before it starts getting bigger.');
-    imgui.TextWrapped('- Max distance: How far away a plate has to be before it reaches its biggest size.');
-    imgui.TextWrapped('- Max scale: Higher values draw larger plates.');
-    imgui.Spacing();
-    DrawSectionDivider();
+    LibraPlatesSettingsDrawBoxedBreadcrumb(T{ 'Settings', 'Scaling' });
 
     local function EnsureEntityDistanceScales()
         if (type(settings.plateDistanceScales) ~= 'table') then
@@ -8860,7 +9314,6 @@ local function DrawGeneralScalingSection(settings)
     local function DrawPcRacePlateAdjustmentSettings()
         EnsurePcRacePlateAdjustments();
 
-        DrawSettingsHeader('Character height adjustments');
         DrawCheckbox('Use model height adjustments', settings.pcRacePlateAdjustments.enabled ~= false, function(value)
             settings.pcRacePlateAdjustments.enabled = value == true;
             state.Save();
@@ -8907,208 +9360,179 @@ local function DrawGeneralScalingSection(settings)
         });
     end
 
-    DrawSliderTenths('Start distance', settings.pcDistanceScaleStart, 0, 200, function(value)
-        StageGlobalDistanceScale(value, settings.pcDistanceScaleEnd, settings.pcDistanceScaleMax, 'start');
-    end);
+    LibraPlatesSettingsDrawBoxedPage('ScalingPageContent', function()
+        LibraPlatesSettingsDrawBoxedPanel('Global distance scaling', function()
+            imgui.TextWrapped('Distance scaling makes far-away world plates easier to read by slowly making them bigger after a set distance.');
+            imgui.Spacing();
+            imgui.TextWrapped('- Start distance: How far away a plate has to be before it starts getting bigger.');
+            imgui.TextWrapped('- Max distance: How far away a plate has to be before it reaches its biggest size.');
+            imgui.TextWrapped('- Max scale: Higher values draw larger plates.');
+            imgui.Spacing();
 
-    DrawSliderTenths('Max distance', settings.pcDistanceScaleEnd, 10, 400, function(value)
-        StageGlobalDistanceScale(settings.pcDistanceScaleStart, value, settings.pcDistanceScaleMax, 'finish');
-    end);
+            DrawSliderTenths('Start distance', settings.pcDistanceScaleStart, 0, 200, function(value)
+                StageGlobalDistanceScale(value, settings.pcDistanceScaleEnd, settings.pcDistanceScaleMax, 'start');
+            end);
 
-    LibraPlatesSettingsDrawTieredSliderTenths('Max scale', settings.pcDistanceScaleMax, 10, 60, {
-        { min = 10, max = 25, label = 'Normal', color = { 0.25, 0.85, 0.35, 0.55 } },
-        { min = 25, max = 35, label = 'Readable', color = { 0.95, 0.84, 0.25, 0.55 } },
-        { min = 35, max = 45, label = 'Far', color = { 1.0, 0.55, 0.20, 0.55 } },
-        { min = 45, max = 60, label = 'Very Far', color = { 1.0, 0.42, 0.22, 0.55 } },
-    }, function(value)
-        StageGlobalDistanceScale(settings.pcDistanceScaleStart, settings.pcDistanceScaleEnd, value, 'max');
-    end);
+            DrawSliderTenths('Max distance', settings.pcDistanceScaleEnd, 10, 400, function(value)
+                StageGlobalDistanceScale(settings.pcDistanceScaleStart, value, settings.pcDistanceScaleMax, 'finish');
+            end);
 
-    DrawCheckbox('Custom entity distance scaling', settings.customEntityDistanceScaling == true, function(value)
-        settings.customEntityDistanceScaling = value == true;
+            LibraPlatesSettingsDrawTieredSliderTenths('Max scale', settings.pcDistanceScaleMax, 10, 60, {
+                { min = 10, max = 25, label = 'Normal', color = { 0.25, 0.85, 0.35, 0.55 } },
+                { min = 25, max = 35, label = 'Readable', color = { 0.95, 0.84, 0.25, 0.55 } },
+                { min = 35, max = 45, label = 'Far', color = { 1.0, 0.55, 0.20, 0.55 } },
+                { min = 45, max = 60, label = 'Very Far', color = { 1.0, 0.42, 0.22, 0.55 } },
+            }, function(value)
+                StageGlobalDistanceScale(settings.pcDistanceScaleStart, settings.pcDistanceScaleEnd, value, 'max');
+            end);
+
+            DrawCheckbox('Custom entity distance scaling', settings.customEntityDistanceScaling == true, function(value)
+                settings.customEntityDistanceScaling = value == true;
+                if (settings.customEntityDistanceScaling == true) then
+                    EnsureEntityDistanceScales();
+                end
+                state.Save();
+            end);
+            uiTooltip.Info('When enabled, each entity type can use its own distance scaling. Global changes can overwrite those custom values.');
+        end, true);
+
+        LibraPlatesSettingsDrawBoxedPanel('Character height adjustments', function()
+            DrawPcRacePlateAdjustmentSettings();
+        end);
+
+        local function DrawEntityScale(label, key)
+            if (type(settings.plateDistanceScales[key]) ~= 'table') then
+                settings.plateDistanceScales[key] = {
+                    start = tonumber(settings.pcDistanceScaleStart) or 2.0,
+                    finish = tonumber(settings.pcDistanceScaleEnd) or 8.0,
+                    max = tonumber(settings.pcDistanceScaleMax) or 2.65,
+                };
+            end
+
+            local scale = settings.plateDistanceScales[key];
+            DrawYellowHeader(label);
+            if (imgui.PushID ~= nil) then
+                imgui.PushID('EntityDistanceScale' .. tostring(key));
+            end
+            DrawSliderTenths('Start distance', scale.start, 0, 200, function(value)
+                scale.start = math.max(0.0, math.min(20.0, tonumber(value) or 2.0));
+                if ((tonumber(scale.finish) or 8.0) <= scale.start) then
+                    scale.finish = math.min(40.0, scale.start + 1.0);
+                end
+            end, 'EntityDistanceScale' .. tostring(key) .. 'Start');
+
+            DrawSliderTenths('Max distance', scale.finish, 10, 400, function(value)
+                scale.finish = math.max(1.0, math.min(40.0, tonumber(value) or 8.0));
+                if (scale.finish <= (tonumber(scale.start) or 2.0)) then
+                    scale.start = math.max(0.0, scale.finish - 1.0);
+                end
+            end, 'EntityDistanceScale' .. tostring(key) .. 'Finish');
+
+            LibraPlatesSettingsDrawTieredSliderTenths('Max scale', scale.max, 10, 60, {
+                { min = 10, max = 25, label = 'Normal', color = { 0.25, 0.85, 0.35, 0.55 } },
+                { min = 25, max = 35, label = 'Readable', color = { 0.95, 0.84, 0.25, 0.55 } },
+                { min = 35, max = 45, label = 'Far', color = { 1.0, 0.55, 0.20, 0.55 } },
+                { min = 45, max = 60, label = 'Very Far', color = { 1.0, 0.42, 0.22, 0.55 } },
+            }, function(value)
+                scale.max = math.max(1.0, math.min(6.0, tonumber(value) or 2.65));
+            end, 'EntityDistanceScale' .. tostring(key) .. 'Max');
+            if (imgui.PopID ~= nil) then
+                imgui.PopID();
+            end
+        end
+
         if (settings.customEntityDistanceScaling == true) then
-            EnsureEntityDistanceScales();
+            LibraPlatesSettingsDrawBoxedPanel('Entity distance scaling', function()
+                imgui.TextWrapped('Fine-tune distance scaling per entity type with its own start distance, max distance, and max scale.');
+                imgui.Spacing();
+
+                EnsureEntityDistanceScales();
+                DrawEntityScale('PC', 'pc');
+                DrawEntityScale('Enemy', 'enemy');
+                DrawEntityScale('Trust', 'trust');
+                DrawEntityScale('Pet', 'pet');
+                DrawEntityScale('NPC', 'npc');
+                DrawEntityScale('Object', 'object');
+            end);
         end
-        state.Save();
+
+        if (imgui.SetNextWindowSize ~= nil) then
+            imgui.SetNextWindowSize({ 430, 120 }, _G.ImGuiCond_Appearing or 8);
+        end
+
+        if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal('Apply global distance scaling##libraplates_global_distance_scaling')) then
+            imgui.TextWrapped('Apply global distance scaling to all entity types?');
+            imgui.TextColored({ 1.0, 0.78, 0.20, 1.0 }, 'This overwrites individual entity scaling.');
+
+            if (imgui.Button('Cancel##GlobalDistanceScaleCancel')) then
+                globalDistanceScalePendingApply = nil;
+                imgui.CloseCurrentPopup();
+            end
+
+            imgui.SameLine();
+
+            if (imgui.Button('Apply to all##GlobalDistanceScaleApply')) then
+                local pending = globalDistanceScalePendingApply or {};
+                ApplyGlobalDistanceScale(pending.start, pending.finish, pending.max, true);
+
+                state.Save();
+                globalDistanceScalePendingApply = nil;
+                imgui.CloseCurrentPopup();
+            end
+
+            imgui.EndPopup();
+        end
+
+        LibraPlatesSettingsDrawBoxedPanel('Global plate position', function()
+            imgui.TextWrapped('Move all world plates together, then use entity plate position below for smaller per-type adjustments.');
+            imgui.Spacing();
+            local globalOffsetX, globalOffsetXChanged, globalOffsetY, globalOffsetYChanged = DrawScalingPlacementPair(
+                'Plate X',
+                settings.globalPlateOffsetX,
+                'GlobalPlateOffsetX',
+                'Plate Y',
+                settings.globalPlateOffsetY,
+                'GlobalPlateOffsetY'
+            );
+            if (globalOffsetXChanged == true) then
+                settings.globalPlateOffsetX = math.max(-100, math.min(100, math.floor((tonumber(globalOffsetX) or 0) + 0.5)));
+            end
+            if (globalOffsetYChanged == true) then
+                settings.globalPlateOffsetY = math.max(-100, math.min(100, math.floor((tonumber(globalOffsetY) or 0) + 0.5)));
+            end
+        end);
+
+        LibraPlatesSettingsDrawBoxedPanel('Entity plate position', function()
+            if (type(settings.platePositionOffsets) ~= 'table') then
+                settings.platePositionOffsets = {};
+            end
+
+            local function DrawEntityOffset(label, key)
+                if (type(settings.platePositionOffsets[key]) ~= 'table') then
+                    settings.platePositionOffsets[key] = { x = 0, y = 0 };
+                end
+
+                local offsets = settings.platePositionOffsets[key];
+                local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawScalingEntityPlacementRow(label, offsets, key);
+                if (offsetXChanged == true) then
+                    offsets.x = math.max(-100, math.min(100, math.floor((tonumber(offsetX) or 0) + 0.5)));
+                end
+                if (offsetYChanged == true) then
+                    offsets.y = math.max(-100, math.min(100, math.floor((tonumber(offsetY) or 0) + 0.5)));
+                end
+            end
+
+            DrawEntityOffset('Self', 'self');
+            DrawEntityOffset('PC', 'pc');
+            DrawEntityOffset('Enemy', 'enemy');
+            DrawEntityOffset('Trust', 'trust');
+            DrawEntityOffset('Pet', 'pet');
+            DrawEntityOffset('NPC', 'npc');
+            DrawEntityOffset('Object', 'object');
+        end);
     end);
-    uiTooltip.Info('When enabled, each entity type can use its own distance scaling. Global changes can overwrite those custom values.');
-
-    if (settings.customEntityDistanceScaling ~= true) then
-        DrawSettingsHeader('Global plate position');
-        imgui.TextWrapped('Move all world plates together, then use entity plate position below for smaller per-type adjustments.');
-        imgui.Spacing();
-        local globalOffsetX, globalOffsetXChanged, globalOffsetY, globalOffsetYChanged = DrawScalingPlacementPair(
-            'Plate X',
-            settings.globalPlateOffsetX,
-            'GlobalPlateOffsetX',
-            'Plate Y',
-            settings.globalPlateOffsetY,
-            'GlobalPlateOffsetY'
-        );
-        if (globalOffsetXChanged == true) then
-            settings.globalPlateOffsetX = math.max(-100, math.min(100, math.floor((tonumber(globalOffsetX) or 0) + 0.5)));
-        end
-        if (globalOffsetYChanged == true) then
-            settings.globalPlateOffsetY = math.max(-100, math.min(100, math.floor((tonumber(globalOffsetY) or 0) + 0.5)));
-        end
-
-        DrawSettingsHeader('Entity plate position');
-        if (type(settings.platePositionOffsets) ~= 'table') then
-            settings.platePositionOffsets = {};
-        end
-
-        local function DrawEntityOffset(label, key)
-            if (type(settings.platePositionOffsets[key]) ~= 'table') then
-                settings.platePositionOffsets[key] = { x = 0, y = 0 };
-            end
-
-            local offsets = settings.platePositionOffsets[key];
-            local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawScalingEntityPlacementRow(label, offsets, key);
-            if (offsetXChanged == true) then
-                offsets.x = math.max(-100, math.min(100, math.floor((tonumber(offsetX) or 0) + 0.5)));
-            end
-            if (offsetYChanged == true) then
-                offsets.y = math.max(-100, math.min(100, math.floor((tonumber(offsetY) or 0) + 0.5)));
-            end
-        end
-
-        DrawEntityOffset('Self', 'self');
-        DrawEntityOffset('PC', 'pc');
-        DrawEntityOffset('Enemy', 'enemy');
-        DrawEntityOffset('Trust', 'trust');
-        DrawEntityOffset('Pet', 'pet');
-        DrawEntityOffset('NPC', 'npc');
-        DrawEntityOffset('Object', 'object');
-        return;
-    end
-
-    DrawSettingsHeader('Entity distance scaling');
-    imgui.TextWrapped('Fine-tune distance scaling per entity type with its own start distance, max distance, and max scale.');
-    imgui.Spacing();
-
-    EnsureEntityDistanceScales();
-
-    local function DrawEntityScale(label, key)
-        if (type(settings.plateDistanceScales[key]) ~= 'table') then
-            settings.plateDistanceScales[key] = {
-                start = tonumber(settings.pcDistanceScaleStart) or 2.0,
-                finish = tonumber(settings.pcDistanceScaleEnd) or 8.0,
-                max = tonumber(settings.pcDistanceScaleMax) or 2.65,
-            };
-        end
-
-        local scale = settings.plateDistanceScales[key];
-        DrawYellowHeader(label);
-        if (imgui.PushID ~= nil) then
-            imgui.PushID('EntityDistanceScale' .. tostring(key));
-        end
-        DrawSliderTenths('Start distance', scale.start, 0, 200, function(value)
-            scale.start = math.max(0.0, math.min(20.0, tonumber(value) or 2.0));
-            if ((tonumber(scale.finish) or 8.0) <= scale.start) then
-                scale.finish = math.min(40.0, scale.start + 1.0);
-            end
-        end, 'EntityDistanceScale' .. tostring(key) .. 'Start');
-
-        DrawSliderTenths('Max distance', scale.finish, 10, 400, function(value)
-            scale.finish = math.max(1.0, math.min(40.0, tonumber(value) or 8.0));
-            if (scale.finish <= (tonumber(scale.start) or 2.0)) then
-                scale.start = math.max(0.0, scale.finish - 1.0);
-            end
-        end, 'EntityDistanceScale' .. tostring(key) .. 'Finish');
-
-        LibraPlatesSettingsDrawTieredSliderTenths('Max scale', scale.max, 10, 60, {
-            { min = 10, max = 25, label = 'Normal', color = { 0.25, 0.85, 0.35, 0.55 } },
-            { min = 25, max = 35, label = 'Readable', color = { 0.95, 0.84, 0.25, 0.55 } },
-            { min = 35, max = 45, label = 'Far', color = { 1.0, 0.55, 0.20, 0.55 } },
-            { min = 45, max = 60, label = 'Very Far', color = { 1.0, 0.42, 0.22, 0.55 } },
-        }, function(value)
-            scale.max = math.max(1.0, math.min(6.0, tonumber(value) or 2.65));
-        end, 'EntityDistanceScale' .. tostring(key) .. 'Max');
-        if (imgui.PopID ~= nil) then
-            imgui.PopID();
-        end
-    end
-
-    DrawEntityScale('PC', 'pc');
-    DrawEntityScale('Enemy', 'enemy');
-    DrawEntityScale('Trust', 'trust');
-    DrawEntityScale('Pet', 'pet');
-    DrawEntityScale('NPC', 'npc');
-    DrawEntityScale('Object', 'object');
-
-    if (imgui.SetNextWindowSize ~= nil) then
-        imgui.SetNextWindowSize({ 430, 120 }, _G.ImGuiCond_Appearing or 8);
-    end
-
-    if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal('Apply global distance scaling##libraplates_global_distance_scaling')) then
-        imgui.TextWrapped('Apply global distance scaling to all entity types?');
-        imgui.TextColored({ 1.0, 0.78, 0.20, 1.0 }, 'This overwrites individual entity scaling.');
-
-        if (imgui.Button('Cancel##GlobalDistanceScaleCancel')) then
-            globalDistanceScalePendingApply = nil;
-            imgui.CloseCurrentPopup();
-        end
-
-        imgui.SameLine();
-
-        if (imgui.Button('Apply to all##GlobalDistanceScaleApply')) then
-            local pending = globalDistanceScalePendingApply or {};
-            ApplyGlobalDistanceScale(pending.start, pending.finish, pending.max, true);
-
-            state.Save();
-            globalDistanceScalePendingApply = nil;
-            imgui.CloseCurrentPopup();
-        end
-
-        imgui.EndPopup();
-    end
-
-    DrawSettingsHeader('Global plate position');
-    imgui.TextWrapped('Move all world plates together, then use entity plate position below for smaller per-type adjustments.');
-    imgui.Spacing();
-    local globalOffsetX, globalOffsetXChanged, globalOffsetY, globalOffsetYChanged = DrawScalingPlacementPair(
-        'Plate X',
-        settings.globalPlateOffsetX,
-        'GlobalPlateOffsetX',
-        'Plate Y',
-        settings.globalPlateOffsetY,
-        'GlobalPlateOffsetY'
-    );
-    if (globalOffsetXChanged == true) then
-        settings.globalPlateOffsetX = math.max(-100, math.min(100, math.floor((tonumber(globalOffsetX) or 0) + 0.5)));
-    end
-    if (globalOffsetYChanged == true) then
-        settings.globalPlateOffsetY = math.max(-100, math.min(100, math.floor((tonumber(globalOffsetY) or 0) + 0.5)));
-    end
-
-    DrawSettingsHeader('Entity plate position');
-    if (type(settings.platePositionOffsets) ~= 'table') then
-        settings.platePositionOffsets = {};
-    end
-
-    local function DrawEntityOffset(label, key)
-        if (type(settings.platePositionOffsets[key]) ~= 'table') then
-            settings.platePositionOffsets[key] = { x = 0, y = 0 };
-        end
-
-        local offsets = settings.platePositionOffsets[key];
-        local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawScalingEntityPlacementRow(label, offsets, key);
-        if (offsetXChanged == true) then
-            offsets.x = math.max(-100, math.min(100, math.floor((tonumber(offsetX) or 0) + 0.5)));
-        end
-        if (offsetYChanged == true) then
-            offsets.y = math.max(-100, math.min(100, math.floor((tonumber(offsetY) or 0) + 0.5)));
-        end
-    end
-
-    DrawEntityOffset('Self', 'self');
-    DrawEntityOffset('PC', 'pc');
-    DrawEntityOffset('Enemy', 'enemy');
-    DrawEntityOffset('Trust', 'trust');
-    DrawEntityOffset('Pet', 'pet');
-    DrawEntityOffset('NPC', 'npc');
-    DrawEntityOffset('Object', 'object');
 end
+
 
 local function DrawCurrentProfileTopBar()
     local now = os.clock();
@@ -9162,7 +9586,7 @@ local function DrawSelectedEditorGeneral()
 end
 
 local helpEntries = {
-    { kind = 'Feature', title = 'Plate stacking', path = 'Settings > Visibility > Plate stacking', text = 'Stack world plates in screen space using stack spacing, allowed overlap, horizontal spread, and fixed target blocker width.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Feature', title = 'Plate stacking', path = 'Settings > Visibility > Plate stacking', text = 'Stack world plates in screen space using stack spacing, horizontal/vertical overlap, horizontal spread, and fixed target blocker width.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Feature', title = 'Interrupted castbar', path = 'Plates > Self > World/Tactical > Cast bar', text = 'Stops LP self castbar early on movement interrupts and shows remaining lockout with Interrupt bar settings.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
     { kind = 'Feature', title = 'Offensive AOE helper', path = 'Plates > Enemy > Tactical > AOE range (module)', text = 'Highlights enemies affected by loaded offensive AOE actions during subtarget selection.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
     { kind = 'Feature', title = 'Defensive AOE helper', path = 'Plates > Self/PC/Trust > Tactical > AOE range (module)', text = 'Highlights friendly/self plates affected by friendly AOE actions such as Curaga.', tab = 'Plates', entity = 'Self', state = 'Tactical', widget = 'AOE range (module)' },
@@ -9175,7 +9599,8 @@ local helpEntries = {
     { kind = 'Setting', title = 'Interrupt bar', path = 'Plates > Self > World/Tactical > Cast bar > Bar settings', text = 'Enables the interrupted castbar recovery display and sets its fill color.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
     { kind = 'Setting', title = 'Interrupt text', path = 'Plates > Self > World/Tactical > Cast bar > Text settings', text = 'Enables custom Interrupted text with separate font, outline, and position settings.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
     { kind = 'Setting', title = 'Stack spacing', path = 'Settings > Visibility > Plate stacking', text = 'Pixel space kept between stacked plates. 20 means about 20 px between plates.', tab = 'Settings', section = 'Visibility' },
-    { kind = 'Setting', title = 'Allowed overlap', path = 'Settings > Visibility > Plate stacking', text = 'Screen pixels plates may overlap before stacking reacts. 2 means about 2 px overlap is allowed.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Setting', title = 'Horizontal overlap', path = 'Settings > Visibility > Plate stacking', text = 'How much plates may overlap left/right before stacking reacts.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Setting', title = 'Vertical overlap', path = 'Settings > Visibility > Plate stacking', text = 'How much plates may overlap up/down before stacking reacts.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Horizontal spread', path = 'Settings > Visibility > Plate stacking', text = 'How far stacked plates may fan left or right before stacking upward.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Keep target fixed', path = 'Settings > Visibility > Plate stacking', text = 'Keeps target and subtarget plates from being pushed by stack placement.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Hide distant world plates', path = 'Settings > Performance > World plates', text = 'Hides world plates past the distance limit while keeping target/subtarget/tactical plates.', tab = 'Settings', section = 'Performance' },
@@ -9446,7 +9871,8 @@ local troubleshooterEntries = {
         checks = {
             'Check plate stacking is enabled.',
             'Spacing controls the visible gap between stacked plates.',
-            'Allowed overlap controls how much plates may overlap before being pushed apart.',
+            'Horizontal overlap controls how much plates may overlap left/right before being pushed apart.',
+            'Vertical overlap controls how much plates may overlap up/down before being pushed apart.',
             'Horizontal spread controls how much nearby plates can fan sideways instead of only upward.',
             'Keep target fixed can make the selected target feel stable while other plates move around it.',
         },
@@ -9944,6 +10370,221 @@ local function DrawSelectedEditorPlatesModules()
     end
 end
 
+function LibraPlatesSettingsIsBoxedSpecialPlateModule(widgetName)
+    local widget = tostring(widgetName or '');
+
+    return (
+        widget == 'Peer (module)' or
+        widget == 'Target (module)' or
+        widget == 'Subtarget (module)' or
+        widget == 'Resting (module)' or
+        widget == 'Crafting (module)' or
+        widget == 'Fishing (module)' or
+        widget == 'Gathering (module)' or
+        widget == 'Quick Menu (module)'
+    );
+end
+
+function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
+    if (LibraPlatesSettingsIsBoxedSpecialPlateModule(selectedWidget) ~= true) then
+        return false;
+    end
+
+    local storageEntity = GetStorageEntity(selectedEntity);
+    local storageState = GetWidgetStorageState(selectedEntity, selectedState, selectedWidget);
+    local loadSettings = state.GetWidgetSettings(storageEntity, storageState, widgetKeys[selectedWidget], GetWidgetDefaults(selectedWidget));
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local moduleSettings = loadSettings;
+    local moduleDefaults = GetWidgetDefaults(selectedWidget);
+
+    if (selectedWidget == 'Peer (module)') then
+        globalSettings.peer = globalSettings.peer or {};
+        moduleSettings = globalSettings.peer;
+        moduleDefaults = globalDefaults.peer;
+    elseif (selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)') then
+        moduleSettings = loadSettings;
+        moduleDefaults = (selectedWidget == 'Subtarget (module)') and subtargetModuleDefaults or targetModuleDefaults;
+    elseif (selectedWidget == 'Resting (module)') then
+        globalSettings.resting = globalSettings.resting or {};
+        moduleSettings = globalSettings.resting;
+        moduleDefaults = globalDefaults.resting;
+    elseif (selectedWidget == 'Crafting (module)') then
+        globalSettings.crafting = globalSettings.crafting or {};
+        moduleSettings = globalSettings.crafting;
+        moduleDefaults = globalDefaults.crafting;
+    elseif (selectedWidget == 'Fishing (module)') then
+        globalSettings.fishing = globalSettings.fishing or {};
+        moduleSettings = globalSettings.fishing;
+        moduleDefaults = globalDefaults.fishing;
+    elseif (selectedWidget == 'Gathering (module)') then
+        globalSettings.gathering = globalSettings.gathering or {};
+        moduleSettings = globalSettings.gathering;
+        moduleDefaults = globalDefaults.gathering;
+    elseif (selectedWidget == 'Quick Menu (module)') then
+        globalSettings.quickMenu = globalSettings.quickMenu or {};
+        moduleSettings = globalSettings.quickMenu;
+        moduleDefaults = globalDefaults.quickMenu;
+    end
+
+    LibraPlatesSettingsDrawBoxedBreadcrumb(T{ selectedTab, GetEntityDisplayLabel(selectedEntity), selectedState, GetWidgetDisplayLabel(selectedWidget) });
+    LibraPlatesSettingsDrawPlatesHeaderBand(function(headerInnerWidth)
+        local headerRowX = nil;
+        if (GetCursorScreenPos ~= nil) then
+            local posA = GetCursorScreenPos();
+            if (type(posA) == 'table') then
+                headerRowX = tonumber(posA.x or posA[1]);
+            else
+                headerRowX = tonumber(posA);
+            end
+        end
+
+        if (loadSettings.loadMode == nil) then
+            loadSettings.loadMode = LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget);
+        else
+            loadSettings.loadMode = LibraPlatesSettingsNormalizeLoadMode(loadSettings.loadMode, LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget));
+        end
+
+        local headerLabelWidth = 120;
+        local headerMaxControlWidth = math.max(80, (tonumber(headerInnerWidth) or 260) - headerLabelWidth - 6);
+        local showHeaderAnchor = (
+            selectedWidget ~= 'Quick Menu (module)' and
+            selectedWidget ~= 'Peer (module)' and
+            selectedWidget ~= 'Target (module)' and
+            selectedWidget ~= 'Subtarget (module)'
+        );
+        local loadComboWidth = 180;
+        if (GetContentRegionAvail ~= nil) then
+            local availableWidth = select(1, GetContentRegionAvail());
+            loadComboWidth = math.max(120, math.min(180, (tonumber(availableWidth) or 330) - headerLabelWidth - 34));
+        end
+
+        local loadRowY = nil;
+        if (GetCursorScreenPos ~= nil) then
+            local posA, posB = GetCursorScreenPos();
+            if (type(posA) == 'table') then
+                loadRowY = tonumber(posA.y or posA[2]);
+            else
+                loadRowY = tonumber(posB);
+            end
+        end
+
+        if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+        imgui.TextColored({ 1.0, 1.0, 1.0, 1.0 }, 'Load');
+        if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+            imgui.SetCursorScreenPos({ headerRowX + headerLabelWidth, loadRowY });
+        else
+            imgui.SameLine();
+        end
+        if (imgui.PushItemWidth ~= nil) then
+            imgui.PushItemWidth(loadComboWidth);
+        end
+        if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+            if (imgui.BeginCombo('##LoadMode' .. tostring(selectedEntity) .. tostring(selectedState) .. tostring(selectedWidget) .. 'Header', tostring(loadSettings.loadMode or 'Always')) == true) then
+                for _, loadChoice in ipairs(T{ 'Always', 'Out of combat', 'In combat', 'Never' }) do
+                    local isSelected = tostring(loadChoice) == tostring(loadSettings.loadMode);
+                    if (imgui.Selectable(tostring(loadChoice), isSelected) == true) then
+                        loadSettings.loadMode = LibraPlatesSettingsNormalizeLoadMode(loadChoice, 'Always');
+                        state.Save();
+                    end
+                    if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                        imgui.SetItemDefaultFocus();
+                    end
+                end
+                imgui.EndCombo();
+            end
+        else
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(loadSettings.loadMode or 'Always'));
+        end
+        if (imgui.PopItemWidth ~= nil) then
+            imgui.PopItemWidth();
+        end
+        loadModeDrawn = true;
+
+        if (selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)') then
+            if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+                imgui.SetCursorScreenPos({ headerRowX, loadRowY + 28 });
+            elseif (imgui.Dummy ~= nil) then
+                imgui.Dummy({ 1, 2 });
+            end
+
+            LibraPlatesSettingsDrawBoxedModuleCopyHeaderRow(moduleSettings, storageEntity, storageState, selectedWidget, moduleDefaults, headerRowX, headerLabelWidth);
+        end
+
+        if (showHeaderAnchor == true) then
+            if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+                imgui.SetCursorScreenPos({ headerRowX, loadRowY + 28 });
+            elseif (imgui.Dummy ~= nil) then
+                imgui.Dummy({ 1, 2 });
+            end
+
+            moduleSettings.anchorTo = moduleSettings.anchorTo or 'Plate';
+            local beforeAnchorTo = moduleSettings.anchorTo;
+            local beforeAnchorPoint = moduleSettings.anchorPoint;
+            local beforeOffsetX = moduleSettings.offsetX;
+            local beforeOffsetY = moduleSettings.offsetY;
+
+            anchorControls.Draw(moduleSettings, {
+                entity = storageEntity,
+                state = storageState,
+                widget = selectedWidget,
+                defaults = moduleDefaults,
+                anchorChoices = _G.LibraPlatesSettingsGetAnchorChoices(selectedEntity, selectedState, selectedWidget),
+                hideActive = true,
+                onlyPlacement = true,
+                suppressHeaderSeparators = true,
+                headerControlOffset = headerLabelWidth,
+                headerMaxControlWidth = headerMaxControlWidth,
+            }, selectedWidget);
+
+            if (
+                beforeAnchorTo ~= moduleSettings.anchorTo or
+                beforeAnchorPoint ~= moduleSettings.anchorPoint or
+                beforeOffsetX ~= moduleSettings.offsetX or
+                beforeOffsetY ~= moduleSettings.offsetY
+            ) then
+                state.Save();
+            end
+        end
+    end, (
+        selectedWidget == 'Quick Menu (module)' or
+        selectedWidget == 'Peer (module)'
+    ) and 48 or 76);
+
+    if (imgui.Spacing ~= nil) then
+        imgui.Spacing();
+    end
+
+    if (selectedWidget == 'Peer (module)') then
+        LibraPlatesSettingsDrawPeerModuleSettings(state.GetGlobalSettings(globalDefaults), {
+            entity = storageEntity,
+            hideDisplayMode = storageEntity == 'Self' or storageEntity == 'PC',
+            hideSections = storageEntity == 'Self' or storageEntity == 'PC',
+        });
+    elseif (selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)') then
+        widgets.targetModule.DrawSettings(moduleSettings, {
+            tab = selectedTab,
+            entity = storageEntity,
+            state = storageState,
+            sourceState = selectedState,
+            widget = selectedWidget,
+            defaults = moduleDefaults,
+            boxed = true,
+        });
+    elseif (selectedWidget == 'Resting (module)') then
+        LibraPlatesSettingsDrawRestingModuleSettings(state.GetGlobalSettings(globalDefaults), true);
+    elseif (selectedWidget == 'Crafting (module)') then
+        LibraPlatesSettingsDrawCraftingModuleSettings(state.GetGlobalSettings(globalDefaults), true);
+    elseif (selectedWidget == 'Fishing (module)') then
+        LibraPlatesSettingsDrawFishingModuleSettings(state.GetGlobalSettings(globalDefaults), true);
+    elseif (selectedWidget == 'Gathering (module)') then
+        LibraPlatesSettingsDrawGatheringModuleSettings(state.GetGlobalSettings(globalDefaults), true);
+    elseif (selectedWidget == 'Quick Menu (module)') then
+        LibraPlatesSettingsDrawQuickMenuModuleSettings(state.GetGlobalSettings(globalDefaults), true);
+    end
+
+    return true;
+end
+
 local function DrawSelectedEditorPlatesName()
     if (selectedWidget ~= 'Name') then
         return;
@@ -10048,6 +10689,313 @@ local function DrawSelectedEditorPlatesPetDefaultsWidget(widgetName, defaults, r
     });
 end
 
+function LibraPlatesSettingsGetBoxedPlateWidgetInfo()
+    if (selectedTab ~= 'Plates') then
+        return nil;
+    end
+
+    local storageEntity = GetStorageEntity(selectedEntity);
+    local widgetName = selectedWidget;
+
+    if (LibraPlatesSettingsIsBoxedSpecialPlateModule(widgetName) == true) then
+        return nil;
+    end
+
+    local defaults = nil;
+    local drawFn = nil;
+    local extras = {};
+
+    if (widgetName == 'Name') then
+        defaults = nameDefaults;
+        drawFn = widgets.name.DrawSettings;
+    elseif (widgetName == 'Background') then
+        defaults = backgroundDefaults;
+        drawFn = widgets.background.DrawSettings;
+    elseif (widgetName == 'Job') then
+        defaults = jobDefaults;
+        drawFn = widgets.job.DrawSettings;
+    elseif (widgetName == 'Level') then
+        defaults = levelDefaults;
+        drawFn = widgets.level.DrawSettings;
+    elseif (widgetName == 'ID') then
+        defaults = idDefaults;
+        drawFn = widgets.id.DrawSettings;
+    elseif (widgetName == 'Distance') then
+        defaults = distanceDefaults;
+        drawFn = widgets.text.DrawSettings;
+        extras.showSmallFontToggle = true;
+        extras.displayLabel = 'Distance';
+    elseif (widgetName == 'Type line') then
+        defaults = require('config.widgets.type_line');
+        drawFn = widgets.text.DrawSettings;
+        extras.showSmallFontToggle = true;
+    elseif (widgetName == 'Buffs') then
+        defaults = buffsDefaults;
+        drawFn = widgets.statusIcons.DrawSettings;
+    elseif (widgetName == 'Debuffs') then
+        defaults = debuffsDefaults;
+        drawFn = widgets.statusIcons.DrawSettings;
+    elseif (widgetName == 'Game mode icon') then
+        defaults = gameModeIconDefaults;
+        drawFn = widgets.gameModeIcon.DrawSettings;
+    elseif (
+        widgetName == 'Bazaar icon' or
+        widgetName == 'Linkshell icon' or
+        widgetName == 'Behavior icon' or
+        widgetName == 'Detects icon' or
+        widgetName == 'Links icon' or
+        widgetName == 'Special icon' or
+        widgetName == 'Away icon' or
+        widgetName == 'Disconnect icon' or
+        widgetName == 'Anon icon' or
+        widgetName == 'Follow icon' or
+        widgetName == 'Party leader icon' or
+        widgetName == 'Alliance leader icon' or
+        widgetName == 'Stars icon' or
+        widgetName == 'Level sync icon' or
+        widgetName == 'New adventurer icon' or
+        widgetName == 'Icon' or
+        widgetName == 'NPC icon' or
+        widgetName == 'Object icon'
+    ) then
+        defaults = GetWidgetDefaults(widgetName);
+        drawFn = widgets.plateIcon.DrawSettings;
+    elseif (widgetName == 'HP Bar' or widgetName == 'MP Bar' or widgetName == 'TP Bar') then
+        defaults = barDefaults;
+        extras.resourceName = 'TP';
+        extras.showValueControl = true;
+
+        if (widgetName == 'HP Bar') then
+            if (storageEntity == 'Pet (SMN)') then
+                defaults = smnHpBarDefaults;
+            end
+            extras.resourceName = 'HP';
+            extras.showValueControl = LibraPlatesSettingsHasResourceValueControl(storageEntity, selectedState, widgetName);
+        elseif (widgetName == 'MP Bar') then
+            if (storageEntity == 'Pet (SMN)') then
+                defaults = smnMpBarDefaults;
+            end
+            extras.resourceName = 'MP';
+            extras.showValueControl = LibraPlatesSettingsHasResourceValueControl(storageEntity, selectedState, widgetName);
+        elseif (widgetName == 'TP Bar') then
+            if (storageEntity == 'Pet (SMN)') then
+                defaults = smnTpBarDefaults;
+            end
+            extras.resourceName = 'TP';
+        end
+
+        extras.showOutOfRangeOpacity = widgetName == 'HP Bar' and storageEntity == 'PC' and LibraPlatesSettingsToStorageStateName(selectedState) == 'Combat';
+        drawFn = widgets.bar.DrawSettings;
+    elseif (widgetName == 'Cast bar') then
+        defaults = storageEntity == 'Pet (SMN)' and smnCastBarDefaults or castBarDefaults;
+        drawFn = widgets.castBar.DrawSettings;
+    elseif (widgetName == 'Pet timer' or widgetName == 'Pet state') then
+        defaults = widgetName == 'Pet timer' and petTimerDefaults or petStateDefaults;
+        extras.extraBeforeReset = widgetName == 'Pet timer' and DrawPetTimerExtraSettings or DrawPetStateExtraSettings;
+        drawFn = widgets.text.DrawSettings;
+    elseif (widgetName == 'Ward timer' or widgetName == 'Rage timer') then
+        defaults = widgetName == 'Rage timer' and petRageBarDefaults or petWardBarDefaults;
+        extras.resourceName = widgetName == 'Rage timer' and 'Rage' or 'Ward';
+        extras.labelIconOptions = true;
+        drawFn = widgets.bar.DrawSettings;
+    elseif (widgetName == 'Sic' or widgetName == 'Ready bar' or widgetName == 'Reward') then
+        defaults = widgetName == 'Reward' and petRewardBarDefaults or petReadyBarDefaults;
+        extras.resourceName = widgetName == 'Reward' and 'Reward' or 'Ready';
+        extras.labelIconOptions = true;
+        drawFn = widgets.bar.DrawSettings;
+    end
+
+    if (defaults == nil or drawFn == nil) then
+        return nil;
+    end
+
+    return {
+        defaults = defaults,
+        drawFn = drawFn,
+        extras = extras,
+    };
+end
+
+function LibraPlatesSettingsApplyBoxedPlateWidgetExtras(payload, extras)
+    if (payload == nil or extras == nil) then
+        return;
+    end
+
+    for key, value in pairs(extras) do
+        payload[key] = value;
+    end
+end
+
+function LibraPlatesSettingsIsBoxedSpecialPlatesPage()
+    return selectedTab == 'Plates' and LibraPlatesSettingsIsBoxedSpecialPlateModule(selectedWidget) == true;
+end
+
+function LibraPlatesSettingsIsBoxedPlatesPage()
+    return LibraPlatesSettingsGetBoxedPlateWidgetInfo() ~= nil or LibraPlatesSettingsIsBoxedSpecialPlatesPage() == true;
+end
+
+function settingsUi.DrawDetachedFrameSettings()
+    local prefix = settingsUi.GetDetachedFramePrefix();
+
+    if (prefix == nil or selectedWidget ~= 'Detached frame') then
+        return;
+    end
+
+    local settings = targeting.GetSettings();
+    if (settings == nil) then
+        return;
+    end
+
+    local modeKey = prefix .. 'PetPlateMode';
+    local editKey = prefix .. 'PetStaticEditFrame';
+    local xKey = prefix .. 'PetStaticX';
+    local yKey = prefix .. 'PetStaticY';
+    local scaleKey = prefix .. 'PetStaticScale';
+    local backgroundSettingsKey = prefix .. 'PetStaticBackgroundSettings';
+    local legacyBackgroundKey = prefix .. 'PetStaticBackground';
+    local defaults = (globalDefaults.targeting or {});
+    local petLabel = ({
+        bst = 'BST pet',
+        smn = 'Avatar',
+        drg = 'Wyvern',
+        pup = 'Automaton',
+    })[prefix] or 'Pet';
+
+    if (settings[backgroundSettingsKey] == nil and type(defaults[backgroundSettingsKey]) == 'table') then
+        settings[backgroundSettingsKey] = LibraPlatesSettingsCopyTable(defaults[backgroundSettingsKey]);
+    end
+
+    local mode = tostring(settings[modeKey] or 'Normal');
+    local detached = mode ~= 'Normal';
+
+    DrawYellowHeader('Detached frame');
+    DrawCheckbox('Detach ' .. petLabel .. ' frame', detached, function(value)
+        if (value == true) then
+            if (settings[modeKey] == nil or tostring(settings[modeKey]) == 'Normal') then
+                settings[modeKey] = 'Detach from pet';
+            end
+        else
+            settings[modeKey] = 'Normal';
+            settings[editKey] = false;
+        end
+        state.Save();
+    end);
+    uiTooltip.Info('Shows a second pet frame on screen. The name can stay on the pet or the full pet plate can also remain there.');
+
+    if (detached ~= true) then
+        return;
+    end
+
+    if (imgui.RadioButton ~= nil) then
+        if (imgui.RadioButton('Detached only##' .. prefix .. 'PetDetachedOnly', mode == 'Detach from pet') == true) then
+            settings[modeKey] = 'Detach from pet';
+            state.Save();
+        end
+        uiTooltip.Info('Shows the pet name on the pet and moves the bars to the second frame.');
+
+        if (imgui.RadioButton('Pet + detached##' .. prefix .. 'PetBoth', mode == 'Both') == true) then
+            settings[modeKey] = 'Both';
+            state.Save();
+        end
+        uiTooltip.Info('Keeps the full pet plate on the pet and also shows the second frame.');
+    else
+        DrawInlineComboRow('Mode', T{ 'Detach from pet', 'Both' }, mode == 'Both' and 'Both' or 'Detach from pet', function(value)
+            settings[modeKey] = value;
+            state.Save();
+        end, prefix .. 'PetDetachedMode');
+    end
+
+    settings[backgroundSettingsKey] = settings[backgroundSettingsKey] or LibraPlatesSettingsCopyTable(backgroundDefaults);
+    if (settings[backgroundSettingsKey].enabled == nil) then
+        settings[backgroundSettingsKey].enabled = settings[legacyBackgroundKey] ~= false;
+    end
+
+    local bg = settings[backgroundSettingsKey];
+    if (bg.enabled == nil) then
+        bg.enabled = true;
+    end
+    bg.width = bg.width or 220;
+    bg.height = bg.height or 74;
+    bg.offsetX = bg.offsetX or 0;
+    bg.offsetY = bg.offsetY or 0;
+    bg.texture = bg.texture or 'None';
+    bg.color = bg.color or { 0.0, 0.0, 0.0, 0.45 };
+    bg.borderColor = bg.borderColor or { 0.0, 0.0, 0.0, 0.80 };
+    bg.borderSize = bg.borderSize or 0;
+
+    DrawYellowHeader('Detached background');
+
+    DrawCheckbox('Use background', bg.enabled == true, function(value)
+        bg.enabled = value == true;
+        state.Save();
+    end);
+
+    local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', bg.width, prefix .. 'DetachedBgWidth', 'Height', bg.height, prefix .. 'DetachedBgHeight', 8, 1000, 1);
+    if (widthChanged == true or heightChanged == true) then
+        bg.width = math.floor((tonumber(width) or 220) + 0.5);
+        bg.height = math.floor((tonumber(height) or 74) + 0.5);
+        state.Save();
+    end
+
+    local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawPlacementPair('Position X', bg.offsetX, prefix .. 'DetachedBgOffsetX', 'Position Y', bg.offsetY, prefix .. 'DetachedBgOffsetY', -400, 400, 1);
+    if (offsetXChanged == true or offsetYChanged == true) then
+        bg.offsetX = math.floor((tonumber(offsetX) or 0) + 0.5);
+        bg.offsetY = math.floor((tonumber(offsetY) or 0) + 0.5);
+        state.Save();
+    end
+
+    DrawInlineComboRow('Background image', require('core.background_textures').GetFiles(), bg.texture or 'None', function(value)
+        bg.texture = value;
+        state.Save();
+    end, prefix .. 'DetachedBgTexture');
+
+    bg.color[4] = math.max(0.0, math.min(1.0, tonumber(bg.color[4]) or 1.0));
+    local opacity = math.floor((bg.color[4] * 100) + 0.5);
+    local fillColor, fillChanged, nextOpacity, opacityChanged = DrawColorAndPlacementRow('Fill color', bg.color, prefix .. 'DetachedBgFillColor', 'Opacity', opacity, prefix .. 'DetachedBgOpacity', 0, 100, 1);
+    if (fillChanged == true or opacityChanged == true) then
+        bg.color = fillColor;
+        bg.color[4] = math.max(0.0, math.min(1.0, (tonumber(nextOpacity) or opacity) / 100));
+        state.Save();
+    end
+
+    local borderColor, borderChanged, borderSize, borderSizeChanged = DrawColorAndPlacementRow('Border color', bg.borderColor, prefix .. 'DetachedBgBorderColor', 'Border size', bg.borderSize, prefix .. 'DetachedBgBorderSize', 0, 40, 1);
+    if (borderChanged == true or borderSizeChanged == true) then
+        bg.borderColor = borderColor;
+        bg.borderSize = math.floor((tonumber(borderSize) or 0) + 0.5);
+        state.Save();
+    end
+
+    DrawCheckbox('Edit detached frame', settings[editKey] == true, function(value)
+        settings[editKey] = value == true;
+        state.Save();
+    end);
+    uiTooltip.Info('Shows the detached frame edit mode while that pet is summoned.');
+
+    imgui.Separator();
+
+    if (DrawResetActionButton('Reset Detached frame position', prefix .. 'DetachedFramePosition') == true) then
+        local defaults = (globalDefaults.targeting or {});
+        settings[xKey] = defaults[xKey] or 170;
+        settings[yKey] = defaults[yKey] or 690;
+        settings[scaleKey] = defaults[scaleKey] or 35;
+        if (type(settings[backgroundSettingsKey]) == 'table') then
+            settings[backgroundSettingsKey].offsetX = 0;
+            settings[backgroundSettingsKey].offsetY = 0;
+        end
+        state.Save();
+    end
+
+    if (DrawResetActionButton('Reset Detached frame settings', prefix .. 'DetachedFrameSettings') == true) then
+        local defaults = (globalDefaults.targeting or {});
+        settings[modeKey] = defaults[modeKey] or 'Normal';
+        settings[editKey] = defaults[editKey] == true;
+        settings[backgroundSettingsKey] = LibraPlatesSettingsCopyTable(defaults[backgroundSettingsKey] or backgroundDefaults);
+        state.Save();
+    end
+
+    DrawResetFooterBottomPadding();
+end
+
 local function DrawSelectedEditorPlates()
     if (selectedTab ~= 'Plates') then
         LibraPlatesSettingsDrawBreadcrumb(T{ selectedTab });
@@ -10057,9 +11005,157 @@ local function DrawSelectedEditorPlates()
     end
 
     loadModeDrawn = false;
+
+    local boxedWidgetInfo = LibraPlatesSettingsGetBoxedPlateWidgetInfo();
+    if (boxedWidgetInfo ~= nil) then
+        local storageEntity = GetStorageEntity(selectedEntity);
+        local storageState = LibraPlatesSettingsToStorageStateName(selectedState);
+        local settings = state.GetWidgetSettings(storageEntity, storageState, widgetKeys[selectedWidget], boxedWidgetInfo.defaults);
+
+        if (selectedWidget == 'Name' and storageEntity == 'Pet (BST)') then
+            local nextOffsetX = ClampOffsetToVisibleEdge(settings.offsetX, 1, 1024, 24);
+            local nextOffsetY = ClampOffsetToVisibleEdge(settings.offsetY, 1, 512, 24);
+
+            if (nextOffsetX ~= settings.offsetX or nextOffsetY ~= settings.offsetY) then
+                settings.offsetX = nextOffsetX;
+                settings.offsetY = nextOffsetY;
+                state.Save();
+            end
+        end
+
+        LibraPlatesSettingsDrawBoxedBreadcrumb(T{ selectedTab, GetEntityDisplayLabel(selectedEntity), selectedState, GetWidgetDisplayLabel(selectedWidget) });
+        LibraPlatesSettingsDrawPlatesHeaderBand(function(headerInnerWidth)
+            local headerRowX = nil;
+            if (GetCursorScreenPos ~= nil) then
+                local posA = GetCursorScreenPos();
+                if (type(posA) == 'table') then
+                    headerRowX = tonumber(posA.x or posA[1]);
+                else
+                    headerRowX = tonumber(posA);
+                end
+            end
+
+            if (settings.loadMode == nil) then
+                settings.loadMode = LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget);
+            else
+                settings.loadMode = LibraPlatesSettingsNormalizeLoadMode(settings.loadMode, LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget));
+            end
+
+            local headerLabelWidth = 120;
+            local headerMaxControlWidth = math.max(80, (tonumber(headerInnerWidth) or 260) - headerLabelWidth - 6);
+            local loadComboWidth = 180;
+            if (GetContentRegionAvail ~= nil) then
+                local availableWidth = select(1, GetContentRegionAvail());
+                loadComboWidth = math.max(120, math.min(180, (tonumber(availableWidth) or 330) - headerLabelWidth - 34));
+            end
+
+            local loadRowY = nil;
+            if (GetCursorScreenPos ~= nil) then
+                local posA, posB = GetCursorScreenPos();
+                if (type(posA) == 'table') then
+                    loadRowY = tonumber(posA.y or posA[2]);
+                else
+                    loadRowY = tonumber(posB);
+                end
+            end
+
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored({ 1.0, 1.0, 1.0, 1.0 }, 'Load');
+            if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+                imgui.SetCursorScreenPos({ headerRowX + headerLabelWidth, loadRowY });
+            else
+                imgui.SameLine();
+            end
+            if (imgui.PushItemWidth ~= nil) then
+                imgui.PushItemWidth(loadComboWidth);
+            end
+            if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+                if (imgui.BeginCombo('##LoadMode' .. tostring(selectedEntity) .. tostring(selectedState) .. tostring(selectedWidget) .. 'Header', tostring(settings.loadMode or 'Always')) == true) then
+                    for _, loadChoice in ipairs(T{ 'Always', 'Out of combat', 'In combat', 'Never' }) do
+                        local isSelected = tostring(loadChoice) == tostring(settings.loadMode);
+                        if (imgui.Selectable(tostring(loadChoice), isSelected) == true) then
+                            settings.loadMode = LibraPlatesSettingsNormalizeLoadMode(loadChoice, 'Always');
+                            state.Save();
+                        end
+                        if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                            imgui.SetItemDefaultFocus();
+                        end
+                    end
+                    imgui.EndCombo();
+                end
+            else
+                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(settings.loadMode or 'Always'));
+            end
+            if (imgui.PopItemWidth ~= nil) then
+                imgui.PopItemWidth();
+            end
+            loadModeDrawn = true;
+            if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+                imgui.SetCursorScreenPos({ headerRowX, loadRowY + 28 });
+            elseif (imgui.Dummy ~= nil) then
+                imgui.Dummy({ 1, 2 });
+            end
+
+            if (headerRowX ~= nil and imgui.SetCursorScreenPos ~= nil and GetCursorScreenPos ~= nil) then
+                local posA, posB = GetCursorScreenPos();
+                local y = nil;
+                if (type(posA) == 'table') then
+                    y = tonumber(posA.y or posA[2]);
+                else
+                    y = tonumber(posB);
+                end
+                imgui.SetCursorScreenPos({ headerRowX, y or 0 });
+            end
+
+            local headerPayload = {
+                tab = selectedTab,
+                entity = storageEntity,
+                state = storageState,
+                widget = selectedWidget,
+                defaults = boxedWidgetInfo.defaults,
+                anchorChoices = _G.LibraPlatesSettingsGetAnchorChoices(selectedEntity, selectedState, selectedWidget),
+                hideActive = true,
+                onlyPlacement = true,
+                suppressHeaderSeparators = true,
+                headerControlOffset = headerLabelWidth,
+                headerMaxControlWidth = headerMaxControlWidth,
+            };
+            LibraPlatesSettingsApplyBoxedPlateWidgetExtras(headerPayload, boxedWidgetInfo.extras);
+            boxedWidgetInfo.drawFn(settings, headerPayload);
+        end);
+
+        if (imgui.Spacing ~= nil) then
+            imgui.Spacing();
+        end
+
+        local bodyPayload = {
+            tab = selectedTab,
+            entity = storageEntity,
+            state = storageState,
+            widget = selectedWidget,
+            defaults = boxedWidgetInfo.defaults,
+            anchorChoices = _G.LibraPlatesSettingsGetAnchorChoices(selectedEntity, selectedState, selectedWidget),
+            hideActive = true,
+            boxed = true,
+            skipPlacement = true,
+        };
+        LibraPlatesSettingsApplyBoxedPlateWidgetExtras(bodyPayload, boxedWidgetInfo.extras);
+        boxedWidgetInfo.drawFn(settings, bodyPayload);
+        return;
+    end
+
+    if (LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed() == true) then
+        return;
+    end
+
     LibraPlatesSettingsDrawBreadcrumb(T{ selectedTab, GetEntityDisplayLabel(selectedEntity), selectedState, GetWidgetDisplayLabel(selectedWidget) });
     LibraPlatesSettingsDrawCurrentWidgetLoadMode();
     imgui.Separator();
+
+    if (selectedWidget == 'Detached frame') then
+        settingsUi.DrawDetachedFrameSettings();
+        return;
+    end
 
     DrawSelectedEditorPlatesTargetWidgets();
     DrawSelectedEditorPlatesModules();
@@ -10150,13 +11246,13 @@ local function DrawSelectedEditorPlates()
                 defaults = smnHpBarDefaults;
             end
             resourceName = 'HP';
-            showValue = IsPetStorageEntity(storageEntity) ~= true;
+            showValue = LibraPlatesSettingsHasResourceValueControl(storageEntity, selectedState, selectedWidget);
         elseif (selectedWidget == 'MP Bar') then
             if (storageEntity == 'Pet (SMN)') then
                 defaults = smnMpBarDefaults;
             end
             resourceName = 'MP';
-            showValue = IsPetStorageEntity(storageEntity) ~= true;
+            showValue = LibraPlatesSettingsHasResourceValueControl(storageEntity, selectedState, selectedWidget);
         elseif (selectedWidget == 'TP Bar') then
             if (storageEntity == 'Pet (SMN)') then
                 defaults = smnTpBarDefaults;
@@ -10368,9 +11464,23 @@ function settingsUi.Render()
                     selectedGeneralSection == 'Mouse' or
                     selectedGeneralSection == 'Profiles' or
                     selectedGeneralSection == 'Theme' or
-                    selectedGeneralSection == 'Native UI'
+                    selectedGeneralSection == 'Native UI' or
+                    selectedGeneralSection == 'Visibility' or
+                    selectedGeneralSection == 'Blacklist' or
+                    selectedGeneralSection == 'Performance' or
+                    selectedGeneralSection == 'Scaling'
                 );
-                local rightPanelBorder = not isBoxedSettings;
+                local isBoxedEditor = isBoxedSettings or LibraPlatesSettingsIsBoxedPlatesPage() == true;
+                local rightPanelBorder = not isBoxedEditor;
+                local rightPanelBgPushed = 0;
+
+                if (isBoxedEditor == true and imgui.PushStyleColor ~= nil) then
+                    local childBgColor = GetImguiColor('ChildBg');
+                    if (childBgColor ~= nil) then
+                        imgui.PushStyleColor(childBgColor, LibraPlatesSettingsPalette.shellBg);
+                        rightPanelBgPushed = 1;
+                    end
+                end
 
                 DrawChild('##right_panel', { math.max(280, availWidth - selectorWidth - 12), math.max(260, availHeight - 24) }, rightPanelBorder, function()
                     if (selectedTab == 'Settings' or selectedTab == 'Help') then
@@ -10378,7 +11488,11 @@ function settingsUi.Render()
                     else
                         DrawRightPanel();
                     end
-                end, not isBoxedSettings);
+                end, not isBoxedEditor);
+
+                if (rightPanelBgPushed > 0 and imgui.PopStyleColor ~= nil) then
+                    imgui.PopStyleColor(rightPanelBgPushed);
+                end
             else
                 DrawSelectedEditor();
             end

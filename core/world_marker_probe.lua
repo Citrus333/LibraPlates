@@ -3658,6 +3658,11 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
             DrawCanvasDebugWithState(device, plateX, plateY, plateZ, plateWorldWidth, plateWorldHeight, 0.035);
         end
 
+        if (ShouldHardHidePlateByNoGoZone(plate.targetIndex) == true) then
+            device:SetRenderState(D3DRS_ZFUNC, savePlateZFunc);
+            return;
+        end
+
         if (style.plateTacticalOverlayOnly == true) then
             return;
         end
@@ -3670,10 +3675,6 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
 
         local stackScreenOffsetX = tonumber(plate._stackScreenOffsetX) or 0;
         local stackScreenOffsetY = tonumber(plate._stackScreenOffsetY) or 0;
-        if (ShouldHardHidePlateByNoGoZone(plate.targetIndex) == true) then
-            device:SetRenderState(D3DRS_ZFUNC, savePlateZFunc);
-            return;
-        end
 
         if (stackScreenOffsetX ~= 0 or stackScreenOffsetY ~= 0) then
             if (DrawPlateOverlayScreen(
@@ -3941,7 +3942,13 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         local drawablePlates = GetDrawableQueuedPlates();
 
         for _, plate in ipairs(drawablePlates) do
-            if (plate.worldMarker ~= nil and plate.worldMarker.plateTextureId ~= nil) then
+            if (
+                plate.worldMarker ~= nil and
+                (
+                    plate.worldMarker.plateTextureId ~= nil or
+                    plate.worldMarker.liveResourceBars == true
+                )
+            ) then
                 pcall(function ()
                     DrawOne(plate, entityManager, getBone, device, true);
                 end);
@@ -4310,18 +4317,23 @@ end
 
 function worldMarkerProbe.GetAlwaysVisiblePlates()
     local results = {};
+    local settings = targeting.GetSettings();
 
     for _, entry in ipairs(clickRects or {}) do
         if (entry.plateTextureId ~= nil and entry.plateOverlayRect ~= nil) then
-            results[#results + 1] = {
-                targetIndex = entry.targetIndex,
-                targetType = entry.targetType,
-                clickName = entry.name,
-                textureId = entry.plateTextureId,
-                rect = entry.plateOverlayRect,
-                overlayOffsetX = entry.plateOverlayOffsetX,
-                overlayOffsetY = entry.plateOverlayOffsetY,
-            };
+            local rect = entry.plateOverlayRect;
+
+            if (RectIntersectsNoGoZone(rect.x1, rect.y1, rect.x2, rect.y2, settings) ~= true) then
+                results[#results + 1] = {
+                    targetIndex = entry.targetIndex,
+                    targetType = entry.targetType,
+                    clickName = entry.name,
+                    textureId = entry.plateTextureId,
+                    rect = entry.plateOverlayRect,
+                    overlayOffsetX = entry.plateOverlayOffsetX,
+                    overlayOffsetY = entry.plateOverlayOffsetY,
+                };
+            end
         end
     end
 

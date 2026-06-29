@@ -15,6 +15,7 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Do not guess settings/options when requirements are unclear. Ask Lila first.
 - Do not mutate `C:\catseyexi\catseyexi-client\Ashita\config\addons\LibraPlates\rebuild_profile.lua` unless Lila explicitly approves it.
 - If two people are testing, only one person should edit addon code at a time.
+- Follow-up: shutdown/logout countdown needs a 2 second delay so the timer does not fire too early.
 
 ## Plate Runtime Mapping
 
@@ -95,7 +96,7 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 - Recheck peer level color-correct-to-level fix; it was marked done before reset.
 - Recheck pet settings cleanup: pet previews/settings should be percent-only for HP/MP and should not expose `Show HP value`.
 - Recheck pet static panel cleanup idea: drag/resize on-screen instead of many X/Y settings.
-- Recheck rental chocobo/self quick menu: mounted rental chocobo should show Dismount, not Mount: Random.
+- Done: rental chocobo/self quick menu shows Dismount while mounted.
 - Recheck mounted buff timer: it appeared after zoning with delay and was marked fixed, but needs verification after reset.
 - Recheck mounted plate height on rental chocobo and normal mounts.
 - Recheck plate stacking fixes/settings: target plate should not be hidden behind non-target plates, and settings should visibly affect enemy stacking.
@@ -660,6 +661,10 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 ## Testing Log
 
 Add new notes below. Newest notes can go at the top.
+
+### 2026-06-28
+
+- Enemy death/overkill UX note: when an enemy dies from an overkill hit, keep the plate briefly long enough to show the HP bar reaching `0` instead of removing the plate immediately. This should make kills feel readable and avoid the plate vanishing before the final damage state is visible.
 
 ### 2026-06-07
 

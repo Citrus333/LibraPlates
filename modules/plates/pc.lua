@@ -723,7 +723,7 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             hpBar = hpBarStyle or cached.hpBar or { enabled = false },
             mpBar = mpBarStyle or cached.mpBar or { enabled = false },
             tpBar = tpBarStyle or cached.tpBar or { enabled = false },
-            liveResourceBars = true,
+            liveResourceBars = false,
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,
@@ -746,7 +746,7 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
     return true;
 end
 
-local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle)
+local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, maxAgeOverride)
     if (targetStateName ~= 'Idle' or useTargetOverlay == true or state.GetConfigOpen() == true) then
         return false;
     end
@@ -765,7 +765,7 @@ local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, la
 
     local now = os.clock();
     local lastRefresh = tonumber(cached.lastFullRefresh) or 0;
-    local maxAge = adaptivePerformance.GetWorldRefreshSeconds('pc');
+    local maxAge = tonumber(maxAgeOverride) or adaptivePerformance.GetWorldRefreshSeconds('pc');
 
     if ((now - lastRefresh) >= maxAge) then
         return false;
@@ -1094,7 +1094,7 @@ local function QueuePlayer(player)
     local isProtectedPlate = isPartyPlayer == true or isTargetContext == true;
 
     local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isProtectedPlate);
-    local useTargetOverlay = isTacticalPlayer == true or isTargetContext == true;
+    local useTargetOverlay = isTargetContext == true;
     local layoutStateName = isTacticalPlayer == true and 'Combat' or 'Idle';
     local targetModuleStateName = (isTacticalPlayer == true or isTargetContext == true) and 'Combat' or layoutStateName;
     local hasHp = player.hpPercent ~= nil or (player.hp ~= nil and player.maxHp ~= nil and tonumber(player.maxHp) > 0);
@@ -1140,9 +1140,14 @@ local function QueuePlayer(player)
 
     end
 
+    local canUseTacticalCacheWindow = isPartyPlayer == true and isTargetContext ~= true;
+    local earlyCacheMaxAge = canUseTacticalCacheWindow == true
+        and adaptivePerformance.GetPlateRefreshSeconds('tactical', 'critical')
+        or nil;
+
     if (
-        canUseFreshIdleCache == true and
-        QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue) == true
+        (canUseFreshIdleCache == true or canUseTacticalCacheWindow == true) and
+        QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, nil, nil, nil, earlyCacheMaxAge) == true
     ) then
         return;
     end
@@ -1385,61 +1390,6 @@ local function QueuePlayer(player)
         enmityAllyDraws ~= true and
         nameAoeActive ~= true
     ) then
-        indexCache[tonumber(player.index) or 0] = nil;
-        return;
-    end
-
-    local resourceOnlyLivePlate =
-        (liveHpBarStyle.enabled == true or liveMpBarStyle.enabled == true or liveTpBarStyle.enabled == true) and
-        backgroundLoads ~= true and
-        nameLoads ~= true and
-        jobLoads ~= true and
-        levelLoads ~= true and
-        buffsLoad ~= true and
-        debuffsLoad ~= true and
-        distanceText == nil and
-        #icons == 0 and
-        targetMarkerDraws ~= true and
-        enmityAllyDraws ~= true and
-        nameAoeActive ~= true;
-
-    if (resourceOnlyLivePlate == true) then
-        local playerMounted = require('core.mounted').IsStatus(player.status);
-        local plateWorldOffsetY = playerMounted and (0.05 - mountedPlateLift) or 0.05;
-        local queueTimer = perfMeter.BeginDetail('pc.queue');
-
-        worldMarkerProbe.QueuePlate({
-            targetIndex = player.index,
-            serverId = player.serverId,
-            distance = player.distance,
-            hp = hasHp == true and hpPercent or 100,
-            mp = hasMp == true and mpPercent or nil,
-            tp = hasTp == true and tpValue or nil,
-            name = '',
-            isSelf = false,
-            stateName = targetStateName,
-            clickTargetType = 'pc',
-            clickName = player.name,
-            worldMarker = targeting.ApplyPlateScalingSettings({
-                hpBar = liveHpBarStyle,
-                mpBar = liveMpBarStyle,
-                tpBar = liveTpBarStyle,
-                liveResourceBars = true,
-                plateTextureId = nil,
-                plateAlwaysOnTop = useTargetOverlay == true,
-                plateTacticalOverlayOnly = false,
-                useExactNameplateAnchor = true,
-                plateWorldWidth = 2.35,
-                plateWorldHeight = 1.18,
-                plateWorldOffsetY = plateWorldOffsetY,
-                plateDistanceScaleOffsetY = 0.28,
-                pcBodyPlateOffsetEnabled = true,
-                clickTargetType = 'pc',
-                clickName = player.name,
-                layoutStateName = layoutStateName,
-            }, 'pc', 0, plateWorldOffsetY),
-        });
-        perfMeter.EndDetail(queueTimer);
         indexCache[tonumber(player.index) or 0] = nil;
         return;
     end
@@ -1742,7 +1692,7 @@ local function QueuePlayer(player)
             hpBar = liveHpBarStyle,
             mpBar = liveMpBarStyle,
             tpBar = liveTpBarStyle,
-            liveResourceBars = cacheEligible == true,
+            liveResourceBars = false,
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,

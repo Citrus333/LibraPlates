@@ -4,6 +4,14 @@ local arrowAnimation = {};
 local textureIds = {};
 local frameCache = {};
 local defaultSpriteFps = 12;
+local legacyArrowNames = {
+    ['arrow_classic.png'] = 'Classic.png',
+    ['arrow_classic_01.png'] = 'Classic_01.png',
+    ['arrow_classic_02.png'] = 'Classic_02.png',
+    ['arrow_classic_03.png'] = 'Classic_03.png',
+    ['arrow_classic_04.png'] = 'Classic_04.png',
+    ['arrow_classic_05.png'] = 'Classic_05.png',
+};
 
 local function GetAddonPath()
     local ok, path = pcall(function()
@@ -30,6 +38,11 @@ local function CleanFileName(fileName)
 
     if (fileName == '' or fileName == 'None') then
         return 'None';
+    end
+
+    local legacyName = legacyArrowNames[string.lower(fileName)];
+    if (legacyName ~= nil) then
+        return legacyName;
     end
 
     local arrowPath = GetAddonPath() .. 'assets\\images\\target\\arrows\\';

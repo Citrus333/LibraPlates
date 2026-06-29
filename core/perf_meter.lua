@@ -38,6 +38,7 @@ local detailOrder = {
     'native.hook',
     'target.marker.build',
     'npc.scan',
+    'npc.tactical.scan',
     'npc.resolve',
     'npc.fastCache',
     'npc.settings',
@@ -83,6 +84,7 @@ local labels = {
     ['native.hook'] = 'Native hook',
     ['target.marker.build'] = 'Target build',
     ['npc.scan'] = 'NPC scan',
+    ['npc.tactical.scan'] = 'NPC tactical scan',
     ['npc.resolve'] = 'NPC resolve',
     ['npc.fastCache'] = 'NPC fast cache',
     ['npc.settings'] = 'NPC settings',
@@ -803,6 +805,7 @@ function perfMeter.GetDiagnosticLine()
     local quickMenu = perfMeter.GetMetric('quick.menu');
     local npc = perfMeter.GetMetric('plates.npc');
     local npcScan = perfMeter.GetMetric('npc.scan');
+    local npcTacticalScan = perfMeter.GetMetric('npc.tactical.scan');
     local npcResolve = perfMeter.GetMetric('npc.resolve');
     local npcFastCache = perfMeter.GetMetric('npc.fastCache');
     local npcSettings = perfMeter.GetMetric('npc.settings');
@@ -810,6 +813,7 @@ function perfMeter.GetDiagnosticLine()
     local npcCanvas = perfMeter.GetMetric('npc.canvas');
     local npcQueue = perfMeter.GetMetric('npc.queue');
     local npcScanCalls = perfMeter.GetCounterValue('npc.scan.calls');
+    local npcTacticalScanCalls = perfMeter.GetCounterValue('npc.tactical.scan.calls');
     local npcResolveCalls = perfMeter.GetCounterValue('npc.resolve.calls');
     local npcFastCacheCalls = perfMeter.GetCounterValue('npc.fastCache.calls');
     local npcSettingsCalls = perfMeter.GetCounterValue('npc.settings.calls');
@@ -847,7 +851,7 @@ function perfMeter.GetDiagnosticLine()
     local enemyCacheMisses = perfMeter.GetCounterValue('enemy.cache.miss');
 
     return string.format(
-        'perf frame=%s overlay=%s detail=%s total_avg=%.3f total_last=%.3f total_peak=%.3f settings_avg=%.3f targeting_avg=%.3f native_avg=%.3f plates_avg=%.3f self_avg=%.3f self_cache_hits=%s self_cache_misses=%s pc_avg=%.3f pc_scan_avg=%.3f pc_scan_calls=%s pc_scan_cache_hits=%s pc_scan_cache_misses=%s pc_settings_avg=%.3f pc_settings_calls=%s pc_icons_avg=%.3f pc_icons_calls=%s pc_build_avg=%.3f pc_build_calls=%s pc_status_avg=%.3f pc_status_calls=%s pc_canvas_avg=%.3f pc_canvas_calls=%s pc_queue_avg=%.3f pc_queue_calls=%s pc_cache_hits=%s pc_cache_misses=%s npc_avg=%.3f npc_scan_avg=%.3f npc_scan_calls=%s npc_resolve_avg=%.3f npc_resolve_calls=%s npc_fast_avg=%.3f npc_fast_calls=%s npc_settings_avg=%.3f npc_settings_calls=%s npc_signature_avg=%.3f npc_signature_calls=%s npc_canvas_avg=%.3f npc_canvas_calls=%s npc_queue_avg=%.3f npc_queue_calls=%s trust_avg=%.3f trust_scan_avg=%.3f trust_scan_calls=%s trust_settings_avg=%.3f trust_settings_calls=%s trust_build_avg=%.3f trust_build_calls=%s trust_canvas_avg=%.3f trust_canvas_calls=%s trust_queue_avg=%.3f trust_queue_calls=%s trust_cache_hits=%s trust_cache_misses=%s pet_avg=%.3f enemy_avg=%.3f enemy_scan_avg=%.3f enemy_scan_calls=%s enemy_settings_avg=%.3f enemy_settings_calls=%s enemy_build_avg=%.3f enemy_build_calls=%s enemy_status_avg=%.3f enemy_status_calls=%s enemy_canvas_avg=%.3f enemy_canvas_calls=%s enemy_queue_avg=%.3f enemy_queue_calls=%s enemy_cache_hits=%s enemy_cache_misses=%s world_draw_avg=%.3f target_overlay_avg=%.3f peer_avg=%.3f quick_menu_avg=%.3f native_hook_avg=%.3f native_hook_calls=%s target_build_avg=%.3f target_build_calls=%s queued=%s drawn=%s clickRects=%s canvas=%s targetedCanvas=%s',
+        'perf frame=%s overlay=%s detail=%s total_avg=%.3f total_last=%.3f total_peak=%.3f settings_avg=%.3f targeting_avg=%.3f native_avg=%.3f plates_avg=%.3f self_avg=%.3f self_cache_hits=%s self_cache_misses=%s pc_avg=%.3f pc_scan_avg=%.3f pc_scan_calls=%s pc_scan_cache_hits=%s pc_scan_cache_misses=%s pc_settings_avg=%.3f pc_settings_calls=%s pc_icons_avg=%.3f pc_icons_calls=%s pc_build_avg=%.3f pc_build_calls=%s pc_status_avg=%.3f pc_status_calls=%s pc_canvas_avg=%.3f pc_canvas_calls=%s pc_queue_avg=%.3f pc_queue_calls=%s pc_cache_hits=%s pc_cache_misses=%s npc_avg=%.3f npc_scan_avg=%.3f npc_scan_calls=%s npc_tactical_scan_avg=%.3f npc_tactical_scan_calls=%s npc_resolve_avg=%.3f npc_resolve_calls=%s npc_fast_avg=%.3f npc_fast_calls=%s npc_settings_avg=%.3f npc_settings_calls=%s npc_signature_avg=%.3f npc_signature_calls=%s npc_canvas_avg=%.3f npc_canvas_calls=%s npc_queue_avg=%.3f npc_queue_calls=%s trust_avg=%.3f trust_scan_avg=%.3f trust_scan_calls=%s trust_settings_avg=%.3f trust_settings_calls=%s trust_build_avg=%.3f trust_build_calls=%s trust_canvas_avg=%.3f trust_canvas_calls=%s trust_queue_avg=%.3f trust_queue_calls=%s trust_cache_hits=%s trust_cache_misses=%s pet_avg=%.3f enemy_avg=%.3f enemy_scan_avg=%.3f enemy_scan_calls=%s enemy_settings_avg=%.3f enemy_settings_calls=%s enemy_build_avg=%.3f enemy_build_calls=%s enemy_status_avg=%.3f enemy_status_calls=%s enemy_canvas_avg=%.3f enemy_canvas_calls=%s enemy_queue_avg=%.3f enemy_queue_calls=%s enemy_cache_hits=%s enemy_cache_misses=%s world_draw_avg=%.3f target_overlay_avg=%.3f peer_avg=%.3f quick_menu_avg=%.3f native_hook_avg=%.3f native_hook_calls=%s target_build_avg=%.3f target_build_calls=%s queued=%s drawn=%s clickRects=%s canvas=%s targetedCanvas=%s',
         tostring(frameIndex),
         tostring(overlayEnabled == true),
         tostring(detailEnabled == true),
@@ -883,6 +887,8 @@ function perfMeter.GetDiagnosticLine()
         npc.avg,
         npcScan.avg,
         tostring(npcScanCalls),
+        npcTacticalScan.avg,
+        tostring(npcTacticalScanCalls),
         npcResolve.avg,
         tostring(npcResolveCalls),
         npcFastCache.avg,
@@ -997,10 +1003,11 @@ function perfMeter.GetSummaryLines()
             tostring(cacheStats.lastEvictedKey or '')
         );
         lines[#lines + 1] = string.format(
-            'Detail native=%s target=%s npcScan=%s npcResolve=%s npcFast=%s',
+            'Detail native=%s target=%s npcScan=%s npcTacticalScan=%s npcResolve=%s npcFast=%s',
             tostring(GetCounter('native.hook.calls')),
             tostring(GetCounter('target.marker.build.calls')),
             tostring(GetCounter('npc.scan.calls')),
+            tostring(GetCounter('npc.tactical.scan.calls')),
             tostring(GetCounter('npc.resolve.calls')),
             tostring(GetCounter('npc.fastCache.calls'))
         );

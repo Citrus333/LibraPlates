@@ -83,10 +83,22 @@ local function DrawTextureFile(label, current)
     local files = backgroundTextures.GetFiles();
     local value = tostring(current or files[1] or 'None');
 
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
 
     if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+        local comboWidth = 300;
+        if (imgui.GetContentRegionAvail ~= nil) then
+            local availA, availB = imgui.GetContentRegionAvail();
+            local availableWidth = type(availA) == 'table' and tonumber(availA.x or availA[1]) or tonumber(availA or availB);
+            comboWidth = math.max(160, math.min(300, (availableWidth or 300) - 16));
+        end
+
+        if (imgui.PushItemWidth ~= nil) then
+            imgui.PushItemWidth(comboWidth);
+        end
+
         local comboOpen = imgui.BeginCombo('##background_texture_' .. tostring(label), value) == true;
         DrawTexturePreviewTooltip(value);
 
@@ -105,6 +117,10 @@ local function DrawTextureFile(label, current)
             end
 
             imgui.EndCombo();
+        end
+
+        if (imgui.PopItemWidth ~= nil) then
+            imgui.PopItemWidth();
         end
 
         return value;
@@ -188,6 +204,7 @@ end
 local DrawSliderControl = nil;
 
 local function DrawSliderInt(label, id, value, minValue, maxValue, width)
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
 
@@ -286,6 +303,7 @@ DrawSliderControl = function(id, value, minValue, maxValue, width)
 end
 
 local function DrawTableSlider(label, id, value, minValue, maxValue)
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
     imgui.TextColored(labelColor, label);
     imgui.TableNextColumn();
     return DrawSliderControl(id, value, minValue, maxValue, 58);
@@ -378,10 +396,12 @@ local function DrawColorAndSliderRow(rowId, colorLabel, color, sliderLabel, slid
             imgui.TableSetupColumn('##slider_control', 0, 124);
             imgui.TableNextRow();
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(labelColor, colorLabel);
             imgui.TableNextColumn();
             colorResult = DrawColor(rowId .. '_color', colorResult);
             imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(labelColor, sliderLabel);
             imgui.TableNextColumn();
             sliderResult = DrawSliderControl(sliderId, sliderResult, minValue, maxValue, 58);
@@ -391,10 +411,12 @@ local function DrawColorAndSliderRow(rowId, colorLabel, color, sliderLabel, slid
         return colorResult, sliderResult;
     end
 
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
     imgui.TextColored(labelColor, colorLabel);
     imgui.SameLine();
     color = DrawColor(rowId .. '_color', color);
     imgui.SameLine();
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
     imgui.TextColored(labelColor, sliderLabel);
     imgui.SameLine();
     sliderValue = DrawSliderControl(sliderId, sliderValue, minValue, maxValue, 58);
@@ -499,61 +521,107 @@ function background.DrawSettings(settings, context)
 
     ApplyDefaults(settings, defaults);
 
-    if (context == nil or context.hideActive ~= true) then
-        settings.enabled = DrawCheckbox('Active', settings.enabled);
-    end
-    DrawAnchorControls(settings, context, label);
+    local function DrawPanel(panelLabel, render, first)
+        if (context ~= nil and context.boxed == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then
+            _G.LibraPlatesSettingsDrawBoxedPanel(panelLabel, render, first);
+            return;
+        end
 
-    settings.width, settings.height = DrawSliderPair(
-        'size',
-        'Width',
-        'width',
-        settings.width,
-        8,
-        1000,
-        'Height',
-        'height',
-        settings.height,
-        8,
-        450
-    );
-
-    settings.offsetX, settings.offsetY = DrawSliderPair(
-        'position',
-        'Position X',
-        'offset_x',
-        settings.offsetX,
-        -400,
-        400,
-        'Position Y',
-        'offset_y',
-        settings.offsetY,
-        -400,
-        400
-    );
-
-    settings.texture = DrawTextureFile('Background image', settings.texture or defaults.texture or 'None');
-
-    settings.color = settings.color or { 0.0, 0.0, 0.0, 0.45 };
-    settings.color[4] = ClampChannel(settings.color[4] or 1.0);
-
-    local opacity = math.floor((settings.color[4] * 100) + 0.5);
-    settings.color, opacity = DrawColorAndSliderRow('fill_opacity', 'Fill color', settings.color, 'Opacity', 'opacity', opacity, 0, 100);
-    settings.color[4] = ClampChannel((tonumber(opacity) or 100) / 100);
-
-    settings.borderColor, settings.borderSize = DrawColorAndSliderRow('border_size', 'Border color', settings.borderColor, 'Border size', 'border_size', settings.borderSize, 0, 40);
-
-    imgui.Separator();
-
-    if (DrawActionButton('Reset ' .. label .. ' position') == true) then
-        RequestReset('position', label .. ' position');
+        render();
     end
 
-    if (DrawActionButton('Reset ' .. label .. ' settings') == true) then
-        RequestReset('settings', label .. ' settings');
+    local function DrawPlacementSettings()
+        if (context == nil or context.hideActive ~= true) then
+            settings.enabled = DrawCheckbox('Active', settings.enabled);
+        end
+        DrawAnchorControls(settings, context, label);
     end
 
-    DrawResetConfirm(settings, defaults);
+    local function DrawSizeAndPositionSettings()
+        settings.width, settings.height = DrawSliderPair(
+            'size',
+            'Width',
+            'width',
+            settings.width,
+            8,
+            1000,
+            'Height',
+            'height',
+            settings.height,
+            8,
+            450
+        );
+
+        settings.offsetX, settings.offsetY = DrawSliderPair(
+            'position',
+            'Position X',
+            'offset_x',
+            settings.offsetX,
+            -400,
+            400,
+            'Position Y',
+            'offset_y',
+            settings.offsetY,
+            -400,
+            400
+        );
+    end
+
+    local function DrawAppearanceSettings()
+        settings.texture = DrawTextureFile('Background image', settings.texture or defaults.texture or 'None');
+
+        settings.color = settings.color or { 0.0, 0.0, 0.0, 0.45 };
+        settings.color[4] = ClampChannel(settings.color[4] or 1.0);
+
+        local opacity = math.floor((settings.color[4] * 100) + 0.5);
+        settings.color, opacity = DrawColorAndSliderRow('fill_opacity', 'Fill color', settings.color, 'Opacity', 'opacity', opacity, 0, 100);
+        settings.color[4] = ClampChannel((tonumber(opacity) or 100) / 100);
+
+        settings.borderColor, settings.borderSize = DrawColorAndSliderRow('border_size', 'Border color', settings.borderColor, 'Border size', 'border_size', settings.borderSize, 0, 40);
+    end
+
+    local function DrawResetSettings()
+        if (context == nil or context.boxed ~= true) then
+            imgui.Separator();
+        elseif (imgui.Dummy ~= nil) then
+            imgui.Dummy({ 1, 10 });
+        else
+            imgui.Spacing();
+        end
+
+        if (DrawActionButton('Reset ' .. label .. ' position') == true) then
+            RequestReset('position', label .. ' position');
+        end
+
+        if (DrawActionButton('Reset ' .. label .. ' settings') == true) then
+            RequestReset('settings', label .. ' settings');
+        end
+
+        DrawResetConfirm(settings, defaults);
+
+        if (context ~= nil and context.boxed == true) then
+            if (imgui.Dummy ~= nil) then
+                imgui.Dummy({ 1, 10 });
+            else
+                imgui.Spacing();
+            end
+        end
+    end
+
+    if (context ~= nil and context.onlyPlacement == true) then
+        DrawPlacementSettings();
+        return;
+    end
+
+    if (context == nil or context.skipPlacement ~= true) then
+        DrawPlacementSettings();
+    end
+    if (context ~= nil and context.boxed == true and context.skipPlacement ~= true) then
+        imgui.Spacing();
+    end
+    DrawPanel('Size and position', DrawSizeAndPositionSettings, true);
+    DrawPanel('Appearance', DrawAppearanceSettings);
+    DrawResetSettings();
 end
 
 return background;

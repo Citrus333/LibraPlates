@@ -3,6 +3,7 @@ local state = require('core.state');
 local globalDefaults = require('config.global');
 local textureLoader = require('core.texture_loader');
 local npcObjectInfo = require('core.npc_object_info');
+local anchorGeometry = require('core.anchor_geometry');
 local log = require('core.log');
 local jobChange = require('core.job_change');
 local jobIconTextures = require('core.job_icon_textures');
@@ -120,6 +121,90 @@ local function GetWindowSize()
     return ReadVec(a, b);
 end
 
+local quickMenuAnchorMap = {
+    ['Name'] = 'name',
+    ['Background'] = 'background',
+    ['HP Bar'] = 'hp',
+    ['MP Bar'] = 'mp',
+    ['TP Bar'] = 'tp',
+    ['Cast bar'] = 'cast',
+    ['Job'] = 'job',
+    ['Level'] = 'level',
+    ['ID'] = 'id',
+    ['Distance'] = 'distance',
+    ['Game mode icon'] = 'gameMode',
+    ['Bazaar icon'] = 'bazaarIcon',
+    ['Linkshell icon'] = 'linkshellIcon',
+    ['Away icon'] = 'awayIcon',
+    ['Disconnect icon'] = 'disconnectIcon',
+    ['Anon icon'] = 'anonIcon',
+    ['Stars icon'] = 'starsIcon',
+    ['Level sync icon'] = 'levelSyncIcon',
+    ['New adventurer icon'] = 'newAdventurerIcon',
+    ['Buffs'] = 'buffs',
+    ['Debuffs'] = 'debuffs',
+};
+
+local function FindPlateAnchorRect(entry, menu)
+    local anchorTo = tostring(menu ~= nil and menu.anchorTo or 'Plate');
+
+    if (entry == nil or anchorTo == 'Plate') then
+        return nil;
+    end
+
+    local targetKind = quickMenuAnchorMap[anchorTo];
+
+    if (targetKind == nil) then
+        return nil;
+    end
+
+    local best = nil;
+
+    for _, rect in ipairs(entry.rects or {}) do
+        if (tostring(rect.kind or '') == targetKind) then
+            local x1 = tonumber(rect.x1);
+            local y1 = tonumber(rect.y1);
+            local x2 = tonumber(rect.x2);
+            local y2 = tonumber(rect.y2);
+
+            if (x1 ~= nil and y1 ~= nil and x2 ~= nil and y2 ~= nil and x2 > x1 and y2 > y1) then
+                if (best == nil or ((x2 - x1) * (y2 - y1)) > ((best.x2 - best.x1) * (best.y2 - best.y1))) then
+                    best = { x1 = x1, y1 = y1, x2 = x2, y2 = y2 };
+                end
+            end
+        end
+    end
+
+    return best;
+end
+
+local function ResolvePopupAnchorPosition(entry, menu, fallbackX, fallbackY)
+    local anchorRect = FindPlateAnchorRect(entry, menu);
+
+    if (anchorRect == nil) then
+        return fallbackX, fallbackY;
+    end
+
+    local width = math.max(80, tonumber(menu.width) or 270);
+    local height = 80;
+    local anchorPoint = tostring(menu.anchorPoint or 'Bottom');
+    local anchorX, anchorY = anchorGeometry.GetRectPoint({
+        x = anchorRect.x1,
+        y = anchorRect.y1,
+        width = anchorRect.x2 - anchorRect.x1,
+        height = anchorRect.y2 - anchorRect.y1,
+    }, anchorPoint);
+    local x, y = anchorGeometry.RectFromAnchorPoint(
+        anchorX + (tonumber(menu.offsetX) or 0),
+        anchorY + (tonumber(menu.offsetY) or 0),
+        width,
+        height,
+        anchorGeometry.AttachmentPointForTarget(anchorPoint)
+    );
+
+    return x, y;
+end
+
 local function GetCursorPos()
     if (imgui.GetCursorPos == nil) then
         return 0, 0;
@@ -147,12 +232,32 @@ local function SplitLines(text)
     return lines;
 end
 
-local function WrapLine(line, maxChars)
+local function GetTextWidth(text)
+    text = tostring(text or '');
+
+    if (imgui.CalcTextSize ~= nil) then
+        local ok, a, b = pcall(function()
+            return imgui.CalcTextSize(text);
+        end);
+
+        if (ok == true) then
+            local width = select(1, ReadVec(a, b));
+
+            if (width > 0) then
+                return width;
+            end
+        end
+    end
+
+    return #text * 8;
+end
+
+local function WrapLine(line, maxWidth)
     local wrapped = {};
     line = tostring(line or '');
-    maxChars = math.max(12, tonumber(maxChars) or 34);
+    maxWidth = math.max(80, tonumber(maxWidth) or 220);
 
-    if (#line <= maxChars) then
+    if (GetTextWidth(line) <= maxWidth) then
         wrapped[#wrapped + 1] = line;
         return wrapped;
     end
@@ -162,7 +267,7 @@ local function WrapLine(line, maxChars)
     for word in line:gmatch('%S+') do
         if (current == '') then
             current = word;
-        elseif (#current + #word + 1 <= maxChars) then
+        elseif (GetTextWidth(current .. ' ' .. word) <= maxWidth) then
             current = current .. ' ' .. word;
         else
             wrapped[#wrapped + 1] = current;
@@ -189,7 +294,7 @@ local function QueueForegroundTextBlock(text, color, maxWidth, linkResolver, sec
     local cursorX, cursorY = GetCursorPos();
     local windowX = tonumber(pendingMenu.foreground.windowX) or 0;
     local windowY = tonumber(pendingMenu.foreground.windowY) or 0;
-    local maxChars = math.floor((tonumber(maxWidth) or tonumber(pendingMenu.foreground.width) or 270) / 7);
+    local wrapWidth = math.max(80, (tonumber(maxWidth) or tonumber(pendingMenu.foreground.width) or 270) - 8);
     local y = windowY + cursorY;
     local canPlaceLinks = linkResolver ~= nil
         and imgui.InvisibleButton ~= nil
@@ -211,7 +316,7 @@ local function QueueForegroundTextBlock(text, color, maxWidth, linkResolver, sec
             local link = linkResolver ~= nil and linkResolver(line) or nil;
             local lineColor = isSectionHeader and (sectionColor or npcSectionTextColor) or color;
 
-            for index, wrapped in ipairs(WrapLine(displayLine, maxChars - (isBullet and 2 or 0))) do
+            for index, wrapped in ipairs(WrapLine(displayLine, wrapWidth - (isBullet and 12 or 0))) do
                 if (canPlaceLinks == true and index == 1 and link ~= nil and link.url ~= nil and link.url ~= '') then
                     local buttonWidth = math.min(math.max(80, #wrapped * 7 + 16), math.max(80, (tonumber(maxWidth) or 270) - (isBullet and 12 or 0)));
                     imgui.SetCursorPosX(textX - windowX);
@@ -1411,6 +1516,7 @@ function quickMenu.OpenForPlate(entry, x, y)
         trustIsMine = entry.trustIsMine == true,
         name = name,
         npcInfo = npcInfo,
+        anchorEntry = entry,
         x = tonumber(x) or 0,
         y = tonumber(y) or 0,
         open = true,
@@ -1448,7 +1554,9 @@ function quickMenu.Render()
             local popupX = tonumber(pendingMenu.x) or 0;
             local popupY = tonumber(pendingMenu.y) or 0;
 
-            if (pendingMenu.targetType == 'self') then
+            if (tostring(menu.anchorTo or 'Plate') ~= 'Plate') then
+                popupX, popupY = ResolvePopupAnchorPosition(pendingMenu.anchorEntry, menu, popupX, popupY);
+            elseif (pendingMenu.targetType == 'self') then
                 popupX = popupX + 24;
                 popupY = popupY + 48;
             end

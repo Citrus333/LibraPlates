@@ -369,88 +369,119 @@ function id.DrawSettings(settings, context)
 
     ApplyDefaults(settings);
 
-    DrawSectionHeader('ID settings');
+    if ((context == nil or context.onlyPlacement ~= true) and (context == nil or context.boxed ~= true)) then
+        DrawSectionHeader('ID settings');
+    end
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawToggle('Active', settings.enabled);
     end
 
-    DrawAnchorControls(settings, context);
-
-    settings.offsetX, settings.offsetY = DrawNumberPair(
-        'position',
-        'Position X', 'position_x', settings.offsetX, -400, 400,
-        'Position Y', 'position_y', settings.offsetY, -400, 400
-    );
-
-    imgui.Separator();
-    DrawSectionHeader('Text settings');
-    DrawFontRow(settings);
-    settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
-    uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
-    settings.outlineEnabled = DrawToggle('Outline', settings.outlineEnabled);
-
-    if (settings.outlineEnabled == true) then
-        DrawOutlineRow(settings);
+    if (context == nil or context.skipPlacement ~= true) then
+        DrawAnchorControls(settings, context);
     end
 
-    imgui.Separator();
-    DrawSectionHeader('Box settings');
-    settings.boxEnabled = DrawToggle('Box', settings.boxEnabled);
+    if (context ~= nil and context.onlyPlacement == true) then
+        return;
+    end
 
-    if (settings.boxEnabled == true) then
-        DrawBoxColorRow(settings);
-        settings.boxSize, settings.cornerRadius = DrawNumberPair(
-            'box_size',
-            'Box size', 'box_size', settings.boxSize, 4, 160,
-            'Corner radius', 'corner_radius', settings.cornerRadius, 0, 40
-        );
-        settings.boxBorderSize = DrawNumber('Border size', settings.boxBorderSize, 0, 20, 1);
-        settings.boxDifficultyColorsEnabled = DrawToggle('Use difficulty box colors', settings.boxDifficultyColorsEnabled);
+    local boxed = context ~= nil and context.boxed == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil;
 
-        if (settings.boxDifficultyColorsEnabled == true) then
-            imgui.Separator();
-            DrawSectionHeader('Difficulty colors');
-
-            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-                if (imgui.BeginTable('##id_difficulty_colors', 6, tableFlags)) then
-                    imgui.TableSetupColumn('##tw_label', 0, 58);
-                    imgui.TableSetupColumn('##tw_control', 0, 96);
-                    imgui.TableSetupColumn('##ep_label', 0, 58);
-                    imgui.TableSetupColumn('##ep_control', 0, 96);
-                    imgui.TableSetupColumn('##dc_label', 0, 58);
-                    imgui.TableSetupColumn('##dc_control', 0, 96);
-                    imgui.TableNextRow();
-                    imgui.TableNextColumn();
-                    settings.boxTwColor = DrawColorCell('TW', 'tw_box', settings.boxTwColor);
-                    imgui.TableNextColumn();
-                    settings.boxEpColor = DrawColorCell('EP', 'ep_box', settings.boxEpColor);
-                    imgui.TableNextColumn();
-                    settings.boxDcColor = DrawColorCell('DC', 'dc_box', settings.boxDcColor);
-                    imgui.TableNextRow();
-                    imgui.TableNextColumn();
-                    settings.boxEmColor = DrawColorCell('EM', 'em_box', settings.boxEmColor);
-                    imgui.TableNextColumn();
-                    settings.boxTColor = DrawColorCell('T', 't_box', settings.boxTColor);
-                    imgui.TableNextColumn();
-                    settings.boxVtColor = DrawColorCell('VT', 'vt_box', settings.boxVtColor);
-                    imgui.TableNextRow();
-                    imgui.TableNextColumn();
-                    settings.boxItColor = DrawColorCell('IT', 'it_box', settings.boxItColor);
-                    imgui.EndTable();
-                end
-            else
-                settings.boxTwColor = DrawColor('tw_box', settings.boxTwColor);
-                settings.boxEpColor = DrawColor('ep_box', settings.boxEpColor);
-                settings.boxDcColor = DrawColor('dc_box', settings.boxDcColor);
-                settings.boxEmColor = DrawColor('em_box', settings.boxEmColor);
-                settings.boxTColor = DrawColor('t_box', settings.boxTColor);
-                settings.boxVtColor = DrawColor('vt_box', settings.boxVtColor);
-                settings.boxItColor = DrawColor('it_box', settings.boxItColor);
+    local function DrawPanel(label, render, first)
+        if (boxed == true) then
+            _G.LibraPlatesSettingsDrawBoxedPanel(label, render, first);
+        else
+            if (first ~= true) then
+                imgui.Separator();
+                DrawSectionHeader(label);
             end
+            render();
         end
     end
 
-    imgui.Separator();
+    DrawPanel('ID', function()
+        settings.offsetX, settings.offsetY = DrawNumberPair(
+            'position',
+            'Position X', 'position_x', settings.offsetX, -400, 400,
+            'Position Y', 'position_y', settings.offsetY, -400, 400
+        );
+    end, true);
+
+    DrawPanel('Text Settings', function()
+        DrawFontRow(settings);
+        settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
+        uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
+        settings.outlineEnabled = DrawToggle('Outline', settings.outlineEnabled);
+
+        if (settings.outlineEnabled == true) then
+            DrawOutlineRow(settings);
+        end
+    end);
+
+    DrawPanel('Box Settings', function()
+        settings.boxEnabled = DrawToggle('Box', settings.boxEnabled);
+
+        if (settings.boxEnabled == true) then
+            DrawBoxColorRow(settings);
+            settings.boxSize, settings.cornerRadius = DrawNumberPair(
+                'box_size',
+                'Box size', 'box_size', settings.boxSize, 4, 160,
+                'Corner radius', 'corner_radius', settings.cornerRadius, 0, 40
+            );
+            settings.boxBorderSize = DrawNumber('Border size', settings.boxBorderSize, 0, 20, 1);
+            settings.boxDifficultyColorsEnabled = DrawToggle('Use difficulty box colors', settings.boxDifficultyColorsEnabled);
+
+            if (settings.boxDifficultyColorsEnabled == true) then
+                if (boxed ~= true) then
+                    imgui.Separator();
+                    DrawSectionHeader('Difficulty colors');
+                end
+
+                if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                    if (imgui.BeginTable('##id_difficulty_colors', 6, tableFlags)) then
+                        imgui.TableSetupColumn('##tw_label', 0, 58);
+                        imgui.TableSetupColumn('##tw_control', 0, 96);
+                        imgui.TableSetupColumn('##ep_label', 0, 58);
+                        imgui.TableSetupColumn('##ep_control', 0, 96);
+                        imgui.TableSetupColumn('##dc_label', 0, 58);
+                        imgui.TableSetupColumn('##dc_control', 0, 96);
+                        imgui.TableNextRow();
+                        imgui.TableNextColumn();
+                        settings.boxTwColor = DrawColorCell('TW', 'tw_box', settings.boxTwColor);
+                        imgui.TableNextColumn();
+                        settings.boxEpColor = DrawColorCell('EP', 'ep_box', settings.boxEpColor);
+                        imgui.TableNextColumn();
+                        settings.boxDcColor = DrawColorCell('DC', 'dc_box', settings.boxDcColor);
+                        imgui.TableNextRow();
+                        imgui.TableNextColumn();
+                        settings.boxEmColor = DrawColorCell('EM', 'em_box', settings.boxEmColor);
+                        imgui.TableNextColumn();
+                        settings.boxTColor = DrawColorCell('T', 't_box', settings.boxTColor);
+                        imgui.TableNextColumn();
+                        settings.boxVtColor = DrawColorCell('VT', 'vt_box', settings.boxVtColor);
+                        imgui.TableNextRow();
+                        imgui.TableNextColumn();
+                        settings.boxItColor = DrawColorCell('IT', 'it_box', settings.boxItColor);
+                        imgui.EndTable();
+                    end
+                else
+                    settings.boxTwColor = DrawColor('tw_box', settings.boxTwColor);
+                    settings.boxEpColor = DrawColor('ep_box', settings.boxEpColor);
+                    settings.boxDcColor = DrawColor('dc_box', settings.boxDcColor);
+                    settings.boxEmColor = DrawColor('em_box', settings.boxEmColor);
+                    settings.boxTColor = DrawColor('t_box', settings.boxTColor);
+                    settings.boxVtColor = DrawColor('vt_box', settings.boxVtColor);
+                    settings.boxItColor = DrawColor('it_box', settings.boxItColor);
+                end
+            end
+        end
+    end);
+
+    if (context ~= nil and context.boxed == true) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        imgui.Separator();
+    end
 
     if (DrawActionButton('Reset ID position') == true) then
         settings.offsetX = defaults.offsetX;

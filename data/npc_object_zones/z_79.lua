@@ -1452,10 +1452,10 @@ Involved in Missions:\
             },
         },
         ["Nasheefa"] = {
-            ["icon"] = "MapDealer.png",
+            ["icon"] = "Waypoint.png",
             ["note"] = "Notes:\
 * Grants access to Alzadaal Undersea Ruins for One Imperial Silver Piece.",
-            ["type"] = "Map Giver",
+            ["type"] = "Alzadaal Toll Attendant",
             ["zoneIds"] = {
                 [1] = 79,
             },

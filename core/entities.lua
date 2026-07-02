@@ -63,6 +63,31 @@ local function SafeCall(fallback, fn)
     return result;
 end
 
+local hiddenUntilAggroEnemyNames = {
+    ['chigoe'] = true,
+    ['greateramphiptere'] = true,
+};
+
+local function NormalizeEnemyName(name)
+    return tostring(name or ''):lower():gsub('[^%w]', '');
+end
+
+local function IsHiddenUntilAggroEnemy(ent)
+    if (ent == nil or hiddenUntilAggroEnemyNames[NormalizeEnemyName(ent.Name)] ~= true) then
+        return false;
+    end
+
+    return tonumber(ent.Status) == 0;
+end
+
+function entities.IsHiddenUntilAggroEnemyNameStatus(name, status)
+    if (hiddenUntilAggroEnemyNames[NormalizeEnemyName(name)] ~= true) then
+        return false;
+    end
+
+    return tonumber(status) == 0;
+end
+
 -- ============================================================
 -- Matrix helpers
 -- ============================================================
@@ -421,6 +446,10 @@ function entities.IsEnemy(index)
         return false;
     end
 
+    if (IsHiddenUntilAggroEnemy(ent) == true) then
+        return false;
+    end
+
     if (IsVisibleEntity(entityManager, index, false) ~= true) then
         return false;
     end
@@ -475,6 +504,7 @@ function entities.GetEnemy(index, allowHidden)
         index = index,
         serverId = serverId,
         name = ent.Name or 'Enemy',
+        status = ent.Status,
         hpPercent = ent.HPPercent or 100,
         distance = ent.Distance ~= nil and math.sqrt(ent.Distance) or nil,
         spawnFlags = spawnFlags,
@@ -507,6 +537,7 @@ function entities.GetNearbyEnemies(maxDistance)
                 ent.Distance <= maxDistanceSq and
                 tonumber(index) ~= tonumber(ownPetIndex) and
                 IsMobIndex(entityManager, index) == true and
+                IsHiddenUntilAggroEnemy(ent) ~= true and
                 IsVisibleEntity(entityManager, index, false) == true
             ) then
                 local serverId = nil;
@@ -519,6 +550,7 @@ function entities.GetNearbyEnemies(maxDistance)
                     index = index,
                     serverId = serverId,
                     name = ent.Name or 'Enemy',
+                    status = ent.Status,
                     hpPercent = ent.HPPercent or 100,
                     distance = math.sqrt(ent.Distance),
                     spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(index); end),

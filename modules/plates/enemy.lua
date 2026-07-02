@@ -169,6 +169,28 @@ local function IsAlTaieuFish(name)
     return name == "ul'hpemde" or name == "ul'phuabo";
 end
 
+local function ResolveEnemyAnchorBone(enemy)
+    if (enemy ~= nil and IsAlTaieuFish(enemy.name) == true) then
+        return 12;
+    end
+
+    return enemyAnchorBone;
+end
+
+local function ResolveEnemyWorldOffsetY(enemy)
+    local offsetY = tonumber(enemyWorldOffsetY) or 0.50;
+
+    if (enemy ~= nil and IsAlTaieuFish(enemy.name) == true) then
+        return -0.65;
+    end
+
+    return offsetY;
+end
+
+local function UseExactEnemyNameplateAnchor(enemy)
+    return enemy ~= nil and IsAlTaieuFish(enemy.name) == true;
+end
+
 local function GetPeerHoverScale(peerSettings)
     return math.max(1.0, math.min(15.0, tonumber(peerSettings ~= nil and peerSettings.zoom) or 3.0));
 end
@@ -1544,6 +1566,8 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
 
     local queueTimer = perfMeter.BeginDetail('enemy.queue');
     local targetingSettings = targeting.GetSettings();
+    local plateWorldOffsetY = ResolveEnemyWorldOffsetY(enemy);
+    local tacticalOverlayOnly = importantAlwaysOnTop == true and (IsAlTaieuFish(enemy.name) ~= true or tostring(stateName or 'Idle') ~= 'Idle');
 
     worldMarkerProbe.QueuePlate({
         targetIndex = enemy.index,
@@ -1559,11 +1583,12 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
             liveResourceBars = liveHpBarStyle ~= nil and liveHpBarStyle.enabled == true,
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = importantAlwaysOnTop,
-            plateTacticalOverlayOnly = importantAlwaysOnTop,
-            anchorBone = enemyAnchorBone,
+            plateTacticalOverlayOnly = tacticalOverlayOnly,
+            anchorBone = ResolveEnemyAnchorBone(enemy),
+            useExactNameplateAnchor = UseExactEnemyNameplateAnchor(enemy),
             plateWorldWidth = cached.plateWorldWidth,
             plateWorldHeight = cached.plateWorldHeight,
-            plateWorldOffsetY = enemyWorldOffsetY,
+            plateWorldOffsetY = plateWorldOffsetY,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
@@ -1572,7 +1597,7 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
             hideWhenProjectedBelowViewport = importantAlwaysOnTop ~= true and IsAlTaieuFish(enemy.name) == true,
             belowViewportHideMargin = 96,
             belowPlayerViewHideDelta = 1.50,
-        }, 'enemy', 0, enemyWorldOffsetY),
+        }, 'enemy', 0, plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 
@@ -1684,7 +1709,8 @@ local function BuildEnemyQueueContext(enemy)
     local castData = enemyCasts.GetActiveCast(enemy.serverId);
     local isEngaged = engagedEnemies.IsEngaged(enemy.index) == true;
     local claimCategory = engagedEnemies.GetClaimCategory(enemy.index);
-    local isTacticalTarget = stateName ~= 'Idle';
+    local isAggroedAlTaieuFish = IsAlTaieuFish(enemy.name) == true and tonumber(enemy.status) == 1;
+    local isTacticalTarget = stateName ~= 'Idle' or isAggroedAlTaieuFish == true;
     local layoutStateName = isTacticalTarget == true and 'Combat' or 'Idle';
     local cachedSettings = GetCachedLayoutSettings(layoutStateName);
     local nameSettings = cachedSettings.name;
@@ -2156,6 +2182,8 @@ local function QueueEnemy(enemy)
 
     local queueTimer = perfMeter.BeginDetail('enemy.queue');
     local targetingSettings = targeting.GetSettings();
+    local plateWorldOffsetY = ResolveEnemyWorldOffsetY(enemy);
+    local tacticalOverlayOnly = context.importantAlwaysOnTop == true and (IsAlTaieuFish(enemy.name) ~= true or tostring(context.stateName or 'Idle') ~= 'Idle');
     worldMarkerProbe.QueuePlate({
         targetIndex = enemy.index,
         serverId = enemy.serverId,
@@ -2170,11 +2198,12 @@ local function QueueEnemy(enemy)
             liveResourceBars = useLiveHpBar == true,
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = context.importantAlwaysOnTop,
-            plateTacticalOverlayOnly = context.importantAlwaysOnTop,
-            anchorBone = enemyAnchorBone,
+            plateTacticalOverlayOnly = tacticalOverlayOnly,
+            anchorBone = ResolveEnemyAnchorBone(enemy),
+            useExactNameplateAnchor = UseExactEnemyNameplateAnchor(enemy),
             plateWorldWidth = 2.35 * plateScale,
             plateWorldHeight = 1.18 * plateScale,
-            plateWorldOffsetY = enemyWorldOffsetY,
+            plateWorldOffsetY = plateWorldOffsetY,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
@@ -2183,7 +2212,7 @@ local function QueueEnemy(enemy)
             hideWhenProjectedBelowViewport = context.importantAlwaysOnTop ~= true and IsAlTaieuFish(enemy.name) == true,
             belowViewportHideMargin = 96,
             belowPlayerViewHideDelta = 1.50,
-        }, 'enemy', 0, enemyWorldOffsetY),
+        }, 'enemy', 0, plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
 end

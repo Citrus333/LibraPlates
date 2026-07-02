@@ -3194,6 +3194,39 @@ local function StackRectsOverlap(left, right, horizontalAllowance, verticalAllow
         math.min(left.drawY + left.height, right.drawY + right.height) - math.max(left.drawY, right.drawY) > verticalAllowance;
 end
 
+local stackIgnoredRectKinds = {
+    background = true,
+    targetModuleBackground = true,
+};
+
+local function GetStackCollisionUnion(entry)
+    local union = nil;
+
+    for _, rect in ipairs(entry ~= nil and entry.rects or {}) do
+        local kind = tostring(rect ~= nil and rect.kind or '');
+
+        if (stackIgnoredRectKinds[kind] ~= true) then
+            local x1 = tonumber(rect.x1);
+            local y1 = tonumber(rect.y1);
+            local x2 = tonumber(rect.x2);
+            local y2 = tonumber(rect.y2);
+
+            if (x1 ~= nil and y1 ~= nil and x2 ~= nil and y2 ~= nil and x2 > x1 and y2 > y1) then
+                if (union == nil) then
+                    union = { x1 = x1, y1 = y1, x2 = x2, y2 = y2 };
+                else
+                    union.x1 = math.min(union.x1, x1);
+                    union.y1 = math.min(union.y1, y1);
+                    union.x2 = math.max(union.x2, x2);
+                    union.y2 = math.max(union.y2, y2);
+                end
+            end
+        end
+    end
+
+    return union;
+end
+
 local function FindBestHorizontalStackX(entry, placed, gap, horizontalAllowance, verticalAllowance, maxSpread)
     local bestX = nil;
     local bestScore = nil;
@@ -3268,6 +3301,45 @@ local function ShiftStackClickEntry(entry, dx, dy)
     end
 end
 
+local function ApplySubtargetTargetSeparation(stackEntries, targetIndex, subTargetIndex, gap, liftOffset, horizontalAllowance, verticalAllowance)
+    local targetEntry = nil;
+    local subTargetEntry = nil;
+    local targetId = tonumber(targetIndex) or 0;
+    local subTargetId = tonumber(subTargetIndex) or 0;
+
+    if (targetId == 0 or subTargetId == 0 or targetId == subTargetId) then
+        return;
+    end
+
+    for _, entry in ipairs(stackEntries or {}) do
+        local index = tonumber(entry ~= nil and entry.plate ~= nil and entry.plate.targetIndex) or 0;
+
+        if (index == targetId) then
+            targetEntry = entry;
+        elseif (index == subTargetId) then
+            subTargetEntry = entry;
+        end
+    end
+
+    if (targetEntry == nil or subTargetEntry == nil) then
+        return;
+    end
+
+    if (StackRectsOverlap(subTargetEntry, targetEntry, horizontalAllowance, verticalAllowance) ~= true) then
+        return;
+    end
+
+    local overlapY =
+        math.min(subTargetEntry.drawY + subTargetEntry.height, targetEntry.drawY + targetEntry.height) -
+        math.max(subTargetEntry.drawY, targetEntry.drawY);
+
+    if (overlapY <= verticalAllowance) then
+        return;
+    end
+
+    subTargetEntry.drawY = subTargetEntry.drawY - overlapY - gap - liftOffset;
+end
+
 local function GetImguiDisplaySize()
     if (imguiApi == nil or imguiApi.GetIO == nil) then
         return nil, nil;
@@ -3310,7 +3382,7 @@ local function ApplyScreenPlateStacking(drawablePlates)
     local entriesByIndex = {};
     for _, entry in ipairs(pendingClickRects) do
         local targetIndex = tonumber(entry.targetIndex);
-        local union = entry.union;
+        local union = GetStackCollisionUnion(entry);
 
         if (
             targetIndex ~= nil and
@@ -3322,7 +3394,10 @@ local function ApplyScreenPlateStacking(drawablePlates)
             tonumber(union.x2) > tonumber(union.x1) and
             tonumber(union.y2) > tonumber(union.y1)
         ) then
-            entriesByIndex[targetIndex] = entry;
+            entriesByIndex[targetIndex] = {
+                clickEntry = entry,
+                stackUnion = union,
+            };
         end
     end
 
@@ -3331,28 +3406,29 @@ local function ApplyScreenPlateStacking(drawablePlates)
     local horizontalAllowance = math.max(0, math.floor((tonumber(settings.plateStackHorizontalOverlap) or 2) + 0.5));
     local verticalAllowance = math.max(0, math.floor((tonumber(settings.plateStackVerticalOverlap) or horizontalAllowance) + 0.5));
     local gap = math.max(0, math.floor((tonumber(settings.plateStackGap) or 4) + 0.5));
+    local subtargetLiftOffset = math.max(-160, math.min(160, math.floor((tonumber(settings.plateStackSubtargetLiftOffset) or 0) + 0.5)));
     local playerEngaged = IsPlayerEngaged() == true;
     local stackEntries = {};
 
     for order, plate in ipairs(drawablePlates or {}) do
         local stackType = GetStackType(plate);
-        local entry = entriesByIndex[tonumber(plate.targetIndex) or 0];
+        local stackInfo = entriesByIndex[tonumber(plate.targetIndex) or 0];
+        local entry = stackInfo ~= nil and stackInfo.clickEntry or nil;
+        local isFixed = IsFixedStackAnchor(plate, targetIndex, subTargetIndex);
 
         if (
             stackType ~= nil and
             entry ~= nil and
-            entry.union ~= nil and
-            stackTypes[stackType] == true and
-            not (stackType == 'enemy' and tostring(plate.stateName or 'Idle') == 'Idle') and
-            (stackType ~= 'pc' or playerEngaged == true or plate.isProtectedPlate == true)
+            stackInfo.stackUnion ~= nil and
+            (isFixed == true or stackTypes[stackType] == true) and
+            (isFixed == true or not (stackType == 'enemy' and tostring(plate.stateName or 'Idle') == 'Idle')) and
+            (isFixed == true or stackType ~= 'pc' or playerEngaged == true or plate.isProtectedPlate == true)
         ) then
-            local union = entry.union;
+            local union = stackInfo.stackUnion;
             local x1 = tonumber(union.x1);
             local y1 = tonumber(union.y1);
             local x2 = tonumber(union.x2);
             local y2 = tonumber(union.y2);
-            local isFixed =
-                settings.plateStackKeepTacticalFixed ~= false and IsFixedStackAnchor(plate, targetIndex, subTargetIndex);
             local stackX1 = x1;
             local stackX2 = x2;
 
@@ -3387,6 +3463,8 @@ local function ApplyScreenPlateStacking(drawablePlates)
     if (#stackEntries <= 1) then
         return;
     end
+
+    ApplySubtargetTargetSeparation(stackEntries, targetIndex, subTargetIndex, gap, subtargetLiftOffset, horizontalAllowance, verticalAllowance);
 
     table.sort(stackEntries, function(left, right)
         if (left.fixed ~= right.fixed) then
@@ -3910,6 +3988,58 @@ local function GetDrawableQueuedPlates()
     return out;
 end
 
+local function SortDrawablePlatesForDraw(drawablePlates)
+    if (type(drawablePlates) ~= 'table' or #drawablePlates <= 1) then
+        return drawablePlates;
+    end
+
+    local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
+    local sorted = {};
+
+    for order, plate in ipairs(drawablePlates) do
+        local index = tonumber(plate ~= nil and plate.targetIndex) or 0;
+        local drawLayer = 0;
+
+        if (index ~= 0 and index == tonumber(targetIndex)) then
+            drawLayer = 1;
+        elseif (index ~= 0 and index == tonumber(subTargetIndex)) then
+            drawLayer = 2;
+        end
+
+        sorted[#sorted + 1] = {
+            plate = plate,
+            priority = GetPlateQueuePriority(plate, targetIndex, subTargetIndex),
+            distance = tonumber(plate ~= nil and plate.distance) or 9999,
+            drawLayer = drawLayer,
+            order = order,
+        };
+    end
+
+    table.sort(sorted, function(left, right)
+        if (left.priority ~= right.priority) then
+            return left.priority > right.priority;
+        end
+
+        if (left.drawLayer ~= right.drawLayer) then
+            return left.drawLayer < right.drawLayer;
+        end
+
+        if (left.distance ~= right.distance) then
+            return left.distance > right.distance;
+        end
+
+        return left.order < right.order;
+    end);
+
+    local result = {};
+
+    for _, entry in ipairs(sorted) do
+        result[#result + 1] = entry.plate;
+    end
+
+    return result;
+end
+
 function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
     pass = pass + 1;
 
@@ -3944,7 +4074,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         pendingSelfClickRects = nil;
         pendingClickRects = {};
 
-        local drawablePlates = GetDrawableQueuedPlates();
+        local drawablePlates = SortDrawablePlatesForDraw(GetDrawableQueuedPlates());
 
         for _, plate in ipairs(drawablePlates) do
             if (
@@ -3974,7 +4104,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
     end
 
     lastDrawCount = 0;
-    local drawablePlates = GetDrawableQueuedPlates();
+    local drawablePlates = SortDrawablePlatesForDraw(GetDrawableQueuedPlates());
 
     for _, plate in ipairs(drawablePlates) do
         local ok, err = pcall(function ()

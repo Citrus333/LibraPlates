@@ -2581,6 +2581,132 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'hiddenscan' or subcommand == 'hiddenmobscan') then
+        local range = tonumber(args[3]) or targeting.GetSettings().enemyPlateRange or 50;
+        local limit = math.max(1, math.min(30, tonumber(args[4]) or 12));
+        local nameFilter = tostring(args[5] or ''):lower();
+        local entityManager = entities.GetEntityManager ~= nil and entities.GetEntityManager() or nil;
+
+        if (entityManager == nil) then
+            log.Warn('Hidden scan failed: no entity manager.');
+            return;
+        end
+
+        local rangeSq = range * range;
+        local rows = {};
+        local mobCount = 0;
+        local visibleCount = 0;
+        local hiddenCandidateCount = 0;
+
+        for index = 0, 2303 do
+            if (index < 1024 or index > 1791) then
+                local ent = GetEntity(index);
+                local distanceSq = tonumber(ent ~= nil and ent.Distance or nil);
+
+                if (
+                    ent ~= nil and
+                    tostring(ent.Name or '') ~= '' and
+                    distanceSq ~= nil and
+                    distanceSq <= rangeSq
+                ) then
+                    local spawnFlags = tonumber(CommandSafeCall(0, function()
+                        return entityManager:GetSpawnFlags(index);
+                    end)) or 0;
+                    local isMob = HasFlag(spawnFlags, 0x10);
+
+                    if (isMob == true) then
+                        mobCount = mobCount + 1;
+
+                        local hp = tonumber(ent.HPPercent);
+                        local render0 = tonumber(CommandSafeCall(0, function()
+                            return entityManager:GetRenderFlags0(index);
+                        end)) or 0;
+                        local render1 = tonumber(CommandSafeCall(0, function()
+                            return entityManager:GetRenderFlags1(index);
+                        end)) or 0;
+                        local actorPointer = tonumber(CommandSafeCall(0, function()
+                            return entityManager:GetActorPointer(index);
+                        end)) or 0;
+                        local hiddenUntilAggro = entities.IsHiddenUntilAggroEnemyNameStatus(ent.Name, ent.Status) == true;
+                        local plateVisible =
+                            HasFlag(render0, 0x200) == true and
+                            HasFlag(render0, 0x4000) ~= true and
+                            actorPointer ~= 0 and
+                            hiddenUntilAggro ~= true;
+
+                        local cleanName = tostring(ent.Name or ''):gsub('\170', ''):lower();
+                        local nameMatches = nameFilter == '' or cleanName:find(nameFilter, 1, true) ~= nil;
+
+                        if (plateVisible == true) then
+                            visibleCount = visibleCount + 1;
+                        else
+                            hiddenCandidateCount = hiddenCandidateCount + 1;
+                        end
+
+                        if (nameMatches == true or (nameFilter == '' and plateVisible ~= true)) then
+                            local reason = {};
+                            if (plateVisible == true) then reason[#reason + 1] = 'visibleByLP'; end
+                            if (HasFlag(render0, 0x200) ~= true) then reason[#reason + 1] = 'no-r0-0x200'; end
+                            if (HasFlag(render0, 0x4000) == true) then reason[#reason + 1] = 'r0-0x4000'; end
+                            if (actorPointer == 0) then reason[#reason + 1] = 'no-actor'; end
+                            if (hiddenUntilAggro == true) then reason[#reason + 1] = 'hidden-until-aggro'; end
+                            if (#reason == 0) then reason[#reason + 1] = 'unknown'; end
+
+                            rows[#rows + 1] = {
+                                index = index,
+                                name = ent.Name,
+                                distance = math.sqrt(distanceSq),
+                                status = ent.Status,
+                                hp = hp,
+                                serverId = GetDebugServerId(entityManager, index),
+                                spawnFlags = spawnFlags,
+                                render0 = render0,
+                                render1 = render1,
+                                actorPointer = actorPointer,
+                                reason = table.concat(reason, ','),
+                            };
+                        end
+                    end
+                end
+            end
+        end
+
+        table.sort(rows, function(left, right)
+            return (tonumber(left.distance) or 9999) < (tonumber(right.distance) or 9999);
+        end);
+
+        log.Info(
+            'Hidden scan range=' .. tostring(range) ..
+            ' mobs=' .. tostring(mobCount) ..
+            ' visibleByLP=' .. tostring(visibleCount) ..
+            ' hiddenCandidates=' .. tostring(hiddenCandidateCount) ..
+            ' filter=' .. tostring(nameFilter ~= '' and nameFilter or '-') ..
+            ' showing=' .. tostring(math.min(#rows, limit))
+        );
+
+        for rowIndex = 1, math.min(#rows, limit) do
+            local row = rows[rowIndex];
+            log.Info(
+                'Hidden scan ' .. tostring(rowIndex) ..
+                ' index=' .. tostring(row.index) ..
+                ' name=' .. tostring(row.name) ..
+                ' serverId=' .. tostring(row.serverId) ..
+                ' dist=' .. string.format('%.1f', tonumber(row.distance) or 0) ..
+                ' status=' .. tostring(row.status) ..
+                ' hp=' .. tostring(row.hp) ..
+                ' spawn=0x' .. string.format('%X', tonumber(row.spawnFlags) or 0) ..
+                ' render0=0x' .. string.format('%X', tonumber(row.render0) or 0) ..
+                ' render1=0x' .. string.format('%X', tonumber(row.render1) or 0) ..
+                ' actor=0x' .. string.format('%X', tonumber(row.actorPointer) or 0) ..
+                ' reason=' .. tostring(row.reason) ..
+                ' r0Bits=' .. DebugFlagList(row.render0, { 0x200, 0x2000, 0x4000, 0x400000, 0x800000, 0x40000000, 0x80000000 }) ..
+                ' r1Bits=' .. DebugFlagList(row.render1, { 0x8, 0x40, 0x400, 0x800, 0x8000, 0x2000000 })
+            );
+        end
+
+        return;
+    end
+
     if (subcommand == 'entitydebug' or subcommand == 'targetcap' or subcommand == 'doorcap') then
         local targetIndex = tonumber(args[3]) or targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
         local debug = entities.GetEntityDebugInfo(targetIndex, targeting.GetSettings().enemyPlateRange);

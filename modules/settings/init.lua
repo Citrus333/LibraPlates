@@ -8829,10 +8829,6 @@ local function DrawGeneralVisibilitySection(settings)
                 settings.plateStackClosestOnTop = value == true;
             end, 'Within the same priority group, closer plates stay in front and farther plates move first.', 'PlateStackClosestOnTop');
 
-            DrawVisibilityCheckbox('Keep target fixed', settings.plateStackKeepTacticalFixed ~= false, function(value)
-                settings.plateStackKeepTacticalFixed = value == true;
-            end, 'Keeps Self, Target, Subtarget, and tactical marker plates anchored while other stackable plates move around them.', 'PlateStackKeepTacticalFixed');
-
         end
     end);
 
@@ -8879,13 +8875,19 @@ local function DrawGeneralVisibilitySection(settings)
                     if (imgui.Dummy ~= nil) then imgui.Dummy({ 1, 2 }); end
                 end
             end
-            uiTooltip.Info('Controls which stackable plate types stay anchored first. Self, Target, Subtarget, and tactical marker plates are handled separately by Keep target fixed.');
+            uiTooltip.Info('Controls which stackable plate types stay anchored first. Self, target, subtarget, and tactical marker plates always stay fixed while other stackable plates move around them.');
         end);
 
         DrawVisibilityPanel('Stacking Spacing', function()
             local stackGap, stackGapChanged = DrawVisibilityNumber('Stack spacing', settings.plateStackGap or 4, 'PlateStackGap', 0, 160, 1, 'Pixel space kept between stacked plates. 20 means about 20 px between plates.');
             if (stackGapChanged == true) then
                 settings.plateStackGap = math.max(0, math.min(160, math.floor((tonumber(stackGap) or 4) + 0.5)));
+            end
+
+            local subtargetLiftValue = tonumber(settings.plateStackSubtargetLiftOffset) or 0;
+            local subtargetLift, subtargetLiftChanged = DrawVisibilityNumber('Subtarget lift', math.floor(subtargetLiftValue + 0.5), 'PlateStackSubtargetLiftOffset', -160, 160, 1, 'Extra vertical offset used only when a subtarget overlaps the main target. Positive moves it higher; negative pulls it closer.');
+            if (subtargetLiftChanged == true) then
+                settings.plateStackSubtargetLiftOffset = math.max(-160, math.min(160, math.floor((tonumber(subtargetLift) or 0) + 0.5)));
             end
 
             local horizontalOverlapValue = tonumber(settings.plateStackHorizontalOverlap) or 2;
@@ -9903,7 +9905,6 @@ local helpEntries = {
     { kind = 'Setting', title = 'Horizontal overlap', path = 'Settings > Visibility > Plate stacking', text = 'How much plates may overlap left/right before stacking reacts.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Vertical overlap', path = 'Settings > Visibility > Plate stacking', text = 'How much plates may overlap up/down before stacking reacts.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Horizontal spread', path = 'Settings > Visibility > Plate stacking', text = 'How far stacked plates may fan left or right before stacking upward.', tab = 'Settings', section = 'Visibility' },
-    { kind = 'Setting', title = 'Keep target fixed', path = 'Settings > Visibility > Plate stacking', text = 'Keeps target and subtarget plates from being pushed by stack placement.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Hide distant world plates', path = 'Settings > Performance > World plates', text = 'Hides world plates past the distance limit while keeping target/subtarget/tactical plates.', tab = 'Settings', section = 'Performance' },
     { kind = 'Setting', title = 'AOE font color', path = 'Plates > Enemy > Tactical > AOE range (module)', text = 'Font color used for offensive AOE affected enemy names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
     { kind = 'Setting', title = 'AOE icon', path = 'Plates > Enemy/Self > Tactical > AOE range (module)', text = 'Optional icon shown with AOE affected names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
@@ -10364,7 +10365,7 @@ local troubleshooterEntries = {
             'Horizontal overlap controls how much plates may overlap left/right before being pushed apart.',
             'Vertical overlap controls how much plates may overlap up/down before being pushed apart.',
             'Horizontal spread controls how much nearby plates can fan sideways instead of only upward.',
-            'Keep target fixed can make the selected target feel stable while other plates move around it.',
+            'Self, target, subtarget, and tactical marker plates stay fixed while other stackable plates move around them.',
         },
     },
     {

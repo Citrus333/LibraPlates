@@ -688,7 +688,7 @@ local function CachedPlayerIdentityMatches(player, cached)
     return tostring(cached.name or '') == tostring(player ~= nil and player.name or '');
 end
 
-local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle)
+local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, isProtectedPlate, isPartyPlayer)
     if (cached == nil or cached.texture == nil) then
         return false;
     end
@@ -717,6 +717,8 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
         tp = hasTp == true and tpValue or nil,
         name = '',
         isSelf = false,
+        isProtectedPlate = isProtectedPlate == true,
+        isPartyPlayer = isPartyPlayer == true,
         stateName = targetStateName,
         clickTargetType = 'pc',
         worldMarker = targeting.ApplyPlateScalingSettings({
@@ -725,7 +727,7 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             tpBar = tpBarStyle or cached.tpBar or { enabled = false },
             liveResourceBars = false,
             plateTextureId = plateTextureId,
-            plateAlwaysOnTop = useTargetOverlay == true,
+            plateAlwaysOnTop = isProtectedPlate == true or useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,
             useExactNameplateAnchor = true,
             plateWorldWidth = cached.plateWorldWidth or 2.35,
@@ -739,6 +741,8 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             clickTargetType = 'pc',
             clickName = player.name,
             layoutStateName = layoutStateName,
+            protectedPlate = isProtectedPlate == true,
+            partyPlate = isPartyPlayer == true,
         }, 'pc', 0, cached.plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
@@ -746,7 +750,7 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
     return true;
 end
 
-local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, maxAgeOverride)
+local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, maxAgeOverride, isProtectedPlate, isPartyPlayer)
     if (targetStateName ~= 'Idle' or useTargetOverlay == true or state.GetConfigOpen() == true) then
         return false;
     end
@@ -771,7 +775,7 @@ local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, la
         return false;
     end
 
-    if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle) == true) then
+    if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, isProtectedPlate, isPartyPlayer) == true) then
         perfMeter.Count('pc.cache.directHit', 1);
         return true;
     end
@@ -1151,7 +1155,7 @@ local function QueuePlayer(player)
 
     if (
         (canUseFreshIdleCache == true or canUseTacticalCacheWindow == true) and
-        QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, nil, nil, nil, earlyCacheMaxAge) == true
+        QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, nil, nil, nil, earlyCacheMaxAge, isProtectedPlate, isPartyPlayer) == true
     ) then
         return;
     end
@@ -1468,7 +1472,7 @@ local function QueuePlayer(player)
         staleCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
         local cached = indexed ~= nil and indexed.signature == signature and staleCached or nil;
 
-        if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle) == true) then
+        if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle, isProtectedPlate, isPartyPlayer) == true) then
             cached.lastFullRefresh = os.clock();
             perfMeter.Count('pc.cache.hit', 1);
             return;
@@ -1479,7 +1483,7 @@ local function QueuePlayer(player)
             adaptivePerformance.ShouldThrottleBackground() == true and
             staleCached ~= nil and
             (os.clock() - (tonumber(staleCached.lastUsed) or 0)) < 1.00 and
-            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle) == true
+            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle, isProtectedPlate, isPartyPlayer) == true
         ) then
             perfMeter.Count('pc.cache.smooth', 1);
             return;
@@ -1501,7 +1505,7 @@ local function QueuePlayer(player)
     ) then
         if (
             staleCached ~= nil and
-            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle) == true
+            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle, isProtectedPlate, isPartyPlayer) == true
         ) then
             perfMeter.Count('pc.cache.deferred', 1);
         else
@@ -1692,6 +1696,8 @@ local function QueuePlayer(player)
         tp = hasTp == true and tpValue or nil,
         name = '',
         isSelf = false,
+        isProtectedPlate = isProtectedPlate == true,
+        isPartyPlayer = isPartyPlayer == true,
         stateName = targetStateName,
         clickTargetType = 'pc',
         worldMarker = targeting.ApplyPlateScalingSettings({
@@ -1700,7 +1706,7 @@ local function QueuePlayer(player)
             tpBar = liveTpBarStyle,
             liveResourceBars = false,
             plateTextureId = plateTextureId,
-            plateAlwaysOnTop = useTargetOverlay == true,
+            plateAlwaysOnTop = isProtectedPlate == true or useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,
             useExactNameplateAnchor = true,
             plateWorldWidth = 2.35,
@@ -1714,6 +1720,8 @@ local function QueuePlayer(player)
             clickTargetType = 'pc',
             clickName = player.name,
             layoutStateName = layoutStateName,
+            protectedPlate = isProtectedPlate == true,
+            partyPlate = isPartyPlayer == true,
         }, 'pc', 0, plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);

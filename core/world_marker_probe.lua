@@ -3098,6 +3098,8 @@ function worldMarkerProbe.QueuePlate(plate)
         jobIconTextureId = plate.jobIconTextureId,
         distance = plate.distance,
         isSelf = plate.isSelf == true,
+        isProtectedPlate = plate.isProtectedPlate == true,
+        isPartyPlayer = plate.isPartyPlayer == true,
         stateName = plate.stateName,
         worldMarker = plate.worldMarker,
         clickTargetType = plate.clickTargetType or (plate.isSelf == true and 'self' or 'enemy'),
@@ -3342,7 +3344,7 @@ local function ApplyScreenPlateStacking(drawablePlates)
             entry.union ~= nil and
             stackTypes[stackType] == true and
             not (stackType == 'enemy' and tostring(plate.stateName or 'Idle') == 'Idle') and
-            (stackType ~= 'pc' or playerEngaged == true)
+            (stackType ~= 'pc' or playerEngaged == true or plate.isProtectedPlate == true)
         ) then
             local union = entry.union;
             local x1 = tonumber(union.x1);
@@ -3877,7 +3879,10 @@ local function GetDrawableQueuedPlates()
     for _, plate in ipairs(queuedPlates) do
         local targetType = tostring(plate ~= nil and plate.clickTargetType or ''):lower();
 
-        if (targetType == 'enemy') then
+        if (plate ~= nil and plate.isProtectedPlate == true) then
+            out[#out + 1] = plate;
+            reservedCount = reservedCount + 1;
+        elseif (targetType == 'enemy') then
             out[#out + 1] = plate;
             reservedCount = reservedCount + 1;
         else

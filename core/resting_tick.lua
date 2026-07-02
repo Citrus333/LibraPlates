@@ -1,4 +1,7 @@
 local restingTick = {};
+local alertSounds = require('core.alert_sounds');
+local state = require('core.state');
+local globalDefaults = require('config.global');
 
 local tickState = {
     active = false,
@@ -45,6 +48,12 @@ end
 
 local function ShouldPreserveLogoutTransition()
     return logoutState.active == true and logoutState.endClock ~= nil;
+end
+
+local function ShouldPlayLogoutSound()
+    local global = state.GetGlobalSettings(globalDefaults);
+    local resting = global.resting or {};
+    return resting.logoutSoundEnabled ~= false;
 end
 
 local function GetLogoutCountdown(settings)
@@ -152,6 +161,9 @@ function restingTick.HandleTextIn(e)
         logoutState.endClock = logoutState.startClock + duration;
         logoutState.duration = duration;
         logoutState.label = label;
+        if (ShouldPlayLogoutSound() == true) then
+            alertSounds.Play('FFXIV_Log_Out.wav', 100);
+        end
         return;
     end
 

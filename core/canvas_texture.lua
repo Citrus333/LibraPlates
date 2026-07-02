@@ -98,6 +98,28 @@ local function BoostColor(color, boost, alpha)
     };
 end
 
+local function NormalizeTextureStrength(value)
+    local strength = tonumber(value);
+
+    if (strength == nil) then
+        strength = 100;
+    end
+
+    return math.max(0, math.min(100, strength)) / 100;
+end
+
+local function ColorWithAlphaMultiplier(color, fallback, multiplier)
+    local source = color or fallback or { 1.0, 1.0, 1.0, 1.0 };
+    local alpha = 1.0;
+
+    if (type(source) == 'table') then
+        alpha = tonumber(source[4]) or 1.0;
+    end
+
+    local result = BoostColor(source, 1.0, alpha * (tonumber(multiplier) or 1.0));
+    return ColorToD3D(result, fallback);
+end
+
 local function TextureId(value)
     if (value == nil) then
         return nil;
@@ -948,8 +970,14 @@ local function DrawBar(device, centerX, centerY, bar, progress, defaultColor, re
         fillX = barX + barW - fillW;
     end
 
-    if (bar.textureId ~= nil and tonumber(bar.textureId) ~= nil and tonumber(bar.textureId) ~= 0) then
-        DrawTexture(device, bar.textureId, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor), progress, 1);
+    local textureStrength = NormalizeTextureStrength(bar.textureStrength);
+
+    if (bar.textureId ~= nil and tonumber(bar.textureId) ~= nil and tonumber(bar.textureId) ~= 0 and textureStrength > 0) then
+        if (textureStrength < 1) then
+            DrawRect(device, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor));
+        end
+
+        DrawTexture(device, bar.textureId, fillX, barY, fillW, barH, ColorWithAlphaMultiplier(bar.color, defaultColor, textureStrength), progress, 1);
     else
         DrawRect(device, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor));
     end
@@ -1137,8 +1165,14 @@ local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, 
         DrawRect(device, segmentX, barY, segmentW, barH, ColorToD3D(bar.backgroundColor, { 0.05, 0.05, 0.05, 0.85 }));
 
         if (segmentProgress > 0) then
-            if (bar.textureId ~= nil and tonumber(bar.textureId) ~= nil and tonumber(bar.textureId) ~= 0) then
-                DrawTexture(device, bar.textureId, segmentX, barY, segmentW * segmentProgress, barH, ColorToD3D(segmentColor, defaultColor), segmentProgress, 1);
+            local textureStrength = NormalizeTextureStrength(bar.textureStrength);
+
+            if (bar.textureId ~= nil and tonumber(bar.textureId) ~= nil and tonumber(bar.textureId) ~= 0 and textureStrength > 0) then
+                if (textureStrength < 1) then
+                    DrawRect(device, segmentX, barY, segmentW * segmentProgress, barH, ColorToD3D(segmentColor, defaultColor));
+                end
+
+                DrawTexture(device, bar.textureId, segmentX, barY, segmentW * segmentProgress, barH, ColorWithAlphaMultiplier(segmentColor, defaultColor, textureStrength), segmentProgress, 1);
             else
                 DrawRect(device, segmentX, barY, segmentW * segmentProgress, barH, ColorToD3D(segmentColor, defaultColor));
             end
@@ -2277,8 +2311,8 @@ function canvasTexture.Render(plate, key)
             DrawPlateBackground(device, centerX, centerY, plate.background, FindRect(elementRects, 'background'));
             DrawTargetMarkerStack(plate.targetMarker, 'background');
             DrawTargetMarkerStack(plate.targetMarker, 'foreground');
-            DrawBar(device, centerX, centerY, plate.hpBar, hp * 100, { 0.20, 0.95, 0.34, 0.95 }, FindRect(elementRects, 'hp'));
             DrawBar(device, centerX, centerY, plate.mpBar, mp, { 0.25, 0.45, 1.0, 0.95 }, FindRect(elementRects, 'mp'));
+            DrawBar(device, centerX, centerY, plate.hpBar, hp * 100, { 0.20, 0.95, 0.34, 0.95 }, FindRect(elementRects, 'hp'));
             DrawTpBar(device, centerX, centerY, plate.tpBar, tp, { 1.0, 0.70, 0.18, 0.95 }, FindRect(elementRects, 'tp'));
             DrawBar(device, centerX, centerY, plate.castBar, math.max(0, math.min(100, tonumber(plate.cast) or 0)), { 0.65, 0.35, 1.0, 0.95 }, FindRect(elementRects, 'cast'));
 
@@ -2658,6 +2692,21 @@ end
 
 function canvasTexture.ReleaseKey(key)
     return ReleaseTextureKey(key, false);
+end
+
+function canvasTexture.Invalidate()
+    local keys = {};
+
+    for key, _ in pairs(textures) do
+        keys[#keys + 1] = key;
+    end
+
+    for _, key in ipairs(keys) do
+        ReleaseTextureKey(key, false);
+    end
+
+    textureAliases = {};
+    renderVersion = renderVersion + 1;
 end
 
 function canvasTexture.GetCacheStats()

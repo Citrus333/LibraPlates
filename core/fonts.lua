@@ -8,6 +8,20 @@ local function Trim(value)
     return tostring(value or ''):gsub('^%s+', ''):gsub('%s+$', '');
 end
 
+local function NormalizeFontChoice(value)
+    if (type(value) ~= 'string') then
+        return 'Default';
+    end
+
+    local text = Trim(value);
+
+    if (text == '') then
+        return 'Default';
+    end
+
+    return text;
+end
+
 local function TitleCase(value)
     return tostring(value or ''):gsub('(%a)([%w]*)', function(first, rest)
         return string.upper(first) .. string.lower(rest);
@@ -60,6 +74,11 @@ end
 
 local function ReadFontNames(path)
     local names = {};
+
+    if (type(path) ~= 'string' or path == '') then
+        return names;
+    end
+
     local file = io.open(path, 'rb');
 
     if (file == nil) then
@@ -152,8 +171,13 @@ end
 local fontFileCache = {};
 
 local function FindFontFile(value)
-    local choice = StripExtension(value);
+    local choice = StripExtension(NormalizeFontChoice(value));
     local key = string.lower(choice);
+
+    if (choice == '' or choice == 'Default') then
+        fontFileCache[key] = false;
+        return nil;
+    end
 
     if (fontFileCache[key] ~= nil) then
         return fontFileCache[key];
@@ -223,7 +247,7 @@ local function StripStyleName(value)
 end
 
 local function GetFontFlags(value)
-    local lower = string.lower(tostring(value or ''));
+    local lower = string.lower(NormalizeFontChoice(value));
     local flags = 0;
 
     if (lower:find('bold', 1, true) ~= nil or lower:find('black', 1, true) ~= nil) then
@@ -238,7 +262,7 @@ local function GetFontFlags(value)
 end
 
 local function GetFamilyCandidates(value)
-    local base = CleanFamilyName(value);
+    local base = CleanFamilyName(NormalizeFontChoice(value));
     local noTrailingNumber = Trim(base:gsub('%s+[0-9]+$', ''));
     local noPointSize = Trim(noTrailingNumber:gsub('%s+[0-9]+pt%s*', ' '):gsub('%s+', ' '));
     local result = {};
@@ -247,7 +271,7 @@ local function GetFamilyCandidates(value)
     local strippedNoTrailingNumber = StripStyleName(noTrailingNumber);
     local fontFile = FindFontFile(value);
 
-    if (fontFile ~= nil) then
+    if (type(fontFile) == 'string' and fontFile ~= '') then
         local metadata = ReadFontNames(fontFile);
 
         for _, name in ipairs(metadata[16] or {}) do
@@ -324,7 +348,7 @@ local function IsFontRenderable(family, flags)
 end
 
 local function ResolveStatus(value)
-    local fontName = tostring(value or 'Default');
+    local fontName = NormalizeFontChoice(value);
     local candidates = nil;
 
     if (fontName == 'Default') then
@@ -457,7 +481,7 @@ function fonts.GetChoices(kind)
 end
 
 function fonts.Resolve(value)
-    local status = ResolveStatus(value);
+    local status = ResolveStatus(NormalizeFontChoice(value));
 
     if (status.available == true) then
         return status.family;
@@ -470,25 +494,25 @@ function fonts.GetRole(globalSettings, useSmallFont)
     local font = (globalSettings ~= nil and globalSettings.font) or {};
 
     if (useSmallFont == true) then
-        return fonts.Resolve(font.smallFamily or font.family or 'Default');
+        return fonts.Resolve(NormalizeFontChoice(font.smallFamily or font.family or 'Default'));
     end
 
-    return fonts.Resolve(font.largeFamily or font.family or 'Default');
+    return fonts.Resolve(NormalizeFontChoice(font.largeFamily or font.family or 'Default'));
 end
 
 function fonts.GetRoleFlags(globalSettings, useSmallFont)
     local font = (globalSettings ~= nil and globalSettings.font) or {};
-    local selected = font.largeFamily or font.family or 'Default';
+    local selected = NormalizeFontChoice(font.largeFamily or font.family or 'Default');
 
     if (useSmallFont == true) then
-        selected = font.smallFamily or font.family or 'Default';
+        selected = NormalizeFontChoice(font.smallFamily or font.family or 'Default');
     end
 
     return GetFontFlags(selected);
 end
 
 function fonts.IsAvailable(value)
-    local fontName = tostring(value or 'Default');
+    local fontName = NormalizeFontChoice(value);
     local candidates = nil;
 
     if (fontName == 'Default') then

@@ -21,6 +21,7 @@ local engagedEnemies = require('core.engaged_enemies');
 local enmity = require('core.enmity');
 local enemyCasts = require('core.enemy_casts');
 local enemyAlerts = require('core.enemy_alerts');
+local alertSounds = require('core.alert_sounds');
 local enemyStatuses = require('core.enemy_statuses');
 local partyStatuses = require('core.party_statuses');
 local trustStatusIcons = require('core.trust_status_icons');
@@ -107,6 +108,7 @@ ashita.events.register('unload', 'libraplates_unload', function()
     diagnostics.Restore();
     state.SaveIfLoadedOrSaved();
     modules.Unload();
+    alertSounds.Cleanup();
     textureLoader.ClearCache();
     npcObjectInfo.ClearTextureCache();
     quickMenu.ClearTextureCache();
@@ -170,6 +172,7 @@ end);
 ashita.events.register('d3d_present', 'libraplates_present', function()
     local ok, err = pcall(function()
         adaptivePerformance.UpdateFrame();
+        blacklistModelReplace.Update();
         mounts.Update();
         profileAutoSwitch.Update();
         nativeTargetArrow.SetTraceCapturePaused(false);

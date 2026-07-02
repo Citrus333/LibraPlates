@@ -494,8 +494,14 @@ local function QueueNpcObject(entity)
     ApplyNpcAnchorDefaults(typeLineSettings, typeLineDefaults, 0, -30);
 
     local globalSettings = state.GetGlobalSettings(globalDefaults);
-    local iconTextureId = suppressExpensiveWorldWidgets ~= true and iconSettings.enabled == true and npcObjectInfo.GetTextureId(displayName, resolvedEntityName) or nil;
-    local typeText = suppressExpensiveWorldWidgets ~= true and typeLineSettings.enabled == true and npcObjectInfo.GetType(displayName, resolvedEntityName) or nil;
+    local lookupOptions = { targetIndex = entity.index };
+    local iconTextureId = suppressExpensiveWorldWidgets ~= true and iconSettings.enabled == true and (
+        npcObjectInfo.GetTextureIdForInfo(npcInfo) or npcObjectInfo.GetTextureId(displayName, resolvedEntityName, lookupOptions)
+    ) or nil;
+    local typeText = suppressExpensiveWorldWidgets ~= true and typeLineSettings.enabled == true and (
+        (npcInfo ~= nil and npcInfo.type ~= nil and tostring(npcInfo.type) ~= '' and tostring(npcInfo.type)) or
+        npcObjectInfo.GetType(displayName, resolvedEntityName, lookupOptions)
+    ) or nil;
     local distanceText = nil;
 
     if (showDistanceBadge == true and distanceSettings.enabled == true and entity.distance ~= nil) then
@@ -792,6 +798,7 @@ local function QueueTacticalNpc(entity)
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             texture = hpBarSettings.texture or 'Solid',
+            textureStrength = tonumber(hpBarSettings.textureStrength) or 100,
             textureId = barTextures.GetTextureId(hpBarSettings.texture),
             showAtPercent = tonumber(hpBarSettings.showAtPercent) or 100,
             text = hpBarSettings.showPercent == true and (tostring(math.floor(hpPercent + 0.5)) .. '%') or '',

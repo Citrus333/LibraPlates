@@ -605,7 +605,7 @@ local function DrawObjectTargetInfo(drawList, index)
     local iconSettings = state.GetWidgetSettings('Object', 'Idle', 'Icon', npcObjectIconDefaults);
     local nameText = displayName;
     local typeText = tostring(info.type or '');
-    local iconTextureId = npcObjectInfo.GetTextureId(displayName, 'Object');
+    local iconTextureId = npcObjectInfo.GetTextureIdForInfo(info) or npcObjectInfo.GetTextureId(displayName, 'Object', { targetIndex = index });
     local fallbackScale = 0.38;
     local iconSize = math.max(10, math.min(48, tonumber(iconSettings.iconSize) or npcObjectIconDefaults.iconSize or 22));
     local nameTextureId = nil;

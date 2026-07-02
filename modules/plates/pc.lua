@@ -928,6 +928,7 @@ local function BuildPcPlateData(context)
 
     local displayName = ShortenName(context.player.name, context.nameSettings.shortenName);
     displayName = playerBlacklist.GetDisplayName(context.player, displayName);
+    nameColor = playerBlacklist.GetDisplayNameColor(context.player, nameColor);
 
     local plateData = {
         hp = context.hpPercent,
@@ -959,6 +960,7 @@ local function BuildPcPlateData(context)
             anchorTo = context.hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = context.hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             texture = context.hpBarSettings.texture or 'Solid',
+            textureStrength = tonumber(context.hpBarSettings.textureStrength) or 100,
             textureId = context.hpBarLoads == true and barTextures.GetTextureId(context.hpBarSettings.texture) or nil,
             animationEnabled = context.hpAnimationEnabled,
             animationTextureId = context.hpAnimationEnabled == true and barAnimations.GetTextureId(context.hpBarSettings.lowAnimation) or nil,
@@ -989,6 +991,7 @@ local function BuildPcPlateData(context)
             anchorTo = context.mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
             anchorPoint = context.mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
             texture = context.mpBarSettings.texture or 'Solid',
+            textureStrength = tonumber(context.mpBarSettings.textureStrength) or 100,
             textureId = context.mpBarLoads == true and barTextures.GetTextureId(context.mpBarSettings.texture) or nil,
             animationEnabled = context.mpAnimationEnabled,
             animationTextureId = context.mpAnimationEnabled == true and barAnimations.GetTextureId(context.mpBarSettings.lowAnimation) or nil,
@@ -1019,6 +1022,7 @@ local function BuildPcPlateData(context)
             anchorTo = context.tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = context.tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             texture = context.tpBarSettings.texture or 'Solid',
+            textureStrength = tonumber(context.tpBarSettings.textureStrength) or 100,
             textureId = context.tpBarLoads == true and barTextures.GetTextureId(context.tpBarSettings.texture) or nil,
             color2 = context.tpBarSettings.color2 or tpBarDefaults.color2,
             color3 = context.tpBarSettings.color3 or tpBarDefaults.color3,
@@ -1454,7 +1458,9 @@ local function QueuePlayer(player)
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'dist:' .. SettingKey(distanceSettings, { 'enabled', 'loadMode', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint' }),
-            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
+            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
+            'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
+            'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
             'icons=' .. tostring(#icons),
         }, '\n');
 

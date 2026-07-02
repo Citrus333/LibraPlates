@@ -7731,8 +7731,6 @@ local npcIcons = T{
         note = "Involved in Mission:\n* Gilded Claws\n* The Voracious Resurgence\n",
     },
 
-
-
     ['Leviathan'] = {
         type = "Mission Associate",
         icon = "QuestAssociate.png",
@@ -7749,6265 +7747,1660 @@ local npcIcons = T{
         note = "Involved in Quest:\n* The Price of Peace\n",
     },
 	
-	
-    ['Lilith Ascendant'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Walk of Echoes' },
-        zoneIds = { 182 },
-        note = 'Needs Review.',
-    },
-
-    ['Limbus Operator'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-    ['Liseran Door: Entrance'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Kamihr Drifts', 'Woh Gates' },
-        zoneIds = { 267, 273 },
-        note = 'Needs Review.',
-    },
-
-    ['Liseran Door: Exit'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Outer Ra\'Kaznar' },
-        zoneIds = { 274 },
-        note = 'Needs Review.',
-    },
-
-    ['Listener'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-    ['Living Cairn'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Cirdas Caverns [U]', 'Rala Waterways [U]', 'Yorcia Weald [U]' },
-        zoneIds = { 259, 264, 271 },
-        note = 'Needs Review.',
-    },
-
-
     ['Livura-Novora'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Fort Karugo-Narugo [S]', 'West Sarutabaruta [S]' },
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
+        zones = { 'West Sarutabaruta [S]', 'Fort Karugo-Narugo [S]' },
         zoneIds = { 95, 96 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* A Manifest Problem\n",
     },
-
-
-    ['Localize'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Lockbox'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Everbloom Hollow', 'Ghoyu\'s Reverie', 'Ruhotz Silvermines' },
-        zoneIds = { 86, 93, 129 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Locked Gate #A'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
-        zoneIds = { 133, 189, 275 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Locked Gate #B'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
-        zoneIds = { 133, 189, 275 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Locked Gate #C'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
-        zoneIds = { 133, 189, 275 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Locked Gate #D'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Outer Rakaznar [U1]', 'Outer Rakaznar [U2]', 'Outer Rakaznar [U3]' },
-        zoneIds = { 133, 189, 275 },
-        note = 'Needs Review.',
-    },
-
-
-
 
     ['Lohvi Rashiibo'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rala Waterways' },
         zoneIds = { 258 },
-        note = 'Needs Review.',
     },
-
 
     ['Lollano'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
-
-    ['Lonely Evergreen'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier' },
-        zoneIds = { 111 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Loose Sand'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Attohwa Chasm' },
-        zoneIds = { 7 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Lost Article'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ceizak Battlegrounds', 'Cirdas Caverns', 'Dho Gates', 'Foret de Hennetiel', 'Kamihr Drifts', 'Marjami Ravine', 'Moh Gates', 'Morimar Basalt Fields', 'Sih Gates', 'Woh Gates', 'Yahse Hunting Grounds', 'Yorcia Weald' },
-        zoneIds = { 260, 261, 262, 263, 265, 266, 267, 268, 269, 270, 272, 273 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Lottery-Maker'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Lourima'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Chateau d\'Oraguille' },
         zoneIds = { 233 },
-        note = 'Needs Review.',
     },
-
-
-
-
-    ['Luck Rune'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'Beaucedine Glacier', 'Lufaise Meadows', 'Pashhow Marshlands', 'Qufim Island', 'Tahrongi Canyon', 'Xarcabard' },
-        zoneIds = { 24, 105, 109, 111, 112, 117, 126 },
-        note = 'Needs Review.',
-    },
-
-
-    ['LuckRune'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Yuhtunga Jungle' },
-        zoneIds = { 123 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Lukka-Lakka'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Fort Karugo-Narugo [S]', 'Windurst Waters [S]' },
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
+        zones = { 'Windurst Waters [S]', 'Fort Karugo-Narugo [S]' },
         zoneIds = { 94, 96 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* A Manifest Problem\n",
     },
-
 
     ['Lumaayu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Mamool Ja Training Grounds' },
         zoneIds = { 66 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Imperial Whitegate\n",
     },
-
-
-    ['Luminant'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Attohwa Chasm' },
-        zoneIds = { 7 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Luminous Convergence'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Garden of Ru\'Hmet' },
-        zoneIds = { 35 },
-        note = 'Needs Review.',
-    },
-
 
     ['Luqrabah'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Aydeewa Subterrane' },
         zoneIds = { 50, 68 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-    ['Lycopodium'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'Batallia Downs [S]', 'Garlaige Citadel', 'Garlaige Citadel [S]', 'North Gustaberg', 'North Gustaberg [S]' },
-        zoneIds = { 84, 88, 105, 106, 164, 200 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Lycopodium Rootprint'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Tahrongi' },
-        zoneIds = { 45 },
-        note = 'Needs Review.',
-    },
-
 
     ['Machudiaux'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Sauromugue Champaign [S]', 'Southern San d\'Oria [S]' },
-        zoneIds = { 80, 98 },
-        note = 'Needs Review.',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Southern San d\'Oria [S]', 'Sauromugue Champaign [S]' },
+        zoneIds = { 136, 98 },
+        note = "Involved in Mission:\n* Mayakov Dance Troupe\n",
     },
-
 
     ['Mafaal Ja'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Arrapago Reef' },
         zoneIds = { 54 },
-        note = 'Needs Review.',
     },
-
-
-    ['Magian MoogleHood'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home', 'Ru\'Lude Gardens' },
-        zoneIds = { 210, 243 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Magic Gate of Horutoto'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Inner Horutoto Ruins' },
-        zoneIds = { 192 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Magicite'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Altar Room', 'Monastic Cavern', 'Qulun Dome', 'Ru\'Lude Gardens' },
-        zoneIds = { 148, 150, 152, 243 },
-        note = 'Needs Review.',
-    },
-
-
-    ['magicman'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate' },
-        zoneIds = { 50 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Magma Vein'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Moh Gates' },
-        zoneIds = { 269 },
-        note = 'Needs Review.',
-    },
-
 
     ['Mahk Rhyonja'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Castle Oztroja [S]' },
         zoneIds = { 99 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Cultivating Catastrophe\n",
     },
-
-
-    ['Mahogany Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Inner Horutoto Ruins', 'Mamook', 'Sacrificial Chamber' },
-        zoneIds = { 65, 163, 192 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['MaidenDark'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chamber of Oracles' },
-        zoneIds = { 168 },
-        note = 'Needs Review.',
-    },
-
-
-    ['MaidenEarth'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chamber of Oracles' },
-        zoneIds = { 168 },
-        note = 'Needs Review.',
-    },
-
-
-    ['MaidenFire'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chamber of Oracles' },
-        zoneIds = { 168 },
-        note = 'Needs Review.',
-    },
-
-
-    ['MaidenIce'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chamber of Oracles' },
-        zoneIds = { 168 },
-        note = 'Needs Review.',
-    },
-
-
-    ['MaidenLight'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chamber of Oracles' },
-        zoneIds = { 168 },
-        note = 'Needs Review.',
-    },
-
-
-    ['MaidenThunder'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chamber of Oracles' },
-        zoneIds = { 168 },
-        note = 'Needs Review.',
-    },
-
-
-    ['MaidenWater'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chamber of Oracles' },
-        zoneIds = { 168 },
-        note = 'Needs Review.',
-    },
-
-
-    ['MaidenWind'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chamber of Oracles' },
-        zoneIds = { 168 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Maik'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Chocobo Circuit' },
         zoneIds = { 70 },
-        note = 'Needs Review.',
     },
-
-
-    ['Main Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Tavnazian Safehold' },
-        zoneIds = { 26 },
-        note = 'Needs Review.',
-    },
-
 
     ['Makrena-Rukrena'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Chocobo Circuit' },
         zoneIds = { 70 },
-        note = 'Needs Review.',
     },
-
-
-    ['Malicious Tulfaire'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Yorcia Weald [U]' },
-        zoneIds = { 264 },
-        note = 'Needs Review.',
-    },
-
 
     ['Malzaab'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Mount Zhayolm', 'Wajaom Woodlands' },
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands', 'Mount Zhayolm' },
         zoneIds = { 50, 51, 61 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-
-    ['Mamool Ja Diver'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Arrapago Reef' },
-        zoneIds = { 54 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mamuuja'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bhaflau Thickets' },
-        zoneIds = { 52 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mandragora Warden ???'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Boyahda Tree' },
-        zoneIds = { 153 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Mannequin'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Map-Change'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Marble Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Heavens Tower', 'Toraimarai Canal', 'Windurst Waters', 'Windurst Waters [S]' },
-        zoneIds = { 94, 169, 238, 242 },
-        note = 'Needs Review.',
-    },
-
 
     ['Marcus'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Xarcabard [S]' },
         zoneIds = { 137 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Darkness Descends\n* When Wills Collide\n",
     },
-
 
     ['Marianne, I.M.'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Fort Karugo-Narugo [S]' },
         zoneIds = { 96 },
-        note = 'Needs Review.',
     },
-
 
     ['Marilionne'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Mhaura' },
         zoneIds = { 249 },
-        note = 'Needs Review.',
     },
-
 
     ['Market Moogle'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bastok Markets', 'Bastok Mines' },
+        type = "Special Event Coordinator",
+        icon = "SpecialEventCoordinator.png",
+        zones = { 'Bastok Mines', 'Bastok Markets' },
         zoneIds = { 234, 235 },
-        note = 'Needs Review.',
+        note = "Seasonal holiday event moogle. Spawns outside the regional Mog House entrances during the annual Starlight Celebration to coordinate custom delivery games and reward trades.",
     },
-
-
-    ['Marolith'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aydeewa Subterrane', 'Wajaom Woodlands' },
-        zoneIds = { 51, 68 },
-        note = 'Needs Review.',
-    },
-
 
     ['Mashubl'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Mamook' },
         zoneIds = { 65 },
-        note = 'Needs Review.',
     },
+
 
 
     ['Masked Goblin'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Garlaige Citadel [S]' },
         zoneIds = { 164 },
-        note = 'Needs Review.',
     },
-
-
-
-    ['mateki'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Al Zahbi' },
-        zoneIds = { 48 },
-        note = 'Needs Review.',
-    },
-
 
     ['Mathais'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rala Waterways' },
         zoneIds = { 258 },
-        note = 'Needs Review.',
     },
-
 
     ['Mathilde\'s Son'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Selbina' },
         zoneIds = { 248 },
-        note = 'Needs Review.',
     },
-
-
-    ['Matter Diffusion Module'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Temenos' },
-        zoneIds = { 37 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Maudadt'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
+	
     ['Maxcimille'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'Ghelsba Outpost', 'Jugner Forest', 'Yughott Grotto' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Batallia Downs', 'Jugner Forest', 'Ghelsba Outpost', 'Yughott Grotto' },
         zoneIds = { 104, 105, 140, 142 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Gilded Claws\n* The Voracious Resurgence\n",
     },
-
-
-    ['Maze Mongers Shopfront'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Lower Jeuno' },
-        zoneIds = { 245 },
-        note = 'Needs Review.',
-    },
-
 
     ['Medada'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Castle Zvahl Keep', 'Celennia Memorial Library' },
         zoneIds = { 162, 284 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Heroes' Gambit\n* The Voracious Resurgence\n",
     },
-
-
-
-    ['Medium Switch'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Metalworks' },
-        zoneIds = { 237 },
-        note = 'Needs Review.',
-    },
-
 
     ['Medusa'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Al Zahbi', 'Mine Shaft #2716' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Mine Shaft #2716', 'Al Zahbi' },
         zoneIds = { 13, 48 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Besieged\n",
     },
-
 
     ['Megomak'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Al Zahbi', 'Mount Zhayolm', 'Navukgo Execution Chamber' },
         zoneIds = { 48, 61, 64 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Besieged\n",
     },
-
 
     ['Melderphaux'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Southern San d\'Oria [S]' },
-        zoneIds = { 80 },
-        note = 'Needs Review.',
+        zoneIds = { 136 },
     },
-
-
-    ['Memorian'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Chateau d\'Oraguille', 'Palborough Mines', 'Rabao', 'Windurst Walls', 'Windurst Waters' },
-        zoneIds = { 50, 143, 233, 238, 239, 247 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Memory Flux'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Promyvion - Dem', 'Promyvion - Holla', 'Promyvion - Mea', 'Promyvion - Vahzl' },
-        zoneIds = { 16, 18, 20, 22 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Menumap-Check'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Merfanont'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'East Ronfaure [S]', 'La Vaule [S]', 'Sauromugue Champaign [S]', 'Southern San d\'Oria [S]' },
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
+        zones = { 'East Ronfaure [S]', 'Southern San d\'Oria [S]', 'La Vaule [S]', 'Sauromugue Champaign [S]' },
         zoneIds = { 80, 81, 85, 98 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* While the Cat's Away\n* Purple, Cleaving\n* A Timeswept Butterfly\n",
     },
-
-
-    ['Merrow A'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Arrapago Reef' },
-        zoneIds = { 54 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Merrow Kabukidancer'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Arrapago Reef' },
-        zoneIds = { 54 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Merrow No.1'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Arrapago Reef' },
-        zoneIds = { 54 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Metallic Hodgepodge'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jugner Forest' },
-        zoneIds = { 104 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Metalworks Entrance'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bastok Markets [S]' },
-        zoneIds = { 87 },
-        note = 'Needs Review.',
-    },
-
-
-
 
     ['Mieuseloir'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier', 'Cape Teriggan', 'Castle Oztroja', 'Dragon\'s Aery', 'Horlais Peak', 'Ifrit\'s Cauldron', 'Metalworks', 'North Gustaberg', 'Ru\'Aun Gardens', 'Ru\'Lude Gardens', 'Sea Serpent Grotto', 'The Sanctuary of Zi\'Tah', 'Valley of Sorrows', 'Western Altepa Desert' },
-        zoneIds = { 106, 111, 113, 121, 125, 128, 130, 139, 151, 154, 176, 205, 237, 243 },
-        note = 'Needs Review.',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'North Gustaberg', 'Beaucedine Glacier', 'Cape Teriggan', 'Castle Oztroja', 'Western Altepa Desert', 'Valley of Sorrows', 'Dragon\'s Aery', 'Horlais Peak', 'The Sanctuary of Zi\'Tah', 'Ru\'Aun Gardens', 'Sea Serpent Grotto', 'Ifrit\'s Cauldron', 'Metalworks', 'Ru\'Lude Gardens' },
+        zoneIds = { 106, 111, 113, 121, 125, 128, 130, 139, 154, 176, 205, 237, 243, 246 },
+        note = "Involved in Quest:\n* The Return of Mieuseloir\n* Mieuseloir's Marvelous Adventure\n",
     },
-
 
     ['Mikilulu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Mamook', 'Wajaom Woodlands' },
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands', 'Mamook' },
         zoneIds = { 50, 51, 65 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-
 
     ['Mikolulu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
 
     ['Mildaurion'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Empyreal Paradox', 'Lufaise Meadows', 'Misareaux Coast', 'Sacrarium', 'Tavnazian Safehold', 'Upper Jeuno' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Lufaise Meadows', 'Misareaux Coast', 'Tavnazian Safehold', 'Sacrarium', 'Empyreal Paradox', 'Upper Jeuno' },
         zoneIds = { 24, 25, 26, 28, 36, 244 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Chains of Promathia\n",
     },
-
 
     ['Millechairale'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jugner Forest', 'La Theine Plateau', 'Southern San d\'Oria' },
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'La Theine Plateau', 'Jugner Forest', 'Southern San d\'Oria' },
         zoneIds = { 102, 104, 230 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* A Timely Visit\n",
     },
-
 
     ['Minautte'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Southern San d\'Oria [S]' },
-        zoneIds = { 80 },
-        note = 'Needs Review.',
+        zoneIds = { 136 },
+        note = "Involved in Mission:\n* Steamed Rams\n",
     },
-
-
-    ['Mind-warped Scorpion'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Palborough Mines' },
-        zoneIds = { 143 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mine Scorpion'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Palborough Mines' },
-        zoneIds = { 143 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mineral Vein'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mog Garden' },
-        zoneIds = { 280 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mineral Vein #2'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mog Garden' },
-        zoneIds = { 280 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mineral Vein #3'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mog Garden' },
-        zoneIds = { 280 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mineral Vein #4'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mog Garden' },
-        zoneIds = { 280 },
-        note = 'Needs Review.',
-    },
-
 
     ['Minfram'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Jade Sepulcher' },
         zoneIds = { 50, 67 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Price of Gold\n",
     },
-
 
     ['Minnifi Delqabba'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
-
-
-
-    ['Mirror Pond'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier' },
-        zoneIds = { 111 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mischief Marker'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Western Adoulin' },
-        zoneIds = { 256 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Missabikong'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate' },
-        zoneIds = { 50 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Missahd'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands' },
-        zoneIds = { 50, 51 },
-        note = 'Needs Review.',
-    },
-
-
-    ['mithra'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Al\'Taieu', 'GM Home' },
-        zoneIds = { 33, 210 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mithran Bivouac'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Meriphataud Mountains [S]' },
-        zoneIds = { 97 },
-        note = 'Needs Review.',
-    },
-
 
     ['Mitsunari'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Selbina' },
         zoneIds = { 248 },
-        note = 'Needs Review.',
     },
-
-
-    ['Mnemonic Pool'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ceizak Battlegrounds', 'Cirdas Caverns', 'Kamihr Drifts', 'Yorcia Weald' },
-        zoneIds = { 261, 263, 267, 270 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Moblin Idol'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghoyu\'s Reverie', 'Ruhotz Silvermines' },
-        zoneIds = { 93, 129 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mog garden'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mog-Tablet'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'Beaucedine Glacier', 'Behemoth\'s Dominion', 'Buburimu Peninsula', 'Cape Teriggan', 'East Ronfaure', 'East Sarutabaruta', 'Eastern Altepa Desert', 'Jugner Forest', 'Konschtat Highlands', 'La Theine Plateau', 'Meriphataud Mountains', 'North Gustaberg', 'Pashhow Marshlands', 'Qufim Island', 'Ro\'Maeve', 'Rolanberry Fields', 'Sauromugue Champaign', 'South Gustaberg', 'Tahrongi Canyon', 'The Sanctuary of Zi\'Tah', 'Valkurm Dunes', 'Valley of Sorrows', 'West Ronfaure', 'West Sarutabaruta', 'Western Altepa Desert', 'Xarcabard', 'Yhoator Jungle', 'Yuhtunga Jungle' },
-        zoneIds = { 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mogball-Local'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'Beaucedine Glacier', 'Behemoth\'s Dominion', 'Buburimu Peninsula', 'Cape Teriggan', 'East Ronfaure', 'East Sarutabaruta', 'Eastern Altepa Desert', 'Jugner Forest', 'Konschtat Highlands', 'La Theine Plateau', 'Meriphataud Mountains', 'North Gustaberg', 'Pashhow Marshlands', 'Qufim Island', 'Ro\'Maeve', 'Rolanberry Fields', 'Sauromugue Champaign', 'South Gustaberg', 'Tahrongi Canyon', 'The Sanctuary of Zi\'Tah', 'Valkurm Dunes', 'Valley of Sorrows', 'West Ronfaure', 'West Sarutabaruta', 'Western Altepa Desert', 'Xarcabard', 'Yhoator Jungle', 'Yuhtunga Jungle' },
-        zoneIds = { 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mogsack Moogle'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Molaal Ja'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aydeewa Subterrane', 'Jade Sepulcher', 'Mine Shaft #2716' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Mine Shaft #2716', 'Jade Sepulcher', 'Aydeewa Subterrane' },
         zoneIds = { 13, 67, 68 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Price of Gold\n",
     },
-
-
-
-    ['Monolith'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Shrine of Ru\'Avitau', 'Ve\'Lugannon Palace' },
-        zoneIds = { 177, 178 },
-        note = 'Needs Review.',
-    },
-
-
 
     ['Montaube'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Northern San d\'Oria' },
         zoneIds = { 231 },
-        note = 'Needs Review.',
     },
-
-
-    ['monthly_master'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Maquette Abdhaljs-Legion A', 'Maquette Abdhaljs-Legion B' },
-        zoneIds = { 183, 287 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Moogle Meeting'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'La Theine Plateau' },
-        zoneIds = { 102 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Moogle-Ch'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mordion Gaol' },
-        zoneIds = { 131 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Moogle\'s Letter'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Oztroja' },
-        zoneIds = { 151 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Moon Spiral'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Full Moon Fountain' },
-        zoneIds = { 170 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Moongate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ro\'Maeve' },
-        zoneIds = { 122 },
-        note = 'Needs Review.',
-    },
-
 
     ['Morzivold'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'West Sarutabaruta', 'Windurst Waters' },
         zoneIds = { 115, 238 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Babban Ny Mheillea\n",
     },
-
-
-    ['Mossy Stump'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jugner Forest [S]' },
-        zoneIds = { 82 },
-        note = 'Needs Review.',
-    },
-
-
 
 
     ['Mufaal Ja'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Jade Sepulcher' },
         zoneIds = { 67 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Price of Gold\n",
     },
-
-
-    ['Muggy Air'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Boyahda Tree' },
-        zoneIds = { 153 },
-        note = 'Needs Review.',
-    },
-
 
     ['Munahda'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-    ['Murky Pond'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - La Theine' },
-        zoneIds = { 132 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mushroom Patch'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aydeewa Subterrane' },
-        zoneIds = { 68 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Musty Well'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ruhotz Silvermines' },
-        zoneIds = { 93 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Mutarid'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Al Zahbi' },
         zoneIds = { 48 },
-        note = 'Needs Review.',
     },
-
 
     ['Myron, C.A.'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Windurst Waters [S]' },
         zoneIds = { 94 },
-        note = 'Needs Review.',
+        note = "Campaign Army Officer. Represents the Allied Forces Combat Association. Handles local battlefield briefings and strategic notes logging during past-timeline war conflicts.",
     },
-
 
     ['Mysterious Vendor'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Merchant",
+        icon = "Merchant.png",
         zones = { 'Port San d\'Oria' },
         zoneIds = { 232 },
-        note = 'Needs Review.',
+        note = "Specialized wandering storefront trader. Operates dynamic time-restricted storefront windows to sell rare materials, regional goods, or custom server reward stocks.",
     },
-
-
-    ['Mystic Retriever'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Empyreal Paradox', 'Port Bastok', 'Port Jeuno', 'Reisenjima', 'Reisenjima Sanctorium', 'Ru\'Lude Gardens', 'Southern San d\'Oria', 'Southern San d\'Oria [S]', 'Windurst Woods' },
-        zoneIds = { 36, 80, 230, 236, 241, 243, 246, 291, 293 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mythralline Wellspring'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bhaflau Thickets', 'Wajaom Woodlands' },
-        zoneIds = { 51, 52 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Mythril Seam'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Palborough Mines' },
-        zoneIds = { 143 },
-        note = 'Needs Review.',
-    },
-
-
 
     ['Nabima-Hyonbima'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Metalworks' },
         zoneIds = { 237 },
-        note = 'Needs Review.',
     },
-
-
-    ['Nabitham'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mount Zhayolm' },
-        zoneIds = { 61 },
-        note = 'Needs Review.',
-    },
-
 
     ['Nag\'molada'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Al\'Taieu', 'Batallia Downs [S]', 'Beaucedine Glacier', 'Empyreal Paradox', 'Grand Palace of Hu\'Xzoi', 'Grauberg [S]', 'Hall of Transference', 'Lower Delkfutt\'s Tower', 'Lower Jeuno', 'Lufaise Meadows', 'Mine Shaft #2716', 'Misareaux Coast', 'Monarch Linn', 'Phomiuna Aqueducts', 'Promyvion - Vahzl', 'Pso\'Xja', 'Riverne - Site #A01', 'Ru\'Lude Gardens', 'Sauromugue Champaign [S]', 'Sealion\'s Den', 'Southern San d\'Oria [S]', 'Spire of Dem', 'Spire of Holla', 'Spire of Mea', 'Spire of Vahzl', 'Tavnazian Safehold', 'The Eldieme Necropolis [S]', 'The Garden of Ru\'Hmet', 'Upper Jeuno' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Phomiuna Aqueducts', 'Mine Shaft #2716', 'Riverne - Site #A01', 'Spire of Holla', 'Spire of Dem', 'Spire of Mea', 'Spire of Vahzl', 'Promyvion - Vahzl', 'Lufaise Meadows', 'Misareaux Coast', 'Tavnazian Safehold', 'Sealion\'s Den', 'Pso\'Xja', 'Monarch Linn', 'Hall of Transference', 'Grand Palace of Hu\'Xzoi', 'The Garden of Ru\'Hmet', 'Al\'Taieu', 'Empyreal Paradox', 'Southern San d\'Oria [S]', 'Batallia Downs [S]', 'Grauberg [S]', 'Sauromugue Champaign [S]', 'Beaucedine Glacier', 'The Eldieme Necropolis [S]', 'Lower Delkfutt\'s Tower', 'Ru\'Lude Gardens', 'Upper Jeuno', 'Lower Jeuno' },
         zoneIds = { 9, 13, 14, 17, 19, 21, 22, 23, 24, 25, 26, 27, 30, 31, 32, 33, 34, 35, 36, 80, 84, 89, 98, 111, 175, 184, 243, 244, 245 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Chains of Promathia\n",
     },
-
 
     ['Nalkuku'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Sauromugue Champaign [S]', 'Southern San d\'Oria [S]' },
-        zoneIds = { 80, 98 },
-        note = 'Needs Review.',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Southern San d\'Oria [S]', 'Sauromugue Champaign [S]' },
+        zoneIds = { 136, 98 },
+        note = "Involved in Mission:\n* Mayakov Dance Troupe\n",
     },
-
-
-
 
     ['Nargoht'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
 
     ['Nasshawan'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Ru\'Lude Gardens' },
         zoneIds = { 243 },
-        note = 'Needs Review.',
     },
-
 
     ['Nateeyu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands' },
         zoneIds = { 50, 51 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-    ['New-turned Earth'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'East Ronfaure [S]', 'Jugner Forest [S]', 'La Vaule [S]' },
-        zoneIds = { 81, 82, 85 },
-        note = 'Needs Review.',
-    },
-
-
 
     ['Nheu Chaftahl'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Chocobo Circuit' },
         zoneIds = { 70 },
-        note = 'Needs Review.',
     },
-
 
     ['Nhiko Rhaabel'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Oztroja [S]', 'Fort Karugo-Narugo [S]', 'Meriphataud Mountains [S]', 'West Sarutabaruta [S]', 'Windurst Waters [S]' },
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
+        zones = { 'Windurst Waters [S]', 'West Sarutabaruta [S]', 'Fort Karugo-Narugo [S]', 'Meriphataud Mountains [S]', 'Castle Oztroja [S]' },
         zoneIds = { 94, 95, 96, 97, 99 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Purple, Cleaving\n* A Timeswept Butterfly\n",
     },
-
 
     ['Nicephore'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Batallia Downs', 'Xarcabard [S]' },
         zoneIds = { 105, 137 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Gilded Claws\n* The Voracious Resurgence\n",
     },
-
-
-    ['Nightflowers'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qufim Island' },
-        zoneIds = { 126 },
-        note = 'Needs Review.',
-    },
-
 
     ['Nii Aquu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Reisenjima' },
         zoneIds = { 291 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Voracious Resurgence\n",
     },
-
 
     ['Ninzu-Call\'Kun'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Ruhotz Silvermines' },
         zoneIds = { 93 },
-        note = 'Needs Review.',
     },
-
 
     ['Niscoliette'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Southern San d\'Oria' },
         zoneIds = { 230 },
-        note = 'Needs Review.',
     },
-
 
     ['Nizahluf'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Jade Sepulcher' },
         zoneIds = { 50, 67 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Price of Gold\n",
     },
-
-
-    ['NM Treant'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jugner Forest' },
-        zoneIds = { 104 },
-        note = 'Needs Review.',
-    },
-
 
     ['Noan'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
-
-    ['Noetic Ascension'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Cirdas Caverns [U]', 'Outer Ra\'Kaznar [U]', 'Rala Waterways [U]', 'Ship Bound for Mhaura (Pirates)', 'Yorcia Weald [U]' },
-        zoneIds = { 228, 259, 264, 271, 275 },
-        note = 'Needs Review.',
-    },
-
-
-    ['nogut'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Noh Ramyoh'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'West Sarutabaruta', 'Windurst Waters' },
         zoneIds = { 115, 238 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Babban Ny Mheillea\n",
     },
-
-
-
 
     ['Nonbo-Krunbo'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Rolanberry Fields [S]' },
         zoneIds = { 91 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Cultivating Catastrophe\n",
     },
-
 
     ['Norbert'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Bastok Markets [S]', 'North Gustaberg [S]' },
         zoneIds = { 87, 88 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Price of Peace\n",
     },
-
-
-    ['North Plate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Eldieme Necropolis', 'The Eldieme Necropolis [S]' },
-        zoneIds = { 175, 195 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Northeastern Pip'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier' },
-        zoneIds = { 111 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Northwestern Pip'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier' },
-        zoneIds = { 111 },
-        note = 'Needs Review.',
-    },
-
 
     ['Nri Sarabah'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Meriphataud Mountains [S]' },
         zoneIds = { 97 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Cultivating Catastrophe\n",
     },
-
 
     ['Nunana'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Merchant",
+        icon = "Merchant.png",
         zones = { 'Yahse Hunting Grounds' },
-        zoneIds = { 260 },
-        note = 'Needs Review.',
+        zoneIds = { 261 },
+        note = "Sells pieces of Adoulin-specific job Artifact armor sets.",
     },
-
 
     ['Nzha Abaleenah'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Fort Karugo-Narugo [S]', 'Meriphataud Mountains [S]', 'Sauromugue Champaign [S]', 'West Sarutabaruta [S]', 'Windurst Waters [S]' },
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
+        zones = { 'Windurst Waters [S]', 'West Sarutabaruta [S]', 'Fort Karugo-Narugo [S]', 'Meriphataud Mountains [S]', 'Sauromugue Champaign [S]' },
         zoneIds = { 94, 95, 96, 97, 98 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Purple, Cleaving\n* A Timeswept Butterfly\n",
     },
-
-
-
-
-    ['Oak Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Davoi' },
-        zoneIds = { 149 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Oaken Box'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Garlaige Citadel' },
-        zoneIds = { 200 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Oaken Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Norg' },
-        zoneIds = { 252 },
-        note = 'Needs Review.',
-    },
-
 
     ['Obolt'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rala Waterways' },
         zoneIds = { 258 },
-        note = 'Needs Review.',
     },
-
-
-    ['Ocean Sahagin'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mine Shaft #2716' },
-        zoneIds = { 13 },
-        note = 'Needs Review.',
-    },
-
 
     ['Odilon'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands' },
         zoneIds = { 50, 51 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* An Imperial Heist\n",
     },
-
 
     ['Odin'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Alzadaal Undersea Ruins', 'Caedarva Mire', 'Castle Zvahl Keep', 'Hall of Transference', 'Hazhalm Testing Grounds', 'La Theine Plateau', 'Quicksand Caves', 'Xarcabard' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Hall of Transference', 'Aht Urhgan Whitegate', 'Alzadaal Undersea Ruins', 'Hazhalm Testing Grounds', 'Caedarva Mire', 'La Theine Plateau', 'Xarcabard', 'Castle Zvahl Keep', 'Quicksand Caves' },
         zoneIds = { 14, 50, 72, 78, 79, 102, 112, 162, 208 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Treasures of Aht Urhgan\n* The Voracious Resurgence\n",
     },
-
-
-    ['Odin Prime'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Hazhalm Testing Grounds' },
-        zoneIds = { 78 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Odin\'s Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Eldieme Necropolis', 'The Eldieme Necropolis [S]' },
-        zoneIds = { 175, 195 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Officer'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Southern San d\'Oria' },
-        zoneIds = { 230 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ohgo Tahwaitsa'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs' },
-        zoneIds = { 105 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Oil Lamp'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Phomiuna Aqueducts' },
-        zoneIds = { 27 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Old Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Grauberg [S]' },
-        zoneIds = { 89 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Old Quadav'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Palborough Mines', 'Zeruhn Mines' },
-        zoneIds = { 143, 172 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Old Toolbox'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Palborough Mines' },
-        zoneIds = { 143 },
-        note = 'Needs Review.',
-    },
-
 
     ['Ole'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Bastok Markets [S]', 'North Gustaberg [S]' },
         zoneIds = { 87, 88 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Price of Peace\n",
     },
-
 
     ['Olivaine'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
 
     ['Oliverain'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Xarcabard [S]' },
         zoneIds = { 137 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Darkness Descends\n* When Wills Collide\n",
     },
-
 
     ['Ollek'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Ghoyu\'s Reverie' },
         zoneIds = { 129 },
-        note = 'Needs Review.',
     },
-
 
     ['Ombelotte'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Tavnazian Safehold' },
         zoneIds = { 26 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* An Uninvited Guest\n* In the Mood for Love\n",
     },
-
-
-    ['Ominous Pillar'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Zvahl Keep' },
-        zoneIds = { 162 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ominous Postern'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ra\'Kaznar Turris' },
-        zoneIds = { 277 },
-        note = 'Needs Review.',
-    },
-
 
     ['Ondieumais'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Southern San d\'Oria' },
         zoneIds = { 230 },
-        note = 'Needs Review.',
     },
-
 
     ['Onki'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Waughroon Shrine' },
         zoneIds = { 144 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Voracious Resurgence\n",
     },
-
-
-
-
-    ['Operating Lever'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Halvung' },
-        zoneIds = { 62 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Orcish Axeman'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chateau d\'Oraguille' },
-        zoneIds = { 233 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish Bloodletter'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier [S]' },
-        zoneIds = { 136 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish Fighter'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jugner Forest' },
-        zoneIds = { 104 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish Fodder'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghelsba Outpost', 'Jugner Forest' },
-        zoneIds = { 104, 140 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish Hexspinner'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mine Shaft #2716' },
-        zoneIds = { 13 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish Machine'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qu\'Bia Arena' },
-        zoneIds = { 206 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish MNK1'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qu\'Bia Arena' },
-        zoneIds = { 206 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish MNK2'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qu\'Bia Arena' },
-        zoneIds = { 206 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish Overlord'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Monastic Cavern' },
-        zoneIds = { 150 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish Pikedancer'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier' },
-        zoneIds = { 111 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Orcish Warchief'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Throne Room' },
-        zoneIds = { 165 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish Warlord'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mine Shaft #2716' },
-        zoneIds = { 13 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Orcish Woomera'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier' },
-        zoneIds = { 111 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ore Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Zvahl Keep', 'Castle Zvahl Keep [S]', 'Heavens Tower', 'Throne Room', 'Throne Room [S]' },
-        zoneIds = { 155, 156, 162, 165, 242 },
-        note = 'Needs Review.',
-    },
-
 
     ['Orfbis'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
-
-    ['Ormr'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Zeruhn Mines' },
-        zoneIds = { 172 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ornamental Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jade Sepulcher' },
-        zoneIds = { 67 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ornamented Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Sea Serpent Grotto' },
-        zoneIds = { 176 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ornate Block'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Zvahl Baileys [S]' },
-        zoneIds = { 138 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ornate Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Quicksand Caves', 'Walk of Echoes' },
-        zoneIds = { 182, 208 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ornate Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Phomiuna Aqueducts' },
-        zoneIds = { 27 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Otherworldly Vortex'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Walk of Echoes [P1]', 'Walk of Echoes [P2]' },
-        zoneIds = { 279, 298 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Outcropping'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Gustav Tunnel' },
-        zoneIds = { 212 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Outpost Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Pashhow Marshlands' },
-        zoneIds = { 109 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Overgrown Grave'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Cirdas Caverns' },
-        zoneIds = { 270 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Overgrown Mushrooms'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jugner Forest [S]' },
-        zoneIds = { 82 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Overlord Bakgodek'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mine Shaft #2716', 'Monastic Cavern' },
-        zoneIds = { 13, 150 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Overturned Soil'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'East Sarutabaruta', 'Jugner Forest', 'Konschtat Highlands', 'La Theine Plateau', 'Meriphataud Mountains', 'Pashhow Marshlands', 'Rolanberry Fields', 'Sauromugue Champaign', 'South Gustaberg', 'Tahrongi Canyon', 'West Ronfaure' },
-        zoneIds = { 100, 102, 104, 105, 107, 108, 109, 110, 116, 117, 119, 120 },
-        note = 'Needs Review.',
-    },
-
-
-
 
     ['Pakulo-Kakulo'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Lower Jeuno' },
         zoneIds = { 245 },
-        note = 'Needs Review.',
     },
-
-
 
     ['Patrillaut'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
 
     ['Paulinne'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Port San d\'Oria' },
         zoneIds = { 232 },
-        note = 'Needs Review.',
     },
-
 
     ['Paulyvan'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Southern San d\'Oria [S]' },
-        zoneIds = { 80 },
-        note = 'Needs Review.',
+        zoneIds = { 136 },
+        note = "Involved in Mission:\n* Steamed Rams\n",
     },
-
-
-
-
-
-    ['Pedh Zhkek'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Oztroja [S]' },
-        zoneIds = { 99 },
-        note = 'Needs Review.',
-    },
-
 
     ['Pelagia'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Upper Jeuno' },
         zoneIds = { 244 },
-        note = 'Needs Review.',
     },
-
-
-    ['Pellucid Afflusion'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Yorcia Weald' },
-        zoneIds = { 263 },
-        note = 'Needs Review.',
-    },
-
 
     ['Pembroke'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Upper Jeuno' },
         zoneIds = { 244 },
-        note = 'Needs Review.',
     },
-
-
-
-
-    ['Perikia'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Caedarva Mire' },
-        zoneIds = { 79 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Personages'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Celennia Memorial Library' },
-        zoneIds = { 284 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Perversion\'s Refuge'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Palborough Mines' },
-        zoneIds = { 143 },
-        note = 'Needs Review.',
-    },
-
 
     ['Pheauclemand'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Upper Jeuno' },
         zoneIds = { 244 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Star Oncie\n",
     },
-
 
     ['Phemille'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Chocobo Circuit' },
         zoneIds = { 70 },
-        note = 'Needs Review.',
     },
-
 
     ['Phileem'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
 
     ['Phillarceaux'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Southern San d\'Oria [S]' },
-        zoneIds = { 80 },
-        note = 'Needs Review.',
+        zoneIds = { 136 },
+        note = "Campaign military logistics official. Stationed inside the past-timeline capital to handle material processing and register local military updates.",
     },
-
 
     ['Phillieulais S Dieuffon'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Southern San d\'Oria [S]' },
-        zoneIds = { 80 },
-        note = 'Needs Review.',
+        zoneIds = { 136 },
+        note = "Campaign tactical military officer. Positioned near the courtyard plazas to monitor strategic border defenses and log Allied combat report subroutines.",
     },
-
-
-    ['Phosphorous Ward'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Fort Karugo-Narugo [S]' },
-        zoneIds = { 96 },
-        note = 'Needs Review.',
-    },
-
 
     ['Pignoit'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Jugner Forest' },
         zoneIds = { 104 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Black Market\n",
     },
-
-
 
     ['Pilgrim Moogle'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Walk of Echoes [P1]', 'Walk of Echoes [P2]' },
         zoneIds = { 279, 298 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Walk of Echoes Survey\n",
     },
-
 
     ['Pilgrimage Moogle'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Rabao' },
         zoneIds = { 247 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Moogle Pilgrimage\n",
     },
-
-
-    ['Pincerstone'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ru\'Aun Gardens' },
-        zoneIds = { 130 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Pixie'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Grauberg' },
-        zoneIds = { 254 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Pixie Quest Box'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-
 
     ['Poccho-Roccho'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Rolanberry Fields [S]' },
         zoneIds = { 91 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Cultivating Catastrophe\n",
     },
-
-
-    ['Poet'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Poko'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rabao' },
         zoneIds = { 247 },
-        note = 'Needs Review.',
     },
-
-
-    ['Pollinating Swarm'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Yahse Hunting Grounds' },
-        zoneIds = { 260 },
-        note = 'Needs Review.',
-    },
-
 
     ['Pomaal Ja'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Jade Sepulcher' },
         zoneIds = { 67 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Price of Gold\n",
     },
-
-
-    ['Pond Dredger'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mog Garden' },
-        zoneIds = { 280 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Port Storage'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Western Adoulin' },
-        zoneIds = { 256 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Portcullis'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Hazhalm Testing Grounds', 'Southern San d\'Oria [S]' },
-        zoneIds = { 78, 80 },
-        note = 'Needs Review.',
-    },
-
 
     ['Portentous Woman'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Beaucedine Glacier [S]' },
         zoneIds = { 136 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Scent of Danger\n",
     },
-
-
-    ['Posten'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abdhaljs Isle-Purgonorgo' },
-        zoneIds = { 44 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Postern'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bhaflau Thickets', 'Wajaom Woodlands' },
-        zoneIds = { 51, 52 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Pot Hatch'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mamook', 'Mamool Ja Training Grounds' },
-        zoneIds = { 65, 66 },
-        note = 'Needs Review.',
-    },
-
-
-
 
     ['Premas-Lamas'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Castle Zvahl Baileys [S]' },
         zoneIds = { 138 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Cultivating Catastrophe\n",
     },
-
-
-    ['Previous Race'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home', 'Port Bastok', 'Port San d\'Oria', 'Windurst Walls' },
-        zoneIds = { 210, 232, 236, 239 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Priming Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Windurst Walls' },
-        zoneIds = { 239 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Primordial Convergence'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Morimar Basalt Fields' },
-        zoneIds = { 265 },
-        note = 'Needs Review.',
-    },
-
-
-
 
     ['Promathia'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Al\'Taieu', 'Empyreal Paradox', 'GM Home', 'The Garden of Ru\'Hmet' },
-        zoneIds = { 33, 35, 36, 210 },
-        note = 'Needs Review.',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Al\'Taieu', 'The Garden of Ru\'Hmet', 'Empyreal Paradox' },
+        zoneIds = { 33, 35, 36 },
+        note = "Involved in Mission:\n* Chains of Promathia\n",
     },
-
-
-
 
     ['Prycillia'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Bastok Mines' },
         zoneIds = { 234 },
-        note = 'Needs Review.',
     },
-
 
     ['Pryden'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Pioneer",
+        icon = "Pioneer.png",
         zones = { 'Outer Ra\'Kaznar' },
         zoneIds = { 274 },
-        note = 'Needs Review.',
     },
-
-
-
 
     ['Pupadi Dollmohr'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rala Waterways' },
         zoneIds = { 258 },
-        note = 'Needs Review.',
     },
-
-
 
     ['Qarimul'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
-
-
-    ['Qe\'Iov Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Stellar Fulcrum' },
-        zoneIds = { 179 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Qiqirn Mine'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Leujaoam Sanctum', 'Periqia' },
-        zoneIds = { 56, 69 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Qiqirun'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ilrusi Atoll' },
-        zoneIds = { 55 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Qo\'Tav Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Stellar Fulcrum' },
-        zoneIds = { 179 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Qu\'Hau Spring'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ro\'Maeve' },
-        zoneIds = { 122 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Quadav'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qulun Dome', 'Ru\'Lude Gardens' },
-        zoneIds = { 148, 243 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Quadav Inquest'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Zeruhn Mines' },
-        zoneIds = { 172 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Quadav Leader'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Grauberg [S]' },
-        zoneIds = { 89 },
-        note = 'Needs Review.',
-    },
-
 
     ['Quam Jitahr'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
 
     ['Quartermaster'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bastok Markets [S]', 'Southern San d\'Oria [S]', 'Windurst Waters [S]' },
-        zoneIds = { 80, 87, 94 },
-        note = 'Needs Review.',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
+        zones = { 'Southern San d\'Oria [S]', 'Bastok Markets [S]', 'Windurst Waters [S]' },
+        zoneIds = { 136, 87, 94 },
+        note = "Campaign tactical military supply officer. Stationed inside nation defense checkpoints to handle frontline inventory updates and process dynamic Allied supply distribution lines.",
     },
-
-
-    ['Queen of Batons'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Full Moon Fountain' },
-        zoneIds = { 170 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Queen of Cups'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Full Moon Fountain', 'Outer Horutoto Ruins' },
-        zoneIds = { 170, 194 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Queen of Hearts'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Windurst Woods' },
-        zoneIds = { 241 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Queen of Swords'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Full Moon Fountain', 'Outer Horutoto Ruins' },
-        zoneIds = { 170, 194 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Queen of Wands'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Full Moon Fountain', 'Outer Horutoto Ruins' },
-        zoneIds = { 170, 194 },
-        note = 'Needs Review.',
-    },
-
 
     ['Quh Berhuja'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'East Sarutabaruta' },
         zoneIds = { 116 },
-        note = 'Needs Review.',
     },
-
-
-    ['Qutrub'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Arrapago Reef' },
-        zoneIds = { 54 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Quu Domi the Gallant'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Zvahl Keep' },
-        zoneIds = { 162 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Rabid Chameleon'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Silver Knife' },
-        zoneIds = { 283 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Rabntah'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Monastic Cavern', 'Ru\'Lude Gardens' },
         zoneIds = { 150, 243 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Voracious Resurgence\n",
     },
-
-
-    ['racetest'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Rachelassiond'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Southern San d\'Oria [S]' },
-        zoneIds = { 80 },
-        note = 'Needs Review.',
+        zoneIds = { 136 },
+        note = "Campaign military logistics official. Stationed inside the past-timeline capital to coordinate material processing and register local military updates.",
     },
-
 
     ['Rachemace'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Fort Karugo-Narugo [S]', 'Sauromugue Champaign [S]', 'Southern San d\'Oria [S]' },
-        zoneIds = { 80, 96, 98 },
-        note = 'Needs Review.',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
+        zones = { 'Southern San d\'Oria [S]', 'Fort Karugo-Narugo [S]', 'Sauromugue Champaign [S]' },
+        zoneIds = { 136, 96, 98 },
+        note = "Involved in Mission:\n* While the Cat's Away\n* Purple, Cleaving\n* A Timeswept Butterfly\n",
     },
-
-
-    ['Radiant Aureole'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Apollyon', 'Spire of Dem', 'Spire of Holla', 'Spire of Mea', 'Spire of Vahzl' },
-        zoneIds = { 17, 19, 21, 23, 38 },
-        note = 'Needs Review.',
-    },
-
 
     ['Rafsween'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Jade Sepulcher' },
         zoneIds = { 50, 67 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Price of Gold\n",
     },
-
 
     ['Rahmi Yamilahto'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'West Sarutabaruta', 'Windurst Waters' },
         zoneIds = { 115, 238 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Babban Ny Mheillea\n",
     },
-
 
     ['Raiclace'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'East Ronfaure [S]', 'Sauromugue Champaign [S]', 'Southern San d\'Oria [S]' },
-        zoneIds = { 80, 81, 98 },
-        note = 'Needs Review.',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
+        zones = { 'East Ronfaure [S]', 'Southern San d\'Oria [S]', 'Sauromugue Champaign [S]' },
+        zoneIds = { 80, 136, 98 },
+        note = "Involved in Mission:\n* While the Cat's Away\n* Purple, Cleaving\n* A Timeswept Butterfly\n",
     },
-
 
     ['Raigegue R d\'Oraguille'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'The Eldieme Necropolis [S]' },
         zoneIds = { 175 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Darkness Descends\n* When Wills Collide\n",
     },
-
-
-    ['rainbow'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'La Theine Plateau' },
-        zoneIds = { 102 },
-        note = 'Needs Review.',
-    },
-
 
     ['Rakocha-Mukocha'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Heavens Tower', 'West Sarutabaruta [S]' },
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'West Sarutabaruta [S]', 'Heavens Tower' },
         zoneIds = { 95, 242 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Cultivating Catastrophe\n",
     },
-
 
     ['Ramchacha'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Windurst Waters' },
         zoneIds = { 238 },
-        note = 'Needs Review.',
     },
-
-
-    ['Rampart Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs [S]', 'Rolanberry Fields [S]', 'Sauromugue Champaign [S]' },
-        zoneIds = { 84, 91, 98 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rampart Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs [S]', 'Rolanberry Fields [S]', 'Sauromugue Champaign [S]' },
-        zoneIds = { 84, 91, 98 },
-        note = 'Needs Review.',
-    },
-
 
     ['Ramuh'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Cloister of Storms', 'Full Moon Fountain', 'La Theine Plateau' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'La Theine Plateau', 'Full Moon Fountain', 'Cloister of Storms' },
         zoneIds = { 102, 170, 202 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Trial by Lightning\n* Trial Size Trial by Lightning\n",
     },
-
 
     ['Ranchuriome'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Northern San d\'Oria' },
         zoneIds = { 231 },
-        note = 'Needs Review.',
     },
-
-
-    ['RandomItemDebugger'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-    ['RandomItemMaker'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Ranperre'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chateau d\'Oraguille', 'King Ranperre\'s Tomb', 'Temple of Uggalepih' },
-        zoneIds = { 159, 190, 233 },
-        note = 'Needs Review.',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'King Ranperre\'s Tomb', 'Temple of Uggalepih', 'Chateau d\'Oraguille' },
+        zoneIds = { 190, 159, 233 },
+        note = "Involved in Mission:\n* The Voracious Resurgence\n",
     },
-
 
     ['Raphaillance'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Southern San d\'Oria [S]' },
-        zoneIds = { 80 },
-        note = 'Needs Review.',
+        zoneIds = { 136 },
+        note = "Involved in Quest:\n* Darkness Descends\n* When Wills Collide\n",
     },
-
 
     ['Rapipi'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Nashmau' },
         zoneIds = { 53 },
-        note = 'Needs Review.',
     },
-
-
-    ['Raptor'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'Upper Jeuno' },
-        zoneIds = { 105, 244 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Raptor\'s Food'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs' },
-        zoneIds = { 105 },
-        note = 'Needs Review.',
-    },
-
 
     ['Rasetsu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Waughroon Shrine' },
         zoneIds = { 144 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Voracious Resurgence\n",
     },
-
 
     ['Ravoignac'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
-
-    ['Reaper Clan Warmachine'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Horlais Peak' },
-        zoneIds = { 139 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rear Trap'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Attohwa', 'Abyssea - Misareaux', 'Abyssea - Vunkerl' },
-        zoneIds = { 215, 216, 217 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Reberosu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mount Zhayolm' },
-        zoneIds = { 61 },
-        note = 'Needs Review.',
-    },
-
 
     ['Ree Habalo'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Reisenjima' },
         zoneIds = { 291 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Voracious Resurgence\n",
     },
-
 
     ['Reepi-Molpi'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Eastern Adoulin', 'Yorcia Weald' },
         zoneIds = { 257, 263 },
-        note = 'Needs Review.',
     },
-
 
     ['Reffen-Geppen'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Eastern Adoulin' },
         zoneIds = { 257 },
-        note = 'Needs Review.',
     },
-
-
-    ['Refiner Lever'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Palborough Mines' },
-        zoneIds = { 143 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Refiner Lid'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Palborough Mines' },
-        zoneIds = { 143 },
-        note = 'Needs Review.',
-    },
-
 
     ['Regal Feline'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'Batallia Downs [S]', 'Rolanberry Fields', 'Rolanberry Fields [S]', 'Sauromugue Champaign', 'Sauromugue Champaign [S]' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Batallia Downs [S]', 'Rolanberry Fields [S]', 'Sauromugue Champaign [S]', 'Batallia Downs', 'Rolanberry Fields', 'Sauromugue Champaign' },
         zoneIds = { 84, 91, 98, 105, 110, 120 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Wings of the Goddess\n",
     },
-
-
-    ['Regal Pawprints'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier [S]', 'Provenance', 'Walk of Echoes' },
-        zoneIds = { 136, 182, 222 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Register of Deeds'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Escha - Ru\'Aun', 'Escha - Zi\'Tah', 'Reisenjima' },
-        zoneIds = { 288, 289, 291 },
-        note = 'Needs Review.',
-    },
-
 
     ['Reikuu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Mine Shaft #2716', 'Reisenjima' },
         zoneIds = { 13, 291 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Voracious Resurgence\n",
     },
-
-
- 
-
-
-    ['reisen_master'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-
-    ['Repairer Moogle'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bastok Markets', 'GM Home', 'Southern San d\'Oria', 'Western Adoulin', 'Windurst Woods' },
-        zoneIds = { 210, 230, 235, 241, 256 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Republic Ensign I'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghoyu\'s Reverie' },
-        zoneIds = { 129 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Republic Ensign II'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghoyu\'s Reverie' },
-        zoneIds = { 129 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Republic Ensign III'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghoyu\'s Reverie' },
-        zoneIds = { 129 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Republic Ensign IV'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghoyu\'s Reverie' },
-        zoneIds = { 129 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Republic Ensign V'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghoyu\'s Reverie' },
-        zoneIds = { 129 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Republic Ensign VI'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghoyu\'s Reverie' },
-        zoneIds = { 129 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Returned Soulflayer'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Wajaom Woodlands' },
-        zoneIds = { 51 },
-        note = 'Needs Review.',
-    },
-
 
     ['Rhind Mhikkrol'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Chocobo Circuit' },
         zoneIds = { 70 },
-        note = 'Needs Review.',
     },
 
-
     ['Rhub Wusthamoi'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
 
 
     ['Ribbolian'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
+
     },
-
-
-    ['Rickety Ladder'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghoyu\'s Reverie' },
-        zoneIds = { 129 },
-        note = 'Needs Review.',
-    },
-
 
     ['Rispa-Merispa'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
+
     },
-
-
+	
     ['Risto-Fristo'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rala Waterways' },
         zoneIds = { 258 },
-        note = 'Needs Review.',
+
     },
-
-
-    ['Ritual Site'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Monastic Cavern' },
-        zoneIds = { 150 },
-        note = 'Needs Review.',
-    },
-
-
-    ['River Mouth'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Foret de Hennetiel' },
-        zoneIds = { 262 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Riverbed'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Grauberg [S]' },
-        zoneIds = { 89 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Rivetpounder Mekglok'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghelsba Outpost', 'Jugner Forest [S]', 'Xarcabard [S]', 'Yughott Grotto' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Jugner Forest [S]', 'Xarcabard [S]', 'Ghelsba Outpost', 'Yughott Grotto' },
         zoneIds = { 82, 137, 140, 142 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Gilded Claws\n* The Voracious Resurgence\n",
     },
-
-
-    ['Rock Slab'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Talacca Cove' },
-        zoneIds = { 57 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rockhopper'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Attohwa' },
-        zoneIds = { 215 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rockwell'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Maze of Shakhrami' },
-        zoneIds = { 198 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rocky Outcrop'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Dho Gates' },
-        zoneIds = { 272 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rocky Perch'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier [S]' },
-        zoneIds = { 136 },
-        note = 'Needs Review.',
-    },
-
-
-    ['rod_test'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Rohemolipaud'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Bibiki Bay', 'La Theine Plateau', 'Southern San d\'Oria' },
         zoneIds = { 4, 102, 230 },
-        note = 'Needs Review.',
-    },
 
+    },
 
     ['Rongelouts N Distaud'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs [S]', 'Garlaige Citadel [S]', 'Sauromugue Champaign [S]', 'Southern San d\'Oria [S]', 'Xarcabard [S]' },
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
+        zones = { 'Southern San d\'Oria [S]', 'Batallia Downs [S]', 'Sauromugue Champaign [S]', 'Xarcabard [S]', 'Garlaige Citadel [S]' },
         zoneIds = { 80, 84, 98, 137, 164 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Wings of the Goddess\n",
     },
-
-
-    ['Rook'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Diorama Abdhaljs-Ghelsba', 'Jugner Forest', 'Meriphataud Mountains', 'Pashhow Marshlands' },
-        zoneIds = { 43, 104, 109, 119 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Royal Sepulcher'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Rala Waterways' },
-        zoneIds = { 258 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ru\'Avitau Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ru\'Aun Gardens' },
-        zoneIds = { 130 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ruah Chodran'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Oztroja [S]' },
-        zoneIds = { 99 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rubious Crystal'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Al\'Taieu' },
-        zoneIds = { 33 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ruby Column'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Western Altepa Desert' },
-        zoneIds = { 125 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Ruby Quadav'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mine Shaft #2716' },
-        zoneIds = { 13 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rudhinaaf'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mount Zhayolm' },
-        zoneIds = { 61 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rujawan'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Caedarva Mire' },
-        zoneIds = { 79 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rune of Release'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ilrusi Atoll', 'Lebros Cavern', 'Leujaoam Sanctum', 'Mamool Ja Training Grounds', 'Periqia' },
-        zoneIds = { 55, 56, 63, 66, 69 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rune of Transfer'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Nyzul Isle' },
-        zoneIds = { 77 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Rune of Transfer ???'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Nyzul Isle' },
-        zoneIds = { 77 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['RuneParser'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ruhotz Silvermines' },
-        zoneIds = { 93 },
-        note = 'Needs Review.',
-    },
-
 
     ['Runga-Kopunga'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Lower Jeuno' },
         zoneIds = { 245 },
-        note = 'Needs Review.',
     },
-
-
-
 
     ['Ruth'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
 
     ['Rutta-Watta'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Nashmau' },
         zoneIds = { 53 },
-        note = 'Needs Review.',
     },
-
-
-    ['S'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bastok Mines', 'Southern San d\'Oria', 'Windurst Woods' },
-        zoneIds = { 230, 234, 241 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sa\'Jho Shieldbreaker'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Eldieme Necropolis [S]' },
-        zoneIds = { 175 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sabori'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beadeaux [S]' },
-        zoneIds = { 92 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sahgo Dhakkario'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aydeewa Subterrane' },
-        zoneIds = { 68 },
-        note = 'Needs Review.',
-    },
-
 
     ['Sahnadjean'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
-
-
 
     ['Sajalda'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands' },
         zoneIds = { 50, 51 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-    ['Sajhaam'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Wajaom Woodlands' },
-        zoneIds = { 51 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Salaheem\'s Sentinels'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate' },
-        zoneIds = { 50 },
-        note = 'Needs Review.',
-    },
-
 
     ['Salwa-Molwa'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Mamook', 'Wajaom Woodlands' },
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands', 'Mamook' },
         zoneIds = { 50, 51, 65 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-
-    ['San d\'Orian Pursuivant'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jugner Forest', 'Meriphataud Mountains', 'Pashhow Marshlands' },
-        zoneIds = { 104, 109, 119 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sand Lizard'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Quicksand Caves' },
-        zoneIds = { 208 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sand Tarantula'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Quicksand Caves' },
-        zoneIds = { 208 },
-        note = 'Needs Review.',
-    },
-
 
     ['Sandey-Lusondey'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Rolanberry Fields [S]' },
         zoneIds = { 91 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Cultivating Catastrophe\n",
     },
-
-
-
-
-
-    ['Sandy Overlook'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ceizak Battlegrounds' },
-        zoneIds = { 261 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sapphire Column'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Western Altepa Desert' },
-        zoneIds = { 125 },
-        note = 'Needs Review.',
-    },
-
 
     ['Saprut'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Lower Jeuno', 'Port Jeuno' },
         zoneIds = { 245, 246 },
-        note = 'Needs Review.',
     },
-
-
-
-
-
-    ['Sarcophagus'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Eldieme Necropolis', 'The Eldieme Necropolis [S]' },
-        zoneIds = { 175, 195 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Savage Scars'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Caedarva Mire', 'Wajaom Woodlands' },
-        zoneIds = { 51, 79 },
-        note = 'Needs Review.',
-    },
-
 
     ['Sazog'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
-
-
-    ['Scalable Area'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Cirdas Caverns', 'Dho Gates', 'Marjami Ravine', 'Moh Gates', 'Morimar Basalt Fields', 'Sih Gates', 'Woh Gates' },
-        zoneIds = { 265, 266, 268, 269, 270, 272, 273 },
-        note = 'Needs Review.',
-    },
-
-
-    ['ScenarioBoss'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Sanctuary of Zi\'Tah' },
-        zoneIds = { 121 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Scheck'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Schultz'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bastok Markets [S]', 'Grauberg [S]', 'Marjami Ravine', 'Pashhow Marshlands [S]', 'The Eldieme Necropolis [S]', 'Throne Room', 'Xarcabard' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Bastok Markets [S]', 'Grauberg [S]', 'Pashhow Marshlands [S]', 'Xarcabard', 'Throne Room', 'The Eldieme Necropolis [S]', 'Marjami Ravine' },
         zoneIds = { 87, 89, 90, 112, 165, 175, 266 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Wings of the Goddess\n* The Voracious Resurgence\n",
     },
-
-
-    ['SCitem-Chair'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Scraggy Gigas'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier [S]' },
-        zoneIds = { 136 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Scrape Mark'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Yughott Grotto' },
-        zoneIds = { 142 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Scrawled Writing'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Oldton Movalpolos' },
-        zoneIds = { 11 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Screaming Pond'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Davoi' },
-        zoneIds = { 149 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Scuff Mark'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Grauberg' },
-        zoneIds = { 254 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-
-    ['Searcher'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Balga\'s Dais' },
-        zoneIds = { 146 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Seat of Gramk-Droog'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Marjami Ravine' },
-        zoneIds = { 266 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Secluded Spot'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'West Sarutabaruta' },
-        zoneIds = { 115 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Seed Afterglow'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Fei\'Yin', 'Lower Delkfutt\'s Tower', 'Middle Delkfutt\'s Tower', 'Upper Delkfutt\'s Tower' },
-        zoneIds = { 157, 158, 184, 204 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Seed Crystal'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Stellar Fulcrum' },
-        zoneIds = { 179 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Seed Fragment'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Lower Delkfutt\'s Tower', 'Middle Delkfutt\'s Tower', 'Stellar Fulcrum', 'Upper Delkfutt\'s Tower' },
-        zoneIds = { 157, 158, 179, 184 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Seed Goblin'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qu\'Bia Arena' },
-        zoneIds = { 206 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Seed Mandragora'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qufim Island' },
-        zoneIds = { 126 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Seed Orc'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qu\'Bia Arena' },
-        zoneIds = { 206 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Seed Quadav'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qu\'Bia Arena' },
-        zoneIds = { 206 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Seed Yagudo'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qu\'Bia Arena' },
-        zoneIds = { 206 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Seeker'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Waughroon Shrine' },
-        zoneIds = { 144 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Selbina/Maura'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Selh\'teus'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Al\'Taieu', 'Bastok Markets', 'Bastok Mines', 'Empyreal Paradox', 'Escha - Ru\'Aun', 'Grand Palace of Hu\'Xzoi', 'Hall of Transference', 'Konschtat Highlands', 'La Theine Plateau', 'Lower Delkfutt\'s Tower', 'Mine Shaft #2716', 'Misareaux Coast', 'Northern San d\'Oria', 'Oldton Movalpolos', 'Port Bastok', 'Port San d\'Oria', 'Port Windurst', 'Promyvion - Vahzl', 'Pso\'Xja', 'Reisenjima Sanctorium', 'Sealion\'s Den', 'Southern San d\'Oria', 'Spire of Dem', 'Spire of Holla', 'Spire of Mea', 'Tahrongi Canyon', 'The Garden of Ru\'Hmet', 'The Shrouded Maw', 'Windurst Walls', 'Windurst Waters', 'Windurst Woods' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Phomiuna Aqueducts', 'The Shrouded Maw', 'Oldton Movalpolos', 'Mine Shaft #2716', 'Hall of Transference', 'Spire of Holla', 'Spire of Dem', 'Spire of Mea', 'Promyvion - Vahzl', 'Misareaux Coast', 'Pso\'Xja', 'Sealion\'s Den', 'Grand Palace of Hu\'Xzoi', 'The Garden of Ru\'Hmet', 'Al\'Taieu', 'Empyreal Paradox', 'La Theine Plateau', 'Konschtat Highlands', 'Tahrongi Canyon', 'Lower Delkfutt\'s Tower', 'Southern San d\'Oria', 'Northern San d\'Oria', 'Port San d\'Oria', 'Bastok Mines', 'Bastok Markets', 'Port Bastok', 'Windurst Waters', 'Windurst Walls', 'Port Windurst', 'Windurst Woods', 'Escha - Ru\'Aun', 'Reisenjima Sanctorium' },
         zoneIds = { 9, 10, 11, 13, 14, 17, 19, 21, 22, 25, 32, 33, 34, 35, 36, 102, 108, 117, 184, 230, 231, 232, 234, 235, 236, 238, 239, 240, 241, 289, 293 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Chains of Promathia\n* Rhapsodies of Vana'diel\n",
     },
-
 
     ['Selhteus'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Temple of Uggalepih' },
         zoneIds = { 159 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Rhapsodies of Vana'diel\n",
     },
-
 
     ['Sempurne'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Desuetia - Empyreal Paradox' },
         zoneIds = { 290 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Rhapsodies of Vana'diel\n",
     },
-
-
-    ['sensya'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier [S]' },
-        zoneIds = { 136 },
-        note = 'Needs Review.',
-    },
-
 
     ['Serafin'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Beadeaux', 'Selbina' },
         zoneIds = { 147, 248 },
-        note = 'Needs Review.',
     },
-
-
-    ['Serpent Generals'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Stellar Fulcrum' },
-        zoneIds = { 179 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Shadow of Darkness'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Altar Room', 'Monastic Cavern', 'Qulun Dome', 'Ru\'Lude Gardens' },
-        zoneIds = { 148, 150, 152, 243 },
-        note = 'Needs Review.',
-    },
-
-
-    ['ShadowLord'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Stellar Fulcrum' },
-        zoneIds = { 179 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Shadowy Pillar'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Zvahl Baileys' },
-        zoneIds = { 161 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Shady Sconce'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Sea Serpent Grotto' },
-        zoneIds = { 176 },
-        note = 'Needs Review.',
-    },
-
 
     ['Shaeema'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
-
-
-    ['Shaft Entrance'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mine Shaft #2716' },
-        zoneIds = { 13 },
-        note = 'Needs Review.',
-    },
-
 
     ['Shahr Yagenmhi'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Windurst Waters', 'Windurst Waters [S]' },
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
+        zones = { 'Windurst Waters [S]', 'Windurst Waters' },
         zoneIds = { 94, 238 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Wings of the Goddess\n",
     },
-
 
     ['Shairiri'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Windurst Waters [S]' },
         zoneIds = { 94 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Wings of the Goddess\n",
     },
-
-
-    ['Shake'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Attohwa' },
-        zoneIds = { 215 },
-        note = 'Needs Review.',
-    },
-
 
     ['Shaldeea'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Wajaom Woodlands' },
         zoneIds = { 51 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* An Imperial Heist\n",
     },
-
-
-    ['Shami\'s Crate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Port Jeuno' },
-        zoneIds = { 246 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Shard of Sunlight'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bastok Mines', 'Southern San d\'Oria', 'Windurst Walls' },
-        zoneIds = { 230, 234, 239 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sharpshot Luttdrutt'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Eldieme Necropolis [S]' },
-        zoneIds = { 175 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Shed'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Kazham' },
-        zoneIds = { 250 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Shellfish'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Yahse Hunting Grounds' },
-        zoneIds = { 260 },
-        note = 'Needs Review.',
-    },
-
 
     ['Shemmie'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Tavnazian Safehold' },
         zoneIds = { 26 },
-        note = 'Needs Review.',
     },
-
-
-    ['Shield_master'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Al Zahbi' },
-        zoneIds = { 48 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Shimmering Pondweed'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Pashhow Marshlands [S]' },
-        zoneIds = { 90 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-   
-
-
-    ['Shiva'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Cloister of Frost', 'Full Moon Fountain', 'La Theine Plateau' },
-        zoneIds = { 102, 170, 203 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Shiva\'s Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Eldieme Necropolis', 'The Eldieme Necropolis [S]' },
-        zoneIds = { 175, 195 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Shoukansho Debug'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Colosseum' },
-        zoneIds = { 71 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Shoukansho Sakusei'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Colosseum' },
-        zoneIds = { 71 },
-        note = 'Needs Review.',
-    },
-
-
-
+	
 
 
 
 
 
     ['Sikool Ja'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Jade Sepulcher' },
         zoneIds = { 67 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Price of Gold\n",
     },
-
-
-    ['Silvertongue Gnashrosh'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jugner Forest [S]' },
-        zoneIds = { 82 },
-        note = 'Needs Review.',
-    },
-
 
     ['Siren'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Escha - Ru\'Aun', 'Sea Serpent Grotto', 'Yuhtunga Jungle' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Yuhtunga Jungle', 'Sea Serpent Grotto', 'Escha - Ru\'Aun' },
         zoneIds = { 123, 176, 289 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Trial by Wind\n* Trial Size Trial by Wind\n",
     },
-
-
-    ['Siren Prime'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Escha - Ru\'Aun' },
-        zoneIds = { 289 },
-        note = 'Needs Review.',
-    },
-
 
     ['Skhoh Undhreh'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Outer Ra\'Kaznar', 'Silver Knife' },
         zoneIds = { 274, 283 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Voracious Resurgence\n",
     },
-
-
-    ['Skill Help Test'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Colosseum' },
-        zoneIds = { 71 },
-        note = 'Needs Review.',
-    },
-
-
-    ['skirm_aug'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Slackjawed Mukdrom'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier', 'Chateau d\'Oraguille' },
-        zoneIds = { 111, 233 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sliding Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beadeaux', 'Beadeaux [S]' },
-        zoneIds = { 92, 147 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Slot'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Arrapago Remnants', 'Bhaflau Remnants', 'Silver Sea Remnants', 'Zhayolm Remnants' },
-        zoneIds = { 73, 74, 75, 76 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sluice Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Rala Waterways' },
-        zoneIds = { 258 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Slumbering Savage'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Xarcabard [S]' },
-        zoneIds = { 137 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Smithy Moogle'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Metalworks' },
-        zoneIds = { 237 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Socket'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Arrapago Remnants', 'Bhaflau Remnants', 'Silver Sea Remnants', 'Zhayolm Remnants' },
-        zoneIds = { 73, 74, 75, 76 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Solo Hunt Box'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Soltargan'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rala Waterways' },
         zoneIds = { 258 },
-        note = 'Needs Review.',
     },
-
-
-    ['Somnial Threshold'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Dynamis - Bastok', 'Dynamis - Beaucedine', 'Dynamis - Buburimu', 'Dynamis - Jeuno', 'Dynamis - Qufim', 'Dynamis - San d\'Oria', 'Dynamis - Tavnazia', 'Dynamis - Valkurm', 'Dynamis - Windurst', 'Dynamis - Xarcabard' },
-        zoneIds = { 39, 40, 41, 42, 134, 135, 185, 186, 187, 188 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Song Runes'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Buburimu Peninsula', 'Valkurm Dunes' },
-        zoneIds = { 103, 118 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sooph Mreeblih'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Oztroja [S]' },
-        zoneIds = { 99 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Soothing Strongbox'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Everbloom Hollow', 'Ghoyu\'s Reverie', 'Ruhotz Silvermines' },
-        zoneIds = { 86, 93, 129 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Soul Pyre'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ceizak Battlegrounds', 'Cirdas Caverns', 'Dho Gates', 'Eastern Adoulin', 'Foret de Hennetiel', 'Kamihr Drifts', 'Marjami Ravine', 'Moh Gates', 'Morimar Basalt Fields', 'Outer Ra\'Kaznar', 'Ra\'Kaznar Inner Court', 'Ra\'Kaznar Turris', 'Rala Waterways', 'Sih Gates', 'Western Adoulin', 'Woh Gates', 'Yahse Hunting Grounds', 'Yorcia Weald' },
-        zoneIds = { 256, 257, 258, 260, 261, 262, 263, 265, 266, 267, 268, 269, 270, 272, 273, 274, 276, 277 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Soulstealer Skullnix'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Zvahl Keep' },
-        zoneIds = { 162 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Spelunking Sabotender'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Quicksand Caves' },
-        zoneIds = { 208 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Spencer'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Southern San d\'Oria [S]' },
-        zoneIds = { 80 },
-        note = 'Needs Review.',
+        zoneIds = { 136 },
     },
-
-
-    ['Spikehelm Argok'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Zvahl Keep', 'La Theine Plateau' },
-        zoneIds = { 102, 162 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Spotter'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Horlais Peak' },
-        zoneIds = { 139 },
-        note = 'Needs Review.',
-    },
-
 
     ['Spriggan Crier'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'North Gustaberg', 'Port Bastok', 'Southern San d\'Oria', 'West Ronfaure', 'West Sarutabaruta', 'Windurst Waters' },
+        type = "Special Event Coordinator",
+        icon = "SpecialEventCoordinator.png",
+        zones = { 'West Ronfaure', 'North Gustaberg', 'West Sarutabaruta', 'Southern San d\'Oria', 'Port Bastok', 'Windurst Waters' },
         zoneIds = { 100, 106, 115, 230, 236, 238 },
-        note = 'Needs Review.',
+        note = "Seasonal holiday event creature coordinator.",
     },
-
-
-    ['Spriggan Graverobber'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'North Gustaberg', 'Port Bastok', 'Southern San d\'Oria', 'West Ronfaure', 'West Sarutabaruta', 'Windurst Waters' },
-        zoneIds = { 100, 106, 115, 230, 236, 238 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Spriggan Sifter'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'North Gustaberg', 'Port Bastok', 'Southern San d\'Oria', 'West Ronfaure', 'West Sarutabaruta', 'Windurst Waters' },
-        zoneIds = { 100, 106, 115, 230, 236, 238 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sprightly Footsteps'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mount Zhayolm' },
-        zoneIds = { 61 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Sprout'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Meriphataud Mountains [S]' },
-        zoneIds = { 97 },
-        note = 'Needs Review.',
-    },
-
-
-    ['St_moogle'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Stalagmite'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Korroloka Tunnel', 'Ordelle\'s Caves' },
-        zoneIds = { 173, 193 },
-        note = 'Needs Review.',
-    },
-
-
-
 
     ['Staumarth'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Moh Gates' },
         zoneIds = { 269 },
-        note = 'Needs Review.',
     },
-
 
     ['Stefan'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Xarcabard [S]' },
         zoneIds = { 137 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Darkness Descends\n* When Wills Collide\n",
     },
-
-
-    ['Stheno'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mine Shaft #2716' },
-        zoneIds = { 13 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Stonehoused Adit'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'North Gustaberg [S]' },
-        zoneIds = { 88 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Strewn Carrion'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Uleguerand' },
-        zoneIds = { 253 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Stripped Carcass'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Vunkerl Inlet [S]' },
-        zoneIds = { 83 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Sturdy Pyxis'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Altepa', 'Abyssea - Attohwa', 'Abyssea - Grauberg', 'Abyssea - Konschtat', 'Abyssea - La Theine', 'Abyssea - Misareaux', 'Abyssea - Tahrongi', 'Abyssea - Uleguerand', 'Abyssea - Vunkerl' },
-        zoneIds = { 15, 45, 132, 215, 216, 217, 218, 253, 254 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Succulent Cactus'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Fort Karugo-Narugo [S]' },
-        zoneIds = { 96 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Summoner'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs', 'Beaucedine Glacier', 'Buburimu Peninsula', 'East Ronfaure', 'East Sarutabaruta', 'Eastern Altepa Desert', 'Jugner Forest', 'Konschtat Highlands', 'La Theine Plateau', 'Meriphataud Mountains', 'North Gustaberg', 'Pashhow Marshlands', 'Qufim Island', 'Rolanberry Fields', 'Sauromugue Champaign', 'South Gustaberg', 'Tahrongi Canyon', 'The Sanctuary of Zi\'Tah', 'Valkurm Dunes', 'West Ronfaure', 'West Sarutabaruta', 'Western Altepa Desert', 'Xarcabard', 'Yhoator Jungle', 'Yuhtunga Jungle' },
-        zoneIds = { 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 114, 115, 116, 117, 118, 119, 120, 121, 123, 124, 125, 126 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Sunken Hollow'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Fort Karugo-Narugo [S]' },
-        zoneIds = { 96 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Sureshot Snatgat'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghelsba Outpost' },
-        zoneIds = { 140 },
-        note = 'Needs Review.',
-    },
-
-
-
 
     ['Swantje'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Bastok Markets [S]', 'North Gustaberg [S]' },
         zoneIds = { 87, 88 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Price of Peace\n",
     },
-
 
     ['Swikastoq'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Tavnazian Safehold' },
         zoneIds = { 26 },
-        note = 'Needs Review.',
     },
-
-
-
-
 
     ['Syaid'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Al Zahbi' },
         zoneIds = { 48 },
-        note = 'Needs Review.',
     },
-
-
-    ['Symphonic Curator'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Al Zahbi', 'Bastok Markets', 'Bastok Markets [S]', 'Bastok Mines', 'Eastern Adoulin', 'Lower Jeuno', 'Northern San d\'Oria', 'Port Bastok', 'Port Jeuno', 'Port San d\'Oria', 'Port Windurst', 'Ru\'Lude Gardens', 'Southern San d\'Oria', 'Southern San d\'Oria [S]', 'Upper Jeuno', 'Western Adoulin', 'Windurst Walls', 'Windurst Waters', 'Windurst Waters [S]', 'Windurst Woods' },
-        zoneIds = { 48, 50, 80, 87, 94, 230, 231, 232, 234, 235, 236, 238, 239, 240, 241, 243, 244, 245, 246, 256, 257 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Synthesis Focuser II'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Port Jeuno' },
-        zoneIds = { 246 },
-        note = 'Needs Review.',
-    },
-
-
-    ['SystemMaster'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Everbloom Hollow', 'Ghoyu\'s Reverie', 'Ruhotz Silvermines' },
-        zoneIds = { 86, 93, 129 },
-        note = 'Needs Review.',
-    },
-
-
 
     ['Tacca-Picca'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'West Sarutabaruta', 'Windurst Waters' },
         zoneIds = { 115, 238 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Babban Ny Mheillea\n",
     },
-
 
     ['Tagloix'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Jugner Forest [S]' },
         zoneIds = { 82 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Weight of Evidence\n",
     },
-
-
-    ['Tahrongi Cacti'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Tahrongi', 'Tahrongi Canyon' },
-        zoneIds = { 45, 117 },
-        note = 'Needs Review.',
-    },
-
 
     ['Taishu-Yaashu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
-
-
-
-    ['Takarabako'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'La Theine Plateau' },
-        zoneIds = { 102 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['TalkyDolly'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Temple of Uggalepih' },
-        zoneIds = { 159 },
-        note = 'Needs Review.',
-    },
-
-
-    ['TalkyDolly2'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Temple of Uggalepih' },
-        zoneIds = { 159 },
-        note = 'Needs Review.',
-    },
-
-
-    ['TalkyDolly3'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Temple of Uggalepih' },
-        zoneIds = { 159 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Tallow Candle'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Eldieme Necropolis', 'The Eldieme Necropolis [S]' },
-        zoneIds = { 175, 195 },
-        note = 'Needs Review.',
-    },
-
 
     ['Talos'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chateau d\'Oraguille', 'Fei\'Yin' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Fei\'Yin', 'Chateau d\'Oraguille' },
         zoneIds = { 204, 233 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Voracious Resurgence\n",
     },
-
-
-
 
     ['Tarotta'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Southern San d\'Oria' },
         zoneIds = { 230 },
-        note = 'Needs Review.',
     },
-
-
-    ['taru'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Al\'Taieu' },
-        zoneIds = { 33 },
-        note = 'Needs Review.',
-    },
-
-
 
     ['Tedimout'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghelsba Outpost', 'Northern San d\'Oria' },
-        zoneIds = { 140, 231 },
-        note = 'Needs Review.',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Northern San d\'Oria', 'Ghelsba Outpost' },
+        zoneIds = { 231, 140 },
+        note = "Involved in Quest:\n* Signature d'Amour\n",
     },
-
 
     ['Teepapa'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Mamook' },
         zoneIds = { 50, 65 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-    ['Teetering Ladder'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ruhotz Silvermines' },
-        zoneIds = { 93 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Teleporter'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Palborough Mines' },
-        zoneIds = { 143 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Teleporter2'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Palborough Mines' },
-        zoneIds = { 143 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Tenmado'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Inner Horutoto Ruins' },
-        zoneIds = { 192 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-
-
-    ['Tethys'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Zvahl Keep', 'La Theine Plateau' },
-        zoneIds = { 102, 162 },
-        note = 'Needs Review.',
-    },
-
-
-
 
     ['Thianond'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Garlaige Citadel [S]' },
         zoneIds = { 164 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Weight of Evidence\n",
     },
-
-
-    ['Three of Diamonds'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Tahrongi' },
-        zoneIds = { 45 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Thundering Chariot'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Oztroja' },
-        zoneIds = { 151 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['ticket_r'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Apollyon', 'Temenos' },
-        zoneIds = { 37, 38 },
-        note = 'Needs Review.',
-    },
-
-
-    ['ticket_w'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Apollyon', 'Temenos' },
-        zoneIds = { 37, 38 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Tiger Bones'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Sauromugue Champaign' },
-        zoneIds = { 120 },
-        note = 'Needs Review.',
-    },
-
 
     ['Tihk Rhumyie'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'West Sarutabaruta', 'Windurst Waters' },
         zoneIds = { 115, 238 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Babban Ny Mheillea\n",
     },
-
-
-    ['Time Bomb'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs [S]', 'East Ronfaure [S]', 'Fort Karugo-Narugo [S]', 'Jugner Forest [S]', 'Meriphataud Mountains [S]', 'Pashhow Marshlands [S]', 'Rolanberry Fields [S]', 'Vunkerl Inlet [S]', 'West Sarutabaruta [S]' },
-        zoneIds = { 81, 82, 83, 84, 90, 91, 95, 96, 97 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Time Master Debug'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Altepa', 'Abyssea - Attohwa', 'Abyssea - Grauberg', 'Abyssea - Konschtat', 'Abyssea - La Theine', 'Abyssea - Misareaux', 'Abyssea - Tahrongi', 'Abyssea - Uleguerand', 'Abyssea - Vunkerl' },
-        zoneIds = { 15, 45, 132, 215, 216, 217, 218, 253, 254 },
-        note = 'Needs Review.',
-    },
-
-
-    ['TimeKeeper'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chocobo Circuit' },
-        zoneIds = { 70 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Timeworn Altar'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Grauberg [S]' },
-        zoneIds = { 89 },
-        note = 'Needs Review.',
-    },
-
 
     ['Tinga-Matonga'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Bhaflau Thickets' },
         zoneIds = { 50, 52 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
 
     ['Titan'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Cloister of Tremors', 'Full Moon Fountain', 'La Theine Plateau' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'La Theine Plateau', 'Full Moon Fountain', 'Cloister of Tremors' },
         zoneIds = { 102, 170, 209 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Trial by Earth\n* Trial Size Trial by Earth\n",
     },
-
-
-
-
-    ['Topaz Column'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Western Altepa Desert' },
-        zoneIds = { 125 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Topaz Quadav'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Throne Room' },
-        zoneIds = { 165 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Toppled Cresset'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Vunkerl Inlet [S]' },
-        zoneIds = { 83 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Toraimarai Canal'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Inner Horutoto Ruins' },
-        zoneIds = { 192 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Tori01'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bibiki Bay' },
-        zoneIds = { 4 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Towering Portcullis'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Walk of Echoes' },
-        zoneIds = { 182 },
-        note = 'Needs Review.',
-    },
-
-
-
-    ['Trader'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Transporter'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Heavens Tower', 'Toraimarai Canal' },
-        zoneIds = { 169, 242 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #1'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #10'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #11'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #12'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #13'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #14'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #15'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #16'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #2'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #3'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #4'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #5'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #6'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #7'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #8'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Treasure Portent #9'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Reisenjima Henge' },
-        zoneIds = { 292 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Tree Hollow'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Southern San d\'Oria [S]' },
-        zoneIds = { 80 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Trentain'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rala Waterways' },
         zoneIds = { 258 },
-        note = 'Needs Review.',
     },
-
-
-    ['Trick Flan'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bastok Markets', 'Northern San d\'Oria', 'Windurst Waters' },
-        zoneIds = { 231, 235, 238 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Triggered Bomb'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Everbloom Hollow' },
-        zoneIds = { 86 },
-        note = 'Needs Review.',
-    },
-
-
-
-
 
     ['Tsolag'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Port Jeuno' },
         zoneIds = { 246 },
-        note = 'Needs Review.',
     },
-
-
-
-    ['Twilight Aureola'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Everbloom Hollow', 'Ghoyu\'s Reverie', 'Ruhotz Silvermines' },
-        zoneIds = { 86, 93, 129 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Twilotak'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mine Shaft #2716' },
-        zoneIds = { 13 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Twinkle Tree'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'West Sarutabaruta' },
-        zoneIds = { 115 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Twinkling Presence'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Dynamis - Xarcabard' },
-        zoneIds = { 135 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Twinkling Tree'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ceizak Battlegrounds' },
-        zoneIds = { 261 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Two of Cups'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Windurst Waters [S]' },
-        zoneIds = { 94 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Two of Diamonds'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Tahrongi' },
-        zoneIds = { 45 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Two of Swords'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Lower Jeuno', 'Upper Jeuno', 'Windurst Woods' },
-        zoneIds = { 241, 244, 245 },
-        note = 'Needs Review.',
-    },
-
-
 
     ['Ukhu Sichahha'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Pioneer",
+        icon = "Pioneer.png",
         zones = { 'Foret de Hennetiel' },
         zoneIds = { 262 },
-        note = 'Needs Review.',
     },
-
 
     ['Uki Pupakkuh'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Arrapago Reef' },
         zoneIds = { 54 },
-        note = 'Needs Review.',
     },
-
-
 
     ['Umon-Paumon'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier', 'Cape Teriggan', 'Castle Oztroja', 'Dragon\'s Aery', 'Horlais Peak', 'Ifrit\'s Cauldron', 'Metalworks', 'North Gustaberg', 'Ru\'Aun Gardens', 'Ru\'Lude Gardens', 'Sea Serpent Grotto', 'The Sanctuary of Zi\'Tah', 'Valley of Sorrows', 'Western Altepa Desert' },
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'North Gustaberg', 'Beaucedine Glacier', 'Cape Teriggan', 'Castle Oztroja', 'Western Altepa Desert', 'Valley of Sorrows', 'Dragon\'s Aery', 'Horlais Peak', 'The Sanctuary of Zi\'Tah', 'Ru\'Aun Gardens', 'Sea Serpent Grotto', 'Ifrit\'s Cauldron', 'Metalworks', 'Ru\'Lude Gardens' },
         zoneIds = { 106, 111, 113, 121, 125, 128, 130, 139, 151, 154, 176, 205, 237, 243 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Return of Mieuseloir\n* Mieuseloir's Marvelous Adventure\n",
     },
-
-
-
-
-
- 
-
-
-    ['Ungainly Gigas'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier [S]' },
-        zoneIds = { 136 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Unity Master'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abdhaljs Isle-Purgonorgo', 'Abyssea - Altepa', 'Abyssea - Attohwa', 'Abyssea - Empyreal Paradox', 'Abyssea - Grauberg', 'Abyssea - Konschtat', 'Abyssea - La Theine', 'Abyssea - Misareaux', 'Abyssea - Tahrongi', 'Abyssea - Uleguerand', 'Abyssea - Vunkerl', 'Aht Urhgan Whitegate', 'Al Zahbi', 'Al\'Taieu', 'Altar Room', 'Alzadaal Undersea Ruins', 'Apollyon', 'Arrapago Reef', 'Attohwa Chasm', 'Aydeewa Subterrane', 'Balga\'s Dais', 'Bastok - Jeuno Airship', 'Bastok Markets', 'Bastok Markets [S]', 'Bastok Mines', 'Batallia Downs', 'Batallia Downs [S]', 'Beadeaux', 'Beadeaux [S]', 'Bearclaw Pinnacle', 'Beaucedine Glacier', 'Beaucedine Glacier [S]', 'Behemoth\'s Dominion', 'Bhaflau Thickets', 'Bibiki Bay', 'Boneyard Gully', 'Bostaunieux Oubliette', 'Buburimu Peninsula', 'Caedarva Mire', 'Cape Teriggan', 'Carpenters\' Landing', 'Castle Oztroja', 'Castle Oztroja [S]', 'Castle Zvahl Baileys', 'Castle Zvahl Baileys [S]', 'Castle Zvahl Keep', 'Castle Zvahl Keep [S]', 'Ceizak Battlegrounds', 'Celennia Memorial Library', 'Chamber of Oracles', 'Chateau d\'Oraguille', 'Chocobo Circuit', 'Cirdas Caverns', 'Cloister of Flames', 'Cloister of Frost', 'Cloister of Gales', 'Cloister of Storms', 'Cloister of Tides', 'Cloister of Tremors', 'Crawlers\' Nest', 'Crawlers\' Nest [S]', 'Dangruf Wadi', 'Davoi', 'Den of Rancor', 'Desuetia - Empyreal Paradox', 'Dho Gates', 'Diorama Abdhaljs-Ghelsba', 'Dragon\'s Aery', 'Dynamis - Bastok', 'Dynamis - Beaucedine', 'Dynamis - Buburimu', 'Dynamis - Jeuno', 'Dynamis - Qufim', 'Dynamis - San d\'Oria', 'Dynamis - Tavnazia', 'Dynamis - Valkurm', 'Dynamis - Windurst', 'Dynamis - Xarcabard', 'East Ronfaure', 'East Ronfaure [S]', 'East Sarutabaruta', 'Eastern Adoulin', 'Eastern Altepa Desert', 'Empyreal Paradox', 'Escha - Ru\'Aun', 'Escha - Zi\'Tah', 'Fei\'Yin', 'Feretory', 'Foret de Hennetiel', 'Fort Ghelsba', 'Fort Karugo-Narugo [S]', 'Full Moon Fountain', 'Garlaige Citadel', 'Garlaige Citadel [S]', 'Ghelsba Outpost', 'Giddeus', 'GM Home', 'Grand Palace of Hu\'Xzoi', 'Grauberg [S]', 'Gusgen Mines', 'Gustav Tunnel', 'Hall of The Gods', 'Hall of Transference', 'Halvung', 'Hazhalm Testing Grounds', 'Heavens Tower', 'Horlais Peak', 'Ifrit\'s Cauldron', 'Inner Horutoto Ruins', 'Jade Sepulcher', 'Jugner Forest', 'Jugner Forest [S]', 'Kamihr Drifts', 'Kazham', 'Kazham - Jeuno Airship', 'King Ranperre\'s Tomb', 'Konschtat Highlands', 'Korroloka Tunnel', 'Kuftal Tunnel', 'La Theine Plateau', 'La Vaule [S]', 'La\'Loff Amphitheater', 'Labyrinth of Onzozo', 'Leafallia', 'Lower Delkfutt\'s Tower', 'Lower Jeuno', 'Lufaise Meadows', 'Mamook', 'Manaclipper', 'Marjami Ravine', 'Maze of Shakhrami', 'Meriphataud Mountains', 'Meriphataud Mountains [S]', 'Metalworks', 'Mhaura', 'Middle Delkfutt\'s Tower', 'Mine Shaft #2716', 'Misareaux Coast', 'Mog Garden', 'Moh Gates', 'Monarch Linn', 'Monastic Cavern', 'Mordion Gaol', 'Morimar Basalt Fields', 'Mount Kamihr', 'Mount Zhayolm', 'Nashmau', 'Navukgo Execution Chamber', 'Newton Movalpolos', 'Norg', 'North Gustaberg', 'North Gustaberg [S]', 'Northern San d\'Oria', 'Oldton Movalpolos', 'Open Sea Route to Al Zahbi', 'Open Sea Route to Mhaura', 'Ordelle\'s Caves', 'Outer Horutoto Ruins', 'Outer Ra\'Kaznar', 'Palborough Mines', 'Pashhow Marshlands', 'Pashhow Marshlands [S]', 'Phanauet Channel', 'Phomiuna Aqueducts', 'Port Bastok', 'Port Jeuno', 'Port San d\'Oria', 'Port Windurst', 'Promyvion - Dem', 'Promyvion - Holla', 'Promyvion - Mea', 'Promyvion - Vahzl', 'Provenance', 'Pso\'Xja', 'Qu\'Bia Arena', 'Qufim Island', 'Quicksand Caves', 'Qulun Dome', 'Ra\'Kaznar Inner Court', 'Ra\'Kaznar Turris', 'Rabao', 'Rala Waterways', 'Ranguemont Pass', 'Reisenjima', 'Reisenjima Henge', 'Reisenjima Sanctorium', 'Riverne - Site #A01', 'Riverne - Site #B01', 'Ro\'Maeve', 'Rolanberry Fields', 'Rolanberry Fields [S]', 'Ru\'Aun Gardens', 'Ru\'Lude Gardens', 'Sacrarium', 'Sacrificial Chamber', 'San d\'Oria - Jeuno Airship', 'Sauromugue Champaign', 'Sauromugue Champaign [S]', 'Sea Serpent Grotto', 'Sealion\'s Den', 'Selbina', 'Ship Bound for Mhaura', 'Ship Bound for Mhaura (Pirates)', 'Ship Bound for Selbina', 'Ship Bound for Selbina (Pirates)', 'Sih Gates', 'Silver Knife', 'Silver Sea Route to Al Zahbi', 'Silver Sea Route to Nashmau', 'South Gustaberg', 'Southern San d\'Oria', 'Southern San d\'Oria [S]', 'Spire of Dem', 'Spire of Holla', 'Spire of Mea', 'Spire of Vahzl', 'Stellar Fulcrum', 'Tahrongi Canyon', 'Talacca Cove', 'Tavnazian Safehold', 'Temenos', 'Temple of Uggalepih', 'The Boyahda Tree', 'The Celestial Nexus', 'The Colosseum', 'The Eldieme Necropolis', 'The Eldieme Necropolis [S]', 'The Garden of Ru\'Hmet', 'The Sanctuary of Zi\'Tah', 'The Shrine of Ru\'Avitau', 'The Shrouded Maw', 'Throne Room', 'Throne Room [S]', 'Toraimarai Canal', 'Uleguerand Range', 'Upper Delkfutt\'s Tower', 'Upper Jeuno', 'Valkurm Dunes', 'Valley of Sorrows', 'Ve\'Lugannon Palace', 'Vunkerl Inlet [S]', 'Wajaom Woodlands', 'Walk of Echoes', 'Waughroon Shrine', 'West Ronfaure', 'West Sarutabaruta', 'West Sarutabaruta [S]', 'Western Adoulin', 'Western Altepa Desert', 'Windurst - Jeuno Airship', 'Windurst Walls', 'Windurst Waters', 'Windurst Waters [S]', 'Windurst Woods', 'Woh Gates', 'Xarcabard', 'Xarcabard [S]', 'Yahse Hunting Grounds', 'Yhoator Jungle', 'Yorcia Weald', 'Yughott Grotto', 'Yuhtunga Jungle', 'Zeruhn Mines' },
-        zoneIds = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 50, 51, 52, 53, 54, 57, 58, 59, 61, 62, 64, 65, 67, 68, 70, 71, 72, 78, 79, 80, 81, 82, 83, 84, 85, 87, 88, 89, 90, 91, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 130, 131, 132, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 184, 185, 186, 187, 188, 190, 191, 192, 193, 194, 195, 196, 197, 198, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 215, 216, 217, 218, 220, 221, 222, 223, 224, 225, 226, 227, 228, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 260, 261, 262, 263, 265, 266, 267, 268, 269, 270, 272, 273, 274, 276, 277, 280, 281, 282, 283, 284, 285, 288, 289, 290, 291, 292, 293 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Unstable'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Unstable Displacement'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Riverne - Site #A01', 'Riverne - Site #B01' },
-        zoneIds = { 29, 30 },
-        note = 'Needs Review.',
-    },
-
-
-    ['usa'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Caedarva Mire' },
-        zoneIds = { 79 },
-        note = 'Needs Review.',
-    },
-
 
     ['Usharani'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rabao' },
         zoneIds = { 247 },
-        note = 'Needs Review.',
     },
-
 
     ['Utrig'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Sauromugue Champaign' },
         zoneIds = { 120 },
-        note = 'Needs Review.',
     },
-
-
 
     ['Valdemar'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Bastok Markets' },
         zoneIds = { 235 },
-        note = 'Needs Review.',
     },
-
 
     ['Valkeng'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bastok Markets', 'Navukgo Execution Chamber', 'Talacca Cove' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Talacca Cove', 'Navukgo Execution Chamber', 'Bastok Markets' },
         zoneIds = { 57, 64, 235 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vampyr Bats'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jade Sepulcher' },
-        zoneIds = { 67 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vampyr Wolf'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jade Sepulcher' },
-        zoneIds = { 67 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Varonbiriaux'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Southern San d\'Oria' },
-        zoneIds = { 230 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vaseradoul'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ghelsba Outpost' },
-        zoneIds = { 140 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vassago'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qu\'Bia Arena' },
-        zoneIds = { 206 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vatharad'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands' },
-        zoneIds = { 50, 51 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vavaroon'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Aydeewa Subterrane', 'Wajaom Woodlands' },
-        zoneIds = { 50, 51, 68 },
-        note = 'Needs Review.',
-    },
-
-
-    ['VCS Crate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Buburimu Peninsula', 'Eastern Altepa Desert', 'Jugner Forest', 'Konschtat Highlands', 'La Theine Plateau', 'Meriphataud Mountains', 'Pashhow Marshlands', 'Tahrongi Canyon', 'Valkurm Dunes', 'Western Altepa Desert', 'Yhoator Jungle', 'Yuhtunga Jungle' },
-        zoneIds = { 102, 103, 104, 108, 109, 114, 117, 118, 119, 123, 124, 125 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vegetation'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Leujaoam Sanctum' },
-        zoneIds = { 69 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Veil'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ceizak Battlegrounds', 'Foret de Hennetiel', 'Kamihr Drifts', 'Marjami Ravine', 'Morimar Basalt Fields', 'Yorcia Weald' },
-        zoneIds = { 261, 262, 263, 265, 266, 267 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Velkk Cache'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Marjami Ravine' },
-        zoneIds = { 266 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vending Box'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Nyzul Isle' },
-        zoneIds = { 77 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vertical Transit Device'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Outer Ra\'Kaznar', 'Ra\'Kaznar Inner Court', 'Ra\'Kaznar Turris' },
-        zoneIds = { 274, 276, 277 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vexing Sniffles'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Caedarva Mire' },
-        zoneIds = { 79 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Vicious Claw Marks'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ranguemont Pass' },
-        zoneIds = { 166 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Victory Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate' },
-        zoneIds = { 50 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Treasures of Aht Urhgan\n",
     },
 
 
     ['Vigsterkr'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Norg', 'Sea Serpent Grotto' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Sea Serpent Grotto', 'Norg' },
         zoneIds = { 176, 252 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Voracious Resurgence\n",
     },
-
 
     ['Vilbert'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Chateau d\'Oraguille', 'Jugner Forest', 'Northern San d\'Oria' },
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Jugner Forest', 'Northern San d\'Oria', 'Chateau d\'Oraguille' },
         zoneIds = { 104, 231, 233 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Star Oncie\n",
     },
-
-
-    ['Village Gateway'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'La Vaule [S]' },
-        zoneIds = { 85 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Village Well'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Davoi' },
-        zoneIds = { 149 },
-        note = 'Needs Review.',
-    },
-
 
     ['Vinairy'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Xarcabard [S]' },
         zoneIds = { 137 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Darkness Descends\n* When Wills Collide\n",
     },
-
 
     ['Viresefilant'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Metalworks', 'Port Bastok' },
+        type = "Citizen",
+        icon = "Dialogue.png",
+        zones = { 'Port Bastok', 'Metalworks' },
         zoneIds = { 236, 237 },
-        note = 'Needs Review.',
     },
-
 
     ['Viridiana'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Southern San d\'Oria [S]' },
-        zoneIds = { 80 },
-        note = 'Needs Review.',
+        zoneIds = { 136 },
+        note = "Involved in Mission:\n* Steamed Rams\n",
     },
-
-
-    ['Viscous Liquid'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mamook', 'Mamool Ja Training Grounds' },
-        zoneIds = { 65, 66 },
-        note = 'Needs Review.',
-    },
-
-
 
     ['Voshekglok'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Xarcabard [S]' },
         zoneIds = { 137 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Gilded Claws\n* The Voracious Resurgence\n",
     },
-
-
-
-    ['Wailing Pond'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Davoi' },
-        zoneIds = { 149 },
-        note = 'Needs Review.',
-    },
-
 
     ['Wajran'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands' },
         zoneIds = { 50, 51 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-    ['Walker'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Wall of Banishing'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Davoi' },
-        zoneIds = { 149 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Wall of Dark Arts'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Davoi' },
-        zoneIds = { 149 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Walnut Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Tavnazian Safehold' },
-        zoneIds = { 26 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Warding Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Fort Karugo-Narugo [S]' },
-        zoneIds = { 96 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Warhorse Hoofprint'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bhaflau Thickets', 'Caedarva Mire', 'Mount Zhayolm', 'Wajaom Woodlands' },
-        zoneIds = { 51, 52, 61, 79 },
-        note = 'Needs Review.',
-    },
-
 
     ['Warjal'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
-
-
-    ['Warlord Rojgnoj'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Qu\'Bia Arena' },
-        zoneIds = { 206 },
-        note = 'Needs Review.',
-    },
-
-
 
     ['Wassert'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'West Sarutabaruta', 'Windurst Waters' },
         zoneIds = { 115, 238 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Babban Ny Mheillea\n",
     },
-
 
     ['Wasuhd'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Arrapago Reef', 'Talacca Cove' },
         zoneIds = { 50, 54, 57 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* An Imperial Heist\n",
     },
-
-
-    ['Water in Space'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Full Moon Fountain', 'Heavens Tower' },
-        zoneIds = { 170, 242 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Water of Whispers'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Dho Gates' },
-        zoneIds = { 272 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Water Protocrystal'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Cloister of Tides' },
-        zoneIds = { 211 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Waterfall Base'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'North Gustaberg' },
-        zoneIds = { 106 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Waterfall Basin'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Sea Serpent Grotto' },
-        zoneIds = { 176 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Watergrass'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Vunkerl' },
-        zoneIds = { 217 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Waters of Oblivion'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ranguemont Pass' },
-        zoneIds = { 166 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Waterways Overlook'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Rala Waterways' },
-        zoneIds = { 258 },
-        note = 'Needs Review.',
-    },
-
 
     ['Wathdeeh'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Aydeewa Subterrane' },
         zoneIds = { 50, 68 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-    ['Wavering Flux'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Cirdas Caverns', 'Yorcia Weald' },
-        zoneIds = { 263, 270 },
-        note = 'Needs Review.',
-    },
-
 
     ['Wawaroon'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Aydeewa Subterrane', 'Wajaom Woodlands' },
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands', 'Aydeewa Subterrane' },
         zoneIds = { 50, 51, 68 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-    ['Wayaati'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Wajaom Woodlands' },
-        zoneIds = { 51 },
-        note = 'Needs Review.',
-    },
-
 
     ['Wazozo'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Tavnazian Safehold' },
         zoneIds = { 26 },
-        note = 'Needs Review.',
     },
-
-
-    ['Weather'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Arrapago Remnants', 'Bhaflau Remnants', 'Nyzul Isle', 'Silver Sea Remnants', 'Silver Sea Route to Al Zahbi', 'Silver Sea Route to Nashmau', 'Zhayolm Remnants' },
-        zoneIds = { 58, 59, 73, 74, 75, 76, 77 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Weathered Boat'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bibiki Bay' },
-        zoneIds = { 4 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Weathered Canvas'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Marjami Ravine' },
-        zoneIds = { 266 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Weathered Gravestone'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Batallia Downs' },
-        zoneIds = { 105 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Web of Recollections'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Spire of Dem', 'Spire of Holla', 'Spire of Mea', 'Spire of Vahzl' },
-        zoneIds = { 17, 19, 21, 23 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Web of Regret'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Spire of Dem', 'Spire of Holla', 'Spire of Mea', 'Spire of Vahzl' },
-        zoneIds = { 17, 19, 21, 23 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Wep-test'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Wesley'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Western Adoulin' },
         zoneIds = { 256 },
-        note = 'Needs Review.',
     },
-
-
-    ['West Plate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'The Eldieme Necropolis', 'The Eldieme Necropolis [S]' },
-        zoneIds = { 175, 195 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Western Pip'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Beaucedine Glacier' },
-        zoneIds = { 111 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Weya Salmacha'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rabao' },
         zoneIds = { 247 },
-        note = 'Needs Review.',
     },
-
-
-    ['Whafael'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Caedarva Mire' },
-        zoneIds = { 79 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Whamaad'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Wajaom Woodlands' },
-        zoneIds = { 51 },
-        note = 'Needs Review.',
-    },
-
 
     ['Wharudu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Hazhalm Testing Grounds', 'Jade Sepulcher' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Aht Urhgan Whitegate', 'Jade Sepulcher', 'Hazhalm Testing Grounds' },
         zoneIds = { 50, 67, 78 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Price of Gold\n",
     },
-
-
-    ['Wheel Rut'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Xarcabard [S]' },
-        zoneIds = { 137 },
-        note = 'Needs Review.',
-    },
-
 
     ['Wilmar'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'North Gustaberg [S]' },
         zoneIds = { 88 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Price of Peace\n",
     },
-
-
-
-    ['Wind Pillar'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bearclaw Pinnacle' },
-        zoneIds = { 6 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Wind Protocrystal'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Cloister of Gales' },
-        zoneIds = { 201 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Windblown Loam'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Yahse Hunting Grounds' },
-        zoneIds = { 260 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Windurst'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Windurstian Bulwark'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'West Sarutabaruta [S]' },
-        zoneIds = { 95 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Windurstian Pursuivant'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Jugner Forest', 'Meriphataud Mountains', 'Pashhow Marshlands' },
-        zoneIds = { 104, 109, 119 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Winged Scourge'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mount Kamihr' },
-        zoneIds = { 282 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Wistaria Doors'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Giddeus' },
-        zoneIds = { 145 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Withered Petals'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mount Zhayolm' },
-        zoneIds = { 61 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Wiyaom'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
-
-
-    ['Wolf Clan Warmachine'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Horlais Peak' },
-        zoneIds = { 139 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Woodland Mender'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Yhoator Jungle' },
-        zoneIds = { 124 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Worn Book'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Temple of Uggalepih' },
-        zoneIds = { 159 },
-        note = 'Needs Review.',
-    },
-
-
+	
     ['Wotark'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Batallia Downs' },
         zoneIds = { 105 },
-        note = 'Needs Review.',
     },
-
-
-    ['Wreckage'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Ilrusi Atoll' },
-        zoneIds = { 55 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Writhing Flame'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Castle Oztroja [S]' },
-        zoneIds = { 99 },
-        note = 'Needs Review.',
-    },
-
-
-
-
+	
     ['Xavinien'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Eastern Adoulin' },
         zoneIds = { 257 },
-        note = 'Needs Review.',
     },
-
-
-
-    ['Yabeesha'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Wajaom Woodlands' },
-        zoneIds = { 51 },
-        note = 'Needs Review.',
-    },
-
 
     ['Yachemidot'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Abyssea - Altepa', 'Meriphataud Mountains', 'Northern San d\'Oria' },
-        zoneIds = { 119, 218, 231 },
-        note = 'Needs Review.',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Meriphataud Mountains', 'Northern San d\'Oria', 'Abyssea - Altepa' },
+        zoneIds = { 119, 231, 218 },
+        note = "Involved in Mission:\n* The Voracious Resurgence\n",
     },
-
 
     ['Yadhiwa'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Arrapago Reef', 'Nashmau' },
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Aht Urhgan Whitegate', 'Nashmau', 'Arrapago Reef' },
         zoneIds = { 50, 53, 54 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* An Imperial Heist\n",
     },
-
-
-
-    ['Yagudo Avatar'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Altar Room', 'Reisenjima', 'Ru\'Lude Gardens' },
-        zoneIds = { 152, 243, 291 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Yagudo Centurion'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'East Sarutabaruta', 'West Sarutabaruta', 'Windurst Waters' },
-        zoneIds = { 115, 116, 238 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Yagudo High Priest'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Altar Room', 'Mine Shaft #2716', 'Ru\'Lude Gardens' },
-        zoneIds = { 13, 152, 243 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Yagudo Inquisitor'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Throne Room' },
-        zoneIds = { 165 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Yagudo Templar'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Altar Room', 'Mine Shaft #2716', 'Ru\'Lude Gardens' },
-        zoneIds = { 13, 152, 243 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Yagudo Underling'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'East Sarutabaruta', 'West Sarutabaruta', 'Windurst Waters' },
-        zoneIds = { 115, 116, 238 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Yagudo Vicar'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'East Sarutabaruta', 'West Sarutabaruta', 'Windurst Waters' },
-        zoneIds = { 115, 116, 238 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Yahse Wildflower'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Yahse Hunting Grounds' },
-        zoneIds = { 260 },
-        note = 'Needs Review.',
-    },
-
 
     ['Yajahm'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
-
-
-    ['Yajiuma'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'GM Home' },
-        zoneIds = { 210 },
-        note = 'Needs Review.',
-    },
-
 
     ['Yamuld'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands' },
         zoneIds = { 50, 51 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* Rock Bottom\n",
     },
-
-
-    ['Yasfel'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Alzadaal Undersea Ruins', 'Aydeewa Subterrane' },
-        zoneIds = { 68, 72 },
-        note = 'Needs Review.',
-    },
-
-
-    ['Yashtra'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Wajaom Woodlands' },
-        zoneIds = { 51 },
-        note = 'Needs Review.',
-    },
-
 
     ['Yazhaal'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Aht Urhgan Whitegate', 'Jade Sepulcher' },
         zoneIds = { 50, 67 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Price of Gold\n",
     },
-
 
     ['Yazquhl'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Aht Urhgan Whitegate', 'Arrapago Reef', 'Maze of Shakhrami', 'Talacca Cove', 'Wajaom Woodlands' },
+        type = "Quest Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Aht Urhgan Whitegate', 'Wajaom Woodlands', 'Arrapago Reef', 'Talacca Cove', 'Maze of Shakhrami' },
         zoneIds = { 50, 51, 54, 57, 198 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* An Imperial Heist\n",
     },
-
 
     ['Yazweel'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
-
 
     ['Yerva Libarello'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
         zones = { 'Castle Oztroja' },
         zoneIds = { 151 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* The Voracious Resurgence\n",
     },
-
-
-    ['Ygnas'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Yorcia Weald [U]' },
-        zoneIds = { 264 },
-        note = 'Needs Review.',
-    },
-
 
     ['Yohsha-Fuhlsha'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rabao' },
         zoneIds = { 247 },
-        note = 'Needs Review.',
     },
-
 
     ['Yve\'noile'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Al\'Taieu', 'Chamber of Oracles', 'Grand Palace of Hu\'Xzoi', 'Hall of The Gods', 'Lower Delkfutt\'s Tower', 'Nyzul Isle', 'Promyvion - Vahzl', 'Sacrarium', 'Sacrificial Chamber', 'Spire of Dem', 'Spire of Holla', 'Spire of Mea', 'The Celestial Nexus', 'The Garden of Ru\'Hmet', 'The Shrine of Ru\'Avitau', 'Upper Jeuno' },
+        type = "Mission Associate",
+        icon = "QuestAssociate.png",
+        zones = { 'Spire of Holla', 'Spire of Dem', 'Spire of Mea', 'Promyvion - Vahzl', 'Sacrarium', 'Al\'Taieu', 'Grand Palace of Hu\'Xzoi', 'The Garden of Ru\'Hmet', 'Nyzul Isle', 'Sacrificial Chamber', 'Chamber of Oracles', 'The Shrine of Ru\'Avitau', 'The Celestial Nexus', 'Lower Delkfutt\'s Tower', 'Upper Jeuno', 'Hall of The Gods' },
         zoneIds = { 17, 19, 21, 22, 28, 33, 34, 35, 77, 163, 168, 178, 181, 184, 244, 251 },
-        note = 'Needs Review.',
+        note = "Involved in Mission:\n* Chains of Promathia\n",
     },
-
 
     ['Yvermain'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Eastern Adoulin' },
         zoneIds = { 257 },
-        note = 'Needs Review.',
     },
-
-
-    ['Z'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Bastok Mines', 'Southern San d\'Oria', 'Windurst Woods' },
-        zoneIds = { 230, 234, 241 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Za\'Dha Adamantking'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Mine Shaft #2716', 'Qulun Dome' },
-        zoneIds = { 13, 148 },
-        note = 'Needs Review.',
-    },
-
 
     ['Zaldur'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Aht Urhgan Whitegate' },
         zoneIds = { 50 },
-        note = 'Needs Review.',
     },
-
-
-    ['Zalwan'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Wajaom Woodlands' },
-        zoneIds = { 51 },
-        note = 'Needs Review.',
-    },
-
 
     ['Zarnei-Hamnei'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Northern San d\'Oria' },
         zoneIds = { 231 },
-        note = 'Needs Review.',
     },
-
 
     ['Zenngar'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Citizen",
+        icon = "Dialogue.png",
         zones = { 'Rala Waterways' },
         zoneIds = { 258 },
-        note = 'Needs Review.',
     },
-
-
-    ['Zhuu Buxu the Silent'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Giddeus', 'Reisenjima' },
-        zoneIds = { 145, 291 },
-        note = 'Needs Review.',
-    },
-
-
-
-
-    ['Zvahl Portcullis'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
-        zones = { 'Xarcabard [S]' },
-        zoneIds = { 137 },
-        note = 'Needs Review.',
-    },
-
 
     ['Zyndowa'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = "Shadowreign",
+        icon = "Shadowreign.png",
         zones = { 'Bastok Markets [S]' },
         zoneIds = { 87 },
-        note = 'Needs Review.',
+        note = "Involved in Quest:\n* The Price of Peace\n",
     },
 
 };

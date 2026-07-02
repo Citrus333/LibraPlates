@@ -1,0 +1,204 @@
+addon.name = 'LibraPlates';
+addon.author = 'Lunem';
+addon.version = '0.1.0';
+addon.desc = 'Clean modular world plates.';
+
+-- ============================================================
+-- Imports
+-- ============================================================
+
+require('common');
+
+local state = require('core.state');
+local commands = require('handlers.commands');
+local log = require('core.log');
+local modules = require('modules.init');
+local aoeNameHighlight = require('core.aoe_name_highlight');
+local nativeTargetArrow = require('core.native_target_arrow');
+local targetActionRange = require('core.target_action_range');
+local targeting = require('core.targeting');
+local engagedEnemies = require('core.engaged_enemies');
+local enmity = require('core.enmity');
+local enemyCasts = require('core.enemy_casts');
+local enemyAlerts = require('core.enemy_alerts');
+local enemyStatuses = require('core.enemy_statuses');
+local partyStatuses = require('core.party_statuses');
+local trustStatusIcons = require('core.trust_status_icons');
+local luopanStatuses = require('core.luopan_statuses');
+local restingTick = require('core.resting_tick');
+local petState = require('core.pet_state');
+local bstCharmTimer = require('core.bst_charm_timer');
+local fishing = require('core.fishing');
+local crafting = require('core.crafting');
+local textureLoader = require('core.texture_loader');
+local npcObjectInfo = require('core.npc_object_info');
+local quickMenu = require('core.quick_menu');
+local mounts = require('core.mounts');
+local anonStatus = require('core.anon_status');
+local playerBlacklist = require('core.player_blacklist');
+local blacklistModelReplace = require('core.blacklist_model_replace');
+local diagnostics = require('core.diagnostics');
+local adaptivePerformance = require('core.adaptive_performance');
+local profileAutoSwitch = require('core.profile_auto_switch');
+local mogJobDebug = require('core.mog_job_debug');
+local nativeDrawHooksRegistered = false;
+
+local function RegisterNativeDrawHooks()
+    if (nativeDrawHooksRegistered == true) then
+        return;
+    end
+
+    ashita.events.register('d3d_dp', 'libraplates_native_target_trace_dp', function(e)
+        nativeTargetArrow.HandleDrawPrimitive(e);
+    end);
+
+    ashita.events.register('d3d_dip', 'libraplates_native_target_trace_dip', function(e)
+        nativeTargetArrow.HandleDrawIndexedPrimitive(e);
+    end);
+
+    ashita.events.register('d3d_dpup', 'libraplates_native_target_trace_dpup', function(e)
+        nativeTargetArrow.HandleDrawPrimitiveUp(e);
+    end);
+
+    ashita.events.register('d3d_dipup', 'libraplates_native_target_trace_dipup', function(e)
+        nativeTargetArrow.HandleDrawIndexedPrimitiveUp(e);
+    end);
+
+    nativeDrawHooksRegistered = true;
+end
+
+local function UnregisterNativeDrawHooks()
+    if (nativeDrawHooksRegistered ~= true) then
+        return;
+    end
+
+    ashita.events.unregister('d3d_dp', 'libraplates_native_target_trace_dp');
+    ashita.events.unregister('d3d_dip', 'libraplates_native_target_trace_dip');
+    ashita.events.unregister('d3d_dpup', 'libraplates_native_target_trace_dpup');
+    ashita.events.unregister('d3d_dipup', 'libraplates_native_target_trace_dipup');
+
+    nativeDrawHooksRegistered = false;
+end
+
+local function UpdateNativeDrawHooks()
+    if (nativeTargetArrow.ShouldUseDrawHooks() == true) then
+        RegisterNativeDrawHooks();
+    else
+        UnregisterNativeDrawHooks();
+    end
+end
+
+-- ============================================================
+-- Addon lifecycle
+-- ============================================================
+
+ashita.events.register('load', 'libraplates_load', function()
+    textureLoader.ClearCache();
+    npcObjectInfo.ClearTextureCache();
+    quickMenu.ClearTextureCache();
+    state.Load();
+    profileAutoSwitch.Reset();
+    modules.Load();
+    log.Info('Loaded clean LibraPlates.');
+end);
+
+ashita.events.register('unload', 'libraplates_unload', function()
+    UnregisterNativeDrawHooks();
+    diagnostics.Restore();
+    state.SaveIfLoadedOrSaved();
+    modules.Unload();
+    textureLoader.ClearCache();
+    npcObjectInfo.ClearTextureCache();
+    quickMenu.ClearTextureCache();
+    log.Info('Unloaded clean LibraPlates.');
+end);
+
+-- ============================================================
+-- Events
+-- ============================================================
+
+ashita.events.register('command', 'libraplates_command', function(e)
+    aoeNameHighlight.HandleCommandText(e.command);
+    targetActionRange.HandleCommandText(e.command);
+    mounts.HandleCommandText(e.command);
+    anonStatus.HandleCommandText(e.command);
+    playerBlacklist.HandleCommandText(e.command);
+    commands.Handle(e);
+end);
+
+ashita.events.register('mouse', 'libraplates_mouse', function(e)
+    modules.HandleMouse(e);
+end);
+
+ashita.events.register('login', 'libraplates_login', function()
+    targeting.HandleLogin();
+    modules.HandleLogin();
+end);
+
+ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
+    blacklistModelReplace.HandlePacketIn(e);
+    mounts.HandlePacketIn(e);
+    targeting.HandlePacketIn(e);
+    mogJobDebug.HandlePacketIn(e);
+    engagedEnemies.HandlePacketIn(e);
+    enmity.HandlePacketIn(e);
+    enemyCasts.HandlePacketIn(e);
+    enemyAlerts.HandlePacketIn(e);
+    enemyStatuses.HandlePacketIn(e);
+    partyStatuses.HandlePacketIn(e);
+    trustStatusIcons.HandlePacketIn(e);
+    luopanStatuses.HandlePacketIn(e);
+    bstCharmTimer.HandlePacketIn(e);
+    crafting.HandlePacketIn(e);
+end);
+
+ashita.events.register('packet_out', 'libraplates_packet_out', function(e)
+    mounts.HandlePacketOut(e);
+    mogJobDebug.HandlePacketOut(e);
+    petState.HandlePacketOut(e);
+    bstCharmTimer.HandlePacketOut(e);
+end);
+
+ashita.events.register('text_in', 'libraplates_text_in', function(e)
+    fishing.HandleTextIn(e);
+    restingTick.HandleTextIn(e);
+    enemyAlerts.HandleTextIn(e);
+    enemyStatuses.HandleTextIn(e);
+    quickMenu.HandleTextIn(e);
+end);
+
+ashita.events.register('d3d_present', 'libraplates_present', function()
+    local ok, err = pcall(function()
+        adaptivePerformance.UpdateFrame();
+        blacklistModelReplace.Update();
+        mounts.Update();
+        profileAutoSwitch.Update();
+        nativeTargetArrow.SetTraceCapturePaused(false);
+        nativeTargetArrow.EndTraceFrame();
+        nativeTargetArrow.SetTraceCapturePaused(true);
+        modules.UpdateNativeTargetArrow();
+        UpdateNativeDrawHooks();
+        modules.ResetWorldMarker();
+        modules.Render();
+        UpdateNativeDrawHooks();
+        modules.PrepareWorldMarkerFont();
+    end);
+
+    if (ok ~= true) then
+        state.SetConfigOpen(false);
+        log.Warn('Config render disabled after error: ' .. tostring(err));
+    end
+end);
+
+ashita.events.register('d3d_beginscene', 'libraplates_world_marker_beginscene', function()
+    modules.UpdateNativeTargetArrow();
+    UpdateNativeDrawHooks();
+    nativeTargetArrow.SetTraceCapturePaused(true);
+    modules.DrawWorldMarker();
+    nativeTargetArrow.SetTraceCapturePaused(false);
+end);
+
+ashita.events.register('d3d_endscene', 'libraplates_native_target_endscene', function()
+    modules.UpdateNativeTargetArrow();
+    UpdateNativeDrawHooks();
+end);

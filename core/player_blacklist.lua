@@ -333,8 +333,28 @@ function playerBlacklist.IsListed(player)
 end
 
 function playerBlacklist.GetDisplayName(player, fallback)
-    if (playerBlacklist.IsListed(player) == true) then
+    local store = EnsureStore();
+
+    if (store.displayNameReplaceEnabled == nil) then
+        store.displayNameReplaceEnabled = true;
+    end
+
+    if (store.displayNameReplaceEnabled == true and playerBlacklist.IsListed(player) == true) then
         return 'Blacklisted';
+    end
+
+    return fallback;
+end
+
+function playerBlacklist.GetDisplayNameColor(player, fallback)
+    local store = EnsureStore();
+
+    if (type(store.displayNameColor) ~= 'table') then
+        store.displayNameColor = { 1.0, 0.22, 0.22, 1.0 };
+    end
+
+    if (playerBlacklist.IsListed(player) == true) then
+        return store.displayNameColor;
     end
 
     return fallback;
@@ -342,9 +362,14 @@ end
 
 function playerBlacklist.GetSignature(player)
     local entry, idKey = playerBlacklist.GetEntry(player);
+    local store = EnsureStore();
 
     if (entry == nil) then
         return 'bl=0';
+    end
+
+    if (type(store.displayNameColor) ~= 'table') then
+        store.displayNameColor = { 1.0, 0.22, 0.22, 1.0 };
     end
 
     return table.concat({
@@ -352,6 +377,13 @@ function playerBlacklist.GetSignature(player)
         'id=' .. tostring(idKey or ''),
         'name=' .. tostring(entry.name or ''),
         'reason=' .. tostring(entry.reason or ''),
+        'displayName=' .. tostring(store.displayNameReplaceEnabled ~= false),
+        'displayColor=' .. table.concat({
+            tostring(store.displayNameColor[1] or ''),
+            tostring(store.displayNameColor[2] or ''),
+            tostring(store.displayNameColor[3] or ''),
+            tostring(store.displayNameColor[4] or ''),
+        }, ','),
     }, ';');
 end
 
@@ -376,6 +408,12 @@ function playerBlacklist.GetModelReplaceSettings()
     end
     if (store.modelReplaceUseFomor == nil) then
         store.modelReplaceUseFomor = true;
+    end
+    if (store.displayNameReplaceEnabled == nil) then
+        store.displayNameReplaceEnabled = true;
+    end
+    if (type(store.displayNameColor) ~= 'table') then
+        store.displayNameColor = { 1.0, 0.22, 0.22, 1.0 };
     end
     store.modelReplaceUseCostume = false;
     store.modelReplaceCostumeId = tonumber(store.modelReplaceCostumeId) or 0;

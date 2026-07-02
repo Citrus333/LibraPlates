@@ -6,6 +6,20 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 
 - LibraPlates must not read from, require, depend on, or assume files from any other installed addon folder at runtime. Bundled/imported assets are allowed only when they are copied into the LibraPlates folder and become LibraPlates-owned files.
 
+## Paste-Back Prompt: Settings UI Layout Loop Stopper
+
+Use this prompt if Codex starts cycling on settings-page layout bugs:
+
+```text
+Stop. Do not change panel drawing yet.
+
+First inspect the parent settings layout around DrawChild('##right_panel') and the isBoxedSettings/isBoxedEditor logic. If this page should look like Mouse/Visibility/Blacklist/Scaling/Performance, make sure the selectedGeneralSection is included in isBoxedSettings so the parent right panel does NOT draw a border and DOES use the boxed editor background behavior.
+
+Only after confirming the parent right-panel state, compare the page body to an existing good page. Copy the existing page's structure exactly. Do not invent new wrappers, draw-list rectangles, TableSetBgColor fixes, or helper abstractions. The usual shape is: boxed breadcrumb, dark child background, 16px indent, and the same table-backed lighter panels as the working page.
+
+If the screenshot shows an unwanted border around the entire right editor area, the likely bug is missing isBoxedSettings registration, not the section panels.
+```
+
 ## Reference
 
 - Good restore point: `C:\catseyexi\catseyexi-client\Ashita\addons\LibraPlates\_rollback_safety_20260526-141407-perfect-engaged-overlay`.
@@ -16,6 +30,9 @@ This file is for shared testing notes between Lila, her husband, and Codex.
 - Do not mutate `C:\catseyexi\catseyexi-client\Ashita\config\addons\LibraPlates\rebuild_profile.lua` unless Lila explicitly approves it.
 - If two people are testing, only one person should edit addon code at a time.
 - Follow-up: shutdown/logout countdown needs a 2 second delay so the timer does not fire too early.
+- Future Screen Alerts idea: add a simple Custom Alert Builder under `Settings > Screen Alerts > Custom alerts > Custom triggers`. It should not replace the manual trigger rows; it should fill the existing `Mode`, `Match text`, and `Alert text` fields so the result stays editable. Suggested builder types: Chat contains, Starts casting, Readies ability, Learned blue magic, and Text in brackets. Example output for Starts casting + spell `Haste`: `^The .- starts casting Haste%.$`; Starts casting + actor `LightSpirit`: `^The LightSpirit starts casting .-%.$`; Learned Blue Magic: `>>> Learned new spell: %[([^%]]+)%]`.
+- Quick Menu follow-up: add Quick Menu support for CW boxes and travel NPCs/crystals, so these plates can expose their useful travel/interaction actions instead of only showing plate info.
+- Packaging follow-up: LibraPlates will ship with mobdb data, but the current bundled path `submodules\mobdb\addons\mobdb\data` is awkward. Before release, decide whether to flatten/copy the needed mobdb data into a LibraPlates-owned path such as `data\mobdb` or `lib\mobdb`, while keeping the runtime rule that LP must not depend on another installed addon folder.
 
 ## Plate Runtime Mapping
 

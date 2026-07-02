@@ -20,13 +20,27 @@ local cachedPlayerPacketsById = {};
 local incomingReplayWarned = false;
 local pendingCostumeApplies = {};
 local pendingLookApplies = {};
+local pendingBlacklistRecoveries = {};
+local suppressBlacklistRecoveryWrites = {};
+local stableBlacklistRecoveredActors = {};
+local runtimeFixedFomorModels = {};
+local runtimeFixedStepper = nil;
 local costumeWatch = nil;
+local blacklistWatch = nil;
+local blacklistLookWatch = nil;
 local fomorModels = {
     hume = { 0x05, 0x01, 0xFA, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
     elvaan = { 0x05, 0x03, 0xFF, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
     tarutaru = { 0x05, 0x05, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
     mithra = { 0x05, 0x07, 0x09, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
     galka = { 0x05, 0x08, 0x0F, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+};
+local sourceFixedFomorModels = {
+    -- LandSandBoat mob_pools: Fomor_Red_Mage has two source-backed model words:
+    -- pool 1389 = 0x0408 / 1032, level-match pool 6525 = 0x0409 / 1033.
+    -- 1032 is already the Mithra family default and does not produce a Hume
+    -- female Fomor on live PCs, so use the adjacent level-match Red Mage row.
+    hume_female = 1033,
 };
 local raceFamilyAliases = {
     hume = { race = 1, family = 'hume' },
@@ -316,6 +330,30 @@ local function GetRaceFamily(race)
     return 'hume';
 end
 
+local function GetRaceModelKey(race)
+    race = tonumber(race) or 0;
+
+    if (race == 1) then
+        return 'hume_male';
+    elseif (race == 2) then
+        return 'hume_female';
+    elseif (race == 3) then
+        return 'elvaan_male';
+    elseif (race == 4) then
+        return 'elvaan_female';
+    elseif (race == 5) then
+        return 'tarutaru_male';
+    elseif (race == 6) then
+        return 'tarutaru_female';
+    elseif (race == 7) then
+        return 'mithra_female';
+    elseif (race == 8) then
+        return 'galka_male';
+    end
+
+    return GetRaceFamily(race);
+end
+
 local function WriteModelBytes(packet, bytes)
     if (type(bytes) ~= 'table') then
         return false;
@@ -326,6 +364,17 @@ local function WriteModelBytes(packet, bytes)
     end
 
     return true;
+end
+
+local function HasFullModelBytes(bytes)
+    if (type(bytes) ~= 'table') then
+        return false;
+    end
+
+    return ReadModelWordFromBytes(bytes, 2) > 0
+        or ReadModelWordFromBytes(bytes, 3) > 0
+        or ReadModelWordFromBytes(bytes, 4) > 0
+        or ReadModelWordFromBytes(bytes, 5) > 0;
 end
 
 local function WriteFomorPlaceholderBytes(packet, bytes)
@@ -384,6 +433,55 @@ local function CloneModelBytes(bytes)
     end
 
     return copy;
+end
+
+local function WriteModelByteWord(bytes, slot, value)
+    if (type(bytes) ~= 'table') then
+        return false;
+    end
+
+    local number = math.max(0, math.min(65535, math.floor(tonumber(value) or 0)));
+    local offset = 3 + ((math.max(1, math.floor(tonumber(slot) or 1)) - 1) * 2);
+
+    bytes[offset] = number % 256;
+    bytes[offset + 1] = math.floor(number / 256);
+
+    return true;
+end
+
+local function BuildModelBytesFromLiveLook(index, fallbackBytes, fallbackRace)
+    local targetIndex = tonumber(index) or 0;
+
+    if (targetIndex <= 0) then
+        return CloneModelBytes(fallbackBytes);
+    end
+
+    local ok, entity = pcall(function()
+        return GetEntity(targetIndex);
+    end);
+
+    if (ok ~= true or entity == nil or entity.Look == nil) then
+        return CloneModelBytes(fallbackBytes);
+    end
+
+    local bytes = CloneModelBytes(fallbackBytes) or {};
+
+    for offset = 1, 18 do
+        bytes[offset] = ClampByte(bytes[offset], 0);
+    end
+
+    bytes[1] = ClampByte(entity.Look.Hair, bytes[1]);
+    bytes[2] = ClampByte(fallbackRace or bytes[2], bytes[2]);
+    WriteModelByteWord(bytes, 1, entity.Look.Head);
+    WriteModelByteWord(bytes, 2, entity.Look.Body);
+    WriteModelByteWord(bytes, 3, entity.Look.Hands);
+    WriteModelByteWord(bytes, 4, entity.Look.Legs);
+    WriteModelByteWord(bytes, 5, entity.Look.Feet);
+    WriteModelByteWord(bytes, 6, entity.Look.Main);
+    WriteModelByteWord(bytes, 7, entity.Look.Sub);
+    WriteModelByteWord(bytes, 8, entity.Look.Range);
+
+    return bytes;
 end
 
 local function NormalizeModelBytesForPlayer(bytes, fallbackRace)
@@ -622,6 +720,106 @@ local function ResolvePlayerIndex(playerOrName)
     return nil, tostring(playerOrName or '');
 end
 
+local function ResolveRawPlayerIndex(playerOrName)
+    local function findRawPcByServerId(serverId)
+        local id = tonumber(serverId) or 0;
+
+        if (id <= 0) then
+            return nil, '';
+        end
+
+        local ok, entities = pcall(require, 'core.entities');
+
+        if (ok ~= true or entities == nil or entities.GetEntity == nil or entities.GetEntityManager == nil) then
+            return nil, '';
+        end
+
+        local entityManager = entities.GetEntityManager();
+
+        if (entityManager == nil or entityManager.GetServerId == nil) then
+            return nil, '';
+        end
+
+        for rawIndex = 1024, 1791 do
+            local okServer, rawServerId = pcall(function()
+                return entityManager:GetServerId(rawIndex);
+            end);
+
+            if (okServer == true and tonumber(rawServerId) == id) then
+                local entity = entities.GetEntity(rawIndex);
+                local entityName = tostring(entity ~= nil and entity.Name or ''):gsub('^%s+', ''):gsub('%s+$', '');
+
+                return rawIndex, entityName;
+            end
+        end
+
+        return nil, '';
+    end
+
+    local numeric = tonumber(playerOrName);
+
+    if (numeric ~= nil) then
+        numeric = math.floor(numeric);
+
+        if (numeric >= 1024 and numeric <= 1791) then
+            return numeric, GetEntityName(numeric);
+        end
+
+        local serverIndex, serverName = findRawPcByServerId(numeric);
+
+        if (serverIndex ~= nil) then
+            return serverIndex, serverName;
+        end
+
+        return nil, tostring(playerOrName or '');
+    end
+
+    local index, name = ResolvePlayerIndex(playerOrName);
+
+    if (index ~= nil and index > 0) then
+        return index, name;
+    end
+
+    local nameKey = NormalizeName(playerOrName);
+
+    if (nameKey == '') then
+        return nil, tostring(playerOrName or '');
+    end
+
+    local ok, entities = pcall(require, 'core.entities');
+
+    if (ok ~= true or entities == nil or entities.GetEntity == nil) then
+        return nil, tostring(playerOrName or '');
+    end
+
+    for rawIndex = 1024, 1791 do
+        local entity = entities.GetEntity(rawIndex);
+        local entityName = tostring(entity ~= nil and entity.Name or ''):gsub('^%s+', ''):gsub('%s+$', '');
+
+        if (NormalizeName(entityName) == nameKey) then
+            return rawIndex, entityName;
+        end
+    end
+
+    local okList, rows = pcall(function()
+        return playerBlacklist.List();
+    end);
+
+    if (okList == true and type(rows) == 'table') then
+        for _, row in ipairs(rows) do
+            if (NormalizeName(row ~= nil and row.name or '') == nameKey and row.serverId ~= nil) then
+                local serverIndex, serverName = findRawPcByServerId(row.serverId);
+
+                if (serverIndex ~= nil) then
+                    return serverIndex, serverName ~= '' and serverName or tostring(row.name or playerOrName or '');
+                end
+            end
+        end
+    end
+
+    return nil, tostring(playerOrName or '');
+end
+
 local function GetEntityManager()
     local ok, entities = pcall(require, 'core.entities');
 
@@ -640,6 +838,316 @@ local function GetEntityManager()
     end
 
     return nil;
+end
+
+local function FormatBool(value)
+    return value == true and 'yes' or 'no';
+end
+
+local function FormatDebugInfo(info)
+    if (info == nil) then
+        return 'entity=none';
+    end
+
+    return table.concat({
+        'index=' .. tostring(info.index or ''),
+        'name=' .. tostring(info.name or ''),
+        'type=' .. tostring(info.type or ''),
+        'status=' .. tostring(info.status or ''),
+        'distance=' .. (info.distance ~= nil and string.format('%.1f', tonumber(info.distance) or 0) or ''),
+        'visible=' .. FormatBool(info.visible),
+        'skeleton=' .. FormatBool(info.visibleWithSkeleton),
+        'settled=' .. FormatBool(info.settled),
+        'inRange=' .. FormatBool(info.inRange),
+        'pcScan=' .. FormatBool((tonumber(info.index) or 0) >= 1024 and (tonumber(info.index) or 0) <= 1791 and info.visibleWithSkeleton == true),
+        'r0=' .. string.format('0x%X', tonumber(info.renderFlags0) or 0),
+        'spawn=' .. string.format('0x%X', tonumber(info.spawnFlags) or 0),
+    }, ' ');
+end
+
+local function GetEntityDebugSummary(index)
+    local okEntities, entities = pcall(require, 'core.entities');
+
+    if (okEntities ~= true or entities == nil or entities.GetEntityDebugInfo == nil) then
+        return 'entityDebug=unavailable';
+    end
+
+    return FormatDebugInfo(entities.GetEntityDebugInfo(index, 64.4)) .. ' ' .. GetRawEntityCostumeSummary(index);
+end
+
+local function GetWatchState(index)
+    local okEntities, entities = pcall(require, 'core.entities');
+    local info = okEntities == true and entities ~= nil and entities.GetEntityDebugInfo ~= nil
+        and entities.GetEntityDebugInfo(index, 64.4)
+        or nil;
+    local okEntity, entity = pcall(function()
+        return GetEntity(index);
+    end);
+
+    if (okEntity ~= true) then
+        entity = nil;
+    end
+
+    return {
+        info = info,
+        key = table.concat({
+            tostring(info ~= nil and info.name or ''),
+            tostring(info ~= nil and info.type or ''),
+            tostring(info ~= nil and info.status or ''),
+            tostring(info ~= nil and info.visible == true),
+            tostring(info ~= nil and info.visibleWithSkeleton == true),
+            tostring(info ~= nil and info.settled == true),
+            tostring(info ~= nil and info.inRange == true),
+            tostring(entity ~= nil and entity.CostumeId or ''),
+            tostring(entity ~= nil and entity.Race or ''),
+            tostring(entity ~= nil and entity.Look ~= nil and entity.Look.Hair or ''),
+            tostring(entity ~= nil and entity.ModelUpdateFlags or ''),
+        }, '|'),
+        text = FormatDebugInfo(info) .. ' ' .. GetRawEntityCostumeSummary(index),
+    };
+end
+
+local function SafeField(object, key)
+    if (object == nil) then
+        return nil;
+    end
+
+    local ok, value = pcall(function()
+        return object[key];
+    end);
+
+    if (ok ~= true) then
+        return nil;
+    end
+
+    return value;
+end
+
+local function SafeMethod(object, methodName, ...)
+    if (object == nil or object[methodName] == nil) then
+        return nil;
+    end
+
+    local args = { ... };
+    local ok, value = pcall(function()
+        return object[methodName](object, unpack(args));
+    end);
+
+    if (ok ~= true) then
+        return nil;
+    end
+
+    return value;
+end
+
+local function FormatProbeValue(value)
+    if (value == nil) then
+        return nil;
+    end
+
+    local valueType = type(value);
+
+    if (valueType == 'number' or valueType == 'string' or valueType == 'boolean') then
+        return tostring(value);
+    end
+
+    return tostring(value);
+end
+
+local function AddProbeField(parts, label, value)
+    local text = FormatProbeValue(value);
+
+    if (text ~= nil) then
+        parts[#parts + 1] = label .. '=' .. text;
+    end
+end
+
+local function AddProbeFields(parts, prefix, object, keys)
+    if (object == nil) then
+        return;
+    end
+
+    for _, key in ipairs(keys) do
+        AddProbeField(parts, prefix .. tostring(key), SafeField(object, key));
+    end
+end
+
+local function GetLiveLookProbe(index)
+    local targetIndex = tonumber(index) or 0;
+    local entityManager = GetEntityManager();
+    local okEntity, entity = pcall(function()
+        return GetEntity(targetIndex);
+    end);
+    local rawEntity = nil;
+
+    if (entityManager ~= nil and entityManager.GetRawEntity ~= nil) then
+        local okRaw, value = pcall(function()
+            return entityManager:GetRawEntity(targetIndex);
+        end);
+        if (okRaw == true) then
+            rawEntity = value;
+        end
+    end
+
+    if (okEntity ~= true) then
+        entity = nil;
+    end
+
+    local infoText = GetEntityDebugSummary(targetIndex);
+    local directKeys = {
+        'Type', 'Status', 'Race', 'RaceId', 'ModelRace', 'LookRace',
+        'CostumeId', 'ModelId', 'Model', 'Face', 'Hair',
+        'Head', 'Body', 'Hands', 'Legs', 'Feet',
+        'ModelUpdateFlags', 'RenderFlags0', 'RenderFlags1', 'SpawnFlags',
+    };
+    local lookKeys = {
+        'Hair', 'Race', 'Face', 'Head', 'Body', 'Hands', 'Legs', 'Feet',
+        'Main', 'Sub', 'Range', 'Ammo', 'Neck', 'Waist',
+        'Ear1', 'Ear2', 'Ring1', 'Ring2', 'Back',
+    };
+    local methodKeys = {
+        'GetType', 'GetStatus', 'GetRace', 'GetRaceId', 'GetModelRace',
+        'GetModelId', 'GetModel', 'GetLook', 'GetFace', 'GetHair',
+        'GetHead', 'GetBody', 'GetHands', 'GetLegs', 'GetFeet',
+        'GetCostumeId', 'GetModelUpdateFlags',
+    };
+    local parts = {};
+    local look = entity ~= nil and SafeField(entity, 'Look') or nil;
+    local rawLook = rawEntity ~= nil and SafeField(rawEntity, 'Look') or nil;
+
+    AddProbeFields(parts, 'e.', entity, directKeys);
+    AddProbeFields(parts, 'look.', look, lookKeys);
+
+    if (look ~= nil) then
+        for slot = 0, 17 do
+            AddProbeField(parts, 'look[' .. tostring(slot) .. ']', SafeField(look, slot));
+        end
+    end
+
+    AddProbeFields(parts, 'raw.', rawEntity, directKeys);
+    AddProbeFields(parts, 'rawLook.', rawLook, lookKeys);
+
+    if (rawLook ~= nil and rawLook ~= look) then
+        for slot = 0, 17 do
+            AddProbeField(parts, 'rawLook[' .. tostring(slot) .. ']', SafeField(rawLook, slot));
+        end
+    end
+
+    for _, methodName in ipairs(methodKeys) do
+        AddProbeField(parts, 'em.' .. methodName, SafeMethod(entityManager, methodName, targetIndex));
+    end
+
+    local detail = table.concat(parts, ' ');
+
+    return {
+        summary = infoText,
+        detail = detail ~= '' and detail or 'liveFields=none',
+        key = infoText .. ' ' .. detail,
+    };
+end
+
+local function LogBlacklistLookWatch(text)
+    if (blacklistLookWatch == nil) then
+        return;
+    end
+
+    blacklistLookWatch.count = (tonumber(blacklistLookWatch.count) or 0) + 1;
+
+    if (blacklistLookWatch.count <= (tonumber(blacklistLookWatch.maxCount) or 30)) then
+        log.Info(text);
+    end
+
+    if (blacklistLookWatch.count >= (tonumber(blacklistLookWatch.maxCount) or 30)) then
+        log.Info('Blacklist look watch reached log limit; watch stopped.');
+        blacklistLookWatch = nil;
+    end
+end
+
+local function ProcessBlacklistLookWatch()
+    if (blacklistLookWatch == nil) then
+        return;
+    end
+
+    local now = os.clock();
+
+    if (now > (tonumber(blacklistLookWatch.untilAt) or 0)) then
+        log.Info('Blacklist look watch expired after 60 seconds.');
+        blacklistLookWatch = nil;
+        return;
+    end
+
+    if (now < (tonumber(blacklistLookWatch.nextPollAt) or 0)) then
+        return;
+    end
+
+    blacklistLookWatch.nextPollAt = now + 0.20;
+
+    local index = tonumber(blacklistLookWatch.index);
+
+    if (index == nil or index <= 0) then
+        local resolvedIndex, resolvedName = ResolveRawPlayerIndex(blacklistLookWatch.input);
+
+        index = resolvedIndex;
+        if (index ~= nil and index > 0) then
+            blacklistLookWatch.index = index;
+            blacklistLookWatch.name = resolvedName;
+        end
+    end
+
+    if (index == nil or index <= 0) then
+        local key = 'missing';
+        if (blacklistLookWatch.lastStateKey ~= key) then
+            blacklistLookWatch.lastStateKey = key;
+            LogBlacklistLookWatch('BL look player not found input=' .. tostring(blacklistLookWatch.input or ''));
+        end
+        return;
+    end
+
+    local probe = GetLiveLookProbe(index);
+
+    if (blacklistLookWatch.lastStateKey ~= probe.key) then
+        blacklistLookWatch.lastStateKey = probe.key;
+        LogBlacklistLookWatch('BL look state ' .. tostring(probe.summary or ''));
+        LogBlacklistLookWatch('BL look fields ' .. tostring(probe.detail or ''));
+    end
+end
+
+local function WatchMatches(player)
+    if (blacklistWatch == nil or player == nil) then
+        return false;
+    end
+
+    if ((tonumber(blacklistWatch.untilAt) or 0) > 0 and os.clock() > blacklistWatch.untilAt) then
+        blacklistWatch = nil;
+        return false;
+    end
+
+    local serverId = tonumber(player.serverId) or tonumber(player.packetServerId) or 0;
+    local index = tonumber(player.index) or 0;
+    local nameKey = NormalizeName(player.name);
+
+    return (
+        (blacklistWatch.serverId ~= nil and serverId > 0 and tostring(blacklistWatch.serverId) == tostring(serverId)) or
+        (blacklistWatch.index ~= nil and index > 0 and tonumber(blacklistWatch.index) == index) or
+        (blacklistWatch.nameKey ~= '' and nameKey ~= '' and blacklistWatch.nameKey == nameKey)
+    );
+end
+
+local function LogWatchLine(text)
+    if (blacklistWatch == nil) then
+        return;
+    end
+
+    blacklistWatch.count = (tonumber(blacklistWatch.count) or 0) + 1;
+
+    if (blacklistWatch.count <= (tonumber(blacklistWatch.maxCount) or 20)) then
+        log.Info(text);
+    end
+
+    if (blacklistWatch.count >= (tonumber(blacklistWatch.maxCount) or 20)) then
+        log.Info('Blacklist watch reached log limit; watch stopped.');
+        blacklistWatch = nil;
+    end
 end
 
 local function SetModelRefreshFlags(entityManager, index)
@@ -698,6 +1206,248 @@ local function SetRawEntityCostume(entityManager, index, value)
     end
 
     return rawSet, rawError;
+end
+
+local function SetRawEntityType(index, value)
+    local ok, err = pcall(function()
+        local entity = GetEntity(index);
+        if (entity == nil) then
+            error('GetEntity returned nil');
+        end
+
+        if (entity.Type == nil) then
+            error('entity Type field unavailable');
+        end
+
+        entity.Type = value;
+        entity.ModelUpdateFlags = 0x10;
+    end);
+
+    return ok == true, err;
+end
+
+local function QueueBlacklistModelRecovery(player, fixedModelId, originalHair, modelBytes)
+    if (player == nil) then
+        return;
+    end
+
+    local now = os.clock();
+    local serverId = tonumber(player.serverId) or tonumber(player.packetServerId) or 0;
+    local index = tonumber(player.index) or 0;
+    local name = tostring(player.name or ''):gsub('^%s+', ''):gsub('%s+$', '');
+    local key = serverId > 0 and ('s:' .. tostring(serverId)) or (name ~= '' and ('n:' .. NormalizeName(name)) or ('i:' .. tostring(index)));
+
+    pendingBlacklistRecoveries[key] = {
+        index = index > 0 and index or nil,
+        name = name,
+        serverId = serverId > 0 and serverId or nil,
+        fixedModelId = math.floor(tonumber(fixedModelId) or 0),
+        originalHair = tonumber(originalHair),
+        modelBytes = CloneModelBytes(modelBytes),
+        queuedAt = now,
+        nextAt = now + 0.35,
+        expiresAt = now + 2.50,
+        attempts = 0,
+    };
+end
+
+local function GetBlacklistRecoveryKey(player)
+    if (player == nil) then
+        return nil;
+    end
+
+    local serverId = tonumber(player.serverId) or tonumber(player.packetServerId) or 0;
+    local index = tonumber(player.index) or 0;
+    local name = tostring(player.name or ''):gsub('^%s+', ''):gsub('%s+$', '');
+
+    if (serverId > 0) then
+        return 's:' .. tostring(serverId);
+    end
+
+    if (name ~= '') then
+        return 'n:' .. NormalizeName(name);
+    end
+
+    if (index > 0) then
+        return 'i:' .. tostring(index);
+    end
+
+    return nil;
+end
+
+local function ShouldSuppressBlacklistRecoveryWrite(player)
+    local key = GetBlacklistRecoveryKey(player);
+
+    if (key == nil) then
+        return false;
+    end
+
+    local untilAt = tonumber(suppressBlacklistRecoveryWrites[key]) or 0;
+
+    if (untilAt <= 0) then
+        return false;
+    end
+
+    if (os.clock() > untilAt) then
+        suppressBlacklistRecoveryWrites[key] = nil;
+        return false;
+    end
+
+    return true;
+end
+
+local function IsStableBlacklistRecoveredActor(player)
+    local key = GetBlacklistRecoveryKey(player);
+
+    if (key == nil or type(stableBlacklistRecoveredActors[key]) ~= 'table') then
+        return false, nil;
+    end
+
+    local stable = stableBlacklistRecoveredActors[key];
+    local index = tonumber(player ~= nil and player.index or 0) or 0;
+
+    if (index <= 0) then
+        stableBlacklistRecoveredActors[key] = nil;
+        return false, nil;
+    end
+
+    local okInfo, info = pcall(function()
+        local entities = require('core.entities');
+        return entities.GetEntityDebugInfo ~= nil and entities.GetEntityDebugInfo(index, 64.4) or nil;
+    end);
+
+    if (okInfo == true and info ~= nil and info.visible ~= true) then
+        stableBlacklistRecoveredActors[key] = nil;
+        return false, nil;
+    end
+
+    local okEntity, entity = pcall(function()
+        return GetEntity(index);
+    end);
+
+    if (okEntity ~= true or entity == nil) then
+        stableBlacklistRecoveredActors[key] = nil;
+        return false, nil;
+    end
+
+    if (tonumber(entity.Type) ~= 0 or tonumber(entity.CostumeId) ~= 0) then
+        stableBlacklistRecoveredActors[key] = nil;
+        return false, nil;
+    end
+
+    return true, stable;
+end
+
+local function HasRecoveredBlacklistLook(index, expectedHair)
+    local targetIndex = tonumber(index) or 0;
+    local targetHair = tonumber(expectedHair);
+
+    if (targetIndex <= 0 or targetHair == nil) then
+        return false;
+    end
+
+    local ok, entity = pcall(function()
+        return GetEntity(targetIndex);
+    end);
+
+    if (ok ~= true or entity == nil) then
+        return false;
+    end
+
+    return tonumber(entity.Type) == 0
+        and tonumber(entity.CostumeId) == 0
+        and tonumber(entity.Look ~= nil and entity.Look.Hair or nil) == targetHair;
+end
+
+local function ProcessBlacklistModelRecoveries()
+    if (playerBlacklist.GetModelReplaceSettings().modelReplaceUseFomor == false) then
+        pendingBlacklistRecoveries = {};
+        return;
+    end
+
+    local now = os.clock();
+    local entityManager = nil;
+    local entities = nil;
+
+    for key, pending in pairs(pendingBlacklistRecoveries) do
+        if (now > (tonumber(pending.expiresAt) or 0)) then
+            pendingBlacklistRecoveries[key] = nil;
+        elseif (now >= (tonumber(pending.nextAt) or 0)) then
+            local index = tonumber(pending.index) or 0;
+
+            if (index <= 0) then
+                local resolvedIndex = ResolveRawPlayerIndex(pending.serverId or pending.name);
+                index = tonumber(resolvedIndex) or 0;
+                pending.index = index > 0 and index or nil;
+            end
+
+            local okEntity, entity = pcall(function()
+                return GetEntity(index);
+            end);
+
+            if (index <= 0 or okEntity ~= true or entity == nil) then
+                pending.nextAt = now + 0.20;
+            else
+                local currentType = tonumber(entity.Type) or 0;
+                local currentCostume = tonumber(entity.CostumeId) or 0;
+                local currentHair = tonumber(entity.Look ~= nil and entity.Look.Hair or nil);
+                local originalHair = tonumber(pending.originalHair);
+
+                if (
+                    originalHair ~= nil and
+                    currentHair == originalHair and
+                    (now - (tonumber(pending.queuedAt) or now)) < 1.50 and
+                    currentType == 2
+                ) then
+                    pending.nextAt = now + 0.10;
+                elseif (currentType ~= 2 and currentCostume ~= (tonumber(pending.fixedModelId) or 0)) then
+                    pendingBlacklistRecoveries[key] = nil;
+                else
+                    entityManager = entityManager or GetEntityManager();
+                    local costumeSet = SetRawEntityCostume(entityManager, index, 0);
+                    local typeSet = SetRawEntityType(index, 0);
+                    local refreshed = SetModelRefreshFlags(entityManager, index);
+                    local selected = PulseTarget(index);
+
+                    pending.attempts = (tonumber(pending.attempts) or 0) + 1;
+
+                    if (debugEnabled == true or blacklistWatch ~= nil) then
+                        entities = entities or (pcall(require, 'core.entities') and require('core.entities') or nil);
+                        local info = entities ~= nil and entities.GetEntityDebugInfo ~= nil
+                            and entities.GetEntityDebugInfo(index, 64.4)
+                            or nil;
+                        log.Info(
+                            'Blacklist auto recover: index=' .. tostring(index) ..
+                            ' name=' .. tostring(pending.name or '') ..
+                            ' costume0=' .. FormatBool(costumeSet) ..
+                            ' type0=' .. FormatBool(typeSet) ..
+                            ' refreshFlags=' .. FormatBool(refreshed) ..
+                            ' targetPulse=' .. FormatBool(selected) ..
+                            ' state=' .. FormatDebugInfo(info) ..
+                            ' ' .. GetRawEntityCostumeSummary(index)
+                        );
+                    end
+
+                    if (costumeSet == true and typeSet == true) then
+                        suppressBlacklistRecoveryWrites[key] = now + 2.00;
+                        local queuedRace = tonumber(pending.modelBytes ~= nil and pending.modelBytes[2] or nil);
+                        local liveModelBytes = BuildModelBytesFromLiveLook(index, pending.modelBytes, queuedRace or tonumber(entity.Race));
+                        stableBlacklistRecoveredActors[key] = {
+                            hair = tonumber(liveModelBytes ~= nil and liveModelBytes[1] or currentHair),
+                            race = tonumber(liveModelBytes ~= nil and liveModelBytes[2] or entity.Race),
+                            modelBytes = CloneModelBytes(liveModelBytes),
+                            savedAt = now,
+                        };
+                        pendingBlacklistRecoveries[key] = nil;
+                    elseif (pending.attempts >= 3) then
+                        pendingBlacklistRecoveries[key] = nil;
+                    else
+                        pending.nextAt = now + 0.25;
+                    end
+                end
+            end
+        end
+    end
 end
 
 local function SetLiveLook(playerOrName, race, face)
@@ -1058,7 +1808,8 @@ local function ReplayCachedPlayerPacket(playerOrName, clear)
     if (clear ~= true) then
         if (settings.modelReplaceUseNpcCostume == true) then
             if (settings.modelReplaceNpcCostumeByRace == true) then
-                costumeId = GetFixedFomorModelId(settings, GetRaceFamily(ReadByteModelRace(replayBytes)));
+                local replayRace = ReadByteModelRace(replayBytes);
+                costumeId = GetFixedFomorModelId(settings, GetRaceModelKey(replayRace), GetRaceFamily(replayRace));
             else
                 costumeId = math.floor(tonumber(settings.modelReplaceNpcCostumeId) or 0);
             end
@@ -1090,9 +1841,34 @@ local function GetFomorModelBytes(settings, raceFamily, fallbackRace)
     return NormalizeModelBytesForPlayer(fomorModels[raceFamily], fallbackRace);
 end
 
-local function GetFixedFomorModelId(settings, raceFamily)
+local function GetFixedFomorModelId(settings, raceKey, raceFamily)
+    raceKey = tostring(raceKey or raceFamily or '');
+    raceFamily = tostring(raceFamily or raceKey or '');
+
+    local runtimeValue = math.floor(tonumber(runtimeFixedFomorModels[raceKey]) or 0);
+
+    if (runtimeValue <= 0 and raceFamily ~= raceKey) then
+        runtimeValue = math.floor(tonumber(runtimeFixedFomorModels[raceFamily]) or 0);
+    end
+
+    if (runtimeValue > 0) then
+        return runtimeValue;
+    end
+
     if (type(settings) ~= 'table' or type(settings.modelReplaceFixedFomorModels) ~= 'table') then
-        return 0;
+        return math.floor(tonumber(sourceFixedFomorModels[raceKey]) or 0);
+    end
+
+    local configured = math.floor(tonumber(settings.modelReplaceFixedFomorModels[raceKey]) or 0);
+
+    if (configured > 0) then
+        return configured;
+    end
+
+    local sourced = math.floor(tonumber(sourceFixedFomorModels[raceKey]) or 0);
+
+    if (sourced > 0) then
+        return sourced;
     end
 
     return math.floor(tonumber(settings.modelReplaceFixedFomorModels[raceFamily]) or 0);
@@ -1292,7 +2068,7 @@ local function HandlePlayerModelPacket00E(e, settings)
         return;
     end
 
-    if (settings.modelReplaceEnabled ~= true or settings.modelReplaceUseFomor == false) then
+    if (settings.modelReplaceUseFomor == false) then
         return;
     end
 
@@ -1323,16 +2099,43 @@ local function HandlePlayerModelPacket00E(e, settings)
     local player = GetEntityPlayer(actIndex, serverId, name);
     local entry = playerBlacklist.GetEntry(player);
 
+    if (WatchMatches(player) == true) then
+        LogWatchLine(
+            'BL watch 0x00E pre' ..
+            ' flag=' .. FormatHex(sendFlag) ..
+            ' packetId=' .. tostring(serverId) ..
+            ' index=' .. tostring(actIndex) ..
+            ' id=' .. tostring(player.serverId or '') ..
+            ' name=' .. tostring(player.name or '') ..
+            ' listed=' .. tostring(entry ~= nil) ..
+            ' hair=' .. tostring(packet[0x32]) ..
+            ' race=' .. tostring(packet[0x33]) ..
+            ' info=' .. GetEntityDebugSummary(actIndex)
+        );
+    end
+
     if (entry == nil) then
         return;
     end
 
     local originalHair = packet[0x32];
     local originalRace = packet[0x33];
-    local targetRace = settings.modelReplacePreserveRace ~= false and originalRace or ClampByte(settings.modelReplaceRace, 5);
+    local targetRace = originalRace;
+    local raceKey = GetRaceModelKey(targetRace);
     local raceFamily = GetRaceFamily(targetRace);
     packet[0x32] = ClampByte(fomorModels[raceFamily] ~= nil and fomorModels[raceFamily][1] or settings.modelReplaceHair, 2);
     packet[0x33] = targetRace;
+
+    if (WatchMatches(player) == true) then
+        LogWatchLine(
+            'BL watch 0x00E post' ..
+            ' index=' .. tostring(actIndex) ..
+            ' afterHair=' .. tostring(packet[0x32]) ..
+            ' afterRace=' .. tostring(packet[0x33]) ..
+            ' family=' .. tostring(raceFamily) ..
+            ' info=' .. GetEntityDebugSummary(actIndex)
+        );
+    end
 
     if (debugEnabled == true and debugPacketCount < 40) then
         debugPacketCount = debugPacketCount + 1;
@@ -1368,7 +2171,7 @@ function blacklistModelReplace.HandlePacketIn(e)
 
     local settings = playerBlacklist.GetModelReplaceSettings();
 
-    if (settings.modelReplaceEnabled ~= true and HasPendingClear() ~= true) then
+    if (settings.modelReplaceUseFomor == false and HasPendingClear() ~= true) then
         return;
     end
 
@@ -1401,9 +2204,27 @@ function blacklistModelReplace.HandlePacketIn(e)
     local queuedCostume = nil;
     local queuedLook = nil;
     local originalRace = packet[0x49];
-    local targetRace = settings.modelReplacePreserveRace ~= false and originalRace or ClampByte(settings.modelReplaceRace, 5);
+    local targetRace = originalRace;
     local raceFamily = GetRaceFamily(targetRace);
     local originalRaceFamily = GetRaceFamily(originalRace);
+
+    if (WatchMatches(player) == true) then
+        LogWatchLine(
+            'BL watch 0x00D pre' ..
+            ' flag=' .. FormatHex(sendFlag) ..
+            ' packetId=' .. tostring(serverId) ..
+            ' index=' .. tostring(actIndex) ..
+            ' id=' .. tostring(player.serverId or '') ..
+            ' name=' .. tostring(player.name or '') ..
+            ' listed=' .. tostring(entry ~= nil) ..
+            ' hair=' .. tostring(packet[0x48]) ..
+            ' race=' .. tostring(packet[0x49]) ..
+            ' costume=' .. tostring(ReadCostumeId(ffiRef, packet)) ..
+            ' head=' .. tostring(ReadModelWord(ffiRef, packet, 1)) ..
+            ' body=' .. tostring(ReadModelWord(ffiRef, packet, 2)) ..
+            ' info=' .. GetEntityDebugSummary(actIndex)
+        );
+    end
 
     if (debugEnabled == true and debugPacketCount < 40) then
         debugPacketCount = debugPacketCount + 1;
@@ -1464,26 +2285,70 @@ function blacklistModelReplace.HandlePacketIn(e)
         return;
     end
 
-    local fixedModelId = GetFixedFomorModelId(settings, raceFamily);
-    local originalFixedModelId = GetFixedFomorModelId(settings, originalRaceFamily);
+    local fixedModelId = GetFixedFomorModelId(settings, raceKey, raceFamily);
+    local originalFixedModelId = GetFixedFomorModelId(settings, GetRaceModelKey(originalRace), originalRaceFamily);
     local npcCostumeId = settings.modelReplaceNpcCostumeByRace == true
         and originalFixedModelId
         or math.floor(tonumber(settings.modelReplaceNpcCostumeId) or 0);
     local costumeId = math.floor(tonumber(settings.modelReplaceCostumeId) or 0);
 
-    if (entry ~= nil and settings.modelReplaceUseFomor ~= false) then
+    local stableRecovered, stableLook = IsStableBlacklistRecoveredActor(player);
+    local fomorModelBytes = GetFomorModelBytes(settings, raceFamily, targetRace);
+
+    if (
+        entry ~= nil and
+        settings.modelReplaceUseFomor ~= false and
+        ShouldSuppressBlacklistRecoveryWrite(player) ~= true and
+        stableRecovered ~= true
+    ) then
         WriteCostumeId(ffiRef, packet, fixedModelId);
+        QueueBlacklistModelRecovery(player, fixedModelId, packet[0x48], fomorModelBytes);
+    elseif (entry ~= nil and stableRecovered == true and type(stableLook) == 'table') then
+        if (HasFullModelBytes(stableLook.modelBytes) == true) then
+            WriteModelBytes(packet, stableLook.modelBytes);
+        else
+            WriteFomorPlaceholderBytes(packet, stableLook.modelBytes or fomorModelBytes);
+        end
+        if (stableLook.hair ~= nil) then
+            packet[0x48] = ClampByte(stableLook.hair, packet[0x48]);
+        end
+        if (stableLook.race ~= nil) then
+            packet[0x49] = ClampByte(stableLook.race, packet[0x49]);
+        end
     elseif (settings.modelReplaceUseNpcCostume == true and npcCostumeId > 0) then
         -- Fixed NPC model ids can make remote player bodies disappear after a real
         -- range reload. Keep the setting/debug path for investigation, but never
         -- apply it to live players.
     end
 
+    if (WatchMatches(player) == true) then
+        LogWatchLine(
+            'BL watch 0x00D post' ..
+            ' index=' .. tostring(actIndex) ..
+            ' afterHair=' .. tostring(packet[0x48]) ..
+            ' afterRace=' .. tostring(packet[0x49]) ..
+            ' afterCostume=' .. tostring(ReadCostumeId(ffiRef, packet)) ..
+            ' family=' .. tostring(raceFamily) ..
+            ' raceKey=' .. tostring(raceKey) ..
+            ' fixedModelId=' .. tostring(fixedModelId) ..
+            ' head=' .. tostring(ReadModelWord(ffiRef, packet, 1)) ..
+            ' body=' .. tostring(ReadModelWord(ffiRef, packet, 2)) ..
+            ' info=' .. GetEntityDebugSummary(actIndex)
+        );
+    end
+
     local logKey = tostring(player.serverId or serverId or player.name or '');
 
     if (logKey ~= '' and loggedServerIds[logKey] ~= true) then
         loggedServerIds[logKey] = true;
-        log.Info('Applied blacklist model replacement to ' .. tostring(player.name ~= '' and player.name or player.serverId or serverId) .. '.');
+        log.Info(
+            'Applied blacklist model replacement to ' ..
+            tostring(player.name ~= '' and player.name or player.serverId or serverId) ..
+            ' family=' .. tostring(raceFamily) ..
+            ' raceKey=' .. tostring(raceKey) ..
+            ' fixedModelId=' .. tostring(fixedModelId) ..
+            '.'
+        );
     end
 end
 
@@ -1553,6 +2418,128 @@ function blacklistModelReplace.SetFixedFomorModel(family, modelId)
     state.Save();
 
     return true, key;
+end
+
+function blacklistModelReplace.SetRuntimeFixedFomorModel(family, modelId)
+    local key = tostring(family or ''):lower():gsub('%-', '_');
+    local value = math.floor(tonumber(modelId) or 0);
+
+    if (key == 'taru' or key == 'tarutaru') then
+        key = 'tarutaru';
+    elseif (key == 'taru_male' or key == 'tarutaru_male') then
+        key = 'tarutaru_male';
+    elseif (key == 'taru_female' or key == 'tarutaru_female') then
+        key = 'tarutaru_female';
+    elseif (key == 'hume' or key == 'human') then
+        key = 'hume';
+    elseif (key == 'hume_male' or key == 'human_male') then
+        key = 'hume_male';
+    elseif (key == 'hume_female' or key == 'human_female') then
+        key = 'hume_female';
+    elseif (key == 'elvaan' or key == 'elf') then
+        key = 'elvaan';
+    elseif (key == 'elvaan_male' or key == 'elf_male') then
+        key = 'elvaan_male';
+    elseif (key == 'elvaan_female' or key == 'elf_female') then
+        key = 'elvaan_female';
+    elseif (key == 'mithra') then
+        key = 'mithra';
+    elseif (key == 'mithra_female') then
+        key = 'mithra_female';
+    elseif (key == 'galka') then
+        key = 'galka';
+    elseif (key == 'galka_male') then
+        key = 'galka_male';
+    elseif (key == 'clear' or key == 'off') then
+        runtimeFixedFomorModels = {};
+        stableBlacklistRecoveredActors = {};
+        pendingBlacklistRecoveries = {};
+        return true, 'cleared', 0;
+    else
+        return false, 'unknown family', 0;
+    end
+
+    if (value <= 0 or value > 65535) then
+        return false, 'invalid model id', 0;
+    end
+
+    runtimeFixedFomorModels[key] = value;
+    stableBlacklistRecoveredActors = {};
+    pendingBlacklistRecoveries = {};
+
+    return true, key, value;
+end
+
+function blacklistModelReplace.StartRuntimeFixedStepper(family, firstId, lastId)
+    local key = tostring(family or ''):lower():gsub('%-', '_');
+    local first = math.floor(tonumber(firstId) or 0);
+    local last = math.floor(tonumber(lastId) or 0);
+
+    if (key == 'taru' or key == 'tarutaru') then
+        key = 'tarutaru';
+    elseif (key == 'taru_male' or key == 'tarutaru_male') then
+        key = 'tarutaru_male';
+    elseif (key == 'taru_female' or key == 'tarutaru_female') then
+        key = 'tarutaru_female';
+    elseif (key == 'hume' or key == 'human') then
+        key = 'hume';
+    elseif (key == 'hume_male' or key == 'human_male') then
+        key = 'hume_male';
+    elseif (key == 'hume_female' or key == 'human_female') then
+        key = 'hume_female';
+    elseif (key == 'elvaan' or key == 'elf') then
+        key = 'elvaan';
+    elseif (key == 'elvaan_male' or key == 'elf_male') then
+        key = 'elvaan_male';
+    elseif (key == 'elvaan_female' or key == 'elf_female') then
+        key = 'elvaan_female';
+    elseif (key == 'mithra') then
+        key = 'mithra';
+    elseif (key == 'mithra_female') then
+        key = 'mithra_female';
+    elseif (key == 'galka') then
+        key = 'galka';
+    elseif (key == 'galka_male') then
+        key = 'galka_male';
+    else
+        return false, 'unknown family';
+    end
+
+    if (first <= 0 or first > 65535 or last <= 0 or last > 65535) then
+        return false, 'invalid model id range';
+    end
+
+    if (last < first) then
+        first, last = last, first;
+    end
+
+    runtimeFixedStepper = {
+        key = key,
+        nextId = first,
+        lastId = last,
+    };
+
+    return true, 'stepper armed ' .. key .. ' ' .. tostring(first) .. '-' .. tostring(last);
+end
+
+function blacklistModelReplace.NextRuntimeFixedStep()
+    if (runtimeFixedStepper == nil) then
+        return false, 'stepper not armed';
+    end
+
+    local value = math.floor(tonumber(runtimeFixedStepper.nextId) or 0);
+    local last = math.floor(tonumber(runtimeFixedStepper.lastId) or 0);
+
+    if (value <= 0 or value > last) then
+        return false, 'stepper finished';
+    end
+
+    runtimeFixedFomorModels[runtimeFixedStepper.key] = value;
+    stableBlacklistRecoveredActors = {};
+    pendingBlacklistRecoveries = {};
+    runtimeFixedStepper.nextId = value + 1;
+
+    return true, 'testing ' .. tostring(runtimeFixedStepper.key) .. '=' .. tostring(value);
 end
 
 function blacklistModelReplace.SetCostumeModel(modelId)
@@ -1629,6 +2616,94 @@ function blacklistModelReplace.SetCostumeWatch(playerOrName)
         ' server=' .. tostring(costumeWatch.serverId or '');
 end
 
+function blacklistModelReplace.SetBlacklistWatch(playerOrName)
+    local text = tostring(playerOrName or ''):gsub('^%s+', ''):gsub('%s+$', '');
+
+    if (text == '' or text:lower() == 'off' or text:lower() == 'clear') then
+        blacklistWatch = nil;
+        return true, 'cleared';
+    end
+
+    local index, resolvedName = ResolveRawPlayerIndex(text);
+    local serverId = nil;
+    local entityManager = GetEntityManager();
+
+    if (index ~= nil and entityManager ~= nil and entityManager.GetServerId ~= nil) then
+        local okServer, value = pcall(function()
+            return entityManager:GetServerId(index);
+        end);
+
+        if (okServer == true and tonumber(value) ~= nil and tonumber(value) > 0) then
+            serverId = tonumber(value);
+        end
+    end
+
+    local numeric = tonumber(text);
+    if (serverId == nil and numeric ~= nil and (numeric < 1024 or numeric > 1791)) then
+        serverId = math.floor(numeric);
+    end
+
+    blacklistWatch = {
+        input = text,
+        index = index,
+        name = resolvedName,
+        nameKey = NormalizeName(resolvedName ~= '' and resolvedName or text),
+        serverId = serverId,
+        untilAt = os.clock() + 180.0,
+        count = 0,
+        maxCount = 80,
+    };
+
+    return true,
+        'input=' .. tostring(text) ..
+        ' index=' .. tostring(index or '') ..
+        ' name=' .. tostring(resolvedName or '') ..
+        ' server=' .. tostring(serverId or '') ..
+        ' seconds=180';
+end
+
+function blacklistModelReplace.SetBlacklistLookWatch(playerOrName)
+    local text = tostring(playerOrName or ''):gsub('^%s+', ''):gsub('%s+$', '');
+
+    if (text == '' or text:lower() == 'clear' or text:lower() == 'off') then
+        blacklistLookWatch = nil;
+        return true, 'cleared';
+    end
+
+    local index, resolvedName = ResolveRawPlayerIndex(text);
+    local serverId = nil;
+    local entityManager = GetEntityManager();
+
+    if (index ~= nil and index > 0 and entityManager ~= nil and entityManager.GetServerId ~= nil) then
+        local okServer, value = pcall(function()
+            return entityManager:GetServerId(index);
+        end);
+        if (okServer == true) then
+            serverId = value;
+        end
+    end
+
+    blacklistLookWatch = {
+        input = text,
+        index = index,
+        name = resolvedName,
+        serverId = serverId,
+        nameKey = NormalizeName(resolvedName or text),
+        untilAt = os.clock() + 60.0,
+        nextPollAt = 0,
+        lastStateKey = nil,
+        count = 0,
+        maxCount = 30,
+    };
+
+    return true,
+        'input=' .. tostring(text) ..
+        ' index=' .. tostring(index or '') ..
+        ' name=' .. tostring(resolvedName or '') ..
+        ' server=' .. tostring(serverId or '') ..
+        ' seconds=60';
+end
+
 function blacklistModelReplace.ClearCostumeWatch()
     costumeWatch = nil;
 end
@@ -1640,6 +2715,54 @@ end
 function blacklistModelReplace.Update()
     pendingCostumeApplies = {};
     pendingLookApplies = {};
+    ProcessBlacklistModelRecoveries();
+    ProcessBlacklistLookWatch();
+
+    if (blacklistWatch == nil) then
+        return;
+    end
+
+    local now = os.clock();
+
+    if (now > (tonumber(blacklistWatch.untilAt) or 0)) then
+        log.Info('Blacklist watch expired after 180 seconds.');
+        blacklistWatch = nil;
+        return;
+    end
+
+    if (now < (tonumber(blacklistWatch.nextPollAt) or 0)) then
+        return;
+    end
+
+    blacklistWatch.nextPollAt = now + 0.25;
+
+    local index = tonumber(blacklistWatch.index);
+
+    if (index == nil or index <= 0) then
+        local resolvedIndex, resolvedName = ResolveRawPlayerIndex(blacklistWatch.input);
+
+        index = resolvedIndex;
+        if (index ~= nil and index > 0) then
+            blacklistWatch.index = index;
+            blacklistWatch.name = resolvedName;
+        end
+    end
+
+    if (index == nil or index <= 0) then
+        local key = 'missing';
+        if (blacklistWatch.lastStateKey ~= key) then
+            blacklistWatch.lastStateKey = key;
+            LogWatchLine('BL watch state player not found input=' .. tostring(blacklistWatch.input or ''));
+        end
+        return;
+    end
+
+    local state = GetWatchState(index);
+
+    if (blacklistWatch.lastStateKey ~= state.key) then
+        blacklistWatch.lastStateKey = state.key;
+        LogWatchLine('BL watch state ' .. tostring(state.text or ''));
+    end
 end
 
 function blacklistModelReplace.SetNpcCostumeModel(modelId)
@@ -1706,6 +2829,123 @@ function blacklistModelReplace.RequestPlayerRefresh(playerOrName, clear)
     return replayed == true or selected == true;
 end
 
+function blacklistModelReplace.DiagnosePlayerRefresh(playerOrName)
+    local index, name = ResolveRawPlayerIndex(playerOrName);
+    local okEntities, entities = pcall(require, 'core.entities');
+    local entityManager = GetEntityManager();
+
+    if (index == nil or index <= 0) then
+        return {
+            ok = false,
+            lines = {
+                'Blacklist test: player not found nearby/raw: ' .. tostring(name or playerOrName or ''),
+            },
+        };
+    end
+
+    local before = okEntities == true and entities ~= nil and entities.GetEntityDebugInfo ~= nil
+        and entities.GetEntityDebugInfo(index, 64.4)
+        or nil;
+    local serverId = nil;
+
+    if (entityManager ~= nil and entityManager.GetServerId ~= nil) then
+        local okServer, value = pcall(function()
+            return entityManager:GetServerId(index);
+        end);
+        if (okServer == true) then
+            serverId = value;
+        end
+    end
+
+    local player = {
+        index = index,
+        name = before ~= nil and before.name or name,
+        serverId = serverId,
+    };
+    local listed = playerBlacklist.IsListed(player) == true;
+    local refreshed = SetModelRefreshFlags(entityManager, index);
+    local selected = PulseTarget(index);
+    local after = okEntities == true and entities ~= nil and entities.GetEntityDebugInfo ~= nil
+        and entities.GetEntityDebugInfo(index, 64.4)
+        or nil;
+
+    return {
+        ok = true,
+        lines = {
+            'Blacklist test: input=' .. tostring(playerOrName or '') ..
+                ' index=' .. tostring(index) ..
+                ' name=' .. tostring(player.name or '') ..
+                ' server=' .. tostring(serverId or '') ..
+                ' blacklisted=' .. FormatBool(listed),
+            'Before: ' .. FormatDebugInfo(before) .. ' ' .. GetRawEntityCostumeSummary(index),
+            'Pulse: selected=' .. FormatBool(selected) .. ' refreshFlags=' .. FormatBool(refreshed),
+            'After: ' .. FormatDebugInfo(after) .. ' ' .. GetRawEntityCostumeSummary(index),
+        },
+    };
+end
+
+function blacklistModelReplace.RecoverBlacklistedPlayer(playerOrName)
+    local index, name = ResolveRawPlayerIndex(playerOrName);
+    local okEntities, entities = pcall(require, 'core.entities');
+    local entityManager = GetEntityManager();
+
+    if (index == nil or index <= 0) then
+        return {
+            ok = false,
+            lines = {
+                'Blacklist recover: player not found nearby/raw: ' .. tostring(name or playerOrName or ''),
+            },
+        };
+    end
+
+    local before = okEntities == true and entities ~= nil and entities.GetEntityDebugInfo ~= nil
+        and entities.GetEntityDebugInfo(index, 64.4)
+        or nil;
+    local serverId = nil;
+
+    if (entityManager ~= nil and entityManager.GetServerId ~= nil) then
+        local okServer, value = pcall(function()
+            return entityManager:GetServerId(index);
+        end);
+        if (okServer == true) then
+            serverId = value;
+        end
+    end
+
+    local player = {
+        index = index,
+        name = before ~= nil and before.name or name,
+        serverId = serverId,
+    };
+    local listed = playerBlacklist.IsListed(player) == true;
+    local costumeSet, costumeErr = SetRawEntityCostume(entityManager, index, 0);
+    local typeSet, typeErr = SetRawEntityType(index, 0);
+    local refreshed = SetModelRefreshFlags(entityManager, index);
+    local selected = PulseTarget(index);
+    local after = okEntities == true and entities ~= nil and entities.GetEntityDebugInfo ~= nil
+        and entities.GetEntityDebugInfo(index, 64.4)
+        or nil;
+
+    return {
+        ok = true,
+        lines = {
+            'Blacklist recover: input=' .. tostring(playerOrName or '') ..
+                ' index=' .. tostring(index) ..
+                ' name=' .. tostring(player.name or '') ..
+                ' server=' .. tostring(serverId or '') ..
+                ' blacklisted=' .. FormatBool(listed),
+            'Before: ' .. FormatDebugInfo(before) .. ' ' .. GetRawEntityCostumeSummary(index),
+            'Recover: costume0=' .. FormatBool(costumeSet) ..
+                ' type0=' .. FormatBool(typeSet) ..
+                ' refreshFlags=' .. FormatBool(refreshed) ..
+                ' targetPulse=' .. FormatBool(selected) ..
+                ' costumeErr=' .. tostring(costumeSet == true and '' or costumeErr or '') ..
+                ' typeErr=' .. tostring(typeSet == true and '' or typeErr or ''),
+            'After: ' .. FormatDebugInfo(after) .. ' ' .. GetRawEntityCostumeSummary(index),
+        },
+    };
+end
+
 function blacklistModelReplace.GetRefreshStatus(name)
     local cached = GetCachedPlayerPacket(name);
 
@@ -1753,6 +2993,15 @@ function blacklistModelReplace.GetDebugStatusText()
     local settings = playerBlacklist.GetModelReplaceSettings();
     local captured = {};
     local fixed = {};
+    local sourceFixed = {};
+    local runtimeFixed = {};
+    local fixedFamilies = {
+        'hume', 'hume_male', 'hume_female',
+        'elvaan', 'elvaan_male', 'elvaan_female',
+        'tarutaru', 'tarutaru_male', 'tarutaru_female',
+        'mithra', 'mithra_female',
+        'galka', 'galka_male',
+    };
 
     if (type(settings.modelReplaceCapturedFomorModels) == 'table') then
         for _, family in ipairs({ 'hume', 'elvaan', 'tarutaru', 'mithra', 'galka' }) do
@@ -1763,10 +3012,20 @@ function blacklistModelReplace.GetDebugStatusText()
     end
 
     if (type(settings.modelReplaceFixedFomorModels) == 'table') then
-        for _, family in ipairs({ 'hume', 'elvaan', 'tarutaru', 'mithra', 'galka' }) do
+        for _, family in ipairs(fixedFamilies) do
             if ((tonumber(settings.modelReplaceFixedFomorModels[family]) or 0) > 0) then
                 fixed[#fixed + 1] = family .. '=' .. tostring(settings.modelReplaceFixedFomorModels[family]);
             end
+        end
+    end
+
+    for _, family in ipairs(fixedFamilies) do
+        if ((tonumber(sourceFixedFomorModels[family]) or 0) > 0) then
+            sourceFixed[#sourceFixed + 1] = family .. '=' .. tostring(sourceFixedFomorModels[family]);
+        end
+
+        if ((tonumber(runtimeFixedFomorModels[family]) or 0) > 0) then
+            runtimeFixed[#runtimeFixed + 1] = family .. '=' .. tostring(runtimeFixedFomorModels[family]);
         end
     end
 
@@ -1776,8 +3035,11 @@ function blacklistModelReplace.GetDebugStatusText()
         ' fomorProbe=' .. tostring(fomorProbeEnabled == true) ..
         ' fomorPackets=' .. tostring(fomorProbePacketCount) ..
         ' targetProbe=' .. tostring(fomorProbeTargetIndex or 'none') ..
+        ' fomorRaceMode=packet-race' ..
         ' captured=' .. (#captured > 0 and table.concat(captured, ',') or 'none') ..
         ' fixed=' .. (#fixed > 0 and table.concat(fixed, ',') or 'none') ..
+        ' sourceFixed=' .. (#sourceFixed > 0 and table.concat(sourceFixed, ',') or 'none') ..
+        ' runtimeFixed=' .. (#runtimeFixed > 0 and table.concat(runtimeFixed, ',') or 'none') ..
         ' costume=' .. tostring(settings.modelReplaceUseCostume == true and settings.modelReplaceCostumeId or 'off') ..
         ' npcCostume=' .. tostring(settings.modelReplaceUseNpcCostume == true and (settings.modelReplaceNpcCostumeByRace == true and 'by-race' or settings.modelReplaceNpcCostumeId) or 'off') ..
         ' refresh=' .. tostring(lastRefreshStatus);

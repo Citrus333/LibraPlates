@@ -1022,7 +1022,13 @@ function state.GetVisualBlacklist()
         runtime.visualBlacklist.modelReplaceClearGear = true;
     end
     if (runtime.visualBlacklist.modelReplaceUseFomor == nil) then
-        runtime.visualBlacklist.modelReplaceUseFomor = false;
+        runtime.visualBlacklist.modelReplaceUseFomor = true;
+    end
+    if (runtime.visualBlacklist.displayNameReplaceEnabled == nil) then
+        runtime.visualBlacklist.displayNameReplaceEnabled = true;
+    end
+    if (type(runtime.visualBlacklist.displayNameColor) ~= 'table') then
+        runtime.visualBlacklist.displayNameColor = { 1.0, 0.22, 0.22, 1.0 };
     end
 
     return runtime.visualBlacklist;

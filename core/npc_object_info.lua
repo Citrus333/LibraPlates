@@ -14,11 +14,17 @@ local function LoadTable(moduleName)
     return {};
 end
 
-local npcIcons = LoadTable('data.npc_icons');
-local itemIcons = LoadTable('data.item_icons');
-local catseyeNpcIcons = LoadTable('data.catseye_npc_icons');
-local catseyeItemIcons = LoadTable('data.catseye_item_icons');
-local hiddenEntries = LoadTable('data.npc_object_hidden');
+local npcIcons = nil;
+local itemIcons = nil;
+local catseyeNpcIcons = nil;
+local catseyeItemIcons = nil;
+local fullNpcIcons = nil;
+local fullItemIcons = nil;
+local fullCatseyeNpcIcons = nil;
+local fullCatseyeItemIcons = nil;
+local fullSourcesLoaded = false;
+local activeZoneSignature = nil;
+local zoneManifest = LoadTable('data.npc_object_zone_manifest');
 local textureIds = {};
 local currentZoneId = nil;
 local currentZoneName = nil;
@@ -46,7 +52,7 @@ local function GetHomePointKey(name)
     local number = lower:match('home%s*point%s*#?%s*(%d+)')
         or lower:match('home%s*point.-(%d+)');
 
-    if (number ~= nil and itemIcons['Home Point #' .. tostring(number)] ~= nil) then
+    if (number ~= nil) then
         return 'Home Point #' .. tostring(number);
     end
 
@@ -214,6 +220,119 @@ local function EntryMatchesCurrentZone(entry)
     end
 
     return false;
+end
+
+local function CopySourceEntries(target, source)
+    if (type(target) ~= 'table' or type(source) ~= 'table') then
+        return;
+    end
+
+    for name, entry in pairs(source) do
+        target[name] = entry;
+    end
+end
+
+local function LoadZoneFile(fileName)
+    local moduleName = tostring(fileName or ''):gsub('%.lua$', '');
+
+    if (moduleName == '') then
+        return {};
+    end
+
+    return LoadTable('data.npc_object_zones.' .. moduleName);
+end
+
+local function LoadFullSources()
+    if (fullSourcesLoaded == true) then
+        return;
+    end
+
+    fullNpcIcons = LoadTable('data.npc_icons');
+    fullItemIcons = LoadTable('data.item_icons');
+    fullCatseyeNpcIcons = LoadTable('data.catseye_npc_icons');
+    fullCatseyeItemIcons = LoadTable('data.catseye_item_icons');
+    fullSourcesLoaded = true;
+end
+
+local function BuildActiveZoneSources()
+    local zoneId = GetCurrentZoneId();
+    local zoneName = GetCurrentZoneName();
+
+    if (zoneId == 0 and zoneName == nil) then
+        LoadFullSources();
+        npcIcons = fullNpcIcons;
+        itemIcons = fullItemIcons;
+        catseyeNpcIcons = fullCatseyeNpcIcons;
+        catseyeItemIcons = fullCatseyeItemIcons;
+        activeZoneSignature = 'full';
+        return;
+    end
+
+    local signature = tostring(zoneId or 0) .. ':' .. tostring(zoneName or '');
+
+    if (signature == activeZoneSignature and npcIcons ~= nil and itemIcons ~= nil and catseyeNpcIcons ~= nil and catseyeItemIcons ~= nil) then
+        return;
+    end
+
+    local globalData = LoadZoneFile(zoneManifest.global);
+    local zoneIdFile = nil;
+    local zoneNameFile = nil;
+
+    if (type(zoneManifest.zoneIds) == 'table') then
+        zoneIdFile = zoneManifest.zoneIds[zoneId] or zoneManifest.zoneIds[tostring(zoneId)];
+    end
+
+    if (type(zoneManifest.zoneNames) == 'table' and zoneName ~= nil) then
+        zoneNameFile = zoneManifest.zoneNames[zoneName];
+    end
+
+    local zoneIdData = LoadZoneFile(zoneIdFile);
+    local zoneNameData = (zoneNameFile ~= zoneIdFile) and LoadZoneFile(zoneNameFile) or {};
+    local activeNpcIcons = {};
+    local activeItemIcons = {};
+    local activeCatseyeNpcIcons = {};
+    local activeCatseyeItemIcons = {};
+
+    CopySourceEntries(activeNpcIcons, globalData.npc);
+    CopySourceEntries(activeItemIcons, globalData.item);
+    CopySourceEntries(activeCatseyeNpcIcons, globalData.catseyeNpc);
+    CopySourceEntries(activeCatseyeItemIcons, globalData.catseyeItem);
+    CopySourceEntries(activeNpcIcons, zoneIdData.npc);
+    CopySourceEntries(activeItemIcons, zoneIdData.item);
+    CopySourceEntries(activeCatseyeNpcIcons, zoneIdData.catseyeNpc);
+    CopySourceEntries(activeCatseyeItemIcons, zoneIdData.catseyeItem);
+    CopySourceEntries(activeNpcIcons, zoneNameData.npc);
+    CopySourceEntries(activeItemIcons, zoneNameData.item);
+    CopySourceEntries(activeCatseyeNpcIcons, zoneNameData.catseyeNpc);
+    CopySourceEntries(activeCatseyeItemIcons, zoneNameData.catseyeItem);
+
+    npcIcons = activeNpcIcons;
+    itemIcons = activeItemIcons;
+    catseyeNpcIcons = activeCatseyeNpcIcons;
+    catseyeItemIcons = activeCatseyeItemIcons;
+    activeZoneSignature = signature;
+end
+
+local function GetSourceTables(useFull)
+    if (useFull == true) then
+        LoadFullSources();
+
+        return {
+            npc = fullNpcIcons,
+            item = fullItemIcons,
+            catseyeNpc = fullCatseyeNpcIcons,
+            catseyeItem = fullCatseyeItemIcons,
+        };
+    end
+
+    BuildActiveZoneSources();
+
+    return {
+        npc = npcIcons or {},
+        item = itemIcons or {},
+        catseyeNpc = catseyeNpcIcons or {},
+        catseyeItem = catseyeItemIcons or {},
+    };
 end
 
 local function ReadEntry(sourceName, entry, ignoreZone)
@@ -384,9 +503,18 @@ IsHiddenEntry = function(entry)
 end
 
 function npcInfo.ShouldHidePlate(name)
+    local sources = GetSourceTables(false);
     local cleanName = NormalizeName(name);
+    local entry = (sources.catseyeItem or {})[cleanName]
+        or (sources.item or {})[cleanName]
+        or (sources.catseyeNpc or {})[cleanName]
+        or (sources.npc or {})[cleanName]
+        or (sources.catseyeItem or {})[CleanName(name)]
+        or (sources.item or {})[CleanName(name)]
+        or (sources.catseyeNpc or {})[CleanName(name)]
+        or (sources.npc or {})[CleanName(name)];
 
-    return hiddenEntries[cleanName] == true;
+    return IsHiddenEntry(entry) == true;
 end
 
 function npcInfo.Find(name, entityType, options)
@@ -400,25 +528,26 @@ function npcInfo.Find(name, entityType, options)
     local homePointKey = GetHomePointKey(name);
     local itemLookupName = homePointKey or name;
     local forceItemZoneMatchOff = homePointKey ~= nil;
+    local sources = GetSourceTables(ignoreZone or forceItemZoneMatchOff);
 
     if (kind == 'object') then
-        local item = FindIn(itemLookupName, 'catseye_item', catseyeItemIcons, ignoreZone or forceItemZoneMatchOff, options)
-            or FindScopedIn(itemLookupName, 'item', itemIcons, ignoreZone or forceItemZoneMatchOff, options)
-            or FindIn(itemLookupName, 'item', itemIcons, ignoreZone or forceItemZoneMatchOff, options)
+        local item = FindIn(itemLookupName, 'catseye_item', sources.catseyeItem, ignoreZone or forceItemZoneMatchOff, options)
+            or FindScopedIn(itemLookupName, 'item', sources.item, ignoreZone or forceItemZoneMatchOff, options)
+            or FindIn(itemLookupName, 'item', sources.item, ignoreZone or forceItemZoneMatchOff, options)
             or GetGatheringPointFallback(name);
-        local npc = FindIn(name, 'catseye_npc', catseyeNpcIcons, ignoreZone, options)
-            or FindScopedIn(name, 'npc', npcIcons, ignoreZone, options)
-            or (ignoreZone ~= true and cleanName == 'Moogle' and FindMogHouseMoogleAlias('npc', npcIcons) or nil)
-            or FindIn(name, 'npc', npcIcons, ignoreZone, options);
+        local npc = FindIn(name, 'catseye_npc', sources.catseyeNpc, ignoreZone, options)
+            or FindScopedIn(name, 'npc', sources.npc, ignoreZone, options)
+            or (ignoreZone ~= true and cleanName == 'Moogle' and FindMogHouseMoogleAlias('npc', sources.npc) or nil)
+            or FindIn(name, 'npc', sources.npc, ignoreZone, options);
 
         return MergeEntry(item, npc);
     end
 
-    local catseyeNpc = FindIn(name, 'catseye_npc', catseyeNpcIcons, ignoreZone, options)
-        or FindScopedIn(name, 'catseye_npc', catseyeNpcIcons, ignoreZone, options);
-    local npc = FindScopedIn(name, 'npc', npcIcons, ignoreZone, options)
-        or (ignoreZone ~= true and cleanName == 'Moogle' and FindMogHouseMoogleAlias('npc', npcIcons) or nil)
-        or FindIn(name, 'npc', npcIcons, ignoreZone, options);
+    local catseyeNpc = FindIn(name, 'catseye_npc', sources.catseyeNpc, ignoreZone, options)
+        or FindScopedIn(name, 'catseye_npc', sources.catseyeNpc, ignoreZone, options);
+    local npc = FindScopedIn(name, 'npc', sources.npc, ignoreZone, options)
+        or (ignoreZone ~= true and cleanName == 'Moogle' and FindMogHouseMoogleAlias('npc', sources.npc) or nil)
+        or FindIn(name, 'npc', sources.npc, ignoreZone, options);
 
     return MergeEntry(catseyeNpc, npc) or npc;
 end
@@ -427,14 +556,15 @@ function npcInfo.ResolveKind(name, entityType, options)
     local homePointKey = GetHomePointKey(name);
     local itemLookupName = homePointKey or name;
     local forceItemZoneMatchOff = homePointKey ~= nil;
-    local catseyeItemInfo = FindIn(itemLookupName, 'catseye_item', catseyeItemIcons, forceItemZoneMatchOff, options);
+    local sources = GetSourceTables(type(options) == 'table' and options.ignoreZone == true or forceItemZoneMatchOff);
+    local catseyeItemInfo = FindIn(itemLookupName, 'catseye_item', sources.catseyeItem, forceItemZoneMatchOff, options);
 
     if (catseyeItemInfo ~= nil) then
         return 'Object', catseyeItemInfo;
     end
 
-    local itemInfo = FindScopedIn(itemLookupName, 'item', itemIcons, forceItemZoneMatchOff, options)
-        or FindIn(itemLookupName, 'item', itemIcons, forceItemZoneMatchOff, options);
+    local itemInfo = FindScopedIn(itemLookupName, 'item', sources.item, forceItemZoneMatchOff, options)
+        or FindIn(itemLookupName, 'item', sources.item, forceItemZoneMatchOff, options);
 
     if (itemInfo ~= nil and (forceItemZoneMatchOff == true or IsGatheringPointName(name) == true)) then
         return 'Object', itemInfo;
@@ -457,10 +587,10 @@ function npcInfo.ResolveKind(name, entityType, options)
         return 'NPC', info;
     end
 
-    itemInfo = FindIn(itemLookupName, 'catseye_item', catseyeItemIcons, forceItemZoneMatchOff, options)
+    itemInfo = FindIn(itemLookupName, 'catseye_item', sources.catseyeItem, forceItemZoneMatchOff, options)
         or itemInfo
-        or FindScopedIn(itemLookupName, 'item', itemIcons, forceItemZoneMatchOff, options)
-        or FindIn(itemLookupName, 'item', itemIcons, forceItemZoneMatchOff, options);
+        or FindScopedIn(itemLookupName, 'item', sources.item, forceItemZoneMatchOff, options)
+        or FindIn(itemLookupName, 'item', sources.item, forceItemZoneMatchOff, options);
 
     if (itemInfo ~= nil) then
         return 'Object', itemInfo;
@@ -543,9 +673,8 @@ local function BuildIconPath(info)
     return path;
 end
 
-function npcInfo.GetTextureId(name, entityType, options)
-    local path = BuildIconPath(npcInfo.Find(name, entityType, options));
-
+function npcInfo.GetTextureIdForInfo(info)
+    local path = BuildIconPath(info);
     if (path == nil or path == '') then
         return nil;
     end
@@ -569,6 +698,10 @@ function npcInfo.GetTextureId(name, entityType, options)
 
     textureIds[path] = textureLoader.ToTextureId(texture);
     return textureIds[path];
+end
+
+function npcInfo.GetTextureId(name, entityType, options)
+    return npcInfo.GetTextureIdForInfo(npcInfo.Find(name, entityType, options));
 end
 
 function npcInfo.ClearTextureCache()

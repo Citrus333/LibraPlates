@@ -56,6 +56,7 @@ local fishing = require('core.fishing');
 local crafting = require('core.crafting');
 local settingsLabelColor = { 0.92, 0.92, 0.90, 1.0 };
 local settingsHeaderColor = { 1.0, 0.84, 0.0, 1.0 };
+LibraPlatesSettingsUiIconCache = LibraPlatesSettingsUiIconCache or {};
 LibraPlatesSettingsPalette = {
     shellBg = { 0.094, 0.094, 0.094, 1.0 },
     panelBg = { 0.145, 0.145, 0.145, 1.0 },
@@ -567,10 +568,15 @@ _G.LibraPlatesSettingsProfileChoicesCache = _G.LibraPlatesSettingsProfileChoices
 local detectedGameFpsMode = 'Unknown';
 local openDropdown = nil;
 local helpSearchBuffer = { '' };
+_G.LibraPlatesUserGuideSearchBuffer = _G.LibraPlatesUserGuideSearchBuffer or { '' };
 local troubleshooterSearchBuffer = { '' };
+LibraPlatesCustomAlertTriggerBuffers = LibraPlatesCustomAlertTriggerBuffers or {};
+LibraPlatesCustomAlertExpandedIndex = LibraPlatesCustomAlertExpandedIndex or nil;
+LibraPlatesCustomAlertPendingDelete = LibraPlatesCustomAlertPendingDelete or nil;
 local pendingHelpNavigation = nil;
 local previewSplitRatio = 0.42;
 local splitterArrowTextureId = nil;
+LibraPlatesSelectedPcHeightRace = LibraPlatesSelectedPcHeightRace or 'Tarutaru';
 local DrawSelectedEditor = nil;
 local uiAccent = { 0.20, 0.65, 0.67, 1.0 };
 local uiAccentHovered = { 0.25, 0.76, 0.78, 1.0 };
@@ -582,8 +588,8 @@ local loadModeDrawn = false;
 local useNativeTopTabs = false;
 
 local tabs = T{ 'Settings', 'Plates', 'Help' };
-local generalSections = T{ 'Profiles', 'Theme', 'Native UI', 'Mouse', 'Visibility', 'Blacklist', 'Scaling', 'Performance' };
-local helpSections = T{ 'User Guide', 'Find Settings', 'Troubleshooter' };
+local generalSections = T{ 'Profiles', 'Theme', 'Native UI', 'Mouse', 'Visibility', 'Scaling', 'Performance', 'Screen Alerts', 'Blacklist' };
+local helpSections = T{ 'User Guide', 'Custom Alerts', 'Find Settings', 'Troubleshooter' };
 local entities = T{
     'Self',
     'Trust',
@@ -841,6 +847,7 @@ local bstCharmedPetWidgets = T{
     'TP Bar',
     'Sic',
     'Reward',
+    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -855,6 +862,7 @@ local bstJugPetWidgets = T{
     'TP Bar',
     'Ready bar',
     'Reward',
+    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -867,6 +875,7 @@ local avatarEditWidgets = T{
     'Rage timer',
     'HP Bar',
     'TP Bar',
+    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -878,6 +887,7 @@ local spiritEditWidgets = T{
     'HP Bar',
     'MP Bar',
     'Cast bar',
+    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -889,6 +899,7 @@ local wyvernEditWidgets = T{
     'Distance',
     'HP Bar',
     'TP Bar',
+    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -902,6 +913,7 @@ local automatonEditWidgets = T{
     'MP Bar',
     'TP Bar',
     'Maneuvers',
+    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -979,7 +991,7 @@ local widgetKeys = {
     ['Resting (module)'] = 'Resting',
     ['Quick Menu (module)'] = 'Quick Menu',
     ['AOE range (module)'] = 'AOE range',
-    ['Enemy Alerts (module)'] = 'Enemy Alerts',
+    ['Enemy Alerts (module)'] = 'Screen Alerts',
     ['Mounted (module)'] = 'Mounted',
     ['Crafting (module)'] = 'Crafting',
     ['Fishing (module)'] = 'Fishing',
@@ -996,6 +1008,7 @@ local widgetKeys = {
     ['Ward timer'] = 'Ward timer',
     ['Rage timer'] = 'Rage timer',
     ['Detached frame'] = 'Detached frame',
+    ['Alerts'] = 'Alerts',
     ['Cast bar'] = 'Cast bar',
     ['Maneuvers'] = 'Maneuvers',
     ['Buffs'] = 'Buffs',
@@ -1605,6 +1618,7 @@ function GetWidgetDefaults(widget)
     if (widget == 'Rage timer') then return petRageBarDefaults; end
     if (widget == 'Sic' or widget == 'Ready bar') then return petReadyBarDefaults; end
     if (widget == 'Reward') then return petRewardBarDefaults; end
+    if (widget == 'Alerts') then return { enabled = false }; end
     if (widget == 'Maneuvers') then return maneuverDefaults; end
 
     return { enabled = false };
@@ -1749,6 +1763,8 @@ function RestoreUiSelection()
 
     if (saved.selectedGeneralSection == 'Font' or saved.selectedGeneralSection == 'Fonts') then
         selectedGeneralSection = 'Theme';
+    elseif (saved.selectedGeneralSection == 'Enemy Alerts') then
+        selectedGeneralSection = 'Screen Alerts';
     elseif (ListContains(generalSections, saved.selectedGeneralSection) == true) then
         selectedGeneralSection = saved.selectedGeneralSection;
     end
@@ -1940,7 +1956,7 @@ function GetSplitterArrowTextureId()
         return splitterArrowTextureId;
     end
 
-    splitterArrowTextureId = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\up_down_arrows.png'));
+    splitterArrowTextureId = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\ui-icons\\up_down_arrows.png'));
     return splitterArrowTextureId;
 end
 
@@ -2029,8 +2045,10 @@ end
 function DrawInlineCombo(label, items, selected, onSelect, displayLabelFn)
     local current = tostring(selected or items[1] or 'Default');
     local currentLabel = displayLabelFn ~= nil and displayLabelFn(current) or current;
+    local labelText = tostring(label or '');
+    local comboId = (labelText:sub(1, 2) == '##') and labelText or ('##' .. labelText);
 
-    if (tostring(label or '') ~= '') then
+    if (labelText ~= '' and labelText:sub(1, 2) ~= '##') then
         DrawYellowHeader(label);
     end
 
@@ -2039,7 +2057,7 @@ function DrawInlineCombo(label, items, selected, onSelect, displayLabelFn)
             imgui.PushItemWidth(242);
         end
 
-        if (imgui.BeginCombo('##' .. label, currentLabel) == true) then
+        if (imgui.BeginCombo(comboId, currentLabel) == true) then
             for _, item in ipairs(items) do
                 local isSelected = (item == current);
                 local itemLabel = displayLabelFn ~= nil and displayLabelFn(item) or tostring(item);
@@ -2197,7 +2215,7 @@ local function DrawSliderValueOverlay(x, y, widthValue, value, formatter)
     drawList:AddText({ textX, textY }, textColor, text);
 end
 
-function DrawSliderTenths(label, value, minTenths, maxTenths, onChange, id, labelWidthOverride, sliderWidthOverride)
+function DrawSliderTenths(label, value, minTenths, maxTenths, onChange, id, labelWidthOverride, sliderWidthOverride, tooltip)
     local ref = { tonumber(value) or 0 };
     local sliderId = tostring(id or label):gsub('%s+', '_');
     local labelWidth = tonumber(labelWidthOverride) or 132;
@@ -2209,11 +2227,17 @@ function DrawSliderTenths(label, value, minTenths, maxTenths, onChange, id, labe
         end
 
         if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-            if (imgui.BeginTable('##scaling_slider_' .. sliderId, 4, settingsTableFlagsNoBorders)) then
+            local hasTooltip = tooltip ~= nil and tostring(tooltip) ~= '';
+            local columnCount = hasTooltip and 5 or 4;
+
+            if (imgui.BeginTable('##scaling_slider_' .. sliderId, columnCount, settingsTableFlagsNoBorders)) then
                 imgui.TableSetupColumn('##label', 0, labelWidth);
                 imgui.TableSetupColumn('##minus', 0, 24);
                 imgui.TableSetupColumn('##slider', 0, sliderWidth + 6);
                 imgui.TableSetupColumn('##plus', 0, 24);
+                if (hasTooltip == true) then
+                    imgui.TableSetupColumn('##info', 0, 34);
+                end
                 imgui.TableNextRow();
                 imgui.TableNextColumn();
                 imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(label or ''));
@@ -2237,6 +2261,10 @@ function DrawSliderTenths(label, value, minTenths, maxTenths, onChange, id, labe
                 if (imgui.Button('+##' .. sliderId .. '_plus')) then
                     ApplyValue((tonumber(value) or 0) + 1.0);
                 end
+                if (hasTooltip == true) then
+                    imgui.TableNextColumn();
+                    uiTooltip.Info(tostring(tooltip), false);
+                end
                 imgui.EndTable();
             end
         else
@@ -2253,6 +2281,9 @@ function DrawSliderTenths(label, value, minTenths, maxTenths, onChange, id, labe
             if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
             imgui.SameLine();
             if (imgui.Button('+##' .. sliderId .. '_plus')) then ApplyValue((tonumber(value) or 0) + 1.0); end
+            if (tooltip ~= nil and tostring(tooltip) ~= '') then
+                uiTooltip.Info(tostring(tooltip), true);
+            end
         end
 
         return;
@@ -2280,7 +2311,7 @@ function LibraPlatesSettingsGetTieredSliderLabel(value, tiers)
     return '', { 0.92, 0.92, 0.90, 1.0 };
 end
 
-function LibraPlatesSettingsDrawTieredSliderTenths(label, value, minTenths, maxTenths, tiers, onChange, id)
+function LibraPlatesSettingsDrawTieredSliderTenths(label, value, minTenths, maxTenths, tiers, onChange, id, tooltip)
     local ref = { tonumber(value) or 0 };
     local sliderId = tostring(id or label):gsub('%s+', '_');
     local sliderWidth = 150;
@@ -2290,7 +2321,7 @@ function LibraPlatesSettingsDrawTieredSliderTenths(label, value, minTenths, maxT
         imgui.GetWindowDrawList == nil or
         imgui.GetColorU32 == nil
     ) then
-        DrawSliderTenths(label, value, minTenths, maxTenths, onChange, id);
+        DrawSliderTenths(label, value, minTenths, maxTenths, onChange, id, nil, nil, tooltip);
         return;
     end
 
@@ -2337,14 +2368,23 @@ function LibraPlatesSettingsDrawTieredSliderTenths(label, value, minTenths, maxT
     end
 
     local tierLabel, tierColor = LibraPlatesSettingsGetTieredSliderLabel((tonumber(ref[1]) or 0) * 10, tiers);
+    local hasTierLabel = tierLabel ~= '';
+    local hasTooltip = tooltip ~= nil and tostring(tooltip) ~= '';
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##scaling_slider_' .. sliderId, 5, settingsTableFlagsNoBorders)) then
+        local columnCount = 4 + (hasTierLabel and 1 or 0) + (hasTooltip and 1 or 0);
+
+        if (imgui.BeginTable('##scaling_slider_' .. sliderId, columnCount, settingsTableFlagsNoBorders)) then
             imgui.TableSetupColumn('##label', 0, 132);
             imgui.TableSetupColumn('##minus', 0, 24);
             imgui.TableSetupColumn('##slider', 0, sliderWidth + 6);
             imgui.TableSetupColumn('##plus', 0, 24);
-            imgui.TableSetupColumn('##tier', 0, 82);
+            if (hasTierLabel == true) then
+                imgui.TableSetupColumn('##tier', 0, 82);
+            end
+            if (hasTooltip == true) then
+                imgui.TableSetupColumn('##info', 0, 34);
+            end
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, label);
@@ -2358,9 +2398,13 @@ function LibraPlatesSettingsDrawTieredSliderTenths(label, value, minTenths, maxT
             if (imgui.Button('+##' .. sliderId .. '_plus')) then
                 ApplyValue((tonumber(value) or 0) + 1.0);
             end
-            imgui.TableNextColumn();
-            if (tierLabel ~= '') then
+            if (hasTierLabel == true) then
+                imgui.TableNextColumn();
                 imgui.TextColored(tierColor, tierLabel);
+            end
+            if (hasTooltip == true) then
+                imgui.TableNextColumn();
+                uiTooltip.Info(tostring(tooltip), false);
             end
             imgui.EndTable();
         end
@@ -2375,6 +2419,9 @@ function LibraPlatesSettingsDrawTieredSliderTenths(label, value, minTenths, maxT
         if (tierLabel ~= '') then
             imgui.SameLine();
             imgui.TextColored(tierColor, tierLabel);
+        end
+        if (hasTooltip == true) then
+            uiTooltip.Info(tostring(tooltip), true);
         end
     end
 end
@@ -2758,6 +2805,16 @@ function ClickText(label, color)
     return imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true;
 end
 
+function LibraPlatesSettingsOpenUrl(url)
+    os.execute('start "" "' .. tostring(url or '') .. '"');
+end
+
+function LibraPlatesHelpLink(label, url)
+    if (ClickText(label, { 0.65, 0.90, 1.0, 1.0 }) == true) then
+        LibraPlatesSettingsOpenUrl(url);
+    end
+end
+
 function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
     local changed = false;
@@ -2835,6 +2892,13 @@ function DrawPlacementNumber(label, value, minValue, maxValue, step, id)
     local minimum = tonumber(minValue) or -1000;
     local maximum = tonumber(maxValue) or 1000;
     local amount = tonumber(step) or 1;
+    local precision = 0;
+    local scaledStep = amount;
+
+    while (amount < 1 and precision < 3 and math.abs(scaledStep - math.floor(scaledStep + 0.5)) > 0.0001) do
+        precision = precision + 1;
+        scaledStep = scaledStep * 10;
+    end
 
     current = math.max(minimum, math.min(maximum, current));
 
@@ -2854,7 +2918,7 @@ function DrawPlacementNumber(label, value, minValue, maxValue, step, id)
     if (amount < 1 and imgui.SliderFloat ~= nil) then
         local ref = { current };
         if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(90); end
-        if (imgui.SliderFloat('##' .. itemId, ref, minimum, maximum) == true) then
+        if (imgui.SliderFloat('##' .. itemId, ref, minimum, maximum, '%.' .. tostring(precision) .. 'f') == true) then
             current = tonumber(ref[1]) or current;
         end
         if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
@@ -2878,8 +2942,60 @@ function DrawPlacementNumber(label, value, minValue, maxValue, step, id)
     end
 
     current = math.max(minimum, math.min(maximum, current));
+    if (amount > 0) then
+        current = math.floor((current / amount) + 0.5) * amount;
+        if (precision > 0) then
+            current = math.floor((current * (10 ^ precision)) + 0.5) / (10 ^ precision);
+        end
+    end
 
     return current, current ~= original;
+end
+
+function GetSettingsUiIconTextureId(fileName)
+    fileName = tostring(fileName or '');
+
+    if (fileName == '') then
+        return nil;
+    end
+
+    if (LibraPlatesSettingsUiIconCache[fileName] ~= nil) then
+        return LibraPlatesSettingsUiIconCache[fileName];
+    end
+
+    LibraPlatesSettingsUiIconCache[fileName] = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\ui-icons\\' .. fileName));
+    return LibraPlatesSettingsUiIconCache[fileName];
+end
+
+function DrawSettingsIconButton(id, fileName, tooltip)
+    local size = 18;
+
+    if (imgui.GetWindowDrawList == nil or imgui.SetCursorScreenPos == nil or imgui.InvisibleButton == nil) then
+        if (imgui.Button ~= nil) then
+            return imgui.Button(tostring(tooltip or id) .. '##' .. tostring(id)) == true;
+        end
+
+        return false;
+    end
+
+    local textureId = GetSettingsUiIconTextureId(fileName);
+    local drawList = imgui.GetWindowDrawList();
+    local x, y = GetCursorScreenPos();
+
+    if (textureId ~= nil and drawList ~= nil and drawList.AddImage ~= nil) then
+        drawList:AddImage(textureId, { x, y }, { x + size, y + size }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+    elseif (drawList ~= nil and drawList.AddRectFilled ~= nil) then
+        drawList:AddRectFilled({ x, y }, { x + size, y + size }, 0xAA2F7478);
+    end
+
+    imgui.SetCursorScreenPos({ x, y });
+    local clicked = imgui.InvisibleButton('##' .. tostring(id), { size, size }) == true;
+
+    if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and tooltip ~= nil and imgui.SetTooltip ~= nil) then
+        imgui.SetTooltip(tostring(tooltip));
+    end
+
+    return clicked;
 end
 
 DrawPlacementControl = function(value, minValue, maxValue, step, id, sliderWidth)
@@ -2889,6 +3005,13 @@ DrawPlacementControl = function(value, minValue, maxValue, step, id, sliderWidth
     local maximum = tonumber(maxValue) or 1000;
     local amount = tonumber(step) or 1;
     local itemId = tostring(id or 'placement');
+    local precision = 0;
+    local scaledStep = amount;
+
+    while (amount < 1 and precision < 3 and math.abs(scaledStep - math.floor(scaledStep + 0.5)) > 0.0001) do
+        precision = precision + 1;
+        scaledStep = scaledStep * 10;
+    end
 
     current = math.max(minimum, math.min(maximum, current));
 
@@ -2901,7 +3024,7 @@ DrawPlacementControl = function(value, minValue, maxValue, step, id, sliderWidth
     imgui.SameLine();
 
     if (imgui.InputText ~= nil) then
-        local ref = { amount < 1 and tostring(current) or tostring(math.floor(current + 0.5)) };
+        local ref = { amount < 1 and string.format('%.' .. tostring(precision) .. 'f', current) or tostring(math.floor(current + 0.5)) };
         if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(tonumber(sliderWidth) or 70); end
         if (imgui.InputText('##' .. itemId, ref, 16) == true) then
             current = tonumber(ref[1]) or current;
@@ -2934,6 +3057,12 @@ DrawPlacementControl = function(value, minValue, maxValue, step, id, sliderWidth
     end
 
     current = math.max(minimum, math.min(maximum, current));
+    if (amount > 0) then
+        current = math.floor((current / amount) + 0.5) * amount;
+        if (precision > 0) then
+            current = math.floor((current * (10 ^ precision)) + 0.5) / (10 ^ precision);
+        end
+    end
 
     return current, current ~= original;
 end
@@ -6275,6 +6404,7 @@ function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
     if (settings.resting.countdownTextOffsetX == nil) then settings.resting.countdownTextOffsetX = 0; end
     if (settings.resting.countdownTextOffsetY == nil) then settings.resting.countdownTextOffsetY = 0; end
     if (settings.resting.enableLogoutCountdown == nil) then settings.resting.enableLogoutCountdown = true; end
+    if (settings.resting.logoutSoundEnabled == nil) then settings.resting.logoutSoundEnabled = true; end
     if (settings.resting.color == nil) then settings.resting.color = { 0.55, 0.95, 0.35, 1.0 }; end
     if (settings.resting.backgroundColor == nil) then settings.resting.backgroundColor = { 0.10, 0.10, 0.10, 1.0 }; end
     if (settings.resting.borderColor == nil) then settings.resting.borderColor = { 1.0, 1.0, 1.0, 1.0 }; end
@@ -6425,6 +6555,11 @@ function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
         end);
 
         if (settings.resting.enableLogoutCountdown ~= false) then
+            DrawCheckbox('Play sound', settings.resting.logoutSoundEnabled ~= false, function(value)
+                settings.resting.logoutSoundEnabled = value == true;
+                state.Save();
+            end);
+
             local countdownFontSize, countdownFontSizeChanged, countdownTextColor, countdownTextColorChanged = DrawRestingPlacementAndColorRow(
                 'Size',
                 settings.resting.countdownFontSize,
@@ -6493,6 +6628,7 @@ function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
         settings.resting.ringSize = globalDefaults.resting.ringSize;
         settings.resting.ringThickness = globalDefaults.resting.ringThickness;
         settings.resting.enableLogoutCountdown = globalDefaults.resting.enableLogoutCountdown;
+        settings.resting.logoutSoundEnabled = globalDefaults.resting.logoutSoundEnabled;
         settings.resting.hideAtFullHp = globalDefaults.resting.hideAtFullHp;
         settings.resting.hideAtFullMp = globalDefaults.resting.hideAtFullMp;
         settings.resting.color = {
@@ -7504,34 +7640,59 @@ local function DrawGeneralFontSection(global)
         LibraPlatesSettingsDrawBoxedPanel('Theme', function()
             imgui.TextWrapped('LibraPlates includes its default fonts, but they still need to be installed in Windows before they can be used. If a selected font is missing, a warning will appear below.');
             imgui.Spacing();
-            imgui.TextWrapped('Large text is used for names. Small text is used by widgets with Use small font enabled. After installing new fonts, reload LibraPlates before checking status.');
+            imgui.TextWrapped('Large text is used for names. Small text is used by widgets with Use small font enabled. After installing new fonts, restart the game before checking status.');
             imgui.Spacing();
             imgui.Spacing();
             DrawFontFolderLink(
                 'Click here to open the LibraPlates font folder.',
-                'Double-click a font file to open it, then click Install. Additional fonts can be added to this folder and installed the same way.'
+                'Double-click a font file to open it, then click Install. Additional fonts can be added to this folder and installed the same way. Restart the game after installing new fonts.'
             );
         end, true);
 
         if (global.font.largeFamily == nil) then
             global.font.largeFamily = global.font.family or 'Default';
         end
+        if (type(global.font.largeFamily) ~= 'string' or global.font.largeFamily == '') then
+            global.font.largeFamily = 'Default';
+        end
 
         if (global.font.smallFamily == nil) then
             global.font.smallFamily = global.font.family or 'Default';
         end
+        if (type(global.font.smallFamily) ~= 'string' or global.font.smallFamily == '') then
+            global.font.smallFamily = 'Default';
+        end
+
+        local largeFontChoices = fonts.GetChoices('large');
+        local smallFontChoices = fonts.GetChoices('small');
+
+        if (ListContains(largeFontChoices, global.font.largeFamily) ~= true) then
+            global.font.largeFamily = 'Default';
+            canvasTexture.Invalidate();
+            state.Save();
+        end
+
+        if (ListContains(smallFontChoices, global.font.smallFamily) ~= true) then
+            global.font.smallFamily = 'Default';
+            canvasTexture.Invalidate();
+            state.Save();
+        end
 
         LibraPlatesSettingsDrawBoxedPanel('Large text font', function()
-            DrawInlineCombo('', fonts.GetChoices('large'), global.font.largeFamily, function(fontFamily)
+            DrawInlineCombo('##LargeTextFontCombo', largeFontChoices, global.font.largeFamily, function(fontFamily)
                 global.font.largeFamily = fontFamily;
+                canvasTexture.Invalidate();
+                state.Save();
             end);
             DrawFontStatus('Large font', global.font.largeFamily);
             DrawFontFolderButton('Open large font folder', 'large');
         end);
 
         LibraPlatesSettingsDrawBoxedPanel('Small text font', function()
-            DrawInlineCombo('', fonts.GetChoices('small'), global.font.smallFamily, function(fontFamily)
+            DrawInlineCombo('##SmallTextFontCombo', smallFontChoices, global.font.smallFamily, function(fontFamily)
                 global.font.smallFamily = fontFamily;
+                canvasTexture.Invalidate();
+                state.Save();
             end);
             DrawFontStatus('Small font', global.font.smallFamily);
             DrawFontFolderButton('Open small font folder', 'small');
@@ -8264,45 +8425,108 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
     local blacklistAddNameBuffer = _G.LibraPlatesBlacklistAddNameBuffer;
     local blacklistAddReasonBuffer = _G.LibraPlatesBlacklistAddReasonBuffer;
     local blacklistSettings = playerBlacklist.GetModelReplaceSettings();
+    local function GetBlacklistTableWidths()
+        local availableWidth = 640;
+
+        if (GetContentRegionAvail ~= nil) then
+            local contentWidth = select(1, GetContentRegionAvail());
+            availableWidth = math.max(260, tonumber(contentWidth) or availableWidth);
+        end
+
+        local buttonWidth = 72;
+        local gapWidth = 18;
+        local nameWidth = math.max(96, math.min(150, math.floor(availableWidth * 0.28)));
+        local reasonWidth = math.max(110, availableWidth - nameWidth - buttonWidth - gapWidth);
+
+        return nameWidth, reasonWidth, buttonWidth;
+    end
 
     LibraPlatesSettingsDrawBoxedBreadcrumb(T{ 'Settings', 'Blacklist' });
 
     LibraPlatesSettingsDrawBoxedPage('BlacklistPageContent', function()
         LibraPlatesSettingsDrawBoxedPanel('Visual blacklist', function()
-            DrawCheckbox('Change blacklisted player names', blacklistSettings.modelReplaceEnabled == true, function(value)
-                blacklistSettings.modelReplaceEnabled = value == true;
+            DrawCheckbox('Show name as Blacklisted', blacklistSettings.displayNameReplaceEnabled ~= false, function(value)
+                blacklistSettings.displayNameReplaceEnabled = value == true;
                 state.Save();
             end);
-            uiTooltip.Info('Safe mode: changes the displayed LibraPlates name only. Body model replacement is disabled until a safe costume id is found.', true);
+            uiTooltip.Info('Off keeps the player name on LibraPlates while still treating the player as blacklisted.', true);
+
+            DrawCheckbox('Use Fomor appearance', blacklistSettings.modelReplaceUseFomor ~= false, function(value)
+                blacklistSettings.modelReplaceUseFomor = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('Controls the blacklist Fomor packet replacement. Turning it off does not remove blacklist entries.', true);
+
+            imgui.TextColored(settingsLabelColor, 'Name color');
+            imgui.SameLine();
+            local color, colorChanged = DrawInlineColorControl(blacklistSettings.displayNameColor, 'BlacklistDisplayNameColor');
+            if (colorChanged == true) then
+                blacklistSettings.displayNameColor = color;
+                state.SaveThrottled(0.25);
+            end
         end, true);
 
         LibraPlatesSettingsDrawBoxedPanel('Manual add', function()
-            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(150); end
-            if (imgui.InputText ~= nil) then
-                imgui.InputText('Name##BlacklistAddName', blacklistAddNameBuffer, 32);
-            end
-            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+            local nameWidth, reasonWidth, buttonWidth = GetBlacklistTableWidths();
 
-            imgui.SameLine();
-            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(260); end
-            if (imgui.InputText ~= nil) then
-                imgui.InputText('Reason##BlacklistAddReason', blacklistAddReasonBuffer, 128);
-            end
-            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                if (imgui.BeginTable('##visual_blacklist_manual_add', 3, settingsTableFlags)) then
+                    imgui.TableSetupColumn('Name', 0, nameWidth);
+                    imgui.TableSetupColumn('Reason', 0, reasonWidth);
+                    imgui.TableSetupColumn('', 0, buttonWidth);
+                    if (imgui.TableHeadersRow ~= nil) then imgui.TableHeadersRow(); end
 
-            imgui.SameLine();
-            if (imgui.Button ~= nil and imgui.Button('Add##BlacklistManualAdd') == true) then
-                local name = tostring(blacklistAddNameBuffer[1] or ''):gsub('^%s+', ''):gsub('%s+$', '');
-                local reason = tostring(blacklistAddReasonBuffer[1] or '');
-                local ok, err = playerBlacklist.AddName(name, reason, 'settings');
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(-1); end
+                    if (imgui.InputText ~= nil) then
+                        imgui.InputText('##BlacklistAddName', blacklistAddNameBuffer, 32);
+                    end
+                    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
 
-                if (ok == true) then
-                    LibraPlatesSettingsQueueNativeBlacklistCommand('add', name);
-                    blacklistAddNameBuffer[1] = '';
-                    blacklistAddReasonBuffer[1] = '';
-                    log.Info('Added ' .. name .. ' to LibraPlates blacklist.');
-                else
-                    log.Warn(tostring(err or 'Blacklist add failed.'));
+                    imgui.TableNextColumn();
+                    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(-1); end
+                    if (imgui.InputText ~= nil) then
+                        imgui.InputText('##BlacklistAddReason', blacklistAddReasonBuffer, 128);
+                    end
+                    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+                    imgui.TableNextColumn();
+                    if (imgui.Button ~= nil and imgui.Button('Add##BlacklistManualAdd') == true) then
+                        local name = tostring(blacklistAddNameBuffer[1] or ''):gsub('^%s+', ''):gsub('%s+$', '');
+                        local reason = tostring(blacklistAddReasonBuffer[1] or '');
+                        local ok, err = playerBlacklist.AddName(name, reason, 'settings');
+
+                        if (ok == true) then
+                            LibraPlatesSettingsQueueNativeBlacklistCommand('add', name);
+                            blacklistAddNameBuffer[1] = '';
+                            blacklistAddReasonBuffer[1] = '';
+                            log.Info('Added ' .. name .. ' to LibraPlates blacklist.');
+                        else
+                            log.Warn(tostring(err or 'Blacklist add failed.'));
+                        end
+                    end
+
+                    imgui.EndTable();
+                end
+            else
+                if (imgui.InputText ~= nil) then
+                    imgui.InputText('Name##BlacklistAddName', blacklistAddNameBuffer, 32);
+                    imgui.InputText('Reason##BlacklistAddReason', blacklistAddReasonBuffer, 128);
+                end
+                if (imgui.Button ~= nil and imgui.Button('Add##BlacklistManualAdd') == true) then
+                    local name = tostring(blacklistAddNameBuffer[1] or ''):gsub('^%s+', ''):gsub('%s+$', '');
+                    local reason = tostring(blacklistAddReasonBuffer[1] or '');
+                    local ok, err = playerBlacklist.AddName(name, reason, 'settings');
+
+                    if (ok == true) then
+                        LibraPlatesSettingsQueueNativeBlacklistCommand('add', name);
+                        blacklistAddNameBuffer[1] = '';
+                        blacklistAddReasonBuffer[1] = '';
+                        log.Info('Added ' .. name .. ' to LibraPlates blacklist.');
+                    else
+                        log.Warn(tostring(err or 'Blacklist add failed.'));
+                    end
                 end
             end
 
@@ -8311,7 +8535,6 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
 
         LibraPlatesSettingsDrawBoxedPanel('Entries', function()
             local rows = playerBlacklist.List();
-            imgui.TextColored(settingsHeaderColor, 'Entries: ' .. tostring(#rows));
 
             if (#rows == 0) then
                 imgui.TextColored({ 0.72, 0.72, 0.70, 1.0 }, 'No LibraPlates blacklist entries yet.');
@@ -8319,15 +8542,12 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
             end
 
             if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                local nameWidth, reasonWidth, buttonWidth = GetBlacklistTableWidths();
                 local flags = settingsTableFlags + (_G.ImGuiTableFlags_RowBg or 0);
-                if (imgui.BeginTable('##visual_blacklist_entries', 7, flags)) then
-                    imgui.TableSetupColumn('Name', 0, 116);
-                    imgui.TableSetupColumn('ID', 0, 74);
-                    imgui.TableSetupColumn('Reason', 0, 250);
-                    imgui.TableSetupColumn('Added', 0, 118);
-                    imgui.TableSetupColumn('Seen', 0, 118);
-                    imgui.TableSetupColumn('Source', 0, 92);
-                    imgui.TableSetupColumn('', 0, 72);
+                if (imgui.BeginTable('##visual_blacklist_entries', 3, flags)) then
+                    imgui.TableSetupColumn('Name', 0, nameWidth);
+                    imgui.TableSetupColumn('Reason', 0, reasonWidth);
+                    imgui.TableSetupColumn('', 0, buttonWidth);
                     if (imgui.TableHeadersRow ~= nil) then imgui.TableHeadersRow(); end
 
                     for index, row in ipairs(rows) do
@@ -8341,20 +8561,18 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
                         imgui.TableNextRow();
                         imgui.TableNextColumn();
                         imgui.TextColored(settingsLabelColor, tostring(row.name or ''));
-                        imgui.TableNextColumn();
-                        imgui.TextColored({ 0.72, 0.86, 1.0, 1.0 }, tostring(row.serverId or 'pending'));
-                        imgui.TableNextColumn();
-                        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(240); end
-                        if (imgui.InputText ~= nil and imgui.InputText('##BlacklistReason' .. rowId, reasonRef, 128) == true) then
-                            playerBlacklist.SetReason(row, reasonRef[1]);
+                        if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and imgui.SetTooltip ~= nil) then
+                            imgui.SetTooltip(
+                                'Added: ' .. LibraPlatesSettingsFormatBlacklistTime(row.addedAt) ..
+                                '\nSeen: ' .. LibraPlatesSettingsFormatBlacklistTime(row.lastSeenAt)
+                            );
                         end
+                    imgui.TableNextColumn();
+                    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(-1); end
+                    if (imgui.InputText ~= nil and imgui.InputText('##BlacklistReason' .. rowId, reasonRef, 128) == true) then
+                        playerBlacklist.SetReason(row, reasonRef[1]);
+                    end
                         if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
-                        imgui.TableNextColumn();
-                        imgui.TextColored({ 0.82, 0.82, 0.80, 1.0 }, LibraPlatesSettingsFormatBlacklistTime(row.addedAt));
-                        imgui.TableNextColumn();
-                        imgui.TextColored({ 0.82, 0.82, 0.80, 1.0 }, LibraPlatesSettingsFormatBlacklistTime(row.lastSeenAt));
-                        imgui.TableNextColumn();
-                        imgui.TextColored({ 0.82, 0.82, 0.80, 1.0 }, tostring(row.source or ''));
                         imgui.TableNextColumn();
                         if (imgui.Button ~= nil and imgui.Button('Remove##BlacklistRemove' .. rowId) == true) then
                             if (playerBlacklist.RemoveEntry(row) == true) then
@@ -8554,29 +8772,29 @@ local function DrawGeneralVisibilitySection(settings)
         end, "Hides plates for pets that do not belong to you, such as avatars, wyverns, and jug pets. Your own pet plate stays visible.", 'HideOtherPlayerPetPlates');
     end, true);
 
+    local stackTypeLabels = {
+        pc = 'PC',
+        enemy = 'Enemy',
+        trust = 'Trust',
+        pet = 'Pet',
+        npc = 'NPC',
+        object = 'Object',
+    };
+    local stackTypeOrder = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
+
+    if (type(settings.plateStackingTypes) ~= 'table') then
+        settings.plateStackingTypes = {};
+    end
+    if (type(settings.plateStackingPriority) ~= 'table') then
+        settings.plateStackingPriority = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
+    end
+
     DrawVisibilityPanel('Plate stacking', function()
         DrawVisibilityCheckbox('Stack overlapping plates', settings.plateStackingEnabled ~= false, function(value)
             settings.plateStackingEnabled = value == true;
         end, 'Moves lower-priority world plates upward when they overlap another plate.', 'PlateStackingEnabled');
 
         if (settings.plateStackingEnabled ~= false) then
-            local stackTypeLabels = {
-                pc = 'PC',
-                enemy = 'Enemy',
-                trust = 'Trust',
-                pet = 'Pet',
-                npc = 'NPC',
-                object = 'Object',
-            };
-            local stackTypeOrder = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
-
-            if (type(settings.plateStackingTypes) ~= 'table') then
-                settings.plateStackingTypes = {};
-            end
-            if (type(settings.plateStackingPriority) ~= 'table') then
-                settings.plateStackingPriority = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' };
-            end
-
             if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
                 if (imgui.BeginTable('##PlateStackTypesGrid', 3, settingsTableFlags)) then
                     imgui.TableSetupColumn('##stack_col_1', 0, 170);
@@ -8615,7 +8833,11 @@ local function DrawGeneralVisibilitySection(settings)
                 settings.plateStackKeepTacticalFixed = value == true;
             end, 'Keeps Self, Target, Subtarget, and tactical marker plates anchored while other stackable plates move around them.', 'PlateStackKeepTacticalFixed');
 
-            DrawYellowHeader('Priority order');
+        end
+    end);
+
+    if (settings.plateStackingEnabled ~= false) then
+        DrawVisibilityPanel('Stacking Priority', function()
             if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
                 if (imgui.BeginTable('##PlateStackPriorityGrid', 3, settingsTableFlagsNoBorders)) then
                     imgui.TableSetupColumn('##priority_label', 0, 160);
@@ -8658,7 +8880,9 @@ local function DrawGeneralVisibilitySection(settings)
                 end
             end
             uiTooltip.Info('Controls which stackable plate types stay anchored first. Self, Target, Subtarget, and tactical marker plates are handled separately by Keep target fixed.');
+        end);
 
+        DrawVisibilityPanel('Stacking Spacing', function()
             local stackGap, stackGapChanged = DrawVisibilityNumber('Stack spacing', settings.plateStackGap or 4, 'PlateStackGap', 0, 160, 1, 'Pixel space kept between stacked plates. 20 means about 20 px between plates.');
             if (stackGapChanged == true) then
                 settings.plateStackGap = math.max(0, math.min(160, math.floor((tonumber(stackGap) or 4) + 0.5)));
@@ -8693,8 +8917,8 @@ local function DrawGeneralVisibilitySection(settings)
             if (blockerChanged == true) then
                 settings.plateStackFixedBlockerWidthPct = math.max(25, math.min(100, math.floor((tonumber(blockerWidth) or 72) + 0.5)));
             end
-        end
-    end);
+        end);
+    end
 
     DrawVisibilityPanel('Tactical screen limits', function()
         DrawVisibilityCheckbox('Keep tactical plates on screen', settings.tacticalScreenClampEnabled == true, function(value)
@@ -8900,7 +9124,8 @@ local function DrawGeneralProfilesSection()
 
         imgui.SameLine();
         if (imgui.Button('Delete##ProfileDelete')) then
-            profilePendingDelete = activeName;
+            profilePendingDelete = state.GetActiveProfileName();
+            profilePopupStatusMessage = '';
             profilePopupToOpen = 'Delete profile##libraplates_profile_delete';
         end
 
@@ -8928,6 +9153,66 @@ local function DrawGeneralProfilesSection()
     DrawProfileNamePopup('Rename profile##libraplates_profile_rename', 'New Name:', 'Rename', profileRenameNameBuffer, function(name)
         return state.RenameProfile(activeName, name);
     end);
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ 390, 145 }, _G.ImGuiCond_Appearing or 8);
+    end
+
+    if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal('Delete profile##libraplates_profile_delete')) then
+        imgui.Text('Delete profile "' .. tostring(profilePendingDelete or activeName or '') .. '"?');
+        imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, 'A backup will be created first.');
+
+        if (profilePopupStatusMessage ~= nil and profilePopupStatusMessage ~= '') then
+            imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, profilePopupStatusMessage);
+        end
+
+        if (imgui.Button('Cancel##ProfileDeleteCancel')) then
+            profilePendingDelete = nil;
+            profilePopupStatusMessage = '';
+            imgui.CloseCurrentPopup();
+        end
+
+        imgui.SameLine();
+
+        if (imgui.Button('Delete##ProfileDeleteConfirm')) then
+            local ok, message = state.DeleteProfile(profilePendingDelete);
+            if (ok == true) then _G.LibraPlatesSettingsProfileChoicesCache.names = nil; _G.LibraPlatesSettingsProfileChoicesCache.clock = 0; end
+            profileStatusMessage = ok == true and '' or tostring(message or 'Profile delete failed.');
+            profilePopupStatusMessage = ok == true and '' or profileStatusMessage;
+            if (ok == true) then
+                profilePendingDelete = nil;
+                imgui.CloseCurrentPopup();
+            end
+        end
+
+        imgui.EndPopup();
+    end
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ 390, 145 }, _G.ImGuiCond_Appearing or 8);
+    end
+
+    if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal('Reset profile##libraplates_profile_reset')) then
+        imgui.Text('Reset profile "' .. tostring(profilePendingReset or activeName or '') .. '" to defaults?');
+        imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, 'A backup will be created first.');
+
+        if (imgui.Button('Cancel##ProfileResetCancel')) then
+            profilePendingReset = nil;
+            imgui.CloseCurrentPopup();
+        end
+
+        imgui.SameLine();
+
+        if (imgui.Button('Reset##ProfileResetConfirm')) then
+            local ok, message = state.ResetProfile(profilePendingReset);
+            if (ok == true) then _G.LibraPlatesSettingsProfileChoicesCache.names = nil; _G.LibraPlatesSettingsProfileChoicesCache.clock = 0; end
+            profileStatusMessage = ok == true and '' or tostring(message or 'Profile reset failed.');
+            profilePendingReset = nil;
+            if (ok == true) then imgui.CloseCurrentPopup(); end
+        end
+
+        imgui.EndPopup();
+    end
 
     local assignment = state.GetProfileAssignment(activeName);
 
@@ -8970,58 +9255,6 @@ local function DrawGeneralProfilesSection()
 
     if (pushedPageBg > 0 and imgui.PopStyleColor ~= nil) then
         imgui.PopStyleColor(pushedPageBg);
-    end
-
-    if (imgui.SetNextWindowSize ~= nil) then
-        imgui.SetNextWindowSize({ 390, 145 }, _G.ImGuiCond_Appearing or 8);
-    end
-
-    if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal('Delete profile##libraplates_profile_delete')) then
-        imgui.Text('Delete profile "' .. tostring(profilePendingDelete or activeName or '') .. '"?');
-        imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, 'A backup will be created first.');
-
-        if (imgui.Button('Cancel##ProfileDeleteCancel')) then
-            profilePendingDelete = nil;
-            imgui.CloseCurrentPopup();
-        end
-
-        imgui.SameLine();
-
-        if (imgui.Button('Delete##ProfileDeleteConfirm')) then
-            local ok, message = state.DeleteProfile(profilePendingDelete);
-            if (ok == true) then _G.LibraPlatesSettingsProfileChoicesCache.names = nil; _G.LibraPlatesSettingsProfileChoicesCache.clock = 0; end
-            profileStatusMessage = ok == true and '' or tostring(message or 'Profile delete failed.');
-            profilePendingDelete = nil;
-            if (ok == true) then imgui.CloseCurrentPopup(); end
-        end
-
-        imgui.EndPopup();
-    end
-
-    if (imgui.SetNextWindowSize ~= nil) then
-        imgui.SetNextWindowSize({ 390, 145 }, _G.ImGuiCond_Appearing or 8);
-    end
-
-    if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal('Reset profile##libraplates_profile_reset')) then
-        imgui.Text('Reset profile "' .. tostring(profilePendingReset or activeName or '') .. '" to defaults?');
-        imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, 'A backup will be created first.');
-
-        if (imgui.Button('Cancel##ProfileResetCancel')) then
-            profilePendingReset = nil;
-            imgui.CloseCurrentPopup();
-        end
-
-        imgui.SameLine();
-
-        if (imgui.Button('Reset##ProfileResetConfirm')) then
-            local ok, message = state.ResetProfile(profilePendingReset);
-            if (ok == true) then _G.LibraPlatesSettingsProfileChoicesCache.names = nil; _G.LibraPlatesSettingsProfileChoicesCache.clock = 0; end
-            profileStatusMessage = ok == true and '' or tostring(message or 'Profile reset failed.');
-            profilePendingReset = nil;
-            if (ok == true) then imgui.CloseCurrentPopup(); end
-        end
-
-        imgui.EndPopup();
     end
 end
 
@@ -9270,29 +9503,14 @@ local function DrawGeneralScalingSection(settings)
         settings.pcRacePlateAdjustments.baselineVersion = 3;
     end
 
-    local function DrawPcRacePlateAdjustmentRow(label, key)
+    local function DrawPcRacePlateAdjustmentControl(key)
         EnsurePcRacePlateAdjustments();
 
         local bucket = settings.pcRacePlateAdjustments.buckets[key];
         local yValue = bucket.y;
         local yChanged = false;
 
-        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-            if (imgui.BeginTable('##pc_race_plate_adjust_' .. tostring(key), 2, settingsTableFlagsNoBorders)) then
-                imgui.TableSetupColumn('##race', 0, 138);
-                imgui.TableSetupColumn('##y', 0, 190);
-                imgui.TableNextRow();
-                imgui.TableNextColumn();
-                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(label or ''));
-                imgui.TableNextColumn();
-                yValue, yChanged = DrawScalingPlacementSlider('', yValue, 'PcRacePlateY' .. tostring(key), 24, 150, 92);
-                imgui.EndTable();
-            end
-        else
-            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(label or ''));
-            imgui.SameLine();
-            yValue, yChanged = DrawScalingPlacementSlider('', yValue, 'PcRacePlateY' .. tostring(key), 24, 150, 92);
-        end
+        yValue, yChanged = DrawScalingPlacementSlider('', yValue, 'PcRacePlateY' .. tostring(key), 24, 150, 92);
 
         if (yChanged == true) then
             bucket.y = math.max(-100, math.min(100, math.floor((tonumber(yValue) or 0) + 0.5)));
@@ -9302,12 +9520,75 @@ local function DrawGeneralScalingSection(settings)
         end
     end
 
-    local function DrawPcHeightBucketGroup(title, rows)
-        imgui.Spacing();
-        imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, tostring(title or ''));
+    local function DrawPcHeightIconHeader(race, fileName, offsetX)
+        local textureId = GetSettingsUiIconTextureId(fileName);
+        local indent = tonumber(offsetX) or 0;
+
+        if (indent > 0 and imgui.Indent ~= nil) then
+            imgui.Indent(indent);
+        end
+
+        imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, tostring(race or ''));
+        imgui.SameLine();
+
+        if (textureId ~= nil and imgui.GetWindowDrawList ~= nil and imgui.SetCursorScreenPos ~= nil and imgui.Dummy ~= nil) then
+            local drawList = imgui.GetWindowDrawList();
+            local iconX, iconY = GetCursorScreenPos();
+            drawList:AddImage(textureId, { iconX, iconY + 1 }, { iconX + 18, iconY + 19 }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+            imgui.Dummy({ 20, 20 });
+        else
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(fileName or ''):sub(1, 1));
+        end
+
+        if (indent > 0 and imgui.Unindent ~= nil) then
+            imgui.Unindent(indent);
+        end
+    end
+
+    local function DrawPcHeightRaceGrid(race, rows)
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            if (imgui.BeginTable('##PcRaceHeightGrid' .. tostring(race), 3, settingsTableFlagsNoBorders)) then
+                imgui.TableSetupColumn('##size', 0, 92);
+                imgui.TableSetupColumn('##male', 0, 230);
+                imgui.TableSetupColumn('##female', 0, 230);
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+                imgui.TableNextColumn();
+                DrawPcHeightIconHeader(race, 'M.png', 58);
+                imgui.TableNextColumn();
+                DrawPcHeightIconHeader(race, 'F.png', 58);
+
+                for _, row in ipairs(rows or {}) do
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(row.label or ''));
+                    imgui.TableNextColumn();
+                    if (row.male ~= nil) then
+                        DrawPcRacePlateAdjustmentControl(row.male);
+                    else
+                        imgui.TextColored({ 0.42, 0.42, 0.42, 1.0 }, '-');
+                    end
+                    imgui.TableNextColumn();
+                    if (row.female ~= nil) then
+                        DrawPcRacePlateAdjustmentControl(row.female);
+                    else
+                        imgui.TextColored({ 0.42, 0.42, 0.42, 1.0 }, '-');
+                    end
+                end
+
+                imgui.EndTable();
+            end
+            return;
+        end
 
         for _, row in ipairs(rows or {}) do
-            DrawPcRacePlateAdjustmentRow(row[1], row[2]);
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(row.label or ''));
+            imgui.SameLine();
+            if (row.male ~= nil) then DrawPcRacePlateAdjustmentControl(row.male); end
+            if (row.female ~= nil) then
+                imgui.SameLine();
+                DrawPcRacePlateAdjustmentControl(row.female);
+            end
         end
     end
 
@@ -9324,67 +9605,67 @@ local function DrawGeneralScalingSection(settings)
             return;
         end
 
-        DrawPcHeightBucketGroup('Tarutaru', {
-            { 'Male S', 'tarutaru_male_small' },
-            { 'Male M', 'tarutaru_male_medium' },
-            { 'Male L', 'tarutaru_male_large' },
-            { 'Female S', 'tarutaru_female_small' },
-            { 'Female M', 'tarutaru_female_medium' },
-            { 'Female L', 'tarutaru_female_large' },
-        });
-        DrawPcHeightBucketGroup('Hume', {
-            { 'Male S', 'hume_male_small' },
-            { 'Male M', 'hume_male_medium' },
-            { 'Male L', 'hume_male_large' },
-            { 'Female S', 'hume_female_small' },
-            { 'Female M', 'hume_female_medium' },
-            { 'Female L', 'hume_female_large' },
-        });
-        DrawPcHeightBucketGroup('Mithra', {
-            { 'Female S', 'mithra_female_small' },
-            { 'Female M', 'mithra_female_medium' },
-            { 'Female L', 'mithra_female_large' },
-        });
-        DrawPcHeightBucketGroup('Elvaan', {
-            { 'Male S', 'elvaan_male_small' },
-            { 'Male M', 'elvaan_male_medium' },
-            { 'Male L', 'elvaan_male_large' },
-            { 'Female S', 'elvaan_female_small' },
-            { 'Female M', 'elvaan_female_medium' },
-            { 'Female L', 'elvaan_female_large' },
-        });
-        DrawPcHeightBucketGroup('Galka', {
-            { 'Male S', 'galka_male_small' },
-            { 'Male M', 'galka_male_medium' },
-            { 'Male L', 'galka_male_large' },
-        });
+        local raceRows = {
+            Tarutaru = {
+                { label = 'Small', male = 'tarutaru_male_small', female = 'tarutaru_female_small' },
+                { label = 'Medium', male = 'tarutaru_male_medium', female = 'tarutaru_female_medium' },
+                { label = 'Large', male = 'tarutaru_male_large', female = 'tarutaru_female_large' },
+            },
+            Hume = {
+                { label = 'Small', male = 'hume_male_small', female = 'hume_female_small' },
+                { label = 'Medium', male = 'hume_male_medium', female = 'hume_female_medium' },
+                { label = 'Large', male = 'hume_male_large', female = 'hume_female_large' },
+            },
+            Mithra = {
+                { label = 'Small', female = 'mithra_female_small' },
+                { label = 'Medium', female = 'mithra_female_medium' },
+                { label = 'Large', female = 'mithra_female_large' },
+            },
+            Elvaan = {
+                { label = 'Small', male = 'elvaan_male_small', female = 'elvaan_female_small' },
+                { label = 'Medium', male = 'elvaan_male_medium', female = 'elvaan_female_medium' },
+                { label = 'Large', male = 'elvaan_male_large', female = 'elvaan_female_large' },
+            },
+            Galka = {
+                { label = 'Small', male = 'galka_male_small' },
+                { label = 'Medium', male = 'galka_male_medium' },
+                { label = 'Large', male = 'galka_male_large' },
+            },
+        };
+        local raceOptions = T{ 'Tarutaru', 'Hume', 'Mithra', 'Elvaan', 'Galka' };
+
+        if (raceRows[LibraPlatesSelectedPcHeightRace] == nil) then
+            LibraPlatesSelectedPcHeightRace = 'Tarutaru';
+        end
+
+        DrawInlineComboRow('Race', raceOptions, LibraPlatesSelectedPcHeightRace, function(value)
+            LibraPlatesSelectedPcHeightRace = tostring(value or 'Tarutaru');
+        end, 'PcHeightRace', nil, 94, settingsTableFlagsNoBorders, 180);
+        imgui.Spacing();
+        DrawPcHeightRaceGrid(LibraPlatesSelectedPcHeightRace, raceRows[LibraPlatesSelectedPcHeightRace]);
     end
 
     LibraPlatesSettingsDrawBoxedPage('ScalingPageContent', function()
         LibraPlatesSettingsDrawBoxedPanel('Global distance scaling', function()
             imgui.TextWrapped('Distance scaling makes far-away world plates easier to read by slowly making them bigger after a set distance.');
             imgui.Spacing();
-            imgui.TextWrapped('- Start distance: How far away a plate has to be before it starts getting bigger.');
-            imgui.TextWrapped('- Max distance: How far away a plate has to be before it reaches its biggest size.');
-            imgui.TextWrapped('- Max scale: Higher values draw larger plates.');
-            imgui.Spacing();
 
             DrawSliderTenths('Start distance', settings.pcDistanceScaleStart, 0, 200, function(value)
                 StageGlobalDistanceScale(value, settings.pcDistanceScaleEnd, settings.pcDistanceScaleMax, 'start');
-            end);
+            end, nil, nil, nil, 'Distance where plates begin growing larger.');
 
             DrawSliderTenths('Max distance', settings.pcDistanceScaleEnd, 10, 400, function(value)
                 StageGlobalDistanceScale(settings.pcDistanceScaleStart, value, settings.pcDistanceScaleMax, 'finish');
-            end);
+            end, nil, nil, nil, 'Distance where plates reach their largest size.');
 
             LibraPlatesSettingsDrawTieredSliderTenths('Max scale', settings.pcDistanceScaleMax, 10, 60, {
-                { min = 10, max = 25, label = 'Normal', color = { 0.25, 0.85, 0.35, 0.55 } },
-                { min = 25, max = 35, label = 'Readable', color = { 0.95, 0.84, 0.25, 0.55 } },
-                { min = 35, max = 45, label = 'Far', color = { 1.0, 0.55, 0.20, 0.55 } },
-                { min = 45, max = 60, label = 'Very Far', color = { 1.0, 0.42, 0.22, 0.55 } },
+                { min = 10, max = 25, label = '', color = { 0.25, 0.85, 0.35, 0.55 } },
+                { min = 25, max = 35, label = '', color = { 0.95, 0.84, 0.25, 0.55 } },
+                { min = 35, max = 45, label = '', color = { 1.0, 0.55, 0.20, 0.55 } },
+                { min = 45, max = 60, label = '', color = { 1.0, 0.42, 0.22, 0.55 } },
             }, function(value)
                 StageGlobalDistanceScale(settings.pcDistanceScaleStart, settings.pcDistanceScaleEnd, value, 'max');
-            end);
+            end, nil, 'Largest scale used for far-away plates.');
 
             DrawCheckbox('Custom entity distance scaling', settings.customEntityDistanceScaling == true, function(value)
                 settings.customEntityDistanceScaling = value == true;
@@ -9393,7 +9674,7 @@ local function DrawGeneralScalingSection(settings)
                 end
                 state.Save();
             end);
-            uiTooltip.Info('When enabled, each entity type can use its own distance scaling. Global changes can overwrite those custom values.');
+            uiTooltip.Info('Use separate distance scaling values for PC, Enemy, Trust, Pet, NPC, and Object plates.', true);
         end, true);
 
         LibraPlatesSettingsDrawBoxedPanel('Character height adjustments', function()
@@ -9507,28 +9788,46 @@ local function DrawGeneralScalingSection(settings)
                 settings.platePositionOffsets = {};
             end
 
-            local function DrawEntityOffset(label, key)
-                if (type(settings.platePositionOffsets[key]) ~= 'table') then
-                    settings.platePositionOffsets[key] = { x = 0, y = 0 };
-                end
+            local entityOptions = T{ 'Self', 'PC', 'Enemy', 'Trust', 'Pet', 'NPC', 'Object' };
+            local entityKeys = {
+                Self = 'self',
+                PC = 'pc',
+                Enemy = 'enemy',
+                Trust = 'trust',
+                Pet = 'pet',
+                NPC = 'npc',
+                Object = 'object',
+            };
 
-                local offsets = settings.platePositionOffsets[key];
-                local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawScalingEntityPlacementRow(label, offsets, key);
-                if (offsetXChanged == true) then
-                    offsets.x = math.max(-100, math.min(100, math.floor((tonumber(offsetX) or 0) + 0.5)));
-                end
-                if (offsetYChanged == true) then
-                    offsets.y = math.max(-100, math.min(100, math.floor((tonumber(offsetY) or 0) + 0.5)));
-                end
+            if (entityKeys[LibraPlatesSelectedPlatePositionEntity] == nil) then
+                LibraPlatesSelectedPlatePositionEntity = 'Self';
             end
 
-            DrawEntityOffset('Self', 'self');
-            DrawEntityOffset('PC', 'pc');
-            DrawEntityOffset('Enemy', 'enemy');
-            DrawEntityOffset('Trust', 'trust');
-            DrawEntityOffset('Pet', 'pet');
-            DrawEntityOffset('NPC', 'npc');
-            DrawEntityOffset('Object', 'object');
+            DrawInlineComboRow('Entity', entityOptions, LibraPlatesSelectedPlatePositionEntity, function(value)
+                LibraPlatesSelectedPlatePositionEntity = tostring(value or 'Self');
+            end, 'PlatePositionEntity', nil, 94, settingsTableFlagsNoBorders, 180);
+            imgui.Spacing();
+
+            local selectedKey = entityKeys[LibraPlatesSelectedPlatePositionEntity] or 'self';
+            if (type(settings.platePositionOffsets[selectedKey]) ~= 'table') then
+                settings.platePositionOffsets[selectedKey] = { x = 0, y = 0 };
+            end
+
+            local offsets = settings.platePositionOffsets[selectedKey];
+            local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawScalingPlacementPair(
+                'Plate X',
+                offsets.x,
+                'PlateOffset' .. selectedKey .. 'X',
+                'Plate Y',
+                offsets.y,
+                'PlateOffset' .. selectedKey .. 'Y'
+            );
+            if (offsetXChanged == true) then
+                offsets.x = math.max(-100, math.min(100, math.floor((tonumber(offsetX) or 0) + 0.5)));
+            end
+            if (offsetYChanged == true) then
+                offsets.y = math.max(-100, math.min(100, math.floor((tonumber(offsetY) or 0) + 0.5)));
+            end
         end);
     end);
 end
@@ -9573,6 +9872,8 @@ local function DrawSelectedEditorGeneral()
             DrawGeneralVisibilitySection(settings);
         elseif (selectedGeneralSection == 'Blacklist') then
             LibraPlatesSettingsDrawGeneralBlacklistSection();
+        elseif (selectedGeneralSection == 'Screen Alerts') then
+            LibraPlatesSettingsDrawEnemyAlertsSection(true);
         elseif (selectedGeneralSection == 'Scaling') then
             DrawGeneralScalingSection(settings);
         elseif (selectedGeneralSection == 'Performance') then
@@ -9669,6 +9970,7 @@ local helpGeneralEntries = {
     { kind = 'Settings', title = 'Native UI', path = 'Settings > Native UI', text = 'Native name/target UI replacement and hiding behavior.', tab = 'Settings', section = 'Native UI' },
     { kind = 'Settings', title = 'Mouse', path = 'Settings > Mouse', text = 'Mouse adornment, mouse movement, click blocking, targeting, and right-click behavior.', tab = 'Settings', section = 'Mouse' },
     { kind = 'Settings', title = 'Visibility', path = 'Settings > Visibility', text = 'World plate filters, hide other players pet plates, plate stacking, tactical screen limits.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Help', title = 'Custom Alerts', path = 'Help > Custom Alerts', text = 'How to use custom Screen Alert triggers, Contains matching, Lua patterns, wildcards, anchors, escaping, and examples.', tab = 'Help', section = 'Custom Alerts' },
     { kind = 'Settings', title = 'Scaling', path = 'Settings > Scaling', text = 'Global and per-entity distance scaling and plate position settings.', tab = 'Settings', section = 'Scaling' },
     { kind = 'Settings', title = 'Performance', path = 'Settings > Performance', text = 'Performance monitor, FPS mode, presets, world plate performance, texture cache, and safety settings.', tab = 'Settings', section = 'Performance' },
 };
@@ -9762,6 +10064,8 @@ local function ApplyPendingHelpNavigation()
         selectedModuleEntity = entry.entity or selectedModuleEntity;
         selectedModuleState = entry.state or selectedModuleState;
         selectedModuleWidget = entry.widget or selectedModuleWidget;
+    elseif (entry.tab == 'Help' and entry.section ~= nil) then
+        selectedHelpSection = entry.section;
     end
 end
 
@@ -9776,12 +10080,189 @@ local helpGuideSections = {
     {
         title = 'Core features',
         lines = {
-            '- Custom plate widgets: name, bars, castbar, buffs, debuffs, icons, distance, target arrows, subtarget arrows, and role-specific modules.',
-            '- AOE helper: shows offensive or defensive AOE name styles while a spell or ability is loaded on subtarget.',
-            '- Plate stacking: spreads crowded world plates in screen space with spacing, overlap, horizontal spread, and target priority controls.',
-            '- Castbar interrupt recovery: self castbars can stop early on interruption and show the remaining lockout with a separate interrupt bar style.',
-            '- Performance tools: monitor plate cost, export reports, hide distant world plates, and filter noisy plates like other players pets.',
-            '- Activity helpers: resting tick display plus fishing, crafting, gathering, quick menu, peer, and enmity modules.',
+            '- Custom nameplates for self, enemies, players, trusts, pets, luopans, NPCs, and objects.',
+            '- Quick menus for common player, party, trust, mount, blacklist, and job-change actions.',
+            '- NPC and object labels with quest, mission, service, event, and wiki quick links.',
+            '- Enemy mob info, cast alerts, AOE range highlights, claim colors, and enmity markers.',
+            '- Buffs and debuffs on players, trusts, enemies, pets, and luopans.',
+            '- Resting, fishing, gathering, crafting-result, mount, blacklist, and screen-alert tools.',
+            '- Highly customizable fonts, colors, textures, backgrounds, icons, animations, and sounds.',
+        },
+    },
+    {
+        title = 'Custom nameplates',
+        lines = {
+            '- Nameplates for self, players, enemies, trusts, pets, luopans, NPCs, and objects.',
+            '- Separate normal and tactical nameplate layouts.',
+            '- HP, MP, TP, cast bars, buffs, debuffs, job, level, distance, target markers, and status icons.',
+            '- Linkshell icons with the correct linkshell color.',
+            '- Low-resource bar warning animations.',
+            '- Plate stacking to reduce overlap.',
+            '- Distance scaling for nameplates.',
+            '- Native name and target UI replacement options.',
+            '- Custom mouse pointer overlay.',
+        },
+    },
+    {
+        title = 'Settings preview UI',
+        lines = {
+            '- Live nameplate preview inside the settings window.',
+            '- Click preview elements to jump directly to their settings.',
+            '- Drag preview elements to adjust placement.',
+            '- Zoom the preview in and out.',
+            '- Preview plates under different lighting conditions.',
+            '- Preview textures, backgrounds, icons, fonts, colors, and modules before using them in-game.',
+        },
+    },
+    {
+        title = 'Enemy plates and mob info',
+        lines = {
+            '- Enemy HP, level, job, distance, ID, buffs, debuffs, and cast bar.',
+            '- Enemy claim coloring for unclaimed, party claim, other claim, and call-for-help states.',
+            '- Enemy mob info icons for behavior, detection, links, and special traits.',
+            '- Enemy AOE range highlighting during supported AOE actions.',
+            '- Enemy cast alerts and readied ability alerts.',
+            '- Enmity markers for enemies targeting you.',
+            '- Peer Inspector can show enemy level, job, HP, distance, behavior, detection, links, weaknesses, resists, and immunities.',
+        },
+    },
+    {
+        title = 'NPC and object info',
+        lines = {
+            'LibraPlates gives NPCs and objects clear labels so players can see what they are at a glance. The quick menu shows details such as services, event text, quests, and missions. Quest and mission entries are clickable and open the related wiki page directly.',
+        },
+    },
+    {
+        title = 'Peer inspector',
+        lines = {
+            '- Modifier-hover inspector for self, player, and enemy plates.',
+            '- Self inspector shows job levels, HP/MP, Attack, Defense, base stats, stat modifiers, and elemental resists.',
+            '- Player inspector shows HP, target, distance, status, and game mode.',
+            '- Enemy inspector shows mob info, weaknesses, resists, and immunities.',
+        },
+    },
+    {
+        title = 'Quick menu',
+        lines = {
+            '- Right-click plate menu for supported plates.',
+            '- Player actions: examine, follow, invite to party, request party invite, invite party to alliance, pass party leader, pass alliance leader, open Catseye profile, add/remove blacklist.',
+            '- Self actions: accept invite, decline invite, leave party, leave alliance, cancel party request.',
+            '- Trust actions: dismiss one trust or dismiss all trusts.',
+            '- Trust visibility actions: ignore other trusts, hide other trusts, emote trust.',
+            '- Mount and dismount actions from the self quick menu.',
+            '- Job-change favorites from supported job-change flows.',
+        },
+    },
+    {
+        title = 'Job change',
+        lines = {
+            '- One-click job change favorites at Mog House Moogles and Nomad Moogles.',
+            '- ACE town job change from the self quick menu without targeting a Moogle.',
+            '- Presets can change main job, sub job, or both.',
+            '- Presets can apply a lockstyle set.',
+            '- Handles main/sub job swap conflicts with a temporary job step.',
+        },
+    },
+    {
+        title = 'Mounts',
+        lines = {
+            '- Mount from the quick menu.',
+            '- Dismount from the quick menu.',
+            '- Random mount option.',
+            '- Tracks owned/learned mounts from mount use and mount packets.',
+        },
+    },
+    {
+        title = 'Resting, fishing, gathering, and crafting',
+        lines = {
+            '- Resting tick bar or ring with tick text.',
+            '- Logout/shutdown countdown display while resting.',
+            '- Logout/shutdown countdown sound.',
+            '- Fishing result display from fishing messages.',
+            '- Right-click fishing when a rod is equipped.',
+            '- One-click gathering on mining, excavation, logging, and harvesting points.',
+            '- Gathering uses the matching tool: Pickaxe, Hatchet, or Sickle.',
+            '- Gathering tool icon and remaining tool count.',
+            '- Crafting result display for Normal Quality, High-Quality, or Break.',
+        },
+    },
+    {
+        title = 'Buffs, debuffs, pets, and luopans',
+        lines = {
+            '- Self buffs and debuffs.',
+            '- Party/player buffs and debuffs.',
+            '- Trust buffs and debuffs with tracked timers.',
+            '- Enemy buffs and debuffs.',
+            '- Luopan statuses.',
+            '- PUP maneuver icons and timers.',
+            '- BST charmed pet timer, pet state display, Sic/Ready bars, and Reward bar.',
+            '- SMN Ward and Rage bars.',
+            '- Spirit cast bar.',
+            '- Wyvern plate support.',
+            '- Automaton HP/MP/TP and maneuvers.',
+            '- Pet action alerts.',
+        },
+    },
+    {
+        title = 'Screen alerts',
+        lines = {
+            '- On-screen alert messages with optional sounds.',
+            '- Enemy offensive magic alerts.',
+            '- Enemy defensive magic alerts.',
+            '- Enemy job ability/readied action alerts.',
+            '- Pet action alerts.',
+            '- Custom text alerts.',
+            '- Built-in alerts for Campaign, Wildkeeper Reive, Ventures/VNM, Voidwatch, learned Blue Magic, Dynamis, and Incursion.',
+        },
+    },
+    {
+        title = 'Blacklist',
+        lines = {
+            '- Add/remove players from LibraPlates blacklist.',
+            '- Mirrors native blacklist add/remove commands.',
+            '- Quick-menu blacklist actions.',
+            '- Blacklisted player name replacement/coloring.',
+            '- Blacklisted player Fomor model replacement.',
+            '- Blacklist reasons.',
+        },
+    },
+    {
+        title = 'No-go zones',
+        lines = {
+            'Define draggable and resizable screen areas where nameplate clicks are ignored, with an option to hide plates inside those zones.',
+        },
+    },
+    {
+        title = 'Under the hood',
+        lines = {
+            'FFXI is an older game, and LibraPlates runs as an addon rather than part of the game engine. A lot of work goes into keeping LP smooth, but crowded areas, heavy combat, or turning on every visual feature can still affect performance.',
+            'That is why most plate features have a Load option, so you can choose whether they appear always, only in combat, only while targeted, or only when they matter for how you play.',
+            '- Adaptive performance mode adjusts background work based on current FPS.',
+            '- Hardware limits still matter: CPU speed, GPU load, resolution, and crowded scenes can change how much LP can draw smoothly.',
+            '- Nameplate refresh work is split into critical, medium, and static updates.',
+            '- Important plates stay smoother: self, target, subtarget, tactical, engaged, casting, hovered, and important enemies.',
+            '- NPC and object info is pre-loaded when entering a zone to increase performance.',
+            '- Texture caching reuses generated plate and icon textures.',
+            '- Old cached textures are evicted when the cache limit is reached.',
+            '- Distant nameplates can be skipped while keeping target/subtarget/tactical plates active.',
+            '- Expensive nameplate widgets can be reduced when performance drops.',
+            '- Settings and profiles use defaults/fallbacks so missing values do not break plates.',
+            '- Profiles are automatically backed up during saves and before destructive profile actions.',
+            '- Diagnostics and lag testing tools can capture addon state and isolate performance cost.',
+            '- Asset lists are cached for fonts, textures, icons, backgrounds, and animations.',
+        },
+    },
+    {
+        title = 'Profiles and tools',
+        lines = {
+            '- Multiple profiles.',
+            '- Create, copy, rename, delete, reset, and switch profiles.',
+            '- Auto-switch profiles by job assignment.',
+            '- Help tab, custom alert guide, setting search, and troubleshooter.',
+            '- Performance overlay and reports.',
+            '- FPS/adaptive performance modes.',
+            '- Nameplate count cap.',
+            '- Diagnostics capture and lag testing tools.',
         },
     },
     {
@@ -9797,6 +10278,15 @@ local helpGuideSections = {
         lines = {
             'Start with a profile, tune Self and Enemy first, then PC/Trust/Pet plates. After that, check Target/Subtarget, AOE, stacking, and performance filters in live play.',
             'When something looks broken, search Find Settings first, then check Troubleshooter for the common setting combinations that can make a feature appear missing.',
+        },
+    },
+    {
+        title = 'Feedback',
+        lines = {
+            'LibraPlates is a love-of-the-game project, and a lot of time and care has gone into it, especially the data collection behind NPCs, objects, quests, missions, icons, and plate behavior.',
+            'Special thanks to atom0s and Thorny from Ashita for their help, and to the addon authors whose public code helped guide parts of LibraPlates.',
+            'LibraPlates also includes ideas, patterns, and small pieces of code learned from other public Ashita addons. Credit and thanks to those authors for sharing their work.',
+            'There will still be mistakes, missing data, missing features, and bugs. Suggestions, corrections, and feedback are always welcome.',
         },
     },
 };
@@ -9932,20 +10422,1002 @@ local troubleshooterEntries = {
     },
 };
 
-local function DrawHelpLines(lines)
+function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
+    local enemyAlerts = require('core.enemy_alerts');
+    local alertSounds = require('core.alert_sounds');
+    local global = state.GetGlobalSettings(globalDefaults);
+    global.enemyAlerts = global.enemyAlerts or {};
+    local settings = global.enemyAlerts;
+    for key, value in pairs(globalDefaults.enemyAlerts or {}) do
+        if (settings[key] == nil) then
+            settings[key] = value;
+        end
+    end
+    if (settings.customTriggers == (globalDefaults.enemyAlerts or {}).customTriggers) then
+        settings.customTriggers = {};
+    end
+    local function GetSoundVolumeLevel(value)
+        value = tonumber(value) or 10;
+        if (value > 10) then
+            value = math.ceil(value / 10);
+        end
+
+        return math.max(1, math.min(10, value));
+    end
+
+    local function GetSoundPlaybackVolume(value)
+        return GetSoundVolumeLevel(value) * 10;
+    end
+
+    local function RoundOneDecimal(value)
+        return math.floor(((tonumber(value) or 0) * 10) + 0.5) / 10;
+    end
+
+    local function DrawScreenAlertsWrappedText(text, color)
+        if (color ~= nil and imgui.TextColored ~= nil) then
+            imgui.TextColored(color, tostring(text or ''));
+        elseif (imgui.TextWrapped ~= nil) then
+            imgui.TextWrapped(tostring(text or ''));
+        else
+            imgui.Text(tostring(text or ''));
+        end
+    end
+
+    local function DrawScreenAlertsPlacementRow(leftLabel, leftValue, leftId, rightLabel, rightValue, rightId, minValue, maxValue, step)
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            local leftResult = leftValue;
+            local rightResult = rightValue;
+            local leftChanged = false;
+            local rightChanged = false;
+
+            if (imgui.BeginTable('##ScreenAlertsPlacement' .. tostring(leftId) .. tostring(rightId or ''), 4, settingsTableFlags)) then
+                imgui.TableSetupColumn('##sa_label_left', 0, 116);
+                imgui.TableSetupColumn('##sa_control_left', 0, 136);
+                imgui.TableSetupColumn('##sa_label_right', 0, 116);
+                imgui.TableSetupColumn('##sa_control_right', 0, 136);
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+                imgui.TextColored(settingsLabelColor, leftLabel);
+                imgui.TableNextColumn();
+                leftResult, leftChanged = DrawPlacementControl(leftValue, minValue, maxValue, step, leftId, 68);
+                imgui.TableNextColumn();
+                if (rightLabel ~= nil and rightLabel ~= '') then
+                    imgui.TextColored(settingsLabelColor, rightLabel);
+                end
+                imgui.TableNextColumn();
+                if (rightLabel ~= nil and rightLabel ~= '' and rightId ~= nil) then
+                    rightResult, rightChanged = DrawPlacementControl(rightValue, minValue, maxValue, step, rightId, 68);
+                end
+                imgui.EndTable();
+            end
+
+            return leftResult, leftChanged, rightResult, rightChanged;
+        end
+
+        local value, changed = DrawPlacementNumber(leftLabel, leftValue, minValue, maxValue, step, leftId);
+        if (rightLabel ~= nil and rightLabel ~= '' and rightId ~= nil) then
+            imgui.SameLine();
+            local secondValue, secondChanged = DrawPlacementNumber(rightLabel, rightValue, minValue, maxValue, step, rightId);
+            return value, changed, secondValue, secondChanged;
+        end
+
+        return value, changed, rightValue, false;
+    end
+
+    local function DrawAlertLineStyleControls(label, prefix)
+        local fontSize, fontChanged = settings[prefix .. 'FontSize'] or settings.fontSize or 34, false;
+        local color, colorChanged = settings[prefix .. 'Color'] or settings.color, false;
+        local outlineColor, outlineChanged = settings[prefix .. 'OutlineColor'] or settings.outlineColor, false;
+
+        imgui.TextColored(settingsLabelColor, 'Font size');
+        imgui.SameLine();
+        fontSize, fontChanged = DrawPlacementControl(fontSize, 12, 80, 1, 'EnemyAlertsPlate' .. label .. 'FontSize', 30);
+
+        imgui.SameLine();
+        imgui.TextColored(settingsLabelColor, 'Font color');
+        imgui.SameLine();
+        if (imgui.ColorEdit4 ~= nil) then
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(24); end
+            colorChanged = imgui.ColorEdit4('##EnemyAlertsPlate' .. label .. 'Color', color, settingsColorEditFlags) == true;
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+        else
+            imgui.TextColored(color, 'sample');
+        end
+
+        imgui.SameLine();
+        imgui.TextColored(settingsLabelColor, 'Outline color');
+        imgui.SameLine();
+        if (imgui.ColorEdit4 ~= nil) then
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(24); end
+            outlineChanged = imgui.ColorEdit4('##EnemyAlertsPlate' .. label .. 'OutlineColor', outlineColor, settingsColorEditFlags) == true;
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+        else
+            imgui.TextColored(outlineColor, 'sample');
+        end
+
+        if (fontChanged == true) then
+            settings[prefix .. 'FontSize'] = fontSize;
+            state.Save();
+        end
+
+        if (colorChanged == true) then
+            settings[prefix .. 'Color'] = color;
+            state.Save();
+        end
+
+        if (outlineChanged == true) then
+            settings[prefix .. 'OutlineColor'] = outlineColor;
+            state.Save();
+        end
+    end
+
+    local function DrawAlertLineSoundControls(label, prefix)
+        local soundEnabled = settings[prefix .. 'SoundEnabled'] == true;
+        local soundFile = alertSounds.ResolveFile(settings[prefix .. 'SoundFile'], settings.soundFile or 'Alert01.wav');
+
+        DrawCheckbox('Play sounds', soundEnabled, function(value)
+            settings[prefix .. 'SoundEnabled'] = value == true;
+            state.Save();
+        end);
+
+        if (soundEnabled == true) then
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(settingsLabelColor, 'Sound file');
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+
+            if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+                if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(220); end
+                if (imgui.BeginCombo('##EnemyAlertsPlate' .. label .. 'SoundFile', soundFile) == true) then
+                    for _, item in ipairs(alertSounds.GetFiles()) do
+                        local isSelected = item == soundFile;
+                        if (imgui.Selectable(tostring(item), isSelected) == true) then
+                            settings[prefix .. 'SoundFile'] = item;
+                            state.Save();
+                            soundFile = item;
+                        end
+                        if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                            imgui.SetItemDefaultFocus();
+                        end
+                    end
+                    imgui.EndCombo();
+                end
+                if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+            else
+                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
+            end
+        end
+
+        if (imgui.Button ~= nil and imgui.Button('Preview sound##EnemyAlertsPlate' .. label .. 'SoundPreview') == true) then
+            alertSounds.Play(soundFile, GetSoundPlaybackVolume(settings.soundVolume));
+        elseif (imgui.Button == nil and ClickText('Preview sound', uiAccent) == true) then
+            alertSounds.Play(soundFile, GetSoundPlaybackVolume(settings.soundVolume));
+        end
+
+        if (imgui.SameLine ~= nil) then
+            imgui.SameLine();
+        end
+
+        if (imgui.Button ~= nil and imgui.Button('Test alert##EnemyAlertsPlate' .. label .. 'Test') == true) then
+            enemyAlerts.Test(prefix);
+        elseif (imgui.Button == nil and ClickText('Test alert', uiAccent) == true) then
+            enemyAlerts.Test(prefix);
+        end
+    end
+
+    local function DrawLane(label, prefix, enabledKey, showHeader)
+        if (showHeader ~= false) then
+            DrawSettingsHeader(label);
+        end
+
+        if (enabledKey ~= nil) then
+            DrawCheckbox('Enabled', settings[enabledKey] ~= false, function(value)
+                settings[enabledKey] = value == true;
+                if (enabledKey == 'offensiveMagicEnabled' or enabledKey == 'defensiveMagicEnabled') then
+                    settings.showMagic = settings.offensiveMagicEnabled ~= false or settings.defensiveMagicEnabled ~= false;
+                end
+                state.Save();
+            end);
+        end
+
+        DrawAlertLineStyleControls(label, prefix);
+        DrawAlertLineSoundControls(label, prefix);
+    end
+
+    local function DrawCustomAlertLane(showHeader)
+        if (showHeader ~= false) then
+            DrawSettingsHeader('Custom alerts');
+        end
+
+        DrawCheckbox('Enabled', settings.customAlertsEnabled ~= false, function(value)
+            settings.customAlertsEnabled = value == true;
+            state.Save();
+        end);
+
+        DrawAlertLineStyleControls('Custom alerts', 'custom');
+    end
+
+    local function DrawIntroContent(showHeader)
+        if (showHeader ~= false) then
+            DrawSettingsHeader('Screen Alerts');
+        end
+
+        DrawScreenAlertsWrappedText('Screen Alerts shows short on-screen messages and can play sounds when events are triggered, such as enemy casts, readied abilities, VNM messages, or learned Blue Magic. Built-in alerts can be toggled here, and custom text triggers can be added.');
+    end
+
+    local function DrawGeneralControls(showHeader)
+        if (showHeader ~= false) then
+            DrawSettingsHeader('Global alert settings');
+        end
+
+        DrawCheckbox('Enabled', settings.enabled == true, function(value)
+            settings.enabled = value == true;
+            state.Save();
+        end);
+
+        local duration, durationChanged, fadeDuration, fadeDurationChanged = DrawScreenAlertsPlacementRow('Duration', settings.duration or 3, 'EnemyAlertsPlateDuration', 'Fade time', settings.fadeDuration or 1.5, 'EnemyAlertsPlateFadeDuration', 0, 10, 0.5);
+        if (durationChanged == true or fadeDurationChanged == true) then
+            settings.fadeDuration = RoundOneDecimal(fadeDuration);
+            settings.duration = math.max(0.5, RoundOneDecimal(duration));
+            state.Save();
+        end
+
+        local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawScreenAlertsPlacementRow('Offset X', settings.offsetX or 0, 'EnemyAlertsPlateOffsetX', 'Offset Y', settings.offsetY or 0, 'EnemyAlertsPlateOffsetY', -900, 900, 5);
+        if (offsetXChanged == true or offsetYChanged == true) then
+            settings.offsetX = offsetX;
+            settings.offsetY = offsetY;
+            state.Save();
+        end
+
+        local soundVolume, soundVolumeChanged = DrawScreenAlertsPlacementRow('Sound volume', GetSoundVolumeLevel(settings.soundVolume), 'EnemyAlertsPlateSoundVolume', '', nil, nil, 1, 10, 1);
+        if (soundVolumeChanged == true) then
+            settings.soundVolume = soundVolume;
+            state.Save();
+        end
+
+        local maxVisibleAlerts, maxVisibleAlertsChanged = DrawScreenAlertsPlacementRow('Max visible alerts', settings.maxVisibleAlerts or 4, 'EnemyAlertsPlateMaxVisibleAlerts', '', nil, nil, 1, 12, 1);
+        if (maxVisibleAlertsChanged == true) then
+            settings.maxVisibleAlerts = math.max(1, math.min(12, math.floor((tonumber(maxVisibleAlerts) or 4) + 0.5)));
+            state.Save();
+        end
+
+        DrawCheckbox('Stack duplicate alerts', settings.stackDuplicateAlerts ~= false, function(value)
+            settings.stackDuplicateAlerts = value == true;
+            state.Save();
+        end);
+        uiTooltip.Info('Combines the same alert lane and action into x2, x3, instead of adding another line.');
+
+        DrawCheckbox('Replay sound on stacked alerts', settings.replayStackedAlertSounds == true, function(value)
+            settings.replayStackedAlertSounds = value == true;
+            state.Save();
+        end);
+        uiTooltip.Info('When off, x2 and x3 updates refresh the alert without replaying the sound.');
+
+        DrawCheckbox('Drop lower priority alerts when full', settings.dropLowerPriorityAlerts ~= false, function(value)
+            settings.dropLowerPriorityAlerts = value == true;
+            state.Save();
+        end);
+        uiTooltip.Info('Priority: Custom, offensive magic, job abilities, pet alerts, defensive magic, then built-in alerts.');
+
+        DrawCheckbox('Layout preview', enemyAlerts.GetPreviewEnabled() == true, function(value)
+            enemyAlerts.SetPreviewEnabled(value == true);
+        end);
+        uiTooltip.Info('Shows the Screen Alerts layout on screen while settings are open.');
+
+        if (enemyAlerts.GetPreviewEnabled() == true) then
+            DrawCheckbox('Edit layout frame', settings.layoutPreviewEditFrame == true, function(value)
+                settings.layoutPreviewEditFrame = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('Drag each preview alert line to move that alert type. Resize from the bottom corners to change that line font size.');
+
+        end
+    end
+
+    local function UpdateMagicAlertGate()
+        settings.showMagic = settings.offensiveMagicEnabled ~= false or settings.defensiveMagicEnabled ~= false;
+    end
+
+    local function GetCustomAlertTriggerBuffer(index, trigger, key)
+        local rowKey = tostring(index) .. ':' .. tostring(key);
+        local current = tostring((trigger ~= nil and trigger[key]) or '');
+        local buffer = LibraPlatesCustomAlertTriggerBuffers[rowKey];
+
+        if (buffer == nil or buffer.source ~= current) then
+            buffer = { current, source = current };
+            LibraPlatesCustomAlertTriggerBuffers[rowKey] = buffer;
+        end
+
+        return buffer;
+    end
+
+    local function DrawLuaPatternHelp()
+        imgui.TextColored(settingsLabelColor, 'Lua pattern help');
+        uiTooltip.Info('Custom triggers can use Contains or Lua pattern. Full examples are in Help > Custom Alerts.', true);
+    end
+
+    local function DrawCustomAlertModeCombo(index, trigger)
+        local current = tostring(trigger.mode or 'Contains');
+
+        if (imgui.RadioButton ~= nil) then
+            if (imgui.RadioButton('Contains##CustomAlertModeContains' .. tostring(index), current == 'Contains') == true) then
+                trigger.mode = 'Contains';
+                current = 'Contains';
+                state.Save();
+            end
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            if (imgui.RadioButton('Lua pattern##CustomAlertModePattern' .. tostring(index), current == 'Lua pattern') == true) then
+                trigger.mode = 'Lua pattern';
+                state.Save();
+            end
+        else
+            if (ClickText(current, uiAccent) == true) then
+                trigger.mode = current == 'Contains' and 'Lua pattern' or 'Contains';
+                state.Save();
+            end
+        end
+    end
+
+    local function DrawCustomAlertTextInput(index, trigger, key, width, maxLength)
+        local buffer = GetCustomAlertTriggerBuffer(index, trigger, key);
+
+        if (imgui.InputText ~= nil) then
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(width); end
+            if (imgui.InputText('##CustomAlert' .. tostring(key) .. tostring(index), buffer, maxLength) == true) then
+                trigger[key] = tostring(buffer[1] or '');
+                buffer.source = trigger[key];
+                state.Save();
+            end
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+        else
+            imgui.TextColored(settingsLabelColor, tostring(trigger[key] or ''));
+        end
+    end
+
+    local function GetCustomTriggerRowLabel(trigger, index)
+        local text = tostring((trigger ~= nil and trigger.text) or '');
+        if (text ~= '') then
+            return text;
+        end
+
+        local match = tostring((trigger ~= nil and trigger.match) or '');
+        if (match ~= '') then
+            return match;
+        end
+
+        return 'Custom trigger ' .. tostring(index);
+    end
+
+    local function GetCustomTriggerSoundFile(trigger)
+        return alertSounds.ResolveFile(
+            trigger.soundFile,
+            settings.customSoundFile or settings.soundFile or 'Alert01.wav'
+        );
+    end
+
+    local function DrawCustomTriggerSoundFileCombo(index, trigger)
+        local soundFile = GetCustomTriggerSoundFile(trigger);
+
+        if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(220); end
+            if (imgui.BeginCombo('##CustomAlertSoundFile' .. tostring(index), soundFile) == true) then
+                for _, item in ipairs(alertSounds.GetFiles()) do
+                    local isSelected = item == soundFile;
+                    if (imgui.Selectable(tostring(item), isSelected) == true) then
+                        trigger.soundFile = item;
+                        state.Save();
+                        soundFile = item;
+                    end
+                    if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                        imgui.SetItemDefaultFocus();
+                    end
+                end
+                imgui.EndCombo();
+            end
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+        else
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
+        end
+
+        return soundFile;
+    end
+
+    local function DeleteCustomTrigger(index)
+        index = tonumber(index) or 0;
+        if (type(settings.customTriggers) ~= 'table' or settings.customTriggers[index] == nil) then
+            LibraPlatesCustomAlertPendingDelete = nil;
+            return false;
+        end
+
+        local nextTriggers = {};
+        for triggerIndex, trigger in ipairs(settings.customTriggers) do
+            if (triggerIndex ~= index) then
+                nextTriggers[#nextTriggers + 1] = trigger;
+            end
+        end
+
+        settings.customTriggers = nextTriggers;
+        if (LibraPlatesCustomAlertExpandedIndex == index) then
+            LibraPlatesCustomAlertExpandedIndex = nil;
+        elseif (tonumber(LibraPlatesCustomAlertExpandedIndex) ~= nil and tonumber(LibraPlatesCustomAlertExpandedIndex) > index) then
+            LibraPlatesCustomAlertExpandedIndex = tonumber(LibraPlatesCustomAlertExpandedIndex) - 1;
+        end
+        LibraPlatesCustomAlertTriggerBuffers = {};
+        LibraPlatesCustomAlertPendingDelete = nil;
+
+        return state.Save() == true;
+    end
+
+    local function DrawCustomTriggers()
+        settings.customTriggers = settings.customTriggers or {};
+
+        DrawSettingsHeader('Custom triggers');
+        DrawLuaPatternHelp();
+        imgui.Spacing();
+
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            if (imgui.BeginTable('##CustomAlertTriggers', 4, settingsTableFlags)) then
+                imgui.TableSetupColumn('##custom_toggle', 0, 34);
+                imgui.TableSetupColumn('##custom_enabled', 0, 28);
+                imgui.TableSetupColumn('##custom_name', 0, 350);
+                imgui.TableSetupColumn('##custom_actions', 0, 136);
+                for index, trigger in ipairs(settings.customTriggers) do
+                    if (type(trigger) ~= 'table') then
+                        trigger = { enabled = true, mode = 'Contains', match = '', text = '' };
+                        settings.customTriggers[index] = trigger;
+                    end
+
+                    local expanded = tonumber(LibraPlatesCustomAlertExpandedIndex) == index;
+
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    if (imgui.Button((expanded == true and 'v' or '>') .. '##CustomAlertExpand' .. tostring(index)) == true) then
+                        if (expanded == true) then
+                            LibraPlatesCustomAlertExpandedIndex = nil;
+                        else
+                            LibraPlatesCustomAlertExpandedIndex = index;
+                        end
+                    end
+
+                    imgui.TableNextColumn();
+                    DrawCheckbox('##CustomAlertEnabled' .. tostring(index), trigger.enabled ~= false, function(value)
+                        trigger.enabled = value == true;
+                        state.Save();
+                    end);
+
+                    imgui.TableNextColumn();
+                    imgui.TextColored(trigger.enabled ~= false and settingsLabelColor or { 0.58, 0.60, 0.64, 1.0 }, GetCustomTriggerRowLabel(trigger, index));
+
+                    imgui.TableNextColumn();
+                    if (tonumber(LibraPlatesCustomAlertPendingDelete) == index) then
+                        if (imgui.Button ~= nil and imgui.Button('Cancel##CustomAlertDeleteCancel' .. tostring(index)) == true) then
+                            LibraPlatesCustomAlertPendingDelete = nil;
+                        end
+                        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+                        if (imgui.Button ~= nil and imgui.Button('Delete##CustomAlertDeleteConfirm' .. tostring(index)) == true) then
+                            DeleteCustomTrigger(index);
+                        end
+                    else
+                        if (trigger.soundEnabled == true) then
+                            if (imgui.Button ~= nil and imgui.Button('Play##CustomAlertSound' .. tostring(index)) == true) then
+                                alertSounds.Play(GetCustomTriggerSoundFile(trigger), GetSoundPlaybackVolume(settings.soundVolume));
+                            end
+                            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+                        end
+                        if (imgui.Button ~= nil and imgui.Button('Test##CustomAlertTest' .. tostring(index)) == true) then
+                            enemyAlerts.TestCustomTrigger(index);
+                        end
+                        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+                        if (imgui.Button ~= nil and imgui.Button('X##CustomAlertDelete' .. tostring(index)) == true) then
+                            LibraPlatesCustomAlertPendingDelete = index;
+                        end
+                    end
+
+                    if (expanded == true) then
+                        imgui.TableNextRow();
+                        imgui.TableNextColumn();
+                        imgui.TableNextColumn();
+                        imgui.TableNextColumn();
+
+                        if (imgui.BeginTable('##CustomAlertEditor' .. tostring(index), 2, settingsTableFlagsNoBorders)) then
+                            imgui.TableSetupColumn('##custom_editor_label', 0, 84);
+                            imgui.TableSetupColumn('##custom_editor_control', 0, 420);
+
+                            imgui.TableNextRow();
+                            imgui.TableNextColumn();
+                            imgui.TextColored(settingsLabelColor, 'Mode');
+                            imgui.TableNextColumn();
+                            DrawCustomAlertModeCombo(index, trigger);
+
+                            imgui.TableNextRow();
+                            imgui.TableNextColumn();
+                            imgui.TextColored(settingsLabelColor, 'Match text');
+                            imgui.TableNextColumn();
+                            DrawCustomAlertTextInput(index, trigger, 'match', 360, 240);
+
+                            imgui.TableNextRow();
+                            imgui.TableNextColumn();
+                            imgui.TextColored(settingsLabelColor, 'Alert text');
+                            imgui.TableNextColumn();
+                            DrawCustomAlertTextInput(index, trigger, 'text', 360, 240);
+
+                            imgui.TableNextRow();
+                            imgui.TableNextColumn();
+                            imgui.TextColored(settingsLabelColor, 'Sound');
+                            imgui.TableNextColumn();
+                            DrawCheckbox('##CustomAlertSoundEnabled' .. tostring(index), trigger.soundEnabled == true, function(value)
+                                trigger.soundEnabled = value == true;
+                                state.Save();
+                            end);
+
+                            if (trigger.soundEnabled == true) then
+                                imgui.TableNextRow();
+                                imgui.TableNextColumn();
+                                imgui.TextColored(settingsLabelColor, 'Sound file');
+                                imgui.TableNextColumn();
+                                DrawCustomTriggerSoundFileCombo(index, trigger);
+                            end
+
+                            imgui.EndTable();
+                        end
+
+                        imgui.TableNextColumn();
+                    end
+                end
+
+                imgui.EndTable();
+            end
+        else
+            for index, trigger in ipairs(settings.customTriggers) do
+                DrawCheckbox('Enabled##CustomAlertEnabled' .. tostring(index), trigger.enabled ~= false, function(value)
+                    trigger.enabled = value == true;
+                    state.Save();
+                end);
+                imgui.TextColored(settingsLabelColor, 'Mode: ' .. tostring(trigger.mode or 'Contains'));
+                imgui.TextColored(settingsLabelColor, 'Match: ' .. tostring(trigger.match or ''));
+                imgui.TextColored(settingsLabelColor, 'Alert: ' .. tostring(trigger.text or ''));
+            end
+        end
+
+        if (LibraPlatesCustomAlertPendingDelete == nil) then
+            if (imgui.Button ~= nil and imgui.Button('Add trigger##CustomAlertAdd') == true) then
+                settings.customTriggers[#settings.customTriggers + 1] = {
+                    enabled = true,
+                    mode = 'Contains',
+                    match = '',
+                    text = '',
+                    soundEnabled = false,
+                    soundFile = settings.customSoundFile or settings.soundFile or 'Alert01.wav',
+                };
+                LibraPlatesCustomAlertExpandedIndex = #settings.customTriggers;
+                LibraPlatesCustomAlertTriggerBuffers = {};
+                state.Save();
+            elseif (imgui.Button == nil and ClickText('Add trigger', uiAccent) == true) then
+                settings.customTriggers[#settings.customTriggers + 1] = {
+                    enabled = true,
+                    mode = 'Contains',
+                    match = '',
+                    text = '',
+                    soundEnabled = false,
+                    soundFile = settings.customSoundFile or settings.soundFile or 'Alert01.wav',
+                };
+                LibraPlatesCustomAlertExpandedIndex = #settings.customTriggers;
+                LibraPlatesCustomAlertTriggerBuffers = {};
+                state.Save();
+            end
+        end
+    end
+
+    local function DrawBuiltInAlertSoundRow(label, enabledKey, soundPrefix, previewText)
+        imgui.TableNextRow();
+        imgui.TableNextColumn();
+
+        DrawCheckbox(label, settings[enabledKey] ~= false, function(value)
+            settings[enabledKey] = value == true;
+            state.Save();
+        end);
+
+        if (settings[enabledKey] == false) then
+            return;
+        end
+
+        local soundEnabledKey = soundPrefix .. 'SoundEnabled';
+        local soundFileKey = soundPrefix .. 'SoundFile';
+        local soundEnabled = settings[soundEnabledKey] == true;
+        local soundFile = alertSounds.ResolveFile(settings[soundFileKey], settings.builtInSoundFile or settings.soundFile or 'Alert01.wav');
+
+        imgui.TableNextColumn();
+        DrawCheckbox('Sound##' .. tostring(soundPrefix), soundEnabled, function(value)
+            settings[soundEnabledKey] = value == true;
+            state.Save();
+        end);
+
+        imgui.TableNextColumn();
+        if (soundEnabled == true) then
+            if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+                if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(146); end
+                if (imgui.BeginCombo('##' .. tostring(soundPrefix) .. 'SoundFile', soundFile) == true) then
+                    for _, item in ipairs(alertSounds.GetFiles()) do
+                        local isSelected = item == soundFile;
+                        if (imgui.Selectable(tostring(item), isSelected) == true) then
+                            settings[soundFileKey] = item;
+                            state.Save();
+                            soundFile = item;
+                        end
+                        if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                            imgui.SetItemDefaultFocus();
+                        end
+                    end
+                    imgui.EndCombo();
+                end
+                if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+            else
+                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
+            end
+        end
+
+        imgui.TableNextColumn();
+        if (soundEnabled == true) then
+            if (DrawSettingsIconButton(tostring(soundPrefix) .. 'PlaySound', 'play.png', 'Play sound') == true) then
+                alertSounds.Play(soundFile, GetSoundPlaybackVolume(settings.soundVolume));
+            end
+
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+        end
+
+        if (DrawSettingsIconButton(tostring(soundPrefix) .. 'PreviewAlert', 'peview.png', 'Preview alert') == true) then
+            enemyAlerts.TestBuiltIn(label, previewText, soundPrefix);
+        end
+    end
+
+    local function DrawBuiltInSoundFolderHelp()
+        imgui.TextColored(settingsLabelColor, 'Custom WAV files can be added to the sounds folder. Click');
+        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+
+        if (ClickText('here', uiAccent) == true) then
+            alertSounds.OpenFolder();
+        end
+
+        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+        imgui.TextColored(settingsLabelColor, 'to open it.');
+    end
+
+    local function DrawBuiltInAlerts(showHeader)
+        if (showHeader ~= false) then
+            DrawSettingsHeader('Built-in alerts');
+            DrawBuiltInSoundFolderHelp();
+            imgui.Spacing();
+        end
+
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            if (imgui.BeginTable('##BuiltInAlertSoundRows', 4, settingsTableFlags)) then
+                imgui.TableSetupColumn('##built_in_alert', 0, 196);
+                imgui.TableSetupColumn('##built_in_sound_toggle', 0, 68);
+                imgui.TableSetupColumn('##built_in_sound_file', 0, 154);
+                imgui.TableSetupColumn('##built_in_sound_actions', 0, 48);
+                DrawBuiltInAlertSoundRow('Wildkeeper Reive', 'builtInWildkeeperEnabled', 'builtInWildkeeper', 'Wildkeeper Reive: Achuka in Morimar Basalt Fields soon');
+                DrawBuiltInAlertSoundRow('Campaign', 'builtInCampaignEnabled', 'builtInCampaign', 'Campaign: enemy forces headed to Jugner Forest [S]');
+                DrawBuiltInAlertSoundRow('Ventures', 'builtInVenturesEnabled', 'builtInVentures', 'Ventures: something is interrupting ventures');
+                DrawBuiltInAlertSoundRow('Voidwatch', 'builtInVoidwatchEnabled', 'builtInVoidwatch', 'Voidwatch: Nyx in Batallia Downs [S] (E-5)');
+                DrawBuiltInAlertSoundRow('Learned Blue Magic', 'builtInBlueMagicEnabled', 'builtInBlueMagic', 'Learned Blue Magic: Refueling');
+                DrawBuiltInAlertSoundRow('Dynamis', 'builtInDynamisEnabled', 'builtInDynamis', 'Dynamis: +10 minutes');
+                DrawBuiltInAlertSoundRow('Incursion', 'builtInIncursionEnabled', 'builtInIncursion', 'Incursion objective: Defeat 15 enemies');
+                imgui.EndTable();
+            end
+        else
+            DrawCheckbox('Wildkeeper Reive', settings.builtInWildkeeperEnabled ~= false, function(value) settings.builtInWildkeeperEnabled = value == true; state.Save(); end);
+            DrawCheckbox('Campaign', settings.builtInCampaignEnabled ~= false, function(value) settings.builtInCampaignEnabled = value == true; state.Save(); end);
+            DrawCheckbox('Ventures', settings.builtInVenturesEnabled ~= false, function(value) settings.builtInVenturesEnabled = value == true; state.Save(); end);
+            DrawCheckbox('Voidwatch', settings.builtInVoidwatchEnabled ~= false, function(value) settings.builtInVoidwatchEnabled = value == true; state.Save(); end);
+            DrawCheckbox('Learned Blue Magic', settings.builtInBlueMagicEnabled ~= false, function(value) settings.builtInBlueMagicEnabled = value == true; state.Save(); end);
+            DrawCheckbox('Dynamis', settings.builtInDynamisEnabled ~= false, function(value) settings.builtInDynamisEnabled = value == true; state.Save(); end);
+            DrawCheckbox('Incursion', settings.builtInIncursionEnabled ~= false, function(value) settings.builtInIncursionEnabled = value == true; state.Save(); end);
+        end
+        imgui.TextColored({ 0.36, 0.39, 0.43, 1.0 }, '------------------------------------------------');
+    end
+
+    local function DrawContent()
+        DrawIntroContent(true);
+        DrawSectionDivider();
+        DrawGeneralControls(true);
+        DrawSectionDivider();
+        DrawCustomAlertLane(true);
+        imgui.Spacing();
+        DrawCustomTriggers();
+        DrawSectionDivider();
+        DrawSettingsHeader('Built-in alerts');
+        DrawBuiltInSoundFolderHelp();
+        imgui.Spacing();
+        DrawAlertLineStyleControls('Built-in alert line', 'builtIn');
+        imgui.Spacing();
+        DrawBuiltInAlerts(false);
+        DrawSectionDivider();
+        DrawLane('Offensive magic', 'offensive', 'offensiveMagicEnabled', true);
+        DrawSectionDivider();
+        DrawLane('Job abilities', 'ability', 'showAbilities');
+        DrawSectionDivider();
+        DrawLane('Pet alerts', 'pet', 'petAlertsEnabled', true);
+        DrawSectionDivider();
+        DrawLane('Defensive magic', 'defensive', 'defensiveMagicEnabled', true);
+    end
+
+    local function DrawAlertsPanel(label, render, first)
+        local panelGap = 8;
+        local panelPadX = 16;
+        local panelPadY = 10;
+        local topGap = (first == true) and 2 or panelGap;
+
+        if (imgui.Dummy ~= nil) then
+            imgui.Dummy({ 1, topGap });
+        else
+            imgui.Spacing();
+        end
+
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            local availWidth = select(1, GetContentRegionAvail());
+            local cardWidth = math.max(260, (tonumber(availWidth) or 260) - 16);
+            local colorCount = 0;
+
+            if (imgui.PushStyleColor ~= nil) then
+                if (_G.ImGuiCol_TableRowBg ~= nil) then
+                    imgui.PushStyleColor(_G.ImGuiCol_TableRowBg, LibraPlatesSettingsPalette.panelBg);
+                    colorCount = colorCount + 1;
+                end
+                if (_G.ImGuiCol_TableRowBgAlt ~= nil) then
+                    imgui.PushStyleColor(_G.ImGuiCol_TableRowBgAlt, LibraPlatesSettingsPalette.panelBg);
+                    colorCount = colorCount + 1;
+                end
+            end
+
+            if (imgui.BeginTable('##ScreenAlertsPanel' .. tostring(label or ''), 1, (_G.ImGuiTableFlags_RowBg or 0), { cardWidth, 0 })) then
+                imgui.TableSetupColumn('##card', 0, cardWidth);
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+
+                if (imgui.Dummy ~= nil) then imgui.Dummy({ 1, panelPadY }); end
+                if (imgui.Indent ~= nil) then imgui.Indent(panelPadX); end
+
+                DrawYellowHeader(tostring(label or ''));
+                imgui.Spacing();
+
+                render();
+
+                if (imgui.Unindent ~= nil) then imgui.Unindent(panelPadX); end
+                if (imgui.Dummy ~= nil) then imgui.Dummy({ 1, panelPadY }); end
+                imgui.EndTable();
+            end
+
+            if (colorCount > 0 and imgui.PopStyleColor ~= nil) then
+                imgui.PopStyleColor(colorCount);
+            end
+
+            return;
+        end
+
+        DrawYellowHeader(tostring(label or ''));
+        render();
+    end
+
+    if (useBoxedPage == true) then
+        LibraPlatesSettingsDrawBoxedBreadcrumb(T{ 'Settings', 'Screen Alerts' });
+
+        local pageWidth, pageHeight = GetContentRegionAvail();
+        local pushedPageBg = 0;
+        if (imgui.PushStyleColor ~= nil and _G.ImGuiCol_ChildBg ~= nil) then
+            imgui.PushStyleColor(_G.ImGuiCol_ChildBg, LibraPlatesSettingsPalette.shellBg);
+            pushedPageBg = 1;
+        end
+
+        imgui.BeginChild('##ScreenAlertsPageContent', { math.max(280, tonumber(pageWidth) or 280), math.max(260, tonumber(pageHeight) or 260) }, false);
+        if (imgui.Indent ~= nil) then imgui.Indent(16); end
+
+        DrawAlertsPanel('Screen Alerts', function()
+            DrawIntroContent(false);
+        end, true);
+        DrawAlertsPanel('Global alert settings', function()
+            DrawGeneralControls(false);
+        end);
+        DrawAlertsPanel('Custom alerts', function()
+            DrawCustomAlertLane(false);
+            imgui.Spacing();
+            DrawCustomTriggers();
+        end);
+        DrawAlertsPanel('Built-in alerts', function()
+            DrawBuiltInSoundFolderHelp();
+            imgui.Spacing();
+            DrawAlertLineStyleControls('Built-in alert line', 'builtIn');
+            imgui.Spacing();
+            DrawBuiltInAlerts(false);
+        end);
+        DrawAlertsPanel('Offensive magic', function()
+            DrawLane('Offensive magic', 'offensive', 'offensiveMagicEnabled', false);
+        end);
+        DrawAlertsPanel('Job abilities', function()
+            DrawLane('Job abilities', 'ability', 'showAbilities', false);
+        end);
+        DrawAlertsPanel('Pet alerts', function()
+            DrawLane('Pet alerts', 'pet', 'petAlertsEnabled', false);
+        end);
+        DrawAlertsPanel('Defensive magic', function()
+            DrawLane('Defensive magic', 'defensive', 'defensiveMagicEnabled', false);
+        end);
+
+        if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+        imgui.EndChild();
+
+        if (pushedPageBg > 0 and imgui.PopStyleColor ~= nil) then
+            imgui.PopStyleColor(pushedPageBg);
+        end
+
+    else
+        DrawContent();
+    end
+end
+
+function LibraPlatesHelpSafeText(value)
+    return tostring(value or ''):gsub('%%', '%%%%');
+end
+
+function LibraPlatesHelpTextWrapped(value)
+    imgui.TextWrapped(LibraPlatesHelpSafeText(value));
+end
+
+function LibraPlatesGetHelpSearchWords(query)
+    local words = {};
+
+    for word in tostring(query or ''):lower():gmatch('%S+') do
+        words[word] = true;
+    end
+
+    return words;
+end
+
+function LibraPlatesStripHelpWord(value)
+    return tostring(value or ''):lower():gsub('^[%p%s]+', ''):gsub('[%p%s]+$', '');
+end
+
+function LibraPlatesDrawHelpHighlightedText(value, searchWords)
+    local text = tostring(value or '');
+
+    if (searchWords == nil or next(searchWords) == nil) then
+        LibraPlatesHelpTextWrapped(text);
+        return;
+    end
+
+    local drewAny = false;
+
+    for chunk in text:gmatch('%S+') do
+        local color = searchWords[LibraPlatesStripHelpWord(chunk)] == true and { 1.0, 0.84, 0.0, 1.0 } or { 0.92, 0.92, 0.90, 1.0 };
+
+        if (drewAny == true and imgui.SameLine ~= nil) then
+            imgui.SameLine();
+        end
+
+        imgui.TextColored(color, LibraPlatesHelpSafeText(chunk));
+        drewAny = true;
+    end
+
+    if (drewAny ~= true) then
+        LibraPlatesHelpTextWrapped(text);
+    end
+end
+
+local function DrawHelpLines(lines, searchWords)
     for _, line in ipairs(lines or {}) do
-        imgui.TextWrapped(tostring(line));
+        local text = tostring(line);
+        local bulletText = text:match('^%-%s+(.+)$');
+
+        if (searchWords ~= nil and next(searchWords) ~= nil) then
+            if (bulletText ~= nil and imgui.Bullet ~= nil) then
+                imgui.Bullet();
+                if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+                LibraPlatesDrawHelpHighlightedText(bulletText, searchWords);
+            elseif (bulletText ~= nil) then
+                LibraPlatesDrawHelpHighlightedText('• ' .. bulletText, searchWords);
+            else
+                LibraPlatesDrawHelpHighlightedText(text, searchWords);
+            end
+        elseif (bulletText ~= nil and imgui.BulletText ~= nil) then
+            imgui.BulletText(LibraPlatesHelpSafeText(bulletText));
+        elseif (bulletText ~= nil) then
+            LibraPlatesHelpTextWrapped('• ' .. bulletText);
+        else
+            LibraPlatesHelpTextWrapped(text);
+        end
         imgui.Spacing();
     end
+end
+
+function LibraPlatesHelpGuideSectionMatches(section, query)
+    if (query == '') then
+        return true;
+    end
+
+    local parts = { tostring(section ~= nil and section.title or '') };
+    for _, line in ipairs(section ~= nil and section.lines or {}) do
+        parts[#parts + 1] = tostring(line);
+    end
+
+    local haystack = NormalizeHelpText(table.concat(parts, ' '));
+    for word in query:gmatch('%S+') do
+        if (haystack:find(word, 1, true) == nil) then
+            return false;
+        end
+    end
+
+    return true;
 end
 
 local function DrawHelpUserGuide()
     LibraPlatesSettingsDrawBreadcrumb(T{ 'Help', 'User Guide' });
 
-    for _, section in ipairs(helpGuideSections) do
-        DrawSettingsHeader(section.title);
-        DrawHelpLines(section.lines);
+    imgui.TextColored(settingsLabelColor, 'Search User Guide');
+    if (imgui.InputText ~= nil) then
+        local searchWidth = math.max(120, (select(1, GetContentRegionAvail()) or 420) - 76);
+        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(searchWidth); end
+        imgui.InputText('##UserGuideSearch', _G.LibraPlatesUserGuideSearchBuffer, 96);
+        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+        if (imgui.Button ~= nil and imgui.Button('Reset##UserGuideSearchReset') == true) then
+            _G.LibraPlatesUserGuideSearchBuffer[1] = '';
+        end
+    else
+        imgui.Text(tostring(_G.LibraPlatesUserGuideSearchBuffer[1] or ''));
     end
+    imgui.Spacing();
+    if (imgui.Separator ~= nil) then imgui.Separator(); end
+    imgui.Spacing();
+
+    local query = NormalizeHelpText(_G.LibraPlatesUserGuideSearchBuffer[1]);
+    local searchWords = LibraPlatesGetHelpSearchWords(query);
+    local matched = 0;
+    local contentWidth, contentHeight = GetContentRegionAvail();
+    local beganChild = false;
+
+    if (imgui.BeginChild ~= nil) then
+        imgui.BeginChild('##UserGuideBody', { math.max(260, tonumber(contentWidth) or 260), math.max(120, tonumber(contentHeight) or 120) }, false);
+        beganChild = true;
+    end
+
+    for _, section in ipairs(helpGuideSections) do
+        if (LibraPlatesHelpGuideSectionMatches(section, query) == true) then
+            matched = matched + 1;
+            DrawSettingsHeader(section.title);
+            DrawHelpLines(section.lines, searchWords);
+        end
+    end
+
+    if (matched == 0) then
+        imgui.TextWrapped('No User Guide sections match that search.');
+    end
+
+    if (beganChild == true and imgui.EndChild ~= nil) then
+        imgui.EndChild();
+    end
+end
+
+function LibraPlatesSettingsDrawHelpCustomAlerts()
+    LibraPlatesSettingsDrawBreadcrumb(T{ 'Help', 'Custom Alerts' });
+
+    DrawSettingsHeader('Custom Alerts');
+    DrawHelpLines({
+        'Custom alerts watch incoming chat text and show a Screen Alert when a trigger matches.',
+        'Use Contains for simple text matches. Use Lua pattern only when parts of the chat line change, such as names, spell names, or numbers.',
+        'Lua patterns are not the same as regular expressions, so regex builders are only useful as rough visual helpers.',
+    });
+
+    DrawSettingsHeader('Pattern help');
+    DrawHelpLines({
+        'For exact testing, use an online Lua runner and test with string.find or string.match.',
+        'For syntax help, use the Lua pattern manual.',
+        'For a rough visual helper, Regex101 can still help with general pattern ideas, but the syntax is not exact for Lua.',
+    });
+
+    LibraPlatesHelpLink('Open Lua test page', 'https://onecompiler.com/lua');
+    imgui.Spacing();
+    LibraPlatesHelpLink('Open Lua pattern manual', 'https://www.lua.org/manual/5.1/manual.html#5.4.1');
+    imgui.Spacing();
+    LibraPlatesHelpLink('Open Regex101 visual helper', 'https://regex101.com/r/jR9jY3/1');
 end
 
 local function DrawHelpFindSettings()
@@ -10099,6 +11571,11 @@ local function DrawHelpTroubleshooter()
 end
 
 local function DrawHelpTab()
+    if (selectedHelpSection == 'Custom Alerts') then
+        LibraPlatesSettingsDrawHelpCustomAlerts();
+        return;
+    end
+
     if (selectedHelpSection == 'Find Settings') then
         DrawHelpFindSettings();
         return;
@@ -10254,105 +11731,7 @@ local function DrawSelectedEditorPlatesModules()
     end
 
     if (selectedWidget == 'Enemy Alerts (module)') then
-        local enemyAlerts = require('core.enemy_alerts');
-        local alertSounds = require('core.alert_sounds');
-        local global = state.GetGlobalSettings(globalDefaults);
-        global.enemyAlerts = global.enemyAlerts or {};
-        local settings = global.enemyAlerts;
-        for key, value in pairs(globalDefaults.enemyAlerts or {}) do
-            if (settings[key] == nil) then
-                settings[key] = value;
-            end
-        end
-
-        local function DrawLane(label, prefix, enabledKey)
-            DrawSettingsHeader(label);
-
-            if (enabledKey ~= nil) then
-                DrawCheckbox('Enabled', settings[enabledKey] ~= false, function(value)
-                    settings[enabledKey] = value == true;
-                    state.Save();
-                end);
-            end
-
-            local fontSize, fontChanged = DrawPlacementNumber('Font size', settings[prefix .. 'FontSize'] or settings.fontSize or 34, 12, 80, 1, 'EnemyAlertsPlate' .. label .. 'FontSize');
-            if (fontChanged == true) then
-                settings[prefix .. 'FontSize'] = fontSize;
-                state.Save();
-            end
-
-            local color, colorChanged = DrawSettingsColor('Font color', settings[prefix .. 'Color'] or settings.color, 'EnemyAlertsPlate' .. label .. 'Color');
-            if (colorChanged == true) then
-                settings[prefix .. 'Color'] = color;
-                state.Save();
-            end
-
-            local outlineColor, outlineChanged = DrawSettingsColor('Outline color', settings[prefix .. 'OutlineColor'] or settings.outlineColor, 'EnemyAlertsPlate' .. label .. 'OutlineColor');
-            if (outlineChanged == true) then
-                settings[prefix .. 'OutlineColor'] = outlineColor;
-                state.Save();
-            end
-
-            DrawCheckbox('Sound', settings[prefix .. 'SoundEnabled'] == true, function(value)
-                settings[prefix .. 'SoundEnabled'] = value == true;
-                state.Save();
-            end);
-
-            local soundFile = alertSounds.ResolveFile(settings[prefix .. 'SoundFile'], settings.soundFile or 'Alert01.wav');
-
-            DrawInlineComboRow('Sound file', alertSounds.GetFiles(), soundFile, function(value)
-                settings[prefix .. 'SoundFile'] = value;
-                state.Save();
-            end, 'EnemyAlertsPlate' .. label .. 'SoundFile');
-
-            if (imgui.Button ~= nil and imgui.Button('Preview sound##EnemyAlertsPlate' .. label .. 'SoundPreview') == true) then
-                alertSounds.Play(soundFile);
-            elseif (imgui.Button == nil and ClickText('Preview sound', uiAccent) == true) then
-                alertSounds.Play(soundFile);
-            end
-        end
-
-        DrawSettingsHeader('Enemy Alerts');
-        DrawCheckbox('Enabled', settings.enabled == true, function(value)
-            settings.enabled = value == true;
-            state.Save();
-        end);
-        DrawCheckbox('Magic casts', settings.showMagic ~= false, function(value)
-            settings.showMagic = value == true;
-            state.Save();
-        end);
-        DrawCheckbox('Job abilities', settings.showAbilities == true, function(value)
-            settings.showAbilities = value == true;
-            state.Save();
-        end);
-
-        local duration, durationChanged = DrawPlacementNumber('Duration', settings.duration or 3, 1, 10, 0.5, 'EnemyAlertsPlateDuration');
-        if (durationChanged == true) then
-            settings.duration = duration;
-            state.Save();
-        end
-
-        local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawPlacementPair('Offset X', settings.offsetX or 0, 'EnemyAlertsPlateOffsetX', 'Offset Y', settings.offsetY or 0, 'EnemyAlertsPlateOffsetY', -900, 900, 5);
-        if (offsetXChanged == true or offsetYChanged == true) then
-            settings.offsetX = offsetX;
-            settings.offsetY = offsetY;
-            state.Save();
-        end
-
-        DrawSectionDivider();
-        DrawLane('Offensive magic', 'offensive', 'offensiveMagicEnabled');
-        DrawSectionDivider();
-        DrawLane('Defensive magic', 'defensive', 'defensiveMagicEnabled');
-        DrawSectionDivider();
-        DrawLane('Job abilities', 'ability');
-
-        if (imgui.Button ~= nil and imgui.Button('Test alert##EnemyAlertsPlateTest') == true) then
-            enemyAlerts.Test();
-        elseif (imgui.Button == nil and ClickText('Test alert', uiAccent) == true) then
-            enemyAlerts.Test();
-        end
-
-        imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, enemyAlerts.GetStatusText());
+        LibraPlatesSettingsDrawEnemyAlertsSection(false);
         return;
     end
 
@@ -11359,6 +12738,21 @@ local function DrawSelectedEditorPlates()
         DrawManeuverSettings(settings);
     end
 
+    if (selectedWidget == 'Alerts') then
+        DrawYellowHeader('Alerts');
+        if (imgui.TextWrapped ~= nil) then
+            imgui.TextWrapped('Pet action alerts are active for this pet plate. Configure style, sound, and layout in Settings > Screen Alerts > Pet alerts.');
+        else
+            imgui.TextColored(settingsLabelColor, 'Pet action alerts are active for this pet plate.');
+            imgui.TextColored(settingsLabelColor, 'Configure style, sound, and layout in Settings > Screen Alerts > Pet alerts.');
+        end
+
+        if (loadModeDrawn ~= true) then
+            LibraPlatesSettingsDrawCurrentWidgetLoadMode();
+        end
+        return;
+    end
+
     if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Behavior icon' or selectedWidget == 'Detects icon' or selectedWidget == 'Links icon' or selectedWidget == 'Special icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Gathering (module)' or selectedWidget == 'Quick Menu (module)' or selectedWidget == 'AOE range (module)') then
         if (loadModeDrawn ~= true) then
             LibraPlatesSettingsDrawCurrentWidgetLoadMode();
@@ -11396,12 +12790,25 @@ function settingsUi.Unload()
     PersistUiSelection();
 end
 
+function settingsUi.SyncScreenAlertsPreviewVisibility()
+    local enemyAlerts = require('core.enemy_alerts');
+    local shouldShowPreview = state.GetConfigOpen() == true and selectedTab == 'Settings' and selectedGeneralSection == 'Screen Alerts';
+
+    if (shouldShowPreview ~= true and enemyAlerts.GetPreviewEnabled() == true) then
+        enemyAlerts.SetPreviewEnabled(false);
+    end
+end
+
 -- ============================================================
 -- Rendering
 -- ============================================================
 
 function settingsUi.Render()
     if (state.GetConfigOpen() ~= true) then
+        local enemyAlerts = require('core.enemy_alerts');
+        if (enemyAlerts.GetPreviewEnabled() == true) then
+            enemyAlerts.SetPreviewEnabled(false);
+        end
         LibraPlatesSettingsWindowLayout.ResetAppearing();
         return;
     end
@@ -11467,6 +12874,7 @@ function settingsUi.Render()
                     selectedGeneralSection == 'Native UI' or
                     selectedGeneralSection == 'Visibility' or
                     selectedGeneralSection == 'Blacklist' or
+                    selectedGeneralSection == 'Screen Alerts' or
                     selectedGeneralSection == 'Performance' or
                     selectedGeneralSection == 'Scaling'
                 );
@@ -11479,6 +12887,13 @@ function settingsUi.Render()
                     if (childBgColor ~= nil) then
                         imgui.PushStyleColor(childBgColor, LibraPlatesSettingsPalette.shellBg);
                         rightPanelBgPushed = 1;
+                    end
+                end
+
+                if (selectedTab == 'Settings' and selectedGeneralSection == 'Screen Alerts') then
+                    local enemyAlerts = require('core.enemy_alerts');
+                    if (enemyAlerts.GetPreviewEnabled() == true) then
+                        enemyAlerts.RenderPreview();
                     end
                 end
 

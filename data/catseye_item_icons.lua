@@ -81,6 +81,7 @@ local itemIcons = T{
 -------------------------------------------------------------------------------
 	['EXP Guide']          = { type = 'EXP Guide', icon = 'EXPGuide.png', zones = { "Lower Jeuno" }, zoneIds = { 245 }, location = 'Lower Jeuno Auction House', worldOffsetY = 0.25, note = 'CatsEyeXI:\n* Free warp book for Signet and Sanction EXP camps.\n* Unlocks after Near Death Experience from Andrus in Lufaise Meadows.\n* Trade 1 gil for a secret menu.\n* Crystal Warriors cannot use this book.' },
 	['Golden Tiger'] = { type = 'Event', icon = 'Event.png', zones = { 'Lower Jeuno' }, zoneIds = { 245 }, worldOffsetY = 0.25, hidden = true },
+	['Regal Pawprint'] = { icon = 'Pawprint.png', zones = { 'Lower Jeuno' }, zoneIds = { 245 }, worldOffsetY = 0.25 },
 
 -------------------------------------------------------------------------------
 -- Lufaise Meadows Item's

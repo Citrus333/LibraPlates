@@ -3,6 +3,7 @@ return {
     width = 180,
     height = 8,
     texture = 'Solid',
+    textureStrength = 100,
     color = { 0.25, 0.45, 1.0, 1.0 },
     backgroundColor = { 0.255, 0.255, 0.255, 1.0 },
     borderColor = { 0.0, 0.0, 0.0, 1.0 },

@@ -111,7 +111,7 @@ local function LoadIcon(name)
         return textureCache[key];
     end
 
-    local filePath = (key == 'linkshell') and 'assets\\images\\linkshell.png' or ('assets\\images\\widget-icons\\' .. key .. '.png');
+    local filePath = 'assets\\images\\widget-icons\\' .. key .. '.png';
     local path = AshitaCore:GetInstallPath() .. '\\addons\\LibraPlates\\' .. filePath;
     textureCache[key] = textureLoader.ToTextureId(textureLoader.Load(path));
 

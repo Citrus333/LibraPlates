@@ -730,17 +730,34 @@ local function DrawColorPair(rowId, leftLabel, leftId, leftValue, rightLabel, ri
     return leftResult, rightResult;
 end
 
-local function DrawColorTextureRow(rowId, fillColor, backgroundColor, texture)
+local function DrawColorTextureRow(rowId, fillColor, backgroundColor, texture, textureStrength)
     local nextFillColor = fillColor;
     local nextBackgroundColor = backgroundColor;
     local nextTexture = texture;
+    local nextTextureStrength = tonumber(textureStrength) or 100;
     local key = tostring(rowId or 'color_texture');
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         nextFillColor, nextBackgroundColor = DrawColorPair(key .. '_colors', 'Fill color', key .. '_fill_color', fillColor, 'BG color', key .. '_bg_color', backgroundColor);
-        nextTexture = DrawComboRow('Texture', texture, barTextures.GetOptions(), key .. '_texture', 170);
 
-        return nextFillColor, nextBackgroundColor, nextTexture;
+        if (imgui.BeginTable('##bar_' .. key .. '_texture_strength', 4, tableFlags)) then
+            imgui.TableSetupColumn('##label_left', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##control_left', 0, pairControlWidth);
+            imgui.TableSetupColumn('##label_right', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##control_right', 0, pairControlWidth);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Texture');
+            imgui.TableNextColumn();
+            nextTexture = DrawBarTextureChoice(texture, key .. '_texture', 170);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Strength');
+            imgui.TableNextColumn();
+            nextTextureStrength = DrawSliderControl(key .. '_texture_strength', nextTextureStrength, 0, 100, 95, true);
+            imgui.EndTable();
+        end
+
+        return nextFillColor, nextBackgroundColor, nextTexture, nextTextureStrength;
     end
 
     imgui.TextColored(labelColor, 'Fill color');
@@ -754,8 +771,12 @@ local function DrawColorTextureRow(rowId, fillColor, backgroundColor, texture)
     imgui.TextColored(labelColor, 'Texture');
     imgui.SameLine();
     nextTexture = DrawChoice('Texture', texture, barTextures.GetOptions(), key .. '_texture');
+    NewLine();
+    imgui.TextColored(labelColor, 'Strength');
+    imgui.SameLine();
+    nextTextureStrength = DrawSliderControl(key .. '_texture_strength', nextTextureStrength, 0, 100, 95, true);
 
-    return nextFillColor, nextBackgroundColor, nextTexture;
+    return nextFillColor, nextBackgroundColor, nextTexture, nextTextureStrength;
 end
 
 local function DrawBorderRow(rowId, borderColor, borderSize)
@@ -1194,27 +1215,38 @@ function bar.DrawSettings(settings, context)
             return DrawColorPair(rowId, leftLabel, leftId, leftValue, rightLabel, rightId, rightValue);
         end
 
-        local function DrawHpTextureRow(rowId, fillColor, backgroundColor, texture)
+        local function DrawHpTextureRow(rowId, fillColor, backgroundColor, texture, textureStrength)
             local key = tostring(rowId or 'color_texture');
             local nextFillColor, nextBackgroundColor = DrawHpColorPair(key .. '_colors', 'Fill color', key .. '_fill_color', fillColor, 'BG color', key .. '_bg_color', backgroundColor);
             local nextTexture = texture;
+            local nextTextureStrength = tonumber(textureStrength) or 100;
 
             if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-                if (imgui.BeginTable('##bar_hp_' .. key .. '_texture', 2, tableFlags)) then
-                    imgui.TableSetupColumn('##texture_label', 0, barLabelWidth);
-                    imgui.TableSetupColumn('##texture_control', 0, barControlWidth);
+                if (imgui.BeginTable('##bar_hp_' .. key .. '_texture', 4, tableFlags)) then
+                    imgui.TableSetupColumn('##label_left', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##control_left', 0, barControlWidth);
+                    imgui.TableSetupColumn('##label_right', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##control_right', 0, barControlWidth);
                     imgui.TableNextRow();
                     imgui.TableNextColumn();
                     imgui.TextColored(labelColor, 'Texture');
                     imgui.TableNextColumn();
                     nextTexture = DrawBarTextureChoice(texture, key .. '_texture', 170);
+                    imgui.TableNextColumn();
+                    imgui.TextColored(labelColor, 'Strength');
+                    imgui.TableNextColumn();
+                    nextTextureStrength = DrawSliderControl(key .. '_texture_strength', nextTextureStrength, 0, 100, 95, true);
                     imgui.EndTable();
                 end
             else
                 nextTexture = DrawComboRow('Texture', texture, barTextures.GetOptions(), key .. '_texture', 170);
+                NewLine();
+                imgui.TextColored(labelColor, 'Strength');
+                imgui.SameLine();
+                nextTextureStrength = DrawSliderControl(key .. '_texture_strength', nextTextureStrength, 0, 100, 95, true);
             end
 
-            return nextFillColor, nextBackgroundColor, nextTexture;
+            return nextFillColor, nextBackgroundColor, nextTexture, nextTextureStrength;
         end
 
         local function DrawHpBorderRow(rowId, borderColor, borderSize)
@@ -1250,7 +1282,7 @@ function bar.DrawSettings(settings, context)
         DrawPanel('Bar Settings', function()
             settings.width, settings.height = DrawHpSliderPair(idPrefix .. 'size', 'Width', idPrefix .. 'width', settings.width, 20, 800, 'Height', idPrefix .. 'height', settings.height, 1, 160);
             settings.offsetX, settings.offsetY = DrawHpSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
-            settings.color, settings.backgroundColor, settings.texture = DrawHpTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture);
+            settings.color, settings.backgroundColor, settings.texture, settings.textureStrength = DrawHpTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture, settings.textureStrength);
             settings.borderColor, settings.borderSize = DrawHpBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
 
             if (resourceName == 'HP' or resourceName == 'MP') then
@@ -1391,7 +1423,7 @@ function bar.DrawSettings(settings, context)
     DrawInnerHeader('Bar Settings:');
     settings.width, settings.height = DrawSliderPair(idPrefix .. 'size', 'Width', idPrefix .. 'width', settings.width, 20, 800, 'Height', idPrefix .. 'height', settings.height, 1, 160);
     settings.offsetX, settings.offsetY = DrawSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
-    settings.color, settings.backgroundColor, settings.texture = DrawColorTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture);
+    settings.color, settings.backgroundColor, settings.texture, settings.textureStrength = DrawColorTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture, settings.textureStrength);
     settings.borderColor, settings.borderSize = DrawBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
 
     if (resourceName == 'Ward' or resourceName == 'Rage') then

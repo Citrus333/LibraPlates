@@ -1788,7 +1788,7 @@ function quickMenu.Render()
                 else
                     local selectedMount = tostring(menu.self.selectedMount or 'Chocobo');
                     MenuItem('Mount: ' .. (selectedMount ~= '' and selectedMount or 'None found'), 'mount.png', function()
-                        local mountName = selectedMount == 'Random' and mounts.GetRandomChoice() or selectedMount;
+                        local mountName = selectedMount == 'Random' and mounts.GetRandomOwnedChoice() or selectedMount;
 
                         if (mountName ~= nil and tostring(mountName or '') ~= '') then
                             QueueCommand('/mount "' .. tostring(mountName) .. '"', 1);

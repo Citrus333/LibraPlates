@@ -23,6 +23,9 @@ local scoutSeen = {};
 local scoutOrder = {};
 local pendingMountName = nil;
 local pendingMountUntil = 0;
+local randomMountIndex = 0;
+local randomMountPoolKey = '';
+local lastRandomMount = nil;
 
 local function AddUnique(list, seen, name)
     name = tostring(name or ''):gsub('^%s+', ''):gsub('%s+$', '');
@@ -305,13 +308,7 @@ function mounts.GetOwnedChoices()
 end
 
 function mounts.GetRandomOwnedChoice()
-    local owned = ReadOwnedMountNames();
-
-    if (#owned == 0) then
-        return nil;
-    end
-
-    return owned[math.random(#owned)];
+    return mounts.GetRandomChoice();
 end
 
 function mounts.GetRandomChoice()
@@ -328,7 +325,33 @@ function mounts.GetRandomChoice()
         return nil;
     end
 
-    return pool[math.random(#pool)];
+    table.sort(pool, function(left, right)
+        return tostring(left) < tostring(right);
+    end);
+
+    local poolKey = table.concat(pool, '\31');
+    if (randomMountPoolKey ~= poolKey) then
+        randomMountPoolKey = poolKey;
+        randomMountIndex = 0;
+    end
+
+    randomMountIndex = randomMountIndex + 1;
+    if (randomMountIndex > #pool) then
+        randomMountIndex = 1;
+    end
+
+    local choice = pool[randomMountIndex];
+
+    if (#pool > 1 and choice == lastRandomMount) then
+        randomMountIndex = randomMountIndex + 1;
+        if (randomMountIndex > #pool) then
+            randomMountIndex = 1;
+        end
+        choice = pool[randomMountIndex];
+    end
+
+    lastRandomMount = choice;
+    return choice;
 end
 
 local function FormatProbeResult(label, ok, value)

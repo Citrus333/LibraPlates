@@ -222,8 +222,11 @@ local function ClearWorldPlateCache()
     cachedWorldPlates = {};
 end
 
-local function BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName, globalSettings)
+local function BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName, globalSettings, aoeRangeSettings)
     local statusIconPack = globalSettings ~= nil and globalSettings.statusIcons ~= nil and globalSettings.statusIcons.iconPack or '';
+    local aoeSignature = (aoeRangeSettings ~= nil and aoeRangeSettings.enabled == true)
+        and aoeNameHighlight.GetSignature(center ~= nil and center.index or 0, 'self')
+        or 'aoe-name:0';
 
     return table.concat({
         'v=1',
@@ -233,7 +236,7 @@ local function BuildWorldCacheSignature(plateData, center, stateName, targetStat
         'state=' .. tostring(stateName or ''),
         'target=' .. tostring(targetStateName or ''),
         'layout=' .. tostring(layoutStateName or ''),
-        'aoe=' .. aoeNameHighlight.GetSignature(center ~= nil and center.index or 0, 'self'),
+        'aoe=' .. aoeSignature,
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'statusIconPack=' .. tostring(statusIconPack),
         'debug=' .. tostring(worldMarkerProbe.GetClickDebug() == true),
@@ -1339,14 +1342,14 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         end
     end
 
-    local cacheEligible = animatedBarActive ~= true and aoeNameHighlight.HasLiveAoe() ~= true and enmityActive ~= true;
+    local cacheEligible = animatedBarActive ~= true and (aoeRangeSettings.enabled ~= true or aoeNameHighlight.HasLiveAoe() ~= true) and enmityActive ~= true;
     local signature = nil;
     local vitalSignature = nil;
     local cacheKey = GetWorldCacheKey(stateName, targetStateName, layoutStateName, plateData.canvasWidth ~= nil);
     local cachedWorldPlate = cachedWorldPlates[cacheKey];
 
     if (cacheEligible == true) then
-        signature = BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName, globalSettings);
+        signature = BuildWorldCacheSignature(plateData, center, stateName, targetStateName, layoutStateName, globalSettings, aoeRangeSettings);
         vitalSignature = BuildWorldVitalSignature(
             center,
             hpPercent,

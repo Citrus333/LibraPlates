@@ -19,6 +19,9 @@ local recordingStartClock = 0;
 local recordingEndClock = 0;
 local recordingDuration = 0;
 local recordingPreviousDetail = nil;
+local recordingLastFrameClock = 0;
+local recordingPeakFrameGapMs = 0;
+local recordingPeakFrameGapAt = 0;
 local GetCounter = nil;
 
 local displayOrder = {
@@ -40,6 +43,19 @@ local displayOrder = {
 };
 
 local detailOrder = {
+    'event.command',
+    'event.textIn',
+    'event.packetIn',
+    'event.packetOut',
+    'event.mouse',
+    'alerts.packet',
+    'alerts.text',
+    'command.actionRange',
+    'command.aoe',
+    'command.mounts',
+    'command.other',
+    'actionRange.resolveName',
+    'actionRange.apply',
     'native.hook',
     'target.marker.build',
     'npc.scan',
@@ -86,6 +102,19 @@ local labels = {
     ['target.overlay'] = 'Target overlay',
     ['peer'] = 'Peer',
     ['quick.menu'] = 'Quick menu',
+    ['event.command'] = 'Command event',
+    ['event.textIn'] = 'Text event',
+    ['event.packetIn'] = 'Packet in event',
+    ['event.packetOut'] = 'Packet out event',
+    ['event.mouse'] = 'Mouse event',
+    ['alerts.packet'] = 'Alerts packet',
+    ['alerts.text'] = 'Alerts text',
+    ['command.actionRange'] = 'Command action range',
+    ['command.aoe'] = 'Command AOE',
+    ['command.mounts'] = 'Command mounts',
+    ['command.other'] = 'Command other',
+    ['actionRange.resolveName'] = 'Action name resolve',
+    ['actionRange.apply'] = 'Action apply',
     ['native.hook'] = 'Native hook',
     ['target.marker.build'] = 'Target build',
     ['npc.scan'] = 'NPC scan',
@@ -462,6 +491,11 @@ local function WritePerformanceReport()
             math.max(0, os.clock() - (tonumber(recordingStartClock) or os.clock())),
             tostring(frameIndex)
         ));
+        file:write(string.format(
+            'Frame gap: peak=%.1fms at=%.1fs\n',
+            tonumber(recordingPeakFrameGapMs) or 0,
+            tonumber(recordingPeakFrameGapAt) or 0
+        ));
     end
     file:write(string.format(
         'Adaptive: mode=%s fps=%.1f frameMs=%.1f tier=%s\n',
@@ -543,6 +577,9 @@ function perfMeter.StartTimedReport(seconds)
     recordingEndClock = recordingStartClock + duration;
     recordingDuration = duration;
     recordingPreviousDetail = detailEnabled == true;
+    recordingLastFrameClock = recordingStartClock;
+    recordingPeakFrameGapMs = 0;
+    recordingPeakFrameGapAt = 0;
     detailEnabled = true;
     lastReportStatus = 'Recording ' .. tostring(duration) .. 's';
 
@@ -566,6 +603,7 @@ function perfMeter.StopTimedReport(writeReport)
         detailEnabled = recordingPreviousDetail == true;
     end
     recordingPreviousDetail = nil;
+    recordingLastFrameClock = 0;
     return true;
 end
 
@@ -687,6 +725,18 @@ local function PopMonitorStyle(count)
 end
 
 function perfMeter.BeginFrame()
+    local now = os.clock();
+
+    if (recordingActive == true and recordingLastFrameClock > 0) then
+        local gapMs = math.max(0, (now - recordingLastFrameClock) * 1000.0);
+        if (gapMs > recordingPeakFrameGapMs) then
+            recordingPeakFrameGapMs = gapMs;
+            recordingPeakFrameGapAt = math.max(0, now - (tonumber(recordingStartClock) or now));
+        end
+    end
+
+    recordingLastFrameClock = now;
+
     if (recordingActive == true and os.clock() >= (tonumber(recordingEndClock) or 0)) then
         perfMeter.StopTimedReport(true);
     end

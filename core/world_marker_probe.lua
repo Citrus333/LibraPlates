@@ -3888,19 +3888,10 @@ local function ApplyScreenPlateStacking(drawablePlates)
                             end
                         end
 
-                        local nextY;
-                        if (entry.stackType == 'enemy') then
-                            nextY = other.drawY + other.height + gap;
-                            if (nextY <= entry.drawY) then
-                                nextY = other.drawY - entry.height - gap;
-                            end
-                        else
-                            nextY = other.drawY - entry.height - gap;
-                        end
+                        local nextY = other.drawY - entry.height - gap;
 
                         if (
-                            (entry.stackType == 'enemy' and nextY ~= entry.drawY) or
-                            (entry.stackType ~= 'enemy' and nextY < entry.drawY)
+                            nextY < entry.drawY
                         ) then
                             entry.drawX = entry.baseX;
                             entry.drawY = nextY;

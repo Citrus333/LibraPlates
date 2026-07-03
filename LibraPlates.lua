@@ -40,6 +40,7 @@ local playerBlacklist = require('core.player_blacklist');
 local blacklistModelReplace = require('core.blacklist_model_replace');
 local diagnostics = require('core.diagnostics');
 local adaptivePerformance = require('core.adaptive_performance');
+local perfMeter = require('core.perf_meter');
 local profileAutoSwitch = require('core.profile_auto_switch');
 local mogJobDebug = require('core.mog_job_debug');
 local nativeDrawHooksRegistered = false;
@@ -120,16 +121,28 @@ end);
 -- ============================================================
 
 ashita.events.register('command', 'libraplates_command', function(e)
-    aoeNameHighlight.HandleCommandText(e.command);
+    local eventTimer = perfMeter.BeginDetail('event.command');
+    local actionRangeTimer = perfMeter.BeginDetail('command.actionRange');
     targetActionRange.HandleCommandText(e.command);
+    perfMeter.EndDetail(actionRangeTimer);
+    local aoeTimer = perfMeter.BeginDetail('command.aoe');
+    aoeNameHighlight.HandleCommandText(e.command);
+    perfMeter.EndDetail(aoeTimer);
+    local mountsTimer = perfMeter.BeginDetail('command.mounts');
     mounts.HandleCommandText(e.command);
+    perfMeter.EndDetail(mountsTimer);
+    local otherTimer = perfMeter.BeginDetail('command.other');
     anonStatus.HandleCommandText(e.command);
     playerBlacklist.HandleCommandText(e.command);
     commands.Handle(e);
+    perfMeter.EndDetail(otherTimer);
+    perfMeter.EndDetail(eventTimer);
 end);
 
 ashita.events.register('mouse', 'libraplates_mouse', function(e)
+    local eventTimer = perfMeter.BeginDetail('event.mouse');
     modules.HandleMouse(e);
+    perfMeter.EndDetail(eventTimer);
 end);
 
 ashita.events.register('login', 'libraplates_login', function()
@@ -138,6 +151,7 @@ ashita.events.register('login', 'libraplates_login', function()
 end);
 
 ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
+    local eventTimer = perfMeter.BeginDetail('event.packetIn');
     blacklistModelReplace.HandlePacketIn(e);
     mounts.HandlePacketIn(e);
     targeting.HandlePacketIn(e);
@@ -145,28 +159,64 @@ ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
     engagedEnemies.HandlePacketIn(e);
     enmity.HandlePacketIn(e);
     enemyCasts.HandlePacketIn(e);
+    targetActionRange.HandlePacketIn(e);
+    local alertsTimer = perfMeter.BeginDetail('alerts.packet');
     enemyAlerts.HandlePacketIn(e);
+    perfMeter.EndDetail(alertsTimer);
     enemyStatuses.HandlePacketIn(e);
     partyStatuses.HandlePacketIn(e);
     trustStatusIcons.HandlePacketIn(e);
     luopanStatuses.HandlePacketIn(e);
     bstCharmTimer.HandlePacketIn(e);
     crafting.HandlePacketIn(e);
+    perfMeter.EndDetail(eventTimer);
 end);
 
 ashita.events.register('packet_out', 'libraplates_packet_out', function(e)
+    local eventTimer = perfMeter.BeginDetail('event.packetOut');
     mounts.HandlePacketOut(e);
+    targetActionRange.HandlePacketOut(e);
     mogJobDebug.HandlePacketOut(e);
     petState.HandlePacketOut(e);
     bstCharmTimer.HandlePacketOut(e);
+    perfMeter.EndDetail(eventTimer);
 end);
 
+local function ShouldIgnoreTextInForLibraPlates(e)
+    local raw = tostring((e ~= nil and (e.message or e.text or e.original or e.modified or e.injected)) or '');
+    local text = raw:gsub(string.char(0x1E) .. '.', ''):gsub('[%z\1-\31]', '');
+
+    if (text == '') then
+        return true;
+    end
+
+    local lower = text:lower();
+
+    return
+        lower:find('a command error occurred', 1, true) ~= nil or
+        lower:find('[thotbar] swapped to palette:', 1, true) ~= nil or
+        lower:find('^%s*>>%s*/ja%s+') ~= nil or
+        lower:find('^%s*>>%s*/jobability%s+') ~= nil or
+        lower:find('^%s*>>%s*/ma%s+') ~= nil or
+        lower:find('^%s*>>%s*/magic%s+') ~= nil or
+        lower:find('^%s*>>%s*/trust%s+') ~= nil;
+end
+
 ashita.events.register('text_in', 'libraplates_text_in', function(e)
+    local eventTimer = perfMeter.BeginDetail('event.textIn');
+    if (ShouldIgnoreTextInForLibraPlates(e) == true) then
+        perfMeter.EndDetail(eventTimer);
+        return;
+    end
+
     fishing.HandleTextIn(e);
     restingTick.HandleTextIn(e);
+    local alertsTimer = perfMeter.BeginDetail('alerts.text');
     enemyAlerts.HandleTextIn(e);
+    perfMeter.EndDetail(alertsTimer);
     enemyStatuses.HandleTextIn(e);
     quickMenu.HandleTextIn(e);
+    perfMeter.EndDetail(eventTimer);
 end);
 
 ashita.events.register('d3d_present', 'libraplates_present', function()

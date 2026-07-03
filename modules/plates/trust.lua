@@ -709,7 +709,7 @@ local function QueueTrust(trust)
             'mp=' .. tostring(mpPercent),
             'tp=' .. tostring(tpValue),
             'enmity=' .. BoolKey(enmityEnabled),
-            'aoe=' .. aoeNameHighlight.GetSignature(trust.index, 'trust'),
+            'aoe=' .. (aoeRangeSettings.enabled == true and aoeNameHighlight.GetSignature(trust.index, 'trust') or 'aoe-name:0'),
             'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),

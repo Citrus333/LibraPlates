@@ -1455,7 +1455,7 @@ local function QueuePlayer(player)
             'lvsync=' .. tostring(levelSyncIconTextureId or ''),
             'new=' .. tostring(newAdventurerIconTextureId or ''),
             'staff=' .. tostring(staffIconTextureId or '') .. ':' .. tostring(staffInfo ~= nil and staffInfo.type or ''),
-            'aoe=' .. (isPartyPlayer == true and aoeNameHighlight.GetSignature(player.index, 'pc') or 'aoe-name:0'),
+            'aoe=' .. (isPartyPlayer == true and aoeRangeSettings.enabled == true and aoeNameHighlight.GetSignature(player.index, 'pc') or 'aoe-name:0'),
             'buffs=' .. statusRowsSignature(buffRows),
             'debuffs=' .. statusRowsSignature(debuffRows),
             'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),

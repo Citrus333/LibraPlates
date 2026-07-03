@@ -1,6 +1,7 @@
 local targetActionRange = {};
 local log = require('core.log');
 local petCommands = require('data.pet_commands');
+local perfMeter = require('core.perf_meter');
 local resourceCache = {};
 local lastAction = nil;
 local recentAction = nil;
@@ -516,21 +517,28 @@ local function BuildActionCommandLookup(category)
     return map;
 end
 
-local function ResolveActionIdByName(category, actionName)
+local function ResolveActionIdByName(category, actionName, allowFullScan)
     local normalized = NormalizeActionName(actionName);
     local rawActionName = tostring(actionName or '');
     local resolvedCategory = tonumber(category) or 0;
+    local canScan = allowFullScan == true;
 
     if (normalized == nil or resolvedCategory <= 0) then
         return nil, nil;
     end
 
-    local map = BuildActionCommandLookup(resolvedCategory);
-    if (map == nil) then
-        return nil, nil;
+    local map = nil;
+    if (type(actionCommandNameCache) == 'table') then
+        map = actionCommandNameCache[resolvedCategory];
+    end
+    if (map == nil and (canScan == true or resolvedCategory == petCommandCategory)) then
+        map = BuildActionCommandLookup(resolvedCategory);
     end
 
-    local entry = map[normalized];
+    local entry = nil;
+    if (type(map) == 'table') then
+        entry = map[normalized];
+    end
     if (entry ~= nil) then
         local candidateId = tonumber(entry.id);
         local candidateMethod = tostring(entry.method or '');
@@ -598,6 +606,10 @@ local function ResolveActionIdByName(category, actionName)
                 DebugLog('action-range cached command resolution mismatch=' .. tostring(normalized) .. ' id=' .. tostring(candidateId) .. ' method=' .. tostring(candidateMethod));
             end
         end
+    end
+
+    if (canScan ~= true) then
+        return nil, nil;
     end
 
     local resourceManagerAccessor = GetResourceManager;
@@ -2084,6 +2096,7 @@ local function ParseActionPacket(e)
 end
 
 local function ApplyQueuedAction(category, actionId, source, displayName)
+    local applyTimer = perfMeter.BeginDetail('actionRange.apply');
     category = tonumber(category);
     actionId = tonumber(actionId);
     local now = os.clock();
@@ -2093,6 +2106,7 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
             DebugLog('action-range queue cleared category=' .. tostring(category) .. ' actionId=' .. tostring(actionId));
         end
         ClearQueuedActionForContextChange();
+        perfMeter.EndDetail(applyTimer);
         return false;
     end
 
@@ -2101,6 +2115,7 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
         if (IsDebugEnabled() == true) then
             DebugLog('action-range ignored category=' .. tostring(category) .. ' actionId=' .. tostring(actionId) .. ' range=' .. tostring(range));
         end
+        perfMeter.EndDetail(applyTimer);
         return false;
     end
 
@@ -2110,6 +2125,7 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
         lastQueuedPacketSignature.action == actionId and
         (now - lastQueuedPacketAt) < queuedPacketDedupeSeconds
     ) then
+        perfMeter.EndDetail(applyTimer);
         return false;
     end
 
@@ -2126,6 +2142,7 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
         if (IsDebugEnabled() == true) then
             DebugLog('action-range packet ignored while command queue window active category=' .. tostring(category) .. ' action=' .. tostring(actionId));
         end
+        perfMeter.EndDetail(applyTimer);
         return false;
     end
 
@@ -2202,6 +2219,7 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
         };
     end
 
+    perfMeter.EndDetail(applyTimer);
     return true;
 end
 
@@ -2233,7 +2251,9 @@ function targetActionRange.HandleActionCommand(commandText)
         return false;
     end
 
-    local ok, actionId, actionMethod = pcall(ResolveActionIdByName, parsedCategory, parsedActionName);
+    local resolveTimer = perfMeter.BeginDetail('actionRange.resolveName');
+    local ok, actionId, actionMethod = pcall(ResolveActionIdByName, parsedCategory, parsedActionName, false);
+    perfMeter.EndDetail(resolveTimer);
     if (ok ~= true) then
         if (IsDebugEnabled() == true) then
             DebugLog('cast queue command resolve failed=' .. tostring(commandText) .. ' err=' .. tostring(actionId));
@@ -2263,7 +2283,7 @@ function targetActionRange.ProbeCommandText(commandText)
         return 'cast range probe: could not parse action command=' .. tostring(commandText or '');
     end
 
-    local ok, actionId, actionMethod = pcall(ResolveActionIdByName, parsedCategory, parsedActionName);
+    local ok, actionId, actionMethod = pcall(ResolveActionIdByName, parsedCategory, parsedActionName, true);
     if (ok ~= true) then
         return 'cast range probe: resolve error command=' .. tostring(commandText or '') .. ' err=' .. tostring(actionId);
     end

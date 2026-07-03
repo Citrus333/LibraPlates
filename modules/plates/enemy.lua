@@ -1617,7 +1617,7 @@ local function QueueFreshIdleCache(enemy)
         enemyCasts.GetActiveCast(enemy.serverId) ~= nil or
         engagedEnemies.IsEngaged(enemy.index) == true or
         worldMarkerProbe.IsPlateHovered(enemy.index, 'enemy') == true or
-        aoeNameHighlight.HasLiveAoe() == true
+        (state.GetWidgetSettings('Enemy', 'Combat', 'AOE range', aoeRangeDefaults).enabled == true and aoeNameHighlight.HasLiveAoe() == true)
     ) then
         return false;
     end
@@ -1855,7 +1855,7 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
         'catseyeSpecialNameIcon=' .. tostring(IsCatseyeSpecialNameIcon(enemy) == true),
         'specialIconSettings=' .. SettingKey(context.specialIconSettings, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
         'nm=' .. tostring(context.mobInfo ~= nil and context.mobInfo.IsNM or ''),
-        'aoe=' .. aoeNameHighlight.GetSignature(enemy.index, 'enemy'),
+        'aoe=' .. (context.aoeRangeSettings.enabled == true and aoeNameHighlight.GetSignature(enemy.index, 'enemy') or 'aoe-name:0'),
         'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
         'bg=' .. SettingKey(context.backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
         'nameSettings=' .. SettingKey(context.nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'claimUnclaimedOutlineColor', 'claimPartyOutlineColor', 'claimOtherOutlineColor', 'claimCallForHelpOutlineColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
@@ -2035,7 +2035,7 @@ local function QueueEnemy(enemy)
         and #context.buffRows == 0
         and #context.debuffRows == 0
         and context.isHovered ~= true
-        and aoeNameHighlight.HasLiveAoe() ~= true
+        and (context.aoeRangeSettings.enabled ~= true or aoeNameHighlight.HasLiveAoe() ~= true)
         and hasDynamicDistance ~= true;
     local cacheKey = nil;
     local signature = nil;
@@ -2076,7 +2076,7 @@ local function QueueEnemy(enemy)
             cacheSkipReason = 'debuffs';
         elseif (context.isHovered == true) then
             cacheSkipReason = 'hover';
-        elseif (aoeNameHighlight.HasLiveAoe() == true) then
+        elseif (context.aoeRangeSettings.enabled == true and aoeNameHighlight.HasLiveAoe() == true) then
             cacheSkipReason = 'aoe';
         elseif (hasDynamicDistance == true) then
             cacheSkipReason = 'distance';

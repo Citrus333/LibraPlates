@@ -229,38 +229,6 @@ function aoeNameHighlight.HandleCommandText(commandText)
         suppressUntil = os.clock() + 8.0;
         suppressReason = 'pet-fight';
     end
-
-    if (targetActionRange ~= nil and targetActionRange.ProbeCommandText ~= nil) then
-        local ok, probeText = pcall(function()
-            return targetActionRange.ProbeCommandText(commandText);
-        end);
-
-        if (ok == true and type(probeText) == 'string' and probeText:find('cast range probe: name=', 1, true) ~= nil) then
-            local name = probeText:match('name=([^ ]+)') or probeText:match('name=(.-)%s+category=');
-            local categoryText = probeText:match('category=([^ ]+)');
-            local id = tonumber(probeText:match('id=(%d+)'));
-            local method = probeText:match('resourceMethod=([^ ]+)');
-            local category = nil;
-
-            if (categoryText == 'ja' or categoryText == 'ability') then
-                category = 2;
-            elseif (categoryText == 'ma' or categoryText == 'spell') then
-                category = 3;
-            elseif (categoryText == 'petcommand') then
-                category = 18;
-            end
-
-            if (id ~= nil and category ~= nil) then
-                recentCommandAction = {
-                    id = id,
-                    category = category,
-                    resourceMethod = method,
-                    name = name,
-                    updated = os.clock(),
-                };
-            end
-        end
-    end
 end
 
 local function IsSuppressed()

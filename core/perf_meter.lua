@@ -22,6 +22,8 @@ local recordingPreviousDetail = nil;
 local recordingLastFrameClock = 0;
 local recordingPeakFrameGapMs = 0;
 local recordingPeakFrameGapAt = 0;
+local eventTrail = {};
+local maxEventTrail = 80;
 local GetCounter = nil;
 
 local displayOrder = {
@@ -215,6 +217,24 @@ local function Record(name, elapsedMs)
     entry.avg = (entry.avg * (1.0 - smoothing)) + (elapsedMs * smoothing);
     entry.peak = math.max(entry.peak or 0, elapsedMs);
     entry.count = (entry.count or 0) + 1;
+end
+
+local function AddEvent(name, details)
+    local now = os.clock();
+    local at = now;
+    if (recordingActive == true and recordingStartClock ~= nil and recordingStartClock > 0) then
+        at = math.max(0, now - recordingStartClock);
+    end
+
+    eventTrail[#eventTrail + 1] = {
+        at = at,
+        name = tostring(name or ''),
+        details = tostring(details or ''),
+    };
+
+    while (#eventTrail > maxEventTrail) do
+        table.remove(eventTrail, 1);
+    end
 end
 
 local function AddLine(lines, name)
@@ -549,6 +569,20 @@ local function WritePerformanceReport()
     file:write('\nNative Hooks\n');
     file:write('shouldUseDrawHooks=' .. tostring(nativeHookStatus) .. '\n');
 
+    file:write('\nEvents\n');
+    if (#eventTrail == 0) then
+        file:write('none\n');
+    else
+        for _, event in ipairs(eventTrail) do
+            file:write(string.format(
+                '%.3fs\t%s\t%s\n',
+                tonumber(event.at) or 0,
+                tostring(event.name or ''),
+                tostring(event.details or '')
+            ));
+        end
+    end
+
     file:write('\nAll Counters\n');
     local names = {};
     for name, _ in pairs(counters) do
@@ -765,6 +799,10 @@ function perfMeter.Count(name, amount)
 
     local key = tostring(name);
     counters[key] = (tonumber(counters[key]) or 0) + (tonumber(amount) or 1);
+end
+
+function perfMeter.LogEvent(name, details)
+    AddEvent(name, details);
 end
 
 GetCounter = function(name)
@@ -1064,6 +1102,7 @@ function perfMeter.Reset()
     samples = {};
     counters = {};
     lastCounters = {};
+    eventTrail = {};
     frameIndex = 0;
 end
 

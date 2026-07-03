@@ -21,6 +21,31 @@ local enemyInfoCache = {
     updated = 0,
 };
 
+local function CopyTable(value)
+    if (type(value) ~= 'table') then
+        return value;
+    end
+
+    local copy = {};
+    for key, child in pairs(value) do
+        copy[key] = CopyTable(child);
+    end
+
+    return copy;
+end
+
+local function MergePeerSettings(globalPeerSettings, widgetPeerSettings)
+    local merged = CopyTable(globalPeerSettings or {});
+
+    if (type(widgetPeerSettings) == 'table') then
+        for key, value in pairs(widgetPeerSettings) do
+            merged[key] = CopyTable(value);
+        end
+    end
+
+    return merged;
+end
+
 local function IsVirtualKeyDown(vk)
     if (peerInspector.user32 == nil) then
         return false;
@@ -1279,10 +1304,6 @@ function peerInspector.Render()
         return;
     end
 
-    if (IsModifierActive(peerSettings) ~= true) then
-        return;
-    end
-
     local hovered = worldMarkerProbe.GetHoveredPlate();
 
     if (hovered == nil or hovered.targetIndex == nil) then
@@ -1296,7 +1317,12 @@ function peerInspector.Render()
         local selfPeerSettings = state.GetWidgetSettings('Self', layoutStateName, 'Peer', { enabled = true });
 
         if (PeerWidgetLoads(selfPeerSettings) == true) then
-            DrawSelfInspector(GetSelfPeerData(), peerSettings);
+            local activePeerSettings = MergePeerSettings(peerSettings, selfPeerSettings);
+            if (IsModifierActive(activePeerSettings) ~= true) then
+                return;
+            end
+
+            DrawSelfInspector(GetSelfPeerData(), activePeerSettings);
         end
 
         return;
@@ -1307,10 +1333,15 @@ function peerInspector.Render()
         local playerPeerSettings = state.GetWidgetSettings('PC', layoutStateName, 'Peer', { enabled = true });
 
         if (PeerWidgetLoads(playerPeerSettings) == true) then
-            local player = GetPlayerPeerData(hovered.targetIndex, peerSettings);
+            local activePeerSettings = MergePeerSettings(peerSettings, playerPeerSettings);
+            if (IsModifierActive(activePeerSettings) ~= true) then
+                return;
+            end
+
+            local player = GetPlayerPeerData(hovered.targetIndex, activePeerSettings);
 
             if (player ~= nil) then
-                DrawPlayerInspector(player, peerSettings);
+                DrawPlayerInspector(player, activePeerSettings);
             end
         end
 
@@ -1328,20 +1359,9 @@ function peerInspector.Render()
         return;
     end
 
-    if (
-        adaptivePerformance.ShouldThrottleBackground() == true and
-        IsModifierActive(peerSettings) ~= true
-    ) then
-        return;
-    end
-
     local enemy = entities.GetEnemy(hovered.targetIndex, true);
 
     if (enemy == nil) then
-        return;
-    end
-
-    if ((tonumber(enemy.distance) or 0) > math.max(0.0, math.min(49.9, tonumber(peerSettings.maxRange) or 49.9))) then
         return;
     end
 
@@ -1351,12 +1371,29 @@ function peerInspector.Render()
         return;
     end
 
-    if (tostring(peerSettings.displayMode or 'Icons') == 'Text') then
-        DrawEnemyTextInspector(enemy, info, peerSettings);
+    local activePeerSettings = MergePeerSettings(peerSettings, enemyPeerSettings);
+
+    if (IsModifierActive(activePeerSettings) ~= true) then
         return;
     end
 
-    DrawEnemyInspector(enemy, info, peerSettings);
+    if (
+        adaptivePerformance.ShouldThrottleBackground() == true and
+        IsModifierActive(activePeerSettings) ~= true
+    ) then
+        return;
+    end
+
+    if ((tonumber(enemy.distance) or 0) > math.max(0.0, math.min(49.9, tonumber(activePeerSettings.maxRange) or 49.9))) then
+        return;
+    end
+
+    if (tostring(activePeerSettings.displayMode or 'Icons') == 'Text') then
+        DrawEnemyTextInspector(enemy, info, activePeerSettings);
+        return;
+    end
+
+    DrawEnemyInspector(enemy, info, activePeerSettings);
 end
 
 pcall(function()

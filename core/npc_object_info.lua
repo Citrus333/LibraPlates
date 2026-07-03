@@ -286,8 +286,8 @@ local function BuildActiveZoneSources()
         zoneNameFile = zoneManifest.zoneNames[zoneName];
     end
 
-    local zoneIdData = LoadZoneFile(zoneIdFile);
-    local zoneNameData = (zoneNameFile ~= zoneIdFile) and LoadZoneFile(zoneNameFile) or {};
+    local primaryZoneFile = zoneNameFile or zoneIdFile;
+    local zoneData = LoadZoneFile(primaryZoneFile);
     local activeNpcIcons = {};
     local activeItemIcons = {};
     local activeCatseyeNpcIcons = {};
@@ -297,14 +297,10 @@ local function BuildActiveZoneSources()
     CopySourceEntries(activeItemIcons, globalData.item);
     CopySourceEntries(activeCatseyeNpcIcons, globalData.catseyeNpc);
     CopySourceEntries(activeCatseyeItemIcons, globalData.catseyeItem);
-    CopySourceEntries(activeNpcIcons, zoneIdData.npc);
-    CopySourceEntries(activeItemIcons, zoneIdData.item);
-    CopySourceEntries(activeCatseyeNpcIcons, zoneIdData.catseyeNpc);
-    CopySourceEntries(activeCatseyeItemIcons, zoneIdData.catseyeItem);
-    CopySourceEntries(activeNpcIcons, zoneNameData.npc);
-    CopySourceEntries(activeItemIcons, zoneNameData.item);
-    CopySourceEntries(activeCatseyeNpcIcons, zoneNameData.catseyeNpc);
-    CopySourceEntries(activeCatseyeItemIcons, zoneNameData.catseyeItem);
+    CopySourceEntries(activeNpcIcons, zoneData.npc);
+    CopySourceEntries(activeItemIcons, zoneData.item);
+    CopySourceEntries(activeCatseyeNpcIcons, zoneData.catseyeNpc);
+    CopySourceEntries(activeCatseyeItemIcons, zoneData.catseyeItem);
 
     npcIcons = activeNpcIcons;
     itemIcons = activeItemIcons;

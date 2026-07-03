@@ -18,6 +18,7 @@ local debugPacketOutEnabled = false;
 local lastCastCommandSignature = nil;
 local lastCastCommandSeenAt = -1;
 local petCommandCategory = 18;
+local actionRangeSlowEventMs = 15.0;
 
 local trackedCategories = {
     [2] = true,   -- Ability queue variants used by this client packet path
@@ -30,7 +31,6 @@ local trackedCategories = {
 local debugEnabled = false;
 local actionPacketIds = {
     [0x01A] = true,
-    [0x015] = true,
     [0x061] = true,
     [0x0C0] = true,
     [0x1A2] = true,
@@ -40,6 +40,14 @@ local function GetPacketData(e)
 end
 local function GetPacketSize(e)
     return (tonumber(e.size) or 0);
+end
+local function FormatPacketId(packetId)
+    local id = tonumber(packetId);
+    if (id == nil) then
+        return 'nil';
+    end
+
+    return string.format('0x%03X', id);
 end
 local ScanActionCandidates;
 local lastPacketOutLogAt = {
@@ -2076,10 +2084,6 @@ local function ParseActionPacket(e)
         return nil, nil;
     end
 
-    if (tonumber(e.id) == 0x015) then
-        return ParseOutActionLoosePacket(e);
-    end
-
     if (e.id == 0x01A) then
         return ParseOutActionPacket(e);
     end
@@ -2095,28 +2099,53 @@ local function ParseActionPacket(e)
     return nil, nil;
 end
 
-local function ApplyQueuedAction(category, actionId, source, displayName)
+local function ApplyQueuedAction(category, actionId, source, displayName, packetId, packetSize)
     local applyTimer = perfMeter.BeginDetail('actionRange.apply');
     category = tonumber(category);
     actionId = tonumber(actionId);
     local now = os.clock();
+    local started = now;
+    local rangeMs = 0;
+    local resourceMs = 0;
+    local nameMs = 0;
+
+    local function FinishApply(result, reason)
+        local elapsedMs = (os.clock() - started) * 1000.0;
+        if (elapsedMs >= actionRangeSlowEventMs and perfMeter.LogEvent ~= nil) then
+            perfMeter.LogEvent('actionRange.apply.slow', string.format(
+                'ms=%.1f source=%s packet=%s size=%s category=%s action=%s reason=%s rangeMs=%.1f resourceMs=%.1f nameMs=%.1f',
+                elapsedMs,
+                tostring(source or ''),
+                FormatPacketId(packetId),
+                tostring(packetSize or ''),
+                tostring(category),
+                tostring(actionId),
+                tostring(reason or ''),
+                rangeMs,
+                resourceMs,
+                nameMs
+            ));
+        end
+        perfMeter.EndDetail(applyTimer);
+        return result;
+    end
 
     if (actionId == nil or actionId <= 0) then
         if (source ~= 'command') then
             DebugLog('action-range queue cleared category=' .. tostring(category) .. ' actionId=' .. tostring(actionId));
         end
         ClearQueuedActionForContextChange();
-        perfMeter.EndDetail(applyTimer);
-        return false;
+        return FinishApply(false, 'invalid-action');
     end
 
+    local rangeClock = os.clock();
     local range = ResolveActionRange(category, actionId);
+    rangeMs = (os.clock() - rangeClock) * 1000.0;
     if (trackedCategories[category] ~= true and range == nil) then
         if (IsDebugEnabled() == true) then
             DebugLog('action-range ignored category=' .. tostring(category) .. ' actionId=' .. tostring(actionId) .. ' range=' .. tostring(range));
         end
-        perfMeter.EndDetail(applyTimer);
-        return false;
+        return FinishApply(false, 'untracked-no-range');
     end
 
     if (
@@ -2125,8 +2154,7 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
         lastQueuedPacketSignature.action == actionId and
         (now - lastQueuedPacketAt) < queuedPacketDedupeSeconds
     ) then
-        perfMeter.EndDetail(applyTimer);
-        return false;
+        return FinishApply(false, 'duplicate');
     end
 
     if (
@@ -2142,16 +2170,17 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
         if (IsDebugEnabled() == true) then
             DebugLog('action-range packet ignored while command queue window active category=' .. tostring(category) .. ' action=' .. tostring(actionId));
         end
-        perfMeter.EndDetail(applyTimer);
-        return false;
+        return FinishApply(false, 'command-window');
     end
 
     local queuedResource = nil;
     local queuedMethod = nil;
     local queuedResolvedId = nil;
+    local resourceClock = os.clock();
     local resolvedOk = pcall(function()
         queuedResource, queuedMethod, queuedResolvedId = ResolveActionResource(category, actionId);
     end);
+    resourceMs = (os.clock() - resourceClock) * 1000.0;
     local queuedType = 'action';
     if (queuedMethod == 'GetAbilityById' or queuedMethod == 'GetAbilityByTimerId') then
         queuedType = 'ability';
@@ -2170,12 +2199,14 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
     elseif (category == 2 or category == 7 or category == 9 or category == 16) then
         queuedType = 'ability';
     end
+    local nameClock = os.clock();
     local queuedName = GetQueuedActionName(
         (resolvedOk == true and queuedResource or nil),
         category,
         actionId,
         queuedResolvedId
     );
+    nameMs = (os.clock() - nameClock) * 1000.0;
     if (queuedName == nil) then
         queuedName = tostring(displayName or '');
     end
@@ -2219,8 +2250,7 @@ local function ApplyQueuedAction(category, actionId, source, displayName)
         };
     end
 
-    perfMeter.EndDetail(applyTimer);
-    return true;
+    return FinishApply(true, 'queued');
 end
 
 function targetActionRange.HandleActionCommand(commandText)
@@ -2400,7 +2430,8 @@ function targetActionRange.HandlePacketOut(e)
         return;
     end
 
-    ApplyQueuedAction(category, actionId, 'packet');
+    perfMeter.Count('actionRange.packet.' .. FormatPacketId(packetId), 1);
+    ApplyQueuedAction(category, actionId, 'packet', nil, packetId, GetPacketSize(e));
 end
 
 function targetActionRange.HandlePacketIn(e)

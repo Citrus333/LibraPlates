@@ -5013,7 +5013,7 @@ function GetPreviewSelection()
         elseif (selectedWidget == 'Peer (module)') then
             context = {
                 entityName = GetStorageEntity(selectedEntity),
-                stateName = GetStorageState(selectedState),
+                stateName = GetWidgetStorageState(selectedEntity, selectedState, selectedWidget),
                 widgetKey = 'Peer',
             };
         elseif (selectedWidget == 'Enmity (module)') then

@@ -55,6 +55,40 @@ local targetModuleDefaults = require('config.widgets.target_module');
 local subtargetModuleDefaults = require('config.widgets.subtarget_module');
 local aoeRangeDefaults = require('config.widgets.aoe_range');
 
+local function CopyTable(value)
+    if (type(value) ~= 'table') then
+        return value;
+    end
+
+    local copy = {};
+    for key, child in pairs(value) do
+        copy[key] = CopyTable(child);
+    end
+
+    return copy;
+end
+
+local function GetPreviewPeerSettings(context)
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local peerSettings = CopyTable(globalSettings.peer or {});
+
+    if (context ~= nil and tostring(context.widgetKey or '') == 'Peer') then
+        local entityName = tostring(context.entityName or '');
+        local stateName = tostring(context.stateName or '');
+
+        if (entityName ~= '' and stateName ~= '') then
+            local widgetSettings = state.GetWidgetSettings(entityName, stateName, 'Peer', { enabled = true });
+            if (type(widgetSettings) == 'table') then
+                for key, value in pairs(widgetSettings) do
+                    peerSettings[key] = CopyTable(value);
+                end
+            end
+        end
+    end
+
+    return peerSettings;
+end
+
 local petTimerDefaults = {
     enabled = true,
     displayMode = 'Text',
@@ -3648,13 +3682,12 @@ local function GetPreviewEnemyPeerIconInspectorHeight(peerSettings)
     return math.max(84, h + 22);
 end
 
-local function DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHeight)
+local function DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHeight, context)
     if (drawList == nil or drawList.AddText == nil or drawList.AddRectFilled == nil) then
         return;
     end
 
-    local settings = state.GetGlobalSettings(globalDefaults);
-    local peerSettings = settings.peer or {};
+    local peerSettings = GetPreviewPeerSettings(context);
     local panelW = math.max(320, math.min(GetPreviewPeerInspectorWidth(peerSettings, 'Enemy'), previewWidth - 36));
     local panelH = math.min(
         (tostring(peerSettings.displayMode or 'Text') == 'Text') and GetPreviewEnemyPeerTextInspectorHeight(peerSettings) or GetPreviewEnemyPeerIconInspectorHeight(peerSettings),
@@ -3768,13 +3801,12 @@ local function DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHei
     end
 end
 
-local function DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight)
+local function DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight, context)
     if (drawList == nil or drawList.AddText == nil or drawList.AddRectFilled == nil) then
         return;
     end
 
-    local settings = state.GetGlobalSettings(globalDefaults);
-    local peerSettings = settings.peer or {};
+    local peerSettings = GetPreviewPeerSettings(context);
     local showName = peerSettings.showName ~= false;
     local showJobLine = peerSettings.showJob ~= false or peerSettings.showLevel ~= false;
     local showStats = peerSettings.showHpValue ~= false;
@@ -3900,13 +3932,12 @@ local function DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight)
     end
 end
 
-local function DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight)
+local function DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight, context)
     if (drawList == nil or drawList.AddText == nil or drawList.AddRectFilled == nil) then
         return;
     end
 
-    local settings = state.GetGlobalSettings(globalDefaults);
-    local peerSettings = settings.peer or {};
+    local peerSettings = GetPreviewPeerSettings(context);
     local panelW = math.min(GetPreviewPeerInspectorWidth(peerSettings, 'PC'), previewWidth - 36);
     local panelH = math.min(136, previewHeight - 8);
     local panelX, panelY = GetPreviewPeerPanelPosition(x, y, previewWidth, previewHeight, panelW, panelH);
@@ -4037,11 +4068,11 @@ function preview.Draw(entityName, stateName, context)
     end
 
     if (isEnemyPeerPreview == true) then
-        DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHeight);
+        DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHeight, context);
     elseif (isSelfPeerPreview == true) then
-        DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight);
+        DrawSelfPeerPreview(drawList, x, y, previewWidth, previewHeight, context);
     elseif (isPcPeerPreview == true) then
-        DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight);
+        DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight, context);
     end
 
     if (drawList.PushClipRect ~= nil and drawList.PopClipRect ~= nil) then

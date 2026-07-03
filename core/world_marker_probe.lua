@@ -138,6 +138,13 @@ local lastSelfJobText = '';
 local lastSelfJobEnabled = false;
 local lastSelfJobMode = 0;
 local clickSelectTarget = nil;
+worldMarkerProbe._stackScreenOffsetState = {};
+worldMarkerProbe._lastStackSmoothingClock = nil;
+function worldMarkerProbe._HasStackScreenOffset(plate)
+    return
+        (tonumber(plate ~= nil and plate._stackScreenOffsetX) or 0) ~= 0 or
+        (tonumber(plate ~= nil and plate._stackScreenOffsetY) or 0) ~= 0;
+end
 local clickSelectEnemyTarget = nil;
 local clickAttackEnemyTarget = nil;
 local helperPointer = nil;
@@ -417,6 +424,54 @@ local function ProjectWithZ(view, proj, vpWidth, vpHeight, wx, wy, wz)
         ((cx / cw) * 0.5 + 0.5) * vpWidth,
         (-(cy / cw) * 0.5 + 0.5) * vpHeight,
         cz / cw;
+end
+
+function worldMarkerProbe._ApplyStackScreenOffset(device, wx, wy, wz, plate)
+    local offsetX = tonumber(plate ~= nil and plate._stackScreenOffsetX) or 0;
+    local offsetY = tonumber(plate ~= nil and plate._stackScreenOffsetY) or 0;
+
+    if (device == nil or (offsetX == 0 and offsetY == 0)) then
+        return wx, wy, wz;
+    end
+
+    local _, view = device:GetTransform(2);
+    local _, proj = device:GetTransform(3);
+    local _, viewport = device:GetViewport();
+
+    if (view == nil or proj == nil or viewport == nil or viewport.Width == nil or viewport.Height == nil) then
+        return wx, wy, wz;
+    end
+
+    local centerX, centerY = ProjectWithZ(view, proj, viewport.Width, viewport.Height, wx, wy, wz);
+
+    if (centerX == nil or centerY == nil) then
+        return wx, wy, wz;
+    end
+
+    local rx, ry, rz, ux, uy, uz = GetBillboardVectors(device);
+    local rightX = nil;
+    local rightY = nil;
+    local upX = nil;
+    local upY = nil;
+
+    rightX, rightY = ProjectWithZ(view, proj, viewport.Width, viewport.Height, wx + (rx * 0.10), wy + (ry * 0.10), wz + (rz * 0.10));
+    upX, upY = ProjectWithZ(view, proj, viewport.Width, viewport.Height, wx + (ux * 0.10), wy + (uy * 0.10), wz + (uz * 0.10));
+
+    if (offsetX ~= 0 and rightX ~= nil and rightX ~= centerX) then
+        local amount = offsetX / ((rightX - centerX) / 0.10);
+        wx = wx + (rx * amount);
+        wy = wy + (ry * amount);
+        wz = wz + (rz * amount);
+    end
+
+    if (offsetY ~= 0 and upY ~= nil and upY ~= centerY) then
+        local amount = offsetY / ((upY - centerY) / 0.10);
+        wx = wx + (ux * amount);
+        wy = wy + (uy * amount);
+        wz = wz + (uz * amount);
+    end
+
+    return wx, wy, wz;
 end
 
 local function AddPlateClickRects(targetIndex, targetType, rects, union, metadata)
@@ -1612,6 +1667,103 @@ end
 
 local function DrawNameWithState(device, name, distance, wx, wy, wz, style)
     DrawTextWithState(device, name, wx, wy, wz, style, 'name');
+end
+
+function worldMarkerProbe._SetNameStackRect(device, targetIndex, targetType, name, wx, wy, wz, style, metadata)
+    local text = tostring(name or '');
+
+    if (device == nil or targetIndex == nil or targetIndex == 0 or text == '') then
+        return false;
+    end
+
+    style = style or {};
+
+    local maxLetters = tonumber(style.nameMaxLetters) or 0;
+    if (maxLetters > 0 and string.len(text) > maxLetters) then
+        text = string.sub(text, 1, maxLetters);
+    end
+
+    local fontScale = tonumber(style.nameFontScale) or 3.4;
+    local worldScale = tonumber(style.nameWorldTextureScale) or 0.00175;
+    local outlineEnabled = style.nameOutlineEnabled ~= false;
+    local outlineColor = style.nameOutlineColor or { 0.0, 0.0, 0.0, 1.0 };
+    local outlineSize = (tonumber(style.nameWorldOutlineBase) or 0) + (tonumber(style.nameOutlineSize) or 0);
+    local textureId, textureWidth, textureHeight = gdiTextTexture.GetTexture(text, {
+        fontFamily = style.nameFontFamily or 'Arial',
+        fontSize = math.max(10, math.floor((tonumber(style.nameFontSize) or 24) * fontScale)),
+        color = style.nameColor or { 0.22, 0.95, 0.38, 1.0 },
+        outlineEnabled = outlineEnabled,
+        outlineColor = outlineColor,
+        outlineSize = outlineSize,
+    });
+
+    textureWidth = tonumber(textureWidth) or math.max(48, string.len(text) * 18);
+    textureHeight = tonumber(textureHeight) or 28;
+
+    local rx, ry, rz, ux, uy, uz = GetBillboardVectors(device);
+    local offsetWorldScale = worldScale;
+
+    if (style.nameUsePixelOffsets == true) then
+        offsetWorldScale = GetWorldUnitsPerPixelAlongVector(device, wx, wy, wz, rx, ry, rz) or offsetWorldScale;
+        worldScale = offsetWorldScale;
+    end
+
+    wx = wx + (rx * ((tonumber(style.nameOffsetX) or 0) * offsetWorldScale));
+    wy = wy - (uy * ((tonumber(style.nameBillboardOffsetY) or 0) * worldScale));
+    wz = wz - (uz * ((tonumber(style.nameBillboardOffsetY) or 0) * worldScale));
+
+    local textureScale = tonumber(style.nameTextureScale) or 1.0;
+    local width = math.max(0.08, textureWidth * textureScale * worldScale);
+    local height = math.max(0.025, textureHeight * textureScale * worldScale);
+    local _, view = device:GetTransform(2);
+    local _, proj = device:GetTransform(3);
+    local _, viewport = device:GetViewport();
+
+    if (view == nil or proj == nil or viewport == nil or viewport.Width == nil or viewport.Height == nil) then
+        return false;
+    end
+
+    local halfWidth = width * 0.5;
+    local halfHeight = height * 0.5;
+    local left = nil;
+    local top = nil;
+    local right = nil;
+    local bottom = nil;
+    local points = {
+        { -halfWidth, -halfHeight },
+        { halfWidth, -halfHeight },
+        { halfWidth, halfHeight },
+        { -halfWidth, halfHeight },
+    };
+
+    for _, point in ipairs(points) do
+        local sx, sy = ProjectBillboardPoint(view, proj, viewport, wx, wy, wz, rx, ry, rz, ux, uy, uz, point[1], point[2]);
+
+        if (sx ~= nil and sy ~= nil) then
+            left = (left == nil) and sx or math.min(left, sx);
+            top = (top == nil) and sy or math.min(top, sy);
+            right = (right == nil) and sx or math.max(right, sx);
+            bottom = (bottom == nil) and sy or math.max(bottom, sy);
+        end
+    end
+
+    if (left == nil or top == nil or right == nil or bottom == nil) then
+        return false;
+    end
+
+    local padding = 4;
+    local rect = {
+        kind = 'name',
+        targetIndex = targetIndex,
+        targetType = tostring(targetType or 'pc'),
+        x1 = left - padding,
+        y1 = top - padding,
+        x2 = right + padding,
+        y2 = bottom + padding,
+    };
+
+    AddPlateClickRects(targetIndex, tostring(targetType or 'pc'), { rect }, rect, metadata);
+    return true;
 end
 
 GetPlateMaskZones = function(viewport)
@@ -3199,26 +3351,94 @@ local stackIgnoredRectKinds = {
     targetModuleBackground = true,
 };
 
+worldMarkerProbe._stackPrimaryRectKinds = {
+    name = true,
+    hp = true,
+    mp = true,
+    tp = true,
+    cast = true,
+    type = true,
+    job = true,
+    level = true,
+    id = true,
+    peerId = true,
+    peerJob = true,
+    petState = true,
+    petTimer = true,
+};
+
+function worldMarkerProbe._NormalizeStackRect(rect)
+    local x1 = tonumber(rect ~= nil and rect.x1);
+    local y1 = tonumber(rect ~= nil and rect.y1);
+    local x2 = tonumber(rect ~= nil and rect.x2);
+    local y2 = tonumber(rect ~= nil and rect.y2);
+
+    if (x1 == nil or y1 == nil or x2 == nil or y2 == nil or x2 <= x1 or y2 <= y1) then
+        return nil;
+    end
+
+    return {
+        x1 = x1,
+        y1 = y1,
+        x2 = x2,
+        y2 = y2,
+    };
+end
+
+function worldMarkerProbe._GetStackPrimaryRect(entry)
+    local union = nil;
+
+    for _, rect in ipairs(entry ~= nil and entry.rects or {}) do
+        local kind = tostring(rect ~= nil and rect.kind or '');
+
+        if (worldMarkerProbe._stackPrimaryRectKinds[kind] == true) then
+            local normalized = worldMarkerProbe._NormalizeStackRect(rect);
+
+            if (normalized ~= nil) then
+                if (union == nil) then
+                    union = normalized;
+                else
+                    union.x1 = math.min(union.x1, normalized.x1);
+                    union.y1 = math.min(union.y1, normalized.y1);
+                    union.x2 = math.max(union.x2, normalized.x2);
+                    union.y2 = math.max(union.y2, normalized.y2);
+                end
+            end
+        end
+    end
+
+    return union;
+end
+
 local function GetStackCollisionUnion(entry)
+    local primaryRect = worldMarkerProbe._GetStackPrimaryRect(entry);
+
+    if (primaryRect ~= nil) then
+        return primaryRect;
+    end
+
+    local overlayRect = worldMarkerProbe._NormalizeStackRect(entry ~= nil and entry.plateOverlayRect or nil);
+
+    if (overlayRect ~= nil) then
+        return overlayRect;
+    end
+
     local union = nil;
 
     for _, rect in ipairs(entry ~= nil and entry.rects or {}) do
         local kind = tostring(rect ~= nil and rect.kind or '');
 
         if (stackIgnoredRectKinds[kind] ~= true) then
-            local x1 = tonumber(rect.x1);
-            local y1 = tonumber(rect.y1);
-            local x2 = tonumber(rect.x2);
-            local y2 = tonumber(rect.y2);
+            local normalized = worldMarkerProbe._NormalizeStackRect(rect);
 
-            if (x1 ~= nil and y1 ~= nil and x2 ~= nil and y2 ~= nil and x2 > x1 and y2 > y1) then
+            if (normalized ~= nil) then
                 if (union == nil) then
-                    union = { x1 = x1, y1 = y1, x2 = x2, y2 = y2 };
+                    union = normalized;
                 else
-                    union.x1 = math.min(union.x1, x1);
-                    union.y1 = math.min(union.y1, y1);
-                    union.x2 = math.max(union.x2, x2);
-                    union.y2 = math.max(union.y2, y2);
+                    union.x1 = math.min(union.x1, normalized.x1);
+                    union.y1 = math.min(union.y1, normalized.y1);
+                    union.x2 = math.max(union.x2, normalized.x2);
+                    union.y2 = math.max(union.y2, normalized.y2);
                 end
             end
         end
@@ -3274,7 +3494,60 @@ local function FindBestHorizontalStackX(entry, placed, gap, horizontalAllowance,
         end
     end
 
-    return bestX;
+    return bestX, bestScore;
+end
+
+function worldMarkerProbe._FindBestVerticalStackY(entry, placed, gap, horizontalAllowance, verticalAllowance)
+    local bestY = nil;
+    local bestScore = nil;
+
+    local function collidesAt(candidateY)
+        local saveX = entry.drawX;
+        local saveY = entry.drawY;
+        entry.drawX = entry.baseX;
+        entry.drawY = candidateY;
+
+        for _, other in ipairs(placed) do
+            if (StackRectsOverlap(entry, other, horizontalAllowance, verticalAllowance) == true) then
+                entry.drawX = saveX;
+                entry.drawY = saveY;
+                return true;
+            end
+        end
+
+        entry.drawX = saveX;
+        entry.drawY = saveY;
+        return false;
+    end
+
+    local function testCandidate(candidateY)
+        if (candidateY == nil or collidesAt(candidateY) == true) then
+            return;
+        end
+
+        local score = math.abs(candidateY - entry.baseY);
+
+        if (bestScore == nil or score < bestScore) then
+            bestY = candidateY;
+            bestScore = score;
+        end
+    end
+
+    for _, other in ipairs(placed) do
+        local horizontalOverlap =
+            math.min(entry.drawX + entry.width, other.drawX + other.width) -
+            math.max(entry.drawX, other.drawX);
+
+        if (horizontalOverlap > horizontalAllowance) then
+            if (entry.stackType == 'enemy') then
+                testCandidate(other.drawY + other.height + gap);
+            end
+
+            testCandidate(other.drawY - entry.height - gap);
+        end
+    end
+
+    return bestY, bestScore;
 end
 
 local function ShiftStackRect(rect, dx, dy)
@@ -3367,8 +3640,88 @@ local function GetScreenClampPadding(settings)
     };
 end
 
+function worldMarkerProbe._GetStackScreenOffsetKey(plate)
+    local index = tonumber(plate ~= nil and plate.targetIndex) or 0;
+
+    if (index == 0) then
+        return nil;
+    end
+
+    return tostring(index) .. ':' .. tostring(plate.clickTargetType or '');
+end
+
+function worldMarkerProbe._GetStackSmoothingDelta()
+    local now = os.clock();
+    local dt = 1 / 60;
+
+    if (worldMarkerProbe._lastStackSmoothingClock ~= nil) then
+        dt = now - worldMarkerProbe._lastStackSmoothingClock;
+
+        if (dt < (1 / 240) or dt > (1 / 15)) then
+            dt = 1 / 60;
+        end
+    end
+
+    worldMarkerProbe._lastStackSmoothingClock = now;
+    return dt;
+end
+
+function worldMarkerProbe._SmoothStackOffsetValue(current, target, dt, speed)
+    local diff = target - current;
+    local distance = math.abs(diff);
+    local travelSpeed = math.max(1.0, math.min(40.0, tonumber(speed) or 14.0));
+
+    if (distance <= 0.35) then
+        return target;
+    end
+
+    local ease = 1.0 - math.exp(-math.max(0.0, dt) * travelSpeed);
+    local nextValue = current + (diff * ease);
+    local maxStep = math.max(1.0, (travelSpeed * 52.0) * math.max(0.0, dt));
+    local moved = nextValue - current;
+
+    if (math.abs(moved) > maxStep) then
+        nextValue = current + ((moved < 0) and -maxStep or maxStep);
+    end
+
+    if (math.abs(target - nextValue) <= 0.35) then
+        return target;
+    end
+
+    return nextValue;
+end
+
+function worldMarkerProbe._ApplySmoothedStackOffset(plate, targetX, targetY, dt, activeKeys, speed)
+    local key = worldMarkerProbe._GetStackScreenOffsetKey(plate);
+
+    if (key == nil) then
+        plate._stackScreenOffsetX = targetX;
+        plate._stackScreenOffsetY = targetY;
+        return targetX, targetY;
+    end
+
+    activeKeys[key] = true;
+
+    local state = worldMarkerProbe._stackScreenOffsetState[key];
+    if (state == nil) then
+        state = { x = 0, y = 0 };
+        worldMarkerProbe._stackScreenOffsetState[key] = state;
+    end
+
+    state.x = worldMarkerProbe._SmoothStackOffsetValue(tonumber(state.x) or 0, tonumber(targetX) or 0, dt, speed);
+    state.y = worldMarkerProbe._SmoothStackOffsetValue(tonumber(state.y) or 0, tonumber(targetY) or 0, dt, speed);
+
+    plate._stackScreenOffsetX = state.x;
+    plate._stackScreenOffsetY = state.y;
+
+    return state.x, state.y;
+end
+
 local function ApplyScreenPlateStacking(drawablePlates)
     local settings = targeting.GetSettings();
+    local dt = worldMarkerProbe._GetStackSmoothingDelta();
+    local activeStackKeys = {};
+    local travelSpeed = math.max(1, math.min(40, tonumber(settings.plateStackTravelSpeed) or 14));
 
     for _, plate in ipairs(drawablePlates or {}) do
         plate._stackScreenOffsetX = 0;
@@ -3376,6 +3729,10 @@ local function ApplyScreenPlateStacking(drawablePlates)
     end
 
     if (settings.plateStackingEnabled ~= true or #pendingClickRects <= 1) then
+        if (settings.plateStackingEnabled ~= true) then
+            worldMarkerProbe._stackScreenOffsetState = {};
+        end
+
         return;
     end
 
@@ -3403,10 +3760,10 @@ local function ApplyScreenPlateStacking(drawablePlates)
 
     local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
     local stackTypes = type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes or {};
-    local horizontalAllowance = math.max(0, math.floor((tonumber(settings.plateStackHorizontalOverlap) or 2) + 0.5));
-    local verticalAllowance = math.max(0, math.floor((tonumber(settings.plateStackVerticalOverlap) or horizontalAllowance) + 0.5));
-    local gap = math.max(0, math.floor((tonumber(settings.plateStackGap) or 4) + 0.5));
-    local subtargetLiftOffset = math.max(-160, math.min(160, math.floor((tonumber(settings.plateStackSubtargetLiftOffset) or 0) + 0.5)));
+    local stackPadding = math.max(0, math.floor((tonumber(settings.plateStackGap) or 4) + 0.5));
+    local horizontalAllowance = 0;
+    local verticalAllowance = 0;
+    local gap = 0;
     local playerEngaged = IsPlayerEngaged() == true;
     local stackEntries = {};
 
@@ -3421,24 +3778,15 @@ local function ApplyScreenPlateStacking(drawablePlates)
             entry ~= nil and
             stackInfo.stackUnion ~= nil and
             (isFixed == true or stackTypes[stackType] == true) and
-            (isFixed == true or not (stackType == 'enemy' and tostring(plate.stateName or 'Idle') == 'Idle')) and
             (isFixed == true or stackType ~= 'pc' or playerEngaged == true or plate.isProtectedPlate == true)
         ) then
             local union = stackInfo.stackUnion;
-            local x1 = tonumber(union.x1);
-            local y1 = tonumber(union.y1);
-            local x2 = tonumber(union.x2);
-            local y2 = tonumber(union.y2);
+            local x1 = (tonumber(union.x1) or 0) - stackPadding;
+            local y1 = (tonumber(union.y1) or 0) - stackPadding;
+            local x2 = (tonumber(union.x2) or 0) + stackPadding;
+            local y2 = (tonumber(union.y2) or 0) + stackPadding;
             local stackX1 = x1;
             local stackX2 = x2;
-
-            if (isFixed == true) then
-                local blockerWidthPct = math.max(25, math.min(100, tonumber(settings.plateStackFixedBlockerWidthPct) or 72)) / 100;
-                local centerX = (x1 + x2) * 0.5;
-                local halfWidth = ((x2 - x1) * 0.5) * blockerWidthPct;
-                stackX1 = centerX - halfWidth;
-                stackX2 = centerX + halfWidth;
-            end
 
             stackEntries[#stackEntries + 1] = {
                 plate = plate,
@@ -3461,10 +3809,21 @@ local function ApplyScreenPlateStacking(drawablePlates)
     end
 
     if (#stackEntries <= 1) then
+        for _, entry in ipairs(stackEntries) do
+            local offsetX, offsetY = worldMarkerProbe._ApplySmoothedStackOffset(entry.plate, 0, 0, dt, activeStackKeys, travelSpeed);
+            ShiftStackClickEntry(entry.clickEntry, offsetX, offsetY);
+        end
+
+        for key in pairs(worldMarkerProbe._stackScreenOffsetState) do
+            if (activeStackKeys[key] ~= true) then
+                worldMarkerProbe._stackScreenOffsetState[key] = nil;
+            end
+        end
+
         return;
     end
 
-    ApplySubtargetTargetSeparation(stackEntries, targetIndex, subTargetIndex, gap, subtargetLiftOffset, horizontalAllowance, verticalAllowance);
+    ApplySubtargetTargetSeparation(stackEntries, targetIndex, subTargetIndex, gap, 0, horizontalAllowance, verticalAllowance);
 
     table.sort(stackEntries, function(left, right)
         if (left.fixed ~= right.fixed) then
@@ -3499,15 +3858,20 @@ local function ApplyScreenPlateStacking(drawablePlates)
                 for _, other in ipairs(placed) do
                     if (StackRectsOverlap(entry, other, horizontalAllowance, verticalAllowance) == true) then
                         if (entry.stackType ~= 'enemy') then
-                            local spreadPct = math.max(0, math.min(250, tonumber(settings.plateStackHorizontalSpreadPct) or 125)) / 100;
-                            local maxSpread = entry.width * spreadPct;
-                            if (spreadPct > 0) then
-                                maxSpread = math.max(maxSpread, entry.width + gap);
-                            end
-                            local nextX = FindBestHorizontalStackX(entry, placed, gap, horizontalAllowance, verticalAllowance, maxSpread);
+                            local maxSpread = 100000;
 
-                            if (nextX ~= nil) then
+                            local nextX, nextXScore = FindBestHorizontalStackX(entry, placed, gap, horizontalAllowance, verticalAllowance, maxSpread);
+                            local nextY, nextYScore = worldMarkerProbe._FindBestVerticalStackY(entry, placed, gap, horizontalAllowance, verticalAllowance);
+
+                            if (nextX ~= nil and (nextY == nil or nextXScore <= nextYScore)) then
                                 entry.drawX = nextX;
+                                changed = true;
+                                break;
+                            end
+
+                            if (nextY ~= nil) then
+                                entry.drawX = entry.baseX;
+                                entry.drawY = nextY;
                                 changed = true;
                                 break;
                             end
@@ -3536,12 +3900,17 @@ local function ApplyScreenPlateStacking(drawablePlates)
             end
         end
 
-        local offsetX = entry.drawX - entry.baseX;
-        local offsetY = entry.drawY - entry.baseY;
-        entry.plate._stackScreenOffsetX = offsetX;
-        entry.plate._stackScreenOffsetY = offsetY;
+        local targetOffsetX = entry.drawX - entry.baseX;
+        local targetOffsetY = entry.drawY - entry.baseY;
+        local offsetX, offsetY = worldMarkerProbe._ApplySmoothedStackOffset(entry.plate, targetOffsetX, targetOffsetY, dt, activeStackKeys, travelSpeed);
         ShiftStackClickEntry(entry.clickEntry, offsetX, offsetY);
         placed[#placed + 1] = entry;
+    end
+
+    for key in pairs(worldMarkerProbe._stackScreenOffsetState) do
+        if (activeStackKeys[key] ~= true) then
+            worldMarkerProbe._stackScreenOffsetState[key] = nil;
+        end
     end
 end
 
@@ -3711,8 +4080,13 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         end
 
         local _, savePlateZFunc = device:GetRenderState(D3DRS_ZFUNC);
+        local stackMoved = worldMarkerProbe._HasStackScreenOffset(plate) == true;
 
-        if (ShouldHideProjectedBelowViewportPlate(device, entityManager, style, plateX, plateY, plateZ) == true) then
+        if (updateClickOnly ~= true and stackMoved == true) then
+            plateX, plateY, plateZ = worldMarkerProbe._ApplyStackScreenOffset(device, plateX, plateY, plateZ, plate);
+        end
+
+        if (stackMoved ~= true and ShouldHideProjectedBelowViewportPlate(device, entityManager, style, plateX, plateY, plateZ) == true) then
             return;
         end
 
@@ -3753,54 +4127,20 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
 
         device:SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
 
-        local stackScreenOffsetX = tonumber(plate._stackScreenOffsetX) or 0;
-        local stackScreenOffsetY = tonumber(plate._stackScreenOffsetY) or 0;
-
-        if (stackScreenOffsetX ~= 0 or stackScreenOffsetY ~= 0) then
-            if (DrawPlateOverlayScreen(
-                device,
-                style.plateTextureId,
-                plateX,
-                plateY,
-                plateZ,
-                plateWorldWidth,
-                plateWorldHeight,
-                style.plateAlwaysOnTop == true,
-                stackScreenOffsetX,
-                stackScreenOffsetY,
-                false
-            ) ~= true) then
-                DrawTextureWithState(
-                    device,
-                    style.plateTextureId,
-                    plateX,
-                    plateY,
-                    plateZ,
-                    plateWorldWidth,
-                    0,
-                    0,
-                    0.00175,
-                    false,
-                    plateWorldHeight,
-                    false
-                );
-            end
-        else
-            DrawTextureWithState(
-                device,
-                style.plateTextureId,
-                plateX,
-                plateY,
-                plateZ,
-                plateWorldWidth,
-                0,
-                0,
-                0.00175,
-                false,
-                plateWorldHeight,
-                false
-            );
-        end
+        DrawTextureWithState(
+            device,
+            style.plateTextureId,
+            plateX,
+            plateY,
+            plateZ,
+            plateWorldWidth,
+            0,
+            0,
+            0.00175,
+            false,
+            plateWorldHeight,
+            style.plateAlwaysOnTop == true or stackMoved == true
+        );
 
         if (style.liveResourceBars == true) then
             DrawSelfResourceBars(device, plateX, plateY, plateZ, plate);
@@ -3827,7 +4167,11 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
         local _, savePlateZFunc = device:GetRenderState(D3DRS_ZFUNC);
 
-        if (ShouldHideProjectedBelowViewportPlate(device, entityManager, style, plateX, plateY, plateZ) == true) then
+        if (updateClickOnly ~= true) then
+            plateX, plateY, plateZ = worldMarkerProbe._ApplyStackScreenOffset(device, plateX, plateY, plateZ, plate);
+        end
+
+        if (worldMarkerProbe._HasStackScreenOffset(plate) ~= true and ShouldHideProjectedBelowViewportPlate(device, entityManager, style, plateX, plateY, plateZ) == true) then
             return;
         end
 
@@ -3888,27 +4232,63 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         end
     end
 
+    if (updateClickOnly == true) then
+        local nameY = wz + verticalOffset + (tonumber(style.nameWorldOffsetY) or 0.78) - nameVerticalOffset;
+        local metadata = {
+            serverId = plate.serverId or style.serverId,
+            name = plate.clickName or plate.name or style.clickName,
+            layoutStateName = style.layoutStateName,
+            trustIsMine = plate.trustIsMine,
+            distance = plate.distance or style.distance,
+            modelHitboxSize = plate.modelHitboxSize or style.modelHitboxSize,
+            clickEnabled = style.plateClickTargetEnabled ~= false,
+        };
+
+        if (worldMarkerProbe._SetNameStackRect(device, targetIndex, style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy'), plate.name, wx, nameY, wy, style, metadata) ~= true) then
+            SetPlateClickRectFromBillboard(device, targetIndex, style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy'), wx, nameY, wy, 0.42, 0.12, metadata);
+        end
+
+        return;
+    end
+
     local barY = wz + verticalOffset;
 
     if (plate.isSelf ~= true) then
         barY = barY + (tonumber(style.hpBarWorldOffsetY) or 0);
     end
 
-    DrawWithState(device, wx, barY, wy, hpPercent, style, nil, plate);
+    local barX = wx;
+    local barDrawY = barY;
+    local barZ = wy;
+    barX, barDrawY, barZ = worldMarkerProbe._ApplyStackScreenOffset(device, barX, barDrawY, barZ, plate);
+
+    DrawWithState(device, barX, barDrawY, barZ, hpPercent, style, nil, plate);
     if (showText == true) then
         local nameY = wz + verticalOffset + (tonumber(style.nameWorldOffsetY) or 0.78) - nameVerticalOffset;
-        DrawCanvasIconWithState(device, wx, nameY, wy, style);
+        local nameX = wx;
+        local nameDrawY = nameY;
+        local nameZ = wy;
+        nameX, nameDrawY, nameZ = worldMarkerProbe._ApplyStackScreenOffset(device, nameX, nameDrawY, nameZ, plate);
+        DrawCanvasIconWithState(device, nameX, nameDrawY, nameZ, style);
         local targetingSettings = targeting.GetSettings();
         if (targetingSettings.hideNativeNamesOnLoad == true or plate.forceName == true) then
-            DrawNameWithState(device, plate.name, plate.distance, wx, nameY, wy, style);
+            DrawNameWithState(device, plate.name, plate.distance, nameX, nameDrawY, nameZ, style);
         end
         if (plate.isSelf == true and plate.jobText ~= nil and tostring(plate.jobText or '') ~= '') then
             local jobY = wz + verticalOffset + (tonumber(style.jobWorldOffsetY) or 0.54) - nameVerticalOffset;
-            DrawJobWithState(device, plate, wx, jobY, wy, style);
+            local jobX = wx;
+            local jobDrawY = jobY;
+            local jobZ = wy;
+            jobX, jobDrawY, jobZ = worldMarkerProbe._ApplyStackScreenOffset(device, jobX, jobDrawY, jobZ, plate);
+            DrawJobWithState(device, plate, jobX, jobDrawY, jobZ, style);
         end
 
         if (showDistance == true and plate.isSelf ~= true) then
-            DrawDistanceWithState(device, plate.distance, wx, nameY - 0.12, wy, style);
+            local distanceX = wx;
+            local distanceY = nameY - 0.12;
+            local distanceZ = wy;
+            distanceX, distanceY, distanceZ = worldMarkerProbe._ApplyStackScreenOffset(device, distanceX, distanceY, distanceZ, plate);
+            DrawDistanceWithState(device, plate.distance, distanceX, distanceY, distanceZ, style);
         end
     end
 end
@@ -4077,13 +4457,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         local drawablePlates = SortDrawablePlatesForDraw(GetDrawableQueuedPlates());
 
         for _, plate in ipairs(drawablePlates) do
-            if (
-                plate.worldMarker ~= nil and
-                (
-                    plate.worldMarker.plateTextureId ~= nil or
-                    plate.worldMarker.liveResourceBars == true
-                )
-            ) then
+            if (plate.worldMarker ~= nil) then
                 pcall(function ()
                     DrawOne(plate, entityManager, getBone, device, true);
                 end);

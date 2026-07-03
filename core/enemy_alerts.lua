@@ -217,6 +217,33 @@ local function ClassifyMagicResource(resource)
     return 'offensive';
 end
 
+local function ResolveSpellByName(name)
+    local resourceManager = AshitaCore:GetResourceManager();
+    name = tostring(name or ''):gsub('^%s*(.-)%s*$', '%1');
+
+    if (resourceManager == nil or name == '') then
+        return nil;
+    end
+
+    local methods = {
+        { name },
+        { name, 0 },
+        { name, 1 },
+    };
+
+    for _, args in ipairs(methods) do
+        local resource = SafeCall(nil, function()
+            return resourceManager:GetSpellByName(unpack(args));
+        end);
+
+        if (resource ~= nil) then
+            return resource;
+        end
+    end
+
+    return nil;
+end
+
 local function ResolveAction(kind, actionType, packetParam, actionParam)
     local ids = { tonumber(actionParam) or 0, tonumber(packetParam) or 0 };
     local methods = nil;
@@ -889,11 +916,7 @@ local function HandleActionPacket(packet)
         log.Info('Enemy Alerts: ' .. lastDebug);
     end
 
-    if (actionName == nil or actionName == '') then
-        return;
-    end
-
-    PushAlert(kind, lane, actorName, actionName);
+    return;
 end
 
 function enemyAlerts.HandlePacketIn(e)
@@ -925,6 +948,11 @@ end
 
 local function TrimText(value)
     return tostring(value or ''):gsub('^%s*(.-)%s*$', '%1');
+end
+
+local function TrimTrailingNonLetters(value)
+    value = tostring(value or '');
+    return value:match('^(.+%a)') or value;
 end
 
 local function CustomTriggerMatches(message, trigger)
@@ -1179,22 +1207,50 @@ function enemyAlerts.HandleTextIn(e)
     end
 
     if (settings.showAbilities ~= true) then
+        actorName = nil;
+        actionName = nil;
+    end
+
+    if (settings.showMagic ~= false) then
+        local castActor, castSpell = message:match('^The (.-) starts casting (.-)[%.!]?$');
+        if (castActor ~= nil and castSpell ~= nil) then
+            castActor = TrimText(castActor);
+            castSpell = TrimText(TrimTrailingNonLetters(castSpell));
+
+            local spellResource = ResolveSpellByName(castSpell);
+            local lane = (spellResource ~= nil and ClassifyMagicResource(spellResource)) or 'offensive';
+
+            PushAlert('MA', lane, castActor, castSpell, {
+                text = castActor .. ' starts casting ' .. castSpell,
+            });
+
+            lastDebug = 'text-magic lane=' .. tostring(lane) .. ' actor=' .. tostring(castActor) .. ' spell=' .. tostring(castSpell);
+            if (IsDebugEnabled() == true) then
+                log.Info('Enemy Alerts: ' .. lastDebug);
+            end
+            return;
+        end
+    end
+
+    if (settings.showAbilities ~= true) then
         return;
     end
 
-    local actorName, actionName = message:match('^The%s+(.+)%s+readies%s+(.+)[%.!]%s*$');
-
-    if (actorName == nil or actionName == nil) then
-        actorName, actionName = message:match('^(.+)%s+readies%s+(.+)[%.!]%s*$');
-    end
+    local actorName, actionName = message:match('^The (.-) readies (.-)[%.!]?$');
+    local verb = 'readies';
 
     if (actorName == nil or actionName == nil) then
         return;
     end
 
-    PushAlert('JA', 'ability', actorName, actionName);
+    actorName = TrimText(actorName);
+    actionName = TrimText(TrimTrailingNonLetters(actionName));
 
-    lastDebug = 'text-ready actor=' .. tostring(actorName) .. ' action=' .. tostring(actionName);
+    PushAlert('JA', 'ability', actorName, actionName, {
+        text = actorName .. ' ' .. verb .. ' ' .. actionName,
+    });
+
+    lastDebug = 'text-ability verb=' .. tostring(verb) .. ' actor=' .. tostring(actorName) .. ' action=' .. tostring(actionName);
     if (IsDebugEnabled() == true) then
         log.Info('Enemy Alerts: ' .. lastDebug);
     end

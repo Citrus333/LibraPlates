@@ -203,6 +203,7 @@ return {
         plateStackClosestOnTop = true,
         plateStackKeepTacticalFixed = true,
         plateStackGap = 4,
+        plateStackTravelSpeed = 14,
         plateStackSubtargetLiftOffset = 0,
         plateStackHorizontalOverlap = 2,
         plateStackVerticalOverlap = 2,

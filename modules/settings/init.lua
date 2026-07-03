@@ -8792,7 +8792,7 @@ local function DrawGeneralVisibilitySection(settings)
     DrawVisibilityPanel('Plate stacking', function()
         DrawVisibilityCheckbox('Stack overlapping plates', settings.plateStackingEnabled ~= false, function(value)
             settings.plateStackingEnabled = value == true;
-        end, 'Moves lower-priority world plates upward when they overlap another plate.', 'PlateStackingEnabled');
+        end, 'Moves lower-priority world plates apart when they overlap another plate.', 'PlateStackingEnabled');
 
         if (settings.plateStackingEnabled ~= false) then
             if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
@@ -8878,46 +8878,15 @@ local function DrawGeneralVisibilitySection(settings)
             uiTooltip.Info('Controls which stackable plate types stay anchored first. Self, target, subtarget, and tactical marker plates always stay fixed while other stackable plates move around them.');
         end);
 
-        DrawVisibilityPanel('Stacking Spacing', function()
-            local stackGap, stackGapChanged = DrawVisibilityNumber('Stack spacing', settings.plateStackGap or 4, 'PlateStackGap', 0, 160, 1, 'Pixel space kept between stacked plates. 20 means about 20 px between plates.');
+        DrawVisibilityPanel('Stacking Space', function()
+            local stackGap, stackGapChanged = DrawVisibilityNumber('Stack padding', settings.plateStackGap or 4, 'PlateStackGap', 0, 160, 1, 'Invisible bumper around each plate. 0 uses the plate/click area; higher values reserve more space around it.');
             if (stackGapChanged == true) then
                 settings.plateStackGap = math.max(0, math.min(160, math.floor((tonumber(stackGap) or 4) + 0.5)));
             end
 
-            local subtargetLiftValue = tonumber(settings.plateStackSubtargetLiftOffset) or 0;
-            local subtargetLift, subtargetLiftChanged = DrawVisibilityNumber('Subtarget lift', math.floor(subtargetLiftValue + 0.5), 'PlateStackSubtargetLiftOffset', -160, 160, 1, 'Extra vertical offset used only when a subtarget overlaps the main target. Positive moves it higher; negative pulls it closer.');
-            if (subtargetLiftChanged == true) then
-                settings.plateStackSubtargetLiftOffset = math.max(-160, math.min(160, math.floor((tonumber(subtargetLift) or 0) + 0.5)));
-            end
-
-            local horizontalOverlapValue = tonumber(settings.plateStackHorizontalOverlap) or 2;
-            if (horizontalOverlapValue > 0 and horizontalOverlapValue <= 1) then
-                horizontalOverlapValue = 2;
-            end
-            local horizontalOverlap, horizontalOverlapChanged = DrawVisibilityNumber('Horizontal overlap', math.floor(horizontalOverlapValue + 0.5), 'PlateStackHorizontalOverlap', 0, 80, 1, 'How much plates may overlap left/right before stacking reacts.');
-            if (horizontalOverlapChanged == true) then
-                settings.plateStackHorizontalOverlap = math.max(0, math.min(80, math.floor((tonumber(horizontalOverlap) or 2) + 0.5)));
-            end
-
-            local verticalOverlapValue = tonumber(settings.plateStackVerticalOverlap) or 2;
-            if (verticalOverlapValue > 0 and verticalOverlapValue <= 1) then
-                verticalOverlapValue = 2;
-            end
-            local verticalOverlap, verticalOverlapChanged = DrawVisibilityNumber('Vertical overlap', math.floor(verticalOverlapValue + 0.5), 'PlateStackVerticalOverlap', 0, 80, 1, 'How much plates may overlap up/down before stacking reacts.');
-            if (verticalOverlapChanged == true) then
-                settings.plateStackVerticalOverlap = math.max(0, math.min(80, math.floor((tonumber(verticalOverlap) or 2) + 0.5)));
-            end
-
-            local spreadValue = tonumber(settings.plateStackHorizontalSpreadPct) or 125;
-            local spread, spreadChanged = DrawVisibilityNumber('Horizontal spread', math.floor(spreadValue + 0.5), 'PlateStackHorizontalSpreadPct', 0, 250, 5, 'How far stacked plates may fan left or right before they stack upward. 0 means mostly vertical; 125 means about one plate width.');
-            if (spreadChanged == true) then
-                settings.plateStackHorizontalSpreadPct = math.max(0, math.min(250, math.floor((tonumber(spread) or 125) + 0.5)));
-            end
-
-            local blockerValue = tonumber(settings.plateStackFixedBlockerWidthPct) or 72;
-            local blockerWidth, blockerChanged = DrawVisibilityNumber('Target blocker width', math.floor(blockerValue + 0.5), 'PlateStackFixedBlockerWidthPct', 25, 100, 1, 'How wide fixed Target/Subtarget plates feel to the stacker. Lower values let nearby plates sit closer.');
-            if (blockerChanged == true) then
-                settings.plateStackFixedBlockerWidthPct = math.max(25, math.min(100, math.floor((tonumber(blockerWidth) or 72) + 0.5)));
+            local travelSpeed, travelSpeedChanged = DrawVisibilityNumber('Stack travel speed', settings.plateStackTravelSpeed or 14, 'PlateStackTravelSpeed', 1, 40, 1, 'How quickly stacked plates travel to their new position. Lower is smoother/slower; higher is snappier.');
+            if (travelSpeedChanged == true) then
+                settings.plateStackTravelSpeed = math.max(1, math.min(40, math.floor((tonumber(travelSpeed) or 14) + 0.5)));
             end
         end);
     end
@@ -9889,7 +9858,7 @@ local function DrawSelectedEditorGeneral()
 end
 
 local helpEntries = {
-    { kind = 'Feature', title = 'Plate stacking', path = 'Settings > Visibility > Plate stacking', text = 'Stack world plates in screen space using stack spacing, horizontal/vertical overlap, horizontal spread, and fixed target blocker width.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Feature', title = 'Plate stacking', path = 'Settings > Visibility > Plate stacking', text = 'Moves overlapping nameplates apart so plates stay readable and clickable.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Feature', title = 'Interrupted castbar', path = 'Plates > Self > World/Tactical > Cast bar', text = 'Stops LP self castbar early on movement interrupts and shows remaining lockout with Interrupt bar settings.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
     { kind = 'Feature', title = 'Offensive AOE helper', path = 'Plates > Enemy > Tactical > AOE range (module)', text = 'Highlights enemies affected by loaded offensive AOE actions during subtarget selection.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
     { kind = 'Feature', title = 'Defensive AOE helper', path = 'Plates > Self/PC/Trust > Tactical > AOE range (module)', text = 'Highlights friendly/self plates affected by friendly AOE actions such as Curaga.', tab = 'Plates', entity = 'Self', state = 'Tactical', widget = 'AOE range (module)' },
@@ -9901,10 +9870,8 @@ local helpEntries = {
     { kind = 'Setting', title = 'In-range tint', path = 'Plates > Enemy/Self/PC/Trust > Target or Subtarget > Target/Subtarget module > Range colors', text = 'Color used by target or subtarget arrows when the loaded action is in range.', tab = 'Plates', entity = 'Enemy', state = 'Target', widget = 'Target (module)' },
     { kind = 'Setting', title = 'Interrupt bar', path = 'Plates > Self > World/Tactical > Cast bar > Bar settings', text = 'Enables the interrupted castbar recovery display and sets its fill color.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
     { kind = 'Setting', title = 'Interrupt text', path = 'Plates > Self > World/Tactical > Cast bar > Text settings', text = 'Enables custom Interrupted text with separate font, outline, and position settings.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
-    { kind = 'Setting', title = 'Stack spacing', path = 'Settings > Visibility > Plate stacking', text = 'Pixel space kept between stacked plates. 20 means about 20 px between plates.', tab = 'Settings', section = 'Visibility' },
-    { kind = 'Setting', title = 'Horizontal overlap', path = 'Settings > Visibility > Plate stacking', text = 'How much plates may overlap left/right before stacking reacts.', tab = 'Settings', section = 'Visibility' },
-    { kind = 'Setting', title = 'Vertical overlap', path = 'Settings > Visibility > Plate stacking', text = 'How much plates may overlap up/down before stacking reacts.', tab = 'Settings', section = 'Visibility' },
-    { kind = 'Setting', title = 'Horizontal spread', path = 'Settings > Visibility > Plate stacking', text = 'How far stacked plates may fan left or right before stacking upward.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Setting', title = 'Stack padding', path = 'Settings > Visibility > Plate stacking', text = 'Invisible bumper around each stacked plate. 0 uses the plate/click area; higher values reserve more space around it.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Setting', title = 'Stack travel speed', path = 'Settings > Visibility > Plate stacking', text = 'How quickly stacked plates travel to their new position.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Hide distant world plates', path = 'Settings > Performance > World plates', text = 'Hides world plates past the distance limit while keeping target/subtarget/tactical plates.', tab = 'Settings', section = 'Performance' },
     { kind = 'Setting', title = 'AOE font color', path = 'Plates > Enemy > Tactical > AOE range (module)', text = 'Font color used for offensive AOE affected enemy names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
     { kind = 'Setting', title = 'AOE icon', path = 'Plates > Enemy/Self > Tactical > AOE range (module)', text = 'Optional icon shown with AOE affected names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
@@ -10354,17 +10321,18 @@ local troubleshooterEntries = {
         },
     },
     {
-        title = 'Plate stacking looks too vertical or too spread out',
+        title = 'Plate stacking looks too tight or too spread out',
         path = 'Settings > Visibility',
-        aliases = 'stack stacking overlap spacing spread crowded plates vertical horizontal',
+        aliases = 'stack stacking padding bumper crowded plates vertical horizontal spread tight',
         tab = 'Settings',
         section = 'Visibility',
         checks = {
             'Check plate stacking is enabled.',
-            'Spacing controls the visible gap between stacked plates.',
-            'Horizontal overlap controls how much plates may overlap left/right before being pushed apart.',
-            'Vertical overlap controls how much plates may overlap up/down before being pushed apart.',
-            'Horizontal spread controls how much nearby plates can fan sideways instead of only upward.',
+            'Check the plate type is enabled under Stack PC, Stack Enemy, Stack Trust, Stack Pet, Stack NPC, or Stack Object.',
+            'Stack padding controls the invisible bumper around each plate.',
+            'Stack travel speed controls how quickly plates glide to their stacked position.',
+            'Use 0 for the tightest movement based on the plate/click area.',
+            'Raise Stack padding when plates need more space before they touch.',
             'Self, target, subtarget, and tactical marker plates stay fixed while other stackable plates move around them.',
         },
     },

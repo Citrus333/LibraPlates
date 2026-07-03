@@ -1850,9 +1850,9 @@ function commands.Handle(e)
             'Plate stacking enabled=' .. tostring(settings.plateStackingEnabled ~= false) ..
             ' pc=' .. tostring(type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes.pc == true) ..
             ' enemy=' .. tostring(type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes.enemy == true) ..
-            ' gap=' .. tostring(settings.plateStackGap) ..
-            ' overlap=' .. tostring(settings.plateStackHorizontalOverlap) .. '/' .. tostring(settings.plateStackVerticalOverlap) ..
-            ' spread=' .. tostring(settings.plateStackHorizontalSpreadPct) ..
+            ' trust=' .. tostring(type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes.trust == true) ..
+            ' padding=' .. tostring(settings.plateStackGap) ..
+            ' speed=' .. tostring(settings.plateStackTravelSpeed) ..
             ' maxWorldPlateCount=' .. tostring(settings.maxWorldPlateCount or 0)
         );
         return;

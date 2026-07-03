@@ -335,7 +335,7 @@ local function GetTargetingSettings()
     end
 
     if (global.targeting.plateStackGap == nil) then
-        global.targeting.plateStackGap = 4;
+        global.targeting.plateStackGap = 10;
     end
 
     if (global.targeting.plateStackSubtargetLiftOffset == nil) then
@@ -567,7 +567,7 @@ local function GetTargetingSettings()
     global.targeting.plateStackingPriority = normalizedPriority;
     global.targeting.plateStackClosestOnTop = global.targeting.plateStackClosestOnTop == true;
     global.targeting.plateStackKeepTacticalFixed = global.targeting.plateStackKeepTacticalFixed ~= false;
-    global.targeting.plateStackGap = math.max(0, math.min(160, math.floor((tonumber(global.targeting.plateStackGap) or 4) + 0.5)));
+    global.targeting.plateStackGap = math.max(0, math.min(20, math.floor((tonumber(global.targeting.plateStackGap) or 10) + 0.5)));
     global.targeting.plateStackTravelSpeed = math.max(1, math.min(40, math.floor((tonumber(global.targeting.plateStackTravelSpeed) or 14) + 0.5)));
     global.targeting.plateStackSubtargetLiftOffset = math.max(-160, math.min(160, math.floor((tonumber(global.targeting.plateStackSubtargetLiftOffset) or 0) + 0.5)));
     local horizontalOverlap = tonumber(global.targeting.plateStackHorizontalOverlap);

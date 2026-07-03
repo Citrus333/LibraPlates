@@ -1852,6 +1852,7 @@ function commands.Handle(e)
             ' enemy=' .. tostring(type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes.enemy == true) ..
             ' trust=' .. tostring(type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes.trust == true) ..
             ' padding=' .. tostring(settings.plateStackGap) ..
+            ' effectivePadding=' .. tostring((tonumber(settings.plateStackGap) or 10) - 10) ..
             ' speed=' .. tostring(settings.plateStackTravelSpeed) ..
             ' maxWorldPlateCount=' .. tostring(settings.maxWorldPlateCount or 0)
         );

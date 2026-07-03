@@ -8879,9 +8879,9 @@ local function DrawGeneralVisibilitySection(settings)
         end);
 
         DrawVisibilityPanel('Stacking Space', function()
-            local stackGap, stackGapChanged = DrawVisibilityNumber('Stack padding', settings.plateStackGap or 4, 'PlateStackGap', 0, 160, 1, 'Invisible bumper around each plate. 0 uses the plate/click area; higher values reserve more space around it.');
+            local stackGap, stackGapChanged = DrawVisibilityNumber('Stack padding', settings.plateStackGap or 10, 'PlateStackGap', 0, 20, 1, 'Controls how much space stacking keeps around plates. 0 allows a little overlap; 10 uses the plate/click area; 20 adds extra space.');
             if (stackGapChanged == true) then
-                settings.plateStackGap = math.max(0, math.min(160, math.floor((tonumber(stackGap) or 4) + 0.5)));
+                settings.plateStackGap = math.max(0, math.min(20, math.floor((tonumber(stackGap) or 10) + 0.5)));
             end
 
             local travelSpeed, travelSpeedChanged = DrawVisibilityNumber('Stack travel speed', settings.plateStackTravelSpeed or 14, 'PlateStackTravelSpeed', 1, 40, 1, 'How quickly stacked plates travel to their new position. Lower is smoother/slower; higher is snappier.');
@@ -9870,7 +9870,7 @@ local helpEntries = {
     { kind = 'Setting', title = 'In-range tint', path = 'Plates > Enemy/Self/PC/Trust > Target or Subtarget > Target/Subtarget module > Range colors', text = 'Color used by target or subtarget arrows when the loaded action is in range.', tab = 'Plates', entity = 'Enemy', state = 'Target', widget = 'Target (module)' },
     { kind = 'Setting', title = 'Interrupt bar', path = 'Plates > Self > World/Tactical > Cast bar > Bar settings', text = 'Enables the interrupted castbar recovery display and sets its fill color.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
     { kind = 'Setting', title = 'Interrupt text', path = 'Plates > Self > World/Tactical > Cast bar > Text settings', text = 'Enables custom Interrupted text with separate font, outline, and position settings.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
-    { kind = 'Setting', title = 'Stack padding', path = 'Settings > Visibility > Plate stacking', text = 'Invisible bumper around each stacked plate. 0 uses the plate/click area; higher values reserve more space around it.', tab = 'Settings', section = 'Visibility' },
+    { kind = 'Setting', title = 'Stack padding', path = 'Settings > Visibility > Plate stacking', text = 'Controls how much space stacking keeps around plates. 0 allows a little overlap, 10 uses the plate/click area, and 20 adds extra space.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Stack travel speed', path = 'Settings > Visibility > Plate stacking', text = 'How quickly stacked plates travel to their new position.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Hide distant world plates', path = 'Settings > Performance > World plates', text = 'Hides world plates past the distance limit while keeping target/subtarget/tactical plates.', tab = 'Settings', section = 'Performance' },
     { kind = 'Setting', title = 'AOE font color', path = 'Plates > Enemy > Tactical > AOE range (module)', text = 'Font color used for offensive AOE affected enemy names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
@@ -10329,9 +10329,9 @@ local troubleshooterEntries = {
         checks = {
             'Check plate stacking is enabled.',
             'Check the plate type is enabled under Stack PC, Stack Enemy, Stack Trust, Stack Pet, Stack NPC, or Stack Object.',
-            'Stack padding controls the invisible bumper around each plate.',
+            'Stack padding controls the invisible bumper around each plate: 0 allows a little overlap, 10 uses the plate/click area, and 20 adds extra space.',
             'Stack travel speed controls how quickly plates glide to their stacked position.',
-            'Use 0 for the tightest movement based on the plate/click area.',
+            'Use 0 for the tightest movement with a small allowed overlap.',
             'Raise Stack padding when plates need more space before they touch.',
             'Self, target, subtarget, and tactical marker plates stay fixed while other stackable plates move around them.',
         },

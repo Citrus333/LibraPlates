@@ -3760,11 +3760,10 @@ local function ApplyScreenPlateStacking(drawablePlates)
 
     local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
     local stackTypes = type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes or {};
-    local stackPadding = math.max(0, math.floor((tonumber(settings.plateStackGap) or 4) + 0.5));
+    local stackPadding = math.max(0, math.min(20, math.floor((tonumber(settings.plateStackGap) or 10) + 0.5))) - 10;
     local horizontalAllowance = 0;
     local verticalAllowance = 0;
     local gap = 0;
-    local playerEngaged = IsPlayerEngaged() == true;
     local stackEntries = {};
 
     for order, plate in ipairs(drawablePlates or {}) do
@@ -3777,14 +3776,26 @@ local function ApplyScreenPlateStacking(drawablePlates)
             stackType ~= nil and
             entry ~= nil and
             stackInfo.stackUnion ~= nil and
-            (isFixed == true or stackTypes[stackType] == true) and
-            (isFixed == true or stackType ~= 'pc' or playerEngaged == true or plate.isProtectedPlate == true)
+            (isFixed == true or stackTypes[stackType] == true)
         ) then
             local union = stackInfo.stackUnion;
             local x1 = (tonumber(union.x1) or 0) - stackPadding;
             local y1 = (tonumber(union.y1) or 0) - stackPadding;
             local x2 = (tonumber(union.x2) or 0) + stackPadding;
             local y2 = (tonumber(union.y2) or 0) + stackPadding;
+
+            if (x2 <= x1) then
+                local centerX = ((tonumber(union.x1) or 0) + (tonumber(union.x2) or 0)) * 0.5;
+                x1 = centerX - 2;
+                x2 = centerX + 2;
+            end
+
+            if (y2 <= y1) then
+                local centerY = ((tonumber(union.y1) or 0) + (tonumber(union.y2) or 0)) * 0.5;
+                y1 = centerY - 2;
+                y2 = centerY + 2;
+            end
+
             local stackX1 = x1;
             local stackX2 = x2;
 

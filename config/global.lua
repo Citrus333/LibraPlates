@@ -202,7 +202,7 @@ return {
         plateStackingPriority = { 'pc', 'enemy', 'trust', 'pet', 'npc', 'object' },
         plateStackClosestOnTop = true,
         plateStackKeepTacticalFixed = true,
-        plateStackGap = 4,
+        plateStackGap = 10,
         plateStackTravelSpeed = 14,
         plateStackSubtargetLiftOffset = 0,
         plateStackHorizontalOverlap = 2,

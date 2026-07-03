@@ -14,6 +14,11 @@ local lastCounters = {};
 local frameIndex = 0;
 local smoothing = 0.10;
 local lastReportStatus = '';
+local recordingActive = false;
+local recordingStartClock = 0;
+local recordingEndClock = 0;
+local recordingDuration = 0;
+local recordingPreviousDetail = nil;
 local GetCounter = nil;
 
 local displayOrder = {
@@ -448,8 +453,16 @@ local function WritePerformanceReport()
 
     local cacheStats = GetCacheStats();
 
-    file:write('LibraPlates Performance Snapshot\n');
+    file:write(recordingActive == true and 'LibraPlates Timed Performance Recording\n' or 'LibraPlates Performance Snapshot\n');
     file:write('Created: ' .. tostring(os.date('%Y-%m-%d %H:%M:%S') or '') .. '\n');
+    if (recordingActive == true) then
+        file:write(string.format(
+            'Recording: duration=%.1fs elapsed=%.1fs frames=%s\n',
+            tonumber(recordingDuration) or 0,
+            math.max(0, os.clock() - (tonumber(recordingStartClock) or os.clock())),
+            tostring(frameIndex)
+        ));
+    end
     file:write(string.format(
         'Adaptive: mode=%s fps=%.1f frameMs=%.1f tier=%s\n',
         tostring(adaptivePerformance.GetEffectiveMode()),
@@ -519,6 +532,53 @@ end
 
 function perfMeter.WritePerformanceReport()
     return WritePerformanceReport();
+end
+
+function perfMeter.StartTimedReport(seconds)
+    local duration = math.max(5, math.min(300, math.floor((tonumber(seconds) or 60) + 0.5)));
+
+    perfMeter.Reset();
+    recordingActive = true;
+    recordingStartClock = os.clock();
+    recordingEndClock = recordingStartClock + duration;
+    recordingDuration = duration;
+    recordingPreviousDetail = detailEnabled == true;
+    detailEnabled = true;
+    lastReportStatus = 'Recording ' .. tostring(duration) .. 's';
+
+    return duration;
+end
+
+function perfMeter.StopTimedReport(writeReport)
+    if (recordingActive ~= true) then
+        return false;
+    end
+
+    local shouldWrite = writeReport ~= false;
+    if (shouldWrite == true) then
+        WritePerformanceReport();
+    else
+        lastReportStatus = 'Recording cancelled';
+    end
+
+    recordingActive = false;
+    if (recordingPreviousDetail ~= nil) then
+        detailEnabled = recordingPreviousDetail == true;
+    end
+    recordingPreviousDetail = nil;
+    return true;
+end
+
+function perfMeter.GetTimedReportStatus()
+    if (recordingActive ~= true) then
+        return 'inactive';
+    end
+
+    return string.format(
+        'recording %.1fs remaining of %.1fs',
+        math.max(0, (tonumber(recordingEndClock) or os.clock()) - os.clock()),
+        tonumber(recordingDuration) or 0
+    );
 end
 
 local function DrawReportButton()
@@ -627,6 +687,10 @@ local function PopMonitorStyle(count)
 end
 
 function perfMeter.BeginFrame()
+    if (recordingActive == true and os.clock() >= (tonumber(recordingEndClock) or 0)) then
+        perfMeter.StopTimedReport(true);
+    end
+
     frameIndex = frameIndex + 1;
     lastCounters = counters;
     counters = {};

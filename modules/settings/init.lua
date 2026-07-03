@@ -11658,7 +11658,9 @@ end
 local function DrawSelectedEditorPlatesModules()
     if (selectedWidget == 'Peer (module)') then
         local storageEntity = GetStorageEntity(selectedEntity);
-        LibraPlatesSettingsDrawPeerModuleSettings(state.GetGlobalSettings(globalDefaults), {
+        local storageState = GetWidgetStorageState(selectedEntity, selectedState, selectedWidget);
+        local peerSettings = state.GetWidgetSettings(storageEntity, storageState, 'Peer', { enabled = true });
+        LibraPlatesSettingsDrawPeerModuleSettings({ peer = peerSettings }, {
             entity = storageEntity,
             hideDisplayMode = storageEntity == 'Self' or storageEntity == 'PC',
             hideSections = storageEntity == 'Self' or storageEntity == 'PC',
@@ -11746,9 +11748,8 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
     local moduleDefaults = GetWidgetDefaults(selectedWidget);
 
     if (selectedWidget == 'Peer (module)') then
-        globalSettings.peer = globalSettings.peer or {};
-        moduleSettings = globalSettings.peer;
-        moduleDefaults = globalDefaults.peer;
+        moduleSettings = loadSettings;
+        moduleDefaults = { enabled = true };
     elseif (selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)') then
         moduleSettings = loadSettings;
         moduleDefaults = (selectedWidget == 'Subtarget (module)') and subtargetModuleDefaults or targetModuleDefaults;
@@ -11903,7 +11904,7 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
     end
 
     if (selectedWidget == 'Peer (module)') then
-        LibraPlatesSettingsDrawPeerModuleSettings(state.GetGlobalSettings(globalDefaults), {
+        LibraPlatesSettingsDrawPeerModuleSettings({ peer = moduleSettings }, {
             entity = storageEntity,
             hideDisplayMode = storageEntity == 'Self' or storageEntity == 'PC',
             hideSections = storageEntity == 'Self' or storageEntity == 'PC',

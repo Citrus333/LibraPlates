@@ -2360,8 +2360,26 @@ function commands.Handle(e)
             perfMeter.WritePerformanceReport();
             log.Info('Performance report saved.');
             return;
+        elseif (value == 'record') then
+            local recordValue = tostring(args[4] or '60'):lower();
+
+            if (recordValue == 'status') then
+                log.Info('Performance recording: ' .. perfMeter.GetTimedReportStatus());
+                return;
+            elseif (recordValue == 'cancel' or recordValue == 'stop') then
+                if (perfMeter.StopTimedReport(false) == true) then
+                    log.Info('Performance recording cancelled.');
+                else
+                    log.Info('No performance recording is active.');
+                end
+                return;
+            end
+
+            local duration = perfMeter.StartTimedReport(tonumber(args[4]) or 60);
+            log.Info('Performance recording started for ' .. tostring(duration) .. ' seconds. Reproduce the freeze; report will save automatically.');
+            return;
         elseif (value ~= 'status' and value ~= '') then
-            log.Warn('Usage: /lp perf [on|off|reset|report|status] | /lp perf detail [on|off|status]');
+            log.Warn('Usage: /lp perf [on|off|reset|report|record|status] | /lp perf detail [on|off|status] | /lp perf record [seconds|status|cancel]');
             return;
         end
 

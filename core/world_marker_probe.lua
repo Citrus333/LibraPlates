@@ -143,7 +143,9 @@ worldMarkerProbe._lastStackSmoothingClock = nil;
 function worldMarkerProbe._HasStackScreenOffset(plate)
     return
         (tonumber(plate ~= nil and plate._stackScreenOffsetX) or 0) ~= 0 or
-        (tonumber(plate ~= nil and plate._stackScreenOffsetY) or 0) ~= 0;
+        (tonumber(plate ~= nil and plate._stackScreenOffsetY) or 0) ~= 0 or
+        (tonumber(plate ~= nil and plate._plateScreenOffsetX) or 0) ~= 0 or
+        (tonumber(plate ~= nil and plate._plateScreenOffsetY) or 0) ~= 0;
 end
 local clickSelectEnemyTarget = nil;
 local clickAttackEnemyTarget = nil;
@@ -427,8 +429,16 @@ local function ProjectWithZ(view, proj, vpWidth, vpHeight, wx, wy, wz)
 end
 
 function worldMarkerProbe._ApplyStackScreenOffset(device, wx, wy, wz, plate)
-    local offsetX = tonumber(plate ~= nil and plate._stackScreenOffsetX) or 0;
-    local offsetY = tonumber(plate ~= nil and plate._stackScreenOffsetY) or 0;
+    local plateOffsetX = 0;
+    local plateOffsetY = 0;
+
+    if (tostring(plate ~= nil and plate.stateName or 'Idle') == 'Idle') then
+        plateOffsetX = tonumber(plate ~= nil and plate._plateScreenOffsetX) or 0;
+        plateOffsetY = tonumber(plate ~= nil and plate._plateScreenOffsetY) or 0;
+    end
+
+    local offsetX = (tonumber(plate ~= nil and plate._stackScreenOffsetX) or 0) + plateOffsetX;
+    local offsetY = (tonumber(plate ~= nil and plate._stackScreenOffsetY) or 0) + plateOffsetY;
 
     if (device == nil or (offsetX == 0 and offsetY == 0)) then
         return wx, wy, wz;
@@ -3253,6 +3263,8 @@ function worldMarkerProbe.QueuePlate(plate)
         isProtectedPlate = plate.isProtectedPlate == true,
         isPartyPlayer = plate.isPartyPlayer == true,
         stateName = plate.stateName,
+        _plateScreenOffsetX = tonumber(plate.screenOffsetX) or 0,
+        _plateScreenOffsetY = tonumber(plate.screenOffsetY) or 0,
         worldMarker = plate.worldMarker,
         clickTargetType = plate.clickTargetType or (plate.isSelf == true and 'self' or 'enemy'),
     };
@@ -4084,7 +4096,7 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         local _, savePlateZFunc = device:GetRenderState(D3DRS_ZFUNC);
         local stackMoved = worldMarkerProbe._HasStackScreenOffset(plate) == true;
 
-        if (updateClickOnly ~= true and stackMoved == true) then
+        if (stackMoved == true) then
             plateX, plateY, plateZ = worldMarkerProbe._ApplyStackScreenOffset(device, plateX, plateY, plateZ, plate);
         end
 
@@ -4169,7 +4181,7 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
         local _, savePlateZFunc = device:GetRenderState(D3DRS_ZFUNC);
 
-        if (updateClickOnly ~= true) then
+        if (worldMarkerProbe._HasStackScreenOffset(plate) == true) then
             plateX, plateY, plateZ = worldMarkerProbe._ApplyStackScreenOffset(device, plateX, plateY, plateZ, plate);
         end
 
@@ -4236,6 +4248,9 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
 
     if (updateClickOnly == true) then
         local nameY = wz + verticalOffset + (tonumber(style.nameWorldOffsetY) or 0.78) - nameVerticalOffset;
+        local nameX = wx;
+        local nameDrawY = nameY;
+        local nameZ = wy;
         local metadata = {
             serverId = plate.serverId or style.serverId,
             name = plate.clickName or plate.name or style.clickName,
@@ -4246,8 +4261,10 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
             clickEnabled = style.plateClickTargetEnabled ~= false,
         };
 
-        if (worldMarkerProbe._SetNameStackRect(device, targetIndex, style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy'), plate.name, wx, nameY, wy, style, metadata) ~= true) then
-            SetPlateClickRectFromBillboard(device, targetIndex, style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy'), wx, nameY, wy, 0.42, 0.12, metadata);
+        nameX, nameDrawY, nameZ = worldMarkerProbe._ApplyStackScreenOffset(device, nameX, nameDrawY, nameZ, plate);
+
+        if (worldMarkerProbe._SetNameStackRect(device, targetIndex, style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy'), plate.name, nameX, nameDrawY, nameZ, style, metadata) ~= true) then
+            SetPlateClickRectFromBillboard(device, targetIndex, style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy'), nameX, nameDrawY, nameZ, 0.42, 0.12, metadata);
         end
 
         return;

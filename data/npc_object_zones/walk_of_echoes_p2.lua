@@ -1,0 +1,170 @@
+return {
+    ["npcs"] = {
+        ["Pilgrim Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Walk of Echoes Survey\
+",
+            ["type"] = "Quest Associate",
+        },
+    },
+    ["objects"] = {
+        ["Aurum Strongbox"] = {
+            ["_source"] = "item",
+            ["icon"] = "TreasureCasket.png",
+            ["note"] = "A high-tier gilded treasure repository manifested inside the fractured instances of the Walk of Echoes. Cracking this stubborn lock unlocks endgame currency and equipment upgrades to bolster your localized combat capabilities.",
+            ["type"] = "Loot Container",
+        },
+        ["Chest"] = {
+            ["_source"] = "item",
+            ["icon"] = "TreasureCasket.png",
+            ["note"] = "A standard wooden repository found tucked away inside dungeon corridors or manifested throughout endgame battle sectors. Prying open its lid rewards your squad with regional supplies, maps, or unique currency components.",
+            ["type"] = "Loot Container",
+        },
+        ["Coffer"] = {
+            ["_source"] = "item",
+            ["icon"] = "TreasureCasket.png",
+            ["note"] = "A heavy ornate repository found tucked away inside dungeon chambers or manifested throughout endgame battle sectors. Prying open its lid rewards your squad with regional supplies or unique currency components.",
+            ["type"] = "Loot Container",
+        },
+        ["Ethereal Junction #1"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "A shimmering dimensional distortion residue light anomaly pulsing inside the Walk of Echoes. Gathering your party before the rift verifies your group parameters to launch high-tier battle encounters.",
+            ["type"] = "Transit Portal",
+        },
+        ["Ethereal Junction #2"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The secondary localized rift distortion pulsing inside the Walk of Echoes. Gathering your party before the anomaly verifies your alliance metrics to launch high-tier battle encounters.",
+            ["type"] = "Transit Portal",
+        },
+        ["Ethereal Junction #3"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The third specialized travel rift waypoint resting in the advanced instance tiers. Stepping directly into the distortion fields bridges separate timeline loops to launch deep battle trials.",
+            ["type"] = "Transit Portal",
+        },
+        ["Ethereal Junction #4"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The fourth fast-travel energy rift humming along the layout walkways. Synchronizing your spiritual parameters with the platform launches your group directly into intense endgame battle scenarios.",
+            ["type"] = "Transit Portal",
+        },
+        ["Ethereal Junction #5"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The fifth specialized spatial distortion core floating inside the fractured landscape. Interfacing with this ancient system node triggers a rapid energy slipstream to deliver you to advanced challenge rooms.",
+            ["type"] = "Transit Portal",
+        },
+        ["Ethereal Junction #6"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The sixth strategic travel waypoint anchoring high-level battle loops. Tapping into its ancient world-warp grid teleports your adventuring party safely across the fractured instance layouts.",
+            ["type"] = "Transit Portal",
+        },
+        ["Ethereal Junction #7"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The final crystalline travel monument unsealed at the end of the temporal loops. Aligning your group parameters with its crystalline grid opens the gateway to launch elite finale battlefields.",
+            ["type"] = "Transit Portal",
+        },
+        ["Otherworldly Vortex"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "A swirling, unstable cosmic rift tearing through the fabric of the fractured timeline. Stepping directly into the temporal void verifies your alliance credentials and teleports you into high-tier master battlefield instances.",
+            ["type"] = "Transit Portal",
+        },
+        ["Translocator #1"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "An ancient technological console pulsing within the fractured space-time loops. Interfacing with its crystalline grid opens a slipstream to teleport your squad instantly between distinct instance wings.",
+            ["type"] = "Transit Portal",
+        },
+        ["Translocator #2"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The secondary localized warp hub within the temporal research layers. Activating its light lattice matrix shifts your entire alliance across layout walls into advanced challenge rooms.",
+            ["type"] = "Transit Portal",
+        },
+        ["Translocator #3"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The third specialized travel waypoint resting in the advanced instance tiers. Synchronizing your destination keys here lets you navigate through higher floor sectors safely.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #1"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "An ancient technological warp hub pulsing within the past-timeline fractured timeline loops. Interfacing with its console opens a slipstream to teleport your squad instantly between wings.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #10"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The tenth specialized travel rift waypoint resting in the advanced instance tiers. Synchronizing your destination keys here lets you navigate through higher floor sectors safely.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #11"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The eleventh specialized travel rift waypoint anchoring high-level battle loops. Tapping into its ancient world-warp grid teleports your adventuring party safely across the fractured instance layouts.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #12"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The twelfth crystalline travel monument unsealed at the end of the temporal loops. Aligning your group parameters with its crystalline grid opens the gateway to launch elite finale battlefields.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #2"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The second designated warp hub within the past-timeline research layers. Activating its light lattice matrix shifts your entire alliance across layout walls into advanced challenge rooms.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #3"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The third localized warp hub within the past-timeline research layers. Activating its light lattice matrix shifts your entire alliance across layout walls into advanced challenge rooms.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #4"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The fourth fast-travel energy gateway humming along the perimeter pathways. Interfacing with this ancient system node triggers a rapid slipstream to deliver you to targeted exploration zones.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #5"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The fifth specialized fast-travel crystalline core floating inside the dangerous hunting zones. Tapping into its ancient world-warp grid teleports your group directly away from surrounding hazards.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #6"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The sixth strategic travel waypoint anchoring high-level battle loops. Linking your destination keys here lets you navigate through advanced areas without walking through enemy territory.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #7"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The seventh high-tier crystalline travel waypoint unsealed inside the fractured landscape. Activating the floating lattice matrix allows you to slip effortlessly across the zone layouts.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #8"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The eighth specialized travel waypoint resting in the advanced instance tiers. Aligning your group parameters with its crystalline grid opens the gateway to launch elite finale battlefields.",
+            ["type"] = "Transit Portal",
+        },
+        ["Veridical Conflux #9"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["note"] = "The ninth specialized travel rift waypoint anchoring high-level battle loops. Tapping into its ancient world-warp grid teleports your adventuring party safely across the fractured instance layouts.",
+            ["type"] = "Transit Portal",
+        },
+    },
+}

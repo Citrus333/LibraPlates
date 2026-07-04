@@ -232,6 +232,21 @@ local function CopySourceEntries(target, source)
     end
 end
 
+local function CopyZoneBucketEntries(targetNpc, targetObject, zoneData)
+    if (type(zoneData) ~= 'table') then
+        return;
+    end
+
+    CopySourceEntries(targetNpc, zoneData.npcs);
+    CopySourceEntries(targetObject, zoneData.objects);
+
+    -- Backward compatibility for older generated zone files.
+    CopySourceEntries(targetNpc, zoneData.npc);
+    CopySourceEntries(targetObject, zoneData.item);
+    CopySourceEntries(targetNpc, zoneData.catseyeNpc);
+    CopySourceEntries(targetObject, zoneData.catseyeItem);
+end
+
 local function LoadZoneFile(fileName)
     local moduleName = tostring(fileName or ''):gsub('%.lua$', '');
 
@@ -293,14 +308,8 @@ local function BuildActiveZoneSources()
     local activeCatseyeNpcIcons = {};
     local activeCatseyeItemIcons = {};
 
-    CopySourceEntries(activeNpcIcons, globalData.npc);
-    CopySourceEntries(activeItemIcons, globalData.item);
-    CopySourceEntries(activeCatseyeNpcIcons, globalData.catseyeNpc);
-    CopySourceEntries(activeCatseyeItemIcons, globalData.catseyeItem);
-    CopySourceEntries(activeNpcIcons, zoneData.npc);
-    CopySourceEntries(activeItemIcons, zoneData.item);
-    CopySourceEntries(activeCatseyeNpcIcons, zoneData.catseyeNpc);
-    CopySourceEntries(activeCatseyeItemIcons, zoneData.catseyeItem);
+    CopyZoneBucketEntries(activeNpcIcons, activeItemIcons, globalData);
+    CopyZoneBucketEntries(activeNpcIcons, activeItemIcons, zoneData);
 
     npcIcons = activeNpcIcons;
     itemIcons = activeItemIcons;
@@ -362,7 +371,7 @@ local function ReadEntry(sourceName, entry, ignoreZone)
     end
 
     return {
-        source = sourceName,
+        source = tostring(entry._source or sourceName or ''),
         type = infoType,
         displayName = displayName,
         icon = icon,

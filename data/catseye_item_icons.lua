@@ -3,25 +3,25 @@ local itemIcons = T{
 -------------------------------------------------------------------------------
 -- Al'Taieu Item's
 -------------------------------------------------------------------------------
-    ['Lumorian Gleam']      = { type = 'Organ Storage', icon = 'LumorianGleam.png', zones = { "Al'Taieu" }, location = 'Taieu H12', worldOffsetY = 0.25, note = 'stow and retrieve sea monster organs' },
+    ['Lumorian Gleam']      = { type = 'Organ Storage', icon = 'LumorianGleam.png', zones = { "Al'Taieu" }, worldOffsetY = 0.25, note = 'stow and retrieve sea monster organs' },
 
 -------------------------------------------------------------------------------
 -- Attohwa Chasm Item's
 -------------------------------------------------------------------------------
-    ['Nyx\'s Essence']     = { type = 'Summit Quest Fight', icon = 'QuestionMark.png', zones = { "Attohwa Chasm" }, location = 'Attohwa Chasm, top of Parradamo Tor', worldOffsetY = 0.25, note = 'Summit of the Stars:\n* Interact after placing all three beastmen offerings.\n* Starts the Nyx Animus alliance battle for Summit access.' },
-    ['Orc\'s Essence']     = { type = 'Summit Offering Turn-in', icon = 'QuestionMark.png', zones = { "Attohwa Chasm" }, location = 'Attohwa Chasm, top of Parradamo Tor', worldOffsetY = 0.25, note = 'Summit of the Stars:\n* Click to place the Orc Offering.\n* One set of offerings is enough per alliance.' },
-    ['Quadav\'s Essence']  = { type = 'Summit Offering Turn-in', icon = 'QuestionMark.png', zones = { "Attohwa Chasm" }, location = 'Attohwa Chasm, top of Parradamo Tor', worldOffsetY = 0.25, note = 'Summit of the Stars:\n* Click to place the Quadav Offering.\n* One set of offerings is enough per alliance.' },
-    ['Yagudo\'s Essence']  = { type = 'Summit Offering Turn-in', icon = 'QuestionMark.png', zones = { "Attohwa Chasm" }, location = 'Attohwa Chasm, top of Parradamo Tor', worldOffsetY = 0.25, note = 'Summit of the Stars:\n* Click to place the Yagudo Offering.\n* The final offering immediately spawns the boss sequence.' },
+    ['Nyx\'s Essence']     = { type = 'Summit Quest Fight', icon = 'QuestionMark.png', zones = { "Attohwa Chasm" }, worldOffsetY = 0.25, note = 'Summit of the Stars:\n* Interact after placing all three beastmen offerings.\n* Starts the Nyx Animus alliance battle for Summit access.' },
+    ['Orc\'s Essence']     = { type = 'Summit Offering Turn-in', icon = 'QuestionMark.png', zones = { "Attohwa Chasm" }, worldOffsetY = 0.25, note = 'Summit of the Stars:\n* Click to place the Orc Offering.\n* One set of offerings is enough per alliance.' },
+    ['Quadav\'s Essence']  = { type = 'Summit Offering Turn-in', icon = 'QuestionMark.png', zones = { "Attohwa Chasm" }, worldOffsetY = 0.25, note = 'Summit of the Stars:\n* Click to place the Quadav Offering.\n* One set of offerings is enough per alliance.' },
+    ['Yagudo\'s Essence']  = { type = 'Summit Offering Turn-in', icon = 'QuestionMark.png', zones = { "Attohwa Chasm" }, worldOffsetY = 0.25, note = 'Summit of the Stars:\n* Click to place the Yagudo Offering.\n* The final offering immediately spawns the boss sequence.' },
 
 -------------------------------------------------------------------------------
--- Balga's Dias Item's
+-- Balga's Dais Item's
 -------------------------------------------------------------------------------
-    ['Dirt']               = { type = 'System Unlock Quest', icon = 'QuestionMark.png', zones = { "Balga's Dias", "Waughroon Shrine", "Horlais Peak" }, worldOffsetY = 0.25, note = 'Digging Up Dirt:\n* Inspect hidden Dirt inside BCNM rooms for Sebastian.\n* Used to unlock Domenic\'s BCNM teleports.' },
+    ['Dirt']               = { type = 'System Unlock Quest', icon = 'QuestionMark.png', zones = { "Balga's Dais", "Waughroon Shrine", "Horlais Peak" }, zoneIds = { 146, 144, 139 }, worldOffsetY = 0.25, note = 'Digging Up Dirt:\n* Inspect hidden Dirt inside BCNM rooms for Sebastian.\n* Used to unlock Domenic\'s BCNM teleports.' },
 
 -------------------------------------------------------------------------------
 -- Carpenters' Landing Item's
 -------------------------------------------------------------------------------
-    ['Crooked Trunk']      = { type = 'CW Storage Unlock', icon = 'QuestionMark.png', zones = { "Carpenters\' Landing" }, location = "Carpenters' Landing G-9, by collapsed bridge", worldOffsetY = 0.25, note = 'Boxed Up:\n* Inspect during Rusty Hammer\'s Ephemeral Box unlock quest.\n* Triggers the level 40 capped Treant fight, then inspect again.' },
+    ['Crooked Trunk']      = { type = 'CW Storage Unlock', icon = 'QuestionMark.png', zones = { "Carpenters\' Landing" }, worldOffsetY = 0.25, note = 'Boxed Up:\n* Inspect during Rusty Hammer\'s Ephemeral Box unlock quest.\n* Triggers the level 40 capped Treant fight, then inspect again.' },
 
 -------------------------------------------------------------------------------
 -- Castle Oztroja Item's
@@ -29,9 +29,14 @@ local itemIcons = T{
     ['Yagudo Offering']    = { type = 'Summit Offering', icon = 'QuestionMark.png', zones = { "Castle Oztroja" }, worldOffsetY = 0.25, note = 'Summit of the Stars:\n* Click to receive the Yagudo Offering for the Summit unlock quest.\n* Offering location changes every in-game hour.' },
 
 -------------------------------------------------------------------------------
+-- Morimar Basalt Fields Item's
+-------------------------------------------------------------------------------
+    ['Frostbloom']         = { type = 'Ergon Locus', icon = 'ErgonLocus.png', zones = { "Morimar Basalt Fields" }, zoneIds = { 265 }, note = 'An Ergon Locus in Morimar Basalt Fields.' },
+
+-------------------------------------------------------------------------------
 -- Crawlers' Nest Item's
 -------------------------------------------------------------------------------
-    ['Vantage Point']      = { type = 'HELM Unlock Quest', icon = 'QuestionMark.png', zones = { "Crawlers\' Nest" }, location = "Crawlers' Nest J-9, Map 1", worldOffsetY = 0.25, note = 'Thread Bare:\n* Investigate for Mathias.\n* Used to unlock harvesting in Crawlers\' Nest.' },
+    ['Vantage Point']      = { type = 'HELM Unlock Quest', icon = 'QuestionMark.png', zones = { "Crawlers\' Nest" }, worldOffsetY = 0.25, note = 'Thread Bare:\n* Investigate for Mathias.\n* Used to unlock harvesting in Crawlers\' Nest.' },
 
 -------------------------------------------------------------------------------
 -- Dangruf Wadi Item's
@@ -41,7 +46,7 @@ local itemIcons = T{
 -------------------------------------------------------------------------------
 -- East Ronfaure Item's
 -------------------------------------------------------------------------------
-    ['Large Hoofprint']    = { type = 'Novice Trial NM', icon = 'Footprint.png', zones = { "East Ronfaure" }, location = 'East Ronfaure I-9', worldOffsetY = 0.25, note = 'Novice Trials:\n* Trade Baked Apple x3 to spawn Rambling Ram.\n* Used by Serpette augment trials.' },
+    ['Large Hoofprint']    = { type = 'Novice Trial NM', icon = 'Footprint.png', zones = { "East Ronfaure" }, worldOffsetY = 0.25, note = 'Novice Trials:\n* Trade Baked Apple x3 to spawn Rambling Ram.\n* Used by Serpette augment trials.' },
     ['Lost Present']       = { type = 'Holiday Event', icon = 'Box.png', zones = { "East Ronfaure", "South Gustaberg", "West Sarutabaruta" }, worldOffsetY = 0.25, note = 'Holiday Event:\n* Courier Helper objective.\n* Click the lost present in the field, then return to the Courier Helper for credit.' },
 
 -------------------------------------------------------------------------------
@@ -52,12 +57,12 @@ local itemIcons = T{
 -------------------------------------------------------------------------------
 -- Fort Karugo-Narugo [S] Item's
 -------------------------------------------------------------------------------
-    ['Buried Note']        = { type = 'HELM Unlock Quest', icon = 'QuestionMark.png', zones = { "Fort Karugo-Narugo [S]" }, location = 'Fort Karugo-Narugo [S] E-8, west exit cliff', worldOffsetY = 0.25, note = 'Broken Bones:\n* Inspect to receive a crumpled note for Felyna.\n* Used to unlock excavation in Labyrinth of Onzozo.' },
+    ['Buried Note']        = { type = 'HELM Unlock Quest', icon = 'QuestionMark.png', zones = { "Fort Karugo-Narugo [S]" }, worldOffsetY = 0.25, note = 'Broken Bones:\n* Inspect to receive a crumpled note for Felyna.\n* Used to unlock excavation in Labyrinth of Onzozo.' },
 
 -------------------------------------------------------------------------------
 -- Gustav Tunnel Item's
 -------------------------------------------------------------------------------
-    ['Miner\'s Helmet']    = { type = 'HELM Unlock Quest', icon = 'QuestionMark.png', zones = { "Gustav Tunnel" }, location = 'Gustav Tunnel D-11', worldOffsetY = 0.25, note = 'Here Be Dragons:\n* Inspect to spawn Ore Melter for Khartes.\n* Used to unlock mining in Gustav Tunnel.' },
+    ['Miner\'s Helmet']    = { type = 'HELM Unlock Quest', icon = 'QuestionMark.png', zones = { "Gustav Tunnel" }, worldOffsetY = 0.25, note = 'Here Be Dragons:\n* Inspect to spawn Ore Melter for Khartes.\n* Used to unlock mining in Gustav Tunnel.' },
 
 -------------------------------------------------------------------------------
 -- King Ranperre's Tomb Item's
@@ -67,19 +72,19 @@ local itemIcons = T{
 -------------------------------------------------------------------------------
 -- Konschtat Highlands Item's
 -------------------------------------------------------------------------------
-    ['Hume Footprint']     = { type = 'CW Early Gear', icon = 'Footprint.png', zones = { "Konschtat Highlands" }, location = 'Konschtat Highlands L-8', worldOffsetY = 0.25, note = 'Crystal Warrior:\n* Starts quest: Head First.\n* Level 15 early gear quest.' },
-    ['Lost Tongs']         = { type = 'Novice Trial NM', icon = 'QuestionMark.png', zones = { "Konschtat Highlands" }, location = 'Konschtat Highlands G-7', worldOffsetY = 0.25, note = 'Novice Trials:\n* Trade Bronze Ingot x3 to spawn Goblin Armorer.\n* Used by Scale Mail and Scale Cuisses augment trials.' },
+    ['Hume Footprint']     = { type = 'CW Early Gear', icon = 'Footprint.png', zones = { "Konschtat Highlands" }, worldOffsetY = 0.25, note = 'Crystal Warrior:\n* Starts quest: Head First.\n* Level 15 early gear quest.' },
+    ['Lost Tongs']         = { type = 'Novice Trial NM', icon = 'QuestionMark.png', zones = { "Konschtat Highlands" }, worldOffsetY = 0.25, note = 'Novice Trials:\n* Trade Bronze Ingot x3 to spawn Goblin Armorer.\n* Used by Scale Mail and Scale Cuisses augment trials.' },
 
 -------------------------------------------------------------------------------
 -- La Theine Plateau Item's
 -------------------------------------------------------------------------------
     ['Crystal Anomaly']    = { type = 'CW Trust Fight', icon = 'QuestionMark.png', zones = { "La Theine Plateau", "Konschtat Highlands", "Tahrongi Canyon" }, worldOffsetY = 0.25, note = 'Matter of Trust I:\n* Inspect to begin the level 10 Crystal Weapon encounter.\n* Locations: La Theine L-8, Konschtat K-5, Tahrongi I-5.' },
-    ['Lost Lockpick']      = { type = 'Novice Trial NM', icon = 'QuestionMark.png', zones = { "La Theine Plateau" }, location = 'La Theine Plateau C-5', worldOffsetY = 0.25, note = 'Novice Trials:\n* Trade Sheep Leather x3 to spawn Goblin Burglar.\n* Used by Doublet and Brais augment trials.' },
+    ['Lost Lockpick']      = { type = 'Novice Trial NM', icon = 'QuestionMark.png', zones = { "La Theine Plateau" }, worldOffsetY = 0.25, note = 'Novice Trials:\n* Trade Sheep Leather x3 to spawn Goblin Burglar.\n* Used by Doublet and Brais augment trials.' },
 
 -------------------------------------------------------------------------------
 -- Lower Jeuno Item's
 -------------------------------------------------------------------------------
-	['EXP Guide']          = { type = 'EXP Guide', icon = 'EXPGuide.png', zones = { "Lower Jeuno" }, zoneIds = { 245 }, location = 'Lower Jeuno Auction House', worldOffsetY = 0.25, note = 'CatsEyeXI:\n* Free warp book for Signet and Sanction EXP camps.\n* Unlocks after Near Death Experience from Andrus in Lufaise Meadows.\n* Trade 1 gil for a secret menu.\n* Crystal Warriors cannot use this book.' },
+	['EXP Guide']          = { type = 'EXP Guide', icon = 'EXPGuide.png', zones = { "Lower Jeuno" }, zoneIds = { 245 }, worldOffsetY = 0.25, note = 'CatsEyeXI:\n* Free warp book for Signet and Sanction EXP camps.\n* Unlocks after Near Death Experience from Andrus in Lufaise Meadows.\n* Trade 1 gil for a secret menu.\n* Crystal Warriors cannot use this book.' },
 	['Golden Tiger'] = { type = 'Event', icon = 'Event.png', zones = { 'Lower Jeuno' }, zoneIds = { 245 }, worldOffsetY = 0.25, hidden = true },
 	['Regal Pawprint'] = { icon = 'Pawprint.png', zones = { 'Lower Jeuno' }, zoneIds = { 245 }, worldOffsetY = 0.25 },
 
@@ -93,7 +98,7 @@ local itemIcons = T{
 -------------------------------------------------------------------------------
 -- Meriphataud Mountains Item's
 -------------------------------------------------------------------------------
-    ['Yagudo Tracks']      = { type = 'CW Arena Entry', icon = 'Footprint.png', zones = { "Meriphataud Mountains" }, location = 'Meriphataud Mountains K-8', worldOffsetY = 0.25, note = 'Crystal Warrior:\n* Starts the level 50 Yagudo Arena after unlocking with Yagudo Outlaw.\n* Return to Yagudo Outlaw afterward to select a reward set.' },
+    ['Yagudo Tracks']      = { type = 'CW Arena Entry', icon = 'Footprint.png', zones = { "Meriphataud Mountains" }, worldOffsetY = 0.25, note = 'Crystal Warrior:\n* Starts the level 50 Yagudo Arena after unlocking with Yagudo Outlaw.\n* Return to Yagudo Outlaw afterward to select a reward set.' },
 
 -------------------------------------------------------------------------------
 -- Monastic Cavern Item's
@@ -103,7 +108,7 @@ local itemIcons = T{
 -------------------------------------------------------------------------------
 -- Norg Item's
 -------------------------------------------------------------------------------
-    ['Sinister Stash']     = { type = 'Doubloon Fish Daily', icon = 'Box.png', zones = { "Norg" }, worldOffsetY = 0.25, location = 'Norg H-8', note = 'CatsEyeXI:\n* Level 20+ daily fish turn-in in Norg (H-8), paired with Crooked Jones.\n* Used for the doubloon fishing daily and treasure hunt rewards.' },
+    ['Sinister Stash']     = { type = 'Doubloon Fish Daily', icon = 'Box.png', zones = { "Norg" }, worldOffsetY = 0.25, note = 'CatsEyeXI:\n* Level 20+ daily fish turn-in in Norg (H-8), paired with Crooked Jones.\n* Used for the doubloon fishing daily and treasure hunt rewards.' },
 
 -------------------------------------------------------------------------------
 -- Provenance Item's
@@ -120,14 +125,14 @@ local itemIcons = T{
 -------------------------------------------------------------------------------
 -- Rabao Item's
 -------------------------------------------------------------------------------
-    ['Book of Mastery']    = { type = 'Adept Reforging', icon = 'QuestionMark.png', zones = { "Rabao" }, location = 'Rabao J-6, next to Adeptus', worldOffsetY = 0.25, note = 'Adept Reforging:\n* Cancels current Adept trial.\n* Transfers augments from augmented NQ armor to an unaugmented HQ version before the third trial.\n* The NQ armor is consumed during transfer.' },
+    ['Book of Mastery']    = { type = 'Adept Reforging', icon = 'QuestionMark.png', zones = { "Rabao" }, worldOffsetY = 0.25, note = 'Adept Reforging:\n* Cancels current Adept trial.\n* Transfers augments from augmented NQ armor to an unaugmented HQ version before the third trial.\n* The NQ armor is consumed during transfer.' },
 
 -------------------------------------------------------------------------------
 -- Ru'Lude Gardens Item's
 -------------------------------------------------------------------------------
-    ['Dragon Lore']        = { type = 'Dragonslaying Merit Storage', icon = 'QuestionMark.png', zones = { "Ru\'Lude Gardens" }, location = "Ru'Lude Gardens G-9", worldOffsetY = 0.25, note = 'Dragonslaying:\n* Stores merit points for later DKP pop item purchases.\n* Alternative merit storage to Sigmund in Mhaura.' },
-    ['EXP Guide (S)']      = { type = 'EXP Guide (S)', icon = 'EXPGuideS.png', zones = { "Ru'Lude Gardens" }, location = "Ru'Lude Gardens, near the Mog House", worldOffsetY = 0.25, note = 'CatsEyeXI:\n* Free warp book for Sigil EXP camps.\n* Unlocks after Blast to the Past from Ash in Batallia Downs (S).\n* Trade 1 gil for a secret menu to Xarcabard (S) G-7 near Caracal.\n* Crystal Warriors may use this book.' },
-    ['Faded Footprint']    = { type = 'CW Armor Quest', icon = 'Footprint.png', zones = { "Ru\'Lude Gardens" }, location = "Ru'Lude Gardens H-7", worldOffsetY = 0.25, note = 'Crystal Warrior:\n* Level 30 armor quest: Empty Handed.\n* Rewards Shade Harness Set.' },
+    ['Dragon Lore']        = { type = 'Dragonslaying Merit Storage', icon = 'QuestionMark.png', zones = { "Ru\'Lude Gardens" }, worldOffsetY = 0.25, note = 'Dragonslaying:\n* Stores merit points for later DKP pop item purchases.\n* Alternative merit storage to Sigmund in Mhaura.' },
+    ['EXP Guide (S)']      = { type = 'EXP Guide (S)', icon = 'EXPGuideS.png', zones = { "Ru'Lude Gardens" }, worldOffsetY = 0.25, note = 'CatsEyeXI:\n* Free warp book for Sigil EXP camps.\n* Unlocks after Blast to the Past from Ash in Batallia Downs (S).\n* Trade 1 gil for a secret menu to Xarcabard (S) G-7 near Caracal.\n* Crystal Warriors may use this book.' },
+    ['Faded Footprint']    = { type = 'CW Armor Quest', icon = 'Footprint.png', zones = { "Ru\'Lude Gardens" }, worldOffsetY = 0.25, note = 'Crystal Warrior:\n* Level 30 armor quest: Empty Handed.\n* Rewards Shade Harness Set.' },
 
 -------------------------------------------------------------------------------
 -- Southern San d'Oria Item's
@@ -137,13 +142,13 @@ local itemIcons = T{
 -------------------------------------------------------------------------------
 -- Tahrongi Canyon Item's
 -------------------------------------------------------------------------------
-    ['Lost Needle']        = { type = 'Novice Trial NM', icon = 'QuestionMark.png', zones = { "Tahrongi Canyon" }, location = 'Tahrongi Canyon G-9', worldOffsetY = 0.25, note = 'Novice Trials:\n* Trade Cotton Thread x3 to spawn Goblin Tailor.\n* Used by Linen Robe and Linen Slops augment trials.' },
-    ['Mithra Tracks']      = { type = 'CW Early Gear', icon = 'Footprint.png', zones = { "Tahrongi Canyon" }, location = 'Tahrongi Canyon J-8', worldOffsetY = 0.25, note = 'Crystal Warrior:\n* Starts quest: Likely Tails.\n* Level 15 early gear quest.' },
+    ['Lost Needle']        = { type = 'Novice Trial NM', icon = 'QuestionMark.png', zones = { "Tahrongi Canyon" }, worldOffsetY = 0.25, note = 'Novice Trials:\n* Trade Cotton Thread x3 to spawn Goblin Tailor.\n* Used by Linen Robe and Linen Slops augment trials.' },
+    ['Mithra Tracks']      = { type = 'CW Early Gear', icon = 'Footprint.png', zones = { "Tahrongi Canyon" }, worldOffsetY = 0.25, note = 'Crystal Warrior:\n* Starts quest: Likely Tails.\n* Level 15 early gear quest.' },
 
 -------------------------------------------------------------------------------
 -- The Sanctuary of Zi'Tah Item's
 -------------------------------------------------------------------------------
-    ['Pile of Stones']     = { type = 'Dragonslayer Intro', icon = 'MiningPoint.png', zones = { "The Sanctuary of Zi\'Tah" }, location = "The Sanctuary of Zi'Tah H-7", worldOffsetY = 0.25, note = 'Dragonslaying:\n* Trade a Pickaxe here during the Dragonslayer intro quest.\n* If nothing happens, return to Sigmund and exhaust dialogue.' },
+    ['Pile of Stones']     = { type = 'Dragonslayer Intro', icon = 'MiningPoint.png', zones = { "The Sanctuary of Zi\'Tah" }, worldOffsetY = 0.25, note = 'Dragonslaying:\n* Trade a Pickaxe here during the Dragonslayer intro quest.\n* If nothing happens, return to Sigmund and exhaust dialogue.' },
 
 -------------------------------------------------------------------------------
 -- Toraimarai Canal Item's
@@ -153,12 +158,11 @@ local itemIcons = T{
 -------------------------------------------------------------------------------
 -- Upper Delkfutt's Tower Item's
 -------------------------------------------------------------------------------
-    ['Training Supplies']  = { type = 'Outpost Unlock Quest', icon = 'QuestionMark.png', zones = { "Upper Delkfutt's Tower" }, location = "Upper Delkfutt's Tower I-9, Map 1 tenth floor", worldOffsetY = 0.25, note = 'Up, Up and Away:\n* Quest object for Disarmed Knight.\n* Located in Porphyrion\'s room by the elevator, sometimes behind the secret chest.' },
+    ['Training Supplies']  = { type = 'Outpost Unlock Quest', icon = 'QuestionMark.png', zones = { "Upper Delkfutt's Tower" }, worldOffsetY = 0.25, note = 'Up, Up and Away:\n* Quest object for Disarmed Knight.\n* Located in Porphyrion\'s room by the elevator, sometimes behind the secret chest.' },
 
 -------------------------------------------------------------------------------
 -- ZZZ (No zone) Item's
 -------------------------------------------------------------------------------
-    ['Gobbie Mystery Box'] = { type = 'Daily Box', icon = 'GobbieMysteryBox.png' },
 
 };
 return itemIcons;

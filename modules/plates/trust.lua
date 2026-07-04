@@ -8,8 +8,8 @@ local buffsDefaults = require('config.widgets.buffs');
 local debuffsDefaults = require('config.widgets.debuffs');
 local aoeRangeDefaults = require('config.widgets.aoe_range');
 local globalDefaults = require('config.global');
-local npcIcons = require('data.npc_icons');
 local trustJobs = require('data.trust_jobs');
+local globalNpcObjectData = require('data.npc_object_zones.global');
 local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
@@ -200,6 +200,7 @@ end
 
 local trustIconAliases = nil;
 local trustJobAliases = nil;
+local trustEntriesByName = nil;
 local trustOffsetNameAliases = {
     aaev = 'arkev',
     aagk = 'arkgk',
@@ -232,6 +233,30 @@ local function NormalizeTrustLookupName(name)
     return CleanTrustName(name):lower():gsub('[^%w]', '');
 end
 
+local function GetTrustEntriesByName()
+    if (trustEntriesByName ~= nil) then
+        return trustEntriesByName;
+    end
+
+    trustEntriesByName = {};
+
+    local npcs = type(globalNpcObjectData) == 'table' and globalNpcObjectData.npcs or nil;
+
+    if (type(npcs) ~= 'table') then
+        return trustEntriesByName;
+    end
+
+    for key, entry in pairs(npcs) do
+        local trustName = tostring(key or ''):match('^Trust:%s*(.+)$');
+
+        if (trustName ~= nil and trustName ~= '') then
+            trustEntriesByName[CleanTrustName(trustName)] = entry;
+        end
+    end
+
+    return trustEntriesByName;
+end
+
 local function GetTrustIconAliases()
     if (trustIconAliases ~= nil) then
         return trustIconAliases;
@@ -239,9 +264,7 @@ local function GetTrustIconAliases()
 
     trustIconAliases = {};
 
-    for key, entry in pairs(npcIcons or {}) do
-        local trustName = tostring(key or ''):match('^Trust:%s*(.+)$');
-
+    for trustName, entry in pairs(GetTrustEntriesByName()) do
         if (trustName ~= nil and trustName ~= '') then
             trustIconAliases[NormalizeTrustLookupName(trustName)] = entry;
             if (type(entry) == 'table') and (type(entry.aliases) == 'table') then
@@ -304,7 +327,7 @@ end
 
 local function ResolveTrustIconEntry(name)
     local cleanName = CleanTrustName(name);
-    local entry = npcIcons['Trust: ' .. cleanName];
+    local entry = GetTrustEntriesByName()[cleanName];
 
     if (entry == nil) then
         local normalizedName = NormalizeTrustLookupName(cleanName);

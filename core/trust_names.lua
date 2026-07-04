@@ -1,9 +1,10 @@
 local trustNames = {};
 local curatedTrustNames = require('data.trust_names');
-local npcIcons = require('data.npc_icons');
-local catseyeNpcIcons = require('data.catseye_npc_icons');
+local zoneManifest = require('data.npc_object_zone_manifest');
 local currentZoneId = nil;
 local currentZoneName = nil;
+local currentZoneFile = nil;
+local globalZoneData = nil;
 
 local function NormalizeZoneName(zoneName)
     local text = tostring(zoneName or '');
@@ -44,8 +45,75 @@ local function GetCurrentZoneName()
     return currentZoneName;
 end
 
+local function GetCurrentZoneId()
+    local zoneId = nil;
+
+    pcall(function()
+        zoneId = AshitaCore:GetMemoryManager():GetParty():GetMemberZone(0);
+    end);
+
+    return tonumber(zoneId) or 0;
+end
+
 local function CleanName(name)
     return tostring(name or ''):gsub('\170', ''):gsub('^%s+', ''):gsub('%s+$', '');
+end
+
+local function LoadTable(moduleName)
+    local ok, data = pcall(require, moduleName);
+
+    if (ok == true and type(data) == 'table') then
+        return data;
+    end
+
+    return {};
+end
+
+local function LoadZoneFile(fileName)
+    local moduleName = tostring(fileName or ''):gsub('%.lua$', '');
+
+    if (moduleName == '') then
+        return {};
+    end
+
+    return LoadTable('data.npc_object_zones.' .. moduleName);
+end
+
+local function GetGlobalZoneData()
+    if (globalZoneData == nil) then
+        globalZoneData = LoadZoneFile(zoneManifest.global);
+    end
+
+    return globalZoneData or {};
+end
+
+local function GetCurrentZoneData()
+    local zoneId = GetCurrentZoneId();
+    local zoneName = GetCurrentZoneName();
+    local zoneIdFile = nil;
+    local zoneNameFile = nil;
+
+    if (type(zoneManifest.zoneIds) == 'table') then
+        zoneIdFile = zoneManifest.zoneIds[zoneId] or zoneManifest.zoneIds[tostring(zoneId)];
+    end
+
+    if (type(zoneManifest.zoneNames) == 'table' and zoneName ~= nil) then
+        zoneNameFile = zoneManifest.zoneNames[zoneName:lower()];
+    end
+
+    local zoneFile = zoneNameFile or zoneIdFile or '';
+
+    if (zoneFile == '') then
+        currentZoneFile = nil;
+        return {};
+    end
+
+    if (currentZoneFile == zoneFile) then
+        return LoadZoneFile(zoneFile);
+    end
+
+    currentZoneFile = zoneFile;
+    return LoadZoneFile(zoneFile);
 end
 
 local knownTrustNames = {};
@@ -65,28 +133,12 @@ for name, value in pairs(curatedTrustNames or {}) do
     end
 end
 
-local function GetCuratedNpcEntry(name)
-    return catseyeNpcIcons[CleanName(name)] or npcIcons[CleanName(name)];
-end
+local function HasCurrentZoneNpcEntry(name)
+    local cleanName = CleanName(name);
+    local globalEntry = ((GetGlobalZoneData().npcs or {})[cleanName]);
+    local zoneEntry = ((GetCurrentZoneData().npcs or {})[cleanName]);
 
-local function EntryHasCurrentZone(entry)
-    if (type(entry) ~= 'table' or type(entry.zones) ~= 'table') then
-        return false;
-    end
-
-    local zoneName = GetCurrentZoneName();
-
-    if (zoneName == nil or zoneName == '') then
-        return false;
-    end
-
-    for _, zone in pairs(entry.zones) do
-        if (NormalizeZoneName(zone) == zoneName) then
-            return true;
-        end
-    end
-
-    return false;
+    return type(globalEntry) == 'table' or type(zoneEntry) == 'table';
 end
 
 function trustNames.IsKnownTrustName(name)
@@ -110,7 +162,7 @@ function trustNames.IsKnownTrustName(name)
 
     -- Some trust names are also normal NPCs. When the current zone has a
     -- concrete NPC entry with the same name, keep it in the NPC data path.
-    if (EntryHasCurrentZone(GetCuratedNpcEntry(cleanName)) == true) then
+    if (HasCurrentZoneNpcEntry(cleanName) == true) then
         return false;
     end
 

@@ -18,11 +18,6 @@ local npcIcons = nil;
 local itemIcons = nil;
 local catseyeNpcIcons = nil;
 local catseyeItemIcons = nil;
-local fullNpcIcons = nil;
-local fullItemIcons = nil;
-local fullCatseyeNpcIcons = nil;
-local fullCatseyeItemIcons = nil;
-local fullSourcesLoaded = false;
 local activeZoneSignature = nil;
 local zoneManifest = LoadTable('data.npc_object_zone_manifest');
 local textureIds = {};
@@ -232,19 +227,54 @@ local function CopySourceEntries(target, source)
     end
 end
 
-local function CopyZoneBucketEntries(targetNpc, targetObject, zoneData)
+local function AddZoneEntry(activeSources, name, entry, defaultSource)
+    if (type(activeSources) ~= 'table' or type(entry) ~= 'table') then
+        return;
+    end
+
+    local sourceName = tostring(entry._source or defaultSource or '');
+
+    if (sourceName == 'catseye_npc') then
+        activeSources.catseyeNpc[name] = entry;
+        return;
+    end
+
+    if (sourceName == 'catseye_item') then
+        activeSources.catseyeItem[name] = entry;
+        return;
+    end
+
+    if (sourceName == 'item') then
+        activeSources.item[name] = entry;
+        return;
+    end
+
+    activeSources.npc[name] = entry;
+end
+
+local function CopyZoneEntries(activeSources, source, defaultSource)
+    if (type(source) ~= 'table') then
+        return;
+    end
+
+    for name, entry in pairs(source) do
+        AddZoneEntry(activeSources, name, entry, defaultSource);
+    end
+end
+
+local function CopyZoneBucketEntries(activeSources, zoneData)
     if (type(zoneData) ~= 'table') then
         return;
     end
 
-    CopySourceEntries(targetNpc, zoneData.npcs);
-    CopySourceEntries(targetObject, zoneData.objects);
+    CopyZoneEntries(activeSources, zoneData.npcs, 'npc');
+    CopyZoneEntries(activeSources, zoneData.objects, 'item');
 
     -- Backward compatibility for older generated zone files.
-    CopySourceEntries(targetNpc, zoneData.npc);
-    CopySourceEntries(targetObject, zoneData.item);
-    CopySourceEntries(targetNpc, zoneData.catseyeNpc);
-    CopySourceEntries(targetObject, zoneData.catseyeItem);
+    CopyZoneEntries(activeSources, zoneData.npc, 'npc');
+    CopyZoneEntries(activeSources, zoneData.item, 'item');
+    CopyZoneEntries(activeSources, zoneData.catseyeNpc, 'catseye_npc');
+    CopyZoneEntries(activeSources, zoneData.catseyeItem, 'catseye_item');
 end
 
 local function LoadZoneFile(fileName)
@@ -257,32 +287,9 @@ local function LoadZoneFile(fileName)
     return LoadTable('data.npc_object_zones.' .. moduleName);
 end
 
-local function LoadFullSources()
-    if (fullSourcesLoaded == true) then
-        return;
-    end
-
-    fullNpcIcons = LoadTable('data.npc_icons');
-    fullItemIcons = LoadTable('data.item_icons');
-    fullCatseyeNpcIcons = LoadTable('data.catseye_npc_icons');
-    fullCatseyeItemIcons = LoadTable('data.catseye_item_icons');
-    fullSourcesLoaded = true;
-end
-
 local function BuildActiveZoneSources()
     local zoneId = GetCurrentZoneId();
     local zoneName = GetCurrentZoneName();
-
-    if (zoneId == 0 and zoneName == nil) then
-        LoadFullSources();
-        npcIcons = fullNpcIcons;
-        itemIcons = fullItemIcons;
-        catseyeNpcIcons = fullCatseyeNpcIcons;
-        catseyeItemIcons = fullCatseyeItemIcons;
-        activeZoneSignature = 'full';
-        return;
-    end
-
     local signature = tostring(zoneId or 0) .. ':' .. tostring(zoneName or '');
 
     if (signature == activeZoneSignature and npcIcons ~= nil and itemIcons ~= nil and catseyeNpcIcons ~= nil and catseyeItemIcons ~= nil) then
@@ -303,33 +310,24 @@ local function BuildActiveZoneSources()
 
     local primaryZoneFile = zoneNameFile or zoneIdFile;
     local zoneData = LoadZoneFile(primaryZoneFile);
-    local activeNpcIcons = {};
-    local activeItemIcons = {};
-    local activeCatseyeNpcIcons = {};
-    local activeCatseyeItemIcons = {};
+    local activeSources = {
+        npc = {},
+        item = {},
+        catseyeNpc = {},
+        catseyeItem = {},
+    };
 
-    CopyZoneBucketEntries(activeNpcIcons, activeItemIcons, globalData);
-    CopyZoneBucketEntries(activeNpcIcons, activeItemIcons, zoneData);
+    CopyZoneBucketEntries(activeSources, globalData);
+    CopyZoneBucketEntries(activeSources, zoneData);
 
-    npcIcons = activeNpcIcons;
-    itemIcons = activeItemIcons;
-    catseyeNpcIcons = activeCatseyeNpcIcons;
-    catseyeItemIcons = activeCatseyeItemIcons;
+    npcIcons = activeSources.npc;
+    itemIcons = activeSources.item;
+    catseyeNpcIcons = activeSources.catseyeNpc;
+    catseyeItemIcons = activeSources.catseyeItem;
     activeZoneSignature = signature;
 end
 
-local function GetSourceTables(useFull)
-    if (useFull == true) then
-        LoadFullSources();
-
-        return {
-            npc = fullNpcIcons,
-            item = fullItemIcons,
-            catseyeNpc = fullCatseyeNpcIcons,
-            catseyeItem = fullCatseyeItemIcons,
-        };
-    end
-
+local function GetSourceTables()
     BuildActiveZoneSources();
 
     return {
@@ -508,7 +506,7 @@ IsHiddenEntry = function(entry)
 end
 
 function npcInfo.ShouldHidePlate(name)
-    local sources = GetSourceTables(false);
+    local sources = GetSourceTables();
     local cleanName = NormalizeName(name);
     local entry = (sources.catseyeItem or {})[cleanName]
         or (sources.item or {})[cleanName]
@@ -533,7 +531,7 @@ function npcInfo.Find(name, entityType, options)
     local homePointKey = GetHomePointKey(name);
     local itemLookupName = homePointKey or name;
     local forceItemZoneMatchOff = homePointKey ~= nil;
-    local sources = GetSourceTables(ignoreZone or forceItemZoneMatchOff);
+    local sources = GetSourceTables();
 
     if (kind == 'object') then
         local item = FindIn(itemLookupName, 'catseye_item', sources.catseyeItem, ignoreZone or forceItemZoneMatchOff, options)
@@ -561,7 +559,7 @@ function npcInfo.ResolveKind(name, entityType, options)
     local homePointKey = GetHomePointKey(name);
     local itemLookupName = homePointKey or name;
     local forceItemZoneMatchOff = homePointKey ~= nil;
-    local sources = GetSourceTables(type(options) == 'table' and options.ignoreZone == true or forceItemZoneMatchOff);
+    local sources = GetSourceTables();
     local catseyeItemInfo = FindIn(itemLookupName, 'catseye_item', sources.catseyeItem, forceItemZoneMatchOff, options);
 
     if (catseyeItemInfo ~= nil) then
@@ -571,7 +569,7 @@ function npcInfo.ResolveKind(name, entityType, options)
     local itemInfo = FindScopedIn(itemLookupName, 'item', sources.item, forceItemZoneMatchOff, options)
         or FindIn(itemLookupName, 'item', sources.item, forceItemZoneMatchOff, options);
 
-    if (itemInfo ~= nil and (forceItemZoneMatchOff == true or IsGatheringPointName(name) == true)) then
+    if (itemInfo ~= nil) then
         return 'Object', itemInfo;
     end
 

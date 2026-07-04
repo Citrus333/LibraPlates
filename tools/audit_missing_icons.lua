@@ -1,19 +1,15 @@
 local outputPath = arg[1] or 'TEMP WORK FOLDER/missing_icons.txt';
 local csvPath = arg[2] or 'TEMP WORK FOLDER/missing_icons.csv';
 
-function T(t)
-    return t;
-end
+local manifest = require('data.npc_object_zone_manifest');
 
 local addonRoot = '.';
 
-local sources = {
-    { key = 'catseye_npc', path = 'data/catseye_npc_icons.lua', folder = 'assets/images/catseye_icons' },
-    { key = 'npc', path = 'data/npc_icons.lua', folder = 'assets/images/npc_icons' },
-    { key = 'catseye_item', path = 'data/catseye_item_icons.lua', folder = 'assets/images/catseye_icons' },
-    { key = 'item', path = 'data/item_icons.lua', folder = 'assets/images/item_icons' },
-    { key = 'legacy_wiki', path = 'data/generated/wiki_legacy_npcs.lua', folder = 'assets/images/npc_icons' },
-    { key = 'current_wiki', path = 'data/generated/wiki_current_npcs.lua', folder = 'assets/images/npc_icons' },
+local folderBySource = {
+    npc = 'assets/images/npc_icons',
+    item = 'assets/images/item_icons',
+    catseye_npc = 'assets/images/catseye_icons',
+    catseye_item = 'assets/images/catseye_icons',
 };
 
 local function IsAbsolutePath(path)
@@ -59,7 +55,36 @@ local function LoadTable(path)
     return data, nil;
 end
 
-local function AddIcon(rows, sourceKey, sourcePath, folder, name, entry)
+local function AddFile(files, seen, fileName)
+    fileName = tostring(fileName or '');
+
+    if (fileName == '' or seen[fileName] == true) then
+        return;
+    end
+
+    seen[fileName] = true;
+    files[#files + 1] = fileName;
+end
+
+local function GetZoneFiles()
+    local files = {};
+    local seen = {};
+
+    AddFile(files, seen, manifest.global);
+
+    for _, fileName in pairs(manifest.zoneIds or {}) do
+        AddFile(files, seen, fileName);
+    end
+
+    for _, fileName in pairs(manifest.zoneNames or {}) do
+        AddFile(files, seen, fileName);
+    end
+
+    table.sort(files);
+    return files;
+end
+
+local function AddIcon(rows, zoneFile, bucketName, name, entry)
     if (type(entry) ~= 'table') then
         return;
     end
@@ -70,6 +95,8 @@ local function AddIcon(rows, sourceKey, sourcePath, folder, name, entry)
         return;
     end
 
+    local source = tostring(entry._source or (bucketName == 'objects' and 'item' or 'npc'));
+    local folder = folderBySource[source] or folderBySource.npc;
     local expectedPath = icon:gsub('\\', '/');
 
     if (IsAbsolutePath(expectedPath) ~= true) then
@@ -77,8 +104,8 @@ local function AddIcon(rows, sourceKey, sourcePath, folder, name, entry)
     end
 
     rows[#rows + 1] = {
-        source = sourceKey,
-        sourcePath = sourcePath,
+        source = source,
+        sourcePath = zoneFile,
         name = tostring(name or ''),
         typeName = tostring(entry.type or ''),
         icon = icon,
@@ -90,14 +117,18 @@ end
 local rows = {};
 local loadErrors = {};
 
-for _, source in ipairs(sources) do
-    local data, err = LoadTable(source.path);
+for _, fileName in ipairs(GetZoneFiles()) do
+    local data, err = LoadTable('data/npc_object_zones/' .. fileName);
 
     if (data == nil) then
-        loadErrors[#loadErrors + 1] = source.path .. ': ' .. tostring(err);
+        loadErrors[#loadErrors + 1] = fileName .. ': ' .. tostring(err);
     else
-        for name, entry in pairs(data) do
-            AddIcon(rows, source.key, source.path, source.folder, name, entry);
+        for name, entry in pairs(data.npcs or {}) do
+            AddIcon(rows, fileName, 'npcs', name, entry);
+        end
+
+        for name, entry in pairs(data.objects or {}) do
+            AddIcon(rows, fileName, 'objects', name, entry);
         end
     end
 end
@@ -108,14 +139,11 @@ if (staffData == nil) then
 else
     if (type(staffData.names) == 'table') then
         for name, entry in pairs(staffData.names) do
-            AddIcon(rows, 'staff_names', 'data/staff_players.lua', 'assets/images/staff', name, entry);
-        end
-    end
-
-    if (type(staffData.serverIds) == 'table') then
-        for serverId, entry in pairs(staffData.serverIds) do
-            local name = tostring(entry.name or serverId);
-            AddIcon(rows, 'staff_serverIds', 'data/staff_players.lua', 'assets/images/staff', name, entry);
+            AddIcon(rows, 'data/staff_players.lua', 'staff', name, {
+                icon = entry.icon,
+                type = entry.type,
+                _source = 'staff',
+            });
         end
     end
 end
@@ -148,7 +176,7 @@ for _, row in ipairs(rows) do
         bucket.types[row.typeName] = true;
 
         if (#bucket.examples < 12) then
-            bucket.examples[#bucket.examples + 1] = row.name .. ' (' .. row.source .. ')';
+            bucket.examples[#bucket.examples + 1] = row.name .. ' (' .. row.sourcePath .. ')';
         end
     end
 end
@@ -219,7 +247,3 @@ for _, bucket in ipairs(missing) do
     }, ',') .. '\n');
 end
 csv:close();
-
-print(string.format('Wrote %s', outputPath));
-print(string.format('Wrote %s', csvPath));
-print(string.format('icon refs=%d missing refs=%d missing unique=%d', total, missingTotal, #missing));

@@ -1108,6 +1108,11 @@ Involved in Quests:\
             ["type"] = "Event",
             ["worldOffsetY"] = 0.25,
         },
+        ["Goldilox Box"] = {
+            ["_source"] = "catseye_item",
+            ["icon"] = "TreasureChest.png",
+            ["type"] = "Daily Quests Rewards",
+        },
         ["Guide Stone"] = {
             ["_source"] = "item",
             ["icon"] = "GuideStone.png",

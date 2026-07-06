@@ -455,6 +455,30 @@ local function GetLaneSettings(settings, lane)
             soundFile = resolveSoundFile(settings.builtInSoundFile),
             soundVolume = soundVolume,
         };
+    elseif (lane == 'fishingHookType') then
+        return {
+            enabled = settings.builtInFishingHookTypeEnabled ~= false,
+            color = settings.fishingHookTypeColor or settings.builtInColor or { 0.65, 0.90, 1.0, 1.0 },
+            outlineColor = settings.fishingHookTypeOutlineColor or settings.builtInOutlineColor or settings.outlineColor,
+            fontSize = tonumber(settings.fishingHookTypeFontSize) or tonumber(settings.builtInFontSize) or 30,
+            offsetX = tonumber(settings.fishingHookTypeOffsetX) or 0,
+            offsetY = tonumber(settings.fishingHookTypeOffsetY) or 220,
+            soundEnabled = false,
+            soundFile = resolveSoundFile(settings.builtInSoundFile),
+            soundVolume = soundVolume,
+        };
+    elseif (lane == 'fishingCatchInfo') then
+        return {
+            enabled = settings.builtInFishingCatchInfoEnabled ~= false,
+            color = settings.fishingCatchInfoColor or settings.builtInColor or { 0.65, 0.90, 1.0, 1.0 },
+            outlineColor = settings.fishingCatchInfoOutlineColor or settings.builtInOutlineColor or settings.outlineColor,
+            fontSize = tonumber(settings.fishingCatchInfoFontSize) or tonumber(settings.builtInFontSize) or 30,
+            offsetX = tonumber(settings.fishingCatchInfoOffsetX) or 0,
+            offsetY = tonumber(settings.fishingCatchInfoOffsetY) or 264,
+            soundEnabled = false,
+            soundFile = resolveSoundFile(settings.builtInSoundFile),
+            soundVolume = soundVolume,
+        };
     end
 
     return {
@@ -479,6 +503,8 @@ local function GetAlertPriority(lane)
     if (lane == 'pet') then return 4; end
     if (lane == 'defensive') then return 5; end
     if (lane == 'builtIn') then return 6; end
+    if (lane == 'fishingHookType') then return 6; end
+    if (lane == 'fishingCatchInfo') then return 6; end
 
     return 7;
 end
@@ -950,6 +976,17 @@ local function TrimText(value)
     return tostring(value or ''):gsub('^%s*(.-)%s*$', '%1');
 end
 
+local function CleanChatLine(value)
+    local text = StripControlCodes(value);
+    text = TrimText(text);
+
+    while (text:match('^%[[^%]]+%]%s*') ~= nil) do
+        text = TrimText(text:gsub('^%[[^%]]+%]%s*', '', 1));
+    end
+
+    return text;
+end
+
 local function TrimTrailingNonLetters(value)
     value = tostring(value or '');
     return value:match('^(.+%a)') or value;
@@ -1032,16 +1069,100 @@ local function GetBuiltInSoundOptions(settings, prefix)
     };
 end
 
-local function PushSystemAlert(label, text, soundPrefix)
+local function PushSystemAlert(label, text, soundPrefix, lane)
     local settings = GetSettings();
     local soundOptions = GetBuiltInSoundOptions(settings, tostring(soundPrefix or 'builtIn'));
 
-    PushAlert('System', 'builtIn', tostring(label or 'Alert'), '', {
+    PushAlert('System', tostring(lane or 'builtIn'), tostring(label or 'Alert'), '', {
         text = tostring(text or ''),
         force = true,
         soundEnabled = soundOptions.soundEnabled,
         soundFile = soundOptions.soundFile,
     });
+end
+
+local function PushFishingHookTypeAlert(settings, label, soundPrefix)
+    if (settings.builtInFishingHookTypeEnabled == false) then
+        return false;
+    end
+
+    PushSystemAlert(label, label, soundPrefix, 'fishingHookType');
+    lastDebug = 'text-fishing hook=' .. tostring(label);
+    if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
+    return true;
+end
+
+local function PushFishingCatchInfoAlert(settings, label, soundPrefix, text)
+    if (settings.builtInFishingCatchInfoEnabled == false) then
+        return false;
+    end
+
+    PushSystemAlert(label, text or label, soundPrefix, 'fishingCatchInfo');
+    lastDebug = 'text-fishing info=' .. tostring(text or label);
+    if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
+    return true;
+end
+
+local function HandleFishingTextAlert(message)
+    local settings = GetSettings();
+    local text = CleanChatLine(message);
+    local lower = text:lower();
+
+    if (text == '') then
+        return false;
+    end
+
+    if (lower:find('something caught the hook!!!', 1, true) ~= nil) then
+        return PushFishingHookTypeAlert(settings, 'Large Fish', 'builtInFishingHookLargeFish');
+    end
+
+    if (lower:find('something caught the hook!', 1, true) ~= nil) then
+        return PushFishingHookTypeAlert(settings, 'Small Fish', 'builtInFishingHookSmallFish');
+    end
+
+    if (lower:find('you feel something pulling at your line', 1, true) ~= nil) then
+        return PushFishingHookTypeAlert(settings, 'Non-Fish Item', 'builtInFishingHookItem');
+    end
+
+    if (lower:find('something clamps onto your line ferociously', 1, true) ~= nil) then
+        return PushFishingHookTypeAlert(settings, 'Monster', 'builtInFishingHookMonster');
+    end
+
+    if (lower:find('you have a good feeling about this one', 1, true) ~= nil) then
+        return PushFishingCatchInfoAlert(settings, 'Easy catch', 'builtInFishingCatchEasy');
+    end
+
+    if (lower:find('you have a bad feeling about this one', 1, true) ~= nil) then
+        return PushFishingCatchInfoAlert(settings, 'Line may snap', 'builtInFishingCatchLineMaySnap');
+    end
+
+    if (lower:find('you have a terrible feeling about this one', 1, true) ~= nil) then
+        return PushFishingCatchInfoAlert(settings, 'Rod may break', 'builtInFishingCatchRodMayBreak');
+    end
+
+    if (lower:find("you don't know if you have enough skill to reel this one in", 1, true) ~= nil) then
+        return PushFishingCatchInfoAlert(settings, 'Skill may be too low', 'builtInFishingCatchSkillMayBeTooLow');
+    end
+
+    if (lower:find("you're fairly sure you don't have enough skill to reel this one in", 1, true) ~= nil) then
+        return PushFishingCatchInfoAlert(settings, 'Skill is too low', 'builtInFishingCatchSkillTooLow');
+    end
+
+    if (lower:find("you're positive you don't have enough skill to reel this one in", 1, true) ~= nil) then
+        return PushFishingCatchInfoAlert(settings, 'Line will snap', 'builtInFishingCatchLineWillSnap');
+    end
+
+    local identifiedName = text:match("[Yy]our keen angler's senses tell you that this is the pull of an? ([^!%.]+)");
+    if (identifiedName ~= nil and identifiedName ~= '') then
+        identifiedName = TrimText(identifiedName);
+        return PushFishingCatchInfoAlert(settings, 'Identified catch', 'builtInFishingCatchIdentified', 'Identified catch: ' .. identifiedName);
+    end
+
+    if (lower:find('you get the sense that you are on the verge of an epic catch', 1, true) ~= nil) then
+        return PushFishingCatchInfoAlert(settings, 'Epic catch', 'builtInFishingCatchEpic');
+    end
+
+    return false;
 end
 
 function enemyAlerts.HandleTextIn(e)
@@ -1052,10 +1173,14 @@ function enemyAlerts.HandleTextIn(e)
     end
 
     local message = StripControlCodes(
-        (e ~= nil and (e.message or e.text or e.original or e.modified or e.injected)) or ''
+        (e ~= nil and (e.message_modified or e.message or e.text or e.original or e.modified or e.injected)) or ''
     );
 
     if (message == '') then
+        return;
+    end
+
+    if (HandleFishingTextAlert(message) == true) then
         return;
     end
 
@@ -1348,6 +1473,10 @@ local function GetLaneEditKeys(lane)
         return 'customFontSize', 'customOffsetX', 'customOffsetY', 'Custom alerts';
     elseif (lane == 'builtIn') then
         return 'builtInFontSize', 'builtInOffsetX', 'builtInOffsetY', 'Built-in alerts';
+    elseif (lane == 'fishingHookType') then
+        return 'fishingHookTypeFontSize', 'fishingHookTypeOffsetX', 'fishingHookTypeOffsetY', 'Fishing hook type';
+    elseif (lane == 'fishingCatchInfo') then
+        return 'fishingCatchInfoFontSize', 'fishingCatchInfoOffsetX', 'fishingCatchInfoOffsetY', 'Fishing catch info';
     end
 
     return 'fontSize', 'offsetX', 'offsetY', 'Screen Alerts';
@@ -1520,9 +1649,25 @@ local function BuildPreviewRows(settings)
     local pet = GetLaneSettings(settings, 'pet');
     local custom = GetLaneSettings(settings, 'custom');
     local builtIn = GetLaneSettings(settings, 'builtIn');
+    local fishingHookType = GetLaneSettings(settings, 'fishingHookType');
+    local fishingCatchInfo = GetLaneSettings(settings, 'fishingCatchInfo');
+    local rows = {};
+    local builtInEnabled =
+        settings.builtInWildkeeperEnabled ~= false or
+        settings.builtInCampaignEnabled ~= false or
+        settings.builtInVenturesEnabled ~= false or
+        settings.builtInVoidwatchEnabled ~= false or
+        settings.builtInBlueMagicEnabled ~= false or
+        settings.builtInDynamisEnabled ~= false or
+        settings.builtInIncursionEnabled ~= false;
 
-    return {
-        {
+    local function AddPreviewRow(laneSettings, row)
+        if (laneSettings.enabled == true) then
+            rows[#rows + 1] = row;
+        end
+    end
+
+    AddPreviewRow(custom, {
             text = 'Custom alert: example trigger matched',
             color = custom.color,
             outlineColor = custom.outlineColor,
@@ -1530,8 +1675,10 @@ local function BuildPreviewRows(settings)
             offsetX = custom.offsetX,
             offsetY = custom.offsetY,
             lane = 'custom',
-        },
-        {
+        });
+
+    if (builtInEnabled == true) then
+        rows[#rows + 1] = {
             text = 'Campaign: enemy forces headed to Jugner Forest [S]',
             color = builtIn.color,
             outlineColor = builtIn.outlineColor,
@@ -1539,8 +1686,30 @@ local function BuildPreviewRows(settings)
             offsetX = builtIn.offsetX,
             offsetY = builtIn.offsetY,
             lane = 'builtIn',
-        },
-        {
+        };
+    end
+
+    AddPreviewRow(fishingHookType, {
+            text = 'Fishing hook type',
+            color = fishingHookType.color,
+            outlineColor = fishingHookType.outlineColor,
+            fontSize = fishingHookType.fontSize,
+            offsetX = fishingHookType.offsetX,
+            offsetY = fishingHookType.offsetY,
+            lane = 'fishingHookType',
+        });
+
+    AddPreviewRow(fishingCatchInfo, {
+            text = 'Fishing catch info',
+            color = fishingCatchInfo.color,
+            outlineColor = fishingCatchInfo.outlineColor,
+            fontSize = fishingCatchInfo.fontSize,
+            offsetX = fishingCatchInfo.offsetX,
+            offsetY = fishingCatchInfo.offsetY,
+            lane = 'fishingCatchInfo',
+        });
+
+    AddPreviewRow(offensive, {
             text = 'Goblin Gambler starts casting Thunder',
             color = offensive.color,
             outlineColor = offensive.outlineColor,
@@ -1548,8 +1717,9 @@ local function BuildPreviewRows(settings)
             offsetX = offensive.offsetX,
             offsetY = offensive.offsetY,
             lane = 'offensive',
-        },
-        {
+        });
+
+    AddPreviewRow(defensive, {
             text = 'Goblin Gambler starts casting Regen',
             color = defensive.color,
             outlineColor = defensive.outlineColor,
@@ -1557,8 +1727,9 @@ local function BuildPreviewRows(settings)
             offsetX = defensive.offsetX,
             offsetY = defensive.offsetY,
             lane = 'defensive',
-        },
-        {
+        });
+
+    AddPreviewRow(ability, {
             text = 'Goblin Leecher uses Goblin Rush',
             color = ability.color,
             outlineColor = ability.outlineColor,
@@ -1566,8 +1737,9 @@ local function BuildPreviewRows(settings)
             offsetX = ability.offsetX,
             offsetY = ability.offsetY,
             lane = 'ability',
-        },
-        {
+        });
+
+    AddPreviewRow(pet, {
             text = 'LightSpirit starts casting Haste',
             color = pet.color,
             outlineColor = pet.outlineColor,
@@ -1575,8 +1747,9 @@ local function BuildPreviewRows(settings)
             offsetX = pet.offsetX,
             offsetY = pet.offsetY,
             lane = 'pet',
-        },
-    };
+        });
+
+    return rows;
 end
 
 local function GetImguiFrameCount()
@@ -1685,9 +1858,9 @@ function enemyAlerts.Test(lane)
     lastDebug = 'test alert: ' .. tostring(test.label) .. ' sound=' .. tostring(soundPlayed) .. ' file=' .. tostring(soundFile);
 end
 
-function enemyAlerts.TestBuiltIn(label, text, soundPrefix)
+function enemyAlerts.TestBuiltIn(label, text, soundPrefix, lane)
     alerts = {};
-    PushSystemAlert(label, text, soundPrefix);
+    PushSystemAlert(label, text, soundPrefix, lane);
     lastDebug = 'test built-in alert: ' .. tostring(label);
 end
 

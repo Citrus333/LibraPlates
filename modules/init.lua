@@ -355,10 +355,6 @@ function modules.HandleMouse(e)
         return;
     end
 
-    if (targeting.TryRightClickFish(e) == true) then
-        return;
-    end
-
     mouseControls.HandleMouse(e);
 end
 

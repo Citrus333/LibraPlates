@@ -1430,19 +1430,36 @@ function fishing.GetStaminaBarState(settings)
     end
 
     local nativeTargetArrow = package.loaded ~= nil and package.loaded['core.native_target_arrow'] or nil;
+    local localProgress = GetLiveStaminaPercent();
     if (nativeTargetArrow ~= nil and nativeTargetArrow.GetFishingBarState ~= nil) then
         local nativeState = nativeTargetArrow.GetFishingBarState(1.5);
         if (nativeState ~= nil and tonumber(nativeState.progress) ~= nil) then
             local progress = math.max(0, math.min(100, tonumber(nativeState.progress) or 0));
+            local sessionAge = os.clock() - (tonumber(session.hookClock) or 0);
+            if (progress <= 1 and tonumber(localProgress) ~= nil and localProgress > 50 and sessionAge >= 0 and sessionAge <= 2.0) then
+                progress = localProgress;
+            end
             return {
                 progress = progress,
                 text = tostring(math.floor(progress + 0.5)) .. '%',
-                labelText = 'Fish',
+                labelText = 'Fish stamina',
                 baseStamina = GetStaminaBaseText(session.parameters),
                 live = true,
                 source = nativeState.source or 'native-geometry',
             };
         end
+    end
+
+    if (tonumber(localProgress) ~= nil) then
+        local progress = math.max(0, math.min(100, tonumber(localProgress) or 0));
+        return {
+            progress = progress,
+            text = tostring(math.floor(progress + 0.5)) .. '%',
+            labelText = 'Fish stamina',
+            baseStamina = GetStaminaBaseText(session.parameters),
+            live = true,
+            source = 'session',
+        };
     end
 
     return nil;

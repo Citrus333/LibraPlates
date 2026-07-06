@@ -3035,6 +3035,51 @@ function DrawSettingsIconButton(id, fileName, tooltip)
     return clicked;
 end
 
+function DrawSettingsSoundToggle(id, enabled, onChange)
+    local nextEnabled = enabled == true;
+    local iconFile = nextEnabled == true and 'sound-on.png' or 'sound-off.png';
+    local tooltip = nextEnabled == true and 'Sound on' or 'Sound off';
+    local buttonId = '##' .. tostring(id or 'SoundToggle');
+    local size = 22;
+    local iconSize = 18;
+    local x, y = nil, nil;
+    local clicked = false;
+
+    if (imgui.Button == nil) then
+        return nextEnabled;
+    end
+
+    if (imgui.GetWindowDrawList ~= nil and GetCursorScreenPos ~= nil) then
+        x, y = GetCursorScreenPos();
+    end
+
+    clicked = imgui.Button(buttonId, { size, size }) == true;
+
+    if (x ~= nil and y ~= nil) then
+        local textureId = GetSettingsUiIconTextureId(iconFile);
+        local drawList = imgui.GetWindowDrawList();
+        local iconX = x + math.floor((size - iconSize) * 0.5);
+        local iconY = y + math.floor((size - iconSize) * 0.5);
+
+        if (textureId ~= nil and drawList ~= nil and drawList.AddImage ~= nil) then
+            drawList:AddImage(textureId, { iconX, iconY }, { iconX + iconSize, iconY + iconSize }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+        end
+    end
+
+    if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and tooltip ~= nil and imgui.SetTooltip ~= nil) then
+        imgui.SetTooltip(tostring(tooltip));
+    end
+
+    if (clicked == true) then
+        nextEnabled = not nextEnabled;
+        if (type(onChange) == 'function') then
+            onChange(nextEnabled);
+        end
+    end
+
+    return nextEnabled;
+end
+
 DrawPlacementControl = function(value, minValue, maxValue, step, id, sliderWidth)
     local current = tonumber(value) or 0;
     local original = current;
@@ -6754,7 +6799,7 @@ function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive, sele
     if (settings.fishing.enabled == nil) then settings.fishing.enabled = true; end
     if (settings.fishing.previewHud == nil) then settings.fishing.previewHud = false; end
     if (settings.fishing.previewStaminaBar == nil) then settings.fishing.previewStaminaBar = false; end
-    if (settings.fishing.enableRightClickFish == nil) then settings.fishing.enableRightClickFish = true; end
+    if (settings.fishing.enableReadyBarFish == nil) then settings.fishing.enableReadyBarFish = true; end
     if (settings.fishing.showFatigue == nil) then settings.fishing.showFatigue = true; end
     if (settings.fishing.showVentures == nil) then settings.fishing.showVentures = true; end
     if (settings.fishing.hudX == nil) then settings.fishing.hudX = 24; end
@@ -6885,11 +6930,11 @@ function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive, sele
                 end);
                 uiTooltip.Info('Temporarily opens the real Fishing HUD while settings are open, using current gear and live fishing data.');
 
-                DrawCheckbox('Right click to fish', settings.fishing.enableRightClickFish == true, function(value)
-                    settings.fishing.enableRightClickFish = value == true;
+                DrawCheckbox('Click Ready bar to fish', settings.fishing.enableReadyBarFish == true, function(value)
+                    settings.fishing.enableReadyBarFish = value == true;
                     state.Save();
                 end);
-                uiTooltip.Info('When a fishing rod is equipped in the ranged slot, right-clicking empty world space queues /fish. The game still decides whether you are close enough to fish.');
+                uiTooltip.Info('When the Fishing HUD status bar is Ready, left-clicking that bar queues /fish.');
 
                 local selfGameMode = LibraPlatesSettingsGetSelfGameMode();
                 if (selfGameMode == 'ACE' or selfGameMode == 'WEW') then
@@ -6948,16 +6993,24 @@ function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive, sele
     end
 
     if (section == 'Alerts') then
-        DrawCheckbox('Enable fishing alerts', settings.fishing.alertsEnabled == true, function(value)
-            settings.fishing.alertsEnabled = value == true;
-            state.Save();
-        end);
+        LibraPlatesSettingsDrawBoxedPage('FishingAlertsPageContent', function()
+            LibraPlatesSettingsDrawBoxedPanel('Fishing Alert Setup', function()
+                imgui.TextWrapped('Fishing alerts are part of Screen Alerts. Use this page to turn fishing alerts on or off. To customize how they look, sound, and behave, go to Settings > Screen Alerts.');
+            end, true);
 
-        DrawCheckbox('Play alert sounds', settings.fishing.alertSoundsEnabled == true, function(value)
-            settings.fishing.alertSoundsEnabled = value == true;
-            state.Save();
+            LibraPlatesSettingsDrawBoxedPanel('Settings', function()
+                DrawCheckbox('Enable fishing alerts', settings.fishing.alertsEnabled == true, function(value)
+                    settings.fishing.alertsEnabled = value == true;
+                    state.Save();
+                end);
+
+                DrawCheckbox('Play alert sounds', settings.fishing.alertSoundsEnabled == true, function(value)
+                    settings.fishing.alertSoundsEnabled = value == true;
+                    state.Save();
+                end);
+                uiTooltip.Info('Fishing alerts will use the hook/feeling messages and can reuse your fishing sound style.');
+            end);
         end);
-        uiTooltip.Info('Fishing alerts will use the hook/feeling messages and can reuse your fishing sound style.');
 
         return;
     end
@@ -10949,7 +11002,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
             state.Save();
         end
 
-        local maxVisibleAlerts, maxVisibleAlertsChanged = DrawScreenAlertsPlacementRow('Max visible alerts', settings.maxVisibleAlerts or 4, 'EnemyAlertsPlateMaxVisibleAlerts', '', nil, nil, 1, 12, 1);
+        local maxVisibleAlerts, maxVisibleAlertsChanged = DrawScreenAlertsPlacementRow('Max alerts', settings.maxVisibleAlerts or 4, 'EnemyAlertsPlateMaxVisibleAlerts', '', nil, nil, 1, 12, 1);
         if (maxVisibleAlertsChanged == true) then
             settings.maxVisibleAlerts = math.max(1, math.min(12, math.floor((tonumber(maxVisibleAlerts) or 4) + 0.5)));
             state.Save();
@@ -10973,19 +11026,14 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         end);
         uiTooltip.Info('Priority: Custom, offensive magic, job abilities, pet alerts, defensive magic, then built-in alerts.');
 
-        DrawCheckbox('Layout preview', enemyAlerts.GetPreviewEnabled() == true, function(value)
-            enemyAlerts.SetPreviewEnabled(value == true);
+        local layoutModeEnabled = enemyAlerts.GetPreviewEnabled() == true and settings.layoutPreviewEditFrame == true;
+        DrawCheckbox('Layout mode', layoutModeEnabled, function(value)
+            local enabled = value == true;
+            enemyAlerts.SetPreviewEnabled(enabled);
+            settings.layoutPreviewEditFrame = enabled;
+            state.Save();
         end);
-        uiTooltip.Info('Shows the Screen Alerts layout on screen while settings are open.');
-
-        if (enemyAlerts.GetPreviewEnabled() == true) then
-            DrawCheckbox('Edit layout frame', settings.layoutPreviewEditFrame == true, function(value)
-                settings.layoutPreviewEditFrame = value == true;
-                state.Save();
-            end);
-            uiTooltip.Info('Drag each preview alert line to move that alert type. Resize from the bottom corners to change that line font size.');
-
-        end
+        uiTooltip.Info('Shows editable Screen Alerts layout frames while settings are open. Drag each alert line to move it, or resize from the bottom corners to change that line font size.');
     end
 
     local function UpdateMagicAlertGate()
@@ -11301,7 +11349,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         local soundFile = alertSounds.ResolveFile(settings[soundFileKey], settings.builtInSoundFile or settings.soundFile or 'Alert01.wav');
 
         imgui.TableNextColumn();
-        DrawCheckbox('Sound##' .. tostring(soundPrefix), soundEnabled, function(value)
+        DrawSettingsSoundToggle('BuiltInAlertSound' .. tostring(soundPrefix), soundEnabled, function(value)
             settings[soundEnabledKey] = value == true;
             state.Save();
         end);
@@ -11309,7 +11357,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         imgui.TableNextColumn();
         if (soundEnabled == true) then
             if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
-                if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(146); end
+                if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(204); end
                 if (imgui.BeginCombo('##' .. tostring(soundPrefix) .. 'SoundFile', soundFile) == true) then
                     for _, item in ipairs(alertSounds.GetFiles()) do
                         local isSelected = item == soundFile;
@@ -11358,7 +11406,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         imgui.TableNextColumn();
     end
 
-    local function DrawBuiltInAlertChildSoundRow(label, soundPrefix)
+    local function DrawBuiltInAlertChildSoundRow(label, soundPrefix, previewText, lane)
         local soundEnabledKey = soundPrefix .. 'SoundEnabled';
         local soundFileKey = soundPrefix .. 'SoundFile';
         local soundEnabled = settings[soundEnabledKey] == true;
@@ -11371,7 +11419,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         if (imgui.Unindent ~= nil) then imgui.Unindent(18); end
 
         imgui.TableNextColumn();
-        DrawCheckbox('Sound##' .. tostring(soundPrefix), soundEnabled, function(value)
+        DrawSettingsSoundToggle('BuiltInAlertSound' .. tostring(soundPrefix), soundEnabled, function(value)
             settings[soundEnabledKey] = value == true;
             state.Save();
         end);
@@ -11379,7 +11427,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         imgui.TableNextColumn();
         if (soundEnabled == true) then
             if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
-                if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(146); end
+                if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(112); end
                 if (imgui.BeginCombo('##' .. tostring(soundPrefix) .. 'SoundFile', soundFile) == true) then
                     for _, item in ipairs(alertSounds.GetFiles()) do
                         local isSelected = item == soundFile;
@@ -11398,25 +11446,104 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
             else
                 imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
             end
+
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+
+            if (imgui.Button ~= nil and imgui.Button('Play##' .. tostring(soundPrefix) .. 'PlaySound') == true) then
+                alertSounds.Play(soundFile, GetSoundPlaybackVolume(settings.soundVolume));
+            end
         end
 
         imgui.TableNextColumn();
-        if (soundEnabled == true and imgui.Button ~= nil) then
-            if (imgui.Button('Play##' .. tostring(soundPrefix) .. 'PlaySound') == true) then
+        if (imgui.Button ~= nil and imgui.Button('Test##' .. tostring(soundPrefix) .. 'PreviewAlert') == true) then
+            enemyAlerts.TestBuiltIn(label, previewText or label, soundPrefix, lane);
+        end
+    end
+
+    local function DrawBuiltInFishingAlertChildLine(label, soundPrefix, previewText, lane)
+        local soundEnabledKey = soundPrefix .. 'SoundEnabled';
+        local soundFileKey = soundPrefix .. 'SoundFile';
+        local soundEnabled = settings[soundEnabledKey] == true;
+        local soundFile = alertSounds.ResolveFile(settings[soundFileKey], settings.builtInSoundFile or settings.soundFile or 'Alert01.wav');
+
+        if (imgui.Indent ~= nil) then imgui.Indent(18); end
+        imgui.TextColored(settingsLabelColor, tostring(label or ''));
+        if (imgui.Unindent ~= nil) then imgui.Unindent(18); end
+
+        if (imgui.SameLine ~= nil) then imgui.SameLine(248); end
+        DrawSettingsSoundToggle('BuiltInAlertSound' .. tostring(soundPrefix), soundEnabled, function(value)
+            settings[soundEnabledKey] = value == true;
+            state.Save();
+        end);
+
+        if (soundEnabled == true) then
+            if (imgui.SameLine ~= nil) then imgui.SameLine(282); end
+            if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+                if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(204); end
+                if (imgui.BeginCombo('##' .. tostring(soundPrefix) .. 'SoundFile', soundFile) == true) then
+                    for _, item in ipairs(alertSounds.GetFiles()) do
+                        local isSelected = item == soundFile;
+                        if (imgui.Selectable(tostring(item), isSelected) == true) then
+                            settings[soundFileKey] = item;
+                            state.Save();
+                            soundFile = item;
+                        end
+                        if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                            imgui.SetItemDefaultFocus();
+                        end
+                    end
+                    imgui.EndCombo();
+                end
+                if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+            else
+                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
+            end
+
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            if (imgui.Button ~= nil and imgui.Button('Play##' .. tostring(soundPrefix) .. 'PlaySound') == true) then
                 alertSounds.Play(soundFile, GetSoundPlaybackVolume(settings.soundVolume));
+            end
+        end
+
+        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+        if (imgui.Button ~= nil and imgui.Button('Test##' .. tostring(soundPrefix) .. 'PreviewAlert') == true) then
+            enemyAlerts.TestBuiltIn(label, previewText or label, soundPrefix, lane);
+        end
+    end
+
+    local function DrawBuiltInFishingAlertTable(label, enabledKey, rows, lane)
+        DrawCheckbox(label, settings[enabledKey] ~= false, function(value)
+            settings[enabledKey] = value == true;
+            state.Save();
+        end);
+
+        if (settings[enabledKey] ~= false) then
+            for _, row in ipairs(rows) do
+                DrawBuiltInFishingAlertChildLine(row[1], row[2], row[3], lane);
             end
         end
     end
 
-    local function DrawBuiltInFishingAlertGroup(label, enabledKey, rows)
-        DrawBuiltInAlertParentRow(label, enabledKey);
-        if (settings[enabledKey] == false) then
-            return;
-        end
+    local function DrawBuiltInFishingHookTypeAlerts()
+        DrawBuiltInFishingAlertTable('Fishing hook type', 'builtInFishingHookTypeEnabled', {
+            { 'Small Fish', 'builtInFishingHookSmallFish' },
+            { 'Large Fish', 'builtInFishingHookLargeFish' },
+            { 'Non-Fish Item', 'builtInFishingHookItem' },
+            { 'Monster', 'builtInFishingHookMonster' },
+        }, 'fishingHookType');
+    end
 
-        for _, row in ipairs(rows) do
-            DrawBuiltInAlertChildSoundRow(row[1], row[2]);
-        end
+    local function DrawBuiltInFishingCatchInfoAlerts()
+        DrawBuiltInFishingAlertTable('Fishing catch info', 'builtInFishingCatchInfoEnabled', {
+            { 'Easy catch', 'builtInFishingCatchEasy' },
+            { 'Line may snap', 'builtInFishingCatchLineMaySnap' },
+            { 'Rod may break', 'builtInFishingCatchRodMayBreak' },
+            { 'Skill may be too low', 'builtInFishingCatchSkillMayBeTooLow' },
+            { 'Skill is too low', 'builtInFishingCatchSkillTooLow' },
+            { 'Line will snap', 'builtInFishingCatchLineWillSnap' },
+            { 'Identified catch', 'builtInFishingCatchIdentified' },
+            { 'Epic catch', 'builtInFishingCatchEpic' },
+        }, 'fishingCatchInfo');
     end
 
     local function DrawBuiltInSoundFolderHelp()
@@ -11441,9 +11568,9 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
             if (imgui.BeginTable('##BuiltInAlertSoundRows', 4, settingsTableFlags)) then
                 imgui.TableSetupColumn('##built_in_alert', 0, 196);
-                imgui.TableSetupColumn('##built_in_sound_toggle', 0, 68);
-                imgui.TableSetupColumn('##built_in_sound_file', 0, 154);
-                imgui.TableSetupColumn('##built_in_sound_actions', 0, 48);
+                imgui.TableSetupColumn('##built_in_sound_toggle', 0, 44);
+                imgui.TableSetupColumn('##built_in_sound_file', 0, 204);
+                imgui.TableSetupColumn('##built_in_sound_actions', 0, 96);
                 DrawBuiltInAlertSoundRow('Wildkeeper Reive', 'builtInWildkeeperEnabled', 'builtInWildkeeper', 'Wildkeeper Reive: Achuka in Morimar Basalt Fields soon');
                 DrawBuiltInAlertSoundRow('Campaign', 'builtInCampaignEnabled', 'builtInCampaign', 'Campaign: enemy forces headed to Jugner Forest [S]');
                 DrawBuiltInAlertSoundRow('Ventures', 'builtInVenturesEnabled', 'builtInVentures', 'Ventures: something is interrupting ventures');
@@ -11451,22 +11578,6 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
                 DrawBuiltInAlertSoundRow('Learned Blue Magic', 'builtInBlueMagicEnabled', 'builtInBlueMagic', 'Learned Blue Magic: Refueling');
                 DrawBuiltInAlertSoundRow('Dynamis', 'builtInDynamisEnabled', 'builtInDynamis', 'Dynamis: +10 minutes');
                 DrawBuiltInAlertSoundRow('Incursion', 'builtInIncursionEnabled', 'builtInIncursion', 'Incursion objective: Defeat 15 enemies');
-                DrawBuiltInFishingAlertGroup('Fishing hook type', 'builtInFishingHookTypeEnabled', {
-                    { 'Small Fish', 'builtInFishingHookSmallFish' },
-                    { 'Large Fish', 'builtInFishingHookLargeFish' },
-                    { 'Non-Fish Item', 'builtInFishingHookItem' },
-                    { 'Monster', 'builtInFishingHookMonster' },
-                });
-                DrawBuiltInFishingAlertGroup('Fishing catch info', 'builtInFishingCatchInfoEnabled', {
-                    { 'Easy catch', 'builtInFishingCatchEasy' },
-                    { 'Line may snap', 'builtInFishingCatchLineMaySnap' },
-                    { 'Rod may break', 'builtInFishingCatchRodMayBreak' },
-                    { 'Skill may be too low', 'builtInFishingCatchSkillMayBeTooLow' },
-                    { 'Skill is too low', 'builtInFishingCatchSkillTooLow' },
-                    { 'Line will snap', 'builtInFishingCatchLineWillSnap' },
-                    { 'Identified catch', 'builtInFishingCatchIdentified' },
-                    { 'Epic catch', 'builtInFishingCatchEpic' },
-                });
                 imgui.EndTable();
             end
         else
@@ -11477,10 +11588,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
             DrawCheckbox('Learned Blue Magic', settings.builtInBlueMagicEnabled ~= false, function(value) settings.builtInBlueMagicEnabled = value == true; state.Save(); end);
             DrawCheckbox('Dynamis', settings.builtInDynamisEnabled ~= false, function(value) settings.builtInDynamisEnabled = value == true; state.Save(); end);
             DrawCheckbox('Incursion', settings.builtInIncursionEnabled ~= false, function(value) settings.builtInIncursionEnabled = value == true; state.Save(); end);
-            DrawCheckbox('Fishing hook type', settings.builtInFishingHookTypeEnabled ~= false, function(value) settings.builtInFishingHookTypeEnabled = value == true; state.Save(); end);
-            DrawCheckbox('Fishing catch info', settings.builtInFishingCatchInfoEnabled ~= false, function(value) settings.builtInFishingCatchInfoEnabled = value == true; state.Save(); end);
         end
-        imgui.TextColored({ 0.36, 0.39, 0.43, 1.0 }, '------------------------------------------------');
     end
 
     local function DrawContent()
@@ -11498,6 +11606,16 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         DrawAlertLineStyleControls('Built-in alert line', 'builtIn');
         imgui.Spacing();
         DrawBuiltInAlerts(false);
+        DrawSectionDivider();
+        DrawSettingsHeader('Fishing hook type');
+        DrawAlertLineStyleControls('Fishing hook type', 'fishingHookType');
+        imgui.Spacing();
+        DrawBuiltInFishingHookTypeAlerts();
+        DrawSectionDivider();
+        DrawSettingsHeader('Fishing catch info');
+        DrawAlertLineStyleControls('Fishing catch info', 'fishingCatchInfo');
+        imgui.Spacing();
+        DrawBuiltInFishingCatchInfoAlerts();
         DrawSectionDivider();
         DrawLane('Offensive magic', 'offensive', 'offensiveMagicEnabled', true);
         DrawSectionDivider();
@@ -11534,6 +11652,16 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
             DrawAlertLineStyleControls('Built-in alert line', 'builtIn');
             imgui.Spacing();
             DrawBuiltInAlerts(false);
+        end);
+        DrawAlertsPanel('Fishing hook type', function()
+            DrawAlertLineStyleControls('Fishing hook type', 'fishingHookType');
+            imgui.Spacing();
+            DrawBuiltInFishingHookTypeAlerts();
+        end);
+        DrawAlertsPanel('Fishing catch info', function()
+            DrawAlertLineStyleControls('Fishing catch info', 'fishingCatchInfo');
+            imgui.Spacing();
+            DrawBuiltInFishingCatchInfoAlerts();
         end);
         DrawAlertsPanel('Offensive magic', function()
             DrawLane('Offensive magic', 'offensive', 'offensiveMagicEnabled', false);

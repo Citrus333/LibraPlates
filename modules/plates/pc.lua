@@ -1111,7 +1111,7 @@ local function QueuePlayer(player)
 
     local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isProtectedPlate);
     local useTargetOverlay = isTargetContext == true;
-    local layoutStateName = isTacticalPlayer == true and 'Combat' or 'Idle';
+    local layoutStateName = (isTacticalPlayer == true or isTargetContext == true) and 'Combat' or 'Idle';
     local targetModuleStateName = (isTacticalPlayer == true or isTargetContext == true) and 'Combat' or layoutStateName;
     local hasHp = player.hpPercent ~= nil or (player.hp ~= nil and player.maxHp ~= nil and tonumber(player.maxHp) > 0);
     local playerMaxMp = tonumber(player.maxMp);
@@ -1215,9 +1215,12 @@ local function QueuePlayer(player)
     local levelLoads = suppressExpensiveWorldWidgets ~= true and WidgetLoads(levelSettings, 'Level');
     local hpAnimationEnabled = hpBarLoads == true and hpBarSettings.lowColorEnabled == true and hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25) and hpBarSettings.lowAnimationEnabled == true;
     local mpAnimationEnabled = mpBarLoads == true and mpBarSettings.lowColorEnabled == true and mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25) and mpBarSettings.lowAnimationEnabled == true;
-    local queuedActionRange = hpBarSettings.outOfRangeOpacityEnabled == true and targetModuleMarker.GetCurrentActionRange() or nil;
+    local canEvaluateHpBarRange = isPartyPlayer == true or isTargetContext == true;
+    local queuedActionRange = (canEvaluateHpBarRange == true and hpBarSettings.outOfRangeOpacityEnabled == true) and targetModuleMarker.GetCurrentActionRange() or nil;
     local hpBarOutOfRangeDistance = tonumber(queuedActionRange) or tonumber(hpBarSettings.outOfRangeDefaultDistance) or 21;
     local hpBarOutOfRange = hpBarSettings.outOfRangeOpacityEnabled == true
+        and canEvaluateHpBarRange == true
+        and hpBarOutOfRangeDistance ~= nil
         and tonumber(player.distance) ~= nil
         and tonumber(player.distance) > hpBarOutOfRangeDistance;
     perfMeter.EndDetail(settingsTimer);

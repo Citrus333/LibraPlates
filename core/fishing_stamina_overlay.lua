@@ -13,6 +13,7 @@ local hudOpen = false;
 local closedRevision = -1;
 local previousHasHudData = false;
 local uiIconTextureIds = {};
+local lastReadyBarFishClock = 0;
 local hudMinWidth = 440;
 local hudMinHeight = 120;
 local hudDefaultHeight = 220;
@@ -755,7 +756,36 @@ local function GetHudStatus(info)
     return tostring(info ~= nil and info.status or 'Ready');
 end
 
-local function DrawHudStatusBar(drawList, x, y, width, height, info, textColor)
+local function TryReadyBarFish(settings, status, x, y, width, height)
+    if (settings.enableReadyBarFish ~= true or status ~= 'Ready') then
+        return;
+    end
+
+    if (IsMouseClickedInRect(x, y, width, height) ~= true) then
+        return;
+    end
+
+    local now = os.clock();
+    if ((now - (tonumber(lastReadyBarFishClock) or 0)) < 1.0) then
+        return;
+    end
+
+    lastReadyBarFishClock = now;
+
+    if (fishing.MarkFishCommandAttempt ~= nil) then
+        fishing.MarkFishCommandAttempt(4);
+    end
+
+    pcall(function()
+        AshitaCore:GetChatManager():QueueCommand(1, '/fish');
+    end);
+
+    if (fishing.MarkFishCommandQueued ~= nil) then
+        fishing.MarkFishCommandQueued('ready-bar', status);
+    end
+end
+
+local function DrawHudStatusBar(drawList, x, y, width, height, info, textColor, settings)
     if (drawList == nil or drawList.AddRectFilled == nil) then
         AddText(drawList, x, y, textColor, GetHudStatus(info));
         return;
@@ -793,7 +823,13 @@ local function DrawHudStatusBar(drawList, x, y, width, height, info, textColor)
         label = label .. ' ' .. string.format('%.1fs', math.max(0, tonumber(cooldown.remaining) or 0));
     end
 
+    TryReadyBarFish(settings or {}, status, x, y, width, height);
     AddText(drawList, x + 8, y + math.max(2, math.floor((height - 14) / 2)), textColor, label);
+
+    if (status == 'Ready' and settings ~= nil and settings.enableReadyBarFish == true) then
+        local actionText = 'Click to fish';
+        AddText(drawList, x + math.max(8, math.floor((width - GetTextWidth(actionText)) * 0.5)), y + math.max(2, math.floor((height - 14) / 2)), textColor, actionText);
+    end
 end
 
 local function DrawStandaloneStaminaBar(settings, stamina)
@@ -830,7 +866,7 @@ local function DrawStandaloneStaminaBar(settings, stamina)
         DrawStaminaPreviewFrame(drawList, frameX, frameY, frameW, frameH);
     end
 
-    AddText(drawList, x, y - 17, textColor, 'Fish');
+    AddText(drawList, x, y - 17, textColor, stamina.labelText or 'Fish stamina');
     drawList:AddRectFilled({ x, y }, { x + width, y + height }, bg);
 
     if (fillWidth > 0) then
@@ -864,7 +900,7 @@ function overlay.Render()
         stamina = {
             progress = 60,
             text = '60%',
-            labelText = 'Fish',
+            labelText = 'Fish stamina',
             live = false,
             source = 'preview',
         };
@@ -984,7 +1020,7 @@ function overlay.Render()
     end
 
     rowY = rowY + 6;
-    DrawHudStatusBar(drawList, windowX + paddingX, rowY, math.max(120, windowWidth - (paddingX * 2)), 22, hudInfo, textColor);
+    DrawHudStatusBar(drawList, windowX + paddingX, rowY, math.max(120, windowWidth - (paddingX * 2)), 22, hudInfo, textColor, settings);
     rowY = rowY + 30;
 
     if (settings.showRodBait ~= false) then

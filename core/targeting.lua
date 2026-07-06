@@ -11,8 +11,6 @@ local lastGatheringDisplayUntil = 0;
 local gatheringToolCounts = nil;
 local lastGatheringToolPoll = 0;
 local suppressGatheringDisplayUntil = 0;
-local lastFishCommandTime = 0;
-local suppressFishRightMouse = false;
 local defaultPlateClickNoGoZones = {
     { name = 'Screen 1', enabled = false, x = 0, y = 960, width = 760, height = 480, color = { 1.0, 0.15, 0.15, 1.0 } },
     { name = 'Screen 2', enabled = false, x = 760, y = 1160, width = 1160, height = 280, color = { 0.15, 0.75, 1.0, 1.0 } },
@@ -1306,64 +1304,6 @@ function targeting.GetFishingEquipmentStatus()
     local hasRod = lower:find('rod', 1, true) ~= nil;
 
     return 'ranged=' .. (rangedName ~= '' and rangedName or 'none') .. ' rod=' .. tostring(hasRod);
-end
-
-local function IsFishingRodEquipped()
-    local rangedName = GetEquippedItemName(2) or '';
-
-    return rangedName:lower():find('rod', 1, true) ~= nil, rangedName;
-end
-
-function targeting.TryRightClickFish(e)
-    local message = tonumber(e ~= nil and e.message);
-
-    if (suppressFishRightMouse == true) then
-        if (message == 512 or message == 517) then
-            e.blocked = true;
-
-            if (message == 517) then
-                suppressFishRightMouse = false;
-                lastGatheringInteractStatus = 'fish mouse released';
-            end
-
-            return true;
-        end
-    end
-
-    if (message ~= 516) then
-        return false;
-    end
-
-    local global = state.GetGlobalSettings(globalDefaults);
-    local fishingSettings = global.fishing or {};
-
-    if (fishingSettings.enabled == false or fishingSettings.enableRightClickFish == false) then
-        lastGatheringInteractStatus = 'fish disabled message=' .. tostring(message);
-        return false;
-    end
-
-    local now = os.clock();
-
-    if ((now - lastFishCommandTime) < 1.0) then
-        suppressFishRightMouse = true;
-        e.blocked = true;
-        lastGatheringInteractStatus = 'fish cooldown message=' .. tostring(message);
-        return true;
-    end
-
-    local hasRod, rangedName = IsFishingRodEquipped();
-
-    if (hasRod ~= true) then
-        lastGatheringInteractStatus = 'fish skipped no rod ranged=' .. tostring(rangedName or 'none') .. ' message=' .. tostring(message);
-        return false;
-    end
-
-    lastFishCommandTime = now;
-    suppressFishRightMouse = true;
-    AshitaCore:GetChatManager():QueueCommand(1, '/fish');
-    lastGatheringInteractStatus = 'sent /fish ranged=' .. tostring(rangedName or '') .. ' message=' .. tostring(message);
-    e.blocked = true;
-    return true;
 end
 
 local function GetGatheringSettings(global)

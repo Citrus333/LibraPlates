@@ -393,7 +393,7 @@ local function UpdateFishingBarStateFromFrame()
         fishingBarLastState = {
             progress = best.progress * 100,
             text = tostring(math.floor((best.progress * 100) + 0.5)) .. '%',
-            labelText = 'Fish',
+            labelText = 'Fish stamina',
             x = background.x,
             y = background.y,
             width = background.width,
@@ -418,7 +418,7 @@ local function UpdateFishingBarStateFromFrame()
         fishingBarLastState = {
             progress = 0,
             text = '0%',
-            labelText = 'Fish',
+            labelText = 'Fish stamina',
             x = knownX,
             y = knownY,
             width = knownWidth,
@@ -443,7 +443,7 @@ local function UpdateFishingBarStateFromFrame()
         fishingBarLastState = {
             progress = 0,
             text = '0%',
-            labelText = 'Fish',
+            labelText = 'Fish stamina',
             x = background.x,
             y = background.y,
             width = background.width,

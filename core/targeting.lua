@@ -163,6 +163,10 @@ local function GetTargetingSettings()
         global.targeting.overwriteNativeNameColors = true;
     end
 
+    if (global.targeting.streamerModeEnabled == nil) then
+        global.targeting.streamerModeEnabled = false;
+    end
+
     if (global.targeting.enablePetPlateTargeting == nil) then
         global.targeting.enablePetPlateTargeting = true;
     end
@@ -1362,6 +1366,19 @@ function targeting.TryRightClickFish(e)
     return true;
 end
 
+local function GetGatheringSettings(global)
+    global = global or state.GetGlobalSettings(globalDefaults);
+
+    local gatheringSettings = global.gathering or {};
+    local oldFishingSettings = global.fishing or {};
+
+    return setmetatable(gatheringSettings, {
+        __index = function(_, key)
+            return oldFishingSettings[key];
+        end,
+    });
+end
+
 function targeting.InteractFishingGatheringTarget(targetIndex, targetType, distance)
     if (targetIndex == nil or targetIndex == 0) then
         lastGatheringInteractStatus = 'invalid target';
@@ -1369,9 +1386,9 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
     end
 
     local global = state.GetGlobalSettings(globalDefaults);
-    local fishingSettings = global.fishing or {};
+    local gatheringSettings = GetGatheringSettings(global);
 
-    if (fishingSettings.enabled == false or fishingSettings.enableRightClickGathering ~= true) then
+    if (gatheringSettings.enabled == false or gatheringSettings.enableRightClickGathering ~= true) then
         lastGatheringInteractStatus = 'disabled';
         return false;
     end
@@ -1392,7 +1409,7 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
         return false;
     end
 
-    local actionEnabled = fishingSettings[action.settingKey];
+    local actionEnabled = gatheringSettings[action.settingKey];
 
     if (actionEnabled == nil) then
         actionEnabled = true;
@@ -1517,9 +1534,9 @@ end
 
 function targeting.ShouldShowGatheringPoint(name)
     local global = state.GetGlobalSettings(globalDefaults);
-    local fishingSettings = global.fishing or {};
+    local gatheringSettings = GetGatheringSettings(global);
 
-    if (fishingSettings.enabled == false or fishingSettings.showGatheringPoints == false) then
+    if (gatheringSettings.enabled == false or gatheringSettings.showGatheringPoints == false) then
         return false;
     end
 
@@ -1529,7 +1546,7 @@ function targeting.ShouldShowGatheringPoint(name)
         return false;
     end
 
-    if (fishingSettings.showGatheringPointsOnlyWithTool ~= true) then
+    if (gatheringSettings.showGatheringPointsOnlyWithTool ~= true) then
         return true;
     end
 

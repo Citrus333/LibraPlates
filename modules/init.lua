@@ -18,6 +18,8 @@ local jobChange = require('core.job_change');
 local enemyCasts = require('core.enemy_casts');
 local enemyAlerts = require('core.enemy_alerts');
 local imgui = require('imgui');
+local fishing = require('core.fishing');
+local fishingStaminaOverlay = require('core.fishing_stamina_overlay');
 
 -- ============================================================
 -- Module registry
@@ -94,6 +96,7 @@ local function UpdateNativeTargetArrowVisibility()
     local targetingSettings = targeting.GetSettings();
     local hasAnyTarget = HasAnyTarget();
     local mogHouseNativePassthrough = entities.IsMogHouseObjectSuppressionArea() == true;
+    local fishingBarCaptureActive = fishing.ShouldCaptureFishBar ~= nil and fishing.ShouldCaptureFishBar() == true;
     local nativeHideSettingEnabled =
         targetingSettings.hideNativeTargetArrow == true and
         mogHouseNativePassthrough ~= true;
@@ -111,10 +114,11 @@ local function UpdateNativeTargetArrowVisibility()
         hasAnyTarget == true and
         nativeTargetStartupBurstFrames > 0;
 
-    nativeTargetArrow.SetHideAllPrimitivesEnabled(hideNativePartyTargetUi);
+    nativeTargetArrow.SetHideAllPrimitivesEnabled(hideNativePartyTargetUi == true and fishingBarCaptureActive ~= true);
     nativeTargetArrow.SetHardHideEveryDrawEnabled(hideNativeTargetArrow);
+    nativeTargetArrow.SetFishingBarCaptureEnabled(fishingBarCaptureActive);
     nativeTargetArrow.SetTargetPrimitiveHideAllowed(mogHouseNativePassthrough ~= true or hasAnyTarget == true);
-    nativeTargetArrow.SetEnabled(hideNativeTargetArrow or startupBurstActive);
+    nativeTargetArrow.SetEnabled(hideNativeTargetArrow or startupBurstActive or fishingBarCaptureActive);
 
     if (startupBurstActive == true) then
         nativeTargetArrow.SetHardHideBurstFrames(nativeTargetStartupBurstFrames);
@@ -132,6 +136,10 @@ end
 
 local function QueueNativeNamesCommand(hidden)
     if (GetLoginStatus() ~= 2) then
+        return false;
+    end
+
+    if (fishing.ShouldSuppressCommandErrorText() == true) then
         return false;
     end
 
@@ -255,8 +263,6 @@ function modules.Render()
         mouseControls.Release();
     elseif (state.GetConfigOpen() ~= true) then
         mouseControls.Update();
-    else
-        mouseControls.Release();
     end
 
     local settingsStart = perfMeter.Start();
@@ -317,6 +323,7 @@ function modules.Render()
 
     if (perfIsolation.overlays ~= true) then
         cursorOverlay.Render();
+        fishingStaminaOverlay.Render();
         enemyAlerts.Render();
     end
 
@@ -336,7 +343,6 @@ function modules.HandleMouse(e)
     worldMarkerProbe.UpdateFocusState();
 
     if (state.GetConfigOpen() == true) then
-        mouseControls.Release();
         return;
     end
 
@@ -446,6 +452,7 @@ function modules.UpdateNativeTargetArrow()
     local targetingSettings = targeting.GetSettings();
     local hasAnyTarget = HasAnyTarget();
     local mogHouseNativePassthrough = entities.IsMogHouseObjectSuppressionArea() == true;
+    local fishingBarCaptureActive = fishing.ShouldCaptureFishBar ~= nil and fishing.ShouldCaptureFishBar() == true;
     local hideNativePartyTargetUi =
         (
             targetingSettings.hideNativePartyTargetUi == true or
@@ -463,12 +470,13 @@ function modules.UpdateNativeTargetArrow()
         hasAnyTarget == true and
         nativeTargetStartupBurstFrames > 0;
 
-    nativeTargetArrow.SetHideAllPrimitivesEnabled(hideNativePartyTargetUi);
+    nativeTargetArrow.SetHideAllPrimitivesEnabled(hideNativePartyTargetUi == true and fishingBarCaptureActive ~= true);
     nativeTargetArrow.SetHardHideEveryDrawEnabled(hideNativeTargetArrow);
+    nativeTargetArrow.SetFishingBarCaptureEnabled(fishingBarCaptureActive);
     nativeTargetArrow.SetTargetPrimitiveHideAllowed(mogHouseNativePassthrough ~= true or hasAnyTarget == true);
-    nativeTargetArrow.SetEnabled(hideNativeTargetArrow or startupBurstActive);
+    nativeTargetArrow.SetEnabled(hideNativeTargetArrow or startupBurstActive or fishingBarCaptureActive);
 
-    if (hideNativePartyTargetUi == true or hideNativeTargetArrow == true) then
+    if (hideNativePartyTargetUi == true or hideNativeTargetArrow == true or fishingBarCaptureActive == true) then
         nativeTargetArrow.Update();
     elseif (startupBurstActive == true) then
         nativeTargetArrow.SetHardHideBurstFrames(nativeTargetStartupBurstFrames);

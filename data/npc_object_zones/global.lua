@@ -3092,6 +3092,13 @@ Involved in Missions:\
         },
     },
     ["objects"] = {
+        ["Auction Counter"] = {
+            ["_source"] = "item",
+            ["icon"] = "ah.png",
+            ["note"] = "",
+            ["type"] = "Buy & Sell",
+		    ["worldOffsetY"] = 0.10,	
+        },	
         ["Bag"] = {
             ["_source"] = "item",
             ["icon"] = "Bag.png",
@@ -3379,7 +3386,8 @@ Involved in Missions:\
             ["_source"] = "item",
             ["icon"] = "Waypoint.png",
             ["note"] = "A crystalline travel waypoint anchored near elite city centers. Interfacing with this network coordinates your movements and handles advanced frontier movement across the continent.",
-            ["type"] = "Waypoint",
+            ["type"] = "Adoulinian teleportation",
+			["worldOffsetY"] = -0.25,
         },
     },
 }

@@ -12,6 +12,7 @@ local tickState = {
     lastHp = nil,
     lastMp = nil,
 };
+local logoutCountdownDelaySeconds = 2;
 local logoutState = {
     active = false,
     startClock = nil,
@@ -64,7 +65,8 @@ local function GetLogoutCountdown(settings)
     end
 
     local now = os.clock();
-    local remaining = math.max(0, logoutState.endClock - now);
+    local effectiveNow = math.max(logoutState.startClock or now, now);
+    local remaining = math.max(0, logoutState.endClock - effectiveNow);
     local duration = math.max(1, tonumber(logoutState.duration) or 30);
 
     if (remaining <= 0) then
@@ -141,7 +143,8 @@ function restingTick.HandleTextIn(e)
         local now = os.clock();
         local duration = math.max(1, tonumber(seconds) or 30);
         local label = (tostring(action or 'logout') == 'shutdown') and 'Shutdown' or 'Logout';
-        local proposedEndClock = now + duration;
+        local proposedStartClock = now + logoutCountdownDelaySeconds;
+        local proposedEndClock = proposedStartClock + duration;
 
         if (logoutState.active == true and logoutState.endClock ~= nil and logoutState.label == label) then
             local remaining = logoutState.endClock - now;
@@ -157,8 +160,8 @@ function restingTick.HandleTextIn(e)
         end
 
         logoutState.active = true;
-        logoutState.startClock = now;
-        logoutState.endClock = logoutState.startClock + duration;
+        logoutState.startClock = proposedStartClock;
+        logoutState.endClock = proposedEndClock;
         logoutState.duration = duration;
         logoutState.label = label;
         if (ShouldPlayLogoutSound() == true) then

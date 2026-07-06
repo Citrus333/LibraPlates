@@ -1178,6 +1178,9 @@ local function RequestConfirm(label, command, options)
         label = tostring(label or 'action'),
         command = (type(command) == 'string') and tostring(command or '') or nil,
         action = type(command) == 'function' and command or options.action,
+        displayNameEnabled = options.displayNameEnabled == true,
+        displayNameLabel = tostring(options.displayNameLabel or 'Display as (optional)'),
+        displayNameRef = { tostring(options.displayName or '') },
         reasonEnabled = options.reasonEnabled == true,
         reasonLabel = tostring(options.reasonLabel or 'Reason'),
         reasonRef = { tostring(options.reason or '') },
@@ -1199,6 +1202,11 @@ local function DrawConfirm()
     if (imgui.BeginPopupModal == nil) then
         imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, pendingConfirm.label .. '?');
 
+        if (pendingConfirm.displayNameEnabled == true and imgui.InputText ~= nil) then
+            imgui.Text(tostring(pendingConfirm.displayNameLabel or 'Display as'));
+            imgui.InputText('##quick_menu_confirm_display_name', pendingConfirm.displayNameRef, 64);
+        end
+
         if (pendingConfirm.reasonEnabled == true and imgui.InputText ~= nil) then
             imgui.Text(tostring(pendingConfirm.reasonLabel or 'Reason'));
             imgui.InputText('##quick_menu_confirm_reason', pendingConfirm.reasonRef, 160);
@@ -1213,7 +1221,10 @@ local function DrawConfirm()
 
         if (imgui.Button ~= nil and imgui.Button(pendingConfirm.confirmLabel or 'Confirm') == true) then
             if (pendingConfirm.action ~= nil) then
-                pendingConfirm.action(tostring(pendingConfirm.reasonRef ~= nil and pendingConfirm.reasonRef[1] or ''));
+                pendingConfirm.action(
+                    tostring(pendingConfirm.reasonRef ~= nil and pendingConfirm.reasonRef[1] or ''),
+                    tostring(pendingConfirm.displayNameRef ~= nil and pendingConfirm.displayNameRef[1] or '')
+                );
             elseif (pendingConfirm.command ~= nil) then
                 QueueCommand(pendingConfirm.command);
             end
@@ -1224,14 +1235,22 @@ local function DrawConfirm()
     end
 
     if (imgui.SetNextWindowSize ~= nil) then
-        imgui.SetNextWindowSize({ 230, 0 }, _G.ImGuiCond_Always or 2);
+        imgui.SetNextWindowSize({ 300, 0 }, _G.ImGuiCond_Always or 2);
     end
 
     if (imgui.BeginPopupModal(confirmPopupId)) then
         imgui.Text(pendingConfirm.label .. '?');
+        if (pendingConfirm.displayNameEnabled == true and imgui.InputText ~= nil) then
+            imgui.Text(tostring(pendingConfirm.displayNameLabel or 'Display as'));
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(230); end
+            imgui.InputText('##quick_menu_confirm_display_name', pendingConfirm.displayNameRef, 64);
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+        end
         if (pendingConfirm.reasonEnabled == true and imgui.InputText ~= nil) then
             imgui.Text(tostring(pendingConfirm.reasonLabel or 'Reason'));
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(230); end
             imgui.InputText('##quick_menu_confirm_reason', pendingConfirm.reasonRef, 160);
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
         end
         imgui.Separator();
 
@@ -1244,7 +1263,10 @@ local function DrawConfirm()
 
         if (imgui.Button ~= nil and imgui.Button(pendingConfirm.confirmLabel or 'Confirm') == true) then
             if (pendingConfirm.action ~= nil) then
-                pendingConfirm.action(tostring(pendingConfirm.reasonRef ~= nil and pendingConfirm.reasonRef[1] or ''));
+                pendingConfirm.action(
+                    tostring(pendingConfirm.reasonRef ~= nil and pendingConfirm.reasonRef[1] or ''),
+                    tostring(pendingConfirm.displayNameRef ~= nil and pendingConfirm.displayNameRef[1] or '')
+                );
             elseif (pendingConfirm.command ~= nil) then
                 QueueCommand(pendingConfirm.command);
             end
@@ -1869,8 +1891,8 @@ function quickMenu.Render()
                 else
                     MenuItem('Add to blacklist', 'blacklist.png', function()
                         local targetName = tostring(blacklistPlayer.name or '');
-                        RequestConfirm('Blacklist ' .. targetName, function(reason)
-                            local ok, err = playerBlacklist.AddPlayer(blacklistPlayer, reason, 'quick-menu');
+                        RequestConfirm('Blacklist ' .. targetName, function(reason, displayName)
+                            local ok, err = playerBlacklist.AddPlayer(blacklistPlayer, reason, 'quick-menu', displayName);
 
                             if (ok == true) then
                                 QueueCommand('/blacklist add ' .. QuoteCommandName(targetName));
@@ -1879,6 +1901,8 @@ function quickMenu.Render()
                                 log.Warn(tostring(err or 'Failed to add player to LibraPlates blacklist.'));
                             end
                         end, {
+                            displayNameEnabled = true,
+                            displayNameLabel = 'Display as (optional)',
                             reasonEnabled = true,
                             reasonLabel = 'Reason (optional)',
                             confirmLabel = 'Add',

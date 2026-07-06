@@ -499,6 +499,7 @@ local function AddPlateClickRects(targetIndex, targetType, rects, union, metadat
         distance = metadata ~= nil and metadata.distance or nil,
         modelHitboxSize = metadata ~= nil and metadata.modelHitboxSize or nil,
         plateTextureId = metadata ~= nil and metadata.plateTextureId or nil,
+        plateOverlayOnly = metadata ~= nil and metadata.plateOverlayOnly == true,
         plateOverlayRect = metadata ~= nil and metadata.plateOverlayRect or nil,
         plateOverlayOffsetX = metadata ~= nil and metadata.plateOverlayOffsetX or nil,
         plateOverlayOffsetY = metadata ~= nil and metadata.plateOverlayOffsetY or nil,
@@ -679,6 +680,7 @@ local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, styl
         distance = style.distance,
         modelHitboxSize = style.modelHitboxSize,
         plateTextureId = style.plateAlwaysOnTop == true and style.plateTextureId or nil,
+        plateOverlayOnly = style.plateTacticalOverlayOnly == true or (style.plateAlwaysOnTop == true and style.plateSuppressWorldWhenAlwaysOnTop == true),
         plateOverlayRect = nil,
         plateOverlayOffsetX = tonumber(style.plateOverlayOffsetX) or 0,
         plateOverlayOffsetY = tonumber(style.plateOverlayOffsetY) or 0,
@@ -2850,6 +2852,34 @@ local function ReadIntList(pointer, offsets)
     return table.concat(parts, ',');
 end
 
+local function BuildOffsetRange(first, last, step)
+    local offsets = {};
+
+    for offset = first, last, step or 1 do
+        offsets[#offsets + 1] = offset;
+    end
+
+    return offsets;
+end
+
+local function ReadByteList(pointer, offsets)
+    if (pointer == nil or pointer == 0) then
+        return nil;
+    end
+
+    local parts = {};
+
+    for _, offset in ipairs(offsets) do
+        local ok, value = pcall(function()
+            return ashita.memory.read_uint8(pointer + offset);
+        end);
+
+        parts[#parts + 1] = string.format('%X=0x%02X', offset, ok == true and (tonumber(value) or 0) or 0);
+    end
+
+    return table.concat(parts, ',');
+end
+
 local function GetSelfVerticalPosition(entityManager)
     if (entityManager == nil) then
         return nil;
@@ -3224,9 +3254,12 @@ function worldMarkerProbe.GetVisibilityDebug(targetIndex, getEntityManager, getB
         baseZ = bounds ~= nil and bounds.baseZ or nil,
         actorScalars = ReadFloatList(actorPointer, { 0x30, 0x34, 0x38, 0x44, 0x48, 0x4C, 0x58, 0x5C, 0x60, 0x6C, 0x70, 0x74, 0x6A0, 0x6A4, 0x6A8, 0x6AC }),
         actorInts = ReadIntList(actorPointer, { 0x20, 0x24, 0x28, 0x674, 0x6B8, 0x6C0 }),
+        actorBytes = ReadByteList(actorPointer, BuildOffsetRange(0x00, 0xC0, 1)),
+        actorExtendedBytes = ReadByteList(actorPointer, BuildOffsetRange(0x660, 0x6D0, 1)),
         objectPointer = objectPointer,
         objectScalars = ReadFloatList(objectPointer, { 0x10, 0x14, 0x18, 0x20, 0x24, 0x28, 0x30, 0x34, 0x38, 0x40, 0x44, 0x48, 0x50, 0x54, 0x58, 0x60, 0x64, 0x68 }),
         objectInts = ReadIntList(objectPointer, { 0x00, 0x04, 0x08, 0x0C, 0x10, 0x20, 0x30, 0x40, 0x50 }),
+        objectBytes = ReadByteList(objectPointer, BuildOffsetRange(0x00, 0xA0, 1)),
     };
 end
 
@@ -3263,6 +3296,7 @@ function worldMarkerProbe.QueuePlate(plate)
         isProtectedPlate = plate.isProtectedPlate == true,
         isPartyPlayer = plate.isPartyPlayer == true,
         stateName = plate.stateName,
+        layoutStateName = plate.layoutStateName,
         _plateScreenOffsetX = tonumber(plate.screenOffsetX) or 0,
         _plateScreenOffsetY = tonumber(plate.screenOffsetY) or 0,
         worldMarker = plate.worldMarker,
@@ -3943,6 +3977,9 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
     end
 
     local style = plate.worldMarker or {};
+    if (style.layoutStateName == nil) then
+        style.layoutStateName = plate.layoutStateName or plate.stateName;
+    end
     local plateAnchorBone = NormalizeAnchorBone(style.anchorBone or anchorBone);
 
     if (compareAnchors == true) then
@@ -4848,7 +4885,7 @@ function worldMarkerProbe.GetAlwaysVisiblePlates()
     local settings = targeting.GetSettings();
 
     for _, entry in ipairs(clickRects or {}) do
-        if (entry.plateTextureId ~= nil and entry.plateOverlayRect ~= nil) then
+        if (entry.plateTextureId ~= nil and entry.plateOverlayRect ~= nil and entry.plateOverlayOnly == true) then
             local rect = entry.plateOverlayRect;
 
             if (RectIntersectsNoGoZone(rect.x1, rect.y1, rect.x2, rect.y2, settings) ~= true) then

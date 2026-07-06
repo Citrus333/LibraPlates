@@ -697,6 +697,13 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
         return false;
     end
 
+    local targetingSettings = targeting.GetSettings();
+    local streamerNames = require('core.streamer_names');
+
+    if ((cached.streamerNameSignature or 'streamer=legacy') ~= streamerNames.GetSignature(player, targetingSettings)) then
+        return false;
+    end
+
     TouchPlateCacheEntry(cached);
 
     local plateTextureId = canvasTexture.GetTextureId(cached.texture);
@@ -706,7 +713,6 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
     end
 
     local queueTimer = perfMeter.BeginDetail('pc.queue');
-    local targetingSettings = targeting.GetSettings();
 
     worldMarkerProbe.QueuePlate({
         targetIndex = player.index,
@@ -918,6 +924,7 @@ local function BuildPcPlateData(context)
     local nameColor = context.nameSettings.color or { 1.0, 1.0, 1.0, 1.0 };
     local targetingSettings = targeting.GetSettings();
     local playerBlacklist = require('core.player_blacklist');
+    local streamerNames = require('core.streamer_names');
 
     if (targetingSettings.overwriteNativeNameColors == false) then
         if (playerIndicators.HasAnonNameColor(context.player.index) == true) then
@@ -933,6 +940,7 @@ local function BuildPcPlateData(context)
     local displayName = ShortenName(context.player.name, context.nameSettings.shortenName);
     displayName = playerBlacklist.GetDisplayName(context.player, displayName);
     nameColor = playerBlacklist.GetDisplayNameColor(context.player, nameColor);
+    displayName = streamerNames.GetDisplayName(context.player, displayName, targetingSettings);
 
     local plateData = {
         hp = context.hpPercent,
@@ -1209,8 +1217,7 @@ local function QueuePlayer(player)
     local mpAnimationEnabled = mpBarLoads == true and mpBarSettings.lowColorEnabled == true and mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25) and mpBarSettings.lowAnimationEnabled == true;
     local queuedActionRange = hpBarSettings.outOfRangeOpacityEnabled == true and targetModuleMarker.GetCurrentActionRange() or nil;
     local hpBarOutOfRangeDistance = tonumber(queuedActionRange) or tonumber(hpBarSettings.outOfRangeDefaultDistance) or 21;
-    local hpBarOutOfRange = layoutStateName == 'Combat'
-        and hpBarSettings.outOfRangeOpacityEnabled == true
+    local hpBarOutOfRange = hpBarSettings.outOfRangeOpacityEnabled == true
         and tonumber(player.distance) ~= nil
         and tonumber(player.distance) > hpBarOutOfRangeDistance;
     perfMeter.EndDetail(settingsTimer);
@@ -1413,6 +1420,8 @@ local function QueuePlayer(player)
     local signature = nil;
     local staleCached = nil;
     local blacklistSignature = require('core.player_blacklist').GetSignature(player);
+    local streamerNames = require('core.streamer_names');
+    local streamerNameSignature = streamerNames.GetSignature(player, targeting.GetSettings());
     local canUseStaleCachedPlate =
         (hpBarLoads ~= true or liveHpBarStyle.enabled == true) and
         (mpBarLoads ~= true or liveMpBarStyle.enabled == true) and
@@ -1425,6 +1434,7 @@ local function QueuePlayer(player)
             'policy=' .. canvasTexture.GetRenderPolicyKey(),
             'overwriteNativeNameColors=' .. tostring(targeting.GetSettings().overwriteNativeNameColors ~= false),
             'blacklist=' .. blacklistSignature,
+            streamerNameSignature,
             'gameModeText=' .. tostring(playerGameModeText or ''),
             'anonNameColor=' .. tostring(playerAnonNameColor),
             'statusIconPack=' .. tostring(globalSettings ~= nil and globalSettings.statusIcons ~= nil and globalSettings.statusIcons.iconPack or ''),
@@ -1664,6 +1674,7 @@ local function QueuePlayer(player)
             identityKey = GetPlayerIdentityKey(player),
             serverId = player.serverId,
             name = player.name,
+            streamerNameSignature = streamerNameSignature,
             lastUsed = os.clock(),
             lastFullRefresh = os.clock(),
             hasDynamicVisuals = buffsLoad == true or debuffsLoad == true or (distanceText ~= nil and distanceText ~= ''),

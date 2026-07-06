@@ -1353,10 +1353,10 @@ local function GetLaneEditKeys(lane)
     return 'fontSize', 'offsetX', 'offsetY', 'Screen Alerts';
 end
 
-local function DrawLinePreviewEditOverlay(settings, row, baseX, baseY, rowX, rowY, textW, textH)
+local function DrawLinePreviewEditOverlay(settings, row, baseX, baseY, rowX, rowY, textW, textH, drawListOverride)
     if (
         settings.layoutPreviewEditFrame ~= true or
-        imgui.GetForegroundDrawList == nil or
+        (drawListOverride == nil and imgui.GetForegroundDrawList == nil) or
         imgui.GetColorU32 == nil or
         imgui.IsMouseClicked == nil or
         imgui.IsMouseDown == nil
@@ -1423,7 +1423,7 @@ local function DrawLinePreviewEditOverlay(settings, row, baseX, baseY, rowX, row
         end
     end
 
-    local drawList = imgui.GetForegroundDrawList();
+    local drawList = drawListOverride or imgui.GetForegroundDrawList();
     if (drawList == nil) then
         return;
     end
@@ -1453,13 +1453,7 @@ local function DrawLinePreviewEditOverlay(settings, row, baseX, baseY, rowX, row
     end
 end
 
-local function DrawAlertRows(settings, rows)
-    local drawList = imgui.GetForegroundDrawList ~= nil and imgui.GetForegroundDrawList() or nil;
-
-    if (drawList == nil) then
-        return;
-    end
-
+local function GetViewportSize()
     local viewportW = 1920;
     local viewportH = 1080;
 
@@ -1471,11 +1465,28 @@ local function DrawAlertRows(settings, rows)
         end
     end);
 
+    return viewportW, viewportH;
+end
+
+local function DrawAlertRows(settings, rows, drawListOverride, viewportWidth, viewportHeight)
+    local drawList = drawListOverride or (imgui.GetForegroundDrawList ~= nil and imgui.GetForegroundDrawList() or nil);
+
+    if (drawList == nil) then
+        return;
+    end
+
+    local viewportW = tonumber(viewportWidth) or 1920;
+    local viewportH = tonumber(viewportHeight) or 1080;
+
+    if (viewportWidth == nil or viewportHeight == nil) then
+        viewportW, viewportH = GetViewportSize();
+    end
+
     local x = (viewportW * 0.5) + (tonumber(settings.offsetX) or 0);
     local y = (viewportH * 0.28) + (tonumber(settings.offsetY) or 0);
     local pushedClip = false;
 
-    if (drawList.PushClipRect ~= nil and drawList.PopClipRect ~= nil) then
+    if (previewEnabled ~= true and drawList.PushClipRect ~= nil and drawList.PopClipRect ~= nil) then
         drawList:PushClipRect({ 0, 0 }, { viewportW, viewportH }, false);
         pushedClip = true;
     end
@@ -1493,7 +1504,7 @@ local function DrawAlertRows(settings, rows)
         local textW, textH = DrawOutlinedText(drawList, rowX, rowY, row.color, row.outlineColor, row.fontSize, row.text, row.alpha);
 
         if (previewEnabled == true) then
-            DrawLinePreviewEditOverlay(settings, row, x, y, rowX, rowY, textW, textH);
+            DrawLinePreviewEditOverlay(settings, row, x, y, rowX, rowY, textW, textH, drawList);
         end
     end
 

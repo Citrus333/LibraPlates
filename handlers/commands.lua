@@ -254,6 +254,8 @@ local function FormatPartySelfProbe()
     return table.concat(parts, ' ');
 end
 
+_G.LibraPlatesFormatPartySelfProbe = FormatPartySelfProbe;
+
 function LibraPlatesHandleSelfAnonProbe()
     local selfEntity = entities.GetSelf();
     local selfIndex = tonumber(selfEntity ~= nil and selfEntity.index) or 0;
@@ -984,11 +986,23 @@ local function BuildVisibilityDiff(a, b)
         parts[#parts + 1] = value;
     end
 
+    for _, value in ipairs(BuildListDiff('ab.', a.actorBytes, b.actorBytes)) do
+        parts[#parts + 1] = value;
+    end
+
+    for _, value in ipairs(BuildListDiff('axb.', a.actorExtendedBytes, b.actorExtendedBytes)) do
+        parts[#parts + 1] = value;
+    end
+
     for _, value in ipairs(BuildListDiff('of.', a.objectScalars, b.objectScalars)) do
         parts[#parts + 1] = value;
     end
 
     for _, value in ipairs(BuildListDiff('oi.', a.objectInts, b.objectInts)) do
+        parts[#parts + 1] = value;
+    end
+
+    for _, value in ipairs(BuildListDiff('ob.', a.objectBytes, b.objectBytes)) do
         parts[#parts + 1] = value;
     end
 
@@ -1859,6 +1873,31 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'clamp' or subcommand == 'tacticalclamp' or subcommand == 'screenclamp') then
+        local action = tostring(args[3] or 'status'):lower();
+        local settings = targeting.GetSettings();
+
+        if (action == 'on' or action == 'enable') then
+            settings.tacticalScreenClampEnabled = true;
+            state.Save();
+        elseif (action == 'off' or action == 'disable') then
+            settings.tacticalScreenClampEnabled = false;
+            state.Save();
+        elseif (action ~= 'status') then
+            log.Warn('Usage: /lp clamp on|off|status');
+            return;
+        end
+
+        log.Info(
+            'Keep tactical plates on screen=' .. tostring(settings.tacticalScreenClampEnabled == true) ..
+            ' top=' .. tostring(settings.tacticalScreenClampTopPadding or 24) ..
+            ' bottom=' .. tostring(settings.tacticalScreenClampBottomPadding or 24) ..
+            ' left=' .. tostring(settings.tacticalScreenClampLeftPadding or 0) ..
+            ' right=' .. tostring(settings.tacticalScreenClampRightPadding or 0)
+        );
+        return;
+    end
+
     if (subcommand == 'platecap' or subcommand == 'worldcap') then
         local action = tostring(args[3] or 'status'):lower();
         local settings = targeting.GetSettings();
@@ -2181,7 +2220,7 @@ function commands.Handle(e)
         return;
     end
 
-    if (subcommand == 'visdebug' or subcommand == 'visibilitydebug') then
+    if (subcommand == 'visdebug' or subcommand == 'visibilitydebug' or subcommand == 'invisdebug') then
         local action = tostring(args[3] or ''):lower();
 
         if (action == 'compare' or action == 'diff') then
@@ -2191,7 +2230,7 @@ function commands.Handle(e)
             local right = visDebugCaptures[rightName];
 
             if (left == nil or right == nil) then
-                log.Warn('Visibility compare needs saved captures. Use: /lp visdebug save large, /lp visdebug save small, then /lp visdebug compare large small');
+                log.Warn('Visibility compare needs saved captures. Use: /lp invisdebug save visible, /lp invisdebug save invisible, then /lp invisdebug compare visible invisible');
                 return;
             end
 
@@ -2228,7 +2267,7 @@ function commands.Handle(e)
             captureName = tostring(args[4] or ''):lower();
 
             if (captureName == '') then
-                log.Warn('Usage: /lp visdebug save <label> [target/pet/index]');
+                log.Warn('Usage: /lp invisdebug save <label> [target/pet/index]');
                 return;
             end
 
@@ -2286,7 +2325,8 @@ function commands.Handle(e)
             ' af=' .. tostring(debug.actorScalars) ..
             ' ai=' .. tostring(debug.actorInts) ..
             ' of=' .. tostring(debug.objectScalars) ..
-            ' oi=' .. tostring(debug.objectInts)
+            ' oi=' .. tostring(debug.objectInts) ..
+            ' byteProbe=' .. tostring(debug.actorBytes ~= nil or debug.objectBytes ~= nil)
         );
         return;
     end
@@ -2776,6 +2816,7 @@ function commands.Handle(e)
             ' indexAllowed=' .. tostring(debug.indexAllowed) ..
             ' isMob=' .. tostring(debug.isMob) ..
             ' isParty=' .. tostring(debug.isParty) ..
+            ' invisibleActor=' .. tostring(debug.invisibleActor) ..
             ' visible=' .. tostring(debug.visible) ..
             ' visibleSkeleton=' .. tostring(debug.visibleWithSkeleton) ..
             ' mogFurniture=' .. tostring(debug.mogHouseFurniturePlaceholder) ..
@@ -3224,10 +3265,51 @@ function commands.Handle(e)
             return;
         end
 
+        if (action == 'trace') then
+            local fishingModule = require('core.fishing');
+            nativeTargetArrow.SetPartyTraceEnabled(true);
+            fishingModule.EnablePacketDebugForSeconds(tonumber(args[4]) or 120);
+            log.Info('Fishing native UI trace and packet debug started file=' .. nativeTargetArrow.GetPartyTraceFilePath() .. ' ' .. fishingModule.GetPacketDebugStatus());
+            return;
+        end
+
+        if (action == 'barprobe' or action == 'probe') then
+            nativeTargetArrow.StartFishingBarProbe(tonumber(args[4]) or 15);
+            log.Info(nativeTargetArrow.GetFishingBarProbeStatusText());
+            return;
+        end
+
+        if (action == 'packets') then
+            local packetAction = tostring(args[4] or 'on'):lower();
+            local fishingModule = require('core.fishing');
+
+            if (packetAction == 'on') then
+                fishingModule.EnablePacketDebugForSeconds(tonumber(args[5]) or 60);
+                log.Info('Fishing packet debug on: ' .. fishingModule.GetPacketDebugStatus());
+                return;
+            end
+
+            if (packetAction == 'off') then
+                fishingModule.SetPacketDebugEnabled(false);
+                log.Info('Fishing packet debug off: ' .. fishingModule.GetPacketDebugStatus());
+                return;
+            end
+
+            if (packetAction == 'status') then
+                log.Info('Fishing packet debug: ' .. fishingModule.GetPacketDebugStatus());
+                return;
+            end
+
+            log.Info('Usage: /lp fishingdebug packets [on|off|status] [seconds]');
+            return;
+        end
+
         log.Info(
             'Fishing/gathering debug interact=' .. tostring(targeting.GetGatheringInteractStatus()) ..
             ' equip=' .. tostring(targeting.GetFishingEquipmentStatus()) ..
             ' gather=' .. tostring(targeting.GetGatheringDebugStatus()) ..
+            ' party=' .. tostring(_G.LibraPlatesFormatPartySelfProbe ~= nil and _G.LibraPlatesFormatPartySelfProbe() or 'none') ..
+            ' packets=' .. tostring(require('core.fishing').GetPacketDebugStatus()) ..
             ' ' .. worldMarkerProbe.GetStatusText()
         );
         return;

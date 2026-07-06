@@ -1644,6 +1644,7 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
         name = '',
         isSelf = false,
         stateName = stateName,
+        layoutStateName = stateName == 'Idle' and 'Idle' or 'Combat',
         clickTargetType = 'enemy',
         worldMarker = worldMarker,
     });
@@ -2261,6 +2262,7 @@ local function QueueEnemy(enemy)
         name = '',
         isSelf = false,
         stateName = context.stateName,
+        layoutStateName = context.layoutStateName,
         clickTargetType = 'enemy',
         worldMarker = worldMarker,
     });

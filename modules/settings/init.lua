@@ -712,16 +712,20 @@ local selfRestingWidgets = T{
     'Quick Menu (module)',
 };
 local selfFishingWidgets = T{
-    'Background',
-    'Name',
-    'HP Bar',
-    'MP Bar',
-    'TP Bar',
-    'Buffs',
-    'Debuffs',
-    'Fishing (module)',
-    'Quick Menu (module)',
+    'Global',
+    'Fish stamina',
+    'Alerts',
 };
+_G.LibraPlatesSettingsFishingHudWidgets = {
+    ['Global'] = true,
+    ['Fish stamina'] = true,
+    ['Alerts'] = true,
+};
+function LibraPlatesSettingsIsFishingHudWidget(widgetName)
+    return tostring(selectedEntity or '') == 'Self' and
+        tostring(selectedState or '') == 'Fishing' and
+        _G.LibraPlatesSettingsFishingHudWidgets[tostring(widgetName or '')] == true;
+end
 local selfCraftingWidgets = T{
     'Background',
     'Name',
@@ -810,8 +814,8 @@ local pcCombatWidgets = T{
     'Quick Menu (module)',
     'Peer (module)',
     'Enmity (module)',
-    'Subtarget',
-    'Target',
+    'Subtarget (module)',
+    'Target (module)',
 };
 local trustIdleWidgets = T{
     'Background',
@@ -995,6 +999,8 @@ local widgetKeys = {
     ['Mounted (module)'] = 'Mounted',
     ['Crafting (module)'] = 'Crafting',
     ['Fishing (module)'] = 'Fishing',
+    ['Global'] = 'Fishing',
+    ['Fish stamina'] = 'Fishing',
     ['Gathering (module)'] = 'Gathering',
     ['Death (module)'] = 'Death',
     ['NPC icon'] = 'NPC icon',
@@ -1626,6 +1632,37 @@ end
 
 function GetChecklistActiveSettings(widget)
     local key = widgetKeys[widget];
+
+    if (LibraPlatesSettingsIsFishingHudWidget(widget) == true) then
+        local global = state.GetGlobalSettings(globalDefaults);
+        global.fishing = global.fishing or {};
+        if (global.fishing.enabled == nil) then global.fishing.enabled = true; end
+
+        local key = 'enabled';
+        if (widget == 'Fish stamina') then
+            key = 'showStaminaBar';
+            if (global.fishing.showStaminaBar == nil) then global.fishing.showStaminaBar = true; end
+        elseif (widget == 'Alerts') then
+            key = 'alertsEnabled';
+            if (global.fishing.alertsEnabled == nil) then global.fishing.alertsEnabled = true; end
+        end
+
+        return setmetatable({}, {
+            __index = function(_, field)
+                if (field == 'enabled') then
+                    return global.fishing[key] == true;
+                end
+                return global.fishing[field];
+            end,
+            __newindex = function(_, field, value)
+                if (field == 'enabled') then
+                    global.fishing[key] = value == true;
+                else
+                    global.fishing[field] = value;
+                end
+            end,
+        });
+    end
 
     if (key == nil) then
         return nil;
@@ -5110,6 +5147,15 @@ function DrawRightPanel()
     local splitterHeight = 18;
     local minPreviewHeight = 95;
     local minSettingsHeight = 145;
+    local hidePreviewPanel = selectedTab == 'Plates' and selectedEntity == 'Self' and selectedState == 'Fishing';
+
+    if (hidePreviewPanel == true) then
+        DrawChild('##settings_scroll_panel', { 0, rightHeight }, true, function()
+            DrawSelectedEditor();
+        end);
+        return;
+    end
+
     local usableHeight = math.max(minPreviewHeight + minSettingsHeight + splitterHeight, rightHeight);
     local maxPreviewHeight = math.max(minPreviewHeight, usableHeight - minSettingsHeight - splitterHeight);
     local previewHeight = math.floor(usableHeight * previewSplitRatio);
@@ -6144,6 +6190,7 @@ function LibraPlatesSettingsDrawPeerModuleSettings(settings, options)
     if (settings.peer.modifierValueOutlineColor == nil) then settings.peer.modifierValueOutlineColor = { 0.0, 0.0, 0.0, 1.0 }; end
 
     LibraPlatesSettingsDrawBoxedPanel('Peer settings', function()
+
         DrawInlineComboRow('Modifier', T{ 'Shift', 'Ctrl', 'Alt', 'None' }, settings.peer.activationModifier, function(value)
             settings.peer.activationModifier = value;
             state.Save();
@@ -6686,18 +6733,47 @@ function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
     DrawResetFooterBottomPadding();
 end
 
-function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive)
+function LibraPlatesSettingsGetSelfGameMode()
+    local party = AshitaCore:GetMemoryManager():GetParty();
+    local selfIndex = nil;
+
+    pcall(function()
+        selfIndex = party ~= nil and party:GetMemberTargetIndex(0) or nil;
+    end);
+
+    if (selfIndex == nil or tonumber(selfIndex) == 0) then
+        return '';
+    end
+
+    return require('core.game_mode').Resolve(tonumber(selfIndex), false);
+end
+
+function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive, selectedFishingSection)
     settings.fishing = settings.fishing or {};
 
     if (settings.fishing.enabled == nil) then settings.fishing.enabled = true; end
+    if (settings.fishing.previewHud == nil) then settings.fishing.previewHud = false; end
+    if (settings.fishing.previewStaminaBar == nil) then settings.fishing.previewStaminaBar = false; end
     if (settings.fishing.enableRightClickFish == nil) then settings.fishing.enableRightClickFish = true; end
-    if (settings.fishing.enableRightClickGathering == nil) then settings.fishing.enableRightClickGathering = true; end
-    if (settings.fishing.showGatheringPoints == nil) then settings.fishing.showGatheringPoints = true; end
-    if (settings.fishing.showGatheringPointsOnlyWithTool == nil) then settings.fishing.showGatheringPointsOnlyWithTool = false; end
-    if (settings.fishing.enableRightClickMining == nil) then settings.fishing.enableRightClickMining = true; end
-    if (settings.fishing.enableRightClickHarvesting == nil) then settings.fishing.enableRightClickHarvesting = true; end
-    if (settings.fishing.enableRightClickLogging == nil) then settings.fishing.enableRightClickLogging = true; end
-    if (settings.fishing.enableRightClickExcavation == nil) then settings.fishing.enableRightClickExcavation = true; end
+    if (settings.fishing.showFatigue == nil) then settings.fishing.showFatigue = true; end
+    if (settings.fishing.showVentures == nil) then settings.fishing.showVentures = true; end
+    if (settings.fishing.hudX == nil) then settings.fishing.hudX = 24; end
+    if (settings.fishing.hudY == nil) then settings.fishing.hudY = 54; end
+    if (settings.fishing.hudWidth == nil) then settings.fishing.hudWidth = 440; end
+    if (settings.fishing.hudHeight == nil) then settings.fishing.hudHeight = 220; end
+    if (settings.fishing.hudLocked == nil) then settings.fishing.hudLocked = true; end
+    if (settings.fishing.backgroundEnabled == nil) then settings.fishing.backgroundEnabled = true; end
+    if (settings.fishing.backgroundTexture == nil) then settings.fishing.backgroundTexture = 'None'; end
+    if (settings.fishing.backgroundColor == nil) then settings.fishing.backgroundColor = { 0.04, 0.05, 0.07, 0.78 }; end
+    if (settings.fishing.backgroundOpacity == nil) then settings.fishing.backgroundOpacity = 78; end
+    if (settings.fishing.backgroundBorderColor == nil) then settings.fishing.backgroundBorderColor = { 0.20, 0.65, 0.67, 0.0 }; end
+    if (settings.fishing.backgroundBorderSize == nil) then settings.fishing.backgroundBorderSize = 0; end
+    if (settings.fishing.showRecentResult == nil) then settings.fishing.showRecentResult = true; end
+    if (settings.fishing.showRodBait == nil) then settings.fishing.showRodBait = true; end
+    if (settings.fishing.showCatchName == nil) then settings.fishing.showCatchName = true; end
+    if (settings.fishing.showCatchIcon == nil) then settings.fishing.showCatchIcon = true; end
+    if (settings.fishing.alertsEnabled == nil) then settings.fishing.alertsEnabled = true; end
+    if (settings.fishing.alertSoundsEnabled == nil) then settings.fishing.alertSoundsEnabled = true; end
     if (settings.fishing.iconFile == nil) then settings.fishing.iconFile = 'fishing_01.png'; end
     if (settings.fishing.offsetX == nil) then settings.fishing.offsetX = 0; end
     if (settings.fishing.offsetY == nil) then settings.fishing.offsetY = 38; end
@@ -6708,6 +6784,86 @@ function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive)
     if (settings.fishing.labelColor == nil) then settings.fishing.labelColor = { 1.0, 1.0, 1.0, 1.0 }; end
     if (settings.fishing.labelOutlineColor == nil) then settings.fishing.labelOutlineColor = { 0.0, 0.0, 0.0, 1.0 }; end
     if (settings.fishing.labelOutlineSize == nil) then settings.fishing.labelOutlineSize = 2; end
+    if (settings.fishing.showStaminaBar == nil) then settings.fishing.showStaminaBar = true; end
+    if (settings.fishing.staminaBarWidth == nil) then settings.fishing.staminaBarWidth = 160; end
+    if (settings.fishing.staminaBarHeight == nil) then settings.fishing.staminaBarHeight = 10; end
+    if (settings.fishing.staminaBarOffsetX == nil) then settings.fishing.staminaBarOffsetX = 0; end
+    if (settings.fishing.staminaBarOffsetY == nil) then settings.fishing.staminaBarOffsetY = 58; end
+    if (settings.fishing.staminaBarColor == nil) then settings.fishing.staminaBarColor = { 0.95, 0.38, 0.46, 1.0 }; end
+    if (settings.fishing.staminaBarBackgroundColor == nil) then settings.fishing.staminaBarBackgroundColor = { 0.05, 0.05, 0.05, 0.86 }; end
+    if (settings.fishing.staminaBarBorderColor == nil) then settings.fishing.staminaBarBorderColor = { 0.0, 0.0, 0.0, 1.0 }; end
+    if (settings.fishing.staminaBarBorderSize == nil) then settings.fishing.staminaBarBorderSize = 1; end
+    if (settings.fishing.staminaBarTextColor == nil) then settings.fishing.staminaBarTextColor = { 1.0, 1.0, 1.0, 1.0 }; end
+    if (settings.fishing.staminaBarTextOutlineColor == nil) then settings.fishing.staminaBarTextOutlineColor = { 0.0, 0.0, 0.0, 1.0 }; end
+    if (settings.fishing.staminaBarTextOutlineSize == nil) then settings.fishing.staminaBarTextOutlineSize = 2; end
+    if (settings.fishing.staminaBarScreenX == nil) then settings.fishing.staminaBarScreenX = 24; end
+    if (settings.fishing.staminaBarScreenY == nil) then settings.fishing.staminaBarScreenY = 190; end
+    local section = tostring(selectedFishingSection or 'Global');
+    if (section ~= 'Global' and section ~= 'Fish stamina' and section ~= 'Alerts') then
+        section = 'Global';
+    end
+
+    local function DrawFishingStaminaColorPair(leftLabel, leftValue, leftId, rightLabel, rightValue, rightId)
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            local leftResult = leftValue;
+            local rightResult = rightValue;
+            local leftChanged = false;
+            local rightChanged = false;
+
+            if (imgui.BeginTable('##FishingStaminaColorPair' .. tostring(leftId) .. tostring(rightId), 4, settingsTableFlags)) then
+                imgui.TableSetupColumn('##left_label', 0, 132);
+                imgui.TableSetupColumn('##left_control', 0, 70);
+                imgui.TableSetupColumn('##right_label', 0, 148);
+                imgui.TableSetupColumn('##right_control', 0, 70);
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+                imgui.TextColored(settingsLabelColor, leftLabel);
+                imgui.TableNextColumn();
+                leftResult, leftChanged = DrawInlineColorControl(leftValue, leftId);
+                imgui.TableNextColumn();
+                imgui.TextColored(settingsLabelColor, rightLabel);
+                imgui.TableNextColumn();
+                rightResult, rightChanged = DrawInlineColorControl(rightValue, rightId);
+                imgui.EndTable();
+            end
+
+            return leftResult, leftChanged, rightResult, rightChanged;
+        end
+
+        local leftResult, leftChanged = DrawSettingsColor(leftLabel, leftValue, leftId);
+        local rightResult, rightChanged = DrawSettingsColor(rightLabel, rightValue, rightId);
+        return leftResult, leftChanged, rightResult, rightChanged;
+    end
+
+    local function DrawFishingStaminaBorderRow()
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            local colorResult = settings.fishing.staminaBarBorderColor;
+            local sizeResult = settings.fishing.staminaBarBorderSize;
+            local colorChanged = false;
+            local sizeChanged = false;
+
+            if (imgui.BeginTable('##FishingStaminaBorderRow', 4, settingsTableFlags)) then
+                imgui.TableSetupColumn('##border_label', 0, 132);
+                imgui.TableSetupColumn('##border_control', 0, 70);
+                imgui.TableSetupColumn('##size_label', 0, 148);
+                imgui.TableSetupColumn('##size_control', 0, 160);
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+                imgui.TextColored(settingsLabelColor, 'Bar border');
+                imgui.TableNextColumn();
+                colorResult, colorChanged = DrawInlineColorControl(settings.fishing.staminaBarBorderColor, 'FishingStaminaBorderColor');
+                imgui.TableNextColumn();
+                imgui.TextColored(settingsLabelColor, 'Border size');
+                imgui.TableNextColumn();
+                sizeResult, sizeChanged = DrawPlacementControl(settings.fishing.staminaBarBorderSize, 0, 12, 1, 'FishingStaminaBorderSize');
+                imgui.EndTable();
+            end
+
+            return colorResult, colorChanged, sizeResult, sizeChanged;
+        end
+
+        return DrawColorAndPlacementRow('Bar border', settings.fishing.staminaBarBorderColor, 'FishingStaminaBorderColor', 'Border size', settings.fishing.staminaBarBorderSize, 'FishingStaminaBorderSize', 0, 12, 1);
+    end
 
     if (hideActive ~= true) then
         DrawCheckbox('Active', settings.fishing.enabled == true, function(value)
@@ -6720,109 +6876,162 @@ function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive)
         return;
     end
 
-    DrawCheckbox('Right-click fish with rod', settings.fishing.enableRightClickFish == true, function(value)
-        settings.fishing.enableRightClickFish = value == true;
-        state.Save();
-    end);
-    uiTooltip.Info('When a fishing rod is equipped in the ranged slot, right-clicking empty world space queues /fish. The game still decides whether you are close enough to fish.');
+    if (section == 'Global') then
+        LibraPlatesSettingsDrawBoxedPage('FishingGlobalPageContent', function()
+            LibraPlatesSettingsDrawBoxedPanel('Settings', function()
+                DrawCheckbox('Preview HUD', settings.fishing.previewHud == true, function(value)
+                    settings.fishing.previewHud = value == true;
+                    state.Save();
+                end);
+                uiTooltip.Info('Temporarily opens the real Fishing HUD while settings are open, using current gear and live fishing data.');
 
-    DrawCheckbox('Right-click gathering actions', settings.fishing.enableRightClickGathering == true, function(value)
-        settings.fishing.enableRightClickGathering = value == true;
-        state.Save();
-    end);
-    uiTooltip.Info('Master switch for right-click gathering on known object plates.');
+                DrawCheckbox('Right click to fish', settings.fishing.enableRightClickFish == true, function(value)
+                    settings.fishing.enableRightClickFish = value == true;
+                    state.Save();
+                end);
+                uiTooltip.Info('When a fishing rod is equipped in the ranged slot, right-clicking empty world space queues /fish. The game still decides whether you are close enough to fish.');
 
-    DrawCheckbox('Show gathering points', settings.fishing.showGatheringPoints ~= false, function(value)
-        settings.fishing.showGatheringPoints = value == true;
-        state.Save();
-    end);
+                local selfGameMode = LibraPlatesSettingsGetSelfGameMode();
+                if (selfGameMode == 'ACE' or selfGameMode == 'WEW') then
+                    DrawCheckbox('Show fatigue', settings.fishing.showFatigue == true, function(value)
+                        settings.fishing.showFatigue = value == true;
+                        state.Save();
+                    end);
+                    uiTooltip.Info('Shows your local fishing fatigue from !fatigue. Crystal Warrior is exempt.');
+                end
 
-    DrawCheckbox('Only show if matching tool is in inventory', settings.fishing.showGatheringPointsOnlyWithTool == true, function(value)
-        settings.fishing.showGatheringPointsOnlyWithTool = value == true;
-        state.Save();
-    end);
-    uiTooltip.Info('When enabled, logging/harvest/mining/excavation points only show if the matching tool is available in inventory.');
+                DrawCheckbox('Show ventures', settings.fishing.showVentures ~= false, function(value)
+                    settings.fishing.showVentures = value == true;
+                    state.Save();
+                end);
+                uiTooltip.Info('Shows CatsEye fishing venture info in the Fishing HUD.');
 
-    if (settings.fishing.enableRightClickGathering == true) then
-        imgui.Indent();
+                DrawCheckbox('Show recent result', settings.fishing.showRecentResult ~= false, function(value)
+                    settings.fishing.showRecentResult = value == true;
+                    state.Save();
+                end);
 
-        imgui.TextColored(settingsLabelColor, 'Right-click gathering if the tool is equipped:');
+                DrawCheckbox('Show rod/bait/target', settings.fishing.showRodBait ~= false, function(value)
+                    settings.fishing.showRodBait = value == true;
+                    state.Save();
+                end);
+            end, true);
 
-        DrawCheckbox('Pickaxe: start mining', settings.fishing.enableRightClickMining == true, function(value)
-            settings.fishing.enableRightClickMining = value == true;
-            state.Save();
+            LibraPlatesSettingsDrawBoxedPanel('Background', function()
+                DrawInlineComboRow('Background image', require('core.background_textures').GetFiles(), settings.fishing.backgroundTexture or 'None', function(value)
+                    settings.fishing.backgroundTexture = value;
+                    state.Save();
+                end, 'FishingHudBackgroundTexture', nil, 136, settingsTableFlagsNoBorders, 260);
+
+                local backgroundColor, backgroundColorChanged, backgroundOpacity, backgroundOpacityChanged = DrawColorAndPlacementRow('Fill color', settings.fishing.backgroundColor, 'FishingHudBackgroundColor', 'Opacity', settings.fishing.backgroundOpacity, 'FishingHudBackgroundOpacity', 0, 100, 1);
+                if (backgroundColorChanged == true) then
+                    settings.fishing.backgroundColor = backgroundColor;
+                end
+                if (backgroundOpacityChanged == true) then
+                    settings.fishing.backgroundOpacity = backgroundOpacity;
+                end
+                if (backgroundColorChanged == true or backgroundOpacityChanged == true) then
+                    state.Save();
+                end
+
+                local borderColor, borderColorChanged, borderSize, borderSizeChanged = DrawColorAndPlacementRow('Border color', settings.fishing.backgroundBorderColor, 'FishingHudBorderColor', 'Border size', settings.fishing.backgroundBorderSize, 'FishingHudBorderSize', 0, 12, 1);
+                if (borderColorChanged == true or borderSizeChanged == true) then
+                    borderColor[4] = 1.0;
+                    settings.fishing.backgroundBorderColor = borderColor;
+                    settings.fishing.backgroundBorderSize = borderSize;
+                    state.Save();
+                end
+            end);
         end);
 
-        DrawCheckbox('Sickle: start harvesting', settings.fishing.enableRightClickHarvesting == true, function(value)
-            settings.fishing.enableRightClickHarvesting = value == true;
-            state.Save();
-        end);
-
-        DrawCheckbox('Hatchet: start logging', settings.fishing.enableRightClickLogging == true, function(value)
-            settings.fishing.enableRightClickLogging = value == true;
-            state.Save();
-        end);
-
-        DrawCheckbox('Pickaxe: start excavation', settings.fishing.enableRightClickExcavation == true, function(value)
-            settings.fishing.enableRightClickExcavation = value == true;
-            state.Save();
-        end);
-
-        uiTooltip.Info('Known mappings: Mining Point -> Pickaxe, Harvest Point -> Sickle, Logging Point -> Hatchet, Excavation Point -> Pickaxe.');
-
-        imgui.Unindent();
+        return;
     end
 
-    DrawInlineComboRow('Icon', fishing.GetIconFiles(), settings.fishing.iconFile or 'fishing_01.png', function(value)
-        settings.fishing.iconFile = value;
-        state.Save();
-    end, 'FishingIconFile');
-
-    local x, xChanged, y, yChanged = DrawPlacementPair('Position X', settings.fishing.offsetX, 'FishingX', 'Position Y', settings.fishing.offsetY, 'FishingY', -500, 500, 1);
-    if (xChanged == true or yChanged == true) then
-        settings.fishing.offsetX = x;
-        settings.fishing.offsetY = y;
-        state.Save();
-    end
-
-    local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.fishing.iconSize, 'FishingIconSize', 1, 200, 1, 154, 124, 58);
-    if (iconSizeChanged == true) then
-        settings.fishing.iconSize = iconSize;
-        state.Save();
-    end
-
-    DrawCheckbox('Show result label', settings.fishing.showLabel ~= false, function(value)
-        settings.fishing.showLabel = value == true;
-        state.Save();
-    end);
-
-    if (settings.fishing.showLabel ~= false) then
-        local labelSize, labelSizeChanged, labelOffsetY, labelOffsetYChanged = DrawPlacementPair('Label size', settings.fishing.labelFontSize, 'FishingLabelSize', 'Label Y', settings.fishing.labelOffsetY, 'FishingLabelY', -100, 100, 1);
-        if (labelSizeChanged == true or labelOffsetYChanged == true) then
-            settings.fishing.labelFontSize = labelSize;
-            settings.fishing.labelOffsetY = labelOffsetY;
+    if (section == 'Alerts') then
+        DrawCheckbox('Enable fishing alerts', settings.fishing.alertsEnabled == true, function(value)
+            settings.fishing.alertsEnabled = value == true;
             state.Save();
+        end);
+
+        DrawCheckbox('Play alert sounds', settings.fishing.alertSoundsEnabled == true, function(value)
+            settings.fishing.alertSoundsEnabled = value == true;
+            state.Save();
+        end);
+        uiTooltip.Info('Fishing alerts will use the hook/feeling messages and can reuse your fishing sound style.');
+
+        return;
+    end
+
+    LibraPlatesSettingsDrawBoxedPage('FishingStaminaPageContent', function()
+        LibraPlatesSettingsDrawBoxedPanel('Settings', function()
+            DrawCheckbox('Preview stamina', settings.fishing.previewStaminaBar == true, function(value)
+                settings.fishing.previewStaminaBar = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('Temporarily shows the real fish stamina bar while settings are open.');
+
+            DrawCheckbox('Show fish stamina bar', settings.fishing.showStaminaBar == true, function(value)
+                settings.fishing.showStaminaBar = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('Shows a local Libra bar from the hook packet while fishing. This is an estimated replacement for the hidden native fish bar.');
+        end, true);
+
+        if (settings.fishing.showStaminaBar == true) then
+            LibraPlatesSettingsDrawBoxedPanel('Layout', function()
+                local barX, barXChanged, barY, barYChanged = DrawPlacementPair('Position X', settings.fishing.staminaBarScreenX, 'FishingStaminaScreenX', 'Position Y', settings.fishing.staminaBarScreenY, 'FishingStaminaScreenY', 0, 4000, 1);
+                if (barXChanged == true or barYChanged == true) then
+                    settings.fishing.staminaBarScreenX = barX;
+                    settings.fishing.staminaBarScreenY = barY;
+                    state.Save();
+                end
+
+                local barWidth, barWidthChanged, barHeight, barHeightChanged = DrawPlacementPair('Bar width', settings.fishing.staminaBarWidth, 'FishingStaminaWidth', 'Bar height', settings.fishing.staminaBarHeight, 'FishingStaminaHeight', 1, 500, 1);
+                if (barWidthChanged == true or barHeightChanged == true) then
+                    settings.fishing.staminaBarWidth = barWidth;
+                    settings.fishing.staminaBarHeight = barHeight;
+                    state.Save();
+                end
+            end);
+
+            LibraPlatesSettingsDrawBoxedPanel('Appearance', function()
+                local barColor, barColorChanged, barBackgroundColor, barBackgroundColorChanged = DrawFishingStaminaColorPair('Bar color', settings.fishing.staminaBarColor, 'FishingStaminaColor', 'Bar background', settings.fishing.staminaBarBackgroundColor, 'FishingStaminaBackground');
+                if (barColorChanged == true or barBackgroundColorChanged == true) then
+                    settings.fishing.staminaBarColor = barColor;
+                    settings.fishing.staminaBarBackgroundColor = barBackgroundColor;
+                    state.Save();
+                end
+
+                local barBorderColor, barBorderColorChanged, barBorderSize, barBorderSizeChanged = DrawFishingStaminaBorderRow();
+                if (barBorderColorChanged == true or barBorderSizeChanged == true) then
+                    settings.fishing.staminaBarBorderColor = barBorderColor;
+                    settings.fishing.staminaBarBorderSize = barBorderSize;
+                    state.Save();
+                end
+            end);
         end
-
-        local labelColor, labelColorChanged = DrawSettingsColor('Label color', settings.fishing.labelColor, 'FishingLabelColor');
-        if (labelColorChanged == true) then
-            settings.fishing.labelColor = labelColor;
-            state.Save();
-        end
-
-        local outlineColor, outlineColorChanged, outlineSize, outlineSizeChanged = DrawColorAndPlacementRow('Outline color', settings.fishing.labelOutlineColor, 'FishingLabelOutlineColor', 'Outline size', settings.fishing.labelOutlineSize, 'FishingLabelOutlineSize', 0, 12, 1);
-        if (outlineColorChanged == true or outlineSizeChanged == true) then
-            settings.fishing.labelOutlineColor = outlineColor;
-            settings.fishing.labelOutlineSize = outlineSize;
-            state.Save();
-        end
-    end
+    end);
 end
 
 function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
     settings.gathering = settings.gathering or {};
+    settings.fishing = settings.fishing or {};
 
     if (settings.gathering.enabled == nil) then settings.gathering.enabled = true; end
+    if (settings.gathering.enableRightClickGathering == nil) then settings.gathering.enableRightClickGathering = settings.fishing.enableRightClickGathering; end
+    if (settings.gathering.enableRightClickGathering == nil) then settings.gathering.enableRightClickGathering = true; end
+    if (settings.gathering.showGatheringPoints == nil) then settings.gathering.showGatheringPoints = settings.fishing.showGatheringPoints; end
+    if (settings.gathering.showGatheringPoints == nil) then settings.gathering.showGatheringPoints = true; end
+    if (settings.gathering.showGatheringPointsOnlyWithTool == nil) then settings.gathering.showGatheringPointsOnlyWithTool = settings.fishing.showGatheringPointsOnlyWithTool; end
+    if (settings.gathering.showGatheringPointsOnlyWithTool == nil) then settings.gathering.showGatheringPointsOnlyWithTool = false; end
+    if (settings.gathering.enableRightClickMining == nil) then settings.gathering.enableRightClickMining = settings.fishing.enableRightClickMining; end
+    if (settings.gathering.enableRightClickMining == nil) then settings.gathering.enableRightClickMining = true; end
+    if (settings.gathering.enableRightClickHarvesting == nil) then settings.gathering.enableRightClickHarvesting = settings.fishing.enableRightClickHarvesting; end
+    if (settings.gathering.enableRightClickHarvesting == nil) then settings.gathering.enableRightClickHarvesting = true; end
+    if (settings.gathering.enableRightClickLogging == nil) then settings.gathering.enableRightClickLogging = settings.fishing.enableRightClickLogging; end
+    if (settings.gathering.enableRightClickLogging == nil) then settings.gathering.enableRightClickLogging = true; end
+    if (settings.gathering.enableRightClickExcavation == nil) then settings.gathering.enableRightClickExcavation = settings.fishing.enableRightClickExcavation; end
+    if (settings.gathering.enableRightClickExcavation == nil) then settings.gathering.enableRightClickExcavation = true; end
     if (settings.gathering.displayMode == nil) then settings.gathering.displayMode = 'Tool + count'; end
     if (settings.gathering.anchorTo == nil) then settings.gathering.anchorTo = 'Name'; end
     if (settings.gathering.anchorPoint == nil) then settings.gathering.anchorPoint = 'Bottom'; end
@@ -6852,6 +7061,55 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
     local function DrawPanel(label, render, first)
         LibraPlatesSettingsDrawBoxedPanel(label, render, first);
     end
+
+    DrawPanel('Interaction', function()
+        DrawCheckbox('Right-click gathering actions', settings.gathering.enableRightClickGathering == true, function(value)
+            settings.gathering.enableRightClickGathering = value == true;
+            state.Save();
+        end);
+        uiTooltip.Info('Master switch for right-click gathering on known object plates.');
+
+        DrawCheckbox('Show gathering points', settings.gathering.showGatheringPoints ~= false, function(value)
+            settings.gathering.showGatheringPoints = value == true;
+            state.Save();
+        end);
+
+        DrawCheckbox('Only show if matching tool is in inventory', settings.gathering.showGatheringPointsOnlyWithTool == true, function(value)
+            settings.gathering.showGatheringPointsOnlyWithTool = value == true;
+            state.Save();
+        end);
+        uiTooltip.Info('When enabled, logging/harvest/mining/excavation points only show if the matching tool is available in inventory.');
+
+        if (settings.gathering.enableRightClickGathering == true) then
+            imgui.Indent();
+
+            imgui.TextColored(settingsLabelColor, 'Right-click gathering if the tool is equipped:');
+
+            DrawCheckbox('Pickaxe: start mining', settings.gathering.enableRightClickMining == true, function(value)
+                settings.gathering.enableRightClickMining = value == true;
+                state.Save();
+            end);
+
+            DrawCheckbox('Sickle: start harvesting', settings.gathering.enableRightClickHarvesting == true, function(value)
+                settings.gathering.enableRightClickHarvesting = value == true;
+                state.Save();
+            end);
+
+            DrawCheckbox('Hatchet: start logging', settings.gathering.enableRightClickLogging == true, function(value)
+                settings.gathering.enableRightClickLogging = value == true;
+                state.Save();
+            end);
+
+            DrawCheckbox('Pickaxe: start excavation', settings.gathering.enableRightClickExcavation == true, function(value)
+                settings.gathering.enableRightClickExcavation = value == true;
+                state.Save();
+            end);
+
+            uiTooltip.Info('Known mappings: Mining Point -> Pickaxe, Harvest Point -> Sickle, Logging Point -> Hatchet, Excavation Point -> Pickaxe.');
+
+            imgui.Unindent();
+        end
+    end, true);
 
     DrawPanel('Gathering', function()
         DrawInlineComboRow('Display mode', T{ 'Tool only', 'Count only', 'Tool + count' }, settings.gathering.displayMode or 'Tool + count', function(value)
@@ -6888,7 +7146,7 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
         ) then
             state.Save();
         end
-    end, true);
+    end);
 
     DrawPanel('Icon', function()
         local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.gathering.iconSize, 'GatheringIconSize', 1, 200, 1, 120, 124, 58);
@@ -6975,6 +7233,13 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
 
     if (DrawResetActionButton('Reset Gathering settings', 'gathering_settings') == true) then
         settings.gathering.displayMode = globalDefaults.gathering.displayMode;
+        settings.gathering.enableRightClickGathering = globalDefaults.gathering.enableRightClickGathering;
+        settings.gathering.showGatheringPoints = globalDefaults.gathering.showGatheringPoints;
+        settings.gathering.showGatheringPointsOnlyWithTool = globalDefaults.gathering.showGatheringPointsOnlyWithTool;
+        settings.gathering.enableRightClickMining = globalDefaults.gathering.enableRightClickMining;
+        settings.gathering.enableRightClickHarvesting = globalDefaults.gathering.enableRightClickHarvesting;
+        settings.gathering.enableRightClickLogging = globalDefaults.gathering.enableRightClickLogging;
+        settings.gathering.enableRightClickExcavation = globalDefaults.gathering.enableRightClickExcavation;
         settings.gathering.anchorTo = globalDefaults.gathering.anchorTo;
         settings.gathering.anchorPoint = globalDefaults.gathering.anchorPoint;
         settings.gathering.offsetX = globalDefaults.gathering.offsetX;
@@ -8421,8 +8686,10 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
     local playerBlacklist = require('core.player_blacklist');
     local state = require('core.state');
     _G.LibraPlatesBlacklistAddNameBuffer = _G.LibraPlatesBlacklistAddNameBuffer or { '' };
+    _G.LibraPlatesBlacklistAddDisplayNameBuffer = _G.LibraPlatesBlacklistAddDisplayNameBuffer or { '' };
     _G.LibraPlatesBlacklistAddReasonBuffer = _G.LibraPlatesBlacklistAddReasonBuffer or { '' };
     local blacklistAddNameBuffer = _G.LibraPlatesBlacklistAddNameBuffer;
+    local blacklistAddDisplayNameBuffer = _G.LibraPlatesBlacklistAddDisplayNameBuffer;
     local blacklistAddReasonBuffer = _G.LibraPlatesBlacklistAddReasonBuffer;
     local blacklistSettings = playerBlacklist.GetModelReplaceSettings();
     local function GetBlacklistTableWidths()
@@ -8434,22 +8701,23 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
         end
 
         local buttonWidth = 72;
-        local gapWidth = 18;
-        local nameWidth = math.max(96, math.min(150, math.floor(availableWidth * 0.28)));
-        local reasonWidth = math.max(110, availableWidth - nameWidth - buttonWidth - gapWidth);
+        local gapWidth = 24;
+        local nameWidth = math.max(92, math.min(140, math.floor(availableWidth * 0.22)));
+        local displayNameWidth = math.max(100, math.min(150, math.floor(availableWidth * 0.24)));
+        local reasonWidth = math.max(110, availableWidth - nameWidth - displayNameWidth - buttonWidth - gapWidth);
 
-        return nameWidth, reasonWidth, buttonWidth;
+        return nameWidth, displayNameWidth, reasonWidth, buttonWidth;
     end
 
     LibraPlatesSettingsDrawBoxedBreadcrumb(T{ 'Settings', 'Blacklist' });
 
     LibraPlatesSettingsDrawBoxedPage('BlacklistPageContent', function()
         LibraPlatesSettingsDrawBoxedPanel('Visual blacklist', function()
-            DrawCheckbox('Show name as Blacklisted', blacklistSettings.displayNameReplaceEnabled ~= false, function(value)
+            DrawCheckbox('Replace displayed name', blacklistSettings.displayNameReplaceEnabled ~= false, function(value)
                 blacklistSettings.displayNameReplaceEnabled = value == true;
                 state.Save();
             end);
-            uiTooltip.Info('Off keeps the player name on LibraPlates while still treating the player as blacklisted.', true);
+            uiTooltip.Info('Uses each entry\'s Display as name, or Blacklisted when blank. Off keeps the real plate name.', true);
 
             DrawCheckbox('Use Fomor appearance', blacklistSettings.modelReplaceUseFomor ~= false, function(value)
                 blacklistSettings.modelReplaceUseFomor = value == true;
@@ -8467,11 +8735,12 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
         end, true);
 
         LibraPlatesSettingsDrawBoxedPanel('Manual add', function()
-            local nameWidth, reasonWidth, buttonWidth = GetBlacklistTableWidths();
+            local nameWidth, displayNameWidth, reasonWidth, buttonWidth = GetBlacklistTableWidths();
 
             if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-                if (imgui.BeginTable('##visual_blacklist_manual_add', 3, settingsTableFlags)) then
+                if (imgui.BeginTable('##visual_blacklist_manual_add', 4, settingsTableFlags)) then
                     imgui.TableSetupColumn('Name', 0, nameWidth);
+                    imgui.TableSetupColumn('Display as', 0, displayNameWidth);
                     imgui.TableSetupColumn('Reason', 0, reasonWidth);
                     imgui.TableSetupColumn('', 0, buttonWidth);
                     if (imgui.TableHeadersRow ~= nil) then imgui.TableHeadersRow(); end
@@ -8487,6 +8756,13 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
                     imgui.TableNextColumn();
                     if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(-1); end
                     if (imgui.InputText ~= nil) then
+                        imgui.InputText('##BlacklistAddDisplayName', blacklistAddDisplayNameBuffer, 32);
+                    end
+                    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+                    imgui.TableNextColumn();
+                    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(-1); end
+                    if (imgui.InputText ~= nil) then
                         imgui.InputText('##BlacklistAddReason', blacklistAddReasonBuffer, 128);
                     end
                     if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
@@ -8494,12 +8770,14 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
                     imgui.TableNextColumn();
                     if (imgui.Button ~= nil and imgui.Button('Add##BlacklistManualAdd') == true) then
                         local name = tostring(blacklistAddNameBuffer[1] or ''):gsub('^%s+', ''):gsub('%s+$', '');
+                        local displayName = tostring(blacklistAddDisplayNameBuffer[1] or ''):gsub('^%s+', ''):gsub('%s+$', '');
                         local reason = tostring(blacklistAddReasonBuffer[1] or '');
-                        local ok, err = playerBlacklist.AddName(name, reason, 'settings');
+                        local ok, err = playerBlacklist.AddName(name, reason, 'settings', displayName);
 
                         if (ok == true) then
                             LibraPlatesSettingsQueueNativeBlacklistCommand('add', name);
                             blacklistAddNameBuffer[1] = '';
+                            blacklistAddDisplayNameBuffer[1] = '';
                             blacklistAddReasonBuffer[1] = '';
                             log.Info('Added ' .. name .. ' to LibraPlates blacklist.');
                         else
@@ -8512,16 +8790,19 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
             else
                 if (imgui.InputText ~= nil) then
                     imgui.InputText('Name##BlacklistAddName', blacklistAddNameBuffer, 32);
+                    imgui.InputText('Display as##BlacklistAddDisplayName', blacklistAddDisplayNameBuffer, 32);
                     imgui.InputText('Reason##BlacklistAddReason', blacklistAddReasonBuffer, 128);
                 end
                 if (imgui.Button ~= nil and imgui.Button('Add##BlacklistManualAdd') == true) then
                     local name = tostring(blacklistAddNameBuffer[1] or ''):gsub('^%s+', ''):gsub('%s+$', '');
+                    local displayName = tostring(blacklistAddDisplayNameBuffer[1] or ''):gsub('^%s+', ''):gsub('%s+$', '');
                     local reason = tostring(blacklistAddReasonBuffer[1] or '');
-                    local ok, err = playerBlacklist.AddName(name, reason, 'settings');
+                    local ok, err = playerBlacklist.AddName(name, reason, 'settings', displayName);
 
                     if (ok == true) then
                         LibraPlatesSettingsQueueNativeBlacklistCommand('add', name);
                         blacklistAddNameBuffer[1] = '';
+                        blacklistAddDisplayNameBuffer[1] = '';
                         blacklistAddReasonBuffer[1] = '';
                         log.Info('Added ' .. name .. ' to LibraPlates blacklist.');
                     else
@@ -8542,20 +8823,26 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
             end
 
             if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-                local nameWidth, reasonWidth, buttonWidth = GetBlacklistTableWidths();
+                local nameWidth, displayNameWidth, reasonWidth, buttonWidth = GetBlacklistTableWidths();
                 local flags = settingsTableFlags + (_G.ImGuiTableFlags_RowBg or 0);
-                if (imgui.BeginTable('##visual_blacklist_entries', 3, flags)) then
+                if (imgui.BeginTable('##visual_blacklist_entries', 4, flags)) then
                     imgui.TableSetupColumn('Name', 0, nameWidth);
+                    imgui.TableSetupColumn('Display as', 0, displayNameWidth);
                     imgui.TableSetupColumn('Reason', 0, reasonWidth);
                     imgui.TableSetupColumn('', 0, buttonWidth);
                     if (imgui.TableHeadersRow ~= nil) then imgui.TableHeadersRow(); end
 
                     for index, row in ipairs(rows) do
                         local rowId = tostring(row.serverId or row.name or index);
+                        _G.LibraPlatesBlacklistDisplayNameBuffers = _G.LibraPlatesBlacklistDisplayNameBuffers or {};
                         _G.LibraPlatesBlacklistReasonBuffers = _G.LibraPlatesBlacklistReasonBuffers or {};
+                        if (_G.LibraPlatesBlacklistDisplayNameBuffers[rowId] == nil) then
+                            _G.LibraPlatesBlacklistDisplayNameBuffers[rowId] = { tostring(row.displayName or '') };
+                        end
                         if (_G.LibraPlatesBlacklistReasonBuffers[rowId] == nil) then
                             _G.LibraPlatesBlacklistReasonBuffers[rowId] = { tostring(row.reason or '') };
                         end
+                        local displayNameRef = _G.LibraPlatesBlacklistDisplayNameBuffers[rowId];
                         local reasonRef = _G.LibraPlatesBlacklistReasonBuffers[rowId];
 
                         imgui.TableNextRow();
@@ -8567,17 +8854,26 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
                                 '\nSeen: ' .. LibraPlatesSettingsFormatBlacklistTime(row.lastSeenAt)
                             );
                         end
-                    imgui.TableNextColumn();
-                    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(-1); end
-                    if (imgui.InputText ~= nil and imgui.InputText('##BlacklistReason' .. rowId, reasonRef, 128) == true) then
-                        playerBlacklist.SetReason(row, reasonRef[1]);
-                    end
+                        imgui.TableNextColumn();
+                        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(-1); end
+                        if (imgui.InputText ~= nil and imgui.InputText('##BlacklistDisplayName' .. rowId, displayNameRef, 32) == true) then
+                            playerBlacklist.SetDisplayName(row, displayNameRef[1]);
+                        end
+                        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+                        imgui.TableNextColumn();
+                        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(-1); end
+                        if (imgui.InputText ~= nil and imgui.InputText('##BlacklistReason' .. rowId, reasonRef, 128) == true) then
+                            playerBlacklist.SetReason(row, reasonRef[1]);
+                        end
                         if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
                         imgui.TableNextColumn();
                         if (imgui.Button ~= nil and imgui.Button('Remove##BlacklistRemove' .. rowId) == true) then
                             if (playerBlacklist.RemoveEntry(row) == true) then
                                 if (_G.LibraPlatesBlacklistReasonBuffers ~= nil) then
                                     _G.LibraPlatesBlacklistReasonBuffers[rowId] = nil;
+                                end
+                                if (_G.LibraPlatesBlacklistDisplayNameBuffers ~= nil) then
+                                    _G.LibraPlatesBlacklistDisplayNameBuffers[rowId] = nil;
                                 end
                                 LibraPlatesSettingsQueueNativeBlacklistCommand('delete', row.name);
                                 log.Info('Removed ' .. tostring(row.name or '') .. ' from LibraPlates blacklist.');
@@ -9219,6 +9515,15 @@ local function DrawGeneralProfilesSection()
 
     DrawProfilePanel('', function()
         LibraPlatesSettingsDrawEnmityProfileSettings(state.GetGlobalSettings(globalDefaults));
+    end);
+
+    DrawProfilePanel('Streamer mode', function()
+        local targetingSettings = targeting.GetSettings();
+        DrawCheckbox('Use Player1/Player2 names', targetingSettings.streamerModeEnabled == true, function(value)
+            targetingSettings.streamerModeEnabled = value == true;
+            state.Save();
+        end);
+        uiTooltip.Info('For streams: shows you as Player1 and nearby players as Player2, Player3, etc. This is only local; other players still see normal names.');
     end);
 
     if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
@@ -9926,7 +10231,7 @@ local helpWidgetDescriptions = {
     ['Enmity (module)'] = 'Enmity icon/module display settings.',
     ['Resting (module)'] = 'Resting tick helper display, timer, hide-at-full options, and logout support.',
     ['Crafting (module)'] = 'Crafting helper display and cooldown/timer settings.',
-    ['Fishing (module)'] = 'Fishing helper display and cooldown/timer settings.',
+    ['Fishing (module)'] = 'Fishing display and right-click fishing settings.',
     ['Gathering (module)'] = 'Gathering helper display, count, and tool interaction settings.',
     ['Quick Menu (module)'] = 'Quick Menu actions and plate menu behavior.',
     ['AOE range (module)'] = 'AOE affected-name style, font size/color, optional icon, and placement.',
@@ -11027,15 +11332,90 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
 
         imgui.TableNextColumn();
         if (soundEnabled == true) then
-            if (DrawSettingsIconButton(tostring(soundPrefix) .. 'PlaySound', 'play.png', 'Play sound') == true) then
+            if (imgui.Button ~= nil and imgui.Button('Play##' .. tostring(soundPrefix) .. 'PlaySound') == true) then
                 alertSounds.Play(soundFile, GetSoundPlaybackVolume(settings.soundVolume));
             end
 
             if (imgui.SameLine ~= nil) then imgui.SameLine(); end
         end
 
-        if (DrawSettingsIconButton(tostring(soundPrefix) .. 'PreviewAlert', 'peview.png', 'Preview alert') == true) then
+        if (imgui.Button ~= nil and imgui.Button('Test##' .. tostring(soundPrefix) .. 'PreviewAlert') == true) then
             enemyAlerts.TestBuiltIn(label, previewText, soundPrefix);
+        end
+    end
+
+    local function DrawBuiltInAlertParentRow(label, enabledKey)
+        imgui.TableNextRow();
+        imgui.TableNextColumn();
+
+        DrawCheckbox(label, settings[enabledKey] ~= false, function(value)
+            settings[enabledKey] = value == true;
+            state.Save();
+        end);
+
+        imgui.TableNextColumn();
+        imgui.TableNextColumn();
+        imgui.TableNextColumn();
+    end
+
+    local function DrawBuiltInAlertChildSoundRow(label, soundPrefix)
+        local soundEnabledKey = soundPrefix .. 'SoundEnabled';
+        local soundFileKey = soundPrefix .. 'SoundFile';
+        local soundEnabled = settings[soundEnabledKey] == true;
+        local soundFile = alertSounds.ResolveFile(settings[soundFileKey], settings.builtInSoundFile or settings.soundFile or 'Alert01.wav');
+
+        imgui.TableNextRow();
+        imgui.TableNextColumn();
+        if (imgui.Indent ~= nil) then imgui.Indent(18); end
+        imgui.TextColored(settingsLabelColor, tostring(label or ''));
+        if (imgui.Unindent ~= nil) then imgui.Unindent(18); end
+
+        imgui.TableNextColumn();
+        DrawCheckbox('Sound##' .. tostring(soundPrefix), soundEnabled, function(value)
+            settings[soundEnabledKey] = value == true;
+            state.Save();
+        end);
+
+        imgui.TableNextColumn();
+        if (soundEnabled == true) then
+            if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+                if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(146); end
+                if (imgui.BeginCombo('##' .. tostring(soundPrefix) .. 'SoundFile', soundFile) == true) then
+                    for _, item in ipairs(alertSounds.GetFiles()) do
+                        local isSelected = item == soundFile;
+                        if (imgui.Selectable(tostring(item), isSelected) == true) then
+                            settings[soundFileKey] = item;
+                            state.Save();
+                            soundFile = item;
+                        end
+                        if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                            imgui.SetItemDefaultFocus();
+                        end
+                    end
+                    imgui.EndCombo();
+                end
+                if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+            else
+                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
+            end
+        end
+
+        imgui.TableNextColumn();
+        if (soundEnabled == true and imgui.Button ~= nil) then
+            if (imgui.Button('Play##' .. tostring(soundPrefix) .. 'PlaySound') == true) then
+                alertSounds.Play(soundFile, GetSoundPlaybackVolume(settings.soundVolume));
+            end
+        end
+    end
+
+    local function DrawBuiltInFishingAlertGroup(label, enabledKey, rows)
+        DrawBuiltInAlertParentRow(label, enabledKey);
+        if (settings[enabledKey] == false) then
+            return;
+        end
+
+        for _, row in ipairs(rows) do
+            DrawBuiltInAlertChildSoundRow(row[1], row[2]);
         end
     end
 
@@ -11071,6 +11451,22 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
                 DrawBuiltInAlertSoundRow('Learned Blue Magic', 'builtInBlueMagicEnabled', 'builtInBlueMagic', 'Learned Blue Magic: Refueling');
                 DrawBuiltInAlertSoundRow('Dynamis', 'builtInDynamisEnabled', 'builtInDynamis', 'Dynamis: +10 minutes');
                 DrawBuiltInAlertSoundRow('Incursion', 'builtInIncursionEnabled', 'builtInIncursion', 'Incursion objective: Defeat 15 enemies');
+                DrawBuiltInFishingAlertGroup('Fishing hook type', 'builtInFishingHookTypeEnabled', {
+                    { 'Small Fish', 'builtInFishingHookSmallFish' },
+                    { 'Large Fish', 'builtInFishingHookLargeFish' },
+                    { 'Non-Fish Item', 'builtInFishingHookItem' },
+                    { 'Monster', 'builtInFishingHookMonster' },
+                });
+                DrawBuiltInFishingAlertGroup('Fishing catch info', 'builtInFishingCatchInfoEnabled', {
+                    { 'Easy catch', 'builtInFishingCatchEasy' },
+                    { 'Line may snap', 'builtInFishingCatchLineMaySnap' },
+                    { 'Rod may break', 'builtInFishingCatchRodMayBreak' },
+                    { 'Skill may be too low', 'builtInFishingCatchSkillMayBeTooLow' },
+                    { 'Skill is too low', 'builtInFishingCatchSkillTooLow' },
+                    { 'Line will snap', 'builtInFishingCatchLineWillSnap' },
+                    { 'Identified catch', 'builtInFishingCatchIdentified' },
+                    { 'Epic catch', 'builtInFishingCatchEpic' },
+                });
                 imgui.EndTable();
             end
         else
@@ -11081,6 +11477,8 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
             DrawCheckbox('Learned Blue Magic', settings.builtInBlueMagicEnabled ~= false, function(value) settings.builtInBlueMagicEnabled = value == true; state.Save(); end);
             DrawCheckbox('Dynamis', settings.builtInDynamisEnabled ~= false, function(value) settings.builtInDynamisEnabled = value == true; state.Save(); end);
             DrawCheckbox('Incursion', settings.builtInIncursionEnabled ~= false, function(value) settings.builtInIncursionEnabled = value == true; state.Save(); end);
+            DrawCheckbox('Fishing hook type', settings.builtInFishingHookTypeEnabled ~= false, function(value) settings.builtInFishingHookTypeEnabled = value == true; state.Save(); end);
+            DrawCheckbox('Fishing catch info', settings.builtInFishingCatchInfoEnabled ~= false, function(value) settings.builtInFishingCatchInfoEnabled = value == true; state.Save(); end);
         end
         imgui.TextColored({ 0.36, 0.39, 0.43, 1.0 }, '------------------------------------------------');
     end
@@ -11111,73 +11509,12 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
     end
 
     local function DrawAlertsPanel(label, render, first)
-        local panelGap = 8;
-        local panelPadX = 16;
-        local panelPadY = 10;
-        local topGap = (first == true) and 2 or panelGap;
-
-        if (imgui.Dummy ~= nil) then
-            imgui.Dummy({ 1, topGap });
-        else
-            imgui.Spacing();
-        end
-
-        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-            local availWidth = select(1, GetContentRegionAvail());
-            local cardWidth = math.max(260, (tonumber(availWidth) or 260) - 16);
-            local colorCount = 0;
-
-            if (imgui.PushStyleColor ~= nil) then
-                if (_G.ImGuiCol_TableRowBg ~= nil) then
-                    imgui.PushStyleColor(_G.ImGuiCol_TableRowBg, LibraPlatesSettingsPalette.panelBg);
-                    colorCount = colorCount + 1;
-                end
-                if (_G.ImGuiCol_TableRowBgAlt ~= nil) then
-                    imgui.PushStyleColor(_G.ImGuiCol_TableRowBgAlt, LibraPlatesSettingsPalette.panelBg);
-                    colorCount = colorCount + 1;
-                end
-            end
-
-            if (imgui.BeginTable('##ScreenAlertsPanel' .. tostring(label or ''), 1, (_G.ImGuiTableFlags_RowBg or 0), { cardWidth, 0 })) then
-                imgui.TableSetupColumn('##card', 0, cardWidth);
-                imgui.TableNextRow();
-                imgui.TableNextColumn();
-
-                if (imgui.Dummy ~= nil) then imgui.Dummy({ 1, panelPadY }); end
-                if (imgui.Indent ~= nil) then imgui.Indent(panelPadX); end
-
-                DrawYellowHeader(tostring(label or ''));
-                imgui.Spacing();
-
-                render();
-
-                if (imgui.Unindent ~= nil) then imgui.Unindent(panelPadX); end
-                if (imgui.Dummy ~= nil) then imgui.Dummy({ 1, panelPadY }); end
-                imgui.EndTable();
-            end
-
-            if (colorCount > 0 and imgui.PopStyleColor ~= nil) then
-                imgui.PopStyleColor(colorCount);
-            end
-
-            return;
-        end
-
-        DrawYellowHeader(tostring(label or ''));
-        render();
+        LibraPlatesSettingsDrawBoxedPanel(label, render, first);
     end
 
     if (useBoxedPage == true) then
         LibraPlatesSettingsDrawBoxedBreadcrumb(T{ 'Settings', 'Screen Alerts' });
 
-        local pageWidth, pageHeight = GetContentRegionAvail();
-        local pushedPageBg = 0;
-        if (imgui.PushStyleColor ~= nil and _G.ImGuiCol_ChildBg ~= nil) then
-            imgui.PushStyleColor(_G.ImGuiCol_ChildBg, LibraPlatesSettingsPalette.shellBg);
-            pushedPageBg = 1;
-        end
-
-        imgui.BeginChild('##ScreenAlertsPageContent', { math.max(280, tonumber(pageWidth) or 280), math.max(260, tonumber(pageHeight) or 260) }, false);
         if (imgui.Indent ~= nil) then imgui.Indent(16); end
 
         DrawAlertsPanel('Screen Alerts', function()
@@ -11212,11 +11549,6 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         end);
 
         if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
-        imgui.EndChild();
-
-        if (pushedPageBg > 0 and imgui.PopStyleColor ~= nil) then
-            imgui.PopStyleColor(pushedPageBg);
-        end
 
     else
         DrawContent();
@@ -11582,7 +11914,9 @@ if (selectedTab == 'Modules') then
 
         if (selectedModuleName == 'Peer') then
             local storageEntity = GetStorageEntity(selectedModuleEntity);
-            LibraPlatesSettingsDrawPeerModuleSettings(state.GetGlobalSettings(globalDefaults), {
+            local storageState = GetWidgetStorageState(selectedModuleEntity, selectedModuleState, 'Peer (module)');
+            local peerSettings = state.GetWidgetSettings(storageEntity, storageState, 'Peer', { enabled = true });
+            LibraPlatesSettingsDrawPeerModuleSettings({ peer = peerSettings }, {
                 entity = storageEntity,
                 hideDisplayMode = storageEntity == 'Self' or storageEntity == 'PC',
                 hideSections = storageEntity == 'Self' or storageEntity == 'PC',
@@ -11656,6 +11990,11 @@ local function DrawSelectedEditorPlatesTargetWidgets()
 end
 
 local function DrawSelectedEditorPlatesModules()
+    if (LibraPlatesSettingsIsFishingHudWidget(selectedWidget) == true) then
+        LibraPlatesSettingsDrawFishingModuleSettings(state.GetGlobalSettings(globalDefaults), true, selectedWidget);
+        return;
+    end
+
     if (selectedWidget == 'Peer (module)') then
         local storageEntity = GetStorageEntity(selectedEntity);
         local storageState = GetWidgetStorageState(selectedEntity, selectedState, selectedWidget);
@@ -11724,6 +12063,7 @@ function LibraPlatesSettingsIsBoxedSpecialPlateModule(widgetName)
     local widget = tostring(widgetName or '');
 
     return (
+        LibraPlatesSettingsIsFishingHudWidget(widget) == true or
         widget == 'Peer (module)' or
         widget == 'Target (module)' or
         widget == 'Subtarget (module)' or
@@ -11761,7 +12101,7 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
         globalSettings.crafting = globalSettings.crafting or {};
         moduleSettings = globalSettings.crafting;
         moduleDefaults = globalDefaults.crafting;
-    elseif (selectedWidget == 'Fishing (module)') then
+    elseif (selectedWidget == 'Fishing (module)' or LibraPlatesSettingsIsFishingHudWidget(selectedWidget) == true) then
         globalSettings.fishing = globalSettings.fishing or {};
         moduleSettings = globalSettings.fishing;
         moduleDefaults = globalDefaults.fishing;
@@ -11796,6 +12136,7 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
         local headerLabelWidth = 120;
         local headerMaxControlWidth = math.max(80, (tonumber(headerInnerWidth) or 260) - headerLabelWidth - 6);
         local showHeaderAnchor = (
+            LibraPlatesSettingsIsFishingHudWidget(selectedWidget) ~= true and
             selectedWidget ~= 'Quick Menu (module)' and
             selectedWidget ~= 'Peer (module)' and
             selectedWidget ~= 'Target (module)' and
@@ -11896,7 +12237,8 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
         end
     end, (
         selectedWidget == 'Quick Menu (module)' or
-        selectedWidget == 'Peer (module)'
+        selectedWidget == 'Peer (module)' or
+        LibraPlatesSettingsIsFishingHudWidget(selectedWidget) == true
     ) and 48 or 76);
 
     if (imgui.Spacing ~= nil) then
@@ -11925,6 +12267,8 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
         LibraPlatesSettingsDrawCraftingModuleSettings(state.GetGlobalSettings(globalDefaults), true);
     elseif (selectedWidget == 'Fishing (module)') then
         LibraPlatesSettingsDrawFishingModuleSettings(state.GetGlobalSettings(globalDefaults), true);
+    elseif (LibraPlatesSettingsIsFishingHudWidget(selectedWidget) == true) then
+        LibraPlatesSettingsDrawFishingModuleSettings(state.GetGlobalSettings(globalDefaults), true, selectedWidget);
     elseif (selectedWidget == 'Gathering (module)') then
         LibraPlatesSettingsDrawGatheringModuleSettings(state.GetGlobalSettings(globalDefaults), true);
     elseif (selectedWidget == 'Quick Menu (module)') then
@@ -12133,7 +12477,7 @@ function LibraPlatesSettingsGetBoxedPlateWidgetInfo()
             extras.resourceName = 'TP';
         end
 
-        extras.showOutOfRangeOpacity = widgetName == 'HP Bar' and storageEntity == 'PC' and LibraPlatesSettingsToStorageStateName(selectedState) == 'Combat';
+        extras.showOutOfRangeOpacity = widgetName == 'HP Bar' and storageEntity == 'PC';
         drawFn = widgets.bar.DrawSettings;
     elseif (widgetName == 'Cast bar') then
         defaults = storageEntity == 'Pet (SMN)' and smnCastBarDefaults or castBarDefaults;
@@ -12617,7 +12961,7 @@ local function DrawSelectedEditorPlates()
             resourceName = resourceName,
             defaults = defaults,
             showValueControl = showValue,
-            showOutOfRangeOpacity = selectedWidget == 'HP Bar' and storageEntity == 'PC' and LibraPlatesSettingsToStorageStateName(selectedState) == 'Combat',
+            showOutOfRangeOpacity = selectedWidget == 'HP Bar' and storageEntity == 'PC',
             anchorChoices = _G.LibraPlatesSettingsGetAnchorChoices(selectedEntity, selectedState, selectedWidget),
             hideActive = true,
         });
@@ -12788,6 +13132,7 @@ function settingsUi.Render()
         EnsureSelectedStateAllowed();
         EnsureSelectedWidgetAllowed();
     end
+    settingsUi.SyncScreenAlertsPreviewVisibility();
 
     windowOpen[1] = true;
 

@@ -558,7 +558,7 @@ local function GetLiveSelfStateName(center)
 end
 
 local function GetLayoutStateName(stateName)
-    if (stateName == 'Resting') then
+    if (stateName == 'Resting' or stateName == 'Fishing') then
         return 'Idle';
     end
 
@@ -799,7 +799,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local targetMarker, targetMarkerActive = BuildTargetMarkerIfEnabled(layoutStateName, targetStateName, hpBarSettings);
     local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(center.index, 'self');
     local enmityActive = globalSettings.enmity ~= nil and globalSettings.enmity.enabled == true and enmity.ShouldDrawAlly(center, globalSettings) == true;
-    local fishingActive = stateName == 'Fishing' and globalSettings.fishing ~= nil and globalSettings.fishing.enabled ~= false;
+    local fishingActive = (stateName == 'Fishing' or fishing.IsSessionActive() == true) and globalSettings.fishing ~= nil and globalSettings.fishing.enabled ~= false;
     local craftingActive = stateName == 'Crafting' and globalSettings.crafting ~= nil and globalSettings.crafting.enabled ~= false;
     local gatheringActive = globalSettings.gathering ~= nil and globalSettings.gathering.enabled ~= false and targeting.GetGatheringDisplayInfo() ~= nil;
     local restingActive = stateName == 'Resting' and restingSettings.enabled ~= false;
@@ -829,7 +829,6 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         targetMarkerActive ~= true and
         nameAoeActive ~= true and
         enmityActive ~= true and
-        fishingActive ~= true and
         craftingActive ~= true and
         gatheringActive ~= true and
         restingActive ~= true
@@ -1063,6 +1062,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         'color=' .. StableTableKey(nameAoeActive == true and aoeRangeSettings.fontColor or nameColor),
         'icon=' .. tostring(aoeRangeSettings.iconEnabled == true) .. ':' .. tostring(aoeRangeSettings.iconSize or '') .. ':' .. tostring(aoeRangeSettings.iconOffsetX or '') .. ':' .. tostring(aoeRangeSettings.iconOffsetY or ''),
     }, ';');
+    local streamerNames = require('core.streamer_names');
+    local displayName = streamerNames.GetSelfDisplayName(center.name, targeting.GetSettings());
 
     local plateData = {
         hp = hpPercent,
@@ -1084,7 +1085,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
-        name = nameEnabled and center.name or '',
+        name = nameEnabled and displayName or '',
         aoeNameActive = nameAoeActive == true,
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
@@ -1226,9 +1227,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
-    if (fishingActive == true) then
-        fishing.AddIcon(plateData, globalSettings.fishing);
-    else
+    if (fishingActive ~= true) then
         fishing.ClearResult();
     end
 
@@ -1470,7 +1469,7 @@ function selfPlate.Render()
     local stateName = GetLiveSelfStateName(center);
     local nameSettings = state.GetWidgetSettings('Self', GetLayoutStateName(stateName), 'Name', nameDefaults);
 
-    if (stateName ~= 'Fishing') then
+    if (stateName ~= 'Fishing' and fishing.IsSessionActive() ~= true) then
         fishing.ClearResult();
     end
 
@@ -1493,7 +1492,9 @@ function selfPlate.Render()
     DrawBackground(drawList, bounds);
 
     if (nativeUiPolicy.ShouldDrawLibraNames() == true) then
-        widgets.name.Draw({ name = center.name }, BuildAoeNameSettings(GetLayoutStateName(stateName), nameSettings, center.index), {
+        local streamerNames = require('core.streamer_names');
+        local displayName = streamerNames.GetSelfDisplayName(center.name, targeting.GetSettings());
+        widgets.name.Draw({ name = displayName }, BuildAoeNameSettings(GetLayoutStateName(stateName), nameSettings, center.index), {
             drawList = drawList,
             bounds = bounds,
             canvas = canvas,

@@ -1291,10 +1291,10 @@ function bar.DrawSettings(settings, context)
 
             if (context ~= nil and context.showOutOfRangeOpacity == true) then
                 if (imgui.Spacing ~= nil) then imgui.Spacing(); end
-                settings.outOfRangeOpacityEnabled = DrawToggle('Use out-of-range fill color', settings.outOfRangeOpacityEnabled);
+                settings.outOfRangeOpacityEnabled = DrawToggle('Use out of range color', settings.outOfRangeOpacityEnabled);
 
                 if (settings.outOfRangeOpacityEnabled == true) then
-                    imgui.TextColored(labelColor, 'Fill color');
+                    imgui.TextColored(labelColor, 'Out of range color');
                     imgui.SameLine();
                     settings.outOfRangeColor = DrawColor(idPrefix .. 'out_of_range_color', settings.outOfRangeColor);
                 end
@@ -1439,10 +1439,10 @@ function bar.DrawSettings(settings, context)
     if (resourceName == 'HP' and context ~= nil and context.showOutOfRangeOpacity == true) then
         DrawInnerBreak();
         DrawInnerHeader('Out of range:');
-        settings.outOfRangeOpacityEnabled = DrawToggle('Use out-of-range fill color', settings.outOfRangeOpacityEnabled);
+        settings.outOfRangeOpacityEnabled = DrawToggle('Use out of range color', settings.outOfRangeOpacityEnabled);
 
         if (settings.outOfRangeOpacityEnabled == true) then
-            imgui.TextColored(labelColor, 'Fill color');
+            imgui.TextColored(labelColor, 'Out of range color');
             imgui.SameLine();
             settings.outOfRangeColor = DrawColor(idPrefix .. 'out_of_range_color', settings.outOfRangeColor);
         end

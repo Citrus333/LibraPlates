@@ -39,6 +39,18 @@ local hardHideBurstFrames = 0;
 local hardHideEveryDrawWrites = 0;
 local hardHideFrameWritten = false;
 local primitiveVisibilityAddresses = {};
+local targetWindowProbePrevious = nil;
+local fishingBarCaptureEnabled = false;
+local fishingBarFrame = 0;
+local fishingBarRects = {};
+local fishingBarFrameBackground = nil;
+local fishingBarFrameFill = nil;
+local fishingBarLastState = nil;
+local fishingBarProbeUntil = 0;
+local fishingBarProbeNextLog = 0;
+local fishingBarProbePrimitiveHits = 0;
+local fishingBarProbeIndexedHits = 0;
+local fishingBarProbeLastText = 'not run';
 
 local function SafeCall(fallback, fn)
     local ok, result = pcall(fn);
@@ -198,6 +210,290 @@ local function ParseRect(rect)
     return tonumber(x), tonumber(y), tonumber(width), tonumber(height);
 end
 
+local function IsFishingBarCandidateRect(rect)
+    local x, y, width, height = ParseRect(rect);
+
+    if (x == nil or y == nil or width == nil or height == nil) then
+        return false;
+    end
+
+    -- The native fish stamina bar is fixed in the upper UI area. Keeping capture
+    -- here prevents tiny chat glyph quads from being mistaken for the final sliver.
+    if (y < 20 or y > 320) then
+        return false;
+    end
+
+    if (width < 1 or width > 240 or height < 2 or height > 18) then
+        return false;
+    end
+
+    if (x < -20 or y < -20 or x > 4096 or y > 4096) then
+        return false;
+    end
+
+    return width >= 1 and (width > (height * 5) or width <= 48);
+end
+
+local function IsFishingBarProbeActive()
+    return os.clock() <= (tonumber(fishingBarProbeUntil) or 0);
+end
+
+local function IsKnownFishingBarRect(rect)
+    if (fishingBarLastState == nil) then
+        return false;
+    end
+
+    local x, y, width, height = ParseRect(rect);
+    local knownX = tonumber(fishingBarLastState.x);
+    local knownY = tonumber(fishingBarLastState.y);
+    local knownWidth = tonumber(fishingBarLastState.width);
+    local knownHeight = tonumber(fishingBarLastState.height);
+
+    if (
+        x == nil or y == nil or width == nil or height == nil or
+        knownX == nil or knownY == nil or knownWidth == nil or knownHeight == nil
+    ) then
+        return false;
+    end
+
+    local age = os.clock() - (tonumber(fishingBarLastState.clock) or 0);
+    if (age > 0.50) then
+        return false;
+    end
+
+    -- The native "Fish" label is drawn just above the bar as small glyph quads,
+    -- and the final low-stamina sliver can be only a few pixels wide. Use a
+    -- learned local footprint around the real bar instead of a broad screen rule.
+    local left = knownX - 24;
+    local right = knownX + knownWidth + 24;
+    local top = knownY - 28;
+    local bottom = knownY + knownHeight + 12;
+
+    return
+        (x + width) >= left and
+        x <= right and
+        (y + height) >= top and
+        y <= bottom;
+end
+
+local function AddFishingBarCandidate(rect, source)
+    local x, y, width, height = ParseRect(rect);
+
+    if (x == nil or y == nil or width == nil or height == nil) then
+        return;
+    end
+
+    local candidate = {
+        x = x,
+        y = y,
+        width = width,
+        height = height,
+        source = source or 'unknown',
+    };
+
+    if (source == 'indexed') then
+        fishingBarProbeIndexedHits = fishingBarProbeIndexedHits + 1;
+    else
+        fishingBarProbePrimitiveHits = fishingBarProbePrimitiveHits + 1;
+    end
+
+    if (width >= 80) then
+        fishingBarRects[#fishingBarRects + 1] = candidate;
+        return;
+    end
+
+    local smallCount = 0;
+    for _, existing in ipairs(fishingBarRects) do
+        if ((tonumber(existing.width) or 0) < 80) then
+            smallCount = smallCount + 1;
+        end
+    end
+
+    if (smallCount < 32) then
+        fishingBarRects[#fishingBarRects + 1] = candidate;
+    end
+end
+
+local function UpdateFishingBarStateFromFrame()
+    if (#fishingBarRects < 2) then
+        fishingBarProbeLastText =
+            'fishbar capture enabled=' .. tostring(fishingBarCaptureEnabled == true) ..
+            ' frame=' .. tostring(fishingBarFrame) ..
+            ' rects=' .. tostring(#fishingBarRects) ..
+            ' primitive=' .. tostring(fishingBarProbePrimitiveHits) ..
+            ' indexed=' .. tostring(fishingBarProbeIndexedHits) ..
+            ' state=none';
+        return;
+    end
+
+    local best = nil;
+    local bestBackground = nil;
+    local bestOrphanFill = nil;
+    local backgroundCount = 0;
+    local fillCount = 0;
+
+    local knownX = fishingBarLastState ~= nil and tonumber(fishingBarLastState.x) or nil;
+    local knownY = fishingBarLastState ~= nil and tonumber(fishingBarLastState.y) or nil;
+    local knownWidth = fishingBarLastState ~= nil and tonumber(fishingBarLastState.width) or nil;
+    local knownHeight = fishingBarLastState ~= nil and tonumber(fishingBarLastState.height) or nil;
+
+    if (knownX ~= nil and knownY ~= nil and knownWidth ~= nil and knownHeight ~= nil) then
+        for _, candidate in ipairs(fishingBarRects) do
+            if (
+                candidate.width < 80 and
+                candidate.width >= 1 and
+                candidate.height >= 2 and
+                candidate.height <= (knownHeight + 2) and
+                math.abs(candidate.x - knownX) <= 4 and
+                math.abs(candidate.y - (knownY + 1)) <= 5
+            ) then
+                if (bestOrphanFill == nil or candidate.width > bestOrphanFill.width) then
+                    bestOrphanFill = candidate;
+                end
+            end
+        end
+    end
+
+    for _, background in ipairs(fishingBarRects) do
+        if (background.width >= 80) then
+            backgroundCount = backgroundCount + 1;
+            if (bestBackground == nil or background.width > bestBackground.width) then
+                bestBackground = background;
+            end
+            for _, fill in ipairs(fishingBarRects) do
+                if (
+                    fill ~= background and
+                    fill.width < background.width and
+                    fill.width >= 1 and
+                    math.abs(fill.x - background.x) <= 3 and
+                    math.abs(fill.y - background.y) <= 4 and
+                    math.abs(fill.height - background.height) <= 6
+                ) then
+                    fillCount = fillCount + 1;
+                    local progress = fill.width / math.max(1, background.width);
+                    if (progress >= 0 and progress <= 1.05) then
+                        local score = background.width - math.abs(fill.height - background.height);
+                        if (best == nil or score > best.score) then
+                            best = {
+                                progress = math.max(0, math.min(1, progress)),
+                                background = background,
+                                fill = fill,
+                                score = score,
+                            };
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if (best ~= nil) then
+        local background = best.background;
+        local fill = best.fill;
+        fishingBarLastState = {
+            progress = best.progress * 100,
+            text = tostring(math.floor((best.progress * 100) + 0.5)) .. '%',
+            labelText = 'Fish',
+            x = background.x,
+            y = background.y,
+            width = background.width,
+            height = background.height,
+            fillWidth = fill.width,
+            clock = os.clock(),
+            source = 'native-geometry',
+        };
+        fishingBarProbeLastText =
+            'fishbar capture enabled=' .. tostring(fishingBarCaptureEnabled == true) ..
+            ' frame=' .. tostring(fishingBarFrame) ..
+            ' rects=' .. tostring(#fishingBarRects) ..
+            ' bg=' .. tostring(backgroundCount) ..
+            ' fill=' .. tostring(fillCount) ..
+            ' primitive=' .. tostring(fishingBarProbePrimitiveHits) ..
+            ' indexed=' .. tostring(fishingBarProbeIndexedHits) ..
+            ' progress=' .. tostring(math.floor((best.progress * 100) + 0.5)) ..
+            ' bgRect=' .. tostring(background.x) .. ',' .. tostring(background.y) .. ',' .. tostring(background.width) .. 'x' .. tostring(background.height) ..
+            ' fillRect=' .. tostring(fill.x) .. ',' .. tostring(fill.y) .. ',' .. tostring(fill.width) .. 'x' .. tostring(fill.height);
+    elseif (bestOrphanFill ~= nil and knownWidth ~= nil and knownWidth > 0) then
+        local fill = bestOrphanFill;
+        fishingBarLastState = {
+            progress = 0,
+            text = '0%',
+            labelText = 'Fish',
+            x = knownX,
+            y = knownY,
+            width = knownWidth,
+            height = knownHeight,
+            fillWidth = 0,
+            clock = os.clock(),
+            source = 'native-geometry-empty',
+        };
+        fishingBarProbeLastText =
+            'fishbar capture enabled=' .. tostring(fishingBarCaptureEnabled == true) ..
+            ' frame=' .. tostring(fishingBarFrame) ..
+            ' rects=' .. tostring(#fishingBarRects) ..
+            ' bg=' .. tostring(backgroundCount) ..
+            ' fill=' .. tostring(fillCount) ..
+            ' primitive=' .. tostring(fishingBarProbePrimitiveHits) ..
+            ' indexed=' .. tostring(fishingBarProbeIndexedHits) ..
+            ' progress=0' ..
+            ' bgRect=last' ..
+            ' orphanHidden=' .. tostring(fill.x) .. ',' .. tostring(fill.y) .. ',' .. tostring(fill.width) .. 'x' .. tostring(fill.height);
+    elseif (bestBackground ~= nil) then
+        local background = bestBackground;
+        fishingBarLastState = {
+            progress = 0,
+            text = '0%',
+            labelText = 'Fish',
+            x = background.x,
+            y = background.y,
+            width = background.width,
+            height = background.height,
+            fillWidth = 0,
+            clock = os.clock(),
+            source = 'native-geometry-empty',
+        };
+        fishingBarProbeLastText =
+            'fishbar capture enabled=' .. tostring(fishingBarCaptureEnabled == true) ..
+            ' frame=' .. tostring(fishingBarFrame) ..
+            ' rects=' .. tostring(#fishingBarRects) ..
+            ' bg=' .. tostring(backgroundCount) ..
+            ' fill=' .. tostring(fillCount) ..
+            ' primitive=' .. tostring(fishingBarProbePrimitiveHits) ..
+            ' indexed=' .. tostring(fishingBarProbeIndexedHits) ..
+            ' progress=0' ..
+            ' bgRect=' .. tostring(background.x) .. ',' .. tostring(background.y) .. ',' .. tostring(background.width) .. 'x' .. tostring(background.height) ..
+            ' fillRect=none';
+    else
+        fishingBarProbeLastText =
+            'fishbar capture enabled=' .. tostring(fishingBarCaptureEnabled == true) ..
+            ' frame=' .. tostring(fishingBarFrame) ..
+            ' rects=' .. tostring(#fishingBarRects) ..
+            ' bg=' .. tostring(backgroundCount) ..
+            ' fill=' .. tostring(fillCount) ..
+            ' primitive=' .. tostring(fishingBarProbePrimitiveHits) ..
+            ' indexed=' .. tostring(fishingBarProbeIndexedHits) ..
+            ' state=no-pair';
+    end
+end
+
+local function BeginFishingBarFrame()
+    fishingBarFrame = fishingBarFrame + 1;
+    fishingBarRects = {};
+    fishingBarFrameBackground = nil;
+    fishingBarFrameFill = nil;
+    fishingBarProbePrimitiveHits = 0;
+    fishingBarProbeIndexedHits = 0;
+end
+
+local function HasFreshFishingBarState(maxAge)
+    if (fishingBarLastState == nil) then
+        return false;
+    end
+
+    maxAge = tonumber(maxAge) or 0.20;
+    return (os.clock() - (tonumber(fishingBarLastState.clock) or 0)) <= maxAge;
+end
+
 local function IsBlockableUiRect(rect)
     local _, _, width, height = ParseRect(rect);
 
@@ -330,6 +626,18 @@ local function GetPartyTraceFilePath()
     end
 
     return 'TEMP WORK FOLDER\\native_party_trace.txt';
+end
+
+local function GetTargetWindowProbeFilePath()
+    local ok, root = pcall(function()
+        return AshitaCore:GetInstallPath() .. '\\addons\\LibraPlates\\';
+    end);
+
+    if (ok == true and root ~= nil) then
+        return tostring(root) .. 'TEMP WORK FOLDER\\native_fishing_bar_probe.txt';
+    end
+
+    return 'TEMP WORK FOLDER\\native_fishing_bar_probe.txt';
 end
 
 local function WriteTraceLine(message)
@@ -822,6 +1130,171 @@ function nativeTargetArrow.WriteTargetWindowStatus(label)
     WritePartyTraceLine(line);
 end
 
+local function AddTargetWindowProbePointer(rows, seen, label, pointer)
+    pointer = tonumber(pointer) or 0;
+
+    if (pointer == 0 or seen[pointer] == true) then
+        return;
+    end
+
+    seen[pointer] = true;
+    rows[#rows + 1] = {
+        label = label,
+        pointer = pointer,
+    };
+end
+
+local function CollectTargetWindowProbePointers()
+    ResolvePointers();
+
+    local rows = {};
+    local seen = {};
+    local refPointer = tonumber(targetPrimitivePointer) or 0;
+    local level1Pointer = refPointer ~= 0 and (ReadUInt32(refPointer) or 0) or 0;
+    local level2Pointer = level1Pointer ~= 0 and (ReadUInt32(level1Pointer + 0x08) or 0) or 0;
+    local level3Pointer = level2Pointer ~= 0 and (ReadUInt32(level2Pointer + 0x08) or 0) or 0;
+    local windows = {
+        { label = 'ref', pointer = refPointer },
+        { label = 'level1', pointer = level1Pointer },
+        { label = 'level2', pointer = level2Pointer },
+        { label = 'level3', pointer = level3Pointer },
+    };
+
+    for _, window in ipairs(windows) do
+        AddTargetWindowProbePointer(rows, seen, window.label, window.pointer);
+
+        local windowPointer = tonumber(window.pointer) or 0;
+        if (windowPointer ~= 0) then
+            AddTargetWindowProbePointer(rows, seen, window.label .. '.lock', ReadUInt32(windowPointer + 0x5C) or 0);
+
+            for index = 0, 15 do
+                AddTargetWindowProbePointer(
+                    rows,
+                    seen,
+                    window.label .. '.shape' .. tostring(index),
+                    ReadUInt32(windowPointer + 0x78 + (index * 4)) or 0
+                );
+            end
+        end
+    end
+
+    return rows;
+end
+
+local function IsUsefulProbeFloat(value)
+    value = tonumber(value);
+
+    if (value == nil or value ~= value) then
+        return false;
+    end
+
+    return value > -100000 and value < 100000;
+end
+
+local function CaptureTargetWindowProbeSnapshot(label)
+    local snapshot = {
+        label = tostring(label or 'probe'),
+        clock = os.clock(),
+        values = {},
+    };
+    local pointers = CollectTargetWindowProbePointers();
+
+    for _, row in ipairs(pointers) do
+        local pointer = tonumber(row.pointer) or 0;
+        local baseKey = tostring(row.label) .. '@' .. FormatHex(pointer);
+
+        snapshot.values[baseKey .. '.u8.6C'] = ReadUInt8(pointer + 0x6C);
+        snapshot.values[baseKey .. '.u8.B8'] = ReadUInt8(pointer + 0xB8);
+        snapshot.values[baseKey .. '.u8.BA'] = ReadUInt8(pointer + 0xBA);
+        snapshot.values[baseKey .. '.i16.BC'] = ReadInt16(pointer + 0xBC);
+        snapshot.values[baseKey .. '.i16.BE'] = ReadInt16(pointer + 0xBE);
+        snapshot.values[baseKey .. '.i16.C0'] = ReadInt16(pointer + 0xC0);
+        snapshot.values[baseKey .. '.i16.C2'] = ReadInt16(pointer + 0xC2);
+
+        for offset = 0, 0x120, 4 do
+            local floatValue = ReadFloat(pointer + offset);
+            if (IsUsefulProbeFloat(floatValue) == true) then
+                snapshot.values[baseKey .. '.f.' .. string.format('%03X', offset)] = tonumber(string.format('%.4f', floatValue));
+            end
+
+            local intValue = ReadUInt32(pointer + offset);
+            if (intValue ~= nil and intValue ~= 0 and intValue < 0x01000000) then
+                snapshot.values[baseKey .. '.u32.' .. string.format('%03X', offset)] = intValue;
+            end
+        end
+    end
+
+    return snapshot;
+end
+
+local function FormatProbeValue(value)
+    if (value == nil) then
+        return 'nil';
+    end
+
+    if (type(value) == 'number') then
+        return tostring(value);
+    end
+
+    return tostring(value);
+end
+
+local function FormatTargetWindowProbeDiff(previous, current, limit)
+    if (previous == nil) then
+        return 'first sample';
+    end
+
+    local rows = {};
+
+    for key, value in pairs(current.values or {}) do
+        local oldValue = previous.values ~= nil and previous.values[key] or nil;
+        if (oldValue ~= value) then
+            rows[#rows + 1] = key .. ':' .. FormatProbeValue(oldValue) .. '>' .. FormatProbeValue(value);
+        end
+    end
+
+    table.sort(rows);
+
+    local parts = {};
+    for index = 1, math.min(#rows, limit or 80) do
+        parts[#parts + 1] = rows[index];
+    end
+
+    if (#rows > #parts) then
+        parts[#parts + 1] = '...+' .. tostring(#rows - #parts) .. ' more';
+    end
+
+    if (#parts == 0) then
+        return 'no changes';
+    end
+
+    return table.concat(parts, ' | ');
+end
+
+function nativeTargetArrow.WriteTargetWindowProbe(label)
+    local snapshot = CaptureTargetWindowProbeSnapshot(label);
+    local diff = FormatTargetWindowProbeDiff(targetWindowProbePrevious, snapshot, 120);
+    local file = io.open(GetTargetWindowProbeFilePath(), targetWindowProbePrevious == nil and 'w' or 'a');
+
+    if (file ~= nil) then
+        if (targetWindowProbePrevious == nil) then
+            file:write('LibraPlates native fishing bar probe\n');
+        end
+
+        file:write('sample=' .. tostring(snapshot.label) .. ' clock=' .. string.format('%.3f', snapshot.clock) .. '\n');
+        file:write('status ' .. nativeTargetArrow.GetTargetWindowStatusText() .. '\n');
+        file:write('diff ' .. diff .. '\n');
+        file:close();
+    end
+
+    targetWindowProbePrevious = snapshot;
+    return diff;
+end
+
+function nativeTargetArrow.GetTargetWindowProbeFilePath()
+    return GetTargetWindowProbeFilePath();
+end
+
 function nativeTargetArrow.SetTraceEnabled(value)
     traceEnabled = value == true;
     traceFrame = 0;
@@ -908,6 +1381,49 @@ function nativeTargetArrow.GetPartyBlockEnabled()
     return partyBlockEnabled == true;
 end
 
+function nativeTargetArrow.SetFishingBarCaptureEnabled(value)
+    fishingBarCaptureEnabled = value == true;
+
+    if (fishingBarCaptureEnabled ~= true) then
+        fishingBarRects = {};
+        fishingBarFrameBackground = nil;
+        fishingBarFrameFill = nil;
+        fishingBarLastState = nil;
+    end
+end
+
+function nativeTargetArrow.GetFishingBarCaptureEnabled()
+    return fishingBarCaptureEnabled == true;
+end
+
+function nativeTargetArrow.GetFishingBarState(maxAge)
+    if (fishingBarLastState == nil) then
+        return nil;
+    end
+
+    maxAge = tonumber(maxAge) or 0.35;
+    if ((os.clock() - (tonumber(fishingBarLastState.clock) or 0)) > maxAge) then
+        return nil;
+    end
+
+    return fishingBarLastState;
+end
+
+function nativeTargetArrow.StartFishingBarProbe(seconds)
+    local duration = math.max(1, tonumber(seconds) or 15);
+    fishingBarProbeUntil = os.clock() + duration;
+    fishingBarProbeNextLog = 0;
+    log.Info('Fishing bar probe started for ' .. tostring(duration) .. 's. Hook a fish now.');
+end
+
+function nativeTargetArrow.GetFishingBarProbeStatusText()
+    local stateAge = fishingBarLastState ~= nil and (os.clock() - (tonumber(fishingBarLastState.clock) or 0)) or nil;
+
+    return tostring(fishingBarProbeLastText) ..
+        ' probeActive=' .. tostring(IsFishingBarProbeActive() == true) ..
+        ' lastAge=' .. tostring(stateAge ~= nil and string.format('%.2f', stateAge) or 'nil');
+end
+
 function nativeTargetArrow.SetHardHideEveryDrawEnabled(value)
     hardHideManualEnabled = value == true;
     hardHideEveryDrawWrites = 0;
@@ -931,6 +1447,7 @@ function nativeTargetArrow.ShouldUseDrawHooks()
         partyTraceEnabled == true or
         drawBlockFrames > 0 or
         partyBlockEnabled == true or
+        fishingBarCaptureEnabled == true or
         hardHideManualEnabled == true or
         hardHideBurstFrames > 0;
 end
@@ -1006,9 +1523,9 @@ function nativeTargetArrow.HandleDrawPrimitiveUp(e)
         partyTraceFrames > 0;
     local partyBlockActive =
         partyBlockEnabled == true and
-        hideAllPrimitiveEnabled == true;
+        (hideAllPrimitiveEnabled == true or fishingBarCaptureEnabled == true);
 
-    if (shouldInspect == true and (blockBurstActive == true or partyBlockActive == true or traceBurstActive == true or partyTraceActive == true)) then
+    if (shouldInspect == true and (blockBurstActive == true or partyBlockActive == true or traceBurstActive == true or partyTraceActive == true or fishingBarCaptureEnabled == true)) then
         rect = GetVertexRect(
             e.vertex_stream_zero_data,
             e.vertex_stream_zero_stride,
@@ -1027,6 +1544,13 @@ function nativeTargetArrow.HandleDrawPrimitiveUp(e)
                     (stride == 20 and IsPartyWindowRect(rect) == true)
                 )
             );
+
+        if (fishingBarCaptureEnabled == true and IsFishingBarCandidateRect(rect) == true) then
+            AddFishingBarCandidate(rect, 'primitive');
+            if (IsKnownFishingBarRect(rect) == true) then
+                shouldBlock = true;
+            end
+        end
 
         if (partyTraceActive == true and stride == 20 and IsCandidateUiRect(rect) == true) then
             AddPartyTraceRect(
@@ -1073,7 +1597,7 @@ function nativeTargetArrow.HandleDrawIndexedPrimitiveUp(e)
 
     HardHidePrimitivesForDraw(true);
 
-    if (traceEnabled ~= true or e == nil) then
+    if (e == nil) then
         perfMeter.EndDetail(perfToken);
         return;
     end
@@ -1083,7 +1607,19 @@ function nativeTargetArrow.HandleDrawIndexedPrimitiveUp(e)
         e.vertex_stream_zero_stride,
         e.primitive_type,
         e.primitive_count
-    ) or '';
+    );
+
+    if (fishingBarCaptureEnabled == true and traceCapturePaused ~= true and IsFishingBarCandidateRect(rect) == true) then
+        AddFishingBarCandidate(rect, 'indexed');
+        if (IsKnownFishingBarRect(rect) == true) then
+            e.blocked = true;
+        end
+    end
+
+    if (traceEnabled ~= true) then
+        perfMeter.EndDetail(perfToken);
+        return;
+    end
 
     AddTraceKey(string.format(
         'dipup pt=%s min=%s nv=%s pc=%s stride=%s%s',
@@ -1092,7 +1628,7 @@ function nativeTargetArrow.HandleDrawIndexedPrimitiveUp(e)
         tostring(e.num_vertex_indices),
         tostring(e.primitive_count),
         tostring(e.vertex_stream_zero_stride),
-        rect
+        rect or ''
     ));
 
     perfMeter.EndDetail(perfToken);
@@ -1100,6 +1636,16 @@ end
 
 function nativeTargetArrow.EndTraceFrame()
     hardHideFrameWritten = false;
+
+    if (fishingBarCaptureEnabled == true) then
+        UpdateFishingBarStateFromFrame();
+        BeginFishingBarFrame();
+
+        if (IsFishingBarProbeActive() == true and os.clock() >= (tonumber(fishingBarProbeNextLog) or 0)) then
+            log.Info(fishingBarProbeLastText);
+            fishingBarProbeNextLog = os.clock() + 1.0;
+        end
+    end
 
     if (hardHideBurstFrames > 0) then
         hardHideBurstFrames = hardHideBurstFrames - 1;

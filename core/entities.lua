@@ -256,6 +256,35 @@ local function HasSettledCharacterModel(entityManager, index)
     return now >= entry.readyAt;
 end
 
+local function IsPlayerIndexRange(index)
+    index = tonumber(index);
+    return index ~= nil and index >= 1024 and index <= 1791;
+end
+
+local function IsInvisiblePlayerActor(entityManager, index, actorPointer)
+    if (entityManager == nil or IsPlayerIndexRange(index) ~= true or actorPointer == nil or actorPointer == 0) then
+        return false;
+    end
+
+    local ok, alphaA, alphaB, alphaC, alphaD = pcall(function()
+        return
+            ashita.memory.read_uint8(actorPointer + 0x663),
+            ashita.memory.read_uint8(actorPointer + 0x666),
+            ashita.memory.read_uint8(actorPointer + 0x667),
+            ashita.memory.read_uint8(actorPointer + 0x66C);
+    end);
+
+    if (ok ~= true) then
+        return false;
+    end
+
+    return
+        tonumber(alphaA) == 0 and
+        tonumber(alphaB) == 0 and
+        tonumber(alphaC) == 0 and
+        tonumber(alphaD) == 0;
+end
+
 function entities.GetEntityManager()
     return AshitaCore:GetMemoryManager():GetEntity();
 end
@@ -584,6 +613,10 @@ IsVisibleEntity = function(entityManager, index, requireSkeleton)
     local actorPointer = entityManager:GetActorPointer(index);
 
     if (actorPointer == nil or actorPointer == 0) then
+        return false;
+    end
+
+    if (IsInvisiblePlayerActor(entityManager, index, actorPointer) == true) then
         return false;
     end
 
@@ -1776,6 +1809,8 @@ function entities.GetEntityDebugInfo(index, maxDistance)
     local isObject = (entityType == 2 or entityType == 3);
     local isMob = IsMobIndex(entityManager, targetIndex);
     local isParty = entities.IsPartyMemberIndex(targetIndex);
+    local actorPointer = SafeCall(nil, function() return entityManager:GetActorPointer(targetIndex); end);
+    local invisibleActor = IsInvisiblePlayerActor(entityManager, targetIndex, actorPointer);
     local visible = IsVisibleEntity(entityManager, targetIndex, false);
     local visibleWithSkeleton = IsVisibleEntity(entityManager, targetIndex, true);
     local mogHouseFurniturePlaceholder = IsMogHouseFurniturePlaceholder(entityManager, targetIndex, ent);
@@ -1832,6 +1867,7 @@ function entities.GetEntityDebugInfo(index, maxDistance)
         indexAllowed = indexAllowed,
         isMob = isMob,
         isParty = isParty,
+        invisibleActor = invisibleActor,
         visible = visible,
         visibleWithSkeleton = visibleWithSkeleton,
         mogHouseFurniturePlaceholder = mogHouseFurniturePlaceholder,

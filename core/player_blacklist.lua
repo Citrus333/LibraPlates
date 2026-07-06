@@ -60,6 +60,7 @@ local function PromotePending(player)
     local existing = store.entries[idKey] or {};
     existing.name = name ~= '' and name or existing.name or pending.name;
     existing.reason = existing.reason or pending.reason or '';
+    existing.displayName = existing.displayName or pending.displayName or '';
     existing.addedAt = existing.addedAt or pending.addedAt or Now();
     existing.lastSeenAt = Now();
     existing.source = existing.source or pending.source or 'manual';
@@ -71,12 +72,14 @@ local function PromotePending(player)
     return existing;
 end
 
-function playerBlacklist.AddPlayer(player, reason, source)
+function playerBlacklist.AddPlayer(player, reason, source, displayName)
     local name = GetName(player);
+    local displayNameValue = tostring(displayName or ''):gsub('^%s+', ''):gsub('%s+$', '');
     local idKey = ServerIdKey(player ~= nil and player.serverId);
     local entry = {
         name = name,
         reason = tostring(reason or ''):gsub('^%s+', ''):gsub('%s+$', ''),
+        displayName = displayNameValue,
         addedAt = Now(),
         lastSeenAt = Now(),
         source = tostring(source or 'manual'),
@@ -88,6 +91,9 @@ function playerBlacklist.AddPlayer(player, reason, source)
         existing.name = name ~= '' and name or existing.name;
         if (entry.reason ~= '' or existing.reason == nil) then
             existing.reason = entry.reason;
+        end
+        if (entry.displayName ~= '' or existing.displayName == nil) then
+            existing.displayName = entry.displayName;
         end
         existing.addedAt = existing.addedAt or entry.addedAt;
         existing.lastSeenAt = entry.lastSeenAt;
@@ -194,14 +200,14 @@ local function ResolvePlayerToken(name)
     return GetPlayerFromTargetIndex(targeting.GetCurrentSubTargetIndex());
 end
 
-function playerBlacklist.AddName(name, reason, source)
+function playerBlacklist.AddName(name, reason, source, displayName)
     local found = ResolvePlayerToken(name) or FindNearbyPlayerByName(name);
 
     if (found ~= nil) then
-        return playerBlacklist.AddPlayer(found, reason, source or 'command');
+        return playerBlacklist.AddPlayer(found, reason, source or 'command', displayName);
     end
 
-    return playerBlacklist.AddPlayer({ name = name }, reason, source or 'command');
+    return playerBlacklist.AddPlayer({ name = name }, reason, source or 'command', displayName);
 end
 
 function playerBlacklist.RemovePlayer(playerOrName)
@@ -304,6 +310,35 @@ function playerBlacklist.SetReason(row, reason)
     return false;
 end
 
+function playerBlacklist.SetDisplayName(row, displayName)
+    if (type(row) ~= 'table') then
+        return false;
+    end
+
+    local store = EnsureStore();
+    local value = tostring(displayName or ''):gsub('^%s+', ''):gsub('%s+$', '');
+
+    if (row.serverId ~= nil) then
+        local idKey = ServerIdKey(row.serverId);
+
+        if (idKey ~= nil and store.entries[idKey] ~= nil) then
+            store.entries[idKey].displayName = value;
+            state.SaveThrottled(0.50);
+            return true;
+        end
+    end
+
+    local nameKey = NormalizeName(row.name);
+
+    if (nameKey ~= '' and store.pendingNames[nameKey] ~= nil) then
+        store.pendingNames[nameKey].displayName = value;
+        state.SaveThrottled(0.50);
+        return true;
+    end
+
+    return false;
+end
+
 function playerBlacklist.GetEntry(player)
     local idKey = ServerIdKey(player ~= nil and player.serverId);
     local nameKey = NormalizeName(GetName(player));
@@ -339,8 +374,11 @@ function playerBlacklist.GetDisplayName(player, fallback)
         store.displayNameReplaceEnabled = true;
     end
 
-    if (store.displayNameReplaceEnabled == true and playerBlacklist.IsListed(player) == true) then
-        return 'Blacklisted';
+    local entry = playerBlacklist.GetEntry(player);
+
+    if (store.displayNameReplaceEnabled == true and entry ~= nil) then
+        local displayName = tostring(entry.displayName or ''):gsub('^%s+', ''):gsub('%s+$', '');
+        return displayName ~= '' and displayName or 'Blacklisted';
     end
 
     return fallback;
@@ -377,6 +415,7 @@ function playerBlacklist.GetSignature(player)
         'id=' .. tostring(idKey or ''),
         'name=' .. tostring(entry.name or ''),
         'reason=' .. tostring(entry.reason or ''),
+        'customName=' .. tostring(entry.displayName or ''),
         'displayName=' .. tostring(store.displayNameReplaceEnabled ~= false),
         'displayColor=' .. table.concat({
             tostring(store.displayNameColor[1] or ''),
@@ -448,6 +487,7 @@ function playerBlacklist.List()
             serverId = tonumber(id) or id,
             name = entry.name or '',
             reason = entry.reason or '',
+            displayName = entry.displayName or '',
             addedAt = entry.addedAt,
             lastSeenAt = entry.lastSeenAt,
             source = entry.source,
@@ -461,6 +501,7 @@ function playerBlacklist.List()
             serverId = nil,
             name = entry.name or '',
             reason = entry.reason or '',
+            displayName = entry.displayName or '',
             addedAt = entry.addedAt,
             lastSeenAt = entry.lastSeenAt,
             source = entry.source,

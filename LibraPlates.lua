@@ -168,6 +168,7 @@ ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
     trustStatusIcons.HandlePacketIn(e);
     luopanStatuses.HandlePacketIn(e);
     bstCharmTimer.HandlePacketIn(e);
+    fishing.HandlePacketIn(e);
     crafting.HandlePacketIn(e);
     perfMeter.EndDetail(eventTimer);
 end);
@@ -179,6 +180,7 @@ ashita.events.register('packet_out', 'libraplates_packet_out', function(e)
     mogJobDebug.HandlePacketOut(e);
     petState.HandlePacketOut(e);
     bstCharmTimer.HandlePacketOut(e);
+    fishing.HandlePacketOut(e);
     perfMeter.EndDetail(eventTimer);
 end);
 
@@ -204,12 +206,16 @@ end
 
 ashita.events.register('text_in', 'libraplates_text_in', function(e)
     local eventTimer = perfMeter.BeginDetail('event.textIn');
+    if (fishing.HandleTextIn(e) == true or (e ~= nil and e.blocked == true)) then
+        perfMeter.EndDetail(eventTimer);
+        return;
+    end
+
     if (ShouldIgnoreTextInForLibraPlates(e) == true) then
         perfMeter.EndDetail(eventTimer);
         return;
     end
 
-    fishing.HandleTextIn(e);
     restingTick.HandleTextIn(e);
     local alertsTimer = perfMeter.BeginDetail('alerts.text');
     enemyAlerts.HandleTextIn(e);
@@ -228,6 +234,7 @@ ashita.events.register('d3d_present', 'libraplates_present', function()
         nativeTargetArrow.SetTraceCapturePaused(false);
         nativeTargetArrow.EndTraceFrame();
         nativeTargetArrow.SetTraceCapturePaused(true);
+        fishing.HandlePresent();
         modules.UpdateNativeTargetArrow();
         UpdateNativeDrawHooks();
         modules.ResetWorldMarker();

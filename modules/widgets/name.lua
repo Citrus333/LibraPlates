@@ -675,19 +675,23 @@ function name.DrawSettings(settings, context)
     end
 
     DrawPanel('Name', function()
-        settings.offsetX, settings.offsetY = DrawSliderPair(
-            'position',
-            'Position X',
-            'offset_x',
-            settings.offsetX,
-            -400,
-            400,
-            'Position Y',
-            'offset_y',
-            settings.offsetY,
-            -400,
-            400
-        );
+        if (anchorControls.IsCollapsedChild(settings) == true) then
+            anchorControls.DrawSpacing(settings, 'name_position');
+        else
+            settings.offsetX, settings.offsetY = DrawSliderPair(
+                'position',
+                'Position X',
+                'offset_x',
+                settings.offsetX,
+                -400,
+                400,
+                'Position Y',
+                'offset_y',
+                settings.offsetY,
+                -400,
+                400
+            );
+        end
 
         if (imgui.Spacing ~= nil) then
             imgui.Spacing();

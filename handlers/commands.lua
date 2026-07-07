@@ -2766,6 +2766,66 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'npcstance') then
+        local label = tostring(args[3] or '-');
+        local targetIndex = tonumber(args[3]) or tonumber(args[4]) or targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
+        local debug = entities.GetEntityDebugInfo(targetIndex, targeting.GetWorldPlateRange());
+
+        if (debug == nil) then
+            log.Warn('NPC stance probe failed: no current target. current=' .. tostring(targeting.GetCurrentTargetIndex()) .. ' sub=' .. tostring(targeting.GetCurrentSubTargetIndex()));
+            return;
+        end
+
+        if (tonumber(args[3]) ~= nil) then
+            label = '-';
+        end
+
+        local rawEntityName = (tonumber(debug.type) == 2 or tonumber(debug.type) == 3) and 'Object' or 'NPC';
+        local cleanName = tostring(debug.name or ''):gsub('\170', '');
+        local resolvedEntityName, info = npcObjectInfo.ResolveKind(cleanName, rawEntityName, { targetIndex = debug.index });
+        local backgroundSettings = state.GetWidgetSettings(resolvedEntityName, 'Idle', 'Background', require('config.widgets.background'));
+        local nameSettings = state.GetWidgetSettings(resolvedEntityName, 'Idle', 'Name', require('config.widgets.name'));
+        local typeLineSettings = state.GetWidgetSettings(resolvedEntityName, 'Idle', 'Type line', typeLineDefaults);
+        local iconSettings = state.GetWidgetSettings(resolvedEntityName, 'Idle', 'Icon', require('config.widgets.npc_object_icon'));
+        local render0 = tonumber(debug.renderFlags0) or 0;
+        local render1 = tonumber(debug.renderFlags1) or 0;
+
+        log.Info(
+            'NPC stance probe label=' .. tostring(label) ..
+            ' target=' .. tostring(debug.index) ..
+            ' name=' .. tostring(cleanName) ..
+            ' status=' .. tostring(debug.status) ..
+            ' type=' .. tostring(debug.type) ..
+            ' hp=' .. tostring(debug.hpPercent) ..
+            ' dist=' .. string.format('%.2f', tonumber(debug.distance) or 0) ..
+            ' worldScan=' .. tostring(debug.npcScanAllowed) ..
+            ' tacticalScan=' .. tostring(debug.tacticalNpcAllowed) ..
+            ' gates=index:' .. tostring(debug.indexAllowed) ..
+            ',status:' .. tostring(debug.statusAllowed) ..
+            ',visible:' .. tostring(debug.visible) ..
+            ',settled:' .. tostring(debug.settled) ..
+            ',range:' .. tostring(debug.inRange) ..
+            ',mob:' .. tostring(debug.isMob) ..
+            ',party:' .. tostring(debug.isParty) ..
+            ',mog:' .. tostring(debug.mogHouseFurniturePlaceholder) ..
+            ' current=' .. tostring(targeting.GetCurrentTargetIndex()) ..
+            ' sub=' .. tostring(targeting.GetCurrentSubTargetIndex()) ..
+            ' resolved=' .. tostring(resolvedEntityName) ..
+            ' infoSource=' .. tostring(info ~= nil and info.source or nil) ..
+            ' infoType=' .. tostring(info ~= nil and info.type or nil) ..
+            ' widgets=name:' .. tostring(nameSettings ~= nil and nameSettings.enabled == true) ..
+            ',type:' .. tostring(typeLineSettings ~= nil and typeLineSettings.enabled == true) ..
+            ',icon:' .. tostring(iconSettings ~= nil and iconSettings.enabled == true) ..
+            ',bg:' .. tostring(backgroundSettings ~= nil and backgroundSettings.enabled == true) ..
+            ' spawn=0x' .. string.format('%X', tonumber(debug.spawnFlags) or 0) ..
+            ' r0=0x' .. string.format('%X', render0) ..
+            ' r1=0x' .. string.format('%X', render1) ..
+            ' r0Bits=' .. DebugFlagList(render0, { 0x200, 0x2000, 0x4000, 0x400000, 0x800000, 0x40000000, 0x80000000 }) ..
+            ' r1Bits=' .. DebugFlagList(render1, { 0x8, 0x40, 0x400, 0x800, 0x8000, 0x2000000 })
+        );
+        return;
+    end
+
     if (subcommand == 'entitydebug' or subcommand == 'targetcap' or subcommand == 'doorcap') then
         local targetIndex = tonumber(args[3]) or targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
         local debug = entities.GetEntityDebugInfo(targetIndex, targeting.GetSettings().enemyPlateRange);

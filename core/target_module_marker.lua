@@ -11,6 +11,7 @@ local targetActionRange = require('core.target_action_range');
 local aoeNameHighlight = require('core.aoe_name_highlight');
 
 local targetModuleMarker = {};
+local actionRangeAllowance = 0.7;
 local textureIds = {};
 local lastDebug = 'target module marker has not built yet';
 local lastActiveDebug = 'target module marker has not built an active target/subtarget yet';
@@ -230,9 +231,10 @@ local function ResolveArrowDistanceColor(distance, settings, markerColor, target
         return CloneColor(settings.arrowInRangeColor, markerColor);
     end
 
-    local warningRange = tonumber(actionRange) + 3.0;
+    local effectiveActionRange = tonumber(actionRange) + actionRangeAllowance;
+    local warningRange = effectiveActionRange + 3.0;
 
-    if (currentDistance <= tonumber(actionRange)) then
+    if (currentDistance <= effectiveActionRange) then
         return CloneColor(settings.arrowInRangeColor, markerColor);
     end
 
@@ -252,6 +254,16 @@ function targetModuleMarker.GetCurrentActionRange()
     end
 
     return GetSubtargetActionRange() or aoeNameHighlight.GetCurrentActionTargetRange() or targetActionRange.GetCurrentRange();
+end
+
+function targetModuleMarker.GetEffectiveActionRange()
+    local range = targetModuleMarker.GetCurrentActionRange();
+
+    if (range == nil) then
+        return nil;
+    end
+
+    return tonumber(range) + actionRangeAllowance;
 end
 
 local function GetAutoPlaceAnchorKinds(value)

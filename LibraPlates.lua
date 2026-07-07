@@ -168,6 +168,7 @@ ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
     trustStatusIcons.HandlePacketIn(e);
     luopanStatuses.HandlePacketIn(e);
     bstCharmTimer.HandlePacketIn(e);
+    quickMenu.HandlePacketIn(e);
     fishing.HandlePacketIn(e);
     crafting.HandlePacketIn(e);
     perfMeter.EndDetail(eventTimer);
@@ -180,6 +181,7 @@ ashita.events.register('packet_out', 'libraplates_packet_out', function(e)
     mogJobDebug.HandlePacketOut(e);
     petState.HandlePacketOut(e);
     bstCharmTimer.HandlePacketOut(e);
+    quickMenu.HandlePacketOut(e);
     fishing.HandlePacketOut(e);
     perfMeter.EndDetail(eventTimer);
 end);

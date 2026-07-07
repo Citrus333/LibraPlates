@@ -432,19 +432,23 @@ function level.DrawSettings(settings, context)
     end
 
     DrawPanel('Level', function()
-        settings.offsetX, settings.offsetY = DrawSliderPair(
-            'position',
-            'Position X',
-            'offset_x',
-            settings.offsetX,
-            -400,
-            400,
-            'Position Y',
-            'offset_y',
-            settings.offsetY,
-            -400,
-            400
-        );
+        if (anchorControls.IsCollapsedChild(settings) == true) then
+            anchorControls.DrawSpacing(settings, 'level_position');
+        else
+            settings.offsetX, settings.offsetY = DrawSliderPair(
+                'position',
+                'Position X',
+                'offset_x',
+                settings.offsetX,
+                -400,
+                400,
+                'Position Y',
+                'offset_y',
+                settings.offsetY,
+                -400,
+                400
+            );
+        end
         DrawFontRow(settings);
         DrawOutlineRow(settings);
         settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;

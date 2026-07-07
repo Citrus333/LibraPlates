@@ -5,6 +5,7 @@ local anchorControls = {};
 local labelColor = { 0.92, 0.92, 0.90, 1.0 };
 local valueColor = { 0.65, 0.90, 1.0, 1.0 };
 local warningColor = { 1.0, 0.84, 0.0, 1.0 };
+local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local pendingRelease = {};
 local pendingCopy = {};
 local selectedCopySourceKey = {};
@@ -93,10 +94,96 @@ local function Release(settings)
     settings.anchorPoint = nil;
     settings.offsetX = 0;
     settings.offsetY = 0;
+    settings.anchorCollapse = nil;
+    settings.anchorSpacing = nil;
 end
 
 local function GetAnchorTooltip(settings)
     return 'Bind this element to a specific spot on the nameplate so they move together.';
+end
+
+local function DrawCheckbox(label, value)
+    local nextValue = value == true;
+    local changed = false;
+
+    if (imgui.Checkbox ~= nil) then
+        local ref = { nextValue };
+
+        if (imgui.Checkbox(label, ref) == true) then
+            nextValue = ref[1] == true;
+            changed = true;
+        end
+    else
+        imgui.Text(tostring(label) .. ': ' .. tostring(nextValue));
+    end
+
+    return nextValue, changed;
+end
+
+local function DrawSpacingControl(key, settings)
+    local value = math.max(0, math.min(64, tonumber(settings.anchorSpacing) or 6));
+    local beganTable = false;
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        beganTable = imgui.BeginTable('##anchor_spacing_row_' .. tostring(key), 2, tableFlags) == true;
+        if (beganTable == true) then
+            imgui.TableSetupColumn('##label', 0, 145);
+            imgui.TableSetupColumn('##control', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+        end
+    end
+
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+    imgui.TextColored(labelColor, 'Spacing');
+
+    if (beganTable == true and imgui.TableNextColumn ~= nil) then
+        imgui.TableNextColumn();
+    else
+        imgui.SameLine();
+    end
+
+    if (imgui.Button ~= nil and imgui.Button('-##anchor_spacing_minus_' .. key) == true) then
+        value = math.max(0, value - 1);
+        settings.anchorSpacing = value;
+    end
+    imgui.SameLine();
+
+    if (imgui.PushItemWidth ~= nil) then
+        imgui.PushItemWidth(42);
+    end
+
+    if (imgui.InputInt ~= nil) then
+        local ref = { value };
+        if (imgui.InputInt('##anchor_spacing_' .. key, ref, 0, 0) == true) then
+            value = math.max(0, math.min(64, tonumber(ref[1]) or value));
+            settings.anchorSpacing = value;
+        end
+    else
+        imgui.TextColored(valueColor, tostring(value));
+    end
+
+    if (imgui.PopItemWidth ~= nil) then
+        imgui.PopItemWidth();
+    end
+
+    imgui.SameLine();
+    if (imgui.Button ~= nil and imgui.Button('+##anchor_spacing_plus_' .. key) == true) then
+        value = math.min(64, value + 1);
+        settings.anchorSpacing = value;
+    end
+
+    if (beganTable == true and imgui.EndTable ~= nil) then
+        imgui.EndTable();
+    end
+end
+
+function anchorControls.IsCollapsedChild(settings)
+    return settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate' and settings.anchorCollapse == true;
+end
+
+function anchorControls.DrawSpacing(settings, key)
+    DrawSpacingControl(tostring(key or 'spacing'), settings);
 end
 
 local function DrawReleaseConfirm(settings, key)
@@ -415,7 +502,7 @@ function anchorControls.Draw(settings, context, label)
         end
 
         if (hasAnchorPoint == true) then
-            local reservedWidth = 88;
+            local reservedWidth = 168;
             pointComboWidth = math.max(58, math.min(155, math.floor((remainingWidth - reservedWidth) * 0.34)));
             anchorComboWidth = math.max(70, math.min(180, remainingWidth - pointComboWidth - reservedWidth));
         else
@@ -431,6 +518,8 @@ function anchorControls.Draw(settings, context, label)
 
         if (anchorTo == 'Plate') then
             settings.anchorPoint = nil;
+            settings.anchorCollapse = nil;
+            settings.anchorSpacing = nil;
         elseif (settings.anchorPoint == nil) then
             settings.anchorPoint = 'Center';
         end
@@ -447,6 +536,16 @@ function anchorControls.Draw(settings, context, label)
             end
         else
             imgui.TextColored(warningColor, 'Release');
+        end
+
+        if (imgui.SetCursorScreenPos ~= nil and anchorRowX ~= nil and anchorRowY ~= nil) then
+            imgui.SetCursorScreenPos({ anchorRowX, anchorRowY + 30 });
+        end
+        local collapse, collapseChanged = DrawCheckbox('Collapse##' .. key, settings.anchorCollapse ~= false);
+        if (collapseChanged == true) then
+            settings.anchorCollapse = collapse == true;
+        elseif (settings.anchorCollapse == nil) then
+            settings.anchorCollapse = true;
         end
         imgui.SameLine();
         uiTooltip.Info(GetAnchorTooltip(settings));

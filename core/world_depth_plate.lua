@@ -165,6 +165,10 @@ function worldDepthPlate.RenderSelf()
         return;
     end
 
+    if (center.visibleSkeleton ~= true) then
+        return;
+    end
+
     local settings = canvasDefaults.worldDepth;
     local background = canvasDefaults.background or {};
     local rx, ry, rz, ux, uy, uz, fx, fy, fz = GetBillboardVectors();

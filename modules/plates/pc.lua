@@ -302,6 +302,8 @@ local function AddJobToPlate(plateData, jobText, jobSettings, globalSettings)
                 offsetY = tonumber(jobSettings.offsetY) or -54,
                 anchorTo = jobSettings.anchorTo or jobDefaults.anchorTo,
                 anchorPoint = jobSettings.anchorPoint or jobDefaults.anchorPoint,
+                anchorCollapse = jobSettings.anchorCollapse,
+                anchorSpacing = jobSettings.anchorSpacing,
             };
 
             return;
@@ -320,10 +322,17 @@ local function AddJobToPlate(plateData, jobText, jobSettings, globalSettings)
     plateData.jobOffsetY = tonumber(jobSettings.offsetY) or -54;
     plateData.jobAnchorTo = jobSettings.anchorTo or jobDefaults.anchorTo;
     plateData.jobAnchorPoint = jobSettings.anchorPoint or jobDefaults.anchorPoint;
+    plateData.jobAnchorCollapse = jobSettings.anchorCollapse;
+    plateData.jobAnchorSpacing = jobSettings.anchorSpacing;
 end
 
 local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind, tint)
     if (settings == nil or settings.enabled ~= true or textureId == nil) then
+        return;
+    end
+
+    textureId = tonumber(textureId);
+    if (textureId == nil or textureId == 0) then
         return;
     end
 
@@ -335,6 +344,8 @@ local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind, tin
         offsetY = tonumber(settings.offsetY) or defaultY,
         anchorTo = settings.anchorTo,
         anchorPoint = settings.anchorPoint,
+        anchorCollapse = settings.anchorCollapse,
+        anchorSpacing = settings.anchorSpacing,
         tint = tint,
     };
 end
@@ -359,6 +370,8 @@ local function BuildPlayerIndicatorAnchorFallbackRects(definitions)
             layout = {
                 anchorTo = settings.anchorTo or defaults.anchorTo,
                 anchorPoint = settings.anchorPoint or defaults.anchorPoint,
+                anchorCollapse = settings.anchorCollapse,
+                anchorSpacing = settings.anchorSpacing,
                 offsetX = offsetX,
                 offsetY = offsetY,
             },
@@ -446,6 +459,8 @@ local function AddTextBadge(plateData, kind, text, settings, defaults, globalSet
         textOutlineSize = tonumber(settings.outlineSize) or defaults.outlineSize,
         anchorTo = settings.anchorTo or defaults.anchorTo,
         anchorPoint = settings.anchorPoint or defaults.anchorPoint,
+        anchorCollapse = settings.anchorCollapse,
+        anchorSpacing = settings.anchorSpacing,
         backgroundEnabled = false,
     };
 end
@@ -526,6 +541,8 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 offsetY = baseY + (row * rowHeight),
                 anchorTo = iconSettings.anchorTo,
                 anchorPoint = iconSettings.anchorPoint,
+                anchorCollapse = iconSettings.anchorCollapse,
+                anchorSpacing = iconSettings.anchorSpacing,
                 timerText = timerText,
                 timerSeconds = timerSeconds,
                 timerOffsetY = tonumber(iconSettings.timerOffsetY) or 0,
@@ -959,6 +976,8 @@ local function BuildPcPlateData(context)
         nameOffsetY = tonumber(context.nameSettings.offsetY) or -54,
         nameAnchorTo = context.nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = context.nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        nameAnchorCollapse = context.nameSettings.anchorCollapse,
+        nameAnchorSpacing = context.nameSettings.anchorSpacing,
         hpBar = {
             enabled = context.hpBarLoads == true,
             width = tonumber(context.hpBarSettings.width) or 180,
@@ -971,6 +990,8 @@ local function BuildPcPlateData(context)
             borderSize = tonumber(context.hpBarSettings.borderSize) or 0,
             anchorTo = context.hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = context.hpBarSettings.anchorPoint or barDefaults.anchorPoint,
+            anchorCollapse = context.hpBarSettings.anchorCollapse,
+            anchorSpacing = context.hpBarSettings.anchorSpacing,
             texture = context.hpBarSettings.texture or 'Solid',
             textureStrength = tonumber(context.hpBarSettings.textureStrength) or 100,
             textureId = context.hpBarLoads == true and barTextures.GetTextureId(context.hpBarSettings.texture) or nil,
@@ -1002,6 +1023,8 @@ local function BuildPcPlateData(context)
             borderSize = tonumber(context.mpBarSettings.borderSize) or 0,
             anchorTo = context.mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
             anchorPoint = context.mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
+            anchorCollapse = context.mpBarSettings.anchorCollapse,
+            anchorSpacing = context.mpBarSettings.anchorSpacing,
             texture = context.mpBarSettings.texture or 'Solid',
             textureStrength = tonumber(context.mpBarSettings.textureStrength) or 100,
             textureId = context.mpBarLoads == true and barTextures.GetTextureId(context.mpBarSettings.texture) or nil,
@@ -1033,6 +1056,8 @@ local function BuildPcPlateData(context)
             borderSize = tonumber(context.tpBarSettings.borderSize) or 0,
             anchorTo = context.tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = context.tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
+            anchorCollapse = context.tpBarSettings.anchorCollapse,
+            anchorSpacing = context.tpBarSettings.anchorSpacing,
             texture = context.tpBarSettings.texture or 'Solid',
             textureStrength = tonumber(context.tpBarSettings.textureStrength) or 100,
             textureId = context.tpBarLoads == true and barTextures.GetTextureId(context.tpBarSettings.texture) or nil,
@@ -1068,6 +1093,8 @@ local function BuildPcPlateData(context)
             textureId = backgroundTextures.GetTextureId(context.backgroundSettings.texture or backgroundDefaults.texture),
             anchorTo = context.backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = context.backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+            anchorCollapse = context.backgroundSettings.anchorCollapse,
+            anchorSpacing = context.backgroundSettings.anchorSpacing,
         },
     };
 
@@ -1216,7 +1243,7 @@ local function QueuePlayer(player)
     local hpAnimationEnabled = hpBarLoads == true and hpBarSettings.lowColorEnabled == true and hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25) and hpBarSettings.lowAnimationEnabled == true;
     local mpAnimationEnabled = mpBarLoads == true and mpBarSettings.lowColorEnabled == true and mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25) and mpBarSettings.lowAnimationEnabled == true;
     local canEvaluateHpBarRange = isPartyPlayer == true or isTargetContext == true;
-    local queuedActionRange = (canEvaluateHpBarRange == true and hpBarSettings.outOfRangeOpacityEnabled == true) and targetModuleMarker.GetCurrentActionRange() or nil;
+    local queuedActionRange = (canEvaluateHpBarRange == true and hpBarSettings.outOfRangeOpacityEnabled == true) and targetModuleMarker.GetEffectiveActionRange() or nil;
     local hpBarOutOfRangeDistance = tonumber(queuedActionRange) or tonumber(hpBarSettings.outOfRangeDefaultDistance) or 21;
     local hpBarOutOfRange = hpBarSettings.outOfRangeOpacityEnabled == true
         and canEvaluateHpBarRange == true
@@ -1472,12 +1499,23 @@ local function QueuePlayer(player)
             'buffs=' .. statusRowsSignature(buffRows),
             'debuffs=' .. statusRowsSignature(debuffRows),
             'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
-            'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
-            'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
-            'dist:' .. SettingKey(distanceSettings, { 'enabled', 'loadMode', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint' }),
-            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
-            'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
-            'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
+            'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'dist:' .. SettingKey(distanceSettings, { 'enabled', 'loadMode', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
+            'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
+            'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
+            'gameModeIcon:' .. SettingKey(gameModeIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'linkshellIcon:' .. SettingKey(linkshellIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'bazaarIcon:' .. SettingKey(bazaarIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'awayIcon:' .. SettingKey(awayIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'disconnectIcon:' .. SettingKey(disconnectIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'anonIcon:' .. SettingKey(anonIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'starsIcon:' .. SettingKey(starsIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'levelSyncIcon:' .. SettingKey(levelSyncIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'newAdventurerIcon:' .. SettingKey(newAdventurerIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'partyLeaderIcon:' .. SettingKey(partyLeaderIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            'allianceLeaderIcon:' .. SettingKey(allianceLeaderIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
             'icons=' .. tostring(#icons),
         }, '\n');
 
@@ -1643,6 +1681,8 @@ local function QueuePlayer(player)
             textOutlineSize = tonumber(distanceSettings.outlineSize) or distanceDefaults.outlineSize,
             anchorTo = distanceSettings.anchorTo or distanceDefaults.anchorTo,
             anchorPoint = distanceSettings.anchorPoint or distanceDefaults.anchorPoint,
+            anchorCollapse = distanceSettings.anchorCollapse,
+            anchorSpacing = distanceSettings.anchorSpacing,
             backgroundEnabled = false,
         };
     end

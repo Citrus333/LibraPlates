@@ -186,7 +186,7 @@ local function IsMobIndex(entityManager, index)
 end
 
 local function IsNpcObjectStatusAllowed(status)
-    return status == nil or status == 0 or status == 33 or status == 34 or status == 47;
+    return status == nil or status == 0 or status == 32 or status == 33 or status == 34 or status == 38 or status == 39 or status == 40 or status == 41 or status == 47 or status == 50;
 end
 
 local function IsTrustStatusAllowed(status)
@@ -389,6 +389,8 @@ function entities.GetSelfCanvasCenter(offsetX, offsetY)
         return nil;
     end
 
+    local visibleSkeleton = HasLoadedSkeleton(entityManager, self.index);
+
     local boneWorldX = nil;
     local boneWorldY = nil;
     local boneWorldZ = nil;
@@ -418,6 +420,7 @@ function entities.GetSelfCanvasCenter(offsetX, offsetY)
         boneWorldX = boneWorldX,
         boneWorldY = boneWorldY,
         boneWorldZ = boneWorldZ,
+        visibleSkeleton = visibleSkeleton,
         name = self.name,
         index = self.index,
         hp = self.hp,
@@ -1679,7 +1682,7 @@ function entities.GetNearbyNpcObjects(maxDistance)
         if (ent ~= nil and inPlayerIndexRange ~= true or allowPlayerRangeNpcObject == true) then
             local entityStatus = tonumber(ent.Status) or 0;
             local isObject = (ent.Type == 2 or ent.Type == 3);
-            local allowUnsettledCharacter = entityStatus == 47;
+            local allowUnsettledCharacter = entityStatus == 40 or entityStatus == 47 or entityStatus == 50;
             local cleanName = tostring(ent.Name or ''):gsub('\170', '');
             local isMogHouseMoogle = mogHouseObjectSuppressionArea == true and cleanName == 'Moogle';
 
@@ -1814,7 +1817,7 @@ function entities.GetEntityDebugInfo(index, maxDistance)
     local visible = IsVisibleEntity(entityManager, targetIndex, false);
     local visibleWithSkeleton = IsVisibleEntity(entityManager, targetIndex, true);
     local mogHouseFurniturePlaceholder = IsMogHouseFurniturePlaceholder(entityManager, targetIndex, ent);
-    local allowUnsettledCharacter = tonumber(status) == 47;
+    local allowUnsettledCharacter = tonumber(status) == 40 or tonumber(status) == 47 or tonumber(status) == 50;
     local settled = isObject == true or allowUnsettledCharacter == true or HasSettledCharacterModel(entityManager, targetIndex);
     local indexAllowed = targetIndex < 1024 or targetIndex > 1791;
     local statusAllowed = IsNpcObjectStatusAllowed(status);

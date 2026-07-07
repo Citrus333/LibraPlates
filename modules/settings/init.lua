@@ -4750,6 +4750,18 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         ['Detects icon'] = true,
         ['Links icon'] = true,
         ['Special icon'] = true,
+        ['Alliance leader icon'] = true,
+        ['Party leader icon'] = true,
+        ['Game mode icon'] = true,
+        ['Linkshell icon'] = true,
+        ['Bazaar icon'] = true,
+        ['Away icon'] = true,
+        ['Disconnect icon'] = true,
+        ['Anon icon'] = true,
+        ['Follow icon'] = true,
+        ['Stars icon'] = true,
+        ['Level sync icon'] = true,
+        ['New adventurer icon'] = true,
     };
 
     if (deltaX == 0 and deltaY == 0) then

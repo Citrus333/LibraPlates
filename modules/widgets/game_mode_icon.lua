@@ -439,20 +439,24 @@ function gameModeIcon.DrawSettings(settings, context)
     end
     local function DrawBody()
         settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, 6, 64, 1);
-        settings.offsetX, settings.offsetY = DrawSliderPair(
-            'position',
-            'Position X',
-            'offset_x',
-            settings.offsetX,
-            -400,
-            400,
-            'Position Y',
-            'offset_y',
-            settings.offsetY,
-            -400,
-            400,
-            5
-        );
+        if (anchorControls.IsCollapsedChild(settings) == true) then
+            anchorControls.DrawSpacing(settings, 'game_mode_icon_position');
+        else
+            settings.offsetX, settings.offsetY = DrawSliderPair(
+                'position',
+                'Position X',
+                'offset_x',
+                settings.offsetX,
+                -400,
+                400,
+                'Position Y',
+                'offset_y',
+                settings.offsetY,
+                -400,
+                400,
+                5
+            );
+        end
     end
 
     if (context ~= nil and context.boxed == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then

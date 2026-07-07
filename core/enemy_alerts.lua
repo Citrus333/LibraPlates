@@ -976,6 +976,15 @@ local function TrimText(value)
     return tostring(value or ''):gsub('^%s*(.-)%s*$', '%1');
 end
 
+local function FormatIncursionDetail(text)
+    text = TrimText(text);
+    text = text:gsub('%(([%u]%-?%d+)%)', '%1');
+    text = text:gsub('%(Map #(%d+)%)', 'Map %1');
+    text = text:gsub('%s+', ' ');
+    text = text:gsub('%s+!', '');
+    return TrimText(text);
+end
+
 local function CleanChatLine(value)
     local text = StripControlCodes(value);
     text = TrimText(text);
@@ -1213,7 +1222,8 @@ function enemyAlerts.HandleTextIn(e)
     end
 
     if (settings.builtInVenturesEnabled ~= false) then
-        local coord, zone = message:match('Hmm%.%.%. Something is interrupting ventures at %((.-)%) in (.-)%.%.%.');
+        local venturesMessage = CleanChatLine(message):gsub('^%{[^}]+%}%s*', '');
+        local coord, zone = venturesMessage:match('Hmm%.%.%. Something is interrupting ventures at %((.-)%) in (.-)%.%.%.');
         if (coord ~= nil and zone ~= nil) then
             zone = zone:gsub('^%s*(.-)%s*$', '%1');
             local displayText = string.format('VNM %s %s', zone, coord);
@@ -1225,9 +1235,10 @@ function enemyAlerts.HandleTextIn(e)
             return;
         end
 
-        if (message:find('Hmm%.%.%. Something is interrupting ventures in these zones%.%.%.') ~= nil) then
-            PushSystemAlert('Ventures', 'Ventures: something is interrupting ventures', 'builtInVentures');
-            lastDebug = 'text-venture zones';
+        local zoneList = venturesMessage:match('^(.+%([A-Z]%-?%d+%).*/.+%([A-Z]%-?%d+%).*)$');
+        if (zoneList ~= nil and zoneList ~= '') then
+            PushSystemAlert('Ventures', 'Ventures: ' .. zoneList .. ' soon', 'builtInVentures');
+            lastDebug = 'text-venture zones=' .. tostring(zoneList);
             if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
             return;
         end
@@ -1292,7 +1303,7 @@ function enemyAlerts.HandleTextIn(e)
     if (settings.builtInIncursionEnabled ~= false) then
         local incursionMinutes = message:match('You have (%d+) minutes remaining inside this Incursion%.');
         if (incursionMinutes ~= nil) then
-            PushSystemAlert('Incursion', 'Incursion: ' .. incursionMinutes .. ' minutes remaining', 'builtInIncursion');
+            PushSystemAlert('Incursion', 'Incursion: ' .. incursionMinutes .. ' min remaining', 'builtInIncursion');
             lastDebug = 'text-incursion remaining=' .. tostring(incursionMinutes);
             if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
             return;
@@ -1300,7 +1311,7 @@ function enemyAlerts.HandleTextIn(e)
 
         local incursionZone = message:match('Incursion %[([^%]]+)%] Begins!');
         if (incursionZone ~= nil and incursionZone ~= '') then
-            PushSystemAlert('Incursion', 'Incursion begins: ' .. incursionZone, 'builtInIncursion');
+            PushSystemAlert('Incursion', 'Incursion: ' .. incursionZone .. ' begins', 'builtInIncursion');
             lastDebug = 'text-incursion begins=' .. tostring(incursionZone);
             if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
             return;
@@ -1308,24 +1319,55 @@ function enemyAlerts.HandleTextIn(e)
 
         local objective = message:match('New Objective:%s*(.+)');
         if (objective ~= nil and objective ~= '') then
-            PushSystemAlert('Incursion', 'Incursion objective: ' .. objective, 'builtInIncursion');
-            lastDebug = 'text-incursion objective=' .. tostring(objective);
+            local displayObjective = FormatIncursionDetail(objective);
+            PushSystemAlert('Incursion', 'Objective: ' .. displayObjective, 'builtInIncursion');
+            lastDebug = 'text-incursion objective=' .. tostring(displayObjective);
             if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
             return;
         end
 
         local boss = message:match('%(Boss:%s*(.+)%)');
         if (boss ~= nil and boss ~= '') then
-            PushSystemAlert('Incursion', 'Incursion boss: ' .. boss, 'builtInIncursion');
-            lastDebug = 'text-incursion boss=' .. tostring(boss);
+            local displayBoss = FormatIncursionDetail(boss);
+            PushSystemAlert('Incursion', 'Boss: ' .. displayBoss, 'builtInIncursion');
+            lastDebug = 'text-incursion boss=' .. tostring(displayBoss);
             if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
             return;
         end
 
-        local phase = message:match('Incursion %[([^%]]+)%] Phase #(.+)');
-        if (phase ~= nil and phase ~= '') then
-            PushSystemAlert('Incursion', 'Incursion phase: ' .. phase, 'builtInIncursion');
-            lastDebug = 'text-incursion phase=' .. tostring(phase);
+        local phaseZone, phaseNumber, phaseProgress = message:match('Incursion %[([^%]]+)%] Phase #(%d+)%s+(.+)');
+        if (phaseZone ~= nil and phaseNumber ~= nil and phaseProgress ~= nil) then
+            local displayPhase = string.format('Incursion: %s Phase #%s (%s)', phaseZone, phaseNumber, TrimText(phaseProgress));
+            PushSystemAlert('Incursion', displayPhase, 'builtInIncursion');
+            lastDebug = 'text-incursion phase=' .. tostring(displayPhase);
+            if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
+            return;
+        end
+
+        local bonusObjective = message:match('Incursion %[[^%]]+%] Bonus Objective:%s*(.+)');
+        if (bonusObjective ~= nil and bonusObjective ~= '') then
+            local bonusName, bonusProgress = bonusObjective:match('^(.-)%s+(%d+/%d+)$');
+            local displayBonus = 'Bonus: ' .. FormatIncursionDetail(bonusObjective);
+            if (bonusName ~= nil and bonusProgress ~= nil) then
+                displayBonus = 'Bonus: ' .. TrimText(bonusName) .. ' (' .. bonusProgress .. ')';
+            end
+            PushSystemAlert('Incursion', displayBonus, 'builtInIncursion');
+            lastDebug = 'text-incursion bonus=' .. tostring(displayBonus);
+            if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
+            return;
+        end
+
+        if (message:match('Incursion %[[^%]]+%] Bonus Objective Complete!') ~= nil) then
+            PushSystemAlert('Incursion', 'Bonus objective complete', 'builtInIncursion');
+            lastDebug = 'text-incursion bonus-complete';
+            if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
+            return;
+        end
+
+        local weakness = message:match('appears to be susceptible to (.-) weaponskills%.');
+        if (weakness ~= nil and weakness ~= '') then
+            PushSystemAlert('Incursion', 'Weakness: ' .. TrimText(weakness) .. ' WS', 'builtInIncursion');
+            lastDebug = 'text-incursion weakness=' .. tostring(weakness);
             if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
             return;
         end

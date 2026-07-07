@@ -1308,6 +1308,19 @@ local function ResolveAnchorRects(rects, plate)
     end
     local fallbackResolvedCache = {};
 
+    local function CollapseToSlot(defaultRect, slot)
+        if (slot == nil) then
+            return nil;
+        end
+
+        return {
+            x = tonumber(slot.x) or 0,
+            y = tonumber(slot.y) or 0,
+            width = tonumber(defaultRect ~= nil and defaultRect.width) or tonumber(slot.width) or 0,
+            height = tonumber(defaultRect ~= nil and defaultRect.height) or tonumber(slot.height) or 0,
+        };
+    end
+
     local function ResolveMissingAnchorSlot(anchorName, bounds, stack)
         anchorName = tostring(anchorName or '');
 
@@ -1370,13 +1383,20 @@ local function ResolveAnchorRects(rects, plate)
             return defaultRect;
         end
 
+        local parentTargetKey = anchorMap[parentAnchorName];
+
+        if (parentTargetKey ~= nil and bounds[parentTargetKey] == nil and layout.anchorCollapse ~= false) then
+            local resolved = CollapseToSlot(defaultRect, parentRect);
+            stack[anchorName] = nil;
+            fallbackResolvedCache[anchorName] = resolved;
+            return resolved;
+        end
+
         local tempBounds = {};
 
         for key, value in pairs(bounds or {}) do
             tempBounds[key] = value;
         end
-
-        local parentTargetKey = anchorMap[parentAnchorName];
 
         if (parentTargetKey ~= nil) then
             tempBounds[parentTargetKey] = parentRect;
@@ -1409,14 +1429,18 @@ local function ResolveAnchorRects(rects, plate)
                 local resolved = nil;
 
                 if (fallbackTarget ~= nil) then
-                    local tempBounds = {};
+                    if (layout.anchorCollapse ~= false) then
+                        resolved = CollapseToSlot(defaultRect, fallbackTarget);
+                    else
+                        local tempBounds = {};
 
-                    for key, value in pairs(bounds or {}) do
-                        tempBounds[key] = value;
+                        for key, value in pairs(bounds or {}) do
+                            tempBounds[key] = value;
+                        end
+
+                        tempBounds[targetKey] = fallbackTarget;
+                        resolved = anchorGeometry.ResolveAnchoredRect(layout, tostring(rect.kind or ''), defaultRect, tempBounds, anchorMap);
                     end
-
-                    tempBounds[targetKey] = fallbackTarget;
-                    resolved = anchorGeometry.ResolveAnchoredRect(layout, tostring(rect.kind or ''), defaultRect, tempBounds, anchorMap);
                 else
                     resolved = anchorGeometry.ResolveAnchoredRect(layout, tostring(rect.kind or ''), defaultRect, bounds, anchorMap);
                 end
@@ -1449,6 +1473,195 @@ local function ResolveAnchorRects(rects, plate)
 
         if (changed ~= true) then
             break;
+        end
+    end
+
+    local bounds = BuildBoundsByKind(rects);
+    local groups = {};
+    local present = {};
+
+    for _, rect in ipairs(rects or {}) do
+        local kind = tostring(rect.kind or '');
+        if (kind ~= '') then
+            present[kind] = true;
+        end
+
+        local layout = rect.anchorLayout;
+        local anchorTo = tostring(layout ~= nil and layout.anchorTo or 'Plate');
+        if (layout ~= nil and anchorTo ~= 'Plate' and layout.anchorCollapse ~= false) then
+            local anchorPoint = tostring(layout.anchorPoint or 'Center');
+            local groupKey = anchorTo .. '\30' .. anchorPoint;
+            groups[groupKey] = groups[groupKey] or {
+                anchorPoint = anchorPoint,
+                entries = {},
+            };
+            groups[groupKey].entries[#groups[groupKey].entries + 1] = {
+                rect = rect,
+                visible = true,
+                slot = RectToBounds(rect),
+                padding = tonumber(rect.padding) or 0,
+            };
+        end
+    end
+
+    for kind, fallback in pairs(fallbackDefs) do
+        if (present[kind] ~= true and fallback ~= nil and fallback.layout ~= nil and fallback.layout.anchorCollapse ~= false) then
+            local anchorTo = tostring(fallback.layout.anchorTo or 'Plate');
+            if (anchorTo ~= 'Plate') then
+                local anchorPoint = tostring(fallback.layout.anchorPoint or 'Center');
+                local slot = ResolveMissingAnchorSlot(kind, bounds, {});
+                if (slot ~= nil) then
+                    local groupKey = anchorTo .. '\30' .. anchorPoint;
+                    groups[groupKey] = groups[groupKey] or {
+                        anchorPoint = anchorPoint,
+                        entries = {},
+                    };
+                    groups[groupKey].entries[#groups[groupKey].entries + 1] = {
+                        visible = false,
+                        slot = slot,
+                        layout = fallback.layout,
+                        padding = tonumber(fallback.padding) or 0,
+                    };
+                end
+            end
+        end
+    end
+
+    local function ApplyShift(rect, dx, dy)
+        local pad = tonumber(rect.padding) or 0;
+        rect.drawX1 = (tonumber(rect.drawX1) or 0) + dx;
+        rect.drawY1 = (tonumber(rect.drawY1) or 0) + dy;
+        rect.drawX2 = (tonumber(rect.drawX2) or 0) + dx;
+        rect.drawY2 = (tonumber(rect.drawY2) or 0) + dy;
+        rect.x1 = rect.drawX1 - pad;
+        rect.y1 = rect.drawY1 - pad;
+        rect.x2 = rect.drawX2 + pad;
+        rect.y2 = rect.drawY2 + pad;
+    end
+
+    local function GetEntrySpacing(entry)
+        local layout = (entry ~= nil and entry.rect ~= nil and entry.rect.anchorLayout) or (entry ~= nil and entry.layout);
+        local spacing = tonumber(layout ~= nil and layout.anchorSpacing or nil);
+
+        if (spacing == nil) then
+            return 6;
+        end
+
+        return math.max(0, math.min(64, spacing));
+    end
+
+    local function GetEntryBounds(entry)
+        if (entry ~= nil and entry.rect ~= nil) then
+            local rect = entry.rect;
+            return {
+                x = tonumber(rect.x1) or tonumber(rect.drawX1) or 0,
+                y = tonumber(rect.y1) or tonumber(rect.drawY1) or 0,
+                width = math.max(0, (tonumber(rect.x2) or tonumber(rect.drawX2) or 0) - (tonumber(rect.x1) or tonumber(rect.drawX1) or 0)),
+                height = math.max(0, (tonumber(rect.y2) or tonumber(rect.drawY2) or 0) - (tonumber(rect.y1) or tonumber(rect.drawY1) or 0)),
+                padding = tonumber(rect.padding) or 0,
+            };
+        end
+
+        local slot = (entry ~= nil and entry.slot) or {};
+        local padding = tonumber(entry ~= nil and entry.padding) or 0;
+        return {
+            x = (tonumber(slot.x) or 0) - padding,
+            y = (tonumber(slot.y) or 0) - padding,
+            width = math.max(0, (tonumber(slot.width) or 0) + (padding * 2)),
+            height = math.max(0, (tonumber(slot.height) or 0) + (padding * 2)),
+            padding = padding,
+        };
+    end
+
+    for _, group in pairs(groups) do
+        local entries = group.entries or {};
+        if (#entries > 1) then
+            local hasMissing = false;
+            local hasExplicitCollapse = false;
+            local hasExplicitSpacing = false;
+            for _, entry in ipairs(entries) do
+                local layout = (entry.rect ~= nil and entry.rect.anchorLayout) or entry.layout;
+                if (entry.visible ~= true) then
+                    hasMissing = true;
+                end
+                if (layout ~= nil and layout.anchorCollapse == true) then
+                    hasExplicitCollapse = true;
+                end
+                if (layout ~= nil and layout.anchorSpacing ~= nil) then
+                    hasExplicitSpacing = true;
+                end
+            end
+
+            if (hasMissing == true or hasExplicitCollapse == true or hasExplicitSpacing == true) then
+                local anchorPoint = tostring(group.anchorPoint or 'Center');
+                local axis = (anchorPoint == 'Top' or anchorPoint == 'Top Left' or anchorPoint == 'Top Right' or anchorPoint == 'Bottom' or anchorPoint == 'Bottom Left' or anchorPoint == 'Bottom Right') and 'y' or 'x';
+                local nearHigh = (anchorPoint == 'Left' or anchorPoint == 'Top Left' or anchorPoint == 'Bottom Left' or anchorPoint == 'Top');
+
+                table.sort(entries, function(left, right)
+                    local leftSlot = GetEntryBounds(left);
+                    local rightSlot = GetEntryBounds(right);
+                    local leftCenter = axis == 'x'
+                        and ((tonumber(leftSlot.x) or 0) + ((tonumber(leftSlot.width) or 0) * 0.5))
+                        or ((tonumber(leftSlot.y) or 0) + ((tonumber(leftSlot.height) or 0) * 0.5));
+                    local rightCenter = axis == 'x'
+                        and ((tonumber(rightSlot.x) or 0) + ((tonumber(rightSlot.width) or 0) * 0.5))
+                        or ((tonumber(rightSlot.y) or 0) + ((tonumber(rightSlot.height) or 0) * 0.5));
+
+                    if (nearHigh == true) then
+                        return leftCenter > rightCenter;
+                    end
+
+                    return leftCenter < rightCenter;
+                end);
+
+                local startSlot = entries[1] ~= nil and GetEntryBounds(entries[1]) or nil;
+                if (startSlot ~= nil) then
+                    local cursor = nil;
+                    if (axis == 'x') then
+                        cursor = nearHigh == true
+                            and ((tonumber(startSlot.x) or 0) + (tonumber(startSlot.width) or 0))
+                            or (tonumber(startSlot.x) or 0);
+                    else
+                        cursor = nearHigh == true
+                            and ((tonumber(startSlot.y) or 0) + (tonumber(startSlot.height) or 0))
+                            or (tonumber(startSlot.y) or 0);
+                    end
+
+                    for _, entry in ipairs(entries) do
+                        if (entry.visible == true and entry.rect ~= nil) then
+                            local rect = entry.rect;
+                            local currentX = tonumber(rect.drawX1) or 0;
+                            local currentY = tonumber(rect.drawY1) or 0;
+                            local entryBounds = GetEntryBounds(entry);
+                            local padding = tonumber(entryBounds.padding) or 0;
+                            local itemW = math.max(0, tonumber(entryBounds.width) or 0);
+                            local itemH = math.max(0, tonumber(entryBounds.height) or 0);
+                            local targetX = currentX;
+                            local targetY = currentY;
+
+                            if (axis == 'x') then
+                                if (nearHigh == true) then
+                                    targetX = cursor - itemW + padding;
+                                    cursor = targetX - padding - GetEntrySpacing(entry);
+                                else
+                                    targetX = cursor + padding;
+                                    cursor = targetX - padding + itemW + GetEntrySpacing(entry);
+                                end
+                            else
+                                if (nearHigh == true) then
+                                    targetY = cursor - itemH + padding;
+                                    cursor = targetY - padding - GetEntrySpacing(entry);
+                                else
+                                    targetY = cursor + padding;
+                                    cursor = targetY - padding + itemH + GetEntrySpacing(entry);
+                                end
+                            end
+
+                            ApplyShift(rect, targetX - currentX, targetY - currentY);
+                        end
+                    end
+                end
+            end
         end
     end
 end
@@ -1941,6 +2154,8 @@ function canvasTexture.GetElementRects(plate)
                 {
                     anchorTo = plate.jobAnchorTo,
                     anchorPoint = plate.jobAnchorPoint,
+                    anchorCollapse = plate.jobAnchorCollapse,
+                    anchorSpacing = plate.jobAnchorSpacing,
                     offsetX = plate.jobOffsetX,
                     offsetY = plate.jobOffsetY,
                 }
@@ -1981,6 +2196,8 @@ function canvasTexture.GetElementRects(plate)
                 {
                     anchorTo = plate.nameAnchorTo,
                     anchorPoint = plate.nameAnchorPoint,
+                    anchorCollapse = plate.nameAnchorCollapse,
+                    anchorSpacing = plate.nameAnchorSpacing,
                     offsetX = plate.nameOffsetX,
                     offsetY = plate.nameOffsetY,
                 }

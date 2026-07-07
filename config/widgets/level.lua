@@ -22,5 +22,7 @@ return {
     outlineSize = 2,
     offsetX = -88,
     offsetY = -54,
+    anchorTo = 'Name',
+    anchorPoint = 'Left',
     prefix = '',
 };

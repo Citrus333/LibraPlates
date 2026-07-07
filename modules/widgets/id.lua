@@ -399,11 +399,15 @@ function id.DrawSettings(settings, context)
     end
 
     DrawPanel('ID', function()
-        settings.offsetX, settings.offsetY = DrawNumberPair(
-            'position',
-            'Position X', 'position_x', settings.offsetX, -400, 400,
-            'Position Y', 'position_y', settings.offsetY, -400, 400
-        );
+        if (anchorControls.IsCollapsedChild(settings) == true) then
+            anchorControls.DrawSpacing(settings, 'id_position');
+        else
+            settings.offsetX, settings.offsetY = DrawNumberPair(
+                'position',
+                'Position X', 'position_x', settings.offsetX, -400, 400,
+                'Position Y', 'position_y', settings.offsetY, -400, 400
+            );
+        end
     end, true);
 
     DrawPanel('Text Settings', function()

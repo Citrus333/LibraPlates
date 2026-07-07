@@ -754,7 +754,11 @@ function castBar.DrawSettings(settings, context)
 
     DrawPanel('Bar Settings', function()
         settings.width, settings.height = DrawPairedNumberRow('size', 'Width', 'width', settings.width, 20, 600, 'Height', 'height', settings.height, 2, 80);
-        settings.offsetX, settings.offsetY = DrawPairedNumberRow('position', 'Position X', 'offset_x', settings.offsetX, -400, 400, 'Position Y', 'offset_y', settings.offsetY, -400, 400);
+        if (anchorControls.IsCollapsedChild(settings) == true) then
+            anchorControls.DrawSpacing(settings, 'cast_bar_position');
+        else
+            settings.offsetX, settings.offsetY = DrawPairedNumberRow('position', 'Position X', 'offset_x', settings.offsetX, -400, 400, 'Position Y', 'offset_y', settings.offsetY, -400, 400);
+        end
         settings.color, settings.backgroundColor, settings.texture = DrawColorTextureRow('colors_texture', settings.color, settings.backgroundColor, settings.texture);
         settings.borderColor, settings.borderSize = DrawBorderRow('border', settings.borderColor, settings.borderSize);
         DrawInterruptBarSettingsRows(settings, defaults);

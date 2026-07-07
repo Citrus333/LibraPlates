@@ -1281,7 +1281,11 @@ function bar.DrawSettings(settings, context)
 
         DrawPanel('Bar Settings', function()
             settings.width, settings.height = DrawHpSliderPair(idPrefix .. 'size', 'Width', idPrefix .. 'width', settings.width, 20, 800, 'Height', idPrefix .. 'height', settings.height, 1, 160);
-            settings.offsetX, settings.offsetY = DrawHpSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
+            if (anchorControls.IsCollapsedChild(settings) == true) then
+                anchorControls.DrawSpacing(settings, idPrefix .. 'position');
+            else
+                settings.offsetX, settings.offsetY = DrawHpSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
+            end
             settings.color, settings.backgroundColor, settings.texture, settings.textureStrength = DrawHpTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture, settings.textureStrength);
             settings.borderColor, settings.borderSize = DrawHpBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
 

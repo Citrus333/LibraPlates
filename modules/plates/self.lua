@@ -339,6 +339,7 @@ local function BuildPlayerIndicatorAnchorFallbackRects(definitions)
             layout = {
                 anchorTo = settings.anchorTo or defaults.anchorTo,
                 anchorPoint = settings.anchorPoint or defaults.anchorPoint,
+                anchorCollapse = settings.anchorCollapse,
                 offsetX = offsetX,
                 offsetY = offsetY,
             },
@@ -424,6 +425,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 offsetY = baseY + (row * rowHeight),
                 anchorTo = iconSettings.anchorTo,
                 anchorPoint = iconSettings.anchorPoint,
+                anchorCollapse = iconSettings.anchorCollapse,
                 timerText = timerText,
                 timerSeconds = timerSeconds,
                 timerOffsetY = tonumber(iconSettings.timerOffsetY) or 0,
@@ -702,6 +704,7 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
         offsetY = tonumber(castBarSettings.offsetY) or castBarDefaults.offsetY,
         anchorTo = castBarSettings.anchorTo or castBarDefaults.anchorTo,
         anchorPoint = castBarSettings.anchorPoint or castBarDefaults.anchorPoint,
+        anchorCollapse = castBarSettings.anchorCollapse,
         color = barColor,
         backgroundColor = castBarSettings.backgroundColor or castBarDefaults.backgroundColor,
         borderColor = castBarSettings.borderColor or castBarDefaults.borderColor,
@@ -891,6 +894,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(allianceLeaderIconSettings.offsetY) or -54,
                 anchorTo = allianceLeaderIconSettings.anchorTo,
                 anchorPoint = allianceLeaderIconSettings.anchorPoint,
+                anchorCollapse = allianceLeaderIconSettings.anchorCollapse,
             });
         end
     end
@@ -906,6 +910,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(partyLeaderIconSettings.offsetY) or -54,
                 anchorTo = partyLeaderIconSettings.anchorTo,
                 anchorPoint = partyLeaderIconSettings.anchorPoint,
+                anchorCollapse = partyLeaderIconSettings.anchorCollapse,
             });
         end
     end
@@ -919,6 +924,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             offsetY = tonumber(gameModeIconSettings.offsetY) or -54,
             anchorTo = gameModeIconSettings.anchorTo,
             anchorPoint = gameModeIconSettings.anchorPoint,
+            anchorCollapse = gameModeIconSettings.anchorCollapse,
         });
     end
 
@@ -934,6 +940,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(linkshellIconSettings.offsetY) or -54,
                 anchorTo = linkshellIconSettings.anchorTo,
                 anchorPoint = linkshellIconSettings.anchorPoint,
+                anchorCollapse = linkshellIconSettings.anchorCollapse,
                 tint = linkshellTint,
             });
         end
@@ -950,6 +957,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(bazaarIconSettings.offsetY) or -54,
                 anchorTo = bazaarIconSettings.anchorTo,
                 anchorPoint = bazaarIconSettings.anchorPoint,
+                anchorCollapse = bazaarIconSettings.anchorCollapse,
             });
         end
     end
@@ -965,6 +973,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(awayIconSettings.offsetY) or -54,
                 anchorTo = awayIconSettings.anchorTo,
                 anchorPoint = awayIconSettings.anchorPoint,
+                anchorCollapse = awayIconSettings.anchorCollapse,
             });
         end
     end
@@ -980,6 +989,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(disconnectIconSettings.offsetY) or -54,
                 anchorTo = disconnectIconSettings.anchorTo,
                 anchorPoint = disconnectIconSettings.anchorPoint,
+                anchorCollapse = disconnectIconSettings.anchorCollapse,
             });
         end
     end
@@ -995,6 +1005,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(anonIconSettings.offsetY) or -54,
                 anchorTo = anonIconSettings.anchorTo,
                 anchorPoint = anonIconSettings.anchorPoint,
+                anchorCollapse = anonIconSettings.anchorCollapse,
             });
         end
     end
@@ -1010,6 +1021,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(starsIconSettings.offsetY) or -54,
                 anchorTo = starsIconSettings.anchorTo,
                 anchorPoint = starsIconSettings.anchorPoint,
+                anchorCollapse = starsIconSettings.anchorCollapse,
             });
         end
     end
@@ -1025,6 +1037,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(levelSyncIconSettings.offsetY) or -54,
                 anchorTo = levelSyncIconSettings.anchorTo,
                 anchorPoint = levelSyncIconSettings.anchorPoint,
+                anchorCollapse = levelSyncIconSettings.anchorCollapse,
             });
         end
     end
@@ -1040,6 +1053,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(newAdventurerIconSettings.offsetY) or -54,
                 anchorTo = newAdventurerIconSettings.anchorTo,
                 anchorPoint = newAdventurerIconSettings.anchorPoint,
+                anchorCollapse = newAdventurerIconSettings.anchorCollapse,
             });
         end
     end
@@ -1084,6 +1098,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             textureId = backgroundSettings.enabled == true and backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture) or nil,
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+            anchorCollapse = backgroundSettings.anchorCollapse,
         },
         name = nameEnabled and displayName or '',
         aoeNameActive = nameAoeActive == true,
@@ -1098,6 +1113,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         nameOffsetY = tonumber(nameSettings.offsetY) or defaultOffsetY,
         nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        nameAnchorCollapse = nameSettings.anchorCollapse,
         hpBar = {
             enabled = hpBarSettings.enabled == true,
             width = tonumber(hpBarSettings.width) or 180,
@@ -1110,6 +1126,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             borderSize = tonumber(hpBarSettings.borderSize) or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
+            anchorCollapse = hpBarSettings.anchorCollapse,
             texture = hpBarSettings.texture or 'Solid',
             textureStrength = tonumber(hpBarSettings.textureStrength) or 100,
             textureId = hpBarSettings.enabled == true and barTextures.GetTextureId(hpBarSettings.texture) or nil,
@@ -1141,6 +1158,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             borderSize = tonumber(mpBarSettings.borderSize) or 0,
             anchorTo = mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
             anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
+            anchorCollapse = mpBarSettings.anchorCollapse,
             texture = mpBarSettings.texture or 'Solid',
             textureStrength = tonumber(mpBarSettings.textureStrength) or 100,
             textureId = mpBarSettings.enabled == true and barTextures.GetTextureId(mpBarSettings.texture) or nil,
@@ -1172,6 +1190,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             borderSize = tonumber(tpBarSettings.borderSize) or 0,
             anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
+            anchorCollapse = tpBarSettings.anchorCollapse,
             texture = tpBarSettings.texture or 'Solid',
             textureStrength = tonumber(tpBarSettings.textureStrength) or 100,
             textureId = tpBarSettings.enabled == true and barTextures.GetTextureId(tpBarSettings.texture) or nil,
@@ -1278,6 +1297,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 offsetY = tonumber(restingSettings.offsetY) or 38,
                 anchorTo = restingSettings.anchorTo or 'Plate',
                 anchorPoint = restingSettings.anchorPoint,
+                anchorCollapse = restingSettings.anchorCollapse,
                 color = restingSettings.color or { 0.55, 0.95, 0.35, 1.0 },
                 backgroundColor = restingSettings.backgroundColor or { 0.10, 0.10, 0.10, 1.0 },
                 borderColor = restingSettings.borderColor or { 1.0, 1.0, 1.0, 1.0 },
@@ -1459,6 +1479,10 @@ function selfPlate.Render()
     local center = entities.GetSelfCanvasCenter(canvasDefaults.offsetX, canvasDefaults.offsetY);
 
     if (center == nil) then
+        return;
+    end
+
+    if (center.visibleSkeleton ~= true) then
         return;
     end
 

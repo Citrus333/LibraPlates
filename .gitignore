@@ -5,3 +5,5 @@ TEMP WORK FOLDER/
 *.psd
 *.DAT
 test-logs/
+.codex-gif-frames/
+restore-points/

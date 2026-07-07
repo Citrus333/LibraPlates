@@ -620,7 +620,11 @@ function job.DrawSettings(settings, context)
 
     local function DrawBody()
         DrawDisplayRow(settings);
-        settings.offsetX, settings.offsetY = DrawPlacementPair('Position X', settings.offsetX, 'offset_x', 'Position Y', settings.offsetY, 'offset_y', -400, 400, 1);
+        if (anchorControls.IsCollapsedChild(settings) == true) then
+            anchorControls.DrawSpacing(settings, 'job_position');
+        else
+            settings.offsetX, settings.offsetY = DrawPlacementPair('Position X', settings.offsetX, 'offset_x', 'Position Y', settings.offsetY, 'offset_y', -400, 400, 1);
+        end
 
         if ((tonumber(settings.displayModeIndex) or 1) == 2) then
             settings.iconSize = DrawSingleSlider('Icon size', 'icon_size', settings.iconSize, 8, 160, 1);

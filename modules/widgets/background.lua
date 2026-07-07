@@ -552,19 +552,23 @@ function background.DrawSettings(settings, context)
             450
         );
 
-        settings.offsetX, settings.offsetY = DrawSliderPair(
-            'position',
-            'Position X',
-            'offset_x',
-            settings.offsetX,
-            -400,
-            400,
-            'Position Y',
-            'offset_y',
-            settings.offsetY,
-            -400,
-            400
-        );
+        if (anchorControls.IsCollapsedChild(settings) == true) then
+            anchorControls.DrawSpacing(settings, 'background_position');
+        else
+            settings.offsetX, settings.offsetY = DrawSliderPair(
+                'position',
+                'Position X',
+                'offset_x',
+                settings.offsetX,
+                -400,
+                400,
+                'Position Y',
+                'offset_y',
+                settings.offsetY,
+                -400,
+                400
+            );
+        end
     end
 
     local function DrawAppearanceSettings()

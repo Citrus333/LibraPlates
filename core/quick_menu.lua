@@ -1377,6 +1377,20 @@ function quickMenu.HasPendingInvite()
     return os.clock() < (tonumber(pendingInviteUntil) or 0);
 end
 
+function quickMenu.HandlePacketIn(e)
+    if (e == nil or e.id ~= 0x00DC or type(e.data) ~= 'string') then
+        return;
+    end
+
+    pendingInviteUntil = os.clock() + 60;
+end
+
+function quickMenu.HandlePacketOut(e)
+    if (e ~= nil and e.id == 0x0074) then
+        pendingInviteUntil = 0;
+    end
+end
+
 function quickMenu.ClearTextureCache()
     iconCache = {};
     missingIcon = {};
@@ -1748,7 +1762,7 @@ function quickMenu.Render()
             local context = GetPartyContext(pendingMenu.targetIndex);
             local isTown = jobChange.IsTownZone() == true;
 
-            local hasPendingInvite = quickMenu.HasPendingInvite() == true or context.selfSolo == true;
+            local hasPendingInvite = quickMenu.HasPendingInvite() == true;
 
             if (menu.self.acceptInvite == true and hasPendingInvite == true) then
                 MenuItem('Accept Invite', 'accept-invite.png', function()

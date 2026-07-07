@@ -1042,19 +1042,23 @@ function statusIcons.DrawSettings(settings, context)
             1
         );
 
-        settings.offsetX, settings.offsetY = DrawSliderPair(
-            'position',
-            'Position X',
-            'offset_x',
-            settings.offsetX,
-            -400,
-            400,
-            'Position Y',
-            'offset_y',
-            settings.offsetY,
-            -400,
-            400
-        );
+        if (anchorControls.IsCollapsedChild(settings) == true) then
+            anchorControls.DrawSpacing(settings, tostring(label) .. '_position');
+        else
+            settings.offsetX, settings.offsetY = DrawSliderPair(
+                'position',
+                'Position X',
+                'offset_x',
+                settings.offsetX,
+                -400,
+                400,
+                'Position Y',
+                'offset_y',
+                settings.offsetY,
+                -400,
+                400
+            );
+        end
 
         settings.iconWarningPadding, settings.iconSpacing = DrawSliderPair(
             'icon_padding_spacing',

@@ -6,6 +6,7 @@ return {
     width = 220,
     height = 74,
     backgroundFile = 'None',
+    backgroundClickable = true,
     arrowFile = 'arrow_1.png',
     chevronFile = 'chevron_01.png',
     autoPlaceBackground = true,

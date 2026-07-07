@@ -2306,7 +2306,9 @@ local function AddTargetMarkerBackgroundRect(rects, centerX, centerY, marker)
         bgH = math.max(1, (tonumber(anchorRect.y2) - tonumber(anchorRect.y1)) + (spacing * 2));
     end
 
-    AddRect(rects, bgX, bgY, bgW, bgH, 0, 'targetModuleBackground');
+    if (marker.backgroundClickable ~= false) then
+        AddRect(rects, bgX, bgY, bgW, bgH, 0, 'targetModuleBackground');
+    end
 end
 
 local function GetTargetMarkerDistanceScale(marker)
@@ -2353,11 +2355,11 @@ local function AddTargetMarkerForegroundRects(rects, centerX, centerY, marker)
         if (marker.showLock == true and marker.lockTextureId ~= nil) then
             local lockX = arrowX + (tonumber(marker.lockOffsetX) or 0);
             local lockY = math.max((lockH * 0.5) + margin, arrowY - (arrowH * 0.5) - (lockH * 0.5) + (tonumber(marker.lockOffsetY) or -24));
-            AddRect(rects, lockX - (lockW * 0.5), lockY - (lockH * 0.5), lockW, lockH, 4, 'targetModuleLock');
+            AddRect(rects, lockX - (lockW * 0.5), lockY - (lockH * 0.5), lockW, lockH, 4, 'targetModuleLock', nil, true);
         end
 
         if (marker.showArrow == true and marker.arrowTextureId ~= nil) then
-            AddRect(rects, arrowX - (arrowW * 0.5), arrowY - (arrowH * 0.5), arrowW, arrowH, 4, 'targetModuleArrow');
+            AddRect(rects, arrowX - (arrowW * 0.5), arrowY - (arrowH * 0.5), arrowW, arrowH, 4, 'targetModuleArrow', nil, true);
         end
     end
 
@@ -2409,8 +2411,8 @@ local function AddTargetMarkerForegroundRects(rects, centerX, centerY, marker)
             rightX = centerX + (tonumber(marker.chevronRightX) or 110) + manualOffsetX;
         end
 
-        AddRect(rects, leftX - (chevW * 0.5), chevY, chevW, chevH, 4, 'targetModuleChevron');
-        AddRect(rects, rightX - (chevW * 0.5), chevY, chevW, chevH, 4, 'targetModuleChevron');
+        AddRect(rects, leftX - (chevW * 0.5), chevY, chevW, chevH, 4, 'targetModuleChevron', nil, true);
+        AddRect(rects, rightX - (chevW * 0.5), chevY, chevW, chevH, 4, 'targetModuleChevron', nil, true);
     end
 end
 

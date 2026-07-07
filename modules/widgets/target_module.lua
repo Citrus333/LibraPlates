@@ -952,6 +952,9 @@ function targetModule.DrawSettings(settings, context)
             end
 
             if (tostring(settings.backgroundFile or 'None') ~= 'None') then
+                settings.backgroundClickable = DrawToggle('Highlight is clickable', settings.backgroundClickable ~= false);
+                uiTooltip.Info('When off, the highlight image still draws but does not expand the plate click area.');
+
                 settings.autoPlaceBackground = DrawToggle('Auto place highlight', settings.autoPlaceBackground ~= false);
                 uiTooltip.Info('When enabled, the highlight image follows the selected plate element. Size expands it outward from the anchor edges. Turn it off to use manual highlight width, height, and position.');
 

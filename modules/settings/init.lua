@@ -4075,6 +4075,11 @@ function DrawTargetModulePlacementSettings(settings, defaults, label, entityName
     end;
 
     if (allowHighlight == true and tostring(settings.backgroundFile or 'None') ~= 'None' and (settings.backgroundEnabled ~= false or settings.showBackground == true)) then
+        DrawCheckbox('Highlight is clickable', settings.backgroundClickable ~= false, function(nextValue)
+            settings.backgroundClickable = nextValue == true;
+            state.Save();
+        end);
+
         if (settings.autoPlaceBackground ~= false) then
             DrawInlineComboRow('Auto place by', targetAutoPlaceAnchorOptions, settings.backgroundAutoPlaceAnchor or 'Widest element', function(value)
                 settings.backgroundAutoPlaceAnchor = value;
@@ -5557,6 +5562,18 @@ function LibraPlatesSettingsDrawPlatesHeaderBand(render, heightOverride)
     imgui.SetCursorScreenPos({ x + panelPadX, y + panelPadY });
     render(math.max(1, cardWidth - (panelPadX * 2)));
     imgui.SetCursorScreenPos({ x, y + height });
+end
+
+function LibraPlatesSettingsGetPlatesHeaderBandHeight(settings, compact)
+    if (compact == true) then
+        return 48;
+    end
+
+    if (settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate') then
+        return 136;
+    end
+
+    return 108;
 end
 
 function GetPeerIconStyles()
@@ -12375,11 +12392,11 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
                 state.Save();
             end
         end
-    end, (
+    end, LibraPlatesSettingsGetPlatesHeaderBandHeight(moduleSettings, (
         selectedWidget == 'Quick Menu (module)' or
         selectedWidget == 'Peer (module)' or
         LibraPlatesSettingsIsFishingHudWidget(selectedWidget) == true
-    ) and 48 or 76);
+    )));
 
     if (imgui.Spacing ~= nil) then
         imgui.Spacing();
@@ -12955,7 +12972,7 @@ local function DrawSelectedEditorPlates()
             };
             LibraPlatesSettingsApplyBoxedPlateWidgetExtras(headerPayload, boxedWidgetInfo.extras);
             boxedWidgetInfo.drawFn(settings, headerPayload);
-        end);
+        end, LibraPlatesSettingsGetPlatesHeaderBandHeight(settings, false));
 
         if (imgui.Spacing ~= nil) then
             imgui.Spacing();

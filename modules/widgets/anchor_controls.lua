@@ -551,6 +551,10 @@ function anchorControls.Draw(settings, context, label)
         uiTooltip.Info(GetAnchorTooltip(settings));
 
         DrawReleaseConfirm(settings, key);
+
+        if (context.suppressHeaderSeparators == true and imgui.SetCursorScreenPos ~= nil and anchorRowX ~= nil and anchorRowY ~= nil) then
+            imgui.SetCursorScreenPos({ anchorRowX, anchorRowY + 58 });
+        end
     else
         imgui.SameLine();
         uiTooltip.Info(GetAnchorTooltip(settings));

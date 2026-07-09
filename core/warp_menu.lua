@@ -9,12 +9,17 @@ local unityData = require('data.warp.unity');
 local outpostData = require('data.warp.outpost_teleporters');
 local campaignData = require('data.warp.campaign_arbiters');
 local expGuideData = require('data.warp.exp_guides');
+local fieldManualData = require('data.warp.field_manual');
+local domenicData = require('data.warp.domenic');
+local gameMode = require('core.game_mode');
 local homePointWarp = require('core.home_point_warp');
 local survivalGuideTeleport = require('core.survival_guide_teleport');
 local unityTeleport = require('core.unity_teleport');
 local outpostTeleport = require('core.outpost_teleport');
 local campaignTeleport = require('core.campaign_teleport');
 local expGuideTeleport = require('core.exp_guide_teleport');
+local fieldManualSupport = require('core.field_manual_support');
+local domenicTeleport = require('core.domenic_teleport');
 
 local warpMenu = {};
 local iconCache = {};
@@ -462,6 +467,16 @@ local function GetExpGuideMode(value)
     return nil;
 end
 
+local function IsFieldManualName(value)
+    local text = tostring(value or ''):gsub('_', ' '):lower();
+    return text == 'field manual';
+end
+
+local function IsDomenicName(value)
+    local text = tostring(value or ''):gsub('_', ' ');
+    return domenicData.npcs ~= nil and domenicData.npcs[text] == true;
+end
+
 local function GetCurrentZoneId()
     local zoneId = nil;
 
@@ -470,6 +485,44 @@ local function GetCurrentZoneId()
     end);
 
     return tonumber(zoneId) or 0;
+end
+
+local function GetSelfGameMode()
+    local selfIndex = nil;
+
+    pcall(function()
+        selfIndex = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0);
+    end);
+
+    return gameMode.Resolve(selfIndex, false);
+end
+
+local function IsAceMode(mode)
+    return tostring(mode or GetSelfGameMode()) == 'ACE';
+end
+
+local function IsEraMode(mode)
+    local value = tostring(mode or GetSelfGameMode());
+    return value == 'CW' or value == 'UCW' or value == 'WEW';
+end
+
+local function IsExpGuideModeAllowed(modeName, playerMode)
+    modeName = tostring(modeName or '');
+    playerMode = tostring(playerMode or GetSelfGameMode());
+
+    if (modeName == 'cw_emilia') then
+        return playerMode == 'CW' or playerMode == 'UCW';
+    end
+
+    if (modeName == 'present') then
+        return playerMode == 'ACE' or playerMode == 'WEW';
+    end
+
+    if (modeName == 'past') then
+        return playerMode == 'ACE' or playerMode == 'CW' or playerMode == 'UCW' or playerMode == 'WEW';
+    end
+
+    return true;
 end
 
 local function PrepareContext(context)
@@ -1264,6 +1317,152 @@ local function DrawCampaignFavorites(settings, context)
     end
 end
 
+local function DrawFieldManualService(service, context)
+    local baseLabel = tostring(service.label or 'Support');
+    local label = baseLabel;
+    local cost = tonumber(service.cost);
+    if (cost ~= nil) then
+        label = label .. '  ' .. tostring(cost) .. ' tabs';
+    end
+
+    if (service.disabled == true) then
+        imgui.TextColored({ 0.55, 0.55, 0.55, 1.0 }, label);
+        if (service.disabledReason ~= nil) then
+            imgui.TextColored({ 0.55, 0.55, 0.55, 1.0 }, tostring(service.disabledReason));
+        end
+        return;
+    end
+
+    if (type(service.stats) == 'table' and #service.stats > 0 and imgui.BeginMenu ~= nil and imgui.EndMenu ~= nil) then
+        if (imgui.BeginMenu(label) == true) then
+            for _, stat in ipairs(service.stats) do
+                imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, tostring(stat));
+            end
+
+            imgui.Separator();
+
+            local useLabel = 'Use';
+            if (cost ~= nil) then
+                useLabel = useLabel .. '  ' .. tostring(cost) .. ' tabs';
+            end
+
+            if (imgui.Selectable(useLabel) == true) then
+                fieldManualSupport.Request(service, context or {});
+                if (imgui.CloseCurrentPopup ~= nil) then
+                    imgui.CloseCurrentPopup();
+                end
+            end
+
+            imgui.EndMenu();
+        end
+
+        return;
+    end
+
+    if (imgui.Selectable(label) == true) then
+        fieldManualSupport.Request(service, context or {});
+        if (imgui.CloseCurrentPopup ~= nil) then
+            imgui.CloseCurrentPopup();
+        end
+    end
+end
+
+local function DrawFieldManualRegime(regime, context)
+    local page = tonumber(regime.page) or 0;
+    local label = 'Page ' .. tostring(page);
+    local low = tonumber(regime.low);
+    local high = tonumber(regime.high);
+
+    if (low ~= nil and high ~= nil) then
+        label = label .. '  Lv ' .. tostring(low) .. '-' .. tostring(high);
+    end
+
+    if (imgui.BeginMenu(label) == true) then
+        if (low ~= nil and high ~= nil) then
+            imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'Level range: ' .. tostring(low) .. '-' .. tostring(high));
+        end
+
+        if (regime.reward ~= nil) then
+            imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'Reward: ' .. tostring(regime.reward) .. ' exp/gil/tabs');
+        end
+
+        if (regime.regimeId ~= nil and GetSettings().debug == true) then
+            imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'Regime ID: ' .. tostring(regime.regimeId));
+        end
+
+        if (type(regime.objectives) == 'table' and #regime.objectives > 0) then
+            imgui.Separator();
+            for _, objective in ipairs(regime.objectives) do
+                local targets = {};
+                if (type(objective.targets) == 'table') then
+                    for _, target in ipairs(objective.targets) do
+                        targets[#targets + 1] = tostring(target);
+                    end
+                end
+
+                if (#targets > 0) then
+                    local shown = {};
+                    local maxTargets = 5;
+                    for index, target in ipairs(targets) do
+                        if (index <= maxTargets) then
+                            shown[#shown + 1] = target;
+                        end
+                    end
+
+                    local text = tostring(objective.count or 0) .. ' x ' .. table.concat(shown, ' / ');
+                    if (#targets > maxTargets) then
+                        text = text .. ' / +' .. tostring(#targets - maxTargets) .. ' more';
+                    end
+
+                    imgui.TextColored({ 0.85, 0.85, 0.85, 1.0 }, text);
+                end
+            end
+        end
+
+        imgui.Separator();
+
+        if (imgui.Selectable('Start training regime') == true) then
+            fieldManualSupport.Request({
+                label = 'Training regime page ' .. tostring(page),
+                option = regime.option,
+                page = page,
+                regimeId = regime.regimeId,
+            }, context or {});
+
+            if (imgui.CloseCurrentPopup ~= nil) then
+                imgui.CloseCurrentPopup();
+            end
+        end
+
+        if (imgui.Selectable('Start training regime, repeat') == true) then
+            fieldManualSupport.Request({
+                label = 'Training regime page ' .. tostring(page) .. ' repeat',
+                option = regime.option,
+                page = page,
+                regimeId = regime.regimeId,
+                repeatEnabled = true,
+            }, context or {});
+
+            if (imgui.CloseCurrentPopup ~= nil) then
+                imgui.CloseCurrentPopup();
+            end
+        end
+
+        imgui.EndMenu();
+    end
+end
+
+local function DrawDomenicDestination(destination, context)
+    local label = tostring(destination.name or 'Destination') .. '  ' .. tostring(destination.gil or '?') .. ' gil';
+
+    if (imgui.Selectable(label) == true) then
+        domenicTeleport.Request(destination, context or {});
+        if (imgui.CloseCurrentPopup ~= nil) then
+            imgui.CloseCurrentPopup();
+        end
+    end
+end
+
 function warpMenu.IsHomePointTarget(name, info)
     if (GetHomePointNumber(name) ~= nil) then
         return true;
@@ -1345,14 +1544,46 @@ function warpMenu.IsCampaignArbiterTarget(name, info)
 end
 
 function warpMenu.IsExpGuideTarget(name, info)
-    if (GetExpGuideMode(name) ~= nil) then
+    local modeName = GetExpGuideMode(name);
+    if (modeName ~= nil and IsExpGuideModeAllowed(modeName) == true) then
+        return true;
+    end
+
+    if (info ~= nil) then
+        modeName = GetExpGuideMode(info.name) or GetExpGuideMode(info.displayName) or GetExpGuideMode(info.type);
+        if (modeName ~= nil and IsExpGuideModeAllowed(modeName) == true) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
+function warpMenu.IsFieldManualTarget(name, info)
+    if (IsFieldManualName(name) == true) then
         return true;
     end
 
     if (info ~= nil and (
-        GetExpGuideMode(info.name) ~= nil or
-        GetExpGuideMode(info.displayName) ~= nil or
-        GetExpGuideMode(info.type) ~= nil
+        IsFieldManualName(info.name) == true or
+        IsFieldManualName(info.displayName) == true or
+        IsFieldManualName(info.type) == true
+    )) then
+        return true;
+    end
+
+    return false;
+end
+
+function warpMenu.IsDomenicTarget(name, info)
+    if (IsDomenicName(name) == true) then
+        return true;
+    end
+
+    if (info ~= nil and (
+        IsDomenicName(info.name) == true or
+        IsDomenicName(info.displayName) == true or
+        IsDomenicName(info.type) == true
     )) then
         return true;
     end
@@ -1361,6 +1592,13 @@ function warpMenu.IsExpGuideTarget(name, info)
 end
 
 function warpMenu.RenderHomePointMenu(context)
+    if (IsAceMode() ~= true) then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Home Point teleportation');
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'Not available.');
+        return false;
+    end
+
     local settings = GetSettings();
     context = PrepareContext(context);
     homePointWarp.SetDebugEnabled(settings.packetDebug == true);
@@ -1411,6 +1649,13 @@ function warpMenu.RenderHomePointMenu(context)
 end
 
 function warpMenu.RenderSurvivalGuideMenu(context)
+    if (IsAceMode() ~= true) then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Survival Guide teleportation');
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'Not available.');
+        return false;
+    end
+
     local settings = GetSettings();
     survivalGuideTeleport.SetDebugEnabled(settings.packetDebug == true);
 
@@ -1454,6 +1699,13 @@ function warpMenu.RenderSurvivalGuideMenu(context)
 end
 
 function warpMenu.RenderUnityMenu(context)
+    if (IsAceMode() ~= true) then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Unity teleportation');
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'Not available.');
+        return false;
+    end
+
     local settings = GetSettings();
     unityTeleport.SetDebugEnabled(settings.packetDebug == true);
 
@@ -1575,6 +1827,30 @@ function warpMenu.RenderCampaignMenu(context)
     return true;
 end
 
+function warpMenu.RenderDomenicMenu(context)
+    local settings = GetSettings();
+    domenicTeleport.SetDebugEnabled(settings.packetDebug == true);
+
+    if (settings.enabled ~= true) then
+        if (settings.debug == true) then
+            imgui.Separator();
+            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'BCNM teleportation');
+            imgui.TextColored({ 0.85, 0.85, 0.85, 1.0 }, 'Disabled in Quick Menu settings.');
+        end
+
+        return false;
+    end
+
+    imgui.Separator();
+    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'BCNM teleportation');
+
+    for _, destination in ipairs(domenicData.destinations or {}) do
+        DrawDomenicDestination(destination, context or {});
+    end
+
+    return true;
+end
+
 function warpMenu.RenderExpGuideMenu(context)
     local settings = GetSettings();
     context = context or {};
@@ -1583,7 +1859,7 @@ function warpMenu.RenderExpGuideMenu(context)
     local modeName = GetExpGuideMode(context.name) or GetExpGuideMode(context.rawName) or 'past';
     local mode = expGuideData.modes[modeName];
 
-    if (mode == nil) then
+    if (mode == nil or IsExpGuideModeAllowed(modeName) ~= true) then
         return false;
     end
 
@@ -1618,22 +1894,41 @@ function warpMenu.RenderExpGuideMenu(context)
     end
 
     for _, region in ipairs(order) do
-        if (imgui.BeginMenu(region) == true) then
+        if (mode.flatList == true) then
             for _, destination in ipairs(groups[region]) do
                 local label = tostring(destination.label or destination.result or 'Destination');
-                if (imgui.BeginMenu(label) == true) then
-                    if (imgui.Selectable('Teleport') == true) then
+                if (mode.directList == true) then
+                    if (imgui.Selectable(label) == true) then
                         RequestExpGuideTeleport(destination, context, false);
                         if (imgui.CloseCurrentPopup ~= nil) then
                             imgui.CloseCurrentPopup();
                         end
                     end
-
-                    if (mode.buffQuestion ~= nil and tostring(mode.buffQuestion) ~= '') then
-                        if (imgui.Selectable('Teleport + ' .. tostring(mode.buffName or 'Buff')) == true) then
-                            RequestExpGuideTeleport(destination, context, true);
+                elseif (imgui.BeginMenu(label) == true) then
+                    local paymentOptions = destination.paymentOptions or mode.paymentOptions;
+                    if (paymentOptions ~= nil and #paymentOptions > 0 and destination.noPayment ~= true) then
+                        for _, paymentOption in ipairs(paymentOptions) do
+                            if (imgui.Selectable(tostring(paymentOption.label or paymentOption.result or 'Pay')) == true) then
+                                RequestExpGuideTeleport(destination, context, paymentOption);
+                                if (imgui.CloseCurrentPopup ~= nil) then
+                                    imgui.CloseCurrentPopup();
+                                end
+                            end
+                        end
+                    else
+                        if (imgui.Selectable('Teleport') == true) then
+                            RequestExpGuideTeleport(destination, context, false);
                             if (imgui.CloseCurrentPopup ~= nil) then
                                 imgui.CloseCurrentPopup();
+                            end
+                        end
+
+                        if (mode.buffQuestion ~= nil and tostring(mode.buffQuestion) ~= '') then
+                            if (imgui.Selectable('Teleport + ' .. tostring(mode.buffName or 'Buff')) == true) then
+                                RequestExpGuideTeleport(destination, context, true);
+                                if (imgui.CloseCurrentPopup ~= nil) then
+                                    imgui.CloseCurrentPopup();
+                                end
                             end
                         end
                     end
@@ -1641,6 +1936,97 @@ function warpMenu.RenderExpGuideMenu(context)
                     imgui.EndMenu();
                 end
             end
+        else
+            if (imgui.BeginMenu(region) == true) then
+                for _, destination in ipairs(groups[region]) do
+                    local label = tostring(destination.label or destination.result or 'Destination');
+                    if (imgui.BeginMenu(label) == true) then
+                        local paymentOptions = destination.paymentOptions or mode.paymentOptions;
+                        if (paymentOptions ~= nil and #paymentOptions > 0 and destination.noPayment ~= true) then
+                            for _, paymentOption in ipairs(paymentOptions) do
+                                if (imgui.Selectable(tostring(paymentOption.label or paymentOption.result or 'Pay')) == true) then
+                                    RequestExpGuideTeleport(destination, context, paymentOption);
+                                    if (imgui.CloseCurrentPopup ~= nil) then
+                                        imgui.CloseCurrentPopup();
+                                    end
+                                end
+                            end
+                        else
+                            if (imgui.Selectable('Teleport') == true) then
+                                RequestExpGuideTeleport(destination, context, false);
+                                if (imgui.CloseCurrentPopup ~= nil) then
+                                    imgui.CloseCurrentPopup();
+                                end
+                            end
+
+                            if (mode.buffQuestion ~= nil and tostring(mode.buffQuestion) ~= '') then
+                                if (imgui.Selectable('Teleport + ' .. tostring(mode.buffName or 'Buff')) == true) then
+                                    RequestExpGuideTeleport(destination, context, true);
+                                    if (imgui.CloseCurrentPopup ~= nil) then
+                                        imgui.CloseCurrentPopup();
+                                    end
+                                end
+                            end
+                        end
+
+                        imgui.EndMenu();
+                    end
+                end
+                imgui.EndMenu();
+            end
+        end
+    end
+
+    return true;
+end
+
+function warpMenu.RenderFieldManualMenu(context)
+    local settings = GetSettings();
+    context = context or {};
+    fieldManualSupport.SetDebugEnabled(settings.packetDebug == true);
+
+    if (settings.enabled ~= true) then
+        if (settings.debug == true) then
+            imgui.Separator();
+            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Field Manual support');
+            imgui.TextColored({ 0.85, 0.85, 0.85, 1.0 }, 'Disabled in Quick Menu settings.');
+        end
+
+        return false;
+    end
+
+    imgui.Separator();
+    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Field Manual support');
+
+    if (imgui.BeginMenu == nil or imgui.EndMenu == nil or imgui.Selectable == nil) then
+        imgui.TextColored({ 0.85, 0.85, 0.85, 1.0 }, 'Flyout menus are not available in this ImGui build.');
+        return true;
+    end
+
+    local groups = { 'Training regimes', 'Support effects', 'Field recipes', 'Teleportation' };
+
+    for _, groupName in ipairs(groups) do
+        if (imgui.BeginMenu(groupName) == true) then
+            if (groupName == 'Training regimes') then
+                local zoneId = GetCurrentZoneId();
+                local regimes = (fieldManualData.trainingRegimes or {})[zoneId] or {};
+                if (#regimes == 0) then
+                    imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'No training pages for this zone.');
+                else
+                    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Starting a page may replace your current regime.');
+                    imgui.Separator();
+                    for _, regime in ipairs(regimes) do
+                        DrawFieldManualRegime(regime, context);
+                    end
+                end
+            else
+                for _, service in ipairs(fieldManualData.support or {}) do
+                    if (service.group == groupName) then
+                        DrawFieldManualService(service, context);
+                    end
+                end
+            end
+
             imgui.EndMenu();
         end
     end
@@ -1701,6 +2087,8 @@ function warpMenu.HandlePacketIn(e)
     outpostTeleport.HandlePacketIn(e);
     campaignTeleport.HandlePacketIn(e);
     expGuideTeleport.HandlePacketIn(e);
+    fieldManualSupport.HandlePacketIn(e);
+    domenicTeleport.HandlePacketIn(e);
 end
 
 function warpMenu.HandlePacketOut(e)
@@ -1729,6 +2117,8 @@ function warpMenu.HandlePacketOut(e)
     outpostTeleport.HandlePacketOut(e);
     campaignTeleport.HandlePacketOut(e);
     expGuideTeleport.HandlePacketOut(e);
+    fieldManualSupport.HandlePacketOut(e);
+    domenicTeleport.HandlePacketOut(e);
 end
 
 function warpMenu.Update()
@@ -1738,6 +2128,8 @@ function warpMenu.Update()
     outpostTeleport.Update();
     campaignTeleport.Update();
     expGuideTeleport.Update();
+    fieldManualSupport.Update();
+    domenicTeleport.Update();
 end
 
 return warpMenu;

@@ -1464,6 +1464,12 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'fmexit' or subcommand == 'fieldmanualexit') then
+        local fieldManualSupport = require('core.field_manual_support');
+        fieldManualSupport.EmergencyExit();
+        return;
+    end
+
     if (subcommand == 'pccap' or subcommand == 'staffcap' or subcommand == 'gmid') then
         AppendStaffPlayer(args[3]);
         return;

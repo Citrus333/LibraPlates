@@ -300,6 +300,29 @@ end
 
 local function QueueForegroundTextBlock(text, color, maxWidth, linkResolver, sectionColor, linkColor)
     if (pendingMenu == nil or pendingMenu.foreground == nil) then
+        local lineHeight = 15;
+        local usedHeight = 0;
+        local wrapWidth = math.max(80, tonumber(maxWidth) or 220);
+
+        for _, line in ipairs(SplitLines(text)) do
+            if (line == '') then
+                if (imgui.Dummy ~= nil) then
+                    imgui.Dummy({ 1, lineHeight });
+                end
+                usedHeight = usedHeight + lineHeight;
+            else
+                local isBullet = line:match('^%*%s+') ~= nil;
+                local isSectionHeader = isBullet ~= true and line:match(':%s*$') ~= nil;
+                local displayLine = isBullet and ('  ' .. npcInfoBullet .. ' ' .. line:gsub('^%*%s+', '')) or line;
+                local lineColor = isSectionHeader and (sectionColor or npcSectionTextColor) or color;
+
+                for _, wrapped in ipairs(WrapLine(displayLine, wrapWidth)) do
+                    imgui.TextColored(lineColor, wrapped);
+                    usedHeight = usedHeight + lineHeight;
+                end
+            end
+        end
+
         return 0;
     end
 
@@ -389,8 +412,11 @@ local function NormalizeNpcInfoText(text)
     text = tostring(text or ''):gsub('\r\n', '\n'):gsub('\r', '\n');
 
     text = text:gsub('◆', npcInfoBullet);
+    text = text:gsub('%s*:%s*%*%s*', '\n' .. npcInfoBullet .. ' ');
     text = text:gsub('(^)%s*[%-%*]%s+', '%1' .. npcInfoBullet .. ' ');
     text = text:gsub('(\n)%s*[%-%*]%s+', '%1' .. npcInfoBullet .. ' ');
+    text = text:gsub('\n%s*\n%s*\n+', '\n\n');
+    text = text:gsub('^%s+', ''):gsub('%s+$', '');
 
     return text;
 end
@@ -1390,6 +1416,35 @@ local function DrawForegroundMenu(menu)
     end
 end
 
+local function UpdateForegroundHeightFromContent(menu)
+    if (pendingMenu == nil or pendingMenu.foreground == nil) then
+        return;
+    end
+
+    local foreground = pendingMenu.foreground;
+    local baseY = tonumber(foreground.windowY) or tonumber(pendingMenu.y) or 0;
+    local bottom = baseY + 40;
+    local iconSize = tonumber(menu.iconSize) or 22;
+
+    if (foreground.header ~= nil) then
+        bottom = math.max(bottom, (tonumber(foreground.header.y) or (baseY + 10)) + iconSize + 8);
+    end
+
+    if (foreground.separatorY ~= nil) then
+        bottom = math.max(bottom, (tonumber(foreground.separatorY) or baseY) + 10);
+    end
+
+    for _, row in ipairs(foreground.rows or {}) do
+        bottom = math.max(bottom, (tonumber(row.y) or baseY) + (tonumber(row.rowHeight) or 24) + 6);
+    end
+
+    for _, row in ipairs(foreground.textRows or {}) do
+        bottom = math.max(bottom, (tonumber(row.y) or baseY) + 18);
+    end
+
+    foreground.height = math.max(40, math.floor((bottom - baseY) + 10));
+end
+
 function quickMenu.GetSettings()
     return EnsureSettings();
 end
@@ -1708,7 +1763,12 @@ function quickMenu.Render()
                 warpMenu.IsExpGuideTarget(pendingMenu.name, pendingMenu.npcInfo or {}) == true
                 or warpMenu.IsExpGuideTarget(pendingMenu.rawName, pendingMenu.npcInfo or {}) == true
             );
-        local useForeground = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object') and isHomePointMenuTarget ~= true and isSurvivalGuideMenuTarget ~= true and isUnityMenuTarget ~= true and isOutpostMenuTarget ~= true and isCampaignMenuTarget ~= true and isExpGuideMenuTarget ~= true;
+        local isDomenicMenuTarget = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object')
+            and (
+                warpMenu.IsDomenicTarget(pendingMenu.name, pendingMenu.npcInfo or {}) == true
+                or warpMenu.IsDomenicTarget(pendingMenu.rawName, pendingMenu.npcInfo or {}) == true
+            );
+        local useForeground = false;
 
         if (useForeground == true) then
             pendingMenu.foreground = {
@@ -1729,6 +1789,12 @@ function quickMenu.Render()
             };
         else
             pendingMenu.foreground = nil;
+        end
+
+        if (pendingMenu.foreground ~= nil) then
+            pendingMenu.foreground.rows = {};
+            pendingMenu.foreground.textRows = {};
+            pendingMenu.foreground.spacerCount = 0;
         end
 
         if (menu.iconsEnabled ~= false and imgui.Image ~= nil) then
@@ -1777,6 +1843,10 @@ function quickMenu.Render()
                 or warpMenu.IsCampaignArbiterTarget(pendingMenu.rawName, info) == true;
             local isExpGuideWarpTarget = warpMenu.IsExpGuideTarget(pendingMenu.name, info) == true
                 or warpMenu.IsExpGuideTarget(pendingMenu.rawName, info) == true;
+            local isDomenicWarpTarget = warpMenu.IsDomenicTarget(pendingMenu.name, info) == true
+                or warpMenu.IsDomenicTarget(pendingMenu.rawName, info) == true;
+            local isFieldManualTarget = warpMenu.IsFieldManualTarget(pendingMenu.name, info) == true
+                or warpMenu.IsFieldManualTarget(pendingMenu.rawName, info) == true;
             local typeText = NormalizeNpcInfoText(info.type or '');
             local infoText = LimitNpcInfoText(info.info or '', menu.npc.maxInfoChars, menu.npc.maxInfoLines);
             local link = BuildNpcLink(pendingMenu.name, info);
@@ -1876,21 +1946,45 @@ function quickMenu.Render()
                 end
             end
 
-            if (menu.warp ~= nil and menu.warp.debug == true and isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true) then
-                imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Warp debug');
-                imgui.TextColored(GetReadableTextColor(menu), 'name=' .. tostring(pendingMenu.name or ''));
-                imgui.TextColored(GetReadableTextColor(menu), 'raw=' .. tostring(pendingMenu.rawName or ''));
-                imgui.TextColored(GetReadableTextColor(menu), 'target=' .. tostring(pendingMenu.targetIndex or '') .. ' type=' .. tostring(pendingMenu.targetType or ''));
-                imgui.TextColored(GetReadableTextColor(menu), 'source=' .. tostring(info.source or '') .. ' type=' .. tostring(info.type or ''));
-                imgui.TextColored(GetReadableTextColor(menu), 'warpEnabled=' .. tostring(menu.warp.enabled == true) .. ' homePoint=' .. tostring(isHomePointWarpTarget == true) .. ' survivalGuide=' .. tostring(isSurvivalGuideWarpTarget == true) .. ' unity=' .. tostring(isUnityWarpTarget == true) .. ' outpost=' .. tostring(isOutpostWarpTarget == true) .. ' campaign=' .. tostring(isCampaignWarpTarget == true) .. ' expGuide=' .. tostring(isExpGuideWarpTarget == true));
-                imgui.Separator();
+            if (isDomenicWarpTarget == true) then
+                local ok, err = pcall(function()
+                    warpMenu.RenderDomenicMenu({
+                        targetIndex = pendingMenu.targetIndex,
+                        targetId = pendingMenu.serverId,
+                        name = pendingMenu.name,
+                        rawName = pendingMenu.rawName,
+                    });
+                end);
+
+                if (ok ~= true) then
+                    log.Warn('Domenic teleport menu failed: ' .. tostring(err or 'unknown error'));
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'BCNM teleportation');
+                    imgui.TextColored(GetReadableTextColor(menu), 'Menu failed to render. Check /console log.');
+                end
             end
 
-            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.showType == true and typeText ~= '') then
+            if (isFieldManualTarget == true) then
+                local ok, err = pcall(function()
+                    warpMenu.RenderFieldManualMenu({
+                        targetIndex = pendingMenu.targetIndex,
+                        targetId = pendingMenu.serverId,
+                        name = pendingMenu.name,
+                        rawName = pendingMenu.rawName,
+                    });
+                end);
+
+                if (ok ~= true) then
+                    log.Warn('Field Manual support menu failed: ' .. tostring(err or 'unknown error'));
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Field Manual support');
+                    imgui.TextColored(GetReadableTextColor(menu), 'Menu failed to render. Check /console log.');
+                end
+            end
+
+            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and isDomenicWarpTarget ~= true and isFieldManualTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.showType == true and typeText ~= '') then
                 ReserveTextBlockHeight(QueueForegroundTextBlock(typeText, bodyTextColor, bodyWidth, nil, sectionTextColor, linkTextColor), typeText);
             end
 
-            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.showInfo == true and infoText ~= '') then
+            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and isDomenicWarpTarget ~= true and isFieldManualTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.showInfo == true and infoText ~= '') then
                 if (typeText ~= '') then
                     imgui.Separator();
                 end
@@ -1898,7 +1992,7 @@ function quickMenu.Render()
                 ReserveTextBlockHeight(QueueForegroundTextBlock(infoText, bodyTextColor, bodyWidth, questLineLinkResolver, sectionTextColor, linkTextColor), infoText);
             end
 
-            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.openLink == true and link ~= '' and canUseJobPresets ~= true) then
+            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and isFieldManualTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.openLink == true and link ~= '' and canUseJobPresets ~= true) then
                 if (typeText ~= '' or infoText ~= '') then
                     imgui.Separator();
                 end
@@ -2163,7 +2257,7 @@ function quickMenu.Render()
         local windowWidth, windowHeight = GetWindowSize();
         if (pendingMenu ~= nil and pendingMenu.foreground ~= nil) then
             pendingMenu.foreground.width = (windowWidth > 0) and windowWidth or (tonumber(menu.width) or 270);
-            pendingMenu.foreground.height = (windowHeight > 0) and windowHeight or pendingMenu.foreground.height;
+            UpdateForegroundHeightFromContent(menu);
         end
 
         imgui.EndPopup();

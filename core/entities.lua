@@ -261,6 +261,10 @@ local function IsPlayerIndexRange(index)
     return index ~= nil and index >= 1024 and index <= 1791;
 end
 
+local function IsPlayerActorEntity(ent)
+    return ent ~= nil and tonumber(ent.Type) == 0;
+end
+
 local function IsInvisiblePlayerActor(entityManager, index, actorPointer)
     if (entityManager == nil or IsPlayerIndexRange(index) ~= true or actorPointer == nil or actorPointer == 0) then
         return false;
@@ -1365,6 +1369,7 @@ function entities.GetNearbyPlayers(maxDistance)
 
             if (
                 ent ~= nil and
+                IsPlayerActorEntity(ent) == true and
                 ent.Name ~= nil and
                 ent.Name ~= '' and
                 (ent.HPPercent ~= nil or isCurrentTargetContext == true) and
@@ -1416,6 +1421,7 @@ function entities.GetPlayerByIndex(index, maxDistance, partyDataByIndex)
     local ent = GetEntity(index);
     if (
         ent == nil or
+        IsPlayerActorEntity(ent) ~= true or
         ent.Name == nil or
         ent.Name == '' or
         ent.Distance == nil or

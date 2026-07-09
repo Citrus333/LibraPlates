@@ -891,13 +891,14 @@ Involved in Missions:\
 ",
             ["type"] = "Campaign Battle",
         },
-        ["Wenonah, C.A."] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Jeuno affliated Campaign Arbiter in Windurst Waters (S) *Offers Campaign Information, Campaign , Teleportation *Campaign Sword in front of name during Campaign *She cannot teleport you to Beastman Strongholds (Castle Oztroja (S), La Vaule (S), Beadeaux (S), Castle Zvahl Baileys (S), Castle Zvahl Keep (S), Throne Room (S))",
-            ["type"] = "Campaign",
-        },
+		["Wenonah, C.A."] = {
+			["_source"] = "npc",
+			["icon"] = "WarpNPC.png",
+			["note"] = "Involved in Mission:\
+		* Allied Campaign\
+		",
+			["type"] = "Teleport Service",
+		},
         ["Wildcat Vanguard"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",

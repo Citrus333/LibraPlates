@@ -1428,6 +1428,42 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'campaigncapture') then
+        local action = tostring(args[3] or 'on'):lower();
+        local captureWarpMenu = require('core.warp_menu');
+
+        if (action == 'off' or action == 'stop') then
+            captureWarpMenu.StopCampaignCapture();
+            return;
+        end
+
+        if (action == 'status') then
+            log.Info('Campaign Arbiter packet capture command ready. Use /lp campaigncapture on [seconds], then select a native Campaign Arbiter destination.');
+            return;
+        end
+
+        captureWarpMenu.StartCampaignCapture(tonumber(args[4]) or tonumber(args[3]) or 30);
+        return;
+    end
+
+    if (subcommand == 'expcapture') then
+        local action = tostring(args[3] or 'on'):lower();
+        local captureWarpMenu = require('core.warp_menu');
+
+        if (action == 'off' or action == 'stop') then
+            captureWarpMenu.StopExpGuideCapture();
+            return;
+        end
+
+        if (action == 'status') then
+            log.Info('EXP Guide packet capture command ready. Use /lp expcapture on [seconds], then select a native EXP Guide destination.');
+            return;
+        end
+
+        captureWarpMenu.StartExpGuideCapture(tonumber(args[4]) or tonumber(args[3]) or 30);
+        return;
+    end
+
     if (subcommand == 'pccap' or subcommand == 'staffcap' or subcommand == 'gmid') then
         AppendStaffPlayer(args[3]);
         return;

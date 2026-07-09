@@ -44,7 +44,8 @@ end
 local function GetHomePointKey(name)
     local text = NormalizeName(name);
     local lower = string.lower(text);
-    local number = lower:match('home%s*point%s*#?%s*(%d+)')
+    local number = lower:match('home[%s_]*point[%s_]*#?[%s_]*(%d+)')
+        or lower:match('homepoint[%s_]*#?[%s_]*(%d+)')
         or lower:match('home%s*point.-(%d+)');
 
     if (number ~= nil) then

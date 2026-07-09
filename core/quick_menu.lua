@@ -10,6 +10,7 @@ local jobIconTextures = require('core.job_icon_textures');
 local mounts = require('core.mounts');
 local targeting = require('core.targeting');
 local playerBlacklist = require('core.player_blacklist');
+local warpMenu = require('core.warp_menu');
 local widgetDefaults = { enabled = true };
 local quickMenuPresetCount = 10;
 
@@ -56,6 +57,17 @@ local function ColorLuma(color)
     local b = tonumber(color[3]) or 0;
 
     return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
+end
+
+local function QuickMenuSelectionColor(menu, alpha)
+    local source = { 0.20, 0.65, 0.67, 1.0 };
+
+    return {
+        math.max(0.0, math.min(1.0, tonumber(source[1]) or 0.20)),
+        math.max(0.0, math.min(1.0, tonumber(source[2]) or 0.65)),
+        math.max(0.0, math.min(1.0, tonumber(source[3]) or 0.67)),
+        math.max(0.0, math.min(1.0, tonumber(alpha) or 0.45)),
+    };
 end
 
 local function GetReadableTextColor(menu)
@@ -629,6 +641,15 @@ local function EnsureSettings()
     if (menu.npc.maxInfoChars == nil) then menu.npc.maxInfoChars = 420; end
     if (menu.npc.maxInfoLines == nil) then menu.npc.maxInfoLines = 10; end
     if (menu.npc.maxQuestLinks == nil or tonumber(menu.npc.maxQuestLinks) == 4) then menu.npc.maxQuestLinks = 8; end
+    if (menu.warp == nil) then menu.warp = {}; end
+    if (menu.warp.enabled == nil) then menu.warp.enabled = true; end
+    if (menu.warp.grouping == nil) then menu.warp.grouping = 'Region'; end
+    if (menu.warp.showNotes == nil) then menu.warp.showNotes = true; end
+    if (menu.warp.hideUnknown == nil) then menu.warp.hideUnknown = false; end
+    if (menu.warp.confirmBeforeWarp == nil) then menu.warp.confirmBeforeWarp = false; end
+    if (menu.warp.debug == nil) then menu.warp.debug = false; end
+    if (menu.warp.favoriteDisplay == nil) then menu.warp.favoriteDisplay = 'Short'; end
+    if (menu.warp.favorites == nil) then menu.warp.favorites = {}; end
     EnsurePresetSettings(menu);
 
     return menu;
@@ -1378,6 +1399,8 @@ function quickMenu.HasPendingInvite()
 end
 
 function quickMenu.HandlePacketIn(e)
+    warpMenu.HandlePacketIn(e);
+
     if (e == nil or e.id ~= 0x00DC or type(e.data) ~= 'string') then
         return;
     end
@@ -1386,6 +1409,8 @@ function quickMenu.HandlePacketIn(e)
 end
 
 function quickMenu.HandlePacketOut(e)
+    warpMenu.HandlePacketOut(e);
+
     if (e ~= nil and e.id == 0x0074) then
         pendingInviteUntil = 0;
     end
@@ -1394,6 +1419,7 @@ end
 function quickMenu.ClearTextureCache()
     iconCache = {};
     missingIcon = {};
+    warpMenu.ClearTextureCache();
 end
 
 local function HasPendingPartyRequest()
@@ -1514,6 +1540,8 @@ function quickMenu.OpenForPlate(entry, x, y)
         name = GetEntityName(entry.targetIndex, entry.name);
     end
 
+    local rawName = tostring(entry.rawName or entry.name or '');
+
     if (targeting.IsGatheringPointName(name) == true) then
         return false;
     end
@@ -1541,7 +1569,8 @@ function quickMenu.OpenForPlate(entry, x, y)
     local npcInfo = nil;
 
     if (targetType == 'npc' or targetType == 'object') then
-        npcInfo = npcObjectInfo.Find(name, (targetType == 'object') and 'Object' or 'NPC');
+        npcInfo = npcObjectInfo.Find(name, (targetType == 'object') and 'Object' or 'NPC')
+            or (rawName ~= '' and npcObjectInfo.Find(rawName, (targetType == 'object') and 'Object' or 'NPC') or nil);
     end
 
     pendingMenu = {
@@ -1551,6 +1580,7 @@ function quickMenu.OpenForPlate(entry, x, y)
         layoutStateName = storageState,
         trustIsMine = entry.trustIsMine == true,
         name = name,
+        rawName = rawName,
         npcInfo = npcInfo,
         anchorEntry = entry,
         x = tonumber(x) or 0,
@@ -1622,6 +1652,9 @@ function quickMenu.Render()
         if (_G.ImGuiCol_PopupBg ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_PopupBg, menu.backgroundColor); colorCount = colorCount + 1; end
         if (_G.ImGuiCol_Border ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_Border, menu.borderColor); colorCount = colorCount + 1; end
         if (_G.ImGuiCol_Text ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_Text, GetReadableTextColor(menu)); colorCount = colorCount + 1; end
+        if (_G.ImGuiCol_Header ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_Header, QuickMenuSelectionColor(menu, 0.34)); colorCount = colorCount + 1; end
+        if (_G.ImGuiCol_HeaderHovered ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_HeaderHovered, QuickMenuSelectionColor(menu, 0.52)); colorCount = colorCount + 1; end
+        if (_G.ImGuiCol_HeaderActive ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_HeaderActive, QuickMenuSelectionColor(menu, 0.68)); colorCount = colorCount + 1; end
     end
 
     local varCount = 0;
@@ -1645,7 +1678,37 @@ function quickMenu.Render()
         local headerTextureId = nil;
         local windowX, windowY = GetWindowPos();
         local cursorX, cursorY = GetCursorPos();
-        local useForeground = pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object';
+        local isHomePointMenuTarget = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object')
+            and (
+                warpMenu.IsHomePointTarget(pendingMenu.name, pendingMenu.npcInfo or {}) == true
+                or warpMenu.IsHomePointTarget(pendingMenu.rawName, pendingMenu.npcInfo or {}) == true
+            );
+        local isSurvivalGuideMenuTarget = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object')
+            and (
+                warpMenu.IsSurvivalGuideTarget(pendingMenu.name, pendingMenu.npcInfo or {}) == true
+                or warpMenu.IsSurvivalGuideTarget(pendingMenu.rawName, pendingMenu.npcInfo or {}) == true
+            );
+        local isUnityMenuTarget = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object')
+            and (
+                warpMenu.IsUnityTarget(pendingMenu.name, pendingMenu.npcInfo or {}) == true
+                or warpMenu.IsUnityTarget(pendingMenu.rawName, pendingMenu.npcInfo or {}) == true
+            );
+        local isOutpostMenuTarget = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object')
+            and (
+                warpMenu.IsOutpostTeleporterTarget(pendingMenu.name, pendingMenu.npcInfo or {}) == true
+                or warpMenu.IsOutpostTeleporterTarget(pendingMenu.rawName, pendingMenu.npcInfo or {}) == true
+            );
+        local isCampaignMenuTarget = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object')
+            and (
+                warpMenu.IsCampaignArbiterTarget(pendingMenu.name, pendingMenu.npcInfo or {}) == true
+                or warpMenu.IsCampaignArbiterTarget(pendingMenu.rawName, pendingMenu.npcInfo or {}) == true
+            );
+        local isExpGuideMenuTarget = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object')
+            and (
+                warpMenu.IsExpGuideTarget(pendingMenu.name, pendingMenu.npcInfo or {}) == true
+                or warpMenu.IsExpGuideTarget(pendingMenu.rawName, pendingMenu.npcInfo or {}) == true
+            );
+        local useForeground = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object') and isHomePointMenuTarget ~= true and isSurvivalGuideMenuTarget ~= true and isUnityMenuTarget ~= true and isOutpostMenuTarget ~= true and isCampaignMenuTarget ~= true and isExpGuideMenuTarget ~= true;
 
         if (useForeground == true) then
             pendingMenu.foreground = {
@@ -1702,6 +1765,18 @@ function quickMenu.Render()
 
         if (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object') then
             local info = pendingMenu.npcInfo or {};
+            local isHomePointWarpTarget = warpMenu.IsHomePointTarget(pendingMenu.name, info) == true
+                or warpMenu.IsHomePointTarget(pendingMenu.rawName, info) == true;
+            local isSurvivalGuideWarpTarget = warpMenu.IsSurvivalGuideTarget(pendingMenu.name, info) == true
+                or warpMenu.IsSurvivalGuideTarget(pendingMenu.rawName, info) == true;
+            local isUnityWarpTarget = warpMenu.IsUnityTarget(pendingMenu.name, info) == true
+                or warpMenu.IsUnityTarget(pendingMenu.rawName, info) == true;
+            local isOutpostWarpTarget = warpMenu.IsOutpostTeleporterTarget(pendingMenu.name, info) == true
+                or warpMenu.IsOutpostTeleporterTarget(pendingMenu.rawName, info) == true;
+            local isCampaignWarpTarget = warpMenu.IsCampaignArbiterTarget(pendingMenu.name, info) == true
+                or warpMenu.IsCampaignArbiterTarget(pendingMenu.rawName, info) == true;
+            local isExpGuideWarpTarget = warpMenu.IsExpGuideTarget(pendingMenu.name, info) == true
+                or warpMenu.IsExpGuideTarget(pendingMenu.rawName, info) == true;
             local typeText = NormalizeNpcInfoText(info.type or '');
             local infoText = LimitNpcInfoText(info.info or '', menu.npc.maxInfoChars, menu.npc.maxInfoLines);
             local link = BuildNpcLink(pendingMenu.name, info);
@@ -1713,11 +1788,109 @@ function quickMenu.Render()
             local questLineLinkResolver = (menu.npc.openLink == true) and CreateQuestLineLinkResolver(menu.npc.maxQuestLinks, linkTextColor, info) or nil;
             local bodyWidth = math.max(160, (tonumber(menu.width) or 270) - 24);
 
-            if (hideInfoForJobPresets ~= true and menu.npc.showType == true and typeText ~= '') then
+            if (isHomePointWarpTarget == true) then
+                local ok, err = pcall(function()
+                    warpMenu.RenderHomePointMenu({
+                        targetIndex = pendingMenu.targetIndex,
+                        homePointNumber = pendingMenu.name or pendingMenu.rawName,
+                    });
+                end);
+
+                if (ok ~= true) then
+                    log.Warn('Home Point warp menu failed: ' .. tostring(err or 'unknown error'));
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Home Point teleportation');
+                    imgui.TextColored(GetReadableTextColor(menu), 'Menu failed to render. Check /console log.');
+                end
+            end
+
+            if (isSurvivalGuideWarpTarget == true) then
+                local ok, err = pcall(function()
+                    warpMenu.RenderSurvivalGuideMenu({
+                        targetIndex = pendingMenu.targetIndex,
+                    });
+                end);
+
+                if (ok ~= true) then
+                    log.Warn('Survival Guide teleport menu failed: ' .. tostring(err or 'unknown error'));
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Survival Guide teleportation');
+                    imgui.TextColored(GetReadableTextColor(menu), 'Menu failed to render. Check /console log.');
+                end
+            end
+
+            if (isUnityWarpTarget == true) then
+                local ok, err = pcall(function()
+                    warpMenu.RenderUnityMenu({
+                        targetIndex = pendingMenu.targetIndex,
+                    });
+                end);
+
+                if (ok ~= true) then
+                    log.Warn('Unity teleport menu failed: ' .. tostring(err or 'unknown error'));
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Unity teleportation');
+                    imgui.TextColored(GetReadableTextColor(menu), 'Menu failed to render. Check /console log.');
+                end
+            end
+
+            if (isOutpostWarpTarget == true) then
+                local ok, err = pcall(function()
+                    warpMenu.RenderOutpostMenu({
+                        targetIndex = pendingMenu.targetIndex,
+                    });
+                end);
+
+                if (ok ~= true) then
+                    log.Warn('Outpost teleport menu failed: ' .. tostring(err or 'unknown error'));
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Outpost teleportation');
+                    imgui.TextColored(GetReadableTextColor(menu), 'Menu failed to render. Check /console log.');
+                end
+            end
+
+            if (isCampaignWarpTarget == true) then
+                local ok, err = pcall(function()
+                    warpMenu.RenderCampaignMenu({
+                        targetIndex = pendingMenu.targetIndex,
+                    });
+                end);
+
+                if (ok ~= true) then
+                    log.Warn('Campaign teleport menu failed: ' .. tostring(err or 'unknown error'));
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Campaign teleportation');
+                    imgui.TextColored(GetReadableTextColor(menu), 'Menu failed to render. Check /console log.');
+                end
+            end
+
+            if (isExpGuideWarpTarget == true) then
+                local ok, err = pcall(function()
+                    warpMenu.RenderExpGuideMenu({
+                        targetIndex = pendingMenu.targetIndex,
+                        targetId = pendingMenu.serverId,
+                        name = pendingMenu.name,
+                        rawName = pendingMenu.rawName,
+                    });
+                end);
+
+                if (ok ~= true) then
+                    log.Warn('EXP Guide teleport menu failed: ' .. tostring(err or 'unknown error'));
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'EXP Guide teleportation');
+                    imgui.TextColored(GetReadableTextColor(menu), 'Menu failed to render. Check /console log.');
+                end
+            end
+
+            if (menu.warp ~= nil and menu.warp.debug == true and isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true) then
+                imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Warp debug');
+                imgui.TextColored(GetReadableTextColor(menu), 'name=' .. tostring(pendingMenu.name or ''));
+                imgui.TextColored(GetReadableTextColor(menu), 'raw=' .. tostring(pendingMenu.rawName or ''));
+                imgui.TextColored(GetReadableTextColor(menu), 'target=' .. tostring(pendingMenu.targetIndex or '') .. ' type=' .. tostring(pendingMenu.targetType or ''));
+                imgui.TextColored(GetReadableTextColor(menu), 'source=' .. tostring(info.source or '') .. ' type=' .. tostring(info.type or ''));
+                imgui.TextColored(GetReadableTextColor(menu), 'warpEnabled=' .. tostring(menu.warp.enabled == true) .. ' homePoint=' .. tostring(isHomePointWarpTarget == true) .. ' survivalGuide=' .. tostring(isSurvivalGuideWarpTarget == true) .. ' unity=' .. tostring(isUnityWarpTarget == true) .. ' outpost=' .. tostring(isOutpostWarpTarget == true) .. ' campaign=' .. tostring(isCampaignWarpTarget == true) .. ' expGuide=' .. tostring(isExpGuideWarpTarget == true));
+                imgui.Separator();
+            end
+
+            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.showType == true and typeText ~= '') then
                 ReserveTextBlockHeight(QueueForegroundTextBlock(typeText, bodyTextColor, bodyWidth, nil, sectionTextColor, linkTextColor), typeText);
             end
 
-            if (hideInfoForJobPresets ~= true and menu.npc.showInfo == true and infoText ~= '') then
+            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.showInfo == true and infoText ~= '') then
                 if (typeText ~= '') then
                     imgui.Separator();
                 end
@@ -1725,7 +1898,7 @@ function quickMenu.Render()
                 ReserveTextBlockHeight(QueueForegroundTextBlock(infoText, bodyTextColor, bodyWidth, questLineLinkResolver, sectionTextColor, linkTextColor), infoText);
             end
 
-            if (hideInfoForJobPresets ~= true and menu.npc.openLink == true and link ~= '' and canUseJobPresets ~= true) then
+            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.openLink == true and link ~= '' and canUseJobPresets ~= true) then
                 if (typeText ~= '' or infoText ~= '') then
                     imgui.Separator();
                 end

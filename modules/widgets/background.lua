@@ -79,13 +79,16 @@ local function DrawTexturePreviewTooltip(fileName)
     end
 end
 
-local function DrawTextureFile(label, current)
+local function DrawTextureFile(label, current, id)
     local files = backgroundTextures.GetFiles();
     local value = tostring(current or files[1] or 'None');
+    local comboId = id or label;
 
-    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
-    imgui.TextColored(labelColor, label);
-    imgui.SameLine();
+    if (label ~= nil and tostring(label) ~= '') then
+        if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+        imgui.TextColored(labelColor, label);
+        imgui.SameLine();
+    end
 
     if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
         local comboWidth = 300;
@@ -99,7 +102,7 @@ local function DrawTextureFile(label, current)
             imgui.PushItemWidth(comboWidth);
         end
 
-        local comboOpen = imgui.BeginCombo('##background_texture_' .. tostring(label), value) == true;
+        local comboOpen = imgui.BeginCombo('##background_texture_' .. tostring(comboId), value) == true;
         DrawTexturePreviewTooltip(value);
 
         if (comboOpen == true) then
@@ -424,6 +427,46 @@ local function DrawColorAndSliderRow(rowId, colorLabel, color, sliderLabel, slid
     return color, sliderValue;
 end
 
+local function DrawTextureAndSliderRow(rowId, textureLabel, textureValue, sliderLabel, sliderId, sliderValue, minValue, maxValue)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local textureResult = textureValue;
+        local sliderResult = sliderValue;
+
+        if (imgui.BeginTable('##background_' .. rowId, 4, tableFlags)) then
+            imgui.TableSetupColumn('##texture_label', 0, 104);
+            imgui.TableSetupColumn('##texture_control', 0, 260);
+            imgui.TableSetupColumn('##slider_label', 0, 104);
+            imgui.TableSetupColumn('##slider_control', 0, 124);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(labelColor, textureLabel);
+            imgui.TableNextColumn();
+            textureResult = DrawTextureFile('', textureResult, rowId .. '_texture');
+            imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(labelColor, sliderLabel);
+            imgui.TableNextColumn();
+            sliderResult = DrawSliderControl(sliderId, sliderResult, minValue, maxValue, 58);
+            imgui.EndTable();
+        end
+
+        return textureResult, sliderResult;
+    end
+
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+    imgui.TextColored(labelColor, textureLabel);
+    imgui.SameLine();
+    textureValue = DrawTextureFile('', textureValue, rowId .. '_texture');
+    imgui.SameLine();
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+    imgui.TextColored(labelColor, sliderLabel);
+    imgui.SameLine();
+    sliderValue = DrawSliderControl(sliderId, sliderValue, minValue, maxValue, 58);
+
+    return textureValue, sliderValue;
+end
+
 local function ApplyDefaults(settings, defaults)
     for key, value in pairs(defaults or {}) do
         if (settings[key] == nil) then
@@ -572,7 +615,20 @@ function background.DrawSettings(settings, context)
     end
 
     local function DrawAppearanceSettings()
-        settings.texture = DrawTextureFile('Background image', settings.texture or defaults.texture or 'None');
+        if (settings.imageOpacity == nil) then
+            settings.imageOpacity = math.floor(((tonumber(settings.color ~= nil and settings.color[4] or nil) or 0.45) * 100) + 0.5);
+        end
+
+        settings.texture, settings.imageOpacity = DrawTextureAndSliderRow(
+            'image_opacity',
+            'Image',
+            settings.texture or defaults.texture or 'None',
+            'Opacity',
+            'image_opacity',
+            settings.imageOpacity,
+            0,
+            100
+        );
 
         settings.color = settings.color or { 0.0, 0.0, 0.0, 0.45 };
         settings.color[4] = ClampChannel(settings.color[4] or 1.0);

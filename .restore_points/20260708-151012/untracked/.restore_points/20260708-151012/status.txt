@@ -1,0 +1,29 @@
+## master...origin/master
+ D assets/images/target/chevrons/chevron_01.png
+ D assets/images/target/chevrons/chevron_02.png
+ D assets/images/target/chevrons/chevron_03.png
+ M assets/images/ui-icons/check-all.png
+ M assets/images/ui-icons/info.png
+ M assets/images/ui-icons/uncheck-all.png
+ M config/widgets/background.lua
+ M core/canvas_texture.lua
+ M modules/plates/enemy.lua
+ M modules/plates/npc.lua
+ M modules/plates/pc.lua
+ M modules/plates/pet.lua
+ M modules/plates/self.lua
+ M modules/plates/trust.lua
+ M modules/settings/init.lua
+ M modules/settings/preview.lua
+ M modules/widgets/background.lua
+?? .restore_points/
+?? assets/images/backgrounds/bevelled-grey.png
+?? assets/images/backgrounds/bevelled.png
+?? assets/images/backgrounds/fade-bottom.png
+?? assets/images/backgrounds/fade-left.png
+?? assets/images/backgrounds/fade-right.png
+?? assets/images/backgrounds/fade-top.png
+?? assets/images/target/chevrons/chevron_down.png
+?? assets/images/target/chevrons/chevron_in.png
+?? assets/images/target/chevrons/chevron_out.png
+?? data/warp/

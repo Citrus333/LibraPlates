@@ -494,6 +494,7 @@ local function AddPlateClickRects(targetIndex, targetType, rects, union, metadat
         targetType = tostring(targetType or 'self'),
         serverId = metadata ~= nil and metadata.serverId or nil,
         name = metadata ~= nil and metadata.name or nil,
+        rawName = metadata ~= nil and metadata.rawName or nil,
         layoutStateName = metadata ~= nil and metadata.layoutStateName or nil,
         trustIsMine = metadata ~= nil and metadata.trustIsMine or nil,
         distance = metadata ~= nil and metadata.distance or nil,
@@ -517,6 +518,7 @@ local function AddPlateClickRects(targetIndex, targetType, rects, union, metadat
             targetType = entry.targetType,
             serverId = entry.serverId,
             name = entry.name,
+            rawName = entry.rawName,
             layoutStateName = entry.layoutStateName,
             x1 = union.x1,
             y1 = union.y1,
@@ -675,6 +677,7 @@ local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, styl
     local metadata = {
         serverId = style.serverId,
         name = style.clickName,
+        rawName = style.rawName,
         layoutStateName = style.layoutStateName,
         trustIsMine = style.trustIsMine,
         distance = style.distance,
@@ -4228,6 +4231,7 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
 
         style.clickTargetType = plate.clickTargetType or style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy');
         style.serverId = plate.serverId or style.serverId;
+        style.rawName = plate.rawName or style.rawName;
         style.distance = plate.distance or style.distance;
         style.modelHitboxSize = plate.modelHitboxSize or style.modelHitboxSize;
 
@@ -4237,6 +4241,7 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
                 targetType = style.clickTargetType,
                 serverId = style.serverId,
                 name = plate.clickName or style.clickName,
+                rawName = plate.rawName or style.rawName,
                 layoutStateName = style.layoutStateName,
             });
             return;
@@ -4251,6 +4256,7 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
                 targetType = style.clickTargetType,
                 serverId = style.serverId,
                 name = plate.clickName or style.clickName,
+                rawName = plate.rawName or style.rawName,
                 layoutStateName = style.layoutStateName,
             });
         end
@@ -4893,6 +4899,7 @@ function worldMarkerProbe.GetAlwaysVisiblePlates()
                     targetIndex = entry.targetIndex,
                     targetType = entry.targetType,
                     clickName = entry.name,
+                    rawName = entry.rawName,
                     textureId = entry.plateTextureId,
                     rect = entry.plateOverlayRect,
                     overlayOffsetX = entry.plateOverlayOffsetX,
@@ -4958,6 +4965,7 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
             targetType = 'self',
             serverId = selfClickRect.serverId,
             name = selfClickRect.name,
+            rawName = selfClickRect.rawName,
             layoutStateName = selfClickRect.layoutStateName,
         };
     end

@@ -663,12 +663,13 @@ Involved in Quests:\
             ["type"] = "Dialogue NPC",
         },
         ["Narkissa, C.A."] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Jeuno affliated Campaign Arbiter. *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign *She cannot teleport you to Beastman Strongholds (Castle Oztroja (S), La Vaule (S), Beadeaux (S), Castle Zvahl Baileys (S), Castle Zvahl Keep (S), Throne Room (S))",
-            ["type"] = "Campaign",
-        },
+			["_source"] = "npc",
+			["icon"] = "WarpNPC.png",
+			["note"] = "Involved in Mission:\
+		* Allied Campaign\
+		",
+			["type"] = "Teleport Service",
+		},
         ["Nicolaus"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",

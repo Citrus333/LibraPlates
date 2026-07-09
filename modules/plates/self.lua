@@ -340,6 +340,7 @@ local function BuildPlayerIndicatorAnchorFallbackRects(definitions)
                 anchorTo = settings.anchorTo or defaults.anchorTo,
                 anchorPoint = settings.anchorPoint or defaults.anchorPoint,
                 anchorCollapse = settings.anchorCollapse,
+                anchorSpacing = settings.anchorSpacing,
                 offsetX = offsetX,
                 offsetY = offsetY,
             },
@@ -426,6 +427,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 anchorTo = iconSettings.anchorTo,
                 anchorPoint = iconSettings.anchorPoint,
                 anchorCollapse = iconSettings.anchorCollapse,
+                anchorSpacing = iconSettings.anchorSpacing,
                 timerText = timerText,
                 timerSeconds = timerSeconds,
                 timerOffsetY = tonumber(iconSettings.timerOffsetY) or 0,
@@ -497,7 +499,7 @@ local function ShouldLoadStatusRows(iconSettings, isEngaged)
     return true;
 end
 
-local function IsEnabled(settings)
+local function IsEnabled(settings, isEngaged)
     return settings ~= nil and settings.enabled == true;
 end
 
@@ -705,6 +707,7 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
         anchorTo = castBarSettings.anchorTo or castBarDefaults.anchorTo,
         anchorPoint = castBarSettings.anchorPoint or castBarDefaults.anchorPoint,
         anchorCollapse = castBarSettings.anchorCollapse,
+        anchorSpacing = castBarSettings.anchorSpacing,
         color = barColor,
         backgroundColor = castBarSettings.backgroundColor or castBarDefaults.backgroundColor,
         borderColor = castBarSettings.borderColor or castBarDefaults.borderColor,
@@ -730,8 +733,23 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
     }, castPercent;
 end
 
-local function DrawBackground(drawList, bounds)
-    local background = canvasDefaults.background;
+local function DrawBackground(drawList, bounds, backgroundSettings, isEngaged)
+    if (IsEnabled(backgroundSettings, isEngaged) ~= true) then
+        return;
+    end
+
+    local background = {
+        enabled = true,
+        width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
+        height = tonumber(backgroundSettings.height) or backgroundDefaults.height,
+        offsetX = tonumber(backgroundSettings.offsetX) or backgroundDefaults.offsetX,
+        offsetY = tonumber(backgroundSettings.offsetY) or backgroundDefaults.offsetY,
+        color = backgroundSettings.color or backgroundDefaults.color,
+        borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
+        borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+        texture = backgroundSettings.texture or backgroundDefaults.texture,
+        imageOpacity = backgroundSettings.imageOpacity or backgroundDefaults.imageOpacity,
+    };
 
     if (background == nil or background.enabled ~= true) then
         return;
@@ -739,22 +757,33 @@ local function DrawBackground(drawList, bounds)
 
     local rect = canvas.GetLocalRect(bounds, background);
 
-    if (background.textureId ~= nil) then
-        local textureAlpha = tonumber(background.color ~= nil and background.color[4] or nil) or 0.45;
-        drawList:AddImage(background.textureId, { rect.left, rect.top }, { rect.left + rect.width, rect.top + rect.height }, { 0, 0 }, { 1, 1 }, ColorToU32({ 1.0, 1.0, 1.0, textureAlpha }));
-    else
-        drawList:AddRectFilled(
-            { rect.left, rect.top },
-            { rect.left + rect.width, rect.top + rect.height },
-            ColorToU32(background.color)
-        );
-    end
-
-    drawList:AddRect(
+    drawList:AddRectFilled(
         { rect.left, rect.top },
         { rect.left + rect.width, rect.top + rect.height },
-        ColorToU32(background.borderColor)
+        ColorToU32(background.color)
     );
+
+    local textureId = backgroundTextures.GetTextureId(background.texture);
+
+    if (textureId ~= nil) then
+        local textureAlpha = tonumber(background.imageOpacity);
+        if (textureAlpha ~= nil and textureAlpha > 1) then
+            textureAlpha = textureAlpha / 100;
+        end
+        textureAlpha = textureAlpha or tonumber(background.color ~= nil and background.color[4] or nil) or 0.45;
+        drawList:AddImage(textureId, { rect.left, rect.top }, { rect.left + rect.width, rect.top + rect.height }, { 0, 0 }, { 1, 1 }, ColorToU32({ 1.0, 1.0, 1.0, textureAlpha }));
+    end
+
+    if ((tonumber(background.borderSize) or 0) > 0) then
+        drawList:AddRect(
+            { rect.left, rect.top },
+            { rect.left + rect.width, rect.top + rect.height },
+            ColorToU32(background.borderColor),
+            0,
+            0,
+            tonumber(background.borderSize) or 1
+        );
+    end
 end
 
 local function QueueWorldMarker(center, nameSettings, stateName)
@@ -779,10 +808,6 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local mpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'MP Bar', mpBarDefaults);
     local tpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'TP Bar', tpBarDefaults);
     local castBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'Cast bar', castBarDefaults);
-    local castData = nil;
-    if (castBarSettings.enabled == true) then
-        castData = enemyCasts.GetActiveCast(center.serverId) or enemyCasts.GetInterruptedCast(center.serverId);
-    end
     local aoeRangeSettings = state.GetWidgetSettings('Self', 'Combat', 'AOE range', aoeRangeDefaults);
     local buffsSettings = state.GetWidgetSettings('Self', layoutStateName, 'Buffs', buffsDefaults);
     local debuffsSettings = state.GetWidgetSettings('Self', layoutStateName, 'Debuffs', debuffsDefaults);
@@ -806,24 +831,45 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local craftingActive = stateName == 'Crafting' and globalSettings.crafting ~= nil and globalSettings.crafting.enabled ~= false;
     local gatheringActive = globalSettings.gathering ~= nil and globalSettings.gathering.enabled ~= false and targeting.GetGatheringDisplayInfo() ~= nil;
     local restingActive = stateName == 'Resting' and restingSettings.enabled ~= false;
+    local nameLoaded = IsEnabled(nameSettings, isEngaged);
+    local backgroundLoaded = IsEnabled(backgroundSettings, isEngaged);
+    local hpBarLoaded = IsEnabled(hpBarSettings, isEngaged);
+    local mpBarLoaded = IsEnabled(mpBarSettings, isEngaged);
+    local tpBarLoaded = IsEnabled(tpBarSettings, isEngaged);
+    local castBarLoaded = IsEnabled(castBarSettings, isEngaged);
+    local gameModeIconLoaded = IsEnabled(gameModeIconSettings, isEngaged);
+    local partyLeaderIconLoaded = IsEnabled(partyLeaderIconSettings, isEngaged);
+    local allianceLeaderIconLoaded = IsEnabled(allianceLeaderIconSettings, isEngaged);
+    local bazaarIconLoaded = IsEnabled(bazaarIconSettings, isEngaged);
+    local linkshellIconLoaded = IsEnabled(linkshellIconSettings, isEngaged);
+    local awayIconLoaded = IsEnabled(awayIconSettings, isEngaged);
+    local disconnectIconLoaded = IsEnabled(disconnectIconSettings, isEngaged);
+    local anonIconLoaded = IsEnabled(anonIconSettings, isEngaged);
+    local starsIconLoaded = IsEnabled(starsIconSettings, isEngaged);
+    local levelSyncIconLoaded = IsEnabled(levelSyncIconSettings, isEngaged);
+    local newAdventurerIconLoaded = IsEnabled(newAdventurerIconSettings, isEngaged);
+    local castData = nil;
+    if (castBarLoaded == true) then
+        castData = enemyCasts.GetActiveCast(center.serverId) or enemyCasts.GetInterruptedCast(center.serverId);
+    end
     local hasEnabledBaseWidget =
-        IsEnabled(nameSettings) or
-        IsEnabled(backgroundSettings) or
-        IsEnabled(hpBarSettings) or
-        IsEnabled(mpBarSettings) or
-        IsEnabled(tpBarSettings) or
-        IsEnabled(castBarSettings) or
-        IsEnabled(gameModeIconSettings) or
-        IsEnabled(partyLeaderIconSettings) or
-        IsEnabled(allianceLeaderIconSettings) or
-        IsEnabled(bazaarIconSettings) or
-        IsEnabled(linkshellIconSettings) or
-        IsEnabled(awayIconSettings) or
-        IsEnabled(disconnectIconSettings) or
-        IsEnabled(anonIconSettings) or
-        IsEnabled(starsIconSettings) or
-        IsEnabled(levelSyncIconSettings) or
-        IsEnabled(newAdventurerIconSettings) or
+        nameLoaded == true or
+        backgroundLoaded == true or
+        hpBarLoaded == true or
+        mpBarLoaded == true or
+        tpBarLoaded == true or
+        castBarLoaded == true or
+        gameModeIconLoaded == true or
+        partyLeaderIconLoaded == true or
+        allianceLeaderIconLoaded == true or
+        bazaarIconLoaded == true or
+        linkshellIconLoaded == true or
+        awayIconLoaded == true or
+        disconnectIconLoaded == true or
+        anonIconLoaded == true or
+        starsIconLoaded == true or
+        levelSyncIconLoaded == true or
+        newAdventurerIconLoaded == true or
         shouldLoadBuffs == true or
         shouldLoadDebuffs == true;
 
@@ -877,13 +923,13 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     ) then
         tpColor = tpBarSettings.lowColor or tpColor;
     end
-    local nameEnabled = (nameSettings.enabled == true);
+    local nameEnabled = nameLoaded == true;
     local defaultOffsetY = tonumber(nameDefaults.offsetY) or 0;
     local modeText = gameMode.Resolve(center.index, false);
-    local modeIconTextureId = (gameModeIconSettings.enabled == true) and gameMode.GetIconTextureId(modeText) or nil;
+    local modeIconTextureId = (gameModeIconLoaded == true) and gameMode.GetIconTextureId(modeText) or nil;
     local icons = {};
 
-    if (allianceLeaderIconSettings.enabled == true) then
+    if (allianceLeaderIconLoaded == true) then
         local allianceLeaderTextureId = playerIndicators.GetAllianceLeaderIconTextureId(center.index);
         if (allianceLeaderTextureId ~= nil) then
             table.insert(icons, {
@@ -895,11 +941,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = allianceLeaderIconSettings.anchorTo,
                 anchorPoint = allianceLeaderIconSettings.anchorPoint,
                 anchorCollapse = allianceLeaderIconSettings.anchorCollapse,
+                anchorSpacing = allianceLeaderIconSettings.anchorSpacing,
             });
         end
     end
 
-    if (partyLeaderIconSettings.enabled == true) then
+    if (partyLeaderIconLoaded == true) then
         local partyLeaderTextureId = playerIndicators.GetPartyLeaderIconTextureId(center.index);
         if (partyLeaderTextureId ~= nil) then
             table.insert(icons, {
@@ -911,11 +958,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = partyLeaderIconSettings.anchorTo,
                 anchorPoint = partyLeaderIconSettings.anchorPoint,
                 anchorCollapse = partyLeaderIconSettings.anchorCollapse,
+                anchorSpacing = partyLeaderIconSettings.anchorSpacing,
             });
         end
     end
 
-    if (gameModeIconSettings.enabled == true and modeIconTextureId ~= nil) then
+    if (gameModeIconLoaded == true and modeIconTextureId ~= nil) then
         table.insert(icons, {
             kind = 'gameModeIcon',
             textureId = modeIconTextureId,
@@ -925,10 +973,11 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             anchorTo = gameModeIconSettings.anchorTo,
             anchorPoint = gameModeIconSettings.anchorPoint,
             anchorCollapse = gameModeIconSettings.anchorCollapse,
+            anchorSpacing = gameModeIconSettings.anchorSpacing,
         });
     end
 
-    if (linkshellIconSettings.enabled == true) then
+    if (linkshellIconLoaded == true) then
         local linkshellTextureId = playerIndicators.GetLinkshellIconTextureId(center.index);
         local linkshellTint = playerIndicators.GetLinkshellIconTint(center.index);
         if (linkshellTextureId ~= nil) then
@@ -941,12 +990,13 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = linkshellIconSettings.anchorTo,
                 anchorPoint = linkshellIconSettings.anchorPoint,
                 anchorCollapse = linkshellIconSettings.anchorCollapse,
+                anchorSpacing = linkshellIconSettings.anchorSpacing,
                 tint = linkshellTint,
             });
         end
     end
 
-    if (bazaarIconSettings.enabled == true) then
+    if (bazaarIconLoaded == true) then
         local bazaarTextureId = playerIndicators.GetBazaarIconTextureId(center.index);
         if (bazaarTextureId ~= nil) then
             table.insert(icons, {
@@ -958,11 +1008,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = bazaarIconSettings.anchorTo,
                 anchorPoint = bazaarIconSettings.anchorPoint,
                 anchorCollapse = bazaarIconSettings.anchorCollapse,
+                anchorSpacing = bazaarIconSettings.anchorSpacing,
             });
         end
     end
 
-    if (awayIconSettings.enabled == true) then
+    if (awayIconLoaded == true) then
         local awayTextureId = playerIndicators.GetAwayIconTextureId(center.index);
         if (awayTextureId ~= nil) then
             table.insert(icons, {
@@ -974,11 +1025,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = awayIconSettings.anchorTo,
                 anchorPoint = awayIconSettings.anchorPoint,
                 anchorCollapse = awayIconSettings.anchorCollapse,
+                anchorSpacing = awayIconSettings.anchorSpacing,
             });
         end
     end
 
-    if (disconnectIconSettings.enabled == true) then
+    if (disconnectIconLoaded == true) then
         local disconnectTextureId = playerIndicators.GetDisconnectIconTextureId(center.index);
         if (disconnectTextureId ~= nil) then
             table.insert(icons, {
@@ -990,11 +1042,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = disconnectIconSettings.anchorTo,
                 anchorPoint = disconnectIconSettings.anchorPoint,
                 anchorCollapse = disconnectIconSettings.anchorCollapse,
+                anchorSpacing = disconnectIconSettings.anchorSpacing,
             });
         end
     end
 
-    if (anonIconSettings.enabled == true) then
+    if (anonIconLoaded == true) then
         local anonTextureId = playerIndicators.GetAnonIconTextureId(center.index);
         if (anonTextureId ~= nil) then
             table.insert(icons, {
@@ -1006,11 +1059,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = anonIconSettings.anchorTo,
                 anchorPoint = anonIconSettings.anchorPoint,
                 anchorCollapse = anonIconSettings.anchorCollapse,
+                anchorSpacing = anonIconSettings.anchorSpacing,
             });
         end
     end
 
-    if (starsIconSettings.enabled == true) then
+    if (starsIconLoaded == true) then
         local starsTextureId = playerIndicators.GetStarsIconTextureId(center.index);
         if (starsTextureId ~= nil) then
             table.insert(icons, {
@@ -1022,11 +1076,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = starsIconSettings.anchorTo,
                 anchorPoint = starsIconSettings.anchorPoint,
                 anchorCollapse = starsIconSettings.anchorCollapse,
+                anchorSpacing = starsIconSettings.anchorSpacing,
             });
         end
     end
 
-    if (levelSyncIconSettings.enabled == true and playerStatuses.HasSelfLevelSyncStatus() == true) then
+    if (levelSyncIconLoaded == true and playerStatuses.HasSelfLevelSyncStatus() == true) then
         local levelSyncTextureId = playerIndicators.GetStaticIconTextureId('lvsync');
         if (levelSyncTextureId ~= nil) then
             table.insert(icons, {
@@ -1038,11 +1093,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = levelSyncIconSettings.anchorTo,
                 anchorPoint = levelSyncIconSettings.anchorPoint,
                 anchorCollapse = levelSyncIconSettings.anchorCollapse,
+                anchorSpacing = levelSyncIconSettings.anchorSpacing,
             });
         end
     end
 
-    if (newAdventurerIconSettings.enabled == true) then
+    if (newAdventurerIconLoaded == true) then
         local newAdventurerTextureId = playerIndicators.GetNewAdventurerIconTextureId(center.index);
         if (newAdventurerTextureId ~= nil) then
             table.insert(icons, {
@@ -1054,11 +1110,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = newAdventurerIconSettings.anchorTo,
                 anchorPoint = newAdventurerIconSettings.anchorPoint,
                 anchorCollapse = newAdventurerIconSettings.anchorCollapse,
+                anchorSpacing = newAdventurerIconSettings.anchorSpacing,
             });
         end
     end
 
-    local castBar, castPercent = BuildCastBar(castData, castBarSettings, globalSettings);
+    local castBar, castPercent = BuildCastBar(castData, castBarLoaded == true and castBarSettings or nil, globalSettings);
     local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
     local nameColor = nameSettings.color or { 1.0, 1.0, 1.0, 1.0 };
 
@@ -1086,7 +1143,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         cast = castPercent,
         targetMarker = targetMarker,
         background = {
-            enabled = backgroundSettings.enabled == true,
+            enabled = backgroundLoaded == true,
             width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
             height = tonumber(backgroundSettings.height) or backgroundDefaults.height,
             offsetX = tonumber(backgroundSettings.offsetX) or backgroundDefaults.offsetX,
@@ -1095,10 +1152,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
             borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
             texture = backgroundSettings.texture or backgroundDefaults.texture,
-            textureId = backgroundSettings.enabled == true and backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture) or nil,
+            textureId = backgroundLoaded == true and backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture) or nil,
+            imageOpacity = backgroundSettings.imageOpacity or backgroundDefaults.imageOpacity,
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
             anchorCollapse = backgroundSettings.anchorCollapse,
+            anchorSpacing = backgroundSettings.anchorSpacing,
         },
         name = nameEnabled and displayName or '',
         aoeNameActive = nameAoeActive == true,
@@ -1114,8 +1173,9 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
         nameAnchorCollapse = nameSettings.anchorCollapse,
+        nameAnchorSpacing = nameSettings.anchorSpacing,
         hpBar = {
-            enabled = hpBarSettings.enabled == true,
+            enabled = hpBarLoaded == true,
             width = tonumber(hpBarSettings.width) or 180,
             height = tonumber(hpBarSettings.height) or 12,
             offsetX = tonumber(hpBarSettings.offsetX) or 0,
@@ -1127,19 +1187,20 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = hpBarSettings.anchorCollapse,
+            anchorSpacing = hpBarSettings.anchorSpacing,
             texture = hpBarSettings.texture or 'Solid',
             textureStrength = tonumber(hpBarSettings.textureStrength) or 100,
-            textureId = hpBarSettings.enabled == true and barTextures.GetTextureId(hpBarSettings.texture) or nil,
-            animationEnabled = hpBarSettings.enabled == true and hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
-            animationTextureId = hpBarSettings.enabled == true and hpLowActive == true and hpBarSettings.lowAnimationEnabled == true and barAnimations.GetTextureId(hpBarSettings.lowAnimation) or nil,
+            textureId = hpBarLoaded == true and barTextures.GetTextureId(hpBarSettings.texture) or nil,
+            animationEnabled = hpBarLoaded == true and hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
+            animationTextureId = hpBarLoaded == true and hpLowActive == true and hpBarSettings.lowAnimationEnabled == true and barAnimations.GetTextureId(hpBarSettings.lowAnimation) or nil,
             animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or 40,
             animationColor = hpBarSettings.lowAnimationColor,
             showAtPercent = tonumber(hpBarSettings.showAtPercent) or 100,
-            text = hpBarSettings.enabled == true and BuildResourceText(hpBarSettings, 'HP', center.hp, center.maxHp, hpPercent) or '',
+            text = hpBarLoaded == true and BuildResourceText(hpBarSettings, 'HP', center.hp, center.maxHp, hpPercent) or '',
             textOffsetX = tonumber(hpBarSettings.textOffsetX) or 0,
             textOffsetY = tonumber(hpBarSettings.textOffsetY) or 0,
-            fontFamily = hpBarSettings.enabled == true and fonts.GetRole(globalSettings, hpBarSettings.useSmallFont == true) or nil,
-            fontFlags = hpBarSettings.enabled == true and fonts.GetRoleFlags(globalSettings, hpBarSettings.useSmallFont == true) or nil,
+            fontFamily = hpBarLoaded == true and fonts.GetRole(globalSettings, hpBarSettings.useSmallFont == true) or nil,
+            fontFlags = hpBarLoaded == true and fonts.GetRoleFlags(globalSettings, hpBarSettings.useSmallFont == true) or nil,
             fontSize = textScale.ToTextureFontSize(hpBarSettings.fontSize, barDefaults.fontSize),
             textColor = hpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
             textOutlineEnabled = hpBarSettings.textOutlineEnabled == true,
@@ -1147,7 +1208,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             textOutlineSize = tonumber(hpBarSettings.textOutlineSize) or 1,
         },
         mpBar = {
-            enabled = mpBarSettings.enabled == true,
+            enabled = mpBarLoaded == true,
             width = tonumber(mpBarSettings.width) or 180,
             height = tonumber(mpBarSettings.height) or 8,
             offsetX = tonumber(mpBarSettings.offsetX) or 0,
@@ -1159,19 +1220,20 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             anchorTo = mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
             anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
             anchorCollapse = mpBarSettings.anchorCollapse,
+            anchorSpacing = mpBarSettings.anchorSpacing,
             texture = mpBarSettings.texture or 'Solid',
             textureStrength = tonumber(mpBarSettings.textureStrength) or 100,
-            textureId = mpBarSettings.enabled == true and barTextures.GetTextureId(mpBarSettings.texture) or nil,
-            animationEnabled = mpBarSettings.enabled == true and mpLowActive == true and mpBarSettings.lowAnimationEnabled == true,
-            animationTextureId = mpBarSettings.enabled == true and mpLowActive == true and mpBarSettings.lowAnimationEnabled == true and barAnimations.GetTextureId(mpBarSettings.lowAnimation) or nil,
+            textureId = mpBarLoaded == true and barTextures.GetTextureId(mpBarSettings.texture) or nil,
+            animationEnabled = mpBarLoaded == true and mpLowActive == true and mpBarSettings.lowAnimationEnabled == true,
+            animationTextureId = mpBarLoaded == true and mpLowActive == true and mpBarSettings.lowAnimationEnabled == true and barAnimations.GetTextureId(mpBarSettings.lowAnimation) or nil,
             animationSpeed = tonumber(mpBarSettings.lowAnimationSpeed) or 40,
             animationColor = mpBarSettings.lowAnimationColor,
             showAtPercent = tonumber(mpBarSettings.showAtPercent) or 100,
-            text = mpBarSettings.enabled == true and BuildResourceText(mpBarSettings, 'MP', center.mp, center.maxMp, mpPercent) or '',
+            text = mpBarLoaded == true and BuildResourceText(mpBarSettings, 'MP', center.mp, center.maxMp, mpPercent) or '',
             textOffsetX = tonumber(mpBarSettings.textOffsetX) or 0,
             textOffsetY = tonumber(mpBarSettings.textOffsetY) or 0,
-            fontFamily = mpBarSettings.enabled == true and fonts.GetRole(globalSettings, mpBarSettings.useSmallFont == true) or nil,
-            fontFlags = mpBarSettings.enabled == true and fonts.GetRoleFlags(globalSettings, mpBarSettings.useSmallFont == true) or nil,
+            fontFamily = mpBarLoaded == true and fonts.GetRole(globalSettings, mpBarSettings.useSmallFont == true) or nil,
+            fontFlags = mpBarLoaded == true and fonts.GetRoleFlags(globalSettings, mpBarSettings.useSmallFont == true) or nil,
             fontSize = textScale.ToTextureFontSize(mpBarSettings.fontSize, mpBarDefaults.fontSize),
             textColor = mpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
             textOutlineEnabled = mpBarSettings.textOutlineEnabled == true,
@@ -1179,7 +1241,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             textOutlineSize = tonumber(mpBarSettings.textOutlineSize) or 1,
         },
         tpBar = {
-            enabled = tpBarSettings.enabled == true,
+            enabled = tpBarLoaded == true,
             width = tonumber(tpBarSettings.width) or 180,
             height = tonumber(tpBarSettings.height) or 6,
             offsetX = tonumber(tpBarSettings.offsetX) or 0,
@@ -1191,19 +1253,20 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             anchorCollapse = tpBarSettings.anchorCollapse,
+            anchorSpacing = tpBarSettings.anchorSpacing,
             texture = tpBarSettings.texture or 'Solid',
             textureStrength = tonumber(tpBarSettings.textureStrength) or 100,
-            textureId = tpBarSettings.enabled == true and barTextures.GetTextureId(tpBarSettings.texture) or nil,
+            textureId = tpBarLoaded == true and barTextures.GetTextureId(tpBarSettings.texture) or nil,
             color2 = tpBarSettings.color2 or tpBarDefaults.color2,
             color3 = tpBarSettings.color3 or tpBarDefaults.color3,
             showAtPercent = tonumber(tpBarSettings.showAtPercent) or 100,
             segmented = tpBarSettings.segmented ~= false,
             segmentGap = tonumber(tpBarSettings.segmentGap) or 3,
-            text = tpBarSettings.enabled == true and BuildResourceText(tpBarSettings, 'TP', tpValue, 3000, tpPercent) or '',
+            text = tpBarLoaded == true and BuildResourceText(tpBarSettings, 'TP', tpValue, 3000, tpPercent) or '',
             textOffsetX = tonumber(tpBarSettings.textOffsetX) or 0,
             textOffsetY = tonumber(tpBarSettings.textOffsetY) or 0,
-            fontFamily = tpBarSettings.enabled == true and fonts.GetRole(globalSettings, tpBarSettings.useSmallFont == true) or nil,
-            fontFlags = tpBarSettings.enabled == true and fonts.GetRoleFlags(globalSettings, tpBarSettings.useSmallFont == true) or nil,
+            fontFamily = tpBarLoaded == true and fonts.GetRole(globalSettings, tpBarSettings.useSmallFont == true) or nil,
+            fontFlags = tpBarLoaded == true and fonts.GetRoleFlags(globalSettings, tpBarSettings.useSmallFont == true) or nil,
             fontSize = textScale.ToTextureFontSize(tpBarSettings.fontSize, tpBarDefaults.fontSize),
             textColor = tpBarSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
             textOutlineEnabled = tpBarSettings.textOutlineEnabled == true,
@@ -1298,6 +1361,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorTo = restingSettings.anchorTo or 'Plate',
                 anchorPoint = restingSettings.anchorPoint,
                 anchorCollapse = restingSettings.anchorCollapse,
+                anchorSpacing = restingSettings.anchorSpacing,
                 color = restingSettings.color or { 0.55, 0.95, 0.35, 1.0 },
                 backgroundColor = restingSettings.backgroundColor or { 0.10, 0.10, 0.10, 1.0 },
                 borderColor = restingSettings.borderColor or { 1.0, 1.0, 1.0, 1.0 },
@@ -1491,7 +1555,10 @@ function selfPlate.Render()
     end
 
     local stateName = GetLiveSelfStateName(center);
-    local nameSettings = state.GetWidgetSettings('Self', GetLayoutStateName(stateName), 'Name', nameDefaults);
+    local layoutStateName = GetLayoutStateName(stateName);
+    local isEngaged = tonumber(center.status) == 1;
+    local nameSettings = state.GetWidgetSettings('Self', layoutStateName, 'Name', nameDefaults);
+    local backgroundSettings = state.GetWidgetSettings('Self', layoutStateName, 'Background', backgroundDefaults);
 
     if (stateName ~= 'Fishing' and fishing.IsSessionActive() ~= true) then
         fishing.ClearResult();
@@ -1513,12 +1580,12 @@ function selfPlate.Render()
         drawList:AddRect({ bounds.left, bounds.top }, { bounds.left + bounds.width, bounds.top + bounds.height }, 0xFFFFFF00);
     end
 
-    DrawBackground(drawList, bounds);
+    DrawBackground(drawList, bounds, backgroundSettings, isEngaged);
 
     if (nativeUiPolicy.ShouldDrawLibraNames() == true) then
         local streamerNames = require('core.streamer_names');
         local displayName = streamerNames.GetSelfDisplayName(center.name, targeting.GetSettings());
-        widgets.name.Draw({ name = displayName }, BuildAoeNameSettings(GetLayoutStateName(stateName), nameSettings, center.index), {
+        widgets.name.Draw({ name = displayName }, BuildAoeNameSettings(layoutStateName, nameSettings, center.index), {
             drawList = drawList,
             bounds = bounds,
             canvas = canvas,

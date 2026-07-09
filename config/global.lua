@@ -569,6 +569,16 @@ return {
             maxInfoLines = 10,
             maxQuestLinks = 8,
         },
+        warp = {
+            enabled = true,
+            grouping = 'Region',
+            favoriteDisplay = 'Short',
+            showNotes = true,
+            hideUnknown = false,
+            confirmBeforeWarp = false,
+            debug = false,
+            favorites = {},
+        },
     },
     peer = {
         activationModifier = 'Shift',

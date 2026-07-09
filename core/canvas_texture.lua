@@ -1083,11 +1083,17 @@ local function DrawPlateBackground(device, centerX, centerY, background, resolve
         bgH = math.max(1, (tonumber(resolvedRect.drawY2) or (bgY + bgH)) - bgY);
     end
 
+    DrawRect(device, bgX, bgY, bgW, bgH, ColorToD3D(background.color, { 0.0, 0.0, 0.0, 0.45 }));
+
     if (background.textureId ~= nil) then
-        local textureAlpha = tonumber(background.color ~= nil and background.color[4] or nil);
+        local textureAlpha = tonumber(background.imageOpacity);
+        if (textureAlpha ~= nil and textureAlpha > 1) then
+            textureAlpha = textureAlpha / 100;
+        end
+        if (textureAlpha == nil) then
+            textureAlpha = tonumber(background.color ~= nil and background.color[4] or nil);
+        end
         DrawTexture(device, background.textureId, bgX, bgY, bgW, bgH, ColorToD3D({ 1.0, 1.0, 1.0, textureAlpha }, { 1.0, 1.0, 1.0, 0.45 }));
-    else
-        DrawRect(device, bgX, bgY, bgW, bgH, ColorToD3D(background.color, { 0.0, 0.0, 0.0, 0.45 }));
     end
 
     if (borderSize > 0) then
@@ -1292,18 +1298,30 @@ local function ResolveAnchorRects(rects, plate)
     };
     local hasFallbacks = plate ~= nil and type(plate.anchorFallbackRects) == 'table' and #plate.anchorFallbackRects > 0;
     local fallbackDefs = {};
+    local fallbackNames = {};
+    local anchorNameByKind = {};
+
+    for anchorName, kind in pairs(anchorMap) do
+        if (kind ~= nil and anchorNameByKind[tostring(kind)] == nil) then
+            anchorNameByKind[tostring(kind)] = tostring(anchorName);
+        end
+    end
 
     for _, fallbackRect in ipairs((plate ~= nil and plate.anchorFallbackRects) or {}) do
-        local key = tostring(fallbackRect ~= nil and fallbackRect.kind or '');
+        local rectKind = tostring(fallbackRect ~= nil and fallbackRect.kind or '');
+        local key = tostring(fallbackRect ~= nil and (fallbackRect.anchorName or anchorNameByKind[rectKind] or rectKind) or '');
 
         if (key ~= '' and fallbackDefs[key] == nil) then
             fallbackDefs[key] = {
+                kind = rectKind,
                 x = tonumber(fallbackRect.x) or 0,
                 y = tonumber(fallbackRect.y) or 0,
                 width = tonumber(fallbackRect.w) or 0,
                 height = tonumber(fallbackRect.h) or 0,
+                padding = tonumber(fallbackRect.padding) or 0,
                 layout = fallbackRect.layout,
             };
+            fallbackNames[#fallbackNames + 1] = key;
         end
     end
     local fallbackResolvedCache = {};
@@ -1504,8 +1522,11 @@ local function ResolveAnchorRects(rects, plate)
         end
     end
 
-    for kind, fallback in pairs(fallbackDefs) do
-        if (present[kind] ~= true and fallback ~= nil and fallback.layout ~= nil and fallback.layout.anchorCollapse ~= false) then
+    for _, kind in ipairs(fallbackNames) do
+        local fallback = fallbackDefs[kind];
+        local rectKind = tostring(fallback ~= nil and fallback.kind or kind);
+
+        if (present[rectKind] ~= true and present[kind] ~= true and fallback ~= nil and fallback.layout ~= nil and fallback.layout.anchorCollapse ~= false) then
             local anchorTo = tostring(fallback.layout.anchorTo or 'Plate');
             if (anchorTo ~= 'Plate') then
                 local anchorPoint = tostring(fallback.layout.anchorPoint or 'Center');

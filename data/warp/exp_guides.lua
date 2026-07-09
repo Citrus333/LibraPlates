@@ -1,0 +1,59 @@
+local expGuides = {
+    npcs = {
+        ['EXP Guide'] = 'present',
+        ['EXP Guide (S)'] = 'past',
+    },
+
+    modes = {
+        present = {
+            title = 'EXP Guide teleportation',
+            question = 'Choose your destination',
+            nextResult = 'Next Page',
+            destinations = {
+                { label = 'Valkurm Dunes (12-18)', result = 'Valkurm Dunes (12-18)', region = 'Zulkheim', page = 1 },
+                { label = 'Qufim Island (19-22)', result = 'Qufim Island (19-22)', region = 'Qufim Island', page = 1 },
+                { label = 'Qufim Island (23-25)', result = 'Qufim Island (23-25)', region = 'Qufim Island', page = 1 },
+                { label = 'Yuhtunga Jungle (26-28)', result = 'Yuh. Jungle (26-28)', region = 'Elshimo Lowlands', page = 1 },
+                { label = 'Yhoator Jungle (29-32)', result = 'Yhoator Jungle (29 - 32)', region = 'Elshimo Uplands', page = 1 },
+                { label = 'Garlaige Citadel (33-36)', result = 'Garlaige Citadel (33-36)', region = 'Derfland', page = 2 },
+                { label = "Crawler's Nest (37-43)", result = "Crawler's Nest (37-43)", region = 'Derfland', page = 2 },
+                { label = 'Western Altepa Desert (44-50)', result = 'Western Altepa Desert (44-50)', region = 'Kuzotz', page = 2 },
+                { label = 'Labyrinth of Onzozo (51-54)', result = 'Lab. of Onzozo (51-54)', region = 'Buburimu', page = 3 },
+                { label = 'Wajaom Woodlands (55-59)', result = 'Wajaom Woodlands (55-59)', region = 'Aht Urhgan', page = 3 },
+                { label = 'Labyrinth of Onzozo (60-69)', result = 'Lab. of Onzozo (60-69)', region = 'Buburimu', page = 3 },
+                { label = 'Kuftal Tunnel (70-75)', result = 'Kuftal Tunnel (70-75)', region = 'Kuzotz', page = 3 },
+                { label = 'Bhaflau Thickets (72-75)', result = 'Bhaflau Thickets (72-75)', region = 'Aht Urhgan', page = 4 },
+            },
+        },
+
+        past = {
+            title = 'EXP Guide (S) teleportation',
+            question = 'Choose your (S) destination',
+            nextResult = 'Next',
+            buffQuestion = 'Receive Sigil?',
+            buffName = 'Sigil',
+            destinations = {
+                { label = 'East Ronfaure [S] (8-23)', result = 'East Ronfaure (8-23)', region = 'Ronfaure', page = 1 },
+                { label = 'West Sarutabaruta [S] (8-25)', result = 'West Sarutabaruta (8-25)', region = 'Sarutabaruta', page = 1 },
+                { label = 'North Gustaberg [S] (22-28)', result = 'North Gustaberg (22-28)', region = 'Gustaberg', page = 1 },
+                { label = 'Batallia Downs [S] (25-35)', result = 'Batallia Downs (25-35)', region = 'Norvallen', page = 1 },
+                { label = 'Vunkerl Inlet [S] (31-38)', result = 'Vunkerl Inlet (31-38)', region = 'Norvallen', page = 2 },
+                { label = 'West Sarutabaruta [S] (32-37)', result = 'West Sarutabaruta (32-37)', region = 'Sarutabaruta', page = 2 },
+                { label = 'North Gustaberg [S] (32-38)', result = 'North Gustaberg (32-38)', region = 'Gustaberg', page = 2 },
+                { label = 'Jugner Forest [S] (35-41)', result = 'Jugner Forest (35-41)', region = 'Norvallen', page = 3 },
+                { label = 'Fort Karugo-Narugo [S] (37-43)', result = 'Fort K.N. (37-43)', region = 'Sarutabaruta', page = 3 },
+                { label = 'Sauromugue Champaign [S] (41-47)', result = 'Sau. Champaign (41-47)', region = 'Aragoneu', page = 3 },
+                { label = 'Batallia Downs [S] (43-50)', result = 'Batallia Downs (43-50)', region = 'Norvallen', page = 4 },
+                { label = 'Rolanberry Fields [S] (44-52)', result = 'Rolan. Fields  (44-52)', region = 'Derfland', page = 4 },
+                { label = 'Meriphataud Mountains [S] (46-55)', result = 'Mer. Mountains (46-55)', region = 'Aragoneu', page = 4 },
+                { label = 'Vunkerl Inlet [S] (59-64)', result = 'Vunkerl Inlet (59-64)', region = 'Norvallen', page = 5 },
+                { label = 'Garlaige Citadel [S] (62-68)', result = 'Garlaige Citadel (62-68)', region = 'Derfland', page = 5 },
+                { label = "Crawlers' Nest [S] (66-71)", result = "Crawlers' Nest (66-71)", region = 'Derfland', page = 5 },
+                { label = 'Grauberg [S] (70-75)', result = 'Grauberg (70-75)', region = 'Gustaberg', page = 5 },
+                { label = 'Beaucedine Glacier [S] (74+)', result = 'Beau. Glacier (74+)', region = 'Fauregandi', page = 6 },
+            },
+        },
+    },
+};
+
+return expGuides;

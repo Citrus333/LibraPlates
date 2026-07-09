@@ -55,6 +55,7 @@ local subtargetModuleDefaults = require('config.widgets.subtarget_module');
 local fishing = require('core.fishing');
 local crafting = require('core.crafting');
 local settingsLabelColor = { 0.92, 0.92, 0.90, 1.0 };
+settingsUi.homePointRefreshMessage = settingsUi.homePointRefreshMessage or '';
 local settingsHeaderColor = { 1.0, 0.84, 0.0, 1.0 };
 LibraPlatesSettingsUiIconCache = LibraPlatesSettingsUiIconCache or {};
 LibraPlatesSettingsPalette = {
@@ -584,6 +585,7 @@ local uiAccentActive = { 0.16, 0.55, 0.57, 1.0 };
 local heldButtonState = {};
 local targetModulePendingReset = nil;
 local maneuverPendingReset = nil;
+LibraPlatesSettingsWidgetsBulkActionPending = LibraPlatesSettingsWidgetsBulkActionPending or nil;
 local loadModeDrawn = false;
 local useNativeTopTabs = false;
 
@@ -1569,11 +1571,47 @@ function IsAnchorableWidget(widgetName)
     return true;
 end
 
+function LibraPlatesSettingsIsWidgetAnchoredChild(entityName, stateName, widgetName)
+    if (IsAnchorableWidget(widgetName) ~= true) then
+        return false;
+    end
+
+    local widgetKey = widgetKeys[widgetName];
+    if (widgetKey == nil) then
+        return false;
+    end
+
+    local settings = state.GetWidgetSettings(
+        GetStorageEntity(entityName),
+        GetWidgetStorageState(entityName, stateName, widgetName),
+        widgetKey,
+        GetWidgetDefaults(widgetName)
+    );
+
+    return settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate';
+end
+
 _G.LibraPlatesSettingsGetAnchorChoices = function(entityName, stateName, widgetName)
     local choices = { 'None' };
+    local currentAnchor = '';
+    local currentKey = widgetKeys[widgetName];
+
+    if (currentKey ~= nil) then
+        local currentSettings = state.GetWidgetSettings(
+            GetStorageEntity(entityName),
+            GetWidgetStorageState(entityName, stateName, widgetName),
+            currentKey,
+            GetWidgetDefaults(widgetName)
+        );
+        currentAnchor = tostring(currentSettings ~= nil and currentSettings.anchorTo or '');
+    end
 
     for _, candidate in ipairs(GetEditWidgetsFor(entityName, stateName)) do
-        if (candidate ~= widgetName and IsAnchorableWidget(candidate) == true) then
+        if (
+            candidate ~= widgetName and
+            IsAnchorableWidget(candidate) == true and
+            (LibraPlatesSettingsIsWidgetAnchoredChild(entityName, stateName, candidate) ~= true or candidate == currentAnchor)
+        ) then
             choices[#choices + 1] = candidate;
         end
     end
@@ -3561,10 +3599,49 @@ function LibraPlatesSettingsNormalizeLoadMode(value, fallback)
     return 'Always';
 end
 
+function LibraPlatesSettingsGetLoadModeOptions(entityName, stateName)
+    local entity = NormalizeEntityName(entityName);
+    local normalizedState = NormalizeStateName(stateName);
+
+    if (entity == 'Self' and normalizedState == 'World') then
+        return T{ 'Always', 'Out of combat', 'Never' };
+    end
+
+    if (entity == 'Self' and normalizedState == 'Tactical') then
+        return T{ 'Always', 'In combat', 'Never' };
+    end
+
+    return T{ 'Always', 'Out of combat', 'In combat', 'Never' };
+end
+
+function LibraPlatesSettingsCoerceLoadModeForContext(value, entityName, stateName, fallback)
+    local mode = LibraPlatesSettingsNormalizeLoadMode(value, fallback);
+    local options = LibraPlatesSettingsGetLoadModeOptions(entityName, stateName);
+
+    for _, option in ipairs(options) do
+        if (tostring(option) == mode) then
+            return mode;
+        end
+    end
+
+    return LibraPlatesSettingsNormalizeLoadMode(fallback, 'Always');
+end
+
+function LibraPlatesSettingsShouldDrawLoadMode(entityName, stateName)
+    local entity = NormalizeEntityName(entityName);
+    local normalizedState = NormalizeStateName(stateName);
+
+    if (entity == 'Self' and (normalizedState == 'World' or normalizedState == 'Tactical')) then
+        return false;
+    end
+
+    return true;
+end
+
 function LibraPlatesSettingsGetWidgetLoadMode(settings, entityName, stateName, widgetName)
     local fallback = LibraPlatesSettingsDefaultLoadMode(entityName, stateName, widgetName);
 
-    return LibraPlatesSettingsNormalizeLoadMode(settings ~= nil and settings.loadMode or nil, fallback);
+    return LibraPlatesSettingsCoerceLoadModeForContext(settings ~= nil and settings.loadMode or nil, entityName, stateName, fallback);
 end
 
 function LibraPlatesSettingsGetLoadModeColor(mode)
@@ -3590,14 +3667,25 @@ function LibraPlatesSettingsDrawWidgetLoadMode(settings, entityName, stateName, 
         return;
     end
 
+    if (LibraPlatesSettingsShouldDrawLoadMode(entityName, stateName) ~= true) then
+        loadModeDrawn = true;
+        return;
+    end
+
+    local previousLoadMode = settings.loadMode;
+
     if (settings.loadMode == nil) then
         settings.loadMode = LibraPlatesSettingsDefaultLoadMode(entityName, stateName, widgetName);
     else
-        settings.loadMode = LibraPlatesSettingsNormalizeLoadMode(settings.loadMode, LibraPlatesSettingsDefaultLoadMode(entityName, stateName, widgetName));
+        settings.loadMode = LibraPlatesSettingsCoerceLoadModeForContext(settings.loadMode, entityName, stateName, LibraPlatesSettingsDefaultLoadMode(entityName, stateName, widgetName));
     end
 
-    DrawInlineComboRow('Load', T{ 'Always', 'Out of combat', 'In combat', 'Never' }, settings.loadMode, function(value)
-        settings.loadMode = LibraPlatesSettingsNormalizeLoadMode(value, 'Always');
+    if (previousLoadMode ~= nil and tostring(previousLoadMode) ~= tostring(settings.loadMode)) then
+        state.Save();
+    end
+
+    DrawInlineComboRow('Load', LibraPlatesSettingsGetLoadModeOptions(entityName, stateName), settings.loadMode, function(value)
+        settings.loadMode = LibraPlatesSettingsCoerceLoadModeForContext(value, entityName, stateName, 'Always');
         state.Save();
     end, 'LoadMode' .. tostring(entityName) .. tostring(stateName) .. tostring(widgetName), { 1.0, 1.0, 1.0, 1.0 });
 
@@ -4342,6 +4430,29 @@ function DrawFontStatus(label, selected)
     imgui.TextColored({ 1.0, 0.40, 0.32, 1.0 }, selectedText .. ' is missing or not installed.');
 end
 
+LibraPlatesSettingsPendingLargeFont = LibraPlatesSettingsPendingLargeFont or nil;
+LibraPlatesSettingsPendingSmallFont = LibraPlatesSettingsPendingSmallFont or nil;
+
+function LibraPlatesSettingsDrawFontApplyRow(kind, pendingValue, appliedValue, apply)
+    if (tostring(pendingValue or '') == tostring(appliedValue or '')) then
+        return;
+    end
+
+    if (imgui.Button ~= nil and imgui.Button('Apply ' .. tostring(kind) .. ' font##Apply' .. tostring(kind) .. 'Font')) then
+        apply();
+    end
+
+    imgui.SameLine();
+
+    if (imgui.Button ~= nil and imgui.Button('Cancel##Cancel' .. tostring(kind) .. 'Font')) then
+        if (kind == 'large') then
+            LibraPlatesSettingsPendingLargeFont = nil;
+        else
+            LibraPlatesSettingsPendingSmallFont = nil;
+        end
+    end
+end
+
 function DrawFontFolderButton(label, kind)
     if (imgui.Button ~= nil) then
         if (imgui.Button(label) == true) then
@@ -4503,11 +4614,24 @@ function DrawTopTabs()
     end
 end
 
-function DrawChild(name, size, border, render, padded)
+function DrawChild(name, size, border, render, padded, childFlags)
     local childError = nil;
     local childIndent = (padded == false) and 0 or 8;
 
-    imgui.BeginChild(name, size, border);
+    if (tonumber(childFlags) ~= nil and tonumber(childFlags) ~= 0) then
+        local beganWithFlags = false;
+        local ok = pcall(function()
+            imgui.BeginChild(name, size, border, childFlags);
+            beganWithFlags = true;
+        end);
+
+        if (ok ~= true or beganWithFlags ~= true) then
+            imgui.BeginChild(name, size, border);
+        end
+    else
+        imgui.BeginChild(name, size, border);
+    end
+
     if (childIndent > 0) then
         imgui.Spacing();
     end
@@ -5245,6 +5369,130 @@ function DrawRightPanel()
     end);
 end
 
+function LibraPlatesSettingsIsProtectedTargetWidget(widget)
+    local nativeUiPolicy = require('core.native_ui_policy');
+    local libraTargetingActive = nativeUiPolicy.ShouldDrawLibraTargetingSystem() == true;
+
+    return libraTargetingActive == true and (
+        widget == 'Target' or
+        widget == 'Subtarget' or
+        widget == 'Target (module)' or
+        widget == 'Subtarget (module)'
+    );
+end
+
+function LibraPlatesSettingsSetPlateWidgetEnabled(widget, settings, enabled)
+    if (settings == nil or LibraPlatesSettingsIsProtectedTargetWidget(widget) == true) then
+        return false;
+    end
+
+    local nextEnabled = enabled == true;
+
+    if (widget == 'Detached frame') then
+        local targetingSettings = targeting.GetSettings();
+        local prefix = settingsUi.GetDetachedFramePrefix();
+        if (nextEnabled == true) then
+            if (prefix ~= nil and (targetingSettings[prefix .. 'PetPlateMode'] == nil or tostring(targetingSettings[prefix .. 'PetPlateMode']) == 'Normal')) then
+                targetingSettings[prefix .. 'PetPlateMode'] = 'Detach from pet';
+            end
+        elseif (prefix ~= nil) then
+            targetingSettings[prefix .. 'PetPlateMode'] = 'Normal';
+            targetingSettings[prefix .. 'PetStaticEditFrame'] = false;
+        end
+    elseif (widget == 'Lock-on icon') then
+        settings.lockEnabled = nextEnabled;
+    else
+        settings.enabled = nextEnabled;
+    end
+
+    return true;
+end
+
+function LibraPlatesSettingsApplyWidgetsBulkAction(enabled)
+    local changed = false;
+
+    for _, widget in ipairs(GetEditWidgets()) do
+        if (LibraPlatesSettingsSetPlateWidgetEnabled(widget, GetChecklistActiveSettings(widget), enabled == true) == true) then
+            changed = true;
+        end
+    end
+
+    if (changed == true) then
+        state.Save();
+    end
+end
+
+function LibraPlatesSettingsDrawWidgetsBulkActionWarning()
+    local pending = LibraPlatesSettingsWidgetsBulkActionPending;
+
+    if (pending == nil) then
+        return;
+    end
+
+    local actionText = pending == 'select' and 'Select all widgets in the list?' or 'Deselect all widgets in the list?';
+    local popupName = 'Confirm widget bulk action##libraplates_widgets_bulk_action';
+
+    if (imgui.OpenPopup ~= nil) then
+        imgui.OpenPopup(popupName);
+    end
+
+    local popupWidth = 430;
+    local popupHeight = 130;
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ popupWidth, popupHeight }, _G.ImGuiCond_Always or 0);
+    end
+
+    if (imgui.SetNextWindowPos ~= nil and imgui.GetIO ~= nil) then
+        local ok, io = pcall(function()
+            return imgui.GetIO();
+        end);
+
+        if (ok == true and io ~= nil and io.DisplaySize ~= nil) then
+            local displayW = tonumber(io.DisplaySize.x or io.DisplaySize.X or io.DisplaySize[1]);
+            local displayH = tonumber(io.DisplaySize.y or io.DisplaySize.Y or io.DisplaySize[2]);
+
+            if (displayW ~= nil and displayH ~= nil) then
+                imgui.SetNextWindowPos({
+                    math.max(0, (displayW - popupWidth) * 0.5),
+                    math.max(0, (displayH - popupHeight) * 0.5),
+                }, _G.ImGuiCond_Always or 0);
+            end
+        end
+    end
+
+    if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal(popupName)) then
+        imgui.TextColored(settingsHeaderColor, 'Warning');
+        imgui.Text(actionText);
+        imgui.Spacing();
+
+        if (imgui.Button('Cancel##widgets_bulk_cancel')) then
+            LibraPlatesSettingsWidgetsBulkActionPending = nil;
+            if (imgui.CloseCurrentPopup ~= nil) then imgui.CloseCurrentPopup(); end
+        end
+
+        imgui.SameLine();
+
+        if (imgui.Button((pending == 'select' and 'Select all' or 'Deselect all') .. '##widgets_bulk_confirm')) then
+            LibraPlatesSettingsApplyWidgetsBulkAction(pending == 'select');
+            LibraPlatesSettingsWidgetsBulkActionPending = nil;
+            if (imgui.CloseCurrentPopup ~= nil) then imgui.CloseCurrentPopup(); end
+        end
+
+        imgui.EndPopup();
+    elseif (imgui.BeginPopupModal == nil) then
+        imgui.TextColored(settingsHeaderColor, 'Warning: ' .. actionText);
+        if (ClickText('Cancel', uiAccent) == true) then
+            LibraPlatesSettingsWidgetsBulkActionPending = nil;
+        end
+        imgui.SameLine();
+        if (ClickText(pending == 'select' and 'Select all' or 'Deselect all', uiAccent) == true) then
+            LibraPlatesSettingsApplyWidgetsBulkAction(pending == 'select');
+            LibraPlatesSettingsWidgetsBulkActionPending = nil;
+        end
+    end
+end
+
 function DrawPlatesSelector()
     DrawInlineCombo('Entity', entities, selectedEntity, function(entity)
         selectedEntity = entity;
@@ -5261,13 +5509,19 @@ function DrawPlatesSelector()
     EnsureSelectedWidgetAllowed();
     imgui.Separator();
     DrawYellowHeader('Widgets');
+    imgui.SameLine();
+    if (DrawSettingsIconButton('widgets_select_all', 'check-all.png', 'Select all widgets') == true) then
+        LibraPlatesSettingsWidgetsBulkActionPending = 'select';
+    end
+    imgui.SameLine();
+    if (DrawSettingsIconButton('widgets_deselect_all', 'uncheck-all.png', 'Deselect all widgets') == true) then
+        LibraPlatesSettingsWidgetsBulkActionPending = 'deselect';
+    end
+    LibraPlatesSettingsDrawWidgetsBulkActionWarning();
 
     for index, widget in ipairs(GetEditWidgets()) do
         local settings = GetChecklistActiveSettings(widget);
-        local globalSettings = state.GetGlobalSettings(globalDefaults);
-        local nativeUiPolicy = require('core.native_ui_policy');
-        local libraTargetingActive = nativeUiPolicy.ShouldDrawLibraTargetingSystem() == true;
-        local protectedTargetModule = libraTargetingActive == true and (widget == 'Target' or widget == 'Subtarget' or widget == 'Target (module)' or widget == 'Subtarget (module)');
+        local protectedTargetModule = LibraPlatesSettingsIsProtectedTargetWidget(widget);
 
         if (protectedTargetModule == true and settings ~= nil and settings.enabled ~= true) then
             settings.enabled = true;
@@ -5298,45 +5552,17 @@ function DrawPlatesSelector()
             end
 
             if (changed == true and settings ~= nil and protectedTargetModule ~= true) then
-                if (widget == 'Detached frame') then
-                    local targetingSettings = targeting.GetSettings();
-                    local prefix = settingsUi.GetDetachedFramePrefix();
-                    if (ref[1] == true) then
-                        if (prefix ~= nil and (targetingSettings[prefix .. 'PetPlateMode'] == nil or tostring(targetingSettings[prefix .. 'PetPlateMode']) == 'Normal')) then
-                            targetingSettings[prefix .. 'PetPlateMode'] = 'Detach from pet';
-                        end
-                    elseif (prefix ~= nil) then
-                        targetingSettings[prefix .. 'PetPlateMode'] = 'Normal';
-                        targetingSettings[prefix .. 'PetStaticEditFrame'] = false;
-                    end
-                elseif (isLockOnIconWidget == true) then
-                    settings.lockEnabled = ref[1] == true;
-                else
-                    settings.enabled = ref[1] == true;
+                if (LibraPlatesSettingsSetPlateWidgetEnabled(widget, settings, ref[1] == true) == true) then
+                    state.Save();
                 end
-                state.Save();
             end
             imgui.SameLine();
         else
             imgui.TextColored(protectedTargetModule == true and { 0.65, 0.90, 1.0, 0.85 } or { 0.92, 0.92, 0.90, 1.0 }, '[' .. ((active or protectedTargetModule) and 'x' or ' ') .. ']');
             if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true and settings ~= nil and protectedTargetModule ~= true) then
-                if (widget == 'Detached frame') then
-                    local targetingSettings = targeting.GetSettings();
-                    local prefix = settingsUi.GetDetachedFramePrefix();
-                    if (active ~= true) then
-                        if (prefix ~= nil and (targetingSettings[prefix .. 'PetPlateMode'] == nil or tostring(targetingSettings[prefix .. 'PetPlateMode']) == 'Normal')) then
-                            targetingSettings[prefix .. 'PetPlateMode'] = 'Detach from pet';
-                        end
-                    elseif (prefix ~= nil) then
-                        targetingSettings[prefix .. 'PetPlateMode'] = 'Normal';
-                        targetingSettings[prefix .. 'PetStaticEditFrame'] = false;
-                    end
-                elseif (isLockOnIconWidget == true) then
-                    settings.lockEnabled = not active;
-                else
-                    settings.enabled = not active;
+                if (LibraPlatesSettingsSetPlateWidgetEnabled(widget, settings, active ~= true) == true) then
+                    state.Save();
                 end
-                state.Save();
             end
             imgui.SameLine();
         end
@@ -5564,9 +5790,17 @@ function LibraPlatesSettingsDrawPlatesHeaderBand(render, heightOverride)
     imgui.SetCursorScreenPos({ x, y + height });
 end
 
-function LibraPlatesSettingsGetPlatesHeaderBandHeight(settings, compact)
+function LibraPlatesSettingsGetPlatesHeaderBandHeight(settings, compact, hideLoadMode)
     if (compact == true) then
         return 48;
+    end
+
+    if (hideLoadMode == true) then
+        if (settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate') then
+            return 108;
+        end
+
+        return 80;
     end
 
     if (settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate') then
@@ -7632,6 +7866,15 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     if (menu.npc.showType == nil) then menu.npc.showType = true; end
     if (menu.npc.showInfo == nil) then menu.npc.showInfo = true; end
     if (menu.npc.openLink == nil) then menu.npc.openLink = true; end
+    menu.warp = menu.warp or {};
+    if (menu.warp.enabled == nil) then menu.warp.enabled = true; end
+    if (menu.warp.grouping == nil) then menu.warp.grouping = 'Region'; end
+    if (menu.warp.favoriteDisplay == nil) then menu.warp.favoriteDisplay = 'Short'; end
+    if (menu.warp.showNotes == nil) then menu.warp.showNotes = true; end
+    if (menu.warp.hideUnknown == nil) then menu.warp.hideUnknown = false; end
+    if (menu.warp.confirmBeforeWarp == nil) then menu.warp.confirmBeforeWarp = false; end
+    if (menu.warp.debug == nil) then menu.warp.debug = false; end
+    if (menu.warp.favorites == nil) then menu.warp.favorites = {}; end
 
     if (selectedTab == 'Plates') then
         scopedEntity = GetStorageEntity(selectedEntity);
@@ -7655,6 +7898,60 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
             imgui.Spacing();
             imgui.Spacing();
             DrawQuickMenuPresetRows(menu);
+        end);
+    end
+
+    local function DrawHomePointWarpsPanel()
+        LibraPlatesSettingsDrawBoxedPanel('Teleportation', function()
+            DrawCheckbox('Enabled', menu.warp.enabled == true, function(value)
+                menu.warp.enabled = value == true;
+                state.Save();
+            end);
+
+            DrawInlineComboRow('Grouping', T{ 'Region', 'Expansion' }, menu.warp.grouping or 'Region', function(value)
+                menu.warp.grouping = value;
+                state.Save();
+            end, 'QuickMenuWarpGrouping', settingsLabelColor, 92, nil, 180);
+
+            DrawInlineComboRow('Favorites', T{ 'Short', 'Full path' }, menu.warp.favoriteDisplay or 'Short', function(value)
+                menu.warp.favoriteDisplay = value;
+                state.Save();
+            end, 'QuickMenuWarpFavorites', settingsLabelColor, 92, nil, 180);
+
+            DrawCheckbox('Show notes', menu.warp.showNotes == true, function(value)
+                menu.warp.showNotes = value == true;
+                state.Save();
+            end);
+
+            DrawCheckbox('Hide unknown', menu.warp.hideUnknown == true, function(value)
+                menu.warp.hideUnknown = value == true;
+                state.Save();
+            end);
+
+            if (imgui.Button ~= nil and imgui.Button('Refresh Home Point unlocks##QuickMenuWarpRefreshUnlocks') == true) then
+                local ok, message = require('core.home_point_warp').ForceRefreshFromCurrentTarget();
+                settingsUi.homePointRefreshMessage = tostring(message or '');
+                if (ok == true) then
+                    log.Info(settingsUi.homePointRefreshMessage);
+                else
+                    log.Warn(settingsUi.homePointRefreshMessage);
+                end
+            end
+            uiTooltip.Info('Target a Home Point crystal before refreshing. This updates the saved unlock cache used by the quick menu.');
+
+            local summary = require('core.home_point_warp').GetUnlockSummary();
+            if (summary.pending == 'refresh') then
+                imgui.TextColored({ 0.72, 0.85, 1.0, 1.0 }, 'Checking Home Point unlocks...');
+            elseif (settingsUi.homePointRefreshMessage ~= '') then
+                imgui.TextColored(settingsLabelColor, settingsUi.homePointRefreshMessage);
+            elseif (summary.known == true) then
+                imgui.TextColored(settingsLabelColor, 'Last cache: ' .. tostring(summary.unlocked or 0) .. '/' .. tostring(summary.total or 0));
+            end
+
+            DrawCheckbox('Debug info', menu.warp.debug == true, function(value)
+                menu.warp.debug = value == true;
+                state.Save();
+            end);
         end);
     end
 
@@ -7853,6 +8150,7 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     end);
 
         if (scopedEntity == 'Self') then
+            DrawHomePointWarpsPanel();
             DrawJobChangePresetsPanel();
         end
 
@@ -7898,6 +8196,8 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
             state.Save();
         end);
         end);
+
+        DrawHomePointWarpsPanel();
 
         DrawJobChangePresetsPanel();
 
@@ -8026,8 +8326,18 @@ local function DrawGeneralFontSection(global)
         end
 
         LibraPlatesSettingsDrawBoxedPanel('Large text font', function()
-            DrawInlineCombo('##LargeTextFontCombo', largeFontChoices, global.font.largeFamily, function(fontFamily)
-                global.font.largeFamily = fontFamily;
+            local pendingLargeFont = LibraPlatesSettingsPendingLargeFont or global.font.largeFamily;
+            if (ListContains(largeFontChoices, pendingLargeFont) ~= true) then
+                pendingLargeFont = global.font.largeFamily;
+                LibraPlatesSettingsPendingLargeFont = nil;
+            end
+
+            DrawInlineCombo('##LargeTextFontCombo', largeFontChoices, pendingLargeFont, function(fontFamily)
+                LibraPlatesSettingsPendingLargeFont = fontFamily;
+            end);
+            LibraPlatesSettingsDrawFontApplyRow('large', pendingLargeFont, global.font.largeFamily, function()
+                global.font.largeFamily = LibraPlatesSettingsPendingLargeFont or global.font.largeFamily;
+                LibraPlatesSettingsPendingLargeFont = nil;
                 canvasTexture.Invalidate();
                 state.Save();
             end);
@@ -8036,8 +8346,18 @@ local function DrawGeneralFontSection(global)
         end);
 
         LibraPlatesSettingsDrawBoxedPanel('Small text font', function()
-            DrawInlineCombo('##SmallTextFontCombo', smallFontChoices, global.font.smallFamily, function(fontFamily)
-                global.font.smallFamily = fontFamily;
+            local pendingSmallFont = LibraPlatesSettingsPendingSmallFont or global.font.smallFamily;
+            if (ListContains(smallFontChoices, pendingSmallFont) ~= true) then
+                pendingSmallFont = global.font.smallFamily;
+                LibraPlatesSettingsPendingSmallFont = nil;
+            end
+
+            DrawInlineCombo('##SmallTextFontCombo', smallFontChoices, pendingSmallFont, function(fontFamily)
+                LibraPlatesSettingsPendingSmallFont = fontFamily;
+            end);
+            LibraPlatesSettingsDrawFontApplyRow('small', pendingSmallFont, global.font.smallFamily, function()
+                global.font.smallFamily = LibraPlatesSettingsPendingSmallFont or global.font.smallFamily;
+                LibraPlatesSettingsPendingSmallFont = nil;
                 canvasTexture.Invalidate();
                 state.Save();
             end);
@@ -12284,10 +12604,21 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
             end
         end
 
-        if (loadSettings.loadMode == nil) then
-            loadSettings.loadMode = LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget);
+        local showLoadMode = LibraPlatesSettingsShouldDrawLoadMode(selectedEntity, selectedState);
+        local previousLoadMode = loadSettings.loadMode;
+
+        if (showLoadMode == true) then
+            if (loadSettings.loadMode == nil) then
+                loadSettings.loadMode = LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget);
+            else
+                loadSettings.loadMode = LibraPlatesSettingsCoerceLoadModeForContext(loadSettings.loadMode, selectedEntity, selectedState, LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget));
+            end
+
+            if (previousLoadMode ~= nil and tostring(previousLoadMode) ~= tostring(loadSettings.loadMode)) then
+                state.Save();
+            end
         else
-            loadSettings.loadMode = LibraPlatesSettingsNormalizeLoadMode(loadSettings.loadMode, LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget));
+            loadModeDrawn = true;
         end
 
         local headerLabelWidth = 120;
@@ -12315,41 +12646,45 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
             end
         end
 
-        if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
-        imgui.TextColored({ 1.0, 1.0, 1.0, 1.0 }, 'Load');
-        if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
-            imgui.SetCursorScreenPos({ headerRowX + headerLabelWidth, loadRowY });
-        else
-            imgui.SameLine();
-        end
-        if (imgui.PushItemWidth ~= nil) then
-            imgui.PushItemWidth(loadComboWidth);
-        end
-        if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
-            if (imgui.BeginCombo('##LoadMode' .. tostring(selectedEntity) .. tostring(selectedState) .. tostring(selectedWidget) .. 'Header', tostring(loadSettings.loadMode or 'Always')) == true) then
-                for _, loadChoice in ipairs(T{ 'Always', 'Out of combat', 'In combat', 'Never' }) do
-                    local isSelected = tostring(loadChoice) == tostring(loadSettings.loadMode);
-                    if (imgui.Selectable(tostring(loadChoice), isSelected) == true) then
-                        loadSettings.loadMode = LibraPlatesSettingsNormalizeLoadMode(loadChoice, 'Always');
-                        state.Save();
-                    end
-                    if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
-                        imgui.SetItemDefaultFocus();
-                    end
-                end
-                imgui.EndCombo();
+        if (showLoadMode == true) then
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored({ 1.0, 1.0, 1.0, 1.0 }, 'Load');
+            if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+                imgui.SetCursorScreenPos({ headerRowX + headerLabelWidth, loadRowY });
+            else
+                imgui.SameLine();
             end
-        else
-            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(loadSettings.loadMode or 'Always'));
+            if (imgui.PushItemWidth ~= nil) then
+                imgui.PushItemWidth(loadComboWidth);
+            end
+            if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+                if (imgui.BeginCombo('##LoadMode' .. tostring(selectedEntity) .. tostring(selectedState) .. tostring(selectedWidget) .. 'Header', tostring(loadSettings.loadMode or 'Always')) == true) then
+                    for _, loadChoice in ipairs(LibraPlatesSettingsGetLoadModeOptions(selectedEntity, selectedState)) do
+                        local isSelected = tostring(loadChoice) == tostring(loadSettings.loadMode);
+                        if (imgui.Selectable(tostring(loadChoice), isSelected) == true) then
+                            loadSettings.loadMode = LibraPlatesSettingsCoerceLoadModeForContext(loadChoice, selectedEntity, selectedState, 'Always');
+                            state.Save();
+                        end
+                        if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                            imgui.SetItemDefaultFocus();
+                        end
+                    end
+                    imgui.EndCombo();
+                end
+            else
+                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(loadSettings.loadMode or 'Always'));
+            end
+            if (imgui.PopItemWidth ~= nil) then
+                imgui.PopItemWidth();
+            end
+            loadModeDrawn = true;
         end
-        if (imgui.PopItemWidth ~= nil) then
-            imgui.PopItemWidth();
-        end
-        loadModeDrawn = true;
+
+        local nextHeaderRowY = (loadRowY or 0) + (showLoadMode == true and 28 or 0);
 
         if (selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)') then
             if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
-                imgui.SetCursorScreenPos({ headerRowX, loadRowY + 28 });
+                imgui.SetCursorScreenPos({ headerRowX, nextHeaderRowY });
             elseif (imgui.Dummy ~= nil) then
                 imgui.Dummy({ 1, 2 });
             end
@@ -12359,7 +12694,7 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
 
         if (showHeaderAnchor == true) then
             if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
-                imgui.SetCursorScreenPos({ headerRowX, loadRowY + 28 });
+                imgui.SetCursorScreenPos({ headerRowX, nextHeaderRowY });
             elseif (imgui.Dummy ~= nil) then
                 imgui.Dummy({ 1, 2 });
             end
@@ -12396,7 +12731,7 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
         selectedWidget == 'Quick Menu (module)' or
         selectedWidget == 'Peer (module)' or
         LibraPlatesSettingsIsFishingHudWidget(selectedWidget) == true
-    )));
+    ), LibraPlatesSettingsShouldDrawLoadMode(selectedEntity, selectedState) ~= true));
 
     if (imgui.Spacing ~= nil) then
         imgui.Spacing();
@@ -12885,10 +13220,21 @@ local function DrawSelectedEditorPlates()
                 end
             end
 
-            if (settings.loadMode == nil) then
-                settings.loadMode = LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget);
+            local showLoadMode = LibraPlatesSettingsShouldDrawLoadMode(selectedEntity, selectedState);
+            local previousLoadMode = settings.loadMode;
+
+            if (showLoadMode == true) then
+                if (settings.loadMode == nil) then
+                    settings.loadMode = LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget);
+                else
+                    settings.loadMode = LibraPlatesSettingsCoerceLoadModeForContext(settings.loadMode, selectedEntity, selectedState, LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget));
+                end
+
+                if (previousLoadMode ~= nil and tostring(previousLoadMode) ~= tostring(settings.loadMode)) then
+                    state.Save();
+                end
             else
-                settings.loadMode = LibraPlatesSettingsNormalizeLoadMode(settings.loadMode, LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget));
+                loadModeDrawn = true;
             end
 
             local headerLabelWidth = 120;
@@ -12909,39 +13255,42 @@ local function DrawSelectedEditorPlates()
                 end
             end
 
-            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
-            imgui.TextColored({ 1.0, 1.0, 1.0, 1.0 }, 'Load');
-            if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
-                imgui.SetCursorScreenPos({ headerRowX + headerLabelWidth, loadRowY });
-            else
-                imgui.SameLine();
-            end
-            if (imgui.PushItemWidth ~= nil) then
-                imgui.PushItemWidth(loadComboWidth);
-            end
-            if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
-                if (imgui.BeginCombo('##LoadMode' .. tostring(selectedEntity) .. tostring(selectedState) .. tostring(selectedWidget) .. 'Header', tostring(settings.loadMode or 'Always')) == true) then
-                    for _, loadChoice in ipairs(T{ 'Always', 'Out of combat', 'In combat', 'Never' }) do
-                        local isSelected = tostring(loadChoice) == tostring(settings.loadMode);
-                        if (imgui.Selectable(tostring(loadChoice), isSelected) == true) then
-                            settings.loadMode = LibraPlatesSettingsNormalizeLoadMode(loadChoice, 'Always');
-                            state.Save();
-                        end
-                        if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
-                            imgui.SetItemDefaultFocus();
-                        end
-                    end
-                    imgui.EndCombo();
+            if (showLoadMode == true) then
+                if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+                imgui.TextColored({ 1.0, 1.0, 1.0, 1.0 }, 'Load');
+                if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+                    imgui.SetCursorScreenPos({ headerRowX + headerLabelWidth, loadRowY });
+                else
+                    imgui.SameLine();
                 end
-            else
-                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(settings.loadMode or 'Always'));
+                if (imgui.PushItemWidth ~= nil) then
+                    imgui.PushItemWidth(loadComboWidth);
+                end
+                if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+                    if (imgui.BeginCombo('##LoadMode' .. tostring(selectedEntity) .. tostring(selectedState) .. tostring(selectedWidget) .. 'Header', tostring(settings.loadMode or 'Always')) == true) then
+                        for _, loadChoice in ipairs(LibraPlatesSettingsGetLoadModeOptions(selectedEntity, selectedState)) do
+                            local isSelected = tostring(loadChoice) == tostring(settings.loadMode);
+                            if (imgui.Selectable(tostring(loadChoice), isSelected) == true) then
+                                settings.loadMode = LibraPlatesSettingsCoerceLoadModeForContext(loadChoice, selectedEntity, selectedState, 'Always');
+                                state.Save();
+                            end
+                            if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                                imgui.SetItemDefaultFocus();
+                            end
+                        end
+                        imgui.EndCombo();
+                    end
+                else
+                    imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(settings.loadMode or 'Always'));
+                end
+                if (imgui.PopItemWidth ~= nil) then
+                    imgui.PopItemWidth();
+                end
+                loadModeDrawn = true;
             end
-            if (imgui.PopItemWidth ~= nil) then
-                imgui.PopItemWidth();
-            end
-            loadModeDrawn = true;
+            local nextHeaderRowY = (loadRowY or 0) + (showLoadMode == true and 28 or 0);
             if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
-                imgui.SetCursorScreenPos({ headerRowX, loadRowY + 28 });
+                imgui.SetCursorScreenPos({ headerRowX, nextHeaderRowY });
             elseif (imgui.Dummy ~= nil) then
                 imgui.Dummy({ 1, 2 });
             end
@@ -12972,7 +13321,7 @@ local function DrawSelectedEditorPlates()
             };
             LibraPlatesSettingsApplyBoxedPlateWidgetExtras(headerPayload, boxedWidgetInfo.extras);
             boxedWidgetInfo.drawFn(settings, headerPayload);
-        end, LibraPlatesSettingsGetPlatesHeaderBandHeight(settings, false));
+        end, LibraPlatesSettingsGetPlatesHeaderBandHeight(settings, false, LibraPlatesSettingsShouldDrawLoadMode(selectedEntity, selectedState) ~= true));
 
         if (imgui.Spacing ~= nil) then
             imgui.Spacing();
@@ -13300,6 +13649,10 @@ function settingsUi.Render()
     local styleCount = PushSettingsAccentStyle();
     local windowFlags = settingsWindowFlags;
 
+    if (selectedTab == 'Plates') then
+        windowFlags = windowFlags + (_G.ImGuiWindowFlags_NoScrollbar or 0) + (_G.ImGuiWindowFlags_NoScrollWithMouse or 0);
+    end
+
     if (preview.ShouldLockSettingsWindowMove ~= nil and preview.ShouldLockSettingsWindowMove() == true) then
         windowFlags = windowFlags + settingsWindowNoMoveFlag;
     end
@@ -13353,6 +13706,11 @@ function settingsUi.Render()
                 local isBoxedEditor = isBoxedSettings or LibraPlatesSettingsIsBoxedPlatesPage() == true;
                 local rightPanelBorder = not isBoxedEditor;
                 local rightPanelBgPushed = 0;
+                local rightPanelChildFlags = 0;
+
+                if (selectedTab == 'Plates') then
+                    rightPanelChildFlags = (_G.ImGuiWindowFlags_NoScrollbar or 0) + (_G.ImGuiWindowFlags_NoScrollWithMouse or 0);
+                end
 
                 if (isBoxedEditor == true and imgui.PushStyleColor ~= nil) then
                     local childBgColor = GetImguiColor('ChildBg');
@@ -13375,7 +13733,7 @@ function settingsUi.Render()
                     else
                         DrawRightPanel();
                     end
-                end, not isBoxedEditor);
+                end, not isBoxedEditor, rightPanelChildFlags);
 
                 if (rightPanelBgPushed > 0 and imgui.PopStyleColor ~= nil) then
                     imgui.PopStyleColor(rightPanelBgPushed);

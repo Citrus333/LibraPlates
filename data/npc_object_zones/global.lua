@@ -3343,6 +3343,7 @@ Involved in Missions:\
             ["icon"] = "SurvivalGuide.png",
             ["note"] = "A book manual podium stationed at critical outposts. Reading the text lets you enroll in training regimes or consume small gil allowances to teleport instantly between regional guides.",
             ["type"] = "Survival Guide",
+			["worldOffsetY"] = 0.40,
         },
         ["Tales'Beginnin"] = {
             ["_source"] = "item",

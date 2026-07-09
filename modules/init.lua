@@ -20,6 +20,7 @@ local enemyAlerts = require('core.enemy_alerts');
 local imgui = require('imgui');
 local fishing = require('core.fishing');
 local fishingStaminaOverlay = require('core.fishing_stamina_overlay');
+local warpMenu = require('core.warp_menu');
 
 -- ============================================================
 -- Module registry
@@ -282,6 +283,7 @@ function modules.Render()
         UpdateNativeNamesRetry();
         UpdateTargetModulePrewarm();
         jobChange.Update();
+        warpMenu.Update();
         enemyCasts.TickDebug();
     end
     perfMeter.Stop('native', nativeStart);

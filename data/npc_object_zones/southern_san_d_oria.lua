@@ -1055,13 +1055,6 @@ Involved in Quests:\
 Marks one's town map with the locations of various NPCs important to adventures: *Home Points *Item Depository *Melody Minstrels *Weather Reporters *Traveling Bards *Reputation *Immigration *Armor Depository *Teleportation *Pursuivant *Gold World Pass Vendor",
             ["type"] = "Map Marker",
         },
-        ["Scarlette, C.A."] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Jeuno affliated Campaign Arbiter. *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign *You are only allowed Teleportation to areas that you have physically visited. * Costs: ** 20 Allied Notes Areas controlled by your Affiliated Country. ** 40 Allied Notes Areas non-Beastmen controlled adjacent to your home country. ** 50 Allied Notes Areas non-Beastmen controlled not adjacent to your home country. ** 80/90 Allied Notes Areas that are Beastmen controlled. *She cannot teleport you to Beastman Strongholds (Castle Oztroja (S), La Vaule (S), Beadeaux (S), Castle Zvahl Baileys (S), Castle Zvahl Keep (S), Throne Room (S))",
-            ["type"] = "Campaign",
-        },
         ["Selh'teus"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",

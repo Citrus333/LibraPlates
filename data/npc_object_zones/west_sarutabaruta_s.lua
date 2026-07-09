@@ -30,10 +30,11 @@ Also appears as a combat magian in past Windurst battlefield zones.",
         },
         ["Addison, C.A."] = {
             ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Jeuno affiliated Campaign Arbiter. Present when Beastmen have control of West Sarutabaruta (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+            ["icon"] = "WarpNPC.png",
+            ["note"] = "Involved in Mission:\
+* Allied Campaign\
+",
+            ["type"] = "Teleport Service",
         },
         ["Allied Commissary"] = {
             ["_source"] = "npc",

@@ -8,10 +8,11 @@ return {
         },
         ["Felicia, C.A."] = {
             ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Jeuno affiliated Campaign Arbiter. Present when Beastmen have control of Vunkerl Inlet (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+            ["icon"] = "WarpNPC.png",
+            ["note"] = "Involved in Mission:\
+* Allied Campaign\
+",
+            ["type"] = "Teleport Service",
         },
         ["Feral Moon, L.C."] = {
             ["_source"] = "npc",

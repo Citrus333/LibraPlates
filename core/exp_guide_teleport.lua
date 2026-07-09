@@ -86,6 +86,99 @@ local function GetCustomQuestion(data, prefix)
     return nil;
 end
 
+local function EscapePattern(value)
+    return tostring(value or ''):gsub('([%(%)%.%%%+%-%*%?%[%]%^%$])', '%%%1');
+end
+
+local function FindResultByPrefix(text, prefix)
+    text = tostring(text or '');
+    prefix = tostring(prefix or '');
+
+    if (text == '' or prefix == '') then
+        return nil;
+    end
+
+    local startIndex = text:find(prefix, 1, true);
+    if (startIndex == nil) then
+        return nil;
+    end
+
+    local endIndex = text:find(')', startIndex, true);
+    if (endIndex ~= nil) then
+        return text:sub(startIndex, endIndex);
+    end
+
+    local matched = text:match('(' .. EscapePattern(prefix) .. '[^%z]+)');
+    return matched;
+end
+
+local function ResolveMenuResult(data, option)
+    if (type(option) ~= 'table') then
+        return tostring(option or '');
+    end
+
+    local exact = tostring(option.result or '');
+    if (exact ~= '') then
+        return exact;
+    end
+
+    local prefix = tostring(option.resultPrefix or '');
+    if (prefix ~= '') then
+        local allText = table.concat(PacketStrings(data), ' ');
+        local matched = FindResultByPrefix(allText, prefix);
+        if (matched ~= nil and matched ~= '') then
+            return matched;
+        end
+
+        for _, value in ipairs(PacketStrings(data)) do
+            local text = tostring(value or '');
+            if (text:find(prefix, 1, true) == 1) then
+                return text;
+            end
+
+            matched = FindResultByPrefix(text, prefix);
+            if (matched ~= nil and matched ~= '') then
+                return matched;
+            end
+        end
+    end
+
+    return tostring(option.label or '');
+end
+
+local function GetMenuPageInfo(question)
+    local current, total = tostring(question or ''):match('%((%d+)%s*/%s*(%d+)%)');
+    return tonumber(current), tonumber(total);
+end
+
+local function GetMenuPage(question)
+    local current = GetMenuPageInfo(question);
+    return current;
+end
+
+local function GetPageStep(currentPage, targetPage, totalPages)
+    currentPage = tonumber(currentPage) or 1;
+    targetPage = tonumber(targetPage) or 1;
+    totalPages = tonumber(totalPages);
+
+    if (currentPage == targetPage) then
+        return nil;
+    end
+
+    if (totalPages ~= nil and totalPages > 1) then
+        local forward = (targetPage - currentPage) % totalPages;
+        local backward = (currentPage - targetPage) % totalPages;
+
+        if (backward < forward) then
+            return 'prev';
+        end
+
+        return 'next';
+    end
+
+    return currentPage < targetPage and 'next' or 'prev';
+end
+
 local function GetPlayerName()
     local name = nil;
 
@@ -194,7 +287,9 @@ function expGuideTeleport.Request(destination, context, option)
     local mode = expGuideData.modes[tostring(destination.mode or context.mode or 'past')];
     local optionType = type(option);
     local withBuff = optionType == 'boolean' and option == true;
-    local paymentResult = optionType == 'table' and option.result or nil;
+    local paymentOption = optionType == 'table' and (option.payment or option) or nil;
+    local destinationBuff = optionType == 'table' and (option.buffResult or option.buff) or nil;
+    local paymentResult = paymentOption ~= nil and (paymentOption.result or paymentOption.label or paymentOption.resultPrefix) or nil;
 
     if (mode == nil) then
         log.Warn('EXP Guide teleport failed: unknown guide mode.');
@@ -210,6 +305,8 @@ function expGuideTeleport.Request(destination, context, option)
         destination = destination,
         mode = mode,
         withBuff = withBuff == true,
+        destinationBuff = destinationBuff,
+        paymentOption = paymentOption,
         paymentResult = paymentResult,
         targetIndex = targetIndex,
         targetId = targetId,
@@ -249,12 +346,33 @@ function expGuideTeleport.HandlePacketIn(e)
     if ((active.state == 'waitingDestination' or active.state == 'waitingNextPage') and text:find(active.mode.question, 1, true) ~= nil) then
         e.blocked = true;
         active.currentQuestion = question;
+        local visiblePage, totalPages = GetMenuPageInfo(question);
+        if (visiblePage == nil) then
+            visiblePage, totalPages = GetMenuPageInfo(text);
+        end
+        if (visiblePage ~= nil) then
+            active.currentPage = visiblePage;
+        end
 
-        if ((tonumber(active.currentPage) or 1) < (tonumber(active.targetPage) or 1)) then
+        local pageStep = GetPageStep(active.currentPage, active.targetPage, totalPages);
+        if (pageStep == 'next') then
             active.state = 'waitingNextPage';
-            active.currentPage = (tonumber(active.currentPage) or 1) + 1;
+            if (visiblePage == nil) then
+                active.currentPage = (tonumber(active.currentPage) or 1) + 1;
+            end
             QueueAction(0.06, function()
                 SendCustomAnswer(active.currentQuestion or active.mode.question, tostring(active.mode.nextResult or 'Next'), 'next destination page');
+            end);
+            return;
+        end
+
+        if (pageStep == 'prev') then
+            active.state = 'waitingNextPage';
+            if (visiblePage == nil) then
+                active.currentPage = math.max(1, (tonumber(active.currentPage) or 1) - 1);
+            end
+            QueueAction(0.06, function()
+                SendCustomAnswer(active.currentQuestion or active.mode.question, tostring(active.mode.prevResult or 'Previous'), 'previous destination page');
             end);
             return;
         end
@@ -262,23 +380,37 @@ function expGuideTeleport.HandlePacketIn(e)
         active.state = 'sentDestination';
         QueueAction(0.10, function()
             SendCustomAnswer(active.currentQuestion or active.mode.question, active.destination.result, 'select destination');
-            if (active.destination.noPayment == true or ((active.mode.buffQuestion == nil or tostring(active.mode.buffQuestion) == '') and (active.mode.paymentQuestion == nil or tostring(active.mode.paymentQuestion) == '') and (active.mode.confirmQuestionPrefix == nil or tostring(active.mode.confirmQuestionPrefix) == ''))) then
+            if (active.destination.noPayment == true or ((active.destination.buffQuestion == nil or tostring(active.destination.buffQuestion) == '') and (active.mode.buffQuestion == nil or tostring(active.mode.buffQuestion) == '') and (active.mode.paymentQuestion == nil or tostring(active.mode.paymentQuestion) == '') and (active.mode.confirmQuestionPrefix == nil or tostring(active.mode.confirmQuestionPrefix) == ''))) then
                 pending = nil;
             end
         end);
         return;
     end
 
-    if (active.state == 'sentDestination' and active.mode.paymentQuestion ~= nil and text:find(active.mode.paymentQuestion, 1, true) ~= nil) then
+    if ((active.state == 'sentDestination' or active.state == 'sentDestinationBuff') and active.mode.paymentQuestion ~= nil and text:find(active.mode.paymentQuestion, 1, true) ~= nil) then
         e.blocked = true;
         active.state = 'sentPayment';
-        local answer = tostring(active.paymentResult or '');
+        local answer = ResolveMenuResult(e.data_modified or e.data, active.paymentOption or active.paymentResult);
         QueueAction(0.18, function()
             SendCustomAnswer(active.mode.paymentQuestion, answer, 'select payment');
             pending = nil;
         end);
         return;
     end;
+
+    if (active.state == 'sentDestination' and active.destination.buffQuestion ~= nil and text:find(active.destination.buffQuestion, 1, true) ~= nil) then
+        e.blocked = true;
+        active.state = 'sentDestinationBuff';
+        local buffQuestion = GetCustomQuestion(e.data_modified or e.data, active.destination.buffQuestion) or active.destination.buffQuestion;
+        local answer = tostring(active.destinationBuff or 'None');
+        QueueAction(0.18, function()
+            SendCustomAnswer(buffQuestion, answer, 'select destination buff');
+            if (active.mode.paymentQuestion == nil or tostring(active.mode.paymentQuestion) == '') then
+                pending = nil;
+            end
+        end);
+        return;
+    end
 
     if (active.state == 'sentDestination' and active.mode.confirmQuestionPrefix ~= nil and text:find(active.mode.confirmQuestionPrefix, 1, true) ~= nil) then
         e.blocked = true;

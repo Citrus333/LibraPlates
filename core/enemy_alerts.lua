@@ -969,7 +969,10 @@ function enemyAlerts.HandlePacketIn(e)
 end
 
 local function StripControlCodes(text)
-    return tostring(text or ''):gsub(string.char(0x1E) .. '.', ''):gsub('[%z\1-\31]', '');
+    return tostring(text or '')
+        :gsub(string.char(0x1E) .. '.', '')
+        :gsub('[%z\1-\31]', '')
+        :gsub('[\127-\255]', '');
 end
 
 local function TrimText(value)

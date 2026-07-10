@@ -28,6 +28,7 @@ local missingIcon = {};
 local warpIndexes = nil;
 local campaignCaptureUntil = 0;
 local expGuideCaptureUntil = 0;
+local mogHouseExitCaptureUntil = 0;
 local eboxItemPages = {};
 local eboxSearchBuffer = { '' };
 
@@ -175,6 +176,20 @@ local function ExpGuideCaptureActive()
     if (os.clock() > expGuideCaptureUntil) then
         expGuideCaptureUntil = 0;
         log.Info('EXP Guide packet capture ended.');
+        return false;
+    end
+
+    return true;
+end
+
+local function MogHouseExitCaptureActive()
+    if (mogHouseExitCaptureUntil <= 0) then
+        return false;
+    end
+
+    if (os.clock() > mogHouseExitCaptureUntil) then
+        mogHouseExitCaptureUntil = 0;
+        log.Info('Mog House Exit packet capture ended.');
         return false;
     end
 
@@ -367,6 +382,7 @@ local function GetSettings()
     if (settings.packetDebug == nil) then settings.packetDebug = false; end
     if (settings.favoriteDisplay == nil) then settings.favoriteDisplay = 'Short'; end
     settings.favorites = settings.favorites or {};
+    settings.eboxFavorites = settings.eboxFavorites or {};
 
     return settings;
 end
@@ -2352,11 +2368,76 @@ local function DrawEphemeralBoxQuantityOptions(categoryName, itemName, total, co
     end
 end
 
+local function EphemeralBoxCategoryKey(categoryName)
+    return tostring(categoryName or ''):gsub('%s*%(%d+%)$', '');
+end
+
+local function EphemeralBoxFavoriteKey(categoryName, itemName)
+    return 'ebox:' .. EphemeralBoxCategoryKey(categoryName) .. ':' .. tostring(itemName or '');
+end
+
+local function IsEphemeralBoxFavorite(settings, categoryName, itemName)
+    settings.eboxFavorites = settings.eboxFavorites or {};
+
+    return settings.eboxFavorites[EphemeralBoxFavoriteKey(categoryName, itemName)] == true;
+end
+
+local function ToggleEphemeralBoxFavorite(settings, categoryName, itemName)
+    settings.eboxFavorites = settings.eboxFavorites or {};
+    local key = EphemeralBoxFavoriteKey(categoryName, itemName);
+    settings.eboxFavorites[key] = settings.eboxFavorites[key] ~= true and true or nil;
+    state.Save();
+end
+
+local function DrawEphemeralBoxItemRow(settings, categoryName, category, itemName, total, context, favoriteRow)
+    local item = category ~= nil and category.items ~= nil and category.items[itemName] or nil;
+    local favorite = IsEphemeralBoxFavorite(settings, categoryName, itemName);
+    local icon = GetIcon(favorite and 'fav-on.png' or 'fav-off.png');
+    local nestedMenu = tostring(item ~= nil and item.nestedMenu or ''):gsub('^%?+%s*', ''):gsub('^%s+', ''):gsub('%s+$', '');
+    local label = tostring(itemName) .. ' (' .. tostring(total) .. ')';
+
+    if (favoriteRow == true and tostring(settings.favoriteDisplay or 'Short') == 'Full path') then
+        if (nestedMenu ~= '') then
+            label = EphemeralBoxCategoryKey(categoryName) .. ' > ' .. nestedMenu .. ' > ' .. label;
+        else
+            label = EphemeralBoxCategoryKey(categoryName) .. ' > ' .. label;
+        end
+    end
+
+    if (icon ~= nil and imgui.Image ~= nil) then
+        imgui.Image(icon, { 16, 16 }, { 0, 0 }, { 1, 1 });
+
+        if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+            ToggleEphemeralBoxFavorite(settings, categoryName, itemName);
+            return;
+        end
+
+        imgui.SameLine();
+    else
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, favorite and '[*]' or '[ ]');
+
+        if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+            ToggleEphemeralBoxFavorite(settings, categoryName, itemName);
+            return;
+        end
+
+        imgui.SameLine();
+    end
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ 72, 0 }, _G.ImGuiCond_Appearing or 8);
+    end
+    if (imgui.BeginMenu(label) == true) then
+        DrawEphemeralBoxQuantityOptions(categoryName, itemName, total, context);
+        imgui.EndMenu();
+    end
+end
+
 local function NormalizeEBoxSearch(value)
     return tostring(value or ''):lower():gsub('^%s+', ''):gsub('%s+$', '');
 end
 
-local function DrawEphemeralBoxSearchResults(cache, query, context)
+local function DrawEphemeralBoxSearchResults(settings, cache, query, context)
     local needle = NormalizeEBoxSearch(query);
     if (needle == '') then
         return false;
@@ -2377,14 +2458,7 @@ local function DrawEphemeralBoxSearchResults(cache, query, context)
                 if (total > 0 and NormalizeEBoxSearch(itemName):find(needle, 1, true) ~= nil) then
                     matches = matches + 1;
                     if (matches <= maxMatches) then
-                        local label = tostring(itemName) .. ' (' .. tostring(total) .. ')';
-                        if (imgui.SetNextWindowSize ~= nil) then
-                            imgui.SetNextWindowSize({ 72, 0 }, _G.ImGuiCond_Appearing or 8);
-                        end
-                        if (imgui.BeginMenu(label) == true) then
-                            DrawEphemeralBoxQuantityOptions(categoryName, itemName, total, context);
-                            imgui.EndMenu();
-                        end
+                        DrawEphemeralBoxItemRow(settings, categoryName, category, itemName, total, context, true);
                     end
                 end
             end
@@ -2430,6 +2504,28 @@ local function BuildEphemeralBoxNestedGroups(category)
     return directItems, groupOrder, groups;
 end
 
+local function DrawEphemeralBoxFavorites(settings, cache, context)
+    local count = 0;
+
+    for _, categoryName in ipairs(cache.categoryOrder or {}) do
+        local category = cache.categories[categoryName];
+        if (category ~= nil) then
+            for _, itemName in ipairs(category.itemOrder or {}) do
+                local item = category.items ~= nil and category.items[itemName] or nil;
+                local total = tonumber(item ~= nil and item.total) or 0;
+                if (total > 0 and IsEphemeralBoxFavorite(settings, categoryName, itemName) == true) then
+                    DrawEphemeralBoxItemRow(settings, categoryName, category, itemName, total, context, true);
+                    count = count + 1;
+                end
+            end
+        end
+    end
+
+    if (count == 0) then
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'No favorites yet');
+    end
+end
+
 local function DrawEphemeralBoxLoadItems(categoryName, context)
     if (imgui.Selectable('Scan category') == true) then
         ephemeralBox.ScanCategoryItems(categoryName, context);
@@ -2439,7 +2535,7 @@ local function DrawEphemeralBoxLoadItems(categoryName, context)
     end
 end
 
-local function DrawEphemeralBoxItemList(categoryName, category, itemOrder, pageKey, context)
+local function DrawEphemeralBoxItemList(settings, categoryName, category, itemOrder, pageKey, context)
     itemOrder = itemOrder or {};
     local itemCount = #itemOrder;
     if (itemCount <= 0) then
@@ -2494,14 +2590,7 @@ local function DrawEphemeralBoxItemList(categoryName, category, itemOrder, pageK
         local item = category.items ~= nil and category.items[itemName] or nil;
         local total = tonumber(item ~= nil and item.total) or 0;
         if (total > 0) then
-            local label = tostring(itemName) .. ' (' .. tostring(total) .. ')';
-            if (imgui.SetNextWindowSize ~= nil) then
-                imgui.SetNextWindowSize({ 72, 0 }, _G.ImGuiCond_Appearing or 8);
-            end
-            if (imgui.BeginMenu(label) == true) then
-                DrawEphemeralBoxQuantityOptions(categoryName, itemName, total, context);
-                imgui.EndMenu();
-            end
+            DrawEphemeralBoxItemRow(settings, categoryName, category, itemName, total, context, false);
         end
     end
 end
@@ -2587,7 +2676,17 @@ function warpMenu.RenderEphemeralBoxMenu(context)
         if (imgui.Separator ~= nil) then
             imgui.Separator();
         end
-        searchActive = DrawEphemeralBoxSearchResults(cache, eboxSearchBuffer[1], context);
+        searchActive = DrawEphemeralBoxSearchResults(settings, cache, eboxSearchBuffer[1], context);
+    end
+
+    if (searchActive ~= true) then
+        if (imgui.BeginMenu('Favorites') == true) then
+            DrawEphemeralBoxFavorites(settings, cache, context);
+            imgui.EndMenu();
+        end
+        if (imgui.Separator ~= nil) then
+            imgui.Separator();
+        end
     end
 
     local hadItems = false;
@@ -2599,8 +2698,13 @@ function warpMenu.RenderEphemeralBoxMenu(context)
             local directItems, groupOrder, groups = BuildEphemeralBoxNestedGroups(category);
 
             local hasCachedItems = (#directItems > 0 or #groupOrder > 0);
+            local hasNativeFolders = type(category.nestedMenus) == 'table' and next(category.nestedMenus) ~= nil;
+            local learnedItemCount = #directItems;
+            for _, groupName in ipairs(groupOrder) do
+                learnedItemCount = learnedItemCount + #(groups[groupName] or {});
+            end
             local verified = tonumber(category.scanVersion) == 2;
-            if (hasCachedItems == true or verified ~= true) then
+            if (hasCachedItems == true or hasNativeFolders == true or verified ~= true) then
                 hadItems = true;
                 if (imgui.BeginMenu(categoryLabel) == true) then
                     if (hasCachedItems == true) then
@@ -2610,7 +2714,7 @@ function warpMenu.RenderEphemeralBoxMenu(context)
                             if (#groupItems > 0) then
                                 groupLabel = groupLabel .. ' (' .. tostring(#groupItems) .. ')';
                                 if (imgui.BeginMenu(groupLabel) == true) then
-                                    DrawEphemeralBoxItemList(categoryLabel, category, groupItems, tostring(categoryName) .. '>' .. tostring(groupName), context);
+                                    DrawEphemeralBoxItemList(settings, categoryName, category, groupItems, tostring(categoryName) .. '>' .. tostring(groupName), context);
                                     imgui.EndMenu();
                                 end
                             end
@@ -2621,8 +2725,16 @@ function warpMenu.RenderEphemeralBoxMenu(context)
                         end
 
                         if (#directItems > 0) then
-                            DrawEphemeralBoxItemList(categoryLabel, category, directItems, tostring(categoryName), context);
+                            DrawEphemeralBoxItemList(settings, categoryName, category, directItems, tostring(categoryName), context);
                         end
+                        if (learnedItemCount < expectedCount) then
+                            if (imgui.Separator ~= nil) then
+                                imgui.Separator();
+                            end
+                            DrawEphemeralBoxLoadItems(categoryLabel, context);
+                        end
+                    elseif (hasNativeFolders == true) then
+                        DrawEphemeralBoxLoadItems(categoryLabel, context);
                     else
                         DrawEphemeralBoxLoadItems(categoryLabel, context);
                     end
@@ -2665,6 +2777,16 @@ function warpMenu.StopExpGuideCapture()
     log.Info('EXP Guide packet capture stopped.');
 end
 
+function warpMenu.StartMogHouseExitCapture(seconds)
+    mogHouseExitCaptureUntil = os.clock() + math.max(1, tonumber(seconds) or 30);
+    log.Info('Mog House Exit packet capture active for ' .. tostring(math.floor(mogHouseExitCaptureUntil - os.clock())) .. 's. Use the native Mog House exit menu now.');
+end
+
+function warpMenu.StopMogHouseExitCapture()
+    mogHouseExitCaptureUntil = 0;
+    log.Info('Mog House Exit packet capture stopped.');
+end
+
 function warpMenu.HandlePacketIn(e)
     if (CampaignCaptureActive() == true and e ~= nil and type(e.data) == 'string') then
         local data = e.data_modified or e.data;
@@ -2684,6 +2806,13 @@ function warpMenu.HandlePacketIn(e)
             else
                 log.Info('EXP Guide capture incoming id=0x' .. string.format('%03X', tonumber(e.id) or 0) .. ' size=' .. tostring(e.size or #data) .. ' text="' .. PacketPrintableText(data) .. '" bytes=' .. FormatPacketString(data, 80));
             end
+        end
+    end
+
+    if (MogHouseExitCaptureActive() == true and e ~= nil and type(e.data) == 'string') then
+        local data = e.data_modified or e.data;
+        if (e.id == 0x05E or e.id == 0x05C or e.id == 0x052 or e.id == 0x00A or e.id == 0x00B) then
+            log.Info('Mog House Exit capture incoming id=0x' .. string.format('%03X', tonumber(e.id) or 0) .. ' size=' .. tostring(e.size or #data) .. ' text="' .. PacketPrintableText(data) .. '" bytes=' .. FormatPacketString(data, 96));
         end
     end
 
@@ -2715,6 +2844,13 @@ function warpMenu.HandlePacketOut(e)
             else
                 log.Info('EXP Guide capture outgoing id=0x' .. string.format('%03X', tonumber(e.id) or 0) .. ' size=' .. tostring(e.size or #data) .. ' text="' .. PacketPrintableText(data) .. '" bytes=' .. FormatPacketString(data, 80));
             end
+        end
+    end
+
+    if (MogHouseExitCaptureActive() == true and e ~= nil and type(e.data) == 'string') then
+        local data = e.data_modified or e.data;
+        if (e.id == 0x05E or e.id == 0x05C or e.id == 0x016 or e.id == 0x01A or e.id == 0x0B6) then
+            log.Info('Mog House Exit capture outgoing id=0x' .. string.format('%03X', tonumber(e.id) or 0) .. ' size=' .. tostring(e.size or #data) .. ' text="' .. PacketPrintableText(data) .. '" bytes=' .. FormatPacketString(data, 96));
         end
     end
 

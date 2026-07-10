@@ -579,6 +579,7 @@ return {
             confirmBeforeWarp = false,
             debug = false,
             favorites = {},
+            eboxFavorites = {},
         },
     },
     peer = {

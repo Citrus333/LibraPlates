@@ -81,6 +81,7 @@ local function NormalizeItemText(value)
 end
 
 local resolvedItemCache = {};
+local resourceItemNameIndex = nil;
 
 local function ReadResourceValue(resource, keys)
     if (resource == nil or type(keys) ~= 'table') then
@@ -157,6 +158,53 @@ local function ResourceMatchesItemName(resource, itemName)
     return false;
 end
 
+local function AddResourceItemIndexName(index, resource, name)
+    local key = NormalizeItemText(name);
+    if (key == '' or index[key] ~= nil) then
+        return;
+    end
+
+    local itemId = GetResourceItemId(resource);
+    if (itemId <= 0) then
+        return;
+    end
+
+    index[key] = {
+        itemId = itemId,
+        name = GetResourceItemDisplayName(resource, name),
+        serverCategory = GetResourceItemCategory(resource),
+    };
+end
+
+local function GetResourceItemNameIndex(resourceManager)
+    if (resourceItemNameIndex ~= nil) then
+        return resourceItemNameIndex;
+    end
+
+    local index = {};
+    local getById = resourceManager ~= nil and resourceManager.GetItemById or nil;
+    if (type(getById) ~= 'function') then
+        resourceItemNameIndex = index;
+        return resourceItemNameIndex;
+    end
+
+    for itemId = 1, 65535 do
+        local ok, resource = pcall(function()
+            return getById(resourceManager, itemId);
+        end);
+        if (ok == true and resource ~= nil and GetResourceItemId(resource) > 0) then
+            AddResourceItemIndexName(index, resource, GetResourceItemDisplayName(resource, ''));
+            AddResourceItemIndexName(index, resource, ReadResourceValue(resource, { 'Name' }));
+            AddResourceItemIndexName(index, resource, ReadResourceValue(resource, { 'NameSingular' }));
+            AddResourceItemIndexName(index, resource, ReadResourceValue(resource, { 'LogNameSingular' }));
+            AddResourceItemIndexName(index, resource, ReadResourceValue(resource, { 'En', 'en', 'English', 'english' }));
+        end
+    end
+
+    resourceItemNameIndex = index;
+    return resourceItemNameIndex;
+end
+
 local function ResolveRealItem(itemName)
     itemName = CleanMenuText(itemName);
     if (itemName == '') then
@@ -201,14 +249,22 @@ local function ResolveRealItem(itemName)
     for _, resource in ipairs(candidates) do
         if (ResourceMatchesItemName(resource, itemName) == true) then
             local itemId = GetResourceItemId(resource);
-            local resolved = {
-                itemId = itemId > 0 and itemId or nil,
-                name = GetResourceItemDisplayName(resource, itemName),
-                serverCategory = GetResourceItemCategory(resource),
-            };
-            resolvedItemCache[key] = resolved;
-            return resolved;
+            if (itemId > 0) then
+                local resolved = {
+                    itemId = itemId,
+                    name = GetResourceItemDisplayName(resource, itemName),
+                    serverCategory = GetResourceItemCategory(resource),
+                };
+                resolvedItemCache[key] = resolved;
+                return resolved;
+            end
         end
+    end
+
+    local indexed = GetResourceItemNameIndex(resourceManager)[key];
+    if (indexed ~= nil and tonumber(indexed.itemId) ~= nil and tonumber(indexed.itemId) > 0) then
+        resolvedItemCache[key] = indexed;
+        return indexed;
     end
 
     resolvedItemCache[key] = false;
@@ -496,7 +552,9 @@ end
 
 local function CleanFolderText(value)
     value = CleanMenuText(value);
+    value = value:gsub('[%z\1-\31]', '');
     value = value:gsub('^%?+%s*', '');
+    value = value:gsub('^[^%w]+%s*', '');
     value = value:gsub('^%s+', ''):gsub('%s+$', '');
     return value;
 end
@@ -948,7 +1006,7 @@ local function SaveCache()
                         '        [',
                         QuoteLua(itemName),
                         '] = { itemId = ',
-                        tostring(tonumber(item.itemId) or 0),
+                        tostring(math.max(0, tonumber(item.itemId) or 0)),
                         ', name = ',
                         QuoteLua(item.name or itemName),
                         ', total = ',
@@ -957,7 +1015,9 @@ local function SaveCache()
                         QuoteLua(CleanFolderText(item.nestedMenu or '')),
                         ', serverCategory = ',
                         QuoteLua(item.serverCategory or ''),
-                        ', verified = true },\n'
+                        ', verified = ',
+                        (tonumber(item.itemId) ~= nil and tonumber(item.itemId) > 0 and 'true' or 'false'),
+                        ' },\n'
                     );
                 end
             end
@@ -1321,6 +1381,25 @@ local function FinishNestedItemScan(active)
     active.state = (active.state == 'scanAllNestedItems') and 'scanAllNestedReturn' or 'scanNestedReturn';
     active.firstSignature = nil;
     active.itemLoops = 0;
+end
+
+local function ReopenCategoryForNextNestedMenu(active)
+    if (active == nil or HasQueuedNestedScanMenus(active) ~= true) then
+        return false;
+    end
+
+    active.state = (tostring(active.state or ''):find('scanAll', 1, true) ~= nil) and 'scanAllFindCategory' or 'scanCategoryFind';
+    active.categoryLoops = 0;
+    active.itemLoops = 0;
+    active.firstSignature = nil;
+    active.nestedMenu = nil;
+    active.lastActivityAt = Now();
+
+    QueueAction(0.14, function()
+        SendOutgoingPacket(0x01A, BuildNpcPokePacket(active.targetId, active.targetIndex), 'scan next Ephemeral Box nested menu ' .. tostring(active.category));
+    end);
+
+    return true;
 end
 
 local function ParseStoredText(text)
@@ -1883,6 +1962,9 @@ function ephemeralBox.HandlePacketIn(e)
         e.blocked = true;
         QueueAction(0.06, function()
             SendCustomAnswer(question, 'Canceled.', 'close nested scan category return');
+            if (ReopenCategoryForNextNestedMenu(active) == true) then
+                return;
+            end
             if (active.state == 'scanAllNestedReturn') then
                 QueueNextFullScanCategory(active);
             else

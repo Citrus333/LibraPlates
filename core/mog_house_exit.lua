@@ -1,0 +1,177 @@
+require('common');
+
+local entities = require('core.entities');
+local log = require('core.log');
+
+local mogHouseExit = {};
+
+local debugEnabled = false;
+
+local cityGroups = {
+    {
+        bit = 1,
+        zones = {
+            { zoneId = 230, label = "Southern San d'Oria", mode = 1 },
+            { zoneId = 231, label = "Northern San d'Oria", mode = 2 },
+            { zoneId = 232, label = "Port San d'Oria", mode = 3 },
+        },
+    },
+    {
+        bit = 2,
+        zones = {
+            { zoneId = 234, label = 'Bastok Mines', mode = 1 },
+            { zoneId = 235, label = 'Bastok Markets', mode = 2 },
+            { zoneId = 236, label = 'Port Bastok', mode = 3 },
+        },
+    },
+    {
+        bit = 3,
+        zones = {
+            { zoneId = 238, label = 'Windurst Waters', mode = 1 },
+            { zoneId = 239, label = 'Windurst Walls', mode = 2 },
+            { zoneId = 240, label = 'Port Windurst', mode = 3 },
+            { zoneId = 241, label = 'Windurst Woods', mode = 4 },
+        },
+    },
+    {
+        bit = 4,
+        zones = {
+            { zoneId = 243, label = "Ru'Lude Gardens", mode = 1 },
+            { zoneId = 244, label = 'Upper Jeuno', mode = 2 },
+            { zoneId = 245, label = 'Lower Jeuno', mode = 3 },
+            { zoneId = 246, label = 'Port Jeuno', mode = 4 },
+        },
+    },
+    {
+        bit = 5,
+        zones = {
+            { zoneId = 49, label = 'Al Zahbi', mode = 1 },
+            { zoneId = 50, label = 'Aht Urhgan Whitegate', mode = 2 },
+        },
+    },
+    {
+        bit = 9,
+        zones = {
+            { zoneId = 256, label = 'Western Adoulin', mode = 1 },
+            { zoneId = 257, label = 'Eastern Adoulin', mode = 2 },
+        },
+    },
+};
+
+local zoneToGroup = {};
+for _, group in ipairs(cityGroups) do
+    for _, zone in ipairs(group.zones) do
+        zoneToGroup[zone.zoneId] = group;
+    end
+end
+
+local function FormatBytes(bytes, maxBytes)
+    local output = {};
+    local count = math.min(#(bytes or {}), math.max(1, tonumber(maxBytes) or 32));
+
+    for index = 1, count do
+        output[#output + 1] = string.format('%02X', tonumber(bytes[index]) or 0);
+    end
+
+    if (#(bytes or {}) > count) then
+        output[#output + 1] = '...';
+    end
+
+    return table.concat(output, ' ');
+end
+
+local function GetCurrentZoneId()
+    local zoneId = nil;
+
+    pcall(function()
+        zoneId = AshitaCore:GetMemoryManager():GetParty():GetMemberZone(0);
+    end);
+
+    return tonumber(zoneId) or 0;
+end
+
+local function SendOutgoingPacket(id, packedData, description)
+    if (packedData == nil) then
+        return false;
+    end
+
+    local ok, err = pcall(function()
+        AshitaCore:GetPacketManager():AddOutgoingPacket(id, packedData);
+    end);
+
+    if (ok ~= true) then
+        log.Warn('Mog House Exit packet failed ' .. tostring(description or '') .. ' id=0x' .. string.format('%03X', tonumber(id) or 0) .. ' err=' .. tostring(err));
+        return false;
+    end
+
+    if (debugEnabled == true) then
+        log.Info('Mog House Exit sent packet ' .. tostring(description or '') .. ' id=0x' .. string.format('%03X', tonumber(id) or 0) .. ' bytes=' .. FormatBytes(packedData, 32));
+    end
+
+    return true;
+end
+
+local function BuildExitPacket(destination)
+    return struct.pack(
+        'bbbbc4fffHBB',
+        0x5E,
+        0x0C,
+        0x00,
+        0x00,
+        'zmrq',
+        0.0,
+        0.0,
+        0.0,
+        0,
+        tonumber(destination.bit) or 0,
+        tonumber(destination.mode) or 0
+    ):totable();
+end
+
+function mogHouseExit.SetDebugEnabled(value)
+    debugEnabled = value == true;
+end
+
+function mogHouseExit.IsAvailable()
+    return entities.IsMogHouseObjectSuppressionArea() == true and zoneToGroup[GetCurrentZoneId()] ~= nil;
+end
+
+function mogHouseExit.GetDestinations()
+    if (entities.IsMogHouseObjectSuppressionArea() ~= true) then
+        return {};
+    end
+
+    local currentZoneId = GetCurrentZoneId();
+    local group = zoneToGroup[currentZoneId];
+    if (group == nil) then
+        return {};
+    end
+
+    local destinations = {};
+    for _, zone in ipairs(group.zones) do
+        if (tonumber(zone.zoneId) ~= currentZoneId) then
+            destinations[#destinations + 1] = {
+                label = zone.label,
+                zoneId = zone.zoneId,
+                bit = group.bit,
+                mode = zone.mode,
+            };
+        end
+    end
+
+    return destinations;
+end
+
+function mogHouseExit.Exit(destination)
+    if (entities.IsMogHouseObjectSuppressionArea() ~= true) then
+        return false, 'not inside a Mog House';
+    end
+
+    if (destination == nil) then
+        return false, 'missing destination';
+    end
+
+    return SendOutgoingPacket(0x05E, BuildExitPacket(destination), tostring(destination.label or ''));
+end
+
+return mogHouseExit;

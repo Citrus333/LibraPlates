@@ -12,6 +12,7 @@ local targeting = require('core.targeting');
 local playerBlacklist = require('core.player_blacklist');
 local warpMenu = require('core.warp_menu');
 local ephemeralBox = require('core.ephemeral_box');
+local mogHouseExit = require('core.mog_house_exit');
 local widgetDefaults = { enabled = true };
 local quickMenuPresetCount = 10;
 
@@ -2115,6 +2116,25 @@ function quickMenu.Render()
                     QueueCommand('/prcmd off');
                     pendingPartyRequestUntil = 0;
                 end, menu);
+            end
+
+            if (mogHouseExit.IsAvailable() == true) then
+                local destinations = mogHouseExit.GetDestinations();
+
+                if (#destinations > 0) then
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Mog House Exit');
+
+                    for _, destination in ipairs(destinations) do
+                        MenuItem(destination.label, nil, function()
+                            local ok, err = mogHouseExit.Exit(destination);
+                            if (ok ~= true) then
+                                log.Warn('Mog House Exit failed: ' .. tostring(err or destination.label));
+                            end
+                        end, menu);
+                    end
+
+                    imgui.Separator();
+                end
             end
 
             if (menu.self.aceTownMog == true and jobChange.CanUseAceTownMog() == true) then

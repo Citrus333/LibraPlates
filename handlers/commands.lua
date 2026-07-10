@@ -1515,6 +1515,24 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'mhcapture' or subcommand == 'moghousecapture') then
+        local action = tostring(args[3] or 'on'):lower();
+        local captureWarpMenu = require('core.warp_menu');
+
+        if (action == 'off' or action == 'stop') then
+            captureWarpMenu.StopMogHouseExitCapture();
+            return;
+        end
+
+        if (action == 'status') then
+            log.Info('Mog House Exit packet capture command ready. Use /lp mhcapture on [seconds], then select a native Mog House exit option.');
+            return;
+        end
+
+        captureWarpMenu.StartMogHouseExitCapture(tonumber(args[4]) or tonumber(args[3]) or 30);
+        return;
+    end
+
     if (subcommand == 'fmexit' or subcommand == 'fieldmanualexit') then
         local fieldManualSupport = require('core.field_manual_support');
         fieldManualSupport.EmergencyExit();

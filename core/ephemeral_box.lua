@@ -2129,6 +2129,19 @@ function ephemeralBox.Update()
         local idleSeconds = Now() - (tonumber(pending.lastActivityAt) or tonumber(pending.startedAt) or Now());
 
         if (stateName:find('scanAll', 1, true) == nil and stateName:find('scan', 1, true) ~= nil and idleSeconds > 8.0) then
+            if (stateName == 'scanNestedReturn') then
+                SaveCache();
+                if (ReopenCategoryForNextNestedMenu(pending) == true) then
+                    SetStatus('E.Box scan resumed: ' .. tostring(pending.category or 'category'));
+                    return;
+                end
+
+                SetStatus('E.Box category scan complete.');
+                pending = nil;
+                queue = {};
+                return;
+            end
+
             SaveCache();
             SetStatus('E.Box scan stopped: no menu response.');
             log.Warn('Ephemeral Box ' .. stateName .. ' stopped after ' .. tostring(math.floor(idleSeconds)) .. 's idle.');

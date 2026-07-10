@@ -57,8 +57,6 @@ local scanCache = {
     range = nil,
     players = nil,
 };
-local staffPlayers = {};
-local staffIconTextureIds = {};
 local mountedPlateLift = 1.05;
 local idleScanCacheSeconds = 0.20;
 local idleDirectDynamicCacheSeconds = 0.35;
@@ -380,64 +378,6 @@ local function BuildPlayerIndicatorAnchorFallbackRects(definitions)
 
     return fallbacks;
 end
-
-local function LoadStaffPlayers()
-    local ok, data = pcall(require, 'data.staff_players');
-
-    if (ok == true and type(data) == 'table') then
-        staffPlayers = data;
-    end
-end
-
-local function GetStaffInfo(name, serverId)
-    if (type(staffPlayers.serverIds) == 'table') then
-        local id = tonumber(serverId);
-
-        if (id ~= nil and staffPlayers.serverIds[id] ~= nil) then
-            return staffPlayers.serverIds[id];
-        end
-    end
-
-    if (type(staffPlayers.names) == 'table') then
-        return staffPlayers.names[tostring(name or '')];
-    end
-
-    return staffPlayers[tostring(name or '')];
-end
-
-local function ResolveStaffInfo(player)
-    if (playerIndicators.IsGameMaster(player.index) == true) then
-        return { type = 'GM', icon = 'GM.png', source = 'native' };
-    end
-
-    return GetStaffInfo(player.name, player.serverId);
-end
-
-local function GetAddonRoot()
-    if (AshitaCore ~= nil and AshitaCore.GetInstallPath ~= nil) then
-        return AshitaCore:GetInstallPath() .. '\\addons\\LibraPlates\\';
-    end
-
-    return '';
-end
-
-local function GetStaffIconTextureId(iconFile)
-    local fileName = tostring(iconFile or '');
-
-    if (fileName == '') then
-        return nil;
-    end
-
-    if (staffIconTextureIds[fileName] ~= nil) then
-        return staffIconTextureIds[fileName];
-    end
-
-    local path = GetAddonRoot() .. 'assets\\images\\staff\\' .. fileName:gsub('/', '\\');
-    staffIconTextureIds[fileName] = textureLoader.ToTextureId(textureLoader.Load(path));
-    return staffIconTextureIds[fileName];
-end
-
-LoadStaffPlayers();
 
 local function AddTextBadge(plateData, kind, text, settings, defaults, globalSettings)
     if (settings == nil or settings.enabled ~= true or text == nil or tostring(text) == '') then
@@ -1320,13 +1260,7 @@ local function QueuePlayer(player)
     local partyLeaderIconTextureId = nil;
     local playerGameModeText = gameMode.Resolve(player.index, false);
     local playerAnonNameColor = playerIndicators.HasAnonNameColor(player.index) == true;
-    local staffInfo = ResolveStaffInfo(player);
-    local staffIconTextureId = nil;
-
-    if (staffInfo ~= nil) then
-        staffIconTextureId = GetStaffIconTextureId(staffInfo.icon);
-        AddIcon(icons, { enabled = true, iconSize = 28, offsetX = -42, offsetY = -78 }, staffIconTextureId, -42, -78, 'staffIcon');
-    end
+    local isGameMaster = playerIndicators.IsGameMaster(player.index) == true;
 
     if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(gameModeIconSettings, 'Game mode icon') == true) then
         gameModeIconTextureId = gameMode.GetIconTextureId(playerGameModeText);
@@ -1495,7 +1429,7 @@ local function QueuePlayer(player)
             'stars=' .. tostring(starsIconTextureId or ''),
             'lvsync=' .. tostring(levelSyncIconTextureId or ''),
             'new=' .. tostring(newAdventurerIconTextureId or ''),
-            'staff=' .. tostring(staffIconTextureId or '') .. ':' .. tostring(staffInfo ~= nil and staffInfo.type or ''),
+            'gm=' .. (isGameMaster == true and '1' or '0'),
             'aoe=' .. (isPartyPlayer == true and aoeRangeSettings.enabled == true and aoeNameHighlight.GetSignature(player.index, 'pc') or 'aoe-name:0'),
             'buffs=' .. statusRowsSignature(buffRows),
             'debuffs=' .. statusRowsSignature(debuffRows),
@@ -1634,8 +1568,8 @@ local function QueuePlayer(player)
         AddTextBadge(plateData, 'level', player.mainJobLevel, levelSettings, levelDefaults, globalSettings);
     end
 
-    if (staffInfo ~= nil and tostring(staffInfo.type or '') ~= '') then
-        AddTextBadge(plateData, 'staff', staffInfo.type, {
+    if (isGameMaster == true) then
+        AddTextBadge(plateData, 'gm', 'GM', {
             enabled = true,
             textSize = 11,
             color = { 1.0, 0.12, 0.12, 1.0 },

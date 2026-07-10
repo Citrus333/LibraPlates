@@ -3451,10 +3451,12 @@ local function GetQuickMenuPreviewRows(entityName, menu)
                 local mainJob = tostring(entry.mainJob or 'None');
                 local subJob = tostring(entry.subJob or 'None');
                 local lockstyleSet = math.max(0, math.min(999, math.floor((tonumber(entry.lockstyleSet) or 0) + 0.5)));
+                local macroBook = math.max(0, math.min(20, math.floor((tonumber(entry.macroBook) or 0) + 0.5)));
+                local macroPage = math.max(0, math.min(10, math.floor((tonumber(entry.macroPage) or 0) + 0.5)));
 
                 if (mainJob ~= 'None' and subJob ~= 'None' and mainJob ~= subJob) then
                     presetRows[#presetRows + 1] = {
-                        mainJob .. '/' .. subJob .. (lockstyleSet > 0 and ('  LS ' .. string.format('%03d', lockstyleSet)) or ''),
+                        mainJob .. '/' .. subJob .. (lockstyleSet > 0 and ('  LS ' .. string.format('%03d', lockstyleSet)) or '') .. ((macroBook > 0 or macroPage > 0) and ('  M ' .. tostring(macroBook) .. '/' .. tostring(macroPage)) or ''),
                         nil,
                         jobIconTextures.GetTextureId(mainJob, menu.presets.iconTheme),
                     };

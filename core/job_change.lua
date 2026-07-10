@@ -164,6 +164,38 @@ local function NormalizeLockstyleSet(value)
     return number;
 end
 
+local function NormalizeMacroBook(value)
+    local number = tonumber(tostring(value or ''):match('%d+'));
+
+    if (number == nil or number <= 0) then
+        return nil;
+    end
+
+    number = math.floor(number + 0.5);
+
+    if (number > 20) then
+        number = 20;
+    end
+
+    return number;
+end
+
+local function NormalizeMacroPage(value)
+    local number = tonumber(tostring(value or ''):match('%d+'));
+
+    if (number == nil or number <= 0) then
+        return nil;
+    end
+
+    number = math.floor(number + 0.5);
+
+    if (number > 10) then
+        number = 10;
+    end
+
+    return number;
+end
+
 local function ClearQueue()
     queuedActions = {};
     sequenceActive = false;
@@ -331,12 +363,14 @@ local function IsAceTownZone()
     return aceTownZoneIds[GetCurrentZoneId()] == true;
 end
 
-local function StartPlan(plan, lockstyleSet, options)
+local function StartPlan(plan, lockstyleSet, macroBook, macroPage, options)
     options = options or {};
     local useRemoteMog = options.remoteMog == true;
     local npc = useRemoteMog ~= true and FindNearbyJobChangeNpc() or nil;
     local delay = 0.0;
     lockstyleSet = NormalizeLockstyleSet(lockstyleSet);
+    macroBook = NormalizeMacroBook(macroBook);
+    macroPage = NormalizeMacroPage(macroPage);
 
     if (useRemoteMog ~= true and npc == nil) then
         return false, 'Not close enough to a job-change Moogle.';
@@ -370,10 +404,28 @@ local function StartPlan(plan, lockstyleSet, options)
         delay = delay + 0.6;
     end
 
+    local commandDelay = delay + 0.8;
+
     if (lockstyleSet ~= nil) then
-        QueueAction(delay + 0.8, {
+        QueueAction(commandDelay, {
             kind = 'command',
             command = '/lockstyleset ' .. tostring(lockstyleSet),
+        });
+        commandDelay = commandDelay + 0.3;
+    end
+
+    if (macroBook ~= nil) then
+        QueueAction(commandDelay, {
+            kind = 'command',
+            command = '/macro book ' .. tostring(macroBook),
+        });
+        commandDelay = commandDelay + 0.3;
+    end
+
+    if (macroPage ~= nil) then
+        QueueAction(commandDelay, {
+            kind = 'command',
+            command = '/macro set ' .. tostring(macroPage),
         });
     end
 
@@ -386,10 +438,12 @@ local function StartPlan(plan, lockstyleSet, options)
     return true;
 end
 
-local function ChangeJobsWithOptions(targetMainCode, targetSubCode, lockstyleSet, options)
+local function ChangeJobsWithOptions(targetMainCode, targetSubCode, lockstyleSet, macroBook, macroPage, options)
     targetMainCode = NormalizeJobCode(targetMainCode);
     targetSubCode = NormalizeJobCode(targetSubCode);
     lockstyleSet = NormalizeLockstyleSet(lockstyleSet);
+    macroBook = NormalizeMacroBook(macroBook);
+    macroPage = NormalizeMacroPage(macroPage);
 
     if (targetMainCode ~= nil and jobCodeToId[targetMainCode] == nil) then
         return false, 'Unknown main job: ' .. tostring(targetMainCode);
@@ -401,26 +455,26 @@ local function ChangeJobsWithOptions(targetMainCode, targetSubCode, lockstyleSet
 
     local plan, err = BuildChangePlan(targetMainCode, targetSubCode);
     if (plan == nil) then
-        if (lockstyleSet ~= nil and tostring(err or '') == 'No change required.') then
-            return StartPlan({}, lockstyleSet, options);
+        if ((lockstyleSet ~= nil or macroBook ~= nil or macroPage ~= nil) and tostring(err or '') == 'No change required.') then
+            return StartPlan({}, lockstyleSet, macroBook, macroPage, options);
         end
 
         return false, err;
     end
 
-    return StartPlan(plan, lockstyleSet, options);
+    return StartPlan(plan, lockstyleSet, macroBook, macroPage, options);
 end
 
-function jobChange.ChangeJobs(targetMainCode, targetSubCode, lockstyleSet)
-    return ChangeJobsWithOptions(targetMainCode, targetSubCode, lockstyleSet, nil);
+function jobChange.ChangeJobs(targetMainCode, targetSubCode, lockstyleSet, macroBook, macroPage)
+    return ChangeJobsWithOptions(targetMainCode, targetSubCode, lockstyleSet, macroBook, macroPage, nil);
 end
 
-function jobChange.ChangeJobsViaAceTownMog(targetMainCode, targetSubCode, lockstyleSet)
+function jobChange.ChangeJobsViaAceTownMog(targetMainCode, targetSubCode, lockstyleSet, macroBook, macroPage)
     if (jobChange.CanUseAceTownMog() ~= true) then
         return false, 'ACE town Mog House job change is not available here.';
     end
 
-    return ChangeJobsWithOptions(targetMainCode, targetSubCode, lockstyleSet, { remoteMog = true });
+    return ChangeJobsWithOptions(targetMainCode, targetSubCode, lockstyleSet, macroBook, macroPage, { remoteMog = true });
 end
 
 function jobChange.IsJobChangeNpcName(name)

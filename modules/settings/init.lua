@@ -139,6 +139,26 @@ function LibraPlatesSettingsFormatLockstyleSet(value)
     return string.format('%03d', LibraPlatesSettingsNormalizeLockstyleSet(value));
 end
 
+function LibraPlatesSettingsNormalizeMacroBook(value)
+    local number = tonumber(tostring(value or ''):match('%d+')) or 0;
+    number = math.floor(number + 0.5);
+
+    if (number < 0) then number = 0; end
+    if (number > 20) then number = 20; end
+
+    return number;
+end
+
+function LibraPlatesSettingsNormalizeMacroPage(value)
+    local number = tonumber(tostring(value or ''):match('%d+')) or 0;
+    number = math.floor(number + 0.5);
+
+    if (number < 0) then number = 0; end
+    if (number > 10) then number = 10; end
+
+    return number;
+end
+
 local function EnsureQuickMenuPresets(menu)
     menu.presets = menu.presets or {};
 
@@ -158,6 +178,8 @@ local function EnsureQuickMenuPresets(menu)
         if (entry.mainJob == nil) then entry.mainJob = 'None'; end
         if (entry.subJob == nil) then entry.subJob = 'None'; end
         if (entry.lockstyleSet == nil) then entry.lockstyleSet = 0; end
+        if (entry.macroBook == nil) then entry.macroBook = 0; end
+        if (entry.macroPage == nil) then entry.macroPage = 0; end
 
         menu.presets.entries[index] = entry;
     end
@@ -173,6 +195,20 @@ function LibraPlatesSettingsDrawLockstyleSetControl(id, entry)
 
     if (changed == true) then
         entry.lockstyleSet = LibraPlatesSettingsNormalizeLockstyleSet(ref[1]);
+        state.Save();
+    end
+end
+
+function LibraPlatesSettingsDrawMacroNumberControl(id, value, maxDigits, normalize, onChanged)
+    local current = tostring(normalize(value));
+    local ref = { current };
+
+    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(38); end
+    local changed = imgui.InputText ~= nil and imgui.InputText('##' .. tostring(id), ref, maxDigits + 1) == true;
+    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+    if (changed == true) then
+        onChanged(normalize(ref[1]));
         state.Save();
     end
 end
@@ -194,16 +230,36 @@ local function DrawQuickMenuPresetRows(menu)
     end, 'QuickMenuPresetTheme', settingsLabelColor, 96, nil, 210);
 
     imgui.TextColored(settingsLabelColor, 'Quick change favorites');
-    uiTooltip.Info('Style 000 means no /lockstyleset command.');
+    uiTooltip.Info('Style 000 means no /lockstyleset command. Book 0 and Page 0 skip macro switching.');
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##quick_menu_presets', 6, settingsTableFlagsNoBorders)) then
+        if (imgui.BeginTable('##quick_menu_presets', 8, settingsTableFlagsNoBorders)) then
             imgui.TableSetupColumn('##slot', 0, 32);
             imgui.TableSetupColumn('##icon', 0, 34);
             imgui.TableSetupColumn('##main', 0, 132);
             imgui.TableSetupColumn('##sub', 0, 132);
             imgui.TableSetupColumn('Style', 0, 54);
+            imgui.TableSetupColumn('Book', 0, 46);
+            imgui.TableSetupColumn('Page', 0, 46);
             imgui.TableSetupColumn('##spacer', 0, 1);
+
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, '#');
+            imgui.TableNextColumn();
+            imgui.Dummy({ 20, 1 });
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Main');
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Sub');
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Style');
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Book');
+            imgui.TableNextColumn();
+            imgui.TextColored(settingsLabelColor, 'Page');
+            imgui.TableNextColumn();
+            imgui.Dummy({ 1, 1 });
 
             for index = 1, quickMenuPresetCount do
                 local entry = menu.presets.entries[index];
@@ -250,6 +306,16 @@ local function DrawQuickMenuPresetRows(menu)
                 LibraPlatesSettingsDrawLockstyleSetControl('QuickMenuPresetLockstyle' .. tostring(index), entry);
 
                 imgui.TableNextColumn();
+                LibraPlatesSettingsDrawMacroNumberControl('QuickMenuPresetMacroBook' .. tostring(index), entry.macroBook, 2, LibraPlatesSettingsNormalizeMacroBook, function(value)
+                    entry.macroBook = value;
+                end);
+
+                imgui.TableNextColumn();
+                LibraPlatesSettingsDrawMacroNumberControl('QuickMenuPresetMacroPage' .. tostring(index), entry.macroPage, 2, LibraPlatesSettingsNormalizeMacroPage, function(value)
+                    entry.macroPage = value;
+                end);
+
+                imgui.TableNextColumn();
                 imgui.Dummy({ 1, 1 });
             end
 
@@ -280,6 +346,18 @@ local function DrawQuickMenuPresetRows(menu)
         imgui.TextColored(settingsLabelColor, '#' .. tostring(index) .. ' Lockstyle');
         imgui.SameLine();
         LibraPlatesSettingsDrawLockstyleSetControl('QuickMenuPresetLockstyleFallback' .. tostring(index), entry);
+
+        imgui.TextColored(settingsLabelColor, '#' .. tostring(index) .. ' Macro book');
+        imgui.SameLine();
+        LibraPlatesSettingsDrawMacroNumberControl('QuickMenuPresetMacroBookFallback' .. tostring(index), entry.macroBook, 2, LibraPlatesSettingsNormalizeMacroBook, function(value)
+            entry.macroBook = value;
+        end);
+
+        imgui.TextColored(settingsLabelColor, '#' .. tostring(index) .. ' Macro page');
+        imgui.SameLine();
+        LibraPlatesSettingsDrawMacroNumberControl('QuickMenuPresetMacroPageFallback' .. tostring(index), entry.macroPage, 2, LibraPlatesSettingsNormalizeMacroPage, function(value)
+            entry.macroPage = value;
+        end);
     end
 
     DrawHideInfoControl();
@@ -8643,6 +8721,14 @@ local function DrawGeneralMouseSection()
         DrawCheckbox('Hold both mouse buttons to move forward', mouseControls.GetBothButtonForwardEnabled(), function(value)
             mouseControls.SetBothButtonForwardEnabled(value == true);
         end);
+    end);
+
+    DrawMousePanel('Mouse Snap', function()
+        DrawInlineComboRow('PC mouse snap', T{ 'Off', 'Name', 'HP bar', 'Name + HP bar' }, settings.pcMouseSnapMode or 'Off', function(value)
+            settings.pcMouseSnapMode = value;
+            state.Save();
+        end, 'PcMouseSnapMode', settingsLabelColor, 118, settingsTableFlagsNoBorders, 180);
+        uiTooltip.Info('When the mouse comes close to a PC Libra plate name or HP bar, gently pulls the cursor toward that visual element. First test is PC-only.');
     end);
 
     DrawMousePanel('Click Targeting', function()

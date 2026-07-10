@@ -261,8 +261,16 @@ local function IsPlayerIndexRange(index)
     return index ~= nil and index >= 1024 and index <= 1791;
 end
 
-local function IsPlayerActorEntity(ent)
-    return ent ~= nil and tonumber(ent.Type) == 0;
+local function IsPlayerActorEntity(ent, index)
+    if (ent == nil) then
+        return false;
+    end
+
+    if (tonumber(ent.Type) == 0) then
+        return true;
+    end
+
+    return IsPlayerIndexRange(index) == true and tonumber(ent.Type) == 2;
 end
 
 local function IsInvisiblePlayerActor(entityManager, index, actorPointer)
@@ -287,6 +295,57 @@ local function IsInvisiblePlayerActor(entityManager, index, actorPointer)
         tonumber(alphaB) == 0 and
         tonumber(alphaC) == 0 and
         tonumber(alphaD) == 0;
+end
+
+local function GetSkeletonBoneCount(actorPointer)
+    if (actorPointer == nil or actorPointer == 0) then
+        return nil;
+    end
+
+    local ok, boneCount = pcall(function()
+        local skeletonBaseAddress = ashita.memory.read_uint32(actorPointer + 0x6B8);
+
+        if (skeletonBaseAddress == 0) then
+            return nil;
+        end
+
+        local skeletonOffsetAddress = ashita.memory.read_uint32(skeletonBaseAddress + 0x0C);
+
+        if (skeletonOffsetAddress == 0) then
+            return nil;
+        end
+
+        local skeletonAddress = ashita.memory.read_uint32(skeletonOffsetAddress);
+
+        if (skeletonAddress == 0) then
+            return nil;
+        end
+
+        return ashita.memory.read_uint16(skeletonAddress + 0x32);
+    end);
+
+    if (ok ~= true) then
+        return nil;
+    end
+
+    return tonumber(boneCount);
+end
+
+local function IsObjectCostumePlayer(entityManager, index, ent)
+    if (
+        entityManager == nil or
+        IsPlayerIndexRange(index) ~= true or
+        tonumber(ent ~= nil and ent.Type or nil) ~= 2
+    ) then
+        return false;
+    end
+
+    local actorPointer = SafeCall(nil, function()
+        return entityManager:GetActorPointer(index);
+    end);
+    local boneCount = GetSkeletonBoneCount(actorPointer);
+
+    return boneCount ~= nil and boneCount > 0 and boneCount <= 8;
 end
 
 function entities.GetEntityManager()
@@ -1366,15 +1425,17 @@ function entities.GetNearbyPlayers(maxDistance)
         if (index ~= selfIndex and IsMobIndex(entityManager, index) ~= true and IsVisibleEntity(entityManager, index, true) == true) then
             local ent = GetEntity(index);
             local isCurrentTargetContext = tonumber(index) == tonumber(targetIndex) or tonumber(index) == tonumber(subTargetIndex);
+            local objectCostumePlayer = IsObjectCostumePlayer(entityManager, index, ent);
 
             if (
                 ent ~= nil and
-                IsPlayerActorEntity(ent) == true and
+                IsPlayerActorEntity(ent, index) == true and
                 ent.Name ~= nil and
                 ent.Name ~= '' and
                 (ent.HPPercent ~= nil or isCurrentTargetContext == true) and
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
+                (objectCostumePlayer ~= true or isCurrentTargetContext == true) and
                 entities.ShouldHideOtherPlayerPet(index, ent.Name) ~= true
             ) then
                 results[#results + 1] = {
@@ -1419,13 +1480,18 @@ function entities.GetPlayerByIndex(index, maxDistance, partyDataByIndex)
     end
 
     local ent = GetEntity(index);
+    local targetIndex = targeting.GetCurrentTargetIndex();
+    local subTargetIndex = targeting.GetCurrentSubTargetIndex();
+    local isCurrentTargetContext = tonumber(index) == tonumber(targetIndex) or tonumber(index) == tonumber(subTargetIndex);
+
     if (
         ent == nil or
-        IsPlayerActorEntity(ent) ~= true or
+        IsPlayerActorEntity(ent, index) ~= true or
         ent.Name == nil or
         ent.Name == '' or
         ent.Distance == nil or
         ent.Distance > maxDistanceSq or
+        (IsObjectCostumePlayer(entityManager, index, ent) == true and isCurrentTargetContext ~= true) or
         entities.ShouldHideOtherPlayerPet(index, ent.Name) == true
     ) then
         return nil;
@@ -1820,6 +1886,7 @@ function entities.GetEntityDebugInfo(index, maxDistance)
     local isParty = entities.IsPartyMemberIndex(targetIndex);
     local actorPointer = SafeCall(nil, function() return entityManager:GetActorPointer(targetIndex); end);
     local invisibleActor = IsInvisiblePlayerActor(entityManager, targetIndex, actorPointer);
+    local objectCostumePlayer = IsObjectCostumePlayer(entityManager, targetIndex, ent);
     local visible = IsVisibleEntity(entityManager, targetIndex, false);
     local visibleWithSkeleton = IsVisibleEntity(entityManager, targetIndex, true);
     local mogHouseFurniturePlaceholder = IsMogHouseFurniturePlaceholder(entityManager, targetIndex, ent);
@@ -1877,6 +1944,7 @@ function entities.GetEntityDebugInfo(index, maxDistance)
         isMob = isMob,
         isParty = isParty,
         invisibleActor = invisibleActor,
+        objectCostumePlayer = objectCostumePlayer,
         visible = visible,
         visibleWithSkeleton = visibleWithSkeleton,
         mogHouseFurniturePlaceholder = mogHouseFurniturePlaceholder,

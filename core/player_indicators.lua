@@ -396,7 +396,39 @@ function indicators.GetAnonIconTextureId(targetIndex)
 end
 
 function indicators.IsGameMaster(targetIndex)
-    return false;
+    local r2 = ReadRenderFlag(targetIndex, 2);
+
+    return Band(r2, 0x00003000) == 0x00003000;
+end
+
+function indicators.GetGameMasterDebugText(targetIndex)
+    local r0 = ReadRenderFlag(targetIndex, 0);
+    local r1 = ReadRenderFlag(targetIndex, 1);
+    local r2 = ReadRenderFlag(targetIndex, 2);
+    local actorMarker = 0;
+    local entityManager = AshitaCore:GetMemoryManager():GetEntity();
+
+    if (entityManager ~= nil and entityManager.GetActorPointer ~= nil and targetIndex ~= nil) then
+        local ok, actorPointer = pcall(function()
+            return entityManager:GetActorPointer(targetIndex);
+        end);
+
+        if (ok == true and actorPointer ~= nil and tonumber(actorPointer) ~= nil and tonumber(actorPointer) ~= 0) then
+            ok, actorMarker = pcall(function()
+                return ashita.memory.read_uint32(actorPointer + 0x20);
+            end);
+
+            if (ok ~= true) then
+                actorMarker = 0;
+            end
+        end
+    end
+
+    return 'gmIcon=' .. tostring(indicators.IsGameMaster(targetIndex) == true) ..
+        ' r0=0x' .. string.format('%X', tonumber(r0) or 0) ..
+        ' r1=0x' .. string.format('%X', tonumber(r1) or 0) ..
+        ' r2=0x' .. string.format('%X', tonumber(r2) or 0) ..
+        ' actor20=0x' .. string.format('%X', tonumber(actorMarker) or 0);
 end
 
 function indicators.GetPartyLeaderIconTextureId(targetIndex)

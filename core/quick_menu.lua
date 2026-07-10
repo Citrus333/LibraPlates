@@ -11,6 +11,7 @@ local mounts = require('core.mounts');
 local targeting = require('core.targeting');
 local playerBlacklist = require('core.player_blacklist');
 local warpMenu = require('core.warp_menu');
+local ephemeralBox = require('core.ephemeral_box');
 local widgetDefaults = { enabled = true };
 local quickMenuPresetCount = 10;
 
@@ -749,6 +750,8 @@ EnsurePresetSettings = function(menu)
         if (menu.presets.entries[index].mainJob == nil) then menu.presets.entries[index].mainJob = 'None'; end
         if (menu.presets.entries[index].subJob == nil) then menu.presets.entries[index].subJob = 'None'; end
         if (menu.presets.entries[index].lockstyleSet == nil) then menu.presets.entries[index].lockstyleSet = 0; end
+        if (menu.presets.entries[index].macroBook == nil) then menu.presets.entries[index].macroBook = 0; end
+        if (menu.presets.entries[index].macroPage == nil) then menu.presets.entries[index].macroPage = 0; end
     end
 end
 
@@ -758,6 +761,26 @@ local function NormalizeLockstyleSet(value)
 
     if (number < 0) then number = 0; end
     if (number > 999) then number = 999; end
+
+    return number;
+end
+
+local function NormalizeMacroBook(value)
+    local number = tonumber(tostring(value or ''):match('%d+')) or 0;
+    number = math.floor(number + 0.5);
+
+    if (number < 0) then number = 0; end
+    if (number > 20) then number = 20; end
+
+    return number;
+end
+
+local function NormalizeMacroPage(value)
+    local number = tonumber(tostring(value or ''):match('%d+')) or 0;
+    number = math.floor(number + 0.5);
+
+    if (number < 0) then number = 0; end
+    if (number > 10) then number = 10; end
 
     return number;
 end
@@ -775,6 +798,8 @@ local function GetPresetRows(menu)
         local mainJob = tostring(entry.mainJob or 'None');
         local subJob = tostring(entry.subJob or 'None');
         local lockstyleSet = NormalizeLockstyleSet(entry.lockstyleSet);
+        local macroBook = NormalizeMacroBook(entry.macroBook);
+        local macroPage = NormalizeMacroPage(entry.macroPage);
 
         if (mainJob ~= 'None' and subJob ~= 'None' and mainJob ~= subJob) then
             rows[#rows + 1] = {
@@ -782,6 +807,8 @@ local function GetPresetRows(menu)
                 mainJob = mainJob,
                 subJob = subJob,
                 lockstyleSet = lockstyleSet,
+                macroBook = macroBook,
+                macroPage = macroPage,
                 textureId = jobIconTextures.GetTextureId(mainJob, theme),
             };
         end
@@ -1482,6 +1509,8 @@ local function HasPendingPartyRequest()
 end
 
 function quickMenu.HandleTextIn(e)
+    ephemeralBox.HandleTextIn(e);
+
     local raw = tostring((e ~= nil and (e.message or e.original or e.modified)) or '');
     local text = raw:gsub(string.char(0x1E) .. '.', ''):gsub('[%z\1-\31]', ''):lower();
 
@@ -1768,6 +1797,11 @@ function quickMenu.Render()
                 warpMenu.IsDomenicTarget(pendingMenu.name, pendingMenu.npcInfo or {}) == true
                 or warpMenu.IsDomenicTarget(pendingMenu.rawName, pendingMenu.npcInfo or {}) == true
             );
+        local isEphemeralBoxMenuTarget = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object')
+            and (
+                warpMenu.IsEphemeralBoxTarget(pendingMenu.name, pendingMenu.npcInfo or {}) == true
+                or warpMenu.IsEphemeralBoxTarget(pendingMenu.rawName, pendingMenu.npcInfo or {}) == true
+            );
         local useForeground = false;
 
         if (useForeground == true) then
@@ -1847,6 +1881,8 @@ function quickMenu.Render()
                 or warpMenu.IsDomenicTarget(pendingMenu.rawName, info) == true;
             local isFieldManualTarget = warpMenu.IsFieldManualTarget(pendingMenu.name, info) == true
                 or warpMenu.IsFieldManualTarget(pendingMenu.rawName, info) == true;
+            local isEphemeralBoxTarget = warpMenu.IsEphemeralBoxTarget(pendingMenu.name, info) == true
+                or warpMenu.IsEphemeralBoxTarget(pendingMenu.rawName, info) == true;
             local typeText = NormalizeNpcInfoText(info.type or '');
             local infoText = LimitNpcInfoText(info.info or '', menu.npc.maxInfoChars, menu.npc.maxInfoLines);
             local link = BuildNpcLink(pendingMenu.name, info);
@@ -1980,11 +2016,28 @@ function quickMenu.Render()
                 end
             end
 
-            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and isDomenicWarpTarget ~= true and isFieldManualTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.showType == true and typeText ~= '') then
+            if (isEphemeralBoxTarget == true) then
+                local ok, err = pcall(function()
+                    warpMenu.RenderEphemeralBoxMenu({
+                        targetIndex = pendingMenu.targetIndex,
+                        targetId = pendingMenu.serverId,
+                        name = pendingMenu.name,
+                        rawName = pendingMenu.rawName,
+                    });
+                end);
+
+                if (ok ~= true) then
+                    log.Warn('Ephemeral Box menu failed: ' .. tostring(err or 'unknown error'));
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Ephemeral Box');
+                    imgui.TextColored(GetReadableTextColor(menu), 'Menu failed to render. Check /console log.');
+                end
+            end
+
+            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and isDomenicWarpTarget ~= true and isFieldManualTarget ~= true and isEphemeralBoxTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.showType == true and typeText ~= '') then
                 ReserveTextBlockHeight(QueueForegroundTextBlock(typeText, bodyTextColor, bodyWidth, nil, sectionTextColor, linkTextColor), typeText);
             end
 
-            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and isDomenicWarpTarget ~= true and isFieldManualTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.showInfo == true and infoText ~= '') then
+            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and isDomenicWarpTarget ~= true and isFieldManualTarget ~= true and isEphemeralBoxTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.showInfo == true and infoText ~= '') then
                 if (typeText ~= '') then
                     imgui.Separator();
                 end
@@ -1992,7 +2045,7 @@ function quickMenu.Render()
                 ReserveTextBlockHeight(QueueForegroundTextBlock(infoText, bodyTextColor, bodyWidth, questLineLinkResolver, sectionTextColor, linkTextColor), infoText);
             end
 
-            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and isFieldManualTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.openLink == true and link ~= '' and canUseJobPresets ~= true) then
+            if (isHomePointWarpTarget ~= true and isSurvivalGuideWarpTarget ~= true and isUnityWarpTarget ~= true and isOutpostWarpTarget ~= true and isCampaignWarpTarget ~= true and isExpGuideWarpTarget ~= true and isFieldManualTarget ~= true and isEphemeralBoxTarget ~= true and hideInfoForJobPresets ~= true and menu.npc.openLink == true and link ~= '' and canUseJobPresets ~= true) then
                 if (typeText ~= '' or infoText ~= '') then
                     imgui.Separator();
                 end
@@ -2015,7 +2068,7 @@ function quickMenu.Render()
                 if (#presetRows > 0) then
                     for _, row in ipairs(presetRows) do
                         MenuItem(row.label, nil, function()
-                            local ok, err = jobChange.ChangeJobs(row.mainJob, row.subJob, row.lockstyleSet);
+                            local ok, err = jobChange.ChangeJobs(row.mainJob, row.subJob, row.lockstyleSet, row.macroBook, row.macroPage);
                             if (ok ~= true) then
                                 log.Warn(tostring(err or 'Job preset failed.'));
                             end
@@ -2072,7 +2125,7 @@ function quickMenu.Render()
 
                     for _, row in ipairs(presetRows) do
                         MenuItem(row.label, nil, function()
-                            local ok, err = jobChange.ChangeJobsViaAceTownMog(row.mainJob, row.subJob, row.lockstyleSet);
+                            local ok, err = jobChange.ChangeJobsViaAceTownMog(row.mainJob, row.subJob, row.lockstyleSet, row.macroBook, row.macroPage);
                             if (ok ~= true) then
                                 log.Warn(tostring(err or 'ACE town job preset failed.'));
                             end

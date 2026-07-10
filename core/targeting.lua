@@ -177,6 +177,10 @@ local function GetTargetingSettings()
         global.targeting.blockPlateClicksWhenImguiCapturesMouse = true;
     end
 
+    if (global.targeting.pcMouseSnapMode == nil) then
+        global.targeting.pcMouseSnapMode = 'Off';
+    end
+
     if (global.targeting.plateClickNoGoZonesEnabled == nil) then
         global.targeting.plateClickNoGoZonesEnabled = false;
     end
@@ -466,6 +470,14 @@ local function GetTargetingSettings()
         global.targeting.platePositionOffsets[entityName].y = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.platePositionOffsets[entityName].y) or 0) + 0.5)));
     end
     global.targeting.blockPlateClicksWhenImguiCapturesMouse = global.targeting.blockPlateClicksWhenImguiCapturesMouse == true;
+    if (
+        global.targeting.pcMouseSnapMode ~= 'Off' and
+        global.targeting.pcMouseSnapMode ~= 'Name' and
+        global.targeting.pcMouseSnapMode ~= 'HP bar' and
+        global.targeting.pcMouseSnapMode ~= 'Name + HP bar'
+    ) then
+        global.targeting.pcMouseSnapMode = 'Off';
+    end
     global.targeting.hideOtherPlayerPetPlates = global.targeting.hideOtherPlayerPetPlates ~= false;
     global.targeting.plateClickNoGoZonesEnabled = global.targeting.plateClickNoGoZonesEnabled == true;
     global.targeting.plateClickNoGoZonesVisible = global.targeting.plateClickNoGoZonesVisible == true;

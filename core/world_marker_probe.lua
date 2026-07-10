@@ -10,6 +10,7 @@ local d3d8 = require('d3d8');
 local defaultImgui = require('imgui');
 local gdiTextTexture = require('ui.gdi_text_texture');
 local targeting = require('core.targeting');
+local entities = require('core.entities');
 
 -- ==========================================================
 -- = D3D CONSTANTS =
@@ -4373,12 +4374,12 @@ local function GetPlateQueuePriority(plate, targetIndex, subTargetIndex)
         return 2;
     end
 
-    if (targetType == 'enemy') then return playerEngaged == true and 10 or 20; end
-    if (targetType == 'pc') then return playerEngaged == true and 20 or 10; end
-    if (targetType == 'trust') then return 30; end
-    if (targetType == 'pet') then return 40; end
-    if (targetType == 'npc') then return 50; end
-    if (targetType == 'object') then return 60; end
+    if (targetType == 'npc') then return 10; end
+    if (targetType == 'object') then return 20; end
+    if (targetType == 'enemy') then return playerEngaged == true and 30 or 40; end
+    if (targetType == 'pc') then return playerEngaged == true and 40 or 30; end
+    if (targetType == 'trust') then return 50; end
+    if (targetType == 'pet') then return 60; end
 
     return 70;
 end
@@ -4802,6 +4803,58 @@ local function GetMousePosition()
         tonumber(io.MousePos.y or io.MousePos.Y or io.MousePos[2]);
 end
 
+local function GetMogHouseExitQuickMenuEntry()
+    if (entities.IsMogHouseObjectSuppressionArea() ~= true) then
+        return nil;
+    end
+
+    local targetManager = nil;
+    pcall(function()
+        targetManager = AshitaCore:GetMemoryManager():GetTarget();
+    end);
+
+    if (targetManager == nil or targetManager.GetTargetIndex == nil) then
+        return nil;
+    end
+
+    local active = nil;
+    local flags = nil;
+
+    pcall(function()
+        if (targetManager.GetIsSubTargetActive ~= nil) then
+            active = targetManager:GetIsSubTargetActive();
+        end
+    end);
+
+    pcall(function()
+        if (targetManager.GetSubTargetFlags ~= nil) then
+            flags = targetManager:GetSubTargetFlags();
+        end
+    end);
+
+    if ((active ~= 1 and active ~= true) and tonumber(flags) == 0xFFFFFFFF) then
+        return nil;
+    end
+
+    local ok, targetIndex = pcall(function()
+        return targetManager:GetTargetIndex(0);
+    end);
+
+    if (ok ~= true or tonumber(targetIndex) ~= 0) then
+        return nil;
+    end
+
+    return {
+        targetIndex = 0,
+        targetType = 'object',
+        serverId = 0,
+        name = 'Mog House Exit',
+        rawName = 'Mog House Exit',
+        clickName = 'Mog House Exit',
+        layoutStateName = 'Idle',
+    };
+end
+
 function worldMarkerProbe.IsPlateHovered(targetIndex, targetType)
     local mouseX, mouseY = GetMousePosition();
 
@@ -4968,6 +5021,10 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
             rawName = selfClickRect.rawName,
             layoutStateName = selfClickRect.layoutStateName,
         };
+    end
+
+    if (entry == nil and (message == 516 or message == 517)) then
+        entry = GetMogHouseExitQuickMenuEntry();
     end
 
     if (message == 516) then

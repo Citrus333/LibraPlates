@@ -45,7 +45,6 @@ local mounts = require('core.mounts');
 local commands = {};
 local visDebugCaptures = {};
 local npcCapturePath = 'C:\\Users\\Lila\\Documents\\ffxi Addon Work\\WORK\\missing_npcs.txt';
-local staffCapturePath = 'C:\\Users\\Lila\\Documents\\ffxi Addon Work\\WORK\\staff_players.txt';
 
 local function HasFlag(value, flag)
     return bit.band(tonumber(value) or 0, flag) ~= 0;
@@ -143,6 +142,114 @@ local function GetDebugStatus(entityManager, index)
     return CommandSafeCall(nil, function()
         return entityManager:GetStatus(index);
     end);
+end
+
+local function ProbeTargetMethod(targetManager, methodName, ...)
+    if (targetManager == nil or targetManager[methodName] == nil) then
+        return 'noapi';
+    end
+
+    local args = { ... };
+    local ok, result = pcall(function()
+        return targetManager[methodName](targetManager, unpack(args));
+    end);
+
+    if (ok ~= true) then
+        return 'err:' .. tostring(result);
+    end
+
+    return tostring(result);
+end
+
+local function ProbeEntityAtIndex(entityManager, index)
+    index = tonumber(index);
+
+    if (entityManager == nil or index == nil or index <= 0) then
+        return 'none';
+    end
+
+    local ent = GetEntity(index);
+    local render0 = CommandSafeCall(nil, function() return entityManager:GetRenderFlags0(index); end);
+    local render1 = CommandSafeCall(nil, function() return entityManager:GetRenderFlags1(index); end);
+    local spawn = CommandSafeCall(nil, function() return entityManager:GetSpawnFlags(index); end);
+
+    return
+        'index=' .. tostring(index) ..
+        ' name=' .. tostring(ent ~= nil and ent.Name or nil) ..
+        ' type=' .. tostring(ent ~= nil and ent.Type or nil) ..
+        ' status=' .. tostring(ent ~= nil and ent.Status or nil) ..
+        ' hp=' .. tostring(ent ~= nil and ent.HPPercent or nil) ..
+        ' distance=' .. tostring(ent ~= nil and ent.Distance or nil) ..
+        ' server=' .. tostring(GetDebugServerId(entityManager, index)) ..
+        ' spawn=0x' .. string.format('%X', tonumber(spawn) or 0) ..
+        ' render0=0x' .. string.format('%X', tonumber(render0) or 0) ..
+        ' render1=0x' .. string.format('%X', tonumber(render1) or 0);
+end
+
+local function LogCurrentTargetProbe(label)
+    local memory = CommandSafeCall(nil, function()
+        return AshitaCore:GetMemoryManager();
+    end);
+    local targetManager = memory ~= nil and CommandSafeCall(nil, function()
+        return memory:GetTarget();
+    end) or nil;
+    local entityManager = memory ~= nil and CommandSafeCall(nil, function()
+        return memory:GetEntity();
+    end) or nil;
+    local party = memory ~= nil and CommandSafeCall(nil, function()
+        return memory:GetParty();
+    end) or nil;
+
+    local slots = {};
+    for slot = 0, 7 do
+        slots[#slots + 1] = tostring(slot) .. '=' .. ProbeTargetMethod(targetManager, 'GetTargetIndex', slot);
+    end
+
+    local partySelf = CommandSafeCall(nil, function()
+        return party:GetMemberTargetIndex(0);
+    end);
+    local normalizedTarget = targeting.GetCurrentTargetIndex();
+    local normalizedSub = targeting.GetCurrentSubTargetIndex();
+    local candidates = {};
+    local seen = {};
+
+    local function addCandidate(value)
+        local number = tonumber(value);
+        if (number ~= nil and number > 0 and seen[number] ~= true) then
+            seen[number] = true;
+            candidates[#candidates + 1] = number;
+        end
+    end
+
+    addCandidate(normalizedTarget);
+    addCandidate(normalizedSub);
+    addCandidate(partySelf);
+    for slot = 0, 7 do
+        local value = ProbeTargetMethod(targetManager, 'GetTargetIndex', slot);
+        addCandidate(value);
+    end
+
+    log.Info(
+        tostring(label or 'Current target probe') ..
+        ' targetMgr=' .. tostring(targetManager ~= nil) ..
+        ' normalizedTarget=' .. tostring(normalizedTarget) ..
+        ' normalizedSub=' .. tostring(normalizedSub) ..
+        ' subActive=' .. ProbeTargetMethod(targetManager, 'GetIsSubTargetActive') ..
+        ' subFlags=' .. ProbeTargetMethod(targetManager, 'GetSubTargetFlags') ..
+        ' locked=' .. ProbeTargetMethod(targetManager, 'GetIsLockedOn') ..
+        ' lockedFlags=' .. ProbeTargetMethod(targetManager, 'GetLockedOnFlags') ..
+        ' partySelfTarget=' .. tostring(partySelf) ..
+        ' slots ' .. table.concat(slots, ' ')
+    );
+
+    if (#candidates <= 0) then
+        log.Warn(tostring(label or 'Current target probe') .. ' found no target index from raw target APIs.');
+        return;
+    end
+
+    for _, index in ipairs(candidates) do
+        log.Info(tostring(label or 'Current target probe') .. ' entity ' .. ProbeEntityAtIndex(entityManager, index));
+    end
 end
 
 local function FormatDebugNumber(value)
@@ -1329,62 +1436,6 @@ local function BuildRenderFlagText(debug)
     return table.concat(parts, ' | ');
 end
 
-local function AppendStaffPlayer(label)
-    local targetIndex = targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
-
-    if (targetIndex == nil or targetIndex == 0) then
-        log.Warn('Staff capture failed: target the player first.');
-        return;
-    end
-
-    local entityManager = AshitaCore:GetMemoryManager():GetEntity();
-    local okName, name = pcall(function()
-        return entityManager:GetName(targetIndex);
-    end);
-    local okServer, serverId = pcall(function()
-        return entityManager:GetServerId(targetIndex);
-    end);
-    local okType, entityType = pcall(function()
-        return entityManager:GetType(targetIndex);
-    end);
-
-    name = (okName == true and name ~= nil) and tostring(name) or '';
-    serverId = (okServer == true) and tonumber(serverId) or nil;
-
-    if (name == '' or name == 'nil' or serverId == nil or serverId == 0) then
-        log.Warn('Staff capture failed: no valid target name/serverId.');
-        return;
-    end
-
-    local zoneName = GetCurrentZoneName();
-    local debug = entities.GetEntityDebugInfo(targetIndex, targeting.GetSettings().enemyPlateRange);
-    local captureLabel = tostring(label or ''):lower();
-    local labelText = (captureLabel ~= '' and captureLabel ~= 'nil') and (' | label=' .. captureLabel) or '';
-    local line = name ..
-        labelText ..
-        ' | serverId=' .. tostring(serverId) ..
-        ' | index=' .. tostring(targetIndex) ..
-        ' | type=' .. tostring(entityType) ..
-        ' | status=' .. tostring(debug ~= nil and debug.status or nil) ..
-        ' | spawn=' .. FormatHex(debug ~= nil and debug.spawnFlags or 0) ..
-        ' | ' .. BuildRenderFlagText(debug) ..
-        ' | distance=' .. tostring(debug ~= nil and debug.distance or nil) ..
-        ' | zone=' .. zoneName;
-    local path = staffCapturePath;
-    local file = io.open(path, 'a');
-
-    if (file == nil) then
-        log.Warn('Staff capture failed: could not open ' .. path);
-        return;
-    end
-
-    file:write(line);
-    file:write('\n');
-    file:close();
-
-    log.Info('Staff capture added: ' .. line);
-end
-
 -- ============================================================
 -- Command handler
 -- ============================================================
@@ -1467,11 +1518,6 @@ function commands.Handle(e)
     if (subcommand == 'fmexit' or subcommand == 'fieldmanualexit') then
         local fieldManualSupport = require('core.field_manual_support');
         fieldManualSupport.EmergencyExit();
-        return;
-    end
-
-    if (subcommand == 'pccap' or subcommand == 'staffcap' or subcommand == 'gmid') then
-        AppendStaffPlayer(args[3]);
         return;
     end
 
@@ -2332,6 +2378,19 @@ function commands.Handle(e)
         local bone2 = debug.bone2 or {};
         local bone12 = debug.bone12 or {};
         local enemyPlate2 = debug.enemyPlate2 or {};
+        local playerIndicators = require('core.player_indicators');
+        local flagParts = {};
+
+        for flagIndex = 0, 7 do
+            local value = tonumber(debug.renderFlags ~= nil and debug.renderFlags[flagIndex]);
+
+            if (value == nil) then
+                value = tonumber(debug['renderFlags' .. tostring(flagIndex)]) or 0;
+            end
+
+            flagParts[#flagParts + 1] = 'r' .. tostring(flagIndex) .. '=0x' .. string.format('%X', value);
+        end
+
         local cleanDebugName = tostring(debug.name or ''):gsub('\170', ''):lower();
         local fishDebug = tonumber(debug.zoneId) == 33 and (cleanDebugName == "ul'hpemde" or cleanDebugName == "ul'phuabo");
         local fishBelow = fishDebug == true
@@ -2351,6 +2410,9 @@ function commands.Handle(e)
             ' spawn=0x' .. string.format('%X', tonumber(debug.spawnFlags) or 0) ..
             ' rf0=0x' .. string.format('%X', tonumber(debug.renderFlags0) or 0) ..
             ' rf1=0x' .. string.format('%X', tonumber(debug.renderFlags1) or 0) ..
+            ' flags=' .. table.concat(flagParts, ' ') ..
+            ' gmNative=' .. tostring(playerIndicators.IsGameMaster(debug.targetIndex) == true) ..
+            ' gmDebug=' .. tostring(playerIndicators.GetGameMasterDebugText(debug.targetIndex)) ..
             ' local=' .. tostring(debug.localX) .. ',' .. tostring(debug.localY) .. ',' .. tostring(debug.localZ) ..
             ' last=' .. tostring(debug.lastX) .. ',' .. tostring(debug.lastY) .. ',' .. tostring(debug.lastZ) ..
             ' b2=' .. tostring(bone2.screenX) .. ',' .. tostring(bone2.screenY) .. ',' .. tostring(bone2.screenZ) .. ',p=' .. tostring(bone2.projected) ..
@@ -2868,7 +2930,16 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'currenttarget' or subcommand == 'targetprobe' or subcommand == 'doorprobe') then
+        LogCurrentTargetProbe('Current target probe');
+        return;
+    end
+
     if (subcommand == 'entitydebug' or subcommand == 'targetcap' or subcommand == 'doorcap') then
+        if (subcommand == 'doorcap' and tonumber(args[3]) == nil) then
+            LogCurrentTargetProbe('Door target probe');
+        end
+
         local targetIndex = tonumber(args[3]) or targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
         local debug = entities.GetEntityDebugInfo(targetIndex, targeting.GetSettings().enemyPlateRange);
 
@@ -2919,6 +2990,7 @@ function commands.Handle(e)
             ' isMob=' .. tostring(debug.isMob) ..
             ' isParty=' .. tostring(debug.isParty) ..
             ' invisibleActor=' .. tostring(debug.invisibleActor) ..
+            ' objectCostumePlayer=' .. tostring(debug.objectCostumePlayer) ..
             ' visible=' .. tostring(debug.visible) ..
             ' visibleSkeleton=' .. tostring(debug.visibleWithSkeleton) ..
             ' mogFurniture=' .. tostring(debug.mogHouseFurniturePlaceholder) ..
@@ -2957,12 +3029,17 @@ function commands.Handle(e)
 
         for index = 0, 2303 do
             local ent = GetEntity(index);
-            if (tonumber(ent ~= nil and ent.Type or nil) == 0 and tostring(ent.Name or '') ~= '') then
+            local entityType = tonumber(ent ~= nil and ent.Type or nil);
+            if (
+                (entityType == 0 or (index >= 1024 and index <= 1791 and entityType == 2)) and
+                tostring(ent ~= nil and ent.Name or '') ~= ''
+            ) then
                 local distanceSq = tonumber(ent.Distance);
                 if (distanceSq ~= nil and distanceSq <= (maxDistance * maxDistance)) then
                     rows[#rows + 1] = {
                         index = index,
                         name = ent.Name,
+                        type = entityType,
                         distance = math.sqrt(distanceSq),
                         serverId = GetDebugServerId(entityManager, index),
                     };
@@ -2982,9 +3059,12 @@ function commands.Handle(e)
                 'PC scan ' .. tostring(rowIndex) ..
                 ' index=' .. tostring(row.index) ..
                 ' name=' .. tostring(row.name) ..
+                ' type=' .. tostring(row.type) ..
                 ' serverId=' .. tostring(row.serverId) ..
                 ' dist=' .. string.format('%.1f', tonumber(row.distance) or 0) ..
                 ' renderAll=' .. LibraPlatesFormatRenderFlags(row.index) ..
+                ' gmNative=' .. tostring(probePlayerIndicators.IsGameMaster(row.index) == true) ..
+                ' gmDebug=' .. tostring(probePlayerIndicators.GetGameMasterDebugText(row.index)) ..
                 ' mode=' .. tostring(probeGameMode.Resolve(row.index, false)) ..
                 ' anonGuess=' .. tostring(probePlayerIndicators.HasAnonNameColor(row.index) == true) ..
                 ' r0hi=' .. tostring(HasFlag(probeGameMode.ReadRenderFlag(row.index, 0), 0x80000000)) ..

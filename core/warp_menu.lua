@@ -20,6 +20,7 @@ local campaignTeleport = require('core.campaign_teleport');
 local expGuideTeleport = require('core.exp_guide_teleport');
 local fieldManualSupport = require('core.field_manual_support');
 local domenicTeleport = require('core.domenic_teleport');
+local ephemeralBox = require('core.ephemeral_box');
 
 local warpMenu = {};
 local iconCache = {};
@@ -27,6 +28,8 @@ local missingIcon = {};
 local warpIndexes = nil;
 local campaignCaptureUntil = 0;
 local expGuideCaptureUntil = 0;
+local eboxItemPages = {};
+local eboxSearchBuffer = { '' };
 
 local function FormatPacketString(data, maxBytes)
     if (type(data) ~= 'string') then
@@ -475,6 +478,11 @@ end
 local function IsDomenicName(value)
     local text = tostring(value or ''):gsub('_', ' ');
     return domenicData.npcs ~= nil and domenicData.npcs[text] == true;
+end
+
+local function IsEphemeralBoxName(value)
+    local text = tostring(value or ''):gsub('_', ' '):lower();
+    return text == 'ephemeral box';
 end
 
 local function GetCurrentZoneId()
@@ -1820,6 +1828,22 @@ function warpMenu.IsDomenicTarget(name, info)
     return false;
 end
 
+function warpMenu.IsEphemeralBoxTarget(name, info)
+    if (IsEphemeralBoxName(name) == true) then
+        return true;
+    end
+
+    if (info ~= nil and (
+        IsEphemeralBoxName(info.name) == true or
+        IsEphemeralBoxName(info.displayName) == true or
+        IsEphemeralBoxName(info.type) == true
+    )) then
+        return true;
+    end
+
+    return false;
+end
+
 function warpMenu.RenderHomePointMenu(context)
     if (IsAceMode() ~= true) then
         imgui.Separator();
@@ -2198,6 +2222,424 @@ function warpMenu.RenderFieldManualMenu(context)
     return true;
 end
 
+local function RenderEphemeralBoxProgressWindow(progress)
+    if (progress == nil or progress.busy ~= true or imgui.Begin == nil or imgui.End == nil) then
+        return;
+    end
+
+    local function getDisplaySize()
+        if (imgui.GetIO ~= nil) then
+            local ok, io = pcall(function()
+                return imgui.GetIO();
+            end);
+            if (ok == true and io ~= nil and io.DisplaySize ~= nil) then
+                return tonumber(io.DisplaySize.x or io.DisplaySize.X or io.DisplaySize[1]) or 1280,
+                    tonumber(io.DisplaySize.y or io.DisplaySize.Y or io.DisplaySize[2]) or 720;
+            end
+        end
+
+        return 1280, 720;
+    end
+
+    local function pushColor(colorId, color)
+        if (imgui.PushStyleColor == nil or colorId == nil) then
+            return 0;
+        end
+
+        local ok = pcall(imgui.PushStyleColor, colorId, color);
+        return ok == true and 1 or 0;
+    end
+
+    local pushedColors = 0;
+    pushedColors = pushedColors + pushColor(_G.ImGuiCol_WindowBg, { 0.025, 0.028, 0.040, 0.94 });
+    pushedColors = pushedColors + pushColor(_G.ImGuiCol_TitleBg, { 0.11, 0.34, 0.36, 0.92 });
+    pushedColors = pushedColors + pushColor(_G.ImGuiCol_TitleBgActive, { 0.16, 0.55, 0.57, 0.98 });
+    pushedColors = pushedColors + pushColor(_G.ImGuiCol_TitleBgCollapsed, { 0.11, 0.34, 0.36, 0.82 });
+    pushedColors = pushedColors + pushColor(_G.ImGuiCol_Border, { 0.24, 0.72, 0.74, 0.72 });
+    pushedColors = pushedColors + pushColor(_G.ImGuiCol_FrameBg, { 0.10, 0.12, 0.16, 1.0 });
+    pushedColors = pushedColors + pushColor(_G.ImGuiCol_PlotHistogram, { 0.17, 0.84, 0.87, 1.0 });
+    pushedColors = pushedColors + pushColor(_G.ImGuiCol_PlotHistogramHovered, { 0.28, 0.92, 0.94, 1.0 });
+
+    local categoryIndex = tonumber(progress.categoryIndex) or 0;
+    local categoryTotal = tonumber(progress.categoryTotal) or 0;
+    local ratio = (categoryTotal > 0 and categoryIndex > 0) and math.min(1.0, categoryIndex / categoryTotal) or 0.0;
+    local dots = string.rep('.', (math.floor(os.clock() * 2) % 3) + 1);
+    local category = tostring(progress.category ~= nil and progress.category ~= '' and progress.category or 'Checking categories');
+    local title = 'LibraPlates E.Box Scan';
+    local flags = (_G.ImGuiWindowFlags_NoCollapse or 0) + (_G.ImGuiWindowFlags_NoSavedSettings or 0) + (_G.ImGuiWindowFlags_NoResize or 0) + (_G.ImGuiWindowFlags_NoScrollbar or 0);
+    local windowW = 440;
+    local windowH = 168;
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ windowW, windowH }, _G.ImGuiCond_Always or 2);
+    end
+    if (imgui.SetNextWindowPos ~= nil) then
+        local displayW, displayH = getDisplaySize();
+        imgui.SetNextWindowPos({
+            math.max(0, (displayW - windowW) * 0.5),
+            math.max(0, (displayH - windowH) * 0.5),
+        }, _G.ImGuiCond_Appearing or 8);
+    end
+
+    if (imgui.Begin(title, true, flags) == true) then
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Scanning Ephemeral Box ' .. dots);
+
+        if (imgui.ProgressBar ~= nil) then
+            imgui.ProgressBar(ratio, { 390, 18 }, tostring(categoryIndex) .. ' / ' .. tostring(categoryTotal));
+        else
+            local barWidth = 32;
+            local filled = math.floor((ratio * barWidth) + 0.5);
+            imgui.Text('[' .. string.rep('#', filled) .. string.rep('-', math.max(0, barWidth - filled)) .. '] ' .. tostring(categoryIndex) .. ' / ' .. tostring(categoryTotal));
+        end
+
+        imgui.Text(category);
+        imgui.Text('Page ' .. tostring(tonumber(progress.itemPage) or 1) .. '    Items learned: ' .. tostring(tonumber(progress.itemCount) or 0));
+        imgui.Text('Idle: ' .. tostring(math.floor(tonumber(progress.idle) or 0)) .. 's    Total: ' .. tostring(math.floor(tonumber(progress.elapsed) or 0)) .. 's');
+        imgui.TextColored({ 1.0, 0.62, 0.25, 1.0 }, 'Stay near the box until the scan completes.');
+    end
+
+    imgui.End();
+    if (pushedColors > 0 and imgui.PopStyleColor ~= nil) then
+        pcall(imgui.PopStyleColor, pushedColors);
+    end
+end
+
+local function DrawEphemeralBoxButton(label, width)
+    if (imgui.Button == nil) then
+        return imgui.Selectable(label) == true;
+    end
+
+    local pushed = 0;
+    if (imgui.PushStyleColor ~= nil) then
+        if (_G.ImGuiCol_Button ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_Button, { 0.16, 0.48, 0.50, 0.70 }); pushed = pushed + 1; end
+        if (_G.ImGuiCol_ButtonHovered ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_ButtonHovered, { 0.22, 0.62, 0.64, 0.88 }); pushed = pushed + 1; end
+        if (_G.ImGuiCol_ButtonActive ~= nil) then imgui.PushStyleColor(_G.ImGuiCol_ButtonActive, { 0.17, 0.84, 0.87, 0.78 }); pushed = pushed + 1; end
+    end
+
+    local clicked = imgui.Button(label, { tonumber(width) or 248, 24 }) == true;
+
+    if (pushed > 0 and imgui.PopStyleColor ~= nil) then
+        imgui.PopStyleColor(pushed);
+    end
+
+    return clicked;
+end
+
+local function DrawEphemeralBoxTooltip(text)
+    if (imgui.IsItemHovered == nil or imgui.IsItemHovered() ~= true) then
+        return;
+    end
+
+    if (imgui.SetTooltip ~= nil) then
+        imgui.SetTooltip(tostring(text or ''));
+    elseif (imgui.BeginTooltip ~= nil and imgui.EndTooltip ~= nil) then
+        imgui.BeginTooltip();
+        imgui.Text(tostring(text or ''));
+        imgui.EndTooltip();
+    end
+end
+
+local function DrawEphemeralBoxQuantityOptions(categoryName, itemName, total, context)
+    for _, amount in ipairs({ 1, 2, 3, 4, 5, 6, 12, 24, 36, 99 }) do
+        if (total <= 0 or amount <= total) then
+            if (imgui.Selectable('x' .. tostring(amount)) == true) then
+                ephemeralBox.RequestExtract(categoryName, itemName, amount, context);
+                if (imgui.CloseCurrentPopup ~= nil) then
+                    imgui.CloseCurrentPopup();
+                end
+            end
+        end
+    end
+end
+
+local function NormalizeEBoxSearch(value)
+    return tostring(value or ''):lower():gsub('^%s+', ''):gsub('%s+$', '');
+end
+
+local function DrawEphemeralBoxSearchResults(cache, query, context)
+    local needle = NormalizeEBoxSearch(query);
+    if (needle == '') then
+        return false;
+    end
+
+    local matches = 0;
+    local maxMatches = 24;
+
+    imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Search results');
+
+    for _, categoryName in ipairs(cache.categoryOrder or {}) do
+        local category = cache.categories[categoryName];
+        local expectedCount = tonumber(category ~= nil and category.expectedCount) or 0;
+        if (category ~= nil and expectedCount > 0) then
+            for _, itemName in ipairs(category.itemOrder or {}) do
+                local item = category.items[itemName];
+                local total = tonumber(item ~= nil and item.total) or 0;
+                if (total > 0 and NormalizeEBoxSearch(itemName):find(needle, 1, true) ~= nil) then
+                    matches = matches + 1;
+                    if (matches <= maxMatches) then
+                        local label = tostring(itemName) .. ' (' .. tostring(total) .. ')';
+                        if (imgui.SetNextWindowSize ~= nil) then
+                            imgui.SetNextWindowSize({ 72, 0 }, _G.ImGuiCond_Appearing or 8);
+                        end
+                        if (imgui.BeginMenu(label) == true) then
+                            DrawEphemeralBoxQuantityOptions(categoryName, itemName, total, context);
+                            imgui.EndMenu();
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if (matches <= 0) then
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'No matching stored items.');
+    elseif (matches > maxMatches) then
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, tostring(matches - maxMatches) .. ' more matches. Keep typing.');
+    end
+
+    return true;
+end
+
+local function BuildEphemeralBoxNestedGroups(category)
+    local directItems = {};
+    local groupOrder = {};
+    local groups = {};
+
+    local function addGroup(groupName)
+        groupName = tostring(groupName or '');
+        if (groupName ~= '' and groups[groupName] == nil) then
+            groups[groupName] = {};
+            groupOrder[#groupOrder + 1] = groupName;
+        end
+    end
+
+    for _, itemName in ipairs(category.itemOrder or {}) do
+        local item = category.items ~= nil and category.items[itemName] or nil;
+        local total = tonumber(item ~= nil and item.total) or 0;
+        if (total > 0 and (category.nestedMenus == nil or category.nestedMenus[itemName] ~= true)) then
+            local nestedMenu = tostring(item ~= nil and item.nestedMenu or ''):gsub('^%?+%s*', ''):gsub('^%s+', ''):gsub('%s+$', '');
+            if (nestedMenu ~= '') then
+                addGroup(nestedMenu);
+                groups[nestedMenu][#groups[nestedMenu] + 1] = itemName;
+            else
+                directItems[#directItems + 1] = itemName;
+            end
+        end
+    end
+
+    return directItems, groupOrder, groups;
+end
+
+local function DrawEphemeralBoxLoadItems(categoryName, context)
+    if (imgui.Selectable('Scan category') == true) then
+        ephemeralBox.ScanCategoryItems(categoryName, context);
+        if (imgui.CloseCurrentPopup ~= nil) then
+            imgui.CloseCurrentPopup();
+        end
+    end
+end
+
+local function DrawEphemeralBoxItemList(categoryName, category, itemOrder, pageKey, context)
+    itemOrder = itemOrder or {};
+    local itemCount = #itemOrder;
+    if (itemCount <= 0) then
+        return;
+    end
+
+    local pageSize = 18;
+    local pageCount = math.max(1, math.ceil(itemCount / pageSize));
+    local page = math.max(1, math.min(pageCount, tonumber(eboxItemPages[pageKey]) or 1));
+    eboxItemPages[pageKey] = page;
+
+    if (itemCount > pageSize) then
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'Page ' .. tostring(page) .. ' / ' .. tostring(pageCount));
+
+        local changedPage = false;
+        if (imgui.Button ~= nil) then
+            if (DrawEphemeralBoxButton('< Prev', 72) == true) then
+                eboxItemPages[pageKey] = math.max(1, page - 1);
+                changedPage = true;
+            end
+            if (imgui.SameLine ~= nil) then
+                imgui.SameLine();
+            end
+            if (DrawEphemeralBoxButton('Next >', 72) == true) then
+                eboxItemPages[pageKey] = math.min(pageCount, page + 1);
+                changedPage = true;
+            end
+        else
+            if (page > 1 and imgui.Selectable('< Prev page') == true) then
+                eboxItemPages[pageKey] = page - 1;
+                changedPage = true;
+            end
+            if (page < pageCount and imgui.Selectable('Next page >') == true) then
+                eboxItemPages[pageKey] = page + 1;
+                changedPage = true;
+            end
+        end
+
+        if (changedPage == true) then
+            page = math.max(1, math.min(pageCount, tonumber(eboxItemPages[pageKey]) or page));
+        end
+
+        if (imgui.Separator ~= nil) then
+            imgui.Separator();
+        end
+    end
+
+    local startIndex = ((page - 1) * pageSize) + 1;
+    local endIndex = math.min(itemCount, startIndex + pageSize - 1);
+    for index = startIndex, endIndex do
+        local itemName = itemOrder[index];
+        local item = category.items ~= nil and category.items[itemName] or nil;
+        local total = tonumber(item ~= nil and item.total) or 0;
+        if (total > 0) then
+            local label = tostring(itemName) .. ' (' .. tostring(total) .. ')';
+            if (imgui.SetNextWindowSize ~= nil) then
+                imgui.SetNextWindowSize({ 72, 0 }, _G.ImGuiCond_Appearing or 8);
+            end
+            if (imgui.BeginMenu(label) == true) then
+                DrawEphemeralBoxQuantityOptions(categoryName, itemName, total, context);
+                imgui.EndMenu();
+            end
+        end
+    end
+end
+
+function warpMenu.RenderEphemeralBoxMenu(context)
+    local settings = GetSettings();
+    context = context or {};
+    ephemeralBox.SetDebugEnabled(settings.packetDebug == true);
+
+    local mode = tostring(GetSelfGameMode());
+    if (mode ~= 'CW' and mode ~= 'UCW') then
+        imgui.Separator();
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'Ephemeral Box');
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'Not available.');
+        return false;
+    end
+
+    if (DrawEphemeralBoxButton('Store', 140) == true) then
+        ephemeralBox.StoreAll();
+        if (imgui.CloseCurrentPopup ~= nil) then
+            imgui.CloseCurrentPopup();
+        end
+    end
+    DrawEphemeralBoxTooltip('Store all carried box items.');
+
+    if (imgui.SameLine ~= nil) then
+        imgui.SameLine();
+    end
+
+    if (DrawEphemeralBoxButton('Scan', 140) == true) then
+        ephemeralBox.ScanAll(context);
+        if (imgui.CloseCurrentPopup ~= nil) then
+            imgui.CloseCurrentPopup();
+        end
+    end
+    DrawEphemeralBoxTooltip('Scan E.Box contents and update the saved item cache.');
+
+    local eboxProgress = ephemeralBox.GetProgress ~= nil and ephemeralBox.GetProgress() or nil;
+    local eboxStatus = eboxProgress ~= nil and eboxProgress.status or ephemeralBox.GetStatus();
+    if (eboxProgress ~= nil and eboxProgress.busy == true) then
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, 'E.Box scan running...');
+        imgui.TextColored({ 1.0, 0.62, 0.25, 1.0 }, 'Stay near the box.');
+    elseif (eboxStatus ~= nil and tostring(eboxStatus) ~= '') then
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, tostring(eboxStatus));
+    end
+
+    if (imgui.BeginMenu == nil or imgui.EndMenu == nil or imgui.Selectable == nil) then
+        return true;
+    end
+
+    local cache = ephemeralBox.GetCache();
+    local cachedCategoryCount = #(cache.categoryOrder or {});
+    local cachedItemCount = 0;
+    for _, categoryName in ipairs(cache.categoryOrder or {}) do
+        local category = cache.categories[categoryName];
+        local expectedCount = tonumber(category ~= nil and category.expectedCount) or 0;
+        if (category ~= nil and expectedCount > 0) then
+            local directItems, groupOrder, groups = BuildEphemeralBoxNestedGroups(category);
+            cachedItemCount = cachedItemCount + #directItems;
+            for _, groupName in ipairs(groupOrder) do
+                cachedItemCount = cachedItemCount + #(groups[groupName] or {});
+            end
+        end
+    end
+
+    if (eboxProgress == nil or eboxProgress.busy ~= true) then
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, tostring(cachedItemCount) .. ' items stored');
+    end
+
+    local searchActive = false;
+    if (imgui.InputText ~= nil) then
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'Search');
+        if (imgui.SameLine ~= nil) then
+            imgui.SameLine();
+        end
+        if (imgui.PushItemWidth ~= nil) then
+            imgui.PushItemWidth(260);
+        end
+        imgui.InputText('##ebox_search', eboxSearchBuffer, 64);
+        if (imgui.PopItemWidth ~= nil) then
+            imgui.PopItemWidth();
+        end
+        if (imgui.Separator ~= nil) then
+            imgui.Separator();
+        end
+        searchActive = DrawEphemeralBoxSearchResults(cache, eboxSearchBuffer[1], context);
+    end
+
+    local hadItems = false;
+    for _, categoryName in ipairs(searchActive == true and {} or (cache.categoryOrder or {})) do
+        local category = cache.categories[categoryName];
+        local expectedCount = tonumber(category ~= nil and category.expectedCount) or 0;
+        if (category ~= nil and expectedCount > 0) then
+            local categoryLabel = tostring(category.name or categoryName);
+            local directItems, groupOrder, groups = BuildEphemeralBoxNestedGroups(category);
+
+            local hasCachedItems = (#directItems > 0 or #groupOrder > 0);
+            local verified = tonumber(category.scanVersion) == 2;
+            if (hasCachedItems == true or verified ~= true) then
+                hadItems = true;
+                if (imgui.BeginMenu(categoryLabel) == true) then
+                    if (hasCachedItems == true) then
+                        for _, groupName in ipairs(groupOrder) do
+                            local groupItems = groups[groupName] or {};
+                            local groupLabel = tostring(groupName);
+                            if (#groupItems > 0) then
+                                groupLabel = groupLabel .. ' (' .. tostring(#groupItems) .. ')';
+                                if (imgui.BeginMenu(groupLabel) == true) then
+                                    DrawEphemeralBoxItemList(categoryLabel, category, groupItems, tostring(categoryName) .. '>' .. tostring(groupName), context);
+                                    imgui.EndMenu();
+                                end
+                            end
+                        end
+
+                        if (#directItems > 0 and #groupOrder > 0 and imgui.Separator ~= nil) then
+                            imgui.Separator();
+                        end
+
+                        if (#directItems > 0) then
+                            DrawEphemeralBoxItemList(categoryLabel, category, directItems, tostring(categoryName), context);
+                        end
+                    else
+                        DrawEphemeralBoxLoadItems(categoryLabel, context);
+                    end
+                    imgui.EndMenu();
+                end
+            end
+        end
+    end
+
+    if (hadItems ~= true and searchActive ~= true) then
+        imgui.Separator();
+        imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'No cached E.Box items yet.');
+    end
+
+    return true;
+end
+
 function warpMenu.ClearTextureCache()
     iconCache = {};
     missingIcon = {};
@@ -2253,6 +2695,7 @@ function warpMenu.HandlePacketIn(e)
     expGuideTeleport.HandlePacketIn(e);
     fieldManualSupport.HandlePacketIn(e);
     domenicTeleport.HandlePacketIn(e);
+    ephemeralBox.HandlePacketIn(e);
 end
 
 function warpMenu.HandlePacketOut(e)
@@ -2283,6 +2726,7 @@ function warpMenu.HandlePacketOut(e)
     expGuideTeleport.HandlePacketOut(e);
     fieldManualSupport.HandlePacketOut(e);
     domenicTeleport.HandlePacketOut(e);
+    ephemeralBox.HandlePacketOut(e);
 end
 
 function warpMenu.Update()
@@ -2294,6 +2738,8 @@ function warpMenu.Update()
     expGuideTeleport.Update();
     fieldManualSupport.Update();
     domenicTeleport.Update();
+    ephemeralBox.Update();
+    RenderEphemeralBoxProgressWindow(ephemeralBox.GetProgress ~= nil and ephemeralBox.GetProgress() or nil);
 end
 
 return warpMenu;

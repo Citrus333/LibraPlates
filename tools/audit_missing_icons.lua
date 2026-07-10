@@ -133,21 +133,6 @@ for _, fileName in ipairs(GetZoneFiles()) do
     end
 end
 
-local staffData, staffErr = LoadTable('data/staff_players.lua');
-if (staffData == nil) then
-    loadErrors[#loadErrors + 1] = 'data/staff_players.lua: ' .. tostring(staffErr);
-else
-    if (type(staffData.names) == 'table') then
-        for name, entry in pairs(staffData.names) do
-            AddIcon(rows, 'data/staff_players.lua', 'staff', name, {
-                icon = entry.icon,
-                type = entry.type,
-                _source = 'staff',
-            });
-        end
-    end
-end
-
 local missingByIcon = {};
 local total = 0;
 local missingTotal = 0;

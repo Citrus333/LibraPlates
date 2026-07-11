@@ -1515,6 +1515,7 @@ local function ResolveAnchorRects(rects, plate)
             local anchorPoint = tostring(layout.anchorPoint or 'Center');
             local groupKey = anchorTo .. '\30' .. anchorPoint;
             groups[groupKey] = groups[groupKey] or {
+                anchorTo = anchorTo,
                 anchorPoint = anchorPoint,
                 entries = {},
             };
@@ -1523,6 +1524,8 @@ local function ResolveAnchorRects(rects, plate)
                 visible = true,
                 slot = RectToBounds(rect),
                 padding = tonumber(rect.padding) or 0,
+                sourceOrder = #groups[groupKey].entries + 1,
+                anchorOrder = tonumber(layout.anchorOrder),
             };
         end
     end
@@ -1539,6 +1542,7 @@ local function ResolveAnchorRects(rects, plate)
                 if (slot ~= nil) then
                     local groupKey = anchorTo .. '\30' .. anchorPoint;
                     groups[groupKey] = groups[groupKey] or {
+                        anchorTo = anchorTo,
                         anchorPoint = anchorPoint,
                         entries = {},
                     };
@@ -1547,6 +1551,8 @@ local function ResolveAnchorRects(rects, plate)
                         slot = slot,
                         layout = fallback.layout,
                         padding = tonumber(fallback.padding) or 0,
+                        sourceOrder = #groups[groupKey].entries + 1,
+                        anchorOrder = tonumber(fallback.layout.anchorOrder),
                     };
                 end
             end
@@ -1601,56 +1607,42 @@ local function ResolveAnchorRects(rects, plate)
 
     for _, group in pairs(groups) do
         local entries = group.entries or {};
-        if (#entries > 1) then
-            local hasMissing = false;
-            local hasExplicitCollapse = false;
-            local hasExplicitSpacing = false;
-            for _, entry in ipairs(entries) do
-                local layout = (entry.rect ~= nil and entry.rect.anchorLayout) or entry.layout;
-                if (entry.visible ~= true) then
-                    hasMissing = true;
-                end
-                if (layout ~= nil and layout.anchorCollapse == true) then
-                    hasExplicitCollapse = true;
-                end
-                if (layout ~= nil and layout.anchorSpacing ~= nil) then
-                    hasExplicitSpacing = true;
-                end
-            end
-
-            if (hasMissing == true or hasExplicitCollapse == true or hasExplicitSpacing == true) then
+        if (#entries > 0) then
+            if (#entries > 0) then
                 local anchorPoint = tostring(group.anchorPoint or 'Center');
                 local axis = (anchorPoint == 'Top' or anchorPoint == 'Top Left' or anchorPoint == 'Top Right' or anchorPoint == 'Bottom' or anchorPoint == 'Bottom Left' or anchorPoint == 'Bottom Right') and 'y' or 'x';
                 local nearHigh = (anchorPoint == 'Left' or anchorPoint == 'Top Left' or anchorPoint == 'Bottom Left' or anchorPoint == 'Top');
 
                 table.sort(entries, function(left, right)
-                    local leftSlot = GetEntryBounds(left);
-                    local rightSlot = GetEntryBounds(right);
-                    local leftCenter = axis == 'x'
-                        and ((tonumber(leftSlot.x) or 0) + ((tonumber(leftSlot.width) or 0) * 0.5))
-                        or ((tonumber(leftSlot.y) or 0) + ((tonumber(leftSlot.height) or 0) * 0.5));
-                    local rightCenter = axis == 'x'
-                        and ((tonumber(rightSlot.x) or 0) + ((tonumber(rightSlot.width) or 0) * 0.5))
-                        or ((tonumber(rightSlot.y) or 0) + ((tonumber(rightSlot.height) or 0) * 0.5));
-
-                    if (nearHigh == true) then
-                        return leftCenter > rightCenter;
+                    local leftOrder = tonumber(left.anchorOrder);
+                    local rightOrder = tonumber(right.anchorOrder);
+                    if leftOrder ~= nil or rightOrder ~= nil then
+                        leftOrder = leftOrder or 1000000;
+                        rightOrder = rightOrder or 1000000;
+                        if leftOrder ~= rightOrder then
+                            return leftOrder < rightOrder;
+                        end
                     end
-
-                    return leftCenter < rightCenter;
+                    return (tonumber(left.sourceOrder) or 0) < (tonumber(right.sourceOrder) or 0);
                 end);
 
-                local startSlot = entries[1] ~= nil and GetEntryBounds(entries[1]) or nil;
+                local parentKey = anchorMap[tostring(group.anchorTo or '')];
+                local startSlot = parentKey ~= nil and bounds[parentKey] or nil;
+
+                if (startSlot == nil) then
+                    startSlot = entries[1] ~= nil and GetEntryBounds(entries[1]) or nil;
+                end
+
                 if (startSlot ~= nil) then
                     local cursor = nil;
                     if (axis == 'x') then
                         cursor = nearHigh == true
-                            and ((tonumber(startSlot.x) or 0) + (tonumber(startSlot.width) or 0))
-                            or (tonumber(startSlot.x) or 0);
+                            and (tonumber(startSlot.x) or 0)
+                            or ((tonumber(startSlot.x) or 0) + (tonumber(startSlot.width) or 0));
                     else
                         cursor = nearHigh == true
-                            and ((tonumber(startSlot.y) or 0) + (tonumber(startSlot.height) or 0))
-                            or (tonumber(startSlot.y) or 0);
+                            and (tonumber(startSlot.y) or 0)
+                            or ((tonumber(startSlot.y) or 0) + (tonumber(startSlot.height) or 0));
                     end
 
                     for _, entry in ipairs(entries) do
@@ -1664,22 +1656,30 @@ local function ResolveAnchorRects(rects, plate)
                             local itemH = math.max(0, tonumber(entryBounds.height) or 0);
                             local targetX = currentX;
                             local targetY = currentY;
+                            local layout = rect.anchorLayout or {};
+                            local fineX = tonumber(layout.offsetX) or 0;
+                            local fineY = tonumber(layout.offsetY) or 0;
+                            local gap = GetEntrySpacing(entry);
 
                             if (axis == 'x') then
                                 if (nearHigh == true) then
-                                    targetX = cursor - itemW + padding;
-                                    cursor = targetX - padding - GetEntrySpacing(entry);
+                                    local baseX = cursor - gap - itemW + padding;
+                                    targetX = baseX + fineX;
+                                    cursor = baseX - padding;
                                 else
-                                    targetX = cursor + padding;
-                                    cursor = targetX - padding + itemW + GetEntrySpacing(entry);
+                                    local baseX = cursor + gap + padding;
+                                    targetX = baseX + fineX;
+                                    cursor = baseX - padding + itemW;
                                 end
                             else
                                 if (nearHigh == true) then
-                                    targetY = cursor - itemH + padding;
-                                    cursor = targetY - padding - GetEntrySpacing(entry);
+                                    local baseY = cursor - gap - itemH + padding;
+                                    targetY = baseY + fineY;
+                                    cursor = baseY - padding;
                                 else
-                                    targetY = cursor + padding;
-                                    cursor = targetY - padding + itemH + GetEntrySpacing(entry);
+                                    local baseY = cursor + gap + padding;
+                                    targetY = baseY + fineY;
+                                    cursor = baseY - padding + itemH;
                                 end
                             end
 
@@ -2182,6 +2182,7 @@ function canvasTexture.GetElementRects(plate)
                     anchorPoint = plate.jobAnchorPoint,
                     anchorCollapse = plate.jobAnchorCollapse,
                     anchorSpacing = plate.jobAnchorSpacing,
+                    anchorOrder = plate.jobAnchorOrder,
                     offsetX = plate.jobOffsetX,
                     offsetY = plate.jobOffsetY,
                 }
@@ -2224,6 +2225,7 @@ function canvasTexture.GetElementRects(plate)
                     anchorPoint = plate.nameAnchorPoint,
                     anchorCollapse = plate.nameAnchorCollapse,
                     anchorSpacing = plate.nameAnchorSpacing,
+                    anchorOrder = plate.nameAnchorOrder,
                     offsetX = plate.nameOffsetX,
                     offsetY = plate.nameOffsetY,
                 }

@@ -9,6 +9,7 @@ local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlag
 local pendingRelease = {};
 local pendingCopy = {};
 local selectedCopySourceKey = {};
+local copyAnchorsEnabled = {};
 
 local anchorPoints = {
     'Top Left', 'Top', 'Top Right',
@@ -96,9 +97,14 @@ local function Release(settings)
     settings.offsetY = 0;
     settings.anchorCollapse = nil;
     settings.anchorSpacing = nil;
+    settings.anchorOrder = nil;
 end
 
 local function GetAnchorTooltip(settings)
+    if (settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate') then
+        return 'Auto-stack places anchored siblings in a stable chain from the parent. Position X/Y adjusts this child without disabling the stack.';
+    end
+
     return 'Bind this element to a specific spot on the nameplate so they move together.';
 end
 
@@ -120,62 +126,62 @@ local function DrawCheckbox(label, value)
     return nextValue, changed;
 end
 
-local function DrawSpacingControl(key, settings, labelWidth, controlWidth)
-    local value = math.max(0, math.min(64, tonumber(settings.anchorSpacing) or 6));
-    local beganTable = false;
+local function DrawOffsetControl(label, value, id, showLabel)
+    value = math.max(-500, math.min(500, tonumber(value) or 0));
 
-    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        beganTable = imgui.BeginTable('##anchor_spacing_row_' .. tostring(key), 2, tableFlags) == true;
-        if (beganTable == true) then
-            imgui.TableSetupColumn('##label', 0, tonumber(labelWidth) or 145);
-            imgui.TableSetupColumn('##control', 0, tonumber(controlWidth) or 170);
-            imgui.TableNextRow();
-            imgui.TableNextColumn();
-        end
-    end
-
-    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
-    imgui.TextColored(labelColor, 'Spacing');
-
-    if (beganTable == true and imgui.TableNextColumn ~= nil) then
-        imgui.TableNextColumn();
-    else
+    if (showLabel ~= false) then
+        if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+        imgui.TextColored(labelColor, label);
         imgui.SameLine();
     end
 
-    if (imgui.Button ~= nil and imgui.Button('-##anchor_spacing_minus_' .. key) == true) then
-        value = math.max(0, value - 1);
-        settings.anchorSpacing = value;
+    if (imgui.Button ~= nil and imgui.Button('-##' .. id .. '_minus') == true) then
+        value = math.max(-500, value - 1);
     end
     imgui.SameLine();
 
-    if (imgui.PushItemWidth ~= nil) then
-        imgui.PushItemWidth(42);
-    end
-
+    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(58); end
     if (imgui.InputInt ~= nil) then
         local ref = { value };
-        if (imgui.InputInt('##anchor_spacing_' .. key, ref, 0, 0) == true) then
-            value = math.max(0, math.min(64, tonumber(ref[1]) or value));
-            settings.anchorSpacing = value;
+        if (imgui.InputInt('##' .. id, ref, 0, 0) == true) then
+            value = math.max(-500, math.min(500, tonumber(ref[1]) or value));
         end
     else
         imgui.TextColored(valueColor, tostring(value));
     end
-
-    if (imgui.PopItemWidth ~= nil) then
-        imgui.PopItemWidth();
-    end
+    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
 
     imgui.SameLine();
-    if (imgui.Button ~= nil and imgui.Button('+##anchor_spacing_plus_' .. key) == true) then
-        value = math.min(64, value + 1);
-        settings.anchorSpacing = value;
+    if (imgui.Button ~= nil and imgui.Button('+##' .. id .. '_plus') == true) then
+        value = math.min(500, value + 1);
     end
 
-    if (beganTable == true and imgui.EndTable ~= nil) then
-        imgui.EndTable();
+    return value;
+end
+
+local function DrawFineOffsetControls(key, settings, labelWidth, controlWidth)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##anchor_fine_offset_row_' .. tostring(key), 4, tableFlags)) then
+            imgui.TableSetupColumn('##x_label', 0, 104);
+            imgui.TableSetupColumn('##x_control', 0, 124);
+            imgui.TableSetupColumn('##y_label', 0, 104);
+            imgui.TableSetupColumn('##y_control', 0, 124);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Position X');
+            imgui.TableNextColumn();
+            settings.offsetX = DrawOffsetControl('', settings.offsetX, 'anchor_fine_x_' .. key, false);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Position Y');
+            imgui.TableNextColumn();
+            settings.offsetY = DrawOffsetControl('', settings.offsetY, 'anchor_fine_y_' .. key, false);
+            imgui.EndTable();
+        end
+        return;
     end
+
+    settings.offsetX = DrawOffsetControl('Position X', settings.offsetX, 'anchor_fine_x_' .. key);
+    settings.offsetY = DrawOffsetControl('Position Y', settings.offsetY, 'anchor_fine_y_' .. key);
 end
 
 function anchorControls.IsCollapsedChild(settings)
@@ -183,7 +189,7 @@ function anchorControls.IsCollapsedChild(settings)
 end
 
 function anchorControls.DrawSpacing(settings, key, labelWidth, controlWidth)
-    DrawSpacingControl(tostring(key or 'spacing'), settings, labelWidth, controlWidth);
+    DrawFineOffsetControls(tostring(key or 'fine_offset'), settings, labelWidth, controlWidth);
 end
 
 local function DrawReleaseConfirm(settings, key)
@@ -369,6 +375,7 @@ local function DrawCopySettings(settings, context, label)
     if (imgui.Button ~= nil) then
         if (imgui.Button('Copy##copy_from_' .. key)) then
             pendingCopy[key] = selectedSource;
+            copyAnchorsEnabled[key] = true;
             if (imgui.OpenPopup ~= nil) then
                 imgui.OpenPopup('Copy settings confirm##libraplates_copy_' .. key);
             end
@@ -376,6 +383,7 @@ local function DrawCopySettings(settings, context, label)
     else
         if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
             pendingCopy[key] = selectedSource;
+            copyAnchorsEnabled[key] = true;
             if (imgui.OpenPopup ~= nil) then
                 imgui.OpenPopup('Copy settings confirm##libraplates_copy_' .. key);
             end
@@ -408,19 +416,27 @@ local function DrawCopySettings(settings, context, label)
 
             if (imgui.Button('Copy##copy_confirm_' .. key)) then
                 if (copySettings ~= nil) then
-                    copySettings(settings, pendingCopy[key], defaults);
+                    copySettings(settings, pendingCopy[key], defaults, copyAnchorsEnabled[key] ~= false, context.anchorChoices);
                 end
 
                 pendingCopy[key] = nil;
                 imgui.CloseCurrentPopup();
             end
 
+            imgui.SameLine();
+            local copyAnchorsRef = { copyAnchorsEnabled[key] ~= false };
+            if (imgui.Checkbox('Copy anchors##copy_anchors_' .. key, copyAnchorsRef)) then
+                copyAnchorsEnabled[key] = copyAnchorsRef[1] == true;
+            end
+            imgui.SameLine();
+            uiTooltip.Info('Also copies Position X/Y, the anchor parent and side, Auto-stack, and child order. Missing parents fall back to Plate.');
+
             imgui.EndPopup();
         end
     else
         if (imgui.Button ~= nil and imgui.Button('Copy##copy_confirm_fallback_' .. key)) then
             if (copySettings ~= nil) then
-                copySettings(settings, pendingCopy[key], defaults);
+                copySettings(settings, pendingCopy[key], defaults, copyAnchorsEnabled[key] ~= false, context.anchorChoices);
             end
             pendingCopy[key] = nil;
         end
@@ -515,6 +531,7 @@ function anchorControls.Draw(settings, context, label)
 
     if (anchorTo ~= settings.anchorTo) then
         settings.anchorTo = anchorTo;
+        settings.anchorOrder = nil;
 
         if (anchorTo == 'Plate') then
             settings.anchorPoint = nil;
@@ -541,7 +558,7 @@ function anchorControls.Draw(settings, context, label)
         if (imgui.SetCursorScreenPos ~= nil and anchorRowX ~= nil and anchorRowY ~= nil) then
             imgui.SetCursorScreenPos({ anchorRowX, anchorRowY + 30 });
         end
-        local collapse, collapseChanged = DrawCheckbox('Collapse##' .. key, settings.anchorCollapse ~= false);
+        local collapse, collapseChanged = DrawCheckbox('Auto-stack##' .. key, settings.anchorCollapse ~= false);
         if (collapseChanged == true) then
             settings.anchorCollapse = collapse == true;
         elseif (settings.anchorCollapse == nil) then

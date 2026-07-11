@@ -685,7 +685,7 @@ local entities = T{
 };
 local states = T{ 'World', 'Tactical' };
 local statesByEntity = {
-    ['Self'] = T{ 'World', 'Tactical', 'Fishing', 'Crafting' },
+    ['Self'] = T{ 'World', 'Tactical', 'Fishing' },
     ['Enemy'] = T{ 'World', 'Tactical' },
     ['PC'] = T{ 'World', 'Tactical' },
     ['Trust'] = T{ 'World', 'Tactical' },
@@ -750,6 +750,7 @@ local selfIdleWidgets = T{
     'Stars icon',
     'Level sync icon',
     'New adventurer icon',
+    'Crafting (module)',
     'Gathering (module)',
     'Resting (module)',
     'Quick Menu (module)',
@@ -1340,12 +1341,28 @@ function LibraPlatesSettingsBuildNameCopySources(entity, stateName)
     return LibraPlatesSettingsBuildWidgetCopySources(entity, stateName, 'Name');
 end
 
-function LibraPlatesSettingsCopySettingsFromSource(settings, source, defaults)
+function LibraPlatesSettingsCopySettingsFromSource(settings, source, defaults, includeAnchors, anchorChoices)
     if (settings == nil or source == nil) then
         return;
     end
 
     local sourceSettings = state.GetWidgetSettings(source.entity, source.state, source.widget, defaults or {});
+    local anchorKeys = {
+        anchorTo = true,
+        anchorPoint = true,
+        anchorCollapse = true,
+        anchorSpacing = true,
+        anchorOrder = true,
+        offsetX = true,
+        offsetY = true,
+    };
+    local preservedAnchors = {};
+
+    if includeAnchors == false then
+        for anchorKey, _ in pairs(anchorKeys) do
+            preservedAnchors[anchorKey] = LibraPlatesSettingsCopyTable(settings[anchorKey]);
+        end
+    end
 
     for key, _ in pairs(settings) do
         settings[key] = nil;
@@ -1353,6 +1370,31 @@ function LibraPlatesSettingsCopySettingsFromSource(settings, source, defaults)
 
     for key, value in pairs(sourceSettings) do
         settings[key] = LibraPlatesSettingsCopyTable(value);
+    end
+
+    if includeAnchors == false then
+        for anchorKey, _ in pairs(anchorKeys) do
+            settings[anchorKey] = preservedAnchors[anchorKey];
+        end
+    else
+        local copiedParent = tostring(settings.anchorTo or 'Plate');
+        local parentAvailable = copiedParent == 'Plate';
+
+        for _, choice in ipairs(anchorChoices or {}) do
+            local storedChoice = tostring(choice or '') == 'None' and 'Plate' or tostring(choice or '');
+            if storedChoice == copiedParent then
+                parentAvailable = true;
+                break;
+            end
+        end
+
+        if parentAvailable ~= true then
+            settings.anchorTo = 'Plate';
+            settings.anchorPoint = nil;
+            settings.anchorCollapse = nil;
+            settings.anchorSpacing = nil;
+            settings.anchorOrder = nil;
+        end
     end
 
     state.Save();
@@ -1609,6 +1651,153 @@ end
 
 function GetEditWidgets()
     return GetEditWidgetsFor(selectedEntity, selectedState);
+end
+
+function GetEditWidgetHierarchyRows()
+    local widgetsList = GetEditWidgets();
+    local available = {};
+    local sourceOrder = {};
+    local parentByWidget = {};
+    local childrenByWidget = {};
+    local rows = {};
+
+    for index, widget in ipairs(widgetsList) do
+        available[widget] = true;
+        sourceOrder[widget] = index;
+        childrenByWidget[widget] = {};
+    end
+
+    for _, widget in ipairs(widgetsList) do
+        local widgetKey = widgetKeys[widget];
+
+        if widgetKey ~= nil and IsAnchorableWidget(widget) == true then
+            local settings = state.GetWidgetSettings(
+                GetStorageEntity(selectedEntity),
+                GetWidgetStorageState(selectedEntity, selectedState, widget),
+                widgetKey,
+                GetWidgetDefaults(widget)
+            );
+            local parent = tostring(settings ~= nil and settings.anchorTo or 'Plate');
+
+            if parent ~= widget and available[parent] == true and IsAnchorableWidget(parent) == true then
+                parentByWidget[widget] = parent;
+                childrenByWidget[parent][#childrenByWidget[parent] + 1] = widget;
+            end
+        end
+    end
+
+    for _, children in pairs(childrenByWidget) do
+        table.sort(children, function(left, right)
+            local leftSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, left), widgetKeys[left], GetWidgetDefaults(left));
+            local rightSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, right), widgetKeys[right], GetWidgetDefaults(right));
+            local leftOrder = tonumber(leftSettings ~= nil and leftSettings.anchorOrder or nil);
+            local rightOrder = tonumber(rightSettings ~= nil and rightSettings.anchorOrder or nil);
+
+            if leftOrder ~= nil or rightOrder ~= nil then
+                leftOrder = leftOrder or 1000000;
+                rightOrder = rightOrder or 1000000;
+                if leftOrder ~= rightOrder then
+                    return leftOrder < rightOrder;
+                end
+            end
+
+            return (sourceOrder[left] or 0) < (sourceOrder[right] or 0);
+        end);
+    end
+
+    local added = {};
+    local visiting = {};
+    local function AddWidget(widget, depth, siblingIndex, siblingCount)
+        if added[widget] == true or visiting[widget] == true then
+            return;
+        end
+
+        visiting[widget] = true;
+        added[widget] = true;
+        rows[#rows + 1] = {
+            widget = widget,
+            depth = depth,
+            hasChildren = #childrenByWidget[widget] > 0,
+            siblingIndex = siblingIndex,
+            siblingCount = siblingCount,
+        };
+
+        for childIndex, child in ipairs(childrenByWidget[widget]) do
+            AddWidget(child, depth + 1, childIndex, #childrenByWidget[widget]);
+        end
+
+        visiting[widget] = nil;
+    end
+
+    for _, widget in ipairs(widgetsList) do
+        if parentByWidget[widget] == nil then
+            AddWidget(widget, 0);
+        end
+    end
+
+    -- Invalid or circular legacy anchors still remain visible and selectable.
+    for _, widget in ipairs(widgetsList) do
+        AddWidget(widget, 0);
+    end
+
+    return rows;
+end
+
+function MoveAnchoredWidget(widget, direction)
+    local rows = GetEditWidgetHierarchyRows();
+    local siblings = {};
+    local targetRow = nil;
+
+    for _, row in ipairs(rows) do
+        if row.widget == widget then
+            targetRow = row;
+            break;
+        end
+    end
+
+    if targetRow == nil or (tonumber(targetRow.depth) or 0) <= 0 then
+        return false;
+    end
+
+    local widgetSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, widget), widgetKeys[widget], GetWidgetDefaults(widget));
+    local parent = tostring(widgetSettings ~= nil and widgetSettings.anchorTo or 'Plate');
+
+    for _, row in ipairs(rows) do
+        local candidate = row.widget;
+        local candidateKey = widgetKeys[candidate];
+        if candidateKey ~= nil then
+            local candidateSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, candidate), candidateKey, GetWidgetDefaults(candidate));
+            if tostring(candidateSettings ~= nil and candidateSettings.anchorTo or 'Plate') == parent then
+                siblings[#siblings + 1] = candidate;
+            end
+        end
+    end
+
+    local currentIndex = nil;
+    for index, sibling in ipairs(siblings) do
+        if sibling == widget then
+            currentIndex = index;
+            break;
+        end
+    end
+
+    local targetIndex = (currentIndex or 0) + (tonumber(direction) or 0);
+    if currentIndex == nil or targetIndex < 1 or targetIndex > #siblings then
+        return false;
+    end
+
+    siblings[currentIndex], siblings[targetIndex] = siblings[targetIndex], siblings[currentIndex];
+    for index, sibling in ipairs(siblings) do
+        local siblingSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, sibling), widgetKeys[sibling], GetWidgetDefaults(sibling));
+        siblingSettings.anchorOrder = index;
+    end
+
+    state.Save();
+    return true;
+end
+
+function GetWidgetListDisplayLabel(widget)
+    return tostring(GetWidgetDisplayLabel(widget)):gsub('%s+[Ii]con$', '');
 end
 
 function GetModuleWidgets(entity, stateName)
@@ -2136,7 +2325,7 @@ function DrawButtonList(items, selected, onSelect)
     end
 end
 
-function DrawSelectableRow(label, selected, color, id)
+function DrawSelectableRow(label, selected, color, id, width)
     local display = tostring(label or '');
     local itemId = tostring(id or display);
     local textColor = color or { 0.92, 0.92, 0.90, 1.0 };
@@ -2153,7 +2342,11 @@ function DrawSelectableRow(label, selected, color, id)
             end
         end
 
-        clicked = imgui.Selectable(display .. '##' .. itemId, selected == true) == true;
+        if tonumber(width) ~= nil then
+            clicked = imgui.Selectable(display .. '##' .. itemId, selected == true, 0, { math.max(1, tonumber(width)), 0 }) == true;
+        else
+            clicked = imgui.Selectable(display .. '##' .. itemId, selected == true) == true;
+        end
 
         if (pushed > 0 and imgui.PopStyleColor ~= nil) then
             imgui.PopStyleColor(pushed);
@@ -2585,14 +2778,14 @@ end
 local DrawPlacementControl = nil;
 local DrawPlacementSingle = nil;
 
-function DrawSettingsColor(label, value, id)
+function DrawSettingsColor(label, value, id, labelWidth, controlWidth)
     local color = value or { 1.0, 1.0, 1.0, 1.0 };
     local changed = false;
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##settings_color_' .. tostring(id or label), 2, settingsTableFlags)) then
-            imgui.TableSetupColumn('##label', 0, 78);
-            imgui.TableSetupColumn('##control', 0, 175);
+            imgui.TableSetupColumn('##label', 0, tonumber(labelWidth) or 78);
+            imgui.TableSetupColumn('##control', 0, tonumber(controlWidth) or 175);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(settingsLabelColor, label);
@@ -2804,7 +2997,7 @@ function DrawRestingSectionHeader(label)
     DrawYellowHeader(label);
 end
 
-function DrawRestingPlacementPair(leftLabel, leftValue, leftId, rightLabel, rightValue, rightId, minValue, maxValue, step)
+function DrawRestingPlacementPair(leftLabel, leftValue, leftId, rightLabel, rightValue, rightId, minValue, maxValue, step, leftLabelWidth, rightLabelWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local leftResult = leftValue;
         local rightResult = rightValue;
@@ -2812,9 +3005,9 @@ function DrawRestingPlacementPair(leftLabel, leftValue, leftId, rightLabel, righ
         local rightChanged = false;
 
         if (imgui.BeginTable('##resting_placement_' .. tostring(leftId) .. '_' .. tostring(rightId), 4, settingsTableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 132);
+            imgui.TableSetupColumn('##label_left', 0, tonumber(leftLabelWidth) or 132);
             imgui.TableSetupColumn('##control_left', 0, 124);
-            imgui.TableSetupColumn('##label_right', 0, 160);
+            imgui.TableSetupColumn('##label_right', 0, tonumber(rightLabelWidth) or 160);
             imgui.TableSetupColumn('##control_right', 0, 124);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -2836,7 +3029,7 @@ function DrawRestingPlacementPair(leftLabel, leftValue, leftId, rightLabel, righ
     return DrawPlacementPair(leftLabel, leftValue, leftId, rightLabel, rightValue, rightId, minValue, maxValue, step);
 end
 
-function DrawRestingPlacementAndColorRow(leftLabel, leftValue, leftId, minValue, maxValue, step, rightLabel, colorValue, colorId)
+function DrawRestingPlacementAndColorRow(leftLabel, leftValue, leftId, minValue, maxValue, step, rightLabel, colorValue, colorId, leftLabelWidth, rightLabelWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local valueResult = leftValue;
         local colorResult = colorValue;
@@ -2844,9 +3037,9 @@ function DrawRestingPlacementAndColorRow(leftLabel, leftValue, leftId, minValue,
         local colorChanged = false;
 
         if (imgui.BeginTable('##resting_placement_color_' .. tostring(leftId) .. '_' .. tostring(colorId), 4, settingsTableFlags)) then
-            imgui.TableSetupColumn('##value_label', 0, 132);
+            imgui.TableSetupColumn('##value_label', 0, tonumber(leftLabelWidth) or 132);
             imgui.TableSetupColumn('##value_control', 0, 124);
-            imgui.TableSetupColumn('##color_label', 0, 160);
+            imgui.TableSetupColumn('##color_label', 0, tonumber(rightLabelWidth) or 160);
             imgui.TableSetupColumn('##color_control', 0, 64);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -5138,6 +5331,23 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         return;
     end
 
+    if (normalizedKind == 'crafting') then
+        local global = state.GetGlobalSettings(globalDefaults);
+        global.crafting = global.crafting or {};
+        global.crafting.offsetX = math.max(-500, math.min(500, (tonumber(global.crafting.offsetX) or 0) + deltaX));
+        global.crafting.offsetY = math.max(-500, math.min(500, (tonumber(global.crafting.offsetY) or 38) + deltaY));
+
+        if (selectedTab == 'Modules') then
+            selectedModuleWidget = 'Crafting';
+        elseif (selectedTab == 'Plates' and ListContains(GetEditWidgets(), 'Crafting (module)') == true) then
+            selectedWidget = 'Crafting (module)';
+        end
+
+        PersistUiSelection();
+        state.Save();
+        return;
+    end
+
     local widgetByKind = {
         background = 'Background',
         name = 'Name',
@@ -5600,7 +5810,14 @@ function DrawPlatesSelector()
     end
     LibraPlatesSettingsDrawWidgetsBulkActionWarning();
 
-    for index, widget in ipairs(GetEditWidgets()) do
+    for index, hierarchyRow in ipairs(GetEditWidgetHierarchyRows()) do
+        local widget = hierarchyRow.widget;
+        local hierarchyIndent = math.max(0, tonumber(hierarchyRow.depth) or 0) * 18;
+
+        if hierarchyIndent > 0 and imgui.Indent ~= nil then
+            imgui.Indent(hierarchyIndent);
+        end
+
         local settings = GetChecklistActiveSettings(widget);
         local protectedTargetModule = LibraPlatesSettingsIsProtectedTargetWidget(widget);
 
@@ -5660,12 +5877,40 @@ function DrawPlatesSelector()
             labelColor = { 0.58, 0.60, 0.64, 1.0 };
         end
 
-        if (DrawSelectableRow(GetWidgetDisplayLabel(widget), selected, labelColor, 'plate_widget_select_' .. tostring(index) .. '_' .. tostring(widget)) == true) then
+        local hasParentMarker = hierarchyRow.hasChildren == true;
+        local hasMoveArrow = hierarchyRow.siblingIndex ~= nil and (tonumber(hierarchyRow.siblingCount) or 0) > 1;
+        local rowControlWidth = (hasParentMarker == true and 20 or 0) + (hasMoveArrow == true and 24 or 0);
+        local labelWidth = math.max(40, (select(1, GetContentRegionAvail()) or 180) - rowControlWidth);
+
+        if (DrawSelectableRow(GetWidgetListDisplayLabel(widget), selected, labelColor, 'plate_widget_select_' .. tostring(index) .. '_' .. tostring(widget), labelWidth) == true) then
             selectedWidget = widget;
+        end
+
+        if hasMoveArrow == true then
+            imgui.SameLine();
+            if tonumber(hierarchyRow.siblingIndex) == 1 then
+                if imgui.Button('v##widget_down_' .. tostring(widget)) == true then
+                    MoveAnchoredWidget(widget, 1);
+                end
+            elseif imgui.Button('^##widget_up_' .. tostring(widget)) == true then
+                MoveAnchoredWidget(widget, -1);
+            end
+        end
+
+        if hasParentMarker == true then
+            local anchorTextureId = GetSettingsUiIconTextureId('anchor.png');
+            if anchorTextureId ~= nil and imgui.Image ~= nil then
+                imgui.SameLine();
+                imgui.Image(anchorTextureId, { 18, 18 }, { 0, 0 }, { 1, 1 });
+            end
         end
 
         if (protectedTargetModule == true) then
             uiTooltip.Info('Required while LibraPlates is replacing the native targeting system.');
+        end
+
+        if hierarchyIndent > 0 and imgui.Unindent ~= nil then
+            imgui.Unindent(hierarchyIndent);
         end
     end
 end
@@ -7697,34 +7942,43 @@ function LibraPlatesSettingsDrawCraftingModuleSettings(settings, hideActive)
         return;
     end
 
+    local function DrawCraftingPanel(label, render, first)
+        LibraPlatesSettingsDrawBoxedPanel(label, render, first);
+    end
+
+    DrawCraftingPanel('Display', function()
     DrawInlineComboRow('Display', T{ 'Icon', 'Text' }, settings.crafting.displayMode or 'Icon', function(value)
         settings.crafting.displayMode = value;
         state.Save();
-    end, 'CraftingDisplayMode');
+    end, 'CraftingDisplayMode', { 1.0, 1.0, 1.0, 1.0 }, 104, nil, 220);
 
     DrawInlineComboRow('Preview result', crafting.GetResultChoices(), settings.crafting.previewResultName or 'High-Quality', function(value)
         settings.crafting.previewResultName = value;
         state.Save();
-    end, 'CraftingPreviewResult');
+    end, 'CraftingPreviewResult', { 1.0, 1.0, 1.0, 1.0 }, 104, nil, 220);
 
-    local x, xChanged, y, yChanged = DrawPlacementPair('Position X', settings.crafting.offsetX, 'CraftingX', 'Position Y', settings.crafting.offsetY, 'CraftingY', -500, 500, 1);
+    local x, xChanged, y, yChanged = DrawRestingPlacementPair('Position X', settings.crafting.offsetX, 'CraftingX', 'Position Y', settings.crafting.offsetY, 'CraftingY', -500, 500, 1, 104, 104);
     if (xChanged == true or yChanged == true) then
         settings.crafting.offsetX = x;
         settings.crafting.offsetY = y;
         state.Save();
     end
 
+    if (tostring(settings.crafting.displayMode or 'Icon') == 'Icon') then
+        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.crafting.iconSize, 'CraftingIconSize', 1, 200, 1, 104, 124, 58);
+        if (iconSizeChanged == true) then
+            settings.crafting.iconSize = iconSize;
+            state.Save();
+        end
+    end
+    end, true);
+
+    DrawCraftingPanel('Appearance', function()
+
     if (tostring(settings.crafting.displayMode or 'Icon') == 'Text') then
-        local fontSize, fontSizeChanged, textColor, textColorChanged = DrawPlacementAndColorRow(
-            'Text size',
-            settings.crafting.textFontSize,
-            'CraftingTextSize',
-            6,
-            64,
-            1,
-            'Text color',
-            settings.crafting.textColor,
-            'CraftingTextColor'
+        local fontSize, fontSizeChanged, textColor, textColorChanged = DrawRestingPlacementAndColorRow(
+            'Text size', settings.crafting.textFontSize, 'CraftingTextSize', 6, 64, 1,
+            'Text color', settings.crafting.textColor, 'CraftingTextColor', 104, 104
         );
         if (fontSizeChanged == true or textColorChanged == true) then
             settings.crafting.textFontSize = fontSize;
@@ -7732,16 +7986,9 @@ function LibraPlatesSettingsDrawCraftingModuleSettings(settings, hideActive)
             state.Save();
         end
 
-        local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawPlacementAndColorRow(
-            'Outline size',
-            settings.crafting.textOutlineSize,
-            'CraftingTextOutlineSize',
-            0,
-            12,
-            1,
-            'Outline color',
-            settings.crafting.textOutlineColor,
-            'CraftingTextOutlineColor'
+        local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawRestingPlacementAndColorRow(
+            'Outline size', settings.crafting.textOutlineSize, 'CraftingTextOutlineSize', 0, 12, 1,
+            'Outline color', settings.crafting.textOutlineColor, 'CraftingTextOutlineColor', 104, 104
         );
         if (outlineSizeChanged == true or outlineColorChanged == true) then
             settings.crafting.textOutlineSize = outlineSize;
@@ -7749,41 +7996,75 @@ function LibraPlatesSettingsDrawCraftingModuleSettings(settings, hideActive)
             state.Save();
         end
 
-        return;
-    end
+    else
+        DrawCheckbox('Show result label', settings.crafting.showLabel ~= false, function(value)
+            settings.crafting.showLabel = value == true;
+            state.Save();
+        end);
 
-    local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.crafting.iconSize, 'CraftingIconSize', 1, 200, 1, 154, 124, 58);
-    if (iconSizeChanged == true) then
-        settings.crafting.iconSize = iconSize;
-        state.Save();
-    end
+        if (settings.crafting.showLabel ~= false) then
+            local labelSize, labelSizeChanged, labelColor, labelColorChanged = DrawRestingPlacementAndColorRow(
+                'Label size', settings.crafting.labelFontSize, 'CraftingLabelSize', 6, 64, 1,
+                'Label color', settings.crafting.labelColor, 'CraftingLabelColor', 104, 104
+            );
+            if (labelSizeChanged == true or labelColorChanged == true) then
+                settings.crafting.labelFontSize = labelSize;
+                settings.crafting.labelColor = labelColor;
+                state.Save();
+            end
 
-    DrawCheckbox('Show result label', settings.crafting.showLabel ~= false, function(value)
-        settings.crafting.showLabel = value == true;
-        state.Save();
+            local labelOffsetY, labelOffsetYChanged = DrawPlacementSingle('Label Y', settings.crafting.labelOffsetY, 'CraftingLabelY', -100, 100, 1, 104, 124, 58);
+            if (labelOffsetYChanged == true) then
+                settings.crafting.labelOffsetY = labelOffsetY;
+                state.Save();
+            end
+
+            local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawRestingPlacementAndColorRow(
+                'Outline size', settings.crafting.labelOutlineSize, 'CraftingLabelOutlineSize', 0, 12, 1,
+                'Outline color', settings.crafting.labelOutlineColor, 'CraftingLabelOutlineColor', 104, 104
+            );
+            if (outlineColorChanged == true or outlineSizeChanged == true) then
+                settings.crafting.labelOutlineColor = outlineColor;
+                settings.crafting.labelOutlineSize = outlineSize;
+                state.Save();
+            end
+        end
+    end
     end);
 
-    if (settings.crafting.showLabel ~= false) then
-        local labelSize, labelSizeChanged, labelOffsetY, labelOffsetYChanged = DrawPlacementPair('Label size', settings.crafting.labelFontSize, 'CraftingLabelSize', 'Label Y', settings.crafting.labelOffsetY, 'CraftingLabelY', -100, 100, 1);
-        if (labelSizeChanged == true or labelOffsetYChanged == true) then
-            settings.crafting.labelFontSize = labelSize;
-            settings.crafting.labelOffsetY = labelOffsetY;
-            state.Save();
-        end
-
-        local labelColor, labelColorChanged = DrawSettingsColor('Label color', settings.crafting.labelColor, 'CraftingLabelColor');
-        if (labelColorChanged == true) then
-            settings.crafting.labelColor = labelColor;
-            state.Save();
-        end
-
-        local outlineColor, outlineColorChanged, outlineSize, outlineSizeChanged = DrawColorAndPlacementRow('Outline color', settings.crafting.labelOutlineColor, 'CraftingLabelOutlineColor', 'Outline size', settings.crafting.labelOutlineSize, 'CraftingLabelOutlineSize', 0, 12, 1);
-        if (outlineColorChanged == true or outlineSizeChanged == true) then
-            settings.crafting.labelOutlineColor = outlineColor;
-            settings.crafting.labelOutlineSize = outlineSize;
-            state.Save();
-        end
+    if (imgui.Spacing ~= nil) then
+        imgui.Spacing();
+        imgui.Spacing();
+    else
+        DrawSectionDivider();
     end
+
+    if (DrawResetActionButton('Reset Crafting position', 'crafting_position') == true) then
+        settings.crafting.offsetX = globalDefaults.crafting.offsetX;
+        settings.crafting.offsetY = globalDefaults.crafting.offsetY;
+        state.Save();
+    end
+
+    if (DrawResetActionButton('Reset Crafting settings', 'crafting_settings') == true) then
+        settings.crafting.displayMode = globalDefaults.crafting.displayMode;
+        settings.crafting.previewResultName = globalDefaults.crafting.previewResultName;
+        settings.crafting.offsetX = globalDefaults.crafting.offsetX;
+        settings.crafting.offsetY = globalDefaults.crafting.offsetY;
+        settings.crafting.iconSize = globalDefaults.crafting.iconSize;
+        settings.crafting.showLabel = globalDefaults.crafting.showLabel;
+        settings.crafting.labelFontSize = globalDefaults.crafting.labelFontSize;
+        settings.crafting.labelOffsetY = globalDefaults.crafting.labelOffsetY;
+        settings.crafting.labelColor = CopyColor(globalDefaults.crafting.labelColor);
+        settings.crafting.labelOutlineColor = CopyColor(globalDefaults.crafting.labelOutlineColor);
+        settings.crafting.labelOutlineSize = globalDefaults.crafting.labelOutlineSize;
+        settings.crafting.textFontSize = globalDefaults.crafting.textFontSize;
+        settings.crafting.textColor = CopyColor(globalDefaults.crafting.textColor);
+        settings.crafting.textOutlineColor = CopyColor(globalDefaults.crafting.textOutlineColor);
+        settings.crafting.textOutlineSize = globalDefaults.crafting.textOutlineSize;
+        state.Save();
+    end
+
+    DrawResetFooterBottomPadding();
 end
 
 local function DrawQuickMenuIconRow(menu)

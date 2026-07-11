@@ -910,26 +910,6 @@ local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind)
     local offsetX = tonumber(settings.offsetX) or defaultX;
     local offsetY = tonumber(settings.offsetY) or defaultY;
 
-    if (
-        settings.anchorCollapse == true and
-        tostring(settings.anchorTo or 'Plate') ~= 'Plate'
-    ) then
-        local spacing = math.max(0, math.min(64, tonumber(settings.anchorSpacing) or 6));
-        local anchorPoint = tostring(settings.anchorPoint or 'Center');
-
-        if (anchorPoint:find('Left', 1, true) ~= nil) then
-            offsetX = offsetX - spacing;
-        elseif (anchorPoint:find('Right', 1, true) ~= nil) then
-            offsetX = offsetX + spacing;
-        end
-
-        if (anchorPoint:find('Top', 1, true) ~= nil) then
-            offsetY = offsetY - spacing;
-        elseif (anchorPoint:find('Bottom', 1, true) ~= nil) then
-            offsetY = offsetY + spacing;
-        end
-    end
-
     table.insert(icons, {
         kind = kind,
         textureId = textureId,
@@ -941,6 +921,7 @@ local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind)
         anchorPoint = settings.anchorPoint,
         anchorCollapse = settings.anchorCollapse,
         anchorSpacing = settings.anchorSpacing,
+        anchorOrder = settings.anchorOrder,
     });
 end
 
@@ -1034,6 +1015,7 @@ local function BuildPreviewAnchorFallbackRects(definitions)
                 anchorPoint = settings.anchorPoint or defaults.anchorPoint,
                 anchorCollapse = settings.anchorCollapse,
                 anchorSpacing = settings.anchorSpacing,
+                anchorOrder = settings.anchorOrder,
                 offsetX = offsetX,
                 offsetY = offsetY,
             },
@@ -1210,6 +1192,7 @@ local function AddRestingPreviewBar(plateData, globalSettings, context)
         anchorPoint = resting.anchorPoint,
         anchorCollapse = resting.anchorCollapse,
         anchorSpacing = resting.anchorSpacing,
+        anchorOrder = resting.anchorOrder,
         color = resting.color or { 0.55, 0.95, 0.35, 1.0 },
         backgroundColor = resting.backgroundColor or { 0.10, 0.10, 0.10, 1.0 },
         borderColor = resting.borderColor or { 1.0, 1.0, 1.0, 1.0 },
@@ -1317,6 +1300,7 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
                 anchorPoint = settings.anchorPoint,
                 anchorCollapse = settings.anchorCollapse,
                 anchorSpacing = settings.anchorSpacing,
+                anchorOrder = settings.anchorOrder,
                 timerText = timerText,
                 timerSeconds = timerSeconds,
                 timerOffsetY = tonumber(settings.timerOffsetY) or 0,
@@ -1518,6 +1502,7 @@ local function BuildPreviewExtraBar(settings, defaults, progress, text, kind, ic
         anchorPoint = settings.anchorPoint or defaults.anchorPoint,
         anchorCollapse = settings.anchorCollapse,
         anchorSpacing = settings.anchorSpacing,
+        anchorOrder = settings.anchorOrder,
         color = settings.color or defaults.color,
         backgroundColor = settings.backgroundColor or defaults.backgroundColor,
         borderColor = settings.borderColor or defaults.borderColor,
@@ -1615,6 +1600,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
             anchorCollapse = backgroundSettings.anchorCollapse,
             anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
         name = (nameSettings.enabled == true) and ((stateName == 'Charmed Pet') and 'Desert Beetle' or 'CourierCarrie') or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
@@ -1629,6 +1615,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
         nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
         nameAnchorCollapse = nameSettings.anchorCollapse,
+        nameAnchorOrder = nameSettings.anchorOrder,
         hpBar = {
             enabled = hpBarSettings.enabled == true,
             width = tonumber(hpBarSettings.width) or 160,
@@ -1643,6 +1630,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = hpBarSettings.anchorCollapse,
             anchorSpacing = hpBarSettings.anchorSpacing,
+            anchorOrder = hpBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(hpBarSettings.texture),
             animationEnabled = hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
             animationTextureId = barAnimations.GetTextureId(hpBarSettings.lowAnimation),
@@ -1675,6 +1663,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             anchorCollapse = tpBarSettings.anchorCollapse,
             anchorSpacing = tpBarSettings.anchorSpacing,
+            anchorOrder = tpBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(tpBarSettings.texture),
             color2 = tpBarSettings.color2 or tpBarDefaults.color2,
             color3 = tpBarSettings.color3 or tpBarDefaults.color3,
@@ -1770,6 +1759,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
             anchorCollapse = backgroundSettings.anchorCollapse,
             anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
         name = (nameSettings.enabled == true) and tostring(name or 'Lumiere') or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
@@ -1784,6 +1774,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
         nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
         nameAnchorCollapse = nameSettings.anchorCollapse,
+        nameAnchorOrder = nameSettings.anchorOrder,
         anchorFallbackRects = BuildPreviewAnchorFallbackRects({
             { kind = 'allianceLeaderIcon', settings = playerIconSettings.allianceLeader, defaults = allianceLeaderIconDefaults, defaultX = -120, defaultY = -54 },
             { kind = 'partyLeaderIcon', settings = playerIconSettings.partyLeader, defaults = partyLeaderIconDefaults, defaultX = -96, defaultY = -54 },
@@ -1813,6 +1804,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = hpBarSettings.anchorCollapse,
             anchorSpacing = hpBarSettings.anchorSpacing,
+            anchorOrder = hpBarSettings.anchorOrder,
             texture = hpBarSettings.texture or barDefaults.texture,
             textureId = barTextures.GetTextureId(hpBarSettings.texture or barDefaults.texture),
             animationEnabled = hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
@@ -1848,6 +1840,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             anchorCollapse = tpBarSettings.anchorCollapse,
             anchorSpacing = tpBarSettings.anchorSpacing,
+            anchorOrder = tpBarSettings.anchorOrder,
             texture = tpBarSettings.texture or tpBarDefaults.texture,
             textureId = barTextures.GetTextureId(tpBarSettings.texture or tpBarDefaults.texture),
             animationEnabled = tpLowActive == true and tpBarSettings.lowAnimationEnabled == true,
@@ -1890,6 +1883,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
             anchorPoint = distanceSettings.anchorPoint or distanceDefaults.anchorPoint,
             anchorCollapse = distanceSettings.anchorCollapse,
             anchorSpacing = distanceSettings.anchorSpacing,
+            anchorOrder = distanceSettings.anchorOrder,
             backgroundEnabled = false,
         };
     end
@@ -1953,6 +1947,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
             anchorCollapse = backgroundSettings.anchorCollapse,
             anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
         name = (nameSettings.enabled == true) and (isSpirit and 'LightSpirit' or 'Carbuncle') or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
@@ -1967,6 +1962,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
         nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
         nameAnchorCollapse = nameSettings.anchorCollapse,
+        nameAnchorOrder = nameSettings.anchorOrder,
         hpBar = {
             enabled = hpBarSettings.enabled == true,
             width = tonumber(hpBarSettings.width) or 160,
@@ -1981,6 +1977,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = hpBarSettings.anchorCollapse,
             anchorSpacing = hpBarSettings.anchorSpacing,
+            anchorOrder = hpBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(hpBarSettings.texture),
             animationEnabled = hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
             animationTextureId = barAnimations.GetTextureId(hpBarSettings.lowAnimation),
@@ -2012,6 +2009,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
             anchorCollapse = mpBarSettings.anchorCollapse,
             anchorSpacing = mpBarSettings.anchorSpacing,
+            anchorOrder = mpBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(mpBarSettings.texture),
             animationEnabled = mpLowActive == true and mpBarSettings.lowAnimationEnabled == true,
             animationTextureId = barAnimations.GetTextureId(mpBarSettings.lowAnimation),
@@ -2043,6 +2041,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             anchorCollapse = tpBarSettings.anchorCollapse,
             anchorSpacing = tpBarSettings.anchorSpacing,
+            anchorOrder = tpBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(tpBarSettings.texture),
             color2 = tpBarSettings.color2 or tpBarDefaults.color2,
             color3 = tpBarSettings.color3 or tpBarDefaults.color3,
@@ -2074,6 +2073,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             anchorPoint = castBarSettings.anchorPoint or castBarDefaults.anchorPoint,
             anchorCollapse = castBarSettings.anchorCollapse,
             anchorSpacing = castBarSettings.anchorSpacing,
+            anchorOrder = castBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(castBarSettings.texture),
             text = (castBarSettings.showSpellName ~= false) and 'Stone III' or '',
             textOffsetX = tonumber(castBarSettings.textOffsetX) or castBarDefaults.textOffsetX,
@@ -2324,6 +2324,7 @@ local function BuildPlate(entityName, stateName, context)
         nameOffsetY = tonumber(nameSettings.offsetY) or -54,
         nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        nameAnchorOrder = nameSettings.anchorOrder,
         aoeNameActive = previewAoeActive == true,
         anchorMap = {
             ['Background'] = 'background',
@@ -2370,6 +2371,7 @@ local function BuildPlate(entityName, stateName, context)
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = hpBarSettings.anchorCollapse,
             anchorSpacing = hpBarSettings.anchorSpacing,
+            anchorOrder = hpBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(hpBarSettings.texture),
             animationEnabled = (
                 hpBarSettings.lowColorEnabled == true and
@@ -2405,6 +2407,7 @@ local function BuildPlate(entityName, stateName, context)
             anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
             anchorCollapse = mpBarSettings.anchorCollapse,
             anchorSpacing = mpBarSettings.anchorSpacing,
+            anchorOrder = mpBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(mpBarSettings.texture),
             animationEnabled = (
                 mpBarSettings.lowColorEnabled == true and
@@ -2440,6 +2443,7 @@ local function BuildPlate(entityName, stateName, context)
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             anchorCollapse = tpBarSettings.anchorCollapse,
             anchorSpacing = tpBarSettings.anchorSpacing,
+            anchorOrder = tpBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(tpBarSettings.texture),
             color2 = tpColor2,
             color3 = tpColor3,
@@ -2472,6 +2476,7 @@ local function BuildPlate(entityName, stateName, context)
             anchorPoint = castBarSettings.anchorPoint or castBarDefaults.anchorPoint,
             anchorCollapse = castBarSettings.anchorCollapse,
             anchorSpacing = castBarSettings.anchorSpacing,
+            anchorOrder = castBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(castBarSettings.texture),
             text = (castBarSettings.showSpellName ~= false) and 'Stonega III' or '',
             textOffsetX = tonumber(castBarSettings.textOffsetX) or 0,
@@ -2542,6 +2547,7 @@ local function BuildPlate(entityName, stateName, context)
                     anchorPoint = jobSettings.anchorPoint or jobDefaults.anchorPoint,
                     anchorCollapse = jobSettings.anchorCollapse,
                     anchorSpacing = jobSettings.anchorSpacing,
+                    anchorOrder = jobSettings.anchorOrder,
                 };
             end
         else
@@ -2558,6 +2564,7 @@ local function BuildPlate(entityName, stateName, context)
             plateData.jobAnchorTo = jobSettings.anchorTo or jobDefaults.anchorTo;
             plateData.jobAnchorPoint = jobSettings.anchorPoint or jobDefaults.anchorPoint;
             plateData.jobAnchorCollapse = jobSettings.anchorCollapse;
+            plateData.jobAnchorOrder = jobSettings.anchorOrder;
         end
     end
 
@@ -2581,6 +2588,7 @@ local function BuildPlate(entityName, stateName, context)
             anchorPoint = levelSettings.anchorPoint or levelDefaults.anchorPoint,
             anchorCollapse = levelSettings.anchorCollapse,
             anchorSpacing = levelSettings.anchorSpacing,
+            anchorOrder = levelSettings.anchorOrder,
             backgroundEnabled = false,
         };
     end
@@ -2605,6 +2613,7 @@ local function BuildPlate(entityName, stateName, context)
             anchorPoint = idSettings.anchorPoint or idDefaults.anchorPoint,
             anchorCollapse = idSettings.anchorCollapse,
             anchorSpacing = idSettings.anchorSpacing,
+            anchorOrder = idSettings.anchorOrder,
             backgroundEnabled = idSettings.boxEnabled == true,
             backgroundColor = GetPreviewIdBoxColor(idSettings, idDefaults),
             borderColor = idSettings.boxBorderColor or idDefaults.boxBorderColor,
@@ -2639,6 +2648,7 @@ local function BuildPlate(entityName, stateName, context)
             anchorPoint = distanceSettings.anchorPoint or distanceDefaults.anchorPoint,
             anchorCollapse = distanceSettings.anchorCollapse,
             anchorSpacing = distanceSettings.anchorSpacing,
+            anchorOrder = distanceSettings.anchorOrder,
             backgroundEnabled = false,
         };
     end
@@ -2658,6 +2668,7 @@ local function BuildPlate(entityName, stateName, context)
                 anchorPoint = iconSettings.anchorPoint or npcObjectIconDefaults.anchorPoint,
                 anchorCollapse = iconSettings.anchorCollapse,
                 anchorSpacing = iconSettings.anchorSpacing,
+                anchorOrder = iconSettings.anchorOrder,
             };
         end
     elseif (entityName == 'Object') then
@@ -2675,6 +2686,7 @@ local function BuildPlate(entityName, stateName, context)
                 anchorPoint = iconSettings.anchorPoint or npcObjectIconDefaults.anchorPoint,
                 anchorCollapse = iconSettings.anchorCollapse,
                 anchorSpacing = iconSettings.anchorSpacing,
+                anchorOrder = iconSettings.anchorOrder,
             };
         end
     end
@@ -2697,6 +2709,7 @@ local function BuildPlate(entityName, stateName, context)
             anchorPoint = typeLineSettings.anchorPoint or typeLineDefaults.anchorPoint,
             anchorCollapse = typeLineSettings.anchorCollapse,
             anchorSpacing = typeLineSettings.anchorSpacing,
+            anchorOrder = typeLineSettings.anchorOrder,
             fontFamily = fonts.GetRole(globalSettings, typeLineSettings.useSmallFont == true),
             fontFlags = fonts.GetRoleFlags(globalSettings, typeLineSettings.useSmallFont == true),
             fontSize = textScale.ToTextureFontSize(typeLineSettings.textSize, typeLineDefaults.textSize),

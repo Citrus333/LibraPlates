@@ -9,6 +9,7 @@ local entities = require('core.entities');
 local npcObjectInfo = require('core.npc_object_info');
 local globalDefaults = require('config.global');
 local nameDefaults = require('config.widgets.name');
+local distanceDefaults = require('config.widgets.distance');
 local typeLineDefaults = require('config.widgets.type_line');
 local npcObjectIconDefaults = require('config.widgets.npc_object_icon');
 local gdiTextTexture = require('ui.gdi_text_texture');
@@ -199,6 +200,48 @@ local function GetColorU32(color)
     end
 
     return 0xFFFFFFFF;
+end
+
+local function DrawTargetDistance(drawList, ent, context, layoutStateName, cx, cy)
+    if (ent == nil or ent.Distance == nil) then
+        return;
+    end
+
+    local entityName = tostring(context ~= nil and context.entityName or '');
+
+    if (entityName ~= 'Enemy' and entityName ~= 'PC') then
+        return;
+    end
+
+    local settings = state.GetWidgetSettings(entityName, layoutStateName, 'Distance', distanceDefaults);
+
+    if (settings == nil or settings.enabled ~= true) then
+        return;
+    end
+
+    local distance = math.sqrt(math.max(0, tonumber(ent.Distance) or 0));
+    local text = tostring(settings.prefix or '') .. string.format('%.1f', distance);
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local textureId, textW, textH = gdiTextTexture.GetTexture(text, {
+        fontFamily = fonts.GetRole(globalSettings, settings.useSmallFont == true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, settings.useSmallFont == true),
+        fontSize = textScale.ToTextureFontSize(settings.textSize, distanceDefaults.textSize),
+        color = settings.color or distanceDefaults.color,
+        outlineEnabled = settings.outlineEnabled == true,
+        outlineColor = settings.outlineColor or distanceDefaults.outlineColor,
+        outlineSize = tonumber(settings.outlineSize) or distanceDefaults.outlineSize,
+    });
+
+    if (textureId == nil or tonumber(textW) == nil or tonumber(textH) == nil or textW <= 0 or textH <= 0) then
+        return;
+    end
+
+    local drawW = textW * overlayScale;
+    local drawH = textH * overlayScale;
+    local textX = cx + ((tonumber(settings.offsetX) or distanceDefaults.offsetX) * overlayScale) - (drawW * 0.5);
+    local textY = cy + ((tonumber(settings.offsetY) or distanceDefaults.offsetY) * overlayScale) - (drawH * 0.5);
+
+    DrawImage(drawList, textureId, textX, textY, drawW, drawH, 0xFFFFFFFF);
 end
 
 local function GetTargetManager()
@@ -911,6 +954,8 @@ local function DrawOne(drawList, index, stateName, offsetY, drawHighlight)
     local cy = pos.y + (tonumber(offsetY) or 0) - 20;
     local scale = 1.0;
     local nameWidth = nil;
+
+    DrawTargetDistance(drawList, ent, context, targetModuleLayout, cx, cy);
 
     if (ent ~= nil and ent.Name ~= nil and ent.Name ~= '') then
         local globalSettings = state.GetGlobalSettings(globalDefaults);

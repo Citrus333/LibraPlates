@@ -205,6 +205,7 @@ After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossov
             ["icon"] = "Dialogue.png",
             ["note"] = "A stationary training ledger podium stationed at military outposts. Reading the text lets you enlist in regional combat regimes, check training metrics, or purchase field enhancements.",
             ["type"] = "Training & Support",
+			["worldOffsetY"] = 0.65,
         },
         ["Field Parchment"] = {
             ["_source"] = "item",

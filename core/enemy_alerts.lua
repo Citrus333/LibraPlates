@@ -942,7 +942,11 @@ local function HandleActionPacket(packet)
         log.Info('Enemy Alerts: ' .. lastDebug);
     end
 
-    return;
+    if (actionName == nil or actionName == '') then
+        return;
+    end
+
+    PushAlert(kind, lane, actorName, actionName);
 end
 
 function enemyAlerts.HandlePacketIn(e)
@@ -955,17 +959,6 @@ function enemyAlerts.HandlePacketIn(e)
         lastDebug = 'Enemy Alerts reset on zone.';
         return;
     end
-
-    if (e.id ~= 0x0028) then
-        return;
-    end
-
-    if (IsEnabled() ~= true) then
-        alerts = {};
-        return;
-    end
-
-    HandleActionPacket(ParseActionPacket(e));
 end
 
 local function StripControlCodes(text)
@@ -1184,9 +1177,12 @@ function enemyAlerts.HandleTextIn(e)
         return;
     end
 
-    local message = StripControlCodes(
-        (e ~= nil and (e.message_modified or e.message or e.text or e.original or e.modified or e.injected)) or ''
-    );
+    local message = e ~= nil and e.message or nil;
+    if (type(message) ~= 'string') then
+        message = StripControlCodes(
+            (e ~= nil and (e.text or e.original or e.message_modified or e.modified or e.injected)) or ''
+        );
+    end
 
     if (message == '') then
         return;

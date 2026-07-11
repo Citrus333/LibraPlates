@@ -842,7 +842,7 @@ local function BuildMissingEnemyInfoAnchorRects(context)
 end
 
 local function AddEnemyMobInfoIconWidgetsToPlate(plateData, layoutStateName, mobInfo, globalSettings, widgetSettings)
-    if (layoutStateName ~= 'Idle' or mobInfo == nil or ShouldProcessEnemyMobInfoWidgets(widgetSettings) ~= true) then
+    if (mobInfo == nil or ShouldProcessEnemyMobInfoWidgets(widgetSettings) ~= true) then
         return;
     end
 
@@ -1876,7 +1876,7 @@ local function BuildEnemyQueueContext(enemy)
     local targetingSettings = cachedSettings.targeting;
     local hpPercent = ClampPercent(enemy.hpPercent, 100);
     local hpColor = hpBarSettings.color or { 0.90, 0.20, 0.20, 1.0 };
-    local showDistanceBadge = distanceSettings ~= nil and distanceSettings.enabled == true;
+    local showDistanceBadge = distanceSettings ~= nil and distanceSettings.enabled == true and stateName == 'Idle';
     local isHovered = worldMarkerProbe.IsPlateHovered(enemy.index, 'enemy') == true;
     local importantAlwaysOnTop =
         isTacticalTarget == true;

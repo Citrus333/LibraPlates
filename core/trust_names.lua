@@ -133,12 +133,29 @@ for name, value in pairs(curatedTrustNames or {}) do
     end
 end
 
+for key, entry in pairs((GetGlobalZoneData().npcs or {})) do
+    local trustName = tostring(key or ''):match('^Trust:%s*(.+)$');
+
+    if trustName ~= nil and trustName ~= '' then
+        knownTrustNames[CleanName(trustName)] = true;
+
+        if type(entry) == 'table' and type(entry.aliases) == 'table' then
+            for _, alias in pairs(entry.aliases) do
+                local cleanAlias = CleanName(alias);
+
+                if cleanAlias ~= '' then
+                    knownTrustNames[cleanAlias] = true;
+                end
+            end
+        end
+    end
+end
+
 local function HasCurrentZoneNpcEntry(name)
     local cleanName = CleanName(name);
-    local globalEntry = ((GetGlobalZoneData().npcs or {})[cleanName]);
     local zoneEntry = ((GetCurrentZoneData().npcs or {})[cleanName]);
 
-    return type(globalEntry) == 'table' or type(zoneEntry) == 'table';
+    return type(zoneEntry) == 'table';
 end
 
 function trustNames.IsKnownTrustName(name)

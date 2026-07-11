@@ -1695,6 +1695,7 @@ local function DrawFieldManualRegime(regime, context)
             option = regime.option,
             page = page,
             regimeId = regime.regimeId,
+            repeatEnabled = true,
         }, context or {});
 
         if (imgui.CloseCurrentPopup ~= nil) then
@@ -2779,7 +2780,7 @@ end
 
 function warpMenu.StartMogHouseExitCapture(seconds)
     mogHouseExitCaptureUntil = os.clock() + math.max(1, tonumber(seconds) or 30);
-    log.Info('Mog House Exit packet capture active for ' .. tostring(math.floor(mogHouseExitCaptureUntil - os.clock())) .. 's. Use the native Mog House exit menu now.');
+    log.Info('Mog House packet capture active for ' .. tostring(math.floor(mogHouseExitCaptureUntil - os.clock())) .. 's. Use the native Mog House enter or exit menu now.');
 end
 
 function warpMenu.StopMogHouseExitCapture()
@@ -2811,7 +2812,7 @@ function warpMenu.HandlePacketIn(e)
 
     if (MogHouseExitCaptureActive() == true and e ~= nil and type(e.data) == 'string') then
         local data = e.data_modified or e.data;
-        if (e.id == 0x05E or e.id == 0x05C or e.id == 0x052 or e.id == 0x00A or e.id == 0x00B) then
+        if (e.id == 0x032 or e.id == 0x034 or e.id == 0x05E or e.id == 0x05C or e.id == 0x052 or e.id == 0x00A or e.id == 0x00B) then
             log.Info('Mog House Exit capture incoming id=0x' .. string.format('%03X', tonumber(e.id) or 0) .. ' size=' .. tostring(e.size or #data) .. ' text="' .. PacketPrintableText(data) .. '" bytes=' .. FormatPacketString(data, 96));
         end
     end
@@ -2849,7 +2850,7 @@ function warpMenu.HandlePacketOut(e)
 
     if (MogHouseExitCaptureActive() == true and e ~= nil and type(e.data) == 'string') then
         local data = e.data_modified or e.data;
-        if (e.id == 0x05E or e.id == 0x05C or e.id == 0x016 or e.id == 0x01A or e.id == 0x0B6) then
+        if (e.id == 0x05B or e.id == 0x05E or e.id == 0x05C or e.id == 0x016 or e.id == 0x01A or e.id == 0x0B6) then
             log.Info('Mog House Exit capture outgoing id=0x' .. string.format('%03X', tonumber(e.id) or 0) .. ' size=' .. tostring(e.size or #data) .. ' text="' .. PacketPrintableText(data) .. '" bytes=' .. FormatPacketString(data, 96));
         end
     end

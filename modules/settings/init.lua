@@ -839,6 +839,9 @@ local enemyCombatWidgets = T{
     'Job',
     'Level',
     'Distance',
+    'Behavior icon',
+    'Detects icon',
+    'Links icon',
     'Lock-on icon',
     'HP Bar',
     'Buffs',
@@ -4467,10 +4470,10 @@ function DrawTargetModulePlacementSettings(settings, defaults, label, entityName
                 settings.chevronAutoPlaceAnchor = value;
                 state.Save();
             end, 'TargetModuleChevronsAnchorMode');
-            value, changed = DrawPlacementSingle('Spacing', settings.chevronSpacing, 'TargetModuleChevronsSpacing', 0, 900, 5);
+            value, changed = DrawPlacementSingle('Spacing', settings.chevronSpacing, 'TargetModuleChevronsSpacing', 0, 900, 1);
             if (changed == true) then settings.chevronSpacing = value; state.Save(); end
         else
-            value, changed = DrawPlacementSingle('Distance apart', settings.chevronSpacing, 'TargetModuleChevronsDistance', 20, 900, 5);
+            value, changed = DrawPlacementSingle('Distance apart', settings.chevronSpacing, 'TargetModuleChevronsDistance', 20, 900, 1);
             if (changed == true) then settings.chevronSpacing = value; state.Save(); end
         end
     end
@@ -7928,6 +7931,7 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     if (menu.self.leaveParty == nil) then menu.self.leaveParty = true; end
     if (menu.self.leaveAlliance == nil) then menu.self.leaveAlliance = true; end
     if (menu.self.cancelPartyRequest == nil) then menu.self.cancelPartyRequest = true; end
+    if (menu.self.mogHouseExit == nil) then menu.self.mogHouseExit = true; end
     if (menu.self.aceTownMog == nil) then menu.self.aceTownMog = true; end
     if (menu.self.mount == nil) then menu.self.mount = true; end
     local ownedMountChoices = require('core.mounts').GetOwnedChoices();
@@ -8030,6 +8034,17 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
                 menu.warp.debug = value == true;
                 state.Save();
             end);
+        end);
+    end
+
+    local function DrawMogHouseExitPanel()
+        LibraPlatesSettingsDrawBoxedPanel('Mog House Exit', function()
+            DrawCheckbox('Show Mog House exits', menu.self.mogHouseExit == true, function(value)
+                menu.self.mogHouseExit = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('Mog House exits are only available after completing the corresponding Mog House Exit Quest for that city.');
+            LibraPlatesHelpLink('Mog House Exit Quests', 'https://www.bg-wiki.com/ffxi/Category:Mog_House_Exit_Quests');
         end);
     end
 
@@ -8229,6 +8244,7 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
 
         if (scopedEntity == 'Self') then
             DrawHomePointWarpsPanel();
+            DrawMogHouseExitPanel();
             DrawJobChangePresetsPanel();
         end
 
@@ -8727,8 +8743,32 @@ local function DrawGeneralMouseSection()
         DrawInlineComboRow('PC mouse snap', T{ 'Off', 'Name', 'HP bar', 'Name + HP bar' }, settings.pcMouseSnapMode or 'Off', function(value)
             settings.pcMouseSnapMode = value;
             state.Save();
-        end, 'PcMouseSnapMode', settingsLabelColor, 118, settingsTableFlagsNoBorders, 180);
-        uiTooltip.Info('When the mouse comes close to a PC Libra plate name or HP bar, gently pulls the cursor toward that visual element. First test is PC-only.');
+        end, 'PcMouseSnapMode', settingsLabelColor, 148, settingsTableFlagsNoBorders, 180);
+        DrawInlineComboRow('Enemy mouse snap', T{ 'Off', 'Name', 'HP bar', 'Name + HP bar' }, settings.enemyMouseSnapMode or 'Off', function(value)
+            settings.enemyMouseSnapMode = value;
+            state.Save();
+        end, 'EnemyMouseSnapMode', settingsLabelColor, 148, settingsTableFlagsNoBorders, 180);
+
+        local strength = { math.max(1, math.min(10, math.floor((tonumber(settings.mouseSnapStrength) or 5) + 0.5))) };
+        if (imgui.BeginTable('##MouseSnapStrengthRow', 3, settingsTableFlagsNoBorders)) then
+            imgui.TableSetupColumn('##label', 0, 148);
+            imgui.TableSetupColumn('##control', 0, 180);
+            imgui.TableSetupColumn('##info', 0, 34);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(settingsLabelColor, 'Strength');
+            imgui.TableNextColumn();
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(180); end
+            if (imgui.SliderInt('##MouseSnapStrength', strength, 1, 10) == true) then
+                settings.mouseSnapStrength = math.max(1, math.min(10, tonumber(strength[1]) or 5));
+                state.Save();
+            end
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+            imgui.TableNextColumn();
+            uiTooltip.Info('Pulls the cursor toward enabled PC or enemy plate elements when it comes close. Strength controls how aggressively the cursor is pulled.');
+            imgui.EndTable();
+        end
     end);
 
     DrawMousePanel('Click Targeting', function()
@@ -10845,6 +10885,7 @@ local helpGuideSections = {
             '- Quick menus for common player, party, trust, mount, blacklist, and job-change actions.',
             '- NPC and object labels with quest, mission, service, event, and wiki quick links.',
             '- Enemy mob info, cast alerts, AOE range highlights, claim colors, and enmity markers.',
+            '- Direct click targeting and right-click auto-attack, including automatic dismounting when mounted.',
             '- Buffs and debuffs on players, trusts, enemies, pets, and luopans.',
             '- Resting, fishing, gathering, crafting-result, mount, blacklist, and screen-alert tools.',
             '- Highly customizable fonts, colors, textures, backgrounds, icons, animations, and sounds.',
@@ -10885,6 +10926,14 @@ local helpGuideSections = {
             '- Enemy cast alerts and readied ability alerts.',
             '- Enmity markers for enemies targeting you.',
             '- Peer Inspector can show enemy level, job, HP, distance, behavior, detection, links, weaknesses, resists, and immunities.',
+        },
+    },
+    {
+        title = 'Click targeting and auto-attack',
+        lines = {
+            '- Left-click a plate to target it without cycling through targets.',
+            '- Right-click an enemy plate to begin auto-attacking immediately, without navigating the native combat menus.',
+            '- When mounted, LibraPlates automatically dismounts you first and begins the attack as soon as possible.',
         },
     },
     {
@@ -11049,6 +11098,8 @@ local helpGuideSections = {
             'LibraPlates also includes ideas, patterns, and small pieces of code learned from other public Ashita addons. Credit and thanks to those authors for sharing their work.',
             'There will still be mistakes, missing data, missing features, and bugs. Suggestions, corrections, and feedback are always welcome.',
         },
+        linkLabel = 'LibraPlates on GitHub',
+        linkUrl = 'https://github.com/Lunem-LumenLee/LibraPlates',
     },
 };
 
@@ -11417,14 +11468,14 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
             state.Save();
         end);
 
-        local duration, durationChanged, fadeDuration, fadeDurationChanged = DrawScreenAlertsPlacementRow('Duration', settings.duration or 3, 'EnemyAlertsPlateDuration', 'Fade time', settings.fadeDuration or 1.5, 'EnemyAlertsPlateFadeDuration', 0, 10, 0.5);
+        local duration, durationChanged, fadeDuration, fadeDurationChanged = DrawScreenAlertsPlacementRow('Duration', settings.duration or 3, 'EnemyAlertsPlateDuration', 'Fade time', settings.fadeDuration or 1.5, 'EnemyAlertsPlateFadeDuration', 0, 10, 1);
         if (durationChanged == true or fadeDurationChanged == true) then
             settings.fadeDuration = RoundOneDecimal(fadeDuration);
             settings.duration = math.max(0.5, RoundOneDecimal(duration));
             state.Save();
         end
 
-        local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawScreenAlertsPlacementRow('Offset X', settings.offsetX or 0, 'EnemyAlertsPlateOffsetX', 'Offset Y', settings.offsetY or 0, 'EnemyAlertsPlateOffsetY', -900, 900, 5);
+        local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawScreenAlertsPlacementRow('Offset X', settings.offsetX or 0, 'EnemyAlertsPlateOffsetX', 'Offset Y', settings.offsetY or 0, 'EnemyAlertsPlateOffsetY', -900, 900, 1);
         if (offsetXChanged == true or offsetYChanged == true) then
             settings.offsetX = offsetX;
             settings.offsetY = offsetY;
@@ -12167,24 +12218,36 @@ function LibraPlatesDrawHelpHighlightedText(value, searchWords)
 end
 
 local function DrawHelpLines(lines, searchWords)
+    local function DrawWrappedBullet(text)
+        if (imgui.Bullet ~= nil) then
+            imgui.Bullet();
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+
+            local pushedWrap = false;
+            if (imgui.PushTextWrapPos ~= nil) then
+                imgui.PushTextWrapPos(0);
+                pushedWrap = true;
+            end
+
+            LibraPlatesHelpTextWrapped(text);
+
+            if (pushedWrap == true and imgui.PopTextWrapPos ~= nil) then
+                imgui.PopTextWrapPos();
+            end
+            return;
+        end
+
+        LibraPlatesHelpTextWrapped('• ' .. text);
+    end
+
     for _, line in ipairs(lines or {}) do
         local text = tostring(line);
         local bulletText = text:match('^%-%s+(.+)$');
 
-        if (searchWords ~= nil and next(searchWords) ~= nil) then
-            if (bulletText ~= nil and imgui.Bullet ~= nil) then
-                imgui.Bullet();
-                if (imgui.SameLine ~= nil) then imgui.SameLine(); end
-                LibraPlatesDrawHelpHighlightedText(bulletText, searchWords);
-            elseif (bulletText ~= nil) then
-                LibraPlatesDrawHelpHighlightedText('• ' .. bulletText, searchWords);
-            else
-                LibraPlatesDrawHelpHighlightedText(text, searchWords);
-            end
-        elseif (bulletText ~= nil and imgui.BulletText ~= nil) then
-            imgui.BulletText(LibraPlatesHelpSafeText(bulletText));
-        elseif (bulletText ~= nil) then
-            LibraPlatesHelpTextWrapped('• ' .. bulletText);
+        if (bulletText ~= nil) then
+            DrawWrappedBullet(bulletText);
+        elseif (searchWords ~= nil and next(searchWords) ~= nil) then
+            LibraPlatesDrawHelpHighlightedText(text, searchWords);
         else
             LibraPlatesHelpTextWrapped(text);
         end
@@ -12248,6 +12311,11 @@ local function DrawHelpUserGuide()
             matched = matched + 1;
             DrawSettingsHeader(section.title);
             DrawHelpLines(section.lines, searchWords);
+
+            if (section.linkUrl ~= nil) then
+                imgui.Spacing();
+                LibraPlatesHelpLink(section.linkLabel or section.linkUrl, section.linkUrl);
+            end
         end
     end
 

@@ -5,6 +5,11 @@ local mountedEntityStatuses = {
     [85] = true, -- Personal mounts.
 };
 
+local defaultPlateLift = 1.05;
+local plateLiftByMountId = {
+    [51] = 0.4,
+};
+
 function mounted.IsStatus(status)
     return mountedEntityStatuses[tonumber(status) or 0] == true;
 end
@@ -28,6 +33,20 @@ end
 
 function mounted.IsSelfMounted()
     return mounted.IsStatus(mounted.GetSelfStatus());
+end
+
+function mounted.GetPlateLift(index)
+    local mountId = nil;
+
+    pcall(function()
+        local entity = AshitaCore:GetMemoryManager():GetEntity();
+
+        if (entity ~= nil and entity.GetMountId ~= nil and index ~= nil) then
+            mountId = entity:GetMountId(index);
+        end
+    end);
+
+    return plateLiftByMountId[tonumber(mountId)] or defaultPlateLift;
 end
 
 return mounted;

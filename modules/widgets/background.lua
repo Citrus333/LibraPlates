@@ -350,7 +350,7 @@ local function DrawOpacitySlider(color)
     color[4] = ClampChannel(color[4] or 1.0);
 
     if (imgui.SliderInt == nil) then
-        color[4] = DrawNumberFallback('Opacity', math.floor(color[4] * 100), 0, 100, 5) / 100;
+        color[4] = DrawNumberFallback('Opacity', math.floor(color[4] * 100), 0, 100, 1) / 100;
         return color;
     end
 
@@ -380,9 +380,9 @@ local function DrawColor(label, color)
 
     imgui.TextColored(color, label);
     imgui.SameLine();
-    color[1] = DrawNumberFallback('R', math.floor(ClampChannel(color[1]) * 255), 0, 255, 5) / 255;
-    color[2] = DrawNumberFallback('G', math.floor(ClampChannel(color[2]) * 255), 0, 255, 5) / 255;
-    color[3] = DrawNumberFallback('B', math.floor(ClampChannel(color[3]) * 255), 0, 255, 5) / 255;
+    color[1] = DrawNumberFallback('R', math.floor(ClampChannel(color[1]) * 255), 0, 255, 1) / 255;
+    color[2] = DrawNumberFallback('G', math.floor(ClampChannel(color[2]) * 255), 0, 255, 1) / 255;
+    color[3] = DrawNumberFallback('B', math.floor(ClampChannel(color[3]) * 255), 0, 255, 1) / 255;
 
     return color;
 end
@@ -596,7 +596,7 @@ function background.DrawSettings(settings, context)
         );
 
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, 'background_position');
+            anchorControls.DrawSpacing(settings, 'background_position', 104, 124);
         else
             settings.offsetX, settings.offsetY = DrawSliderPair(
                 'position',

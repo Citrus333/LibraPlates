@@ -233,14 +233,10 @@ local function DrawSingleSlider(label, id, value, minValue, maxValue, showButton
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local result = value;
         local hasSuffix = suffix ~= nil and tostring(suffix) ~= '';
-        local columnCount = hasSuffix and 3 or 2;
 
-        if (imgui.BeginTable('##bar_' .. id .. '_row', columnCount, tableFlags)) then
+        if (imgui.BeginTable('##bar_' .. id .. '_row', 2, tableFlags)) then
             imgui.TableSetupColumn('##label', 0, labelWidth or pairLabelWidth);
-            imgui.TableSetupColumn('##control', 0, controlWidth or 170);
-            if (hasSuffix == true) then
-                imgui.TableSetupColumn('##suffix', 0, 82);
-            end
+            imgui.TableSetupColumn('##control', 0, (controlWidth or 170) + (hasSuffix and 32 or 0));
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, label);
@@ -248,8 +244,9 @@ local function DrawSingleSlider(label, id, value, minValue, maxValue, showButton
             local sliderWidth = (showButtons == false) and (hasSuffix and 95 or 140) or 95;
             result = DrawSliderControl(id, value, minValue, maxValue, sliderWidth, showButtons);
             if (hasSuffix == true) then
-                imgui.TableNextColumn();
-                imgui.TextColored(labelColor, tostring(suffix));
+                imgui.SameLine();
+                local suffixText = tostring(suffix);
+                imgui.TextColored(labelColor, suffixText == '%' and '%%' or suffixText);
             end
             imgui.EndTable();
         end
@@ -263,7 +260,8 @@ local function DrawSingleSlider(label, id, value, minValue, maxValue, showButton
     local result = DrawSliderControl(id, value, minValue, maxValue, sliderWidth, showButtons);
     if (suffix ~= nil and tostring(suffix) ~= '') then
         imgui.SameLine();
-        imgui.TextColored(labelColor, tostring(suffix));
+        local suffixText = tostring(suffix);
+        imgui.TextColored(labelColor, suffixText == '%' and '%%' or suffixText);
     end
     return result;
 end
@@ -672,17 +670,17 @@ local function DrawColor(label, value)
     if (ClickText('blue+', actionColor) == true) then edit = 'blue+'; end
 
     if (edit == 'red-') then
-        red = math.max(0, red - 5);
+        red = math.max(0, red - 1);
     elseif (edit == 'red+') then
-        red = math.min(255, red + 5);
+        red = math.min(255, red + 1);
     elseif (edit == 'green-') then
-        green = math.max(0, green - 5);
+        green = math.max(0, green - 1);
     elseif (edit == 'green+') then
-        green = math.min(255, green + 5);
+        green = math.min(255, green + 1);
     elseif (edit == 'blue-') then
-        blue = math.max(0, blue - 5);
+        blue = math.max(0, blue - 1);
     elseif (edit == 'blue+') then
-        blue = math.min(255, blue + 5);
+        blue = math.min(255, blue + 1);
     end
 
     color[1] = red / 255;
@@ -1279,10 +1277,44 @@ function bar.DrawSettings(settings, context)
             return DrawBorderRow(rowId, borderColor, borderSize);
         end
 
+        local function DrawTpThresholdColorRow(rowId, showAtPercent, fullColor)
+            local nextShowAtPercent = tonumber(showAtPercent) or 300;
+            local nextFullColor = fullColor or defaults.fullColor or settings.color;
+
+            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                if (imgui.BeginTable('##bar_tp_' .. rowId, 4, tableFlags)) then
+                    imgui.TableSetupColumn('##threshold_label', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##threshold_control', 0, barControlWidth);
+                    imgui.TableSetupColumn('##full_color_label', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##full_color_control', 0, barControlWidth);
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    imgui.TextColored(labelColor, 'Show at TP');
+                    imgui.TableNextColumn();
+                    nextShowAtPercent = DrawSliderControl(rowId .. '_threshold', nextShowAtPercent, 0, 300, 95, true);
+                    imgui.SameLine();
+                    imgui.TextColored(labelColor, '%%');
+                    imgui.TableNextColumn();
+                    imgui.TextColored(labelColor, 'Full color');
+                    imgui.TableNextColumn();
+                    nextFullColor = DrawColor(rowId .. '_full_color', nextFullColor);
+                    imgui.EndTable();
+                end
+
+                return nextShowAtPercent, nextFullColor;
+            end
+
+            nextShowAtPercent = DrawSingleSlider('Show at TP', rowId .. '_threshold', nextShowAtPercent, 0, 300, true, barLabelWidth, 150, '%');
+            imgui.TextColored(labelColor, 'Full color');
+            imgui.SameLine();
+            nextFullColor = DrawColor(rowId .. '_full_color', nextFullColor);
+            return nextShowAtPercent, nextFullColor;
+        end
+
         DrawPanel('Bar Settings', function()
             settings.width, settings.height = DrawHpSliderPair(idPrefix .. 'size', 'Width', idPrefix .. 'width', settings.width, 20, 800, 'Height', idPrefix .. 'height', settings.height, 1, 160);
             if (anchorControls.IsCollapsedChild(settings) == true) then
-                anchorControls.DrawSpacing(settings, idPrefix .. 'position');
+                anchorControls.DrawSpacing(settings, idPrefix .. 'position', barLabelWidth, barControlWidth);
             else
                 settings.offsetX, settings.offsetY = DrawHpSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
             end
@@ -1290,7 +1322,9 @@ function bar.DrawSettings(settings, context)
             settings.borderColor, settings.borderSize = DrawHpBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
 
             if (resourceName == 'HP' or resourceName == 'MP') then
-                settings.showAtPercent = DrawSingleSlider('Show at ' .. resourceLabel, idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, barLabelWidth, 150, 'percent');
+                settings.showAtPercent = DrawSingleSlider('Show at ' .. resourceLabel, idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, barLabelWidth, 150, '%');
+            elseif (resourceName == 'TP') then
+                settings.showAtPercent, settings.fullColor = DrawTpThresholdColorRow(idPrefix .. 'show_at_full_color', settings.showAtPercent, settings.fullColor);
             end
 
             if (context ~= nil and context.showOutOfRangeOpacity == true) then
@@ -1435,9 +1469,9 @@ function bar.DrawSettings(settings, context)
     end
 
     if (resourceName == 'HP') then
-        settings.showAtPercent = DrawSingleSlider('Show at HP', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, 108, 150, 'percent');
+        settings.showAtPercent = DrawSingleSlider('Show at HP', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, 108, 150, '%');
     elseif (resourceName == 'MP') then
-        settings.showAtPercent = DrawSingleSlider('Show at MP', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, 108, 150, 'percent');
+        settings.showAtPercent = DrawSingleSlider('Show at MP', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, 108, 150, '%');
     end
 
     if (resourceName == 'HP' and context ~= nil and context.showOutOfRangeOpacity == true) then

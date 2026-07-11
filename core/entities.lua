@@ -663,7 +663,7 @@ function entities.GetNearbyEnemies(maxDistance)
     return results;
 end
 
-IsVisibleEntity = function(entityManager, index, requireSkeleton)
+IsVisibleEntity = function(entityManager, index, requireSkeleton, allowInvisiblePlayer)
     local ok, renderFlags = pcall(function()
         return entityManager:GetRenderFlags0(index);
     end);
@@ -682,7 +682,7 @@ IsVisibleEntity = function(entityManager, index, requireSkeleton)
         return false;
     end
 
-    if (IsInvisiblePlayerActor(entityManager, index, actorPointer) == true) then
+    if (allowInvisiblePlayer ~= true and IsInvisiblePlayerActor(entityManager, index, actorPointer) == true) then
         return false;
     end
 
@@ -1402,10 +1402,61 @@ function entities.GetPartyTrusts(maxDistance)
 end
 
 function entities.GetNearbyTrusts(maxDistance)
-    -- Trust names are reused by Campaign/Garrison NPCs, so name-only scanning
-    -- misclassifies allied battle NPCs as trusts. Real trust plates come from
-    -- GetPartyTrusts, which reads the party table.
-    return {};
+    local results = {};
+    local maxDistanceSq = (tonumber(maxDistance) or 50) * (tonumber(maxDistance) or 50);
+    local entityManager = AshitaCore:GetMemoryManager():GetEntity();
+    local partyIndexes = nil;
+
+    if (entityManager == nil) then
+        return results;
+    end
+
+    for index = 0, 2303 do
+        if (index < 1024 or index > 1791) then
+            local ent = GetEntity(index);
+
+            if (
+                ent ~= nil and
+                ent.Name ~= nil and
+                ent.Name ~= '' and
+                ent.Distance ~= nil and
+                ent.Distance <= maxDistanceSq and
+                IsTrustStatusAllowed(ent.Status) == true and
+                trustNames.IsKnownTrustName(ent.Name) == true
+            ) then
+                partyIndexes = partyIndexes or BuildPartyMemberIndexSet();
+
+                if (
+                    IsMobIndex(entityManager, index) ~= true and
+                    partyIndexes[index] ~= true and
+                    IsVisibleEntity(entityManager, index, true) == true
+                ) then
+                    results[#results + 1] = {
+                        index = index,
+                        serverId = SafeCall(nil, function() return entityManager:GetServerId(index); end),
+                        slot = nil,
+                        name = ent.Name,
+                        status = ent.Status,
+                        spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(index); end),
+                        distance = math.sqrt(ent.Distance),
+                        hp = nil,
+                        maxHp = nil,
+                        hpPercent = ent.HPPercent or 100,
+                        mp = nil,
+                        maxMp = nil,
+                        mpPercent = nil,
+                        tp = nil,
+                    };
+                end
+            end
+        end
+    end
+
+    table.sort(results, function(a, b)
+        return (tonumber(a.distance) or 0) < (tonumber(b.distance) or 0);
+    end);
+
+    return results;
 end
 
 function entities.GetNearbyPlayers(maxDistance)
@@ -1475,7 +1526,7 @@ function entities.GetPlayerByIndex(index, maxDistance, partyDataByIndex)
         return nil;
     end
 
-    if (index < 1024 or index > 1791 or IsMobIndex(entityManager, index) == true or IsVisibleEntity(entityManager, index, true) ~= true) then
+    if (index < 1024 or index > 1791 or IsMobIndex(entityManager, index) == true or IsVisibleEntity(entityManager, index, true, true) ~= true) then
         return nil;
     end
 

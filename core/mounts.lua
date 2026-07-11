@@ -23,6 +23,8 @@ local scoutSeen = {};
 local scoutOrder = {};
 local pendingMountName = nil;
 local pendingMountUntil = 0;
+local mountRecastUntil = 0;
+local mountRecastDuration = 60;
 local randomMountIndex = 0;
 local randomMountPoolKey = '';
 local lastRandomMount = nil;
@@ -450,8 +452,22 @@ local function ReadMountIdsFromPacketData(data, startOffset)
     return owned;
 end
 
+local function ReadUInt32(data, offset)
+    if (type(data) ~= 'string' or #data < offset + 4) then
+        return 0;
+    end
+
+    local b1 = string.byte(data, offset + 1) or 0;
+    local b2 = string.byte(data, offset + 2) or 0;
+    local b3 = string.byte(data, offset + 3) or 0;
+    local b4 = string.byte(data, offset + 4) or 0;
+
+    return b1 + (b2 * 256) + (b3 * 65536) + (b4 * 16777216);
+end
+
 function mounts.GetDebugStatusText(includeRaw)
     local player = GetPlayer();
+    local entityMountText = 'entityMountId=unavailable';
     local parts = {};
     local rawParts = {};
     local probes = {};
@@ -484,6 +500,17 @@ function mounts.GetDebugStatusText(includeRaw)
         return 'Mount debug: player=nil packet=' .. packetText .. ' scout=' .. scoutText;
     end
 
+    pcall(function()
+        local memory = AshitaCore:GetMemoryManager();
+        local party = memory ~= nil and memory:GetParty() or nil;
+        local entity = memory ~= nil and memory:GetEntity() or nil;
+        local selfIndex = party ~= nil and party:GetMemberTargetIndex(0) or nil;
+
+        if (entity ~= nil and entity.GetMountId ~= nil and selfIndex ~= nil and selfIndex > 0) then
+            entityMountText = 'entityMountId=' .. tostring(entity:GetMountId(selfIndex));
+        end
+    end);
+
     for _, methodName in ipairs({ 'GetMounts', 'GetMountList', 'GetUnlockedMounts', 'GetMountMask', 'GetKeyItems' }) do
         local ok, value = pcall(function()
             return player[methodName](player);
@@ -510,10 +537,10 @@ function mounts.GetDebugStatusText(includeRaw)
 
     if (#parts == 0) then
         if (includeRaw == true and #rawParts > 0) then
-            return 'Mount debug: named=none raw3000-3300=' .. table.concat(rawParts, ',') .. ' packet=' .. packetText .. ' scout=' .. scoutText .. ' probes=' .. table.concat(probes, ' ');
+        return 'Mount debug: named=none raw3000-3300=' .. table.concat(rawParts, ',') .. ' ' .. entityMountText .. ' packet=' .. packetText .. ' scout=' .. scoutText .. ' probes=' .. table.concat(probes, ' ');
         end
 
-        return 'Mount debug: owned=none from HasKeyItem ' .. tostring(scanStartId) .. '-' .. tostring(scanEndId) .. ' packet=' .. packetText .. ' scout=' .. scoutText .. ' probes=' .. table.concat(probes, ' ');
+        return 'Mount debug: owned=none from HasKeyItem ' .. tostring(scanStartId) .. '-' .. tostring(scanEndId) .. ' ' .. entityMountText .. ' packet=' .. packetText .. ' scout=' .. scoutText .. ' probes=' .. table.concat(probes, ' ');
     end
 
     local text = 'Mount debug: owned=' .. table.concat(parts, ', ');
@@ -522,7 +549,7 @@ function mounts.GetDebugStatusText(includeRaw)
         text = text .. ' raw3000-3300=' .. table.concat(rawParts, ',');
     end
 
-    return text .. ' packet=' .. packetText .. ' scout=' .. scoutText .. ' probes=' .. table.concat(probes, ' ');
+    return text .. ' ' .. entityMountText .. ' packet=' .. packetText .. ' scout=' .. scoutText .. ' probes=' .. table.concat(probes, ' ');
 end
 
 function mounts.StartPacketScout(seconds)
@@ -572,9 +599,30 @@ function mounts.IsMounted()
     return IsMounted();
 end
 
+function mounts.GetRecastProgress()
+    local remaining = (tonumber(mountRecastUntil) or 0) - os.clock();
+
+    if (remaining <= 0) then
+        return nil;
+    end
+
+    return math.max(0, math.min(1, remaining / mountRecastDuration));
+end
+
 function mounts.HandlePacketIn(e)
     local data = GetPacketData(e);
     RecordScoutPacket(e, data, 'in');
+
+    if (tonumber(e.id) == 0x119 and data ~= nil and #data >= 0x104) then
+        local recastSeconds = ReadUInt32(data, 0x0FC);
+        local recastId = ReadUInt32(data, 0x100);
+
+        if (recastId == 256) then
+            mountRecastUntil = os.clock() + math.max(0, math.min(mountRecastDuration, recastSeconds));
+        elseif (recastSeconds == 0) then
+            mountRecastUntil = 0;
+        end
+    end
 
     if (tonumber(e.id) ~= 0x0AE) then
         return;

@@ -101,7 +101,6 @@ ashita.events.register('load', 'libraplates_load', function()
     state.Load();
     profileAutoSwitch.Reset();
     modules.Load();
-    log.Info('Loaded clean LibraPlates.');
 end);
 
 ashita.events.register('unload', 'libraplates_unload', function()
@@ -113,7 +112,6 @@ ashita.events.register('unload', 'libraplates_unload', function()
     textureLoader.ClearCache();
     npcObjectInfo.ClearTextureCache();
     quickMenu.ClearTextureCache();
-    log.Info('Unloaded clean LibraPlates.');
 end);
 
 -- ============================================================

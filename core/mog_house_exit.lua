@@ -148,6 +148,19 @@ function mogHouseExit.GetDestinations()
     end
 
     local destinations = {};
+
+    for _, zone in ipairs(group.zones) do
+        if (tonumber(zone.zoneId) == currentZoneId) then
+            destinations[#destinations + 1] = {
+                label = 'Area you entered from.',
+                zoneId = zone.zoneId,
+                bit = group.bit,
+                mode = zone.mode,
+            };
+            break;
+        end
+    end
+
     for _, zone in ipairs(group.zones) do
         if (tonumber(zone.zoneId) ~= currentZoneId) then
             destinations[#destinations + 1] = {

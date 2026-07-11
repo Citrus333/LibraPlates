@@ -808,8 +808,8 @@ Leafallia.",
         ["Elevator Button"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "A polished mechanical wall apparatus situated inside the Grand Palace corridors. Activating this console signals the main palace lift, summoning transport to deliver you straight to the audience chambers.",
-            ["type"] = "Dungeon Switch",
+            ["type"] = "Mog House Entrance",
+			["worldOffsetZ"] = 0.25,
         },
         ["Enigmatic Footprints #2"] = {
             ["_source"] = "item",

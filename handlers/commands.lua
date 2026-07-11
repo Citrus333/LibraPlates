@@ -1525,7 +1525,7 @@ function commands.Handle(e)
         end
 
         if (action == 'status') then
-            log.Info('Mog House Exit packet capture command ready. Use /lp mhcapture on [seconds], then select a native Mog House exit option.');
+            log.Info('Mog House packet capture command ready. Use /lp mhcapture on [seconds], then select a native Mog House enter or exit option.');
             return;
         end
 

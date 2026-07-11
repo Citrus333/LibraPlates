@@ -7,6 +7,7 @@ return {
     color = { 1.0, 0.70, 0.18, 1.0 },
     color2 = { 0.80, 0.45, 1.0, 0.95 },
     color3 = { 0.35, 0.75, 1.0, 0.95 },
+    fullColor = { 1.0, 0.70, 0.18, 1.0 },
     backgroundColor = { 0.255, 0.255, 0.255, 1.0 },
     borderColor = { 0.0, 0.0, 0.0, 1.0 },
     borderSize = 0,

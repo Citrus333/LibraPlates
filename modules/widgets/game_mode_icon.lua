@@ -440,7 +440,7 @@ function gameModeIcon.DrawSettings(settings, context)
     local function DrawBody()
         settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, 6, 64, 1);
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, 'game_mode_icon_position');
+            anchorControls.DrawSpacing(settings, 'game_mode_icon_position', 145, 170);
         else
             settings.offsetX, settings.offsetY = DrawSliderPair(
                 'position',

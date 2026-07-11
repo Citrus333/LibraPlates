@@ -23,50 +23,6 @@ return {
 ",
             ["type"] = "Campaign Ally",
         },
-        ["Ace of Batons"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Windurst Mission 1-2: The Heart of the Matter\
-* Windurst Mission 2-1: Lost for Words\
-* Windurst Mission 8-2: The Jester Who'd Be King\
-* Windurst Mission 9-1: Doll of the Dead\
-* Windurst Mission 9-2: Moon Reading\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Ace of Cups"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Windurst Mission 1-2: The Heart of the Matter\
-* Windurst Mission 2-1: Lost for Words\
-* Windurst Mission 8-2: The Jester Who'd Be King\
-* Windurst Mission 9-1: Doll of the Dead\
-* Windurst Mission 9-2: Moon Reading\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Ace of Swords"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Windurst Mission 1-2: The Heart of the Matter\
-* Windurst Mission 2-1: Lost for Words\
-* Windurst Mission 8-2: The Jester Who'd Be King\
-* Windurst Mission 9-1: Doll of the Dead\
-* Windurst Mission 9-2: Moon Reading\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Ace of Wands"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Windurst Mission 8-2: Lost for Words\
-* Windurst Mission 8-2: The Jester Who'd Be King",
-            ["type"] = "Cutscene NPC",
-        },
         ["Adventuring Fellow"] = {
             ["_source"] = "npc",
             ["icon"] = "AdventuringFellow.png",
@@ -98,21 +54,6 @@ According to Vana'diel Tribune http://www.playonline.com/ff11/guide/development/
             ["icon"] = "Merchant.png",
             ["type"] = "Standard Merchant",
         },
-        ["Albrecht"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Save My Sister",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Alista"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Save My Sister\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Allied Armored Belfry"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
@@ -140,20 +81,6 @@ According to Vana'diel Tribune http://www.playonline.com/ff11/guide/development/
 ",
             ["type"] = "Quest Giver",
         },
-        ["Altana"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Alystair"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Cavernous Maws (WOTG01)\
-* A Nation on the Brink (WOTG14)\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Anaconda Mercenary Major Vashai"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -169,14 +96,6 @@ Involved in Quests:\
 * Tea with a Tonberry?",
             ["type"] = "Adventurer's Assistant",
         },
-        ["Annika"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* The Unfinished Waltz (DNC AF1)\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Antonia"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
@@ -188,21 +107,6 @@ To equip 100 job points are needed.",
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["type"] = "Master Caster",
-        },
-        ["Aquila"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* WOTG07: Purple, The New Black\
-* WOTG08: In the Name of the Father\
-* WOTG09: Dancers in Distress\
-* WOTG15: Crossroads of Time\
-* WOTG19: Betrayal at Beaucedine\
-* WOTG25: The Will of the World\
-* WOTG26: Fate in Haze\
-* WOTG37: Darkness Descends\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Ariesan Master Caster Lutete"] = {
             ["_source"] = "npc",
@@ -216,34 +120,6 @@ To equip 100 job points are needed.",
 * Unlocks the EXP Guide (S) in Ru'Lude Gardens.\
 * Find the missing pages in Batallia Downs (S), then defeat Assassin Coq from the Shredded Page.",
             ["type"] = "EXP Guide Unlock",
-        },
-        ["Ashrakk"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Yggdrasil Beckons",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Atori-Tutori"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Beat Around the Bushin\
-* Beyond Infinity\
-* Dormant Powers Dislodged\
-* Prelude to Puissance\
-\
-Involved in Missions:\
-* The Scent of Battle\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Audia"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Save My Sister",
-            ["type"] = "Cutscene NPC",
         },
         ["Auspicious Cub"] = {
             ["_source"] = "npc",
@@ -281,79 +157,6 @@ Appears with 4 other NPCs: *Galger *Taruger *Auspicious Tiger *Auspicious Cub",
             ["note"] = "Notes:\
 *  Along with Vahi, assists Choh Moui in Campaign battles.",
             ["type"] = "Campaign Battle",
-        },
-        ["Bahamut"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Storms of Fate\
-* The Wyrmking Descends\
-\
-Involved in Missions:\
-* Promathia Mission 1-1: The Rites of Life\
-* Promathia Mission 2-5: Ancient Vows\
-* Promathia Mission 4-2: The Savage\
-* Promathia Mission 6-4: One to be Feared",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Balamor"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Starts Quests:\
-* Sinister Reign\
-\
-Involved in Quests:\
-* A Thirst Before Time\
-\
-Involved in Missions:\
-* An Emergency Convocation\
-* Arciela's Resolve\
-* Balamor's Ruse\
-* The Charlatan\
-* Returning to the Trees\
-* The Light Within\
-* Where Divinities Collide\
-* Visions of Dread\
-* The Decisive Heroine\
-* Eddies of Despair (Chapter 2)\
-* Pretender to the Throne\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Barnabas"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Cavernous Maws (WOTG01)\
-* Borne by the Wind (WOTG11)\
-* A Nation on the Brink (WOTG14)\
-* Crossroads of Time (WOTG15)\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Basweema"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Not Meant to Be",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Bearer of Darkness"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Sin Hunting\
-* Wings of the Goddess Windurst Missionquest 9: The Forbidden Path\
-\
-Involved in Missions:\
-* Magicite (Bastok)\
-* Magicite (San d'Oria)\
-* Magicite (Windurst)\
-* Windurst Mission 8-1 Vain\
-* Windurst Mission 9-1 Doll of the Dead\
-* Windurst Mission 9-2 Moon Reading\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Bella"] = {
             ["_source"] = "catseye_npc",
@@ -468,11 +271,6 @@ A rabbit found roaming in many areas which is accompanied by four other Rabbits 
 ",
             ["type"] = "Campaign Ally",
         },
-        ["Cait Sith"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["type"] = "Cutscene NPC",
-        },
         ["Callisto"] = {
             ["_source"] = "npc",
             ["note"] = "Involved in Quests:\
@@ -584,54 +382,6 @@ Always open.No longer closed Darksday.",
 :*Explains the basics and rules for The Chocobo Hot and Cold Game. :*Hands-out Tandjana Wildgrass for the The Chocobo Hot and Cold Game, once per day.",
             ["type"] = "VCS Chocobo Racing Associate",
         },
-        ["Cornelia"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Beauty and the Galka\
-* Fallen Comrades\
-* Rivals\
-\
-Involved in Missions:\
-* Bastok Mission 3-1: The Four Musketeers\
-* Bastok Mission 5-1: Darkness Rising\
-* Bastok Mission 7-1: The Final Image\
-* Bastok Mission 7-2: On My Way\
-* Bastok Mission 9-2: Where Two Paths Converge\
-* Promathia Mission 3-1: Call of the Wyrmking\
-* Promathia Mission 5-3: Three Paths\
-* Past Sins (Louverance Path)\
-* The Voracious Resurgence #1: The Gloom Phantom's Approach\
-* The Voracious Resurgence #2: The Brygid Cup\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Cornelia (Mythril Musketeer)"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* San d'Oria Mission 4-1: Magicite\
-* Bastok Mission 4-1: Magicite\
-* Windurst Mission 4-1: Magicite\
-* Bastok Mission 5-2: Xarcabard, Land of Truths\
-* San d'Oria Mission 5-2: The Shadow Lord\
-* Windurst Mission 5-2: The Shadow Awaits\
-* Bastok Mission 9-2: Where Two Paths Converge\
-* Zilart Mission 1: The New Frontier",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Count Bifrons"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Seeing Blood-red\
-* Wrath of the Griffon\
-\
-Involved in Missions:\
-* Into the Beast's Maw\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Coupulie"] = {
             ["_source"] = "npc",
             ["icon"] = "TicketSalesperson.png",
@@ -679,35 +429,12 @@ Involved in Missions:\
 * Jeuno affiliated Campaign Arbiter. Present when Beastmen have control of Garlaige Citadel (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
             ["type"] = "Campaign",
         },
-        ["Darrcuiln"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Kumhau, the Flashfrost Naakual\
-* Soul Siphon\
-* Salvation",
-            ["type"] = "Cutscene NPC",
-        },
         ["Dawn Aureola"] = {
             ["_source"] = "npc",
             ["icon"] = "TacticalAssessment.png",
             ["note"] = "Notes:\
 Used in Campaign Ops",
             ["type"] = "Campaign Ops",
-        },
-        ["Dazbog"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* The Voracious Resurgence 1-3: The Destiny Destroyers\
-* The Voracious Resurgence 8-2: Not Just a Pretty Face\
-* The Voracious Resurgence 9-4: The Prime Weapons\
-* The Voracious Resurgence 10-3: 101 Dazbogs\
-* The Voracious Resurgence 10-4: Kipdrix the Faithful\
-* The Voracious Resurgence 10-5: Duke Alloces's Decision\
-* The Voracious Resurgence 11-2: The Voracious Beast\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Degenhard (S)"] = {
             ["_source"] = "npc",
@@ -718,13 +445,6 @@ Used in Campaign Ops",
 * Sometimes shows up to help out Maat during campaign battles.\
 * Uses the unique weapon skill Rising Dragon.",
             ["type"] = "Campaign Freelance",
-        },
-        ["Dhokmak"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Yggdrasil Beckons",
-            ["type"] = "Cutscene NPC",
         },
         ["Dusk Raider"] = {
             ["_source"] = "npc",
@@ -744,13 +464,6 @@ Used in Campaign Ops",
             ["note"] = "Notes:\
 You can purchase Barge Tickets or a Barge Multi-ticket to gain access to the barge.",
             ["type"] = "Barge Ticket",
-        },
-        ["Eggblix"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* As Thick as Thieves",
-            ["type"] = "Cutscene NPC",
         },
         ["Element (NPC)"] = {
             ["_source"] = "npc",
@@ -815,21 +528,6 @@ Reports the arrival and departure times of the barges.",
 * Windurst Mission 4-1: Magicite\
 ",
             ["type"] = "Goblin Informant",
-        },
-        ["Flit"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Aht Urhgan Mission 15: The Black Coffin\
-* Aht Urhgan Mission 22: Shield of Diplomacy\
-* Aht Urhgan Mission 29: Puppet in Peril\
-* Aht Urhgan Mission 30: Prevalence of Pirates\
-* Aht Urhgan Mission 35: Legacy of the Lost\
-* Aht Urhgan Mission 36: Gaze of the Saboteur\
-* Aht Urhgan Mission 37: Path of Blood\
-* The Battle of Xarcabard\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Gabbot"] = {
             ["_source"] = "npc",
@@ -902,29 +600,6 @@ traded to Tateeya.\
 attachments.",
             ["type"] = "Attachment Fixer",
         },
-        ["Gessho"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Divine Interference\
-\
-Starts Missions:\
-* Aht Urhgan Mission 16: Ghosts of the Past\
-* Aht Urhgan Mission 36: Gaze of the Saboteur\
-\
-Involved in Missions:\
-* Aht Urhgan Mission 4: Knight of Gold\
-* Aht Urhgan Mission 7: Westerly Winds\
-* Aht Urhgan Mission 15: The Black Coffin\
-* Aht Urhgan Mission 18: Passing Glory\
-* Aht Urhgan Mission 19: Sweets for the Soul\
-* Aht Urhgan Mission 28: Bastion of Knowledge\
-* Aht Urhgan Mission 29: Puppet in Peril\
-* Aht Urhgan Mission 35: Legacy of the Lost\
-* Aht Urhgan Mission 47: The Empress Crowned\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Gisbert, C.A."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
@@ -937,31 +612,10 @@ Involved in Missions:\
             ["icon"] = "Event.png",
             ["type"] = "New Year Event",
         },
-        ["Gloom Phantom"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* The Voracious Resurgence 1-1: The Gloom Phantom's Approach\
-* The Voracious Resurgence 1-3: The Destiny Destroyers\
-* The Voracious Resurgence 8-2: Not Just a Pretty Face\
-* The Voracious Resurgence 9-4: The Prime Weapons\
-* The Voracious Resurgence 10-4: Kipdrix the Faithful\
-* The Voracious Resurgence 10-5: Duke Alloces's Decision\
-* The Voracious Resurgence 11-2: The Voracious Beast\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Gold Musketeer Commander Gogol"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["type"] = "Gold Musketeer",
-        },
-        ["Grasswix"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* As Thick as Thieves",
-            ["type"] = "Cutscene NPC",
         },
         ["Grumblix"] = {
             ["_source"] = "npc",
@@ -995,31 +649,6 @@ Involved in Missions:\
             ["note"] = "Notes:\
 * A rabbit found roaming in many areas which is accompanied by four other Rabbits NPCs. *In 2023, its model was changed to a Lapinion.",
             ["type"] = "Event NPC",
-        },
-        ["Haudrale"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* WOTG07: Purple, The New Black\
-* WOTG08: In the Name of the Father\
-* WOTG09: Dancers in Distress\
-* WOTG15: Crossroads of Time\
-* WOTG19: Betrayal at Beaucedine\
-* WOTG25: The Will of the World\
-* WOTG26: Fate in Haze\
-* WOTG37: Darkness Descends\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Heartwing"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Onward to Adoulin\
-* Heartwings and the Kindhearted\
-* The Disappearance of Nyline\
-* Rosulatia's Promise",
-            ["type"] = "Cutscene NPC",
         },
         ["Holger, I.M."] = {
             ["_source"] = "npc",
@@ -1135,24 +764,6 @@ required base items.",
 * The Flying Machine of Eld",
             ["type"] = "Quest Associate",
         },
-        ["Joker"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Crying Over Onions\
-* I Can Hear a Rainbow\
-* Onion Rings\
-* Wild Card\
-* The Promise\
-* The Moonlit Path (First defeat after reaching Rank 10.)\
-\
-Involved in Missions:\
-* Windurst Mission 8-2: The Jester Who'd Be King\
-* Windurst Mission 9-1: Doll of the Dead\
-* Windurst Mission 9-2: Moon Reading\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Joosef"] = {
             ["_source"] = "npc",
             ["icon"] = "AirshipTravelAgent.png",
@@ -1176,11 +787,6 @@ Will report how long until the Airship arrives at its destination.",
             ["note"] = "Involved in Missions:\
 * Windurst Mission 6-2: Saintly Invitation",
             ["type"] = "Mission",
-        },
-        ["Kagero"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["type"] = "Cutscene NPC",
         },
         ["Kagetora (S)"] = {
             ["_source"] = "npc",
@@ -1213,22 +819,6 @@ Will report how long until the Airship arrives at its destination.",
             ["icon"] = "Guard.png",
             ["type"] = "Iron Musketeer",
         },
-        ["King of Hearts"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Aht Urhgan Mission 19: Sweets for the Soul\
-* Aht Urhgan Mission 20: Teahouse Tumult\
-* Aht Urhgan Mission 21: Finders Keepers\
-* Aht Urhgan Mission 22: Shield of Diplomacy\
-* Aht Urhgan Mission 23: Social Graces\
-* Aht Urhgan Mission 24: Foiled Ambition\
-* Aht Urhgan Mission 39: Allied Rumblings\
-* Aht Urhgan Mission 40: Unraveling Reason\
-* Aht Urhgan Mission 41: Light of Judgment\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Kingslayer Doggvdegg"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -1238,14 +828,6 @@ Will report how long until the Airship arrives at its destination.",
 * Blood of Heroes\
 ",
             ["type"] = "Orc Warchief",
-        },
-        ["Koh Lenbalalako (S)"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Sins of the Mothers\
-* Manifest Destiny",
-            ["type"] = "Cutscene NPC",
         },
         ["Kupeliaure"] = {
             ["_source"] = "npc",
@@ -1300,17 +882,6 @@ Discusses various events in Vana'diel with Kupulele and Kupeliont.",
 Will report how long until the Barge docks at South Landing and Central Landing.",
             ["type"] = "Barge Schedule",
         },
-        ["Larzos"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* WOTG19: Betrayal at Beaucedine\
-* WOTG22: A Sanguinary Prelude\
-* WOTG25: The Will of the World\
-* WOTG26: Fate in Haze\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Lerren"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
@@ -1332,15 +903,6 @@ Will report how long until the Barge docks at South Landing and Central Landing.
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["type"] = "Freelance",
-        },
-        ["Linzaza"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* As Thick as Thieves\
-* Hitting the Marquisate\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Lokhong"] = {
             ["_source"] = "npc",
@@ -1373,45 +935,12 @@ Will report how long until the Barge docks at South Landing and Central Landing.
 Provides information about when the barge will land.",
             ["type"] = "Barge Schedule",
         },
-        ["Luzaf"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Unwavering Resolve\
-\
-Starts Missions:\
-* Aht Urhgan Mission 35: Legacy of the Lost\
-\
-Involved in Missions:\
-* Aht Urhgan Mission 15: The Black Coffin\
-* Aht Urhgan Mission 22: Shield of Diplomacy\
-* Aht Urhgan Mission 25: Playing the Part\
-* Aht Urhgan Mission 29: Puppet in Peril\
-* Aht Urhgan Mission 30: Prevalence of Pirates\
-* Aht Urhgan Mission 32: In the Blood\
-* Aht Urhgan Mission 34: Testing the Waters\
-* Aht Urhgan Mission 36: Gaze of the Saboteur\
-* Aht Urhgan Mission 37: Path of Blood\
-* Aht Urhgan Mission 41: Light of Judgment\
-* Aht Urhgan Mission 42: Path of Darkness\
-* Aht Urhgan Mission 45: Ragnarok\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Lycopodium (NPC)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Lycopodium Warps",
             ["type"] = "Quest Giver",
-        },
-        ["Lysander"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Cavernous Maws (WOTG01)\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Maccus"] = {
             ["_source"] = "npc",
@@ -1421,21 +950,6 @@ Involved in Missions:\
 * Monstrosity\
 ",
             ["type"] = "Monstrosity",
-        },
-        ["Magh Bihu"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* The Voracious Resurgence 1-3: The Destiny Destroyers\
-* The Voracious Resurgence 8-2: Not Just a Pretty Face\
-* The Voracious Resurgence 9-4: The Prime Weapons\
-* The Voracious Resurgence 10-2: Magh Bihu on the Prowl\
-* The Voracious Resurgence 10-3: 101 Dazbogs\
-* The Voracious Resurgence 10-4: Kipdrix the Faithful\
-* The Voracious Resurgence 10-5: Duke Alloces's Decision\
-* The Voracious Resurgence 11-2: The Voracious Beast\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Magian Moogl"] = {
             ["_source"] = "npc",
@@ -1449,18 +963,6 @@ Involved in Missions:\
 * Bonds of Mythril\
 ",
             ["type"] = "Dark Kindred Noble",
-        },
-        ["Martial Maestro Megomak"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Waking the Colossus\
-\
-Involved in Missions:\
-* Aht Urhgan Mission 22: Shield of Diplomacy\
-* Bellerophon's Bliss\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Maryse"] = {
             ["_source"] = "npc",
@@ -1482,15 +984,6 @@ One of The Dark Lilies of the Harvest Festival event held each October since 200
             ["note"] = "Notes:\
 Will report how long until the Airship arrives at its destination.",
             ["type"] = "Airship Schedule",
-        },
-        ["Melisandra"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Thorn in the Side\
-* Velkkovert Operations\
-* The Good, the Bad, the Clement",
-            ["type"] = "Cutscene NPC",
         },
         ["Midras"] = {
             ["_source"] = "npc",
@@ -1568,13 +1061,6 @@ trade target.\
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["type"] = "Standard Merchant",
-        },
-        ["Monsieur Kupont"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Hypnotic Hospitality",
-            ["type"] = "Cutscene NPC",
         },
         ["Moodon"] = {
             ["_source"] = "catseye_npc",
@@ -1683,18 +1169,6 @@ Involved in Missions:\
 Will report how long until the Airship arrives at its destination.",
             ["type"] = "Airship Schedule",
         },
-        ["Palometa"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Girl in the Looking Glass\
-* Past Reflections\
-* Blighted Gloom\
-* Blessed Radiance\
-* Mirror Images\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Papako"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -1730,46 +1204,10 @@ Will report how long until the Airship arrives at its destination.",
 * Hitting the Marquisate",
             ["type"] = "Quest Associate",
         },
-        ["Pawnpix"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Return to the Depths",
-            ["type"] = "Cutscene NPC",
-        },
         ["Perna-Parna, C.C."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["type"] = "Campaign",
-        },
-        ["Perseus"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Relic Shield: Aegis",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Phoenix"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* The Orb's Radiance",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Pieuje"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Starts Quests:\
-* Pieuje's Decision\
-* Prelude of Black and White\
-\
-Involved in Missions:\
-* San d'Oria Mission 5-2: The Shadow Lord\
-* San d'Oria Mission 9-2: The Heir to the Light\
-* Aht Urhgan Mission 5: Confessions of Royalty\
-* A Crystalline Prophecy (Mission)\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Pompi-Rompi"] = {
             ["_source"] = "npc",
@@ -1864,32 +1302,6 @@ If you come across a Goblin Footprint in the field, you may hear voices. If so, 
 * Part of the staff from Buffalo Bonanza Ranch. *Trade items to receive buffs or items that are used in Happy New Year 2009, or any Happy New Year thereafter. *They are always on the move, and they like to follow the current event Chinese zodiac animal around the area. Wide Scan and mounts are useful for locating and running them down.",
             ["type"] = "Event NPC",
         },
-        ["Raogrimm"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* San d'Oria Mission 4-1: Magicite\
-* Bastok Mission 4-1: Magicite\
-* Windurst Mission 4-1: Magicite\
-* Bastok Mission 5-1: Darkness Rising\
-* San d'Oria Mission 5-1: The Ruins of Fei'Yin\
-* Windurst Mission 5-1: The Final Seal\
-* Bastok Mission 5-2: Xarcabard, Land of Truths\
-* San d'Oria Mission 5-2: The Shadow Lord\
-* Windurst Mission 5-2: The Shadow Awaits\
-* Bastok Mission 9-2: Where Two Paths Converge\
-* Zilart Mission 1: The New Frontier",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Rasusu"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Knot Quite There\
-* Recollections\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Ratoulle"] = {
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
@@ -1929,14 +1341,6 @@ A rabbit found roaming in many areas which is accompanied by four other Rabbits 
 * Windurst Mission 3-2: Written in the Stars",
             ["type"] = "Mission Associate",
         },
-        ["Ritopopo"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Past Reflections\
-* Blessed Radiance",
-            ["type"] = "Cutscene NPC",
-        },
         ["Robino-Mobino"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -1971,21 +1375,6 @@ A rabbit found roaming in many areas which is accompanied by four other Rabbits 
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["type"] = "Royal Knight",
-        },
-        ["Sagelord Molaal Ja"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Aht Urhgan Mission 29: Puppet in Peril\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Saltvix"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* As Thick as Thieves",
-            ["type"] = "Cutscene NPC",
         },
         ["Salvador"] = {
             ["_source"] = "npc",
@@ -2036,14 +1425,6 @@ Involved in Quests:\
 ",
             ["type"] = "Quest Giver",
         },
-        ["Shayeeha"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Embers of His Past\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Shikaree G"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -2056,16 +1437,6 @@ Involved in Quests:\
 * At Journey's End\
 ",
             ["type"] = "Shikaree",
-        },
-        ["Shikaree M"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Sin Hunting\
-* Fire and Brimstone\
-* Unbridled Passion\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Shooting Star"] = {
             ["_source"] = "npc",
@@ -2091,19 +1462,6 @@ Involved in Quests:\
 ",
             ["type"] = "Chocobo",
         },
-        ["Siren (NPC)"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* The Silent Forest\
-* Winds of Eternity\
-\
-Involved in Missions:\
-* The Ties that Bind\
-* Impurity\
-* The Lost Avatar",
-            ["type"] = "Cutscene NPC",
-        },
         ["Sirius"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
@@ -2125,15 +1483,6 @@ Involved in Missions:\
             ["note"] = "Involved in Quests:\
 * Starlight Celebration 2009",
             ["type"] = "Quest Associate",
-        },
-        ["Soraa Ishakal"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Thorn in the Side\
-* Velkkovert Operations\
-* The Good, the Bad, the Clement",
-            ["type"] = "Cutscene NPC",
         },
         ["Star Sibyl"] = {
             ["_source"] = "npc",
@@ -2174,21 +1523,6 @@ Involved in Missions:\
 * A Challenge! You Could Be a Winner",
             ["type"] = "Mission Associate",
         },
-        ["Strifelord Bakool Ja"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Aht Urhgan Mission 29: Puppet in Peril\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Stufstix"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Return to the Depths",
-            ["type"] = "Cutscene NPC",
-        },
         ["Stun Tube"] = {
             ["_source"] = "npc",
             ["icon"] = "GoalTracker.png",
@@ -2216,14 +1550,6 @@ temporary August or Shantotto II\
 trust access.",
             ["type"] = "Summit Token Weekly",
         },
-        ["Sunny-Pabonny"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* SMN AF2: Class Reunion\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Synergy Engineer"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -2235,15 +1561,6 @@ trust access.",
             ["note"] = "Notes:\
 Teaches Synergy Recipes to players",
             ["type"] = "Synergy Recipes",
-        },
-        ["Taliesin"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Blessed Radiance\
-* Mirror Images\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Tanja"] = {
             ["_source"] = "npc",
@@ -2272,32 +1589,6 @@ Appears with 4 other NPCs: *Galger *Auspicious Tiger *Auspicious Tigress *Auspic
             ["icon"] = "Guard.png",
             ["type"] = "Temple Knight",
         },
-        ["Tenzen"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Promathia Mission 3-2: Vessel Without a Captain\
-* Promathia Mission 3-5: Darkness Named\
-* Promathia Mission 4-1: Sheltering Doubt\
-* Promathia Mission 4-2: The Savage\
-* Promathia Mission 4-3: The Secrets of Worship\
-* Promathia Mission 4-4: Slanderous Utterings\
-* Promathia Mission 5-1: The Enduring Tumult of War\
-* Promathia Mission 5-2: Desires of Emptiness\
-* Promathia Mission 5-3: Three Paths\
-* The Pursuit of Paradise (Tenzen's Path)\
-* Promathia Mission 6-1: For Whom the Verse is Sung\
-* Promathia Mission 6-4: One to be Feared\
-* Promathia Mission 7-1: Chains and Bonds\
-* Promathia Mission 7-2: Flames in the Darkness\
-* Promathia Mission 7-3: Fire in the Eyes of Men\
-* Promathia Mission 7-4: Calm Before the Storm\
-* Promathia Mission 7-5: The Warrior's Path\
-* Promathia Mission 8-3: When Angels Fall\
-* Promathia Mission 8-4: Dawn\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Teyrnon"] = {
             ["_source"] = "npc",
             ["icon"] = "GoalTracker.png",
@@ -2306,14 +1597,6 @@ Appears with 4 other NPCs: *Galger *Auspicious Tiger *Auspicious Tigress *Auspic
 * Monstrosity\
 ",
             ["type"] = "Monstrosity",
-        },
-        ["The Great Kupellion"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Hypnotic Hospitality\
-* Titillating Tomes",
-            ["type"] = "Cutscene NPC",
         },
         ["Toto Kupeliaure"] = {
             ["_source"] = "npc",
@@ -2763,14 +2046,6 @@ Involved in Missions:\
         ["Trust: Zeid II"] = {
             ["_source"] = "npc",
         },
-        ["Tsiket-Lukit"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* The Lost Cardian\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Tsoo Haja the Umbra"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -2827,21 +2102,6 @@ Involved in Quests:\
 * These were four true-sight NPCs that spawned Diabolos Heart, Diabolos Diamond, Diabolos Spade, or Diabolos Club when aggroed. They despawned after aggroing. They were removed from the game when Dynamis - Tavnazia was updated in late 2011.",
             ["type"] = "Event NPC",
         },
-        ["Uran-Mafran"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Trial by Fire\
-* Trial by Ice\
-* Trial by Wind\
-* Trial by Earth\
-* Trial by Lightning\
-* Trial by Water\
-* SMN AF1: The Puppet Master\
-* SMN AF3: Carbuncle Debacle\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Vahi"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
@@ -2887,15 +2147,6 @@ Involved in Missions:\
 * Aht Urhgan Mission 47: The Empress Crowned\
 ",
             ["type"] = "Mythril Musketeer",
-        },
-        ["Volto Oscuro"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Volto Oscuro (NPC)"] = {
-            ["_source"] = "npc",
-            ["type"] = "Cutscene NPC",
         },
         ["Vukki-Chebukki"] = {
             ["_source"] = "npc",
@@ -2987,50 +2238,12 @@ Involved in Missions:\
             ["icon"] = "Guard.png",
             ["type"] = "Temple Knight",
         },
-        ["Yasin"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* The Doorman\
-* The First Meeting\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Young Aldo"] = {
             ["_source"] = "npc",
             ["icon"] = "MissionNPC.png",
             ["note"] = "Involved in Missions:\
 * A Crystalline Prophecy (Mission)",
             ["type"] = "Mission",
-        },
-        ["Zeid"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Blade of Darkness\
-* Blade of Death\
-* Blade of Evil\
-* Dark Puppet\
-* Inheritance\
-* Apocalypse Nigh\
-\
-Involved in Missions:\
-* San d'Oria Mission 5-1: The Ruins of Fei'Yin\
-* Bastok Mission 5-1: Darkness Rising\
-* Windurst Mission 5-1: The Final Seal\
-* San d'Oria Mission 5-2: The Shadow Lord\
-* Bastok Mission 5-2: Xarcabard, Land of Truths\
-* Windurst Mission 5-2: The Shadow Awaits\
-* Bastok Mission 8-1: The Chains That Bind Us\
-* Bastok Mission 9-2: Where Two Paths Converge\
-* Zilart Mission 1: The New Frontier\
-* Zilart Mission 7: The Chamber of Oracles\
-* Zilart Mission 8: Return to Delkfutt's Tower\
-* Zilart Mission 13: The Gate of the Gods\
-* Zilart Mission 16: The Celestial Nexus\
-* The Voracious Resurgence #2: The Brygid Cup\
-",
-            ["type"] = "Cutscene NPC",
         },
         ["Zhuk Vojahom"] = {
             ["_source"] = "npc",
@@ -3040,27 +2253,6 @@ Involved in Missions:\
 ",
             ["type"] = "Quest Giver",
         },
-        ["Zogbog"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Gifts of the Griffon\
-* Claws of the Griffon\
-* Wrath of the Griffon\
-* In a Haze of Glory\
-* The Price of Valor\
-* Face of the Future\
-",
-            ["type"] = "Cutscene NPC",
-        },
-        ["Zonpa-Zippa"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Windurst Mission 9-1: Doll of the Dead\
-",
-            ["type"] = "Cutscene NPC",
-        },
         ["Zubaba"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -3068,15 +2260,6 @@ Involved in Missions:\
 * Windurst Mission 3-2: Written in the Stars\
 ",
             ["type"] = "Lady-in-Waiting",
-        },
-        ["Zunmimi"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Thorn in the Side\
-* Velkkovert Operations\
-* The Good, the Bad, the Clement",
-            ["type"] = "Cutscene NPC",
         },
         ["Zweeha"] = {
             ["_source"] = "npc",

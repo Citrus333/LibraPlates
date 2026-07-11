@@ -517,10 +517,10 @@ local function DrawColor(label, color)
     imgui.TextColored(labelColor, label);
 
     local colorId = tostring(label or 'Color'):gsub('[^%w_]', '_');
-    color[1] = DrawNumber('Red', color[1], 0, 1, 0.05, colorId .. 'Red');
-    color[2] = DrawNumber('Green', color[2], 0, 1, 0.05, colorId .. 'Green');
-    color[3] = DrawNumber('Blue', color[3], 0, 1, 0.05, colorId .. 'Blue');
-    color[4] = DrawNumber('Alpha', color[4], 0, 1, 0.05, colorId .. 'Alpha');
+    color[1] = DrawNumber('Red', color[1], 0, 1, 0.01, colorId .. 'Red');
+    color[2] = DrawNumber('Green', color[2], 0, 1, 0.01, colorId .. 'Green');
+    color[3] = DrawNumber('Blue', color[3], 0, 1, 0.01, colorId .. 'Blue');
+    color[4] = DrawNumber('Alpha', color[4], 0, 1, 0.01, colorId .. 'Alpha');
 
     return color;
 end
@@ -564,10 +564,10 @@ local function DrawColorLabelFirst(label, color)
     imgui.TextColored(color, '#');
 
     local colorId = tostring(label or 'Color'):gsub('[^%w_]', '_');
-    color[1] = DrawNumber('Red', color[1], 0, 1, 0.05, colorId .. 'Red');
-    color[2] = DrawNumber('Green', color[2], 0, 1, 0.05, colorId .. 'Green');
-    color[3] = DrawNumber('Blue', color[3], 0, 1, 0.05, colorId .. 'Blue');
-    color[4] = DrawNumber('Alpha', color[4], 0, 1, 0.05, colorId .. 'Alpha');
+    color[1] = DrawNumber('Red', color[1], 0, 1, 0.01, colorId .. 'Red');
+    color[2] = DrawNumber('Green', color[2], 0, 1, 0.01, colorId .. 'Green');
+    color[3] = DrawNumber('Blue', color[3], 0, 1, 0.01, colorId .. 'Blue');
+    color[4] = DrawNumber('Alpha', color[4], 0, 1, 0.01, colorId .. 'Alpha');
 
     return color;
 end
@@ -974,7 +974,7 @@ function targetModule.DrawSettings(settings, context)
                         'TargetModuleBackgroundWidth',
                         'TargetModuleBackgroundHeight'
                     );
-                    settings.backgroundOffsetX = DrawNumber('Position X', settings.backgroundOffsetX, -350, 350, 5, 'TargetModuleBackgroundX');
+                    settings.backgroundOffsetX = DrawNumber('Position X', settings.backgroundOffsetX, -350, 350, 1, 'TargetModuleBackgroundX');
 
                     local backgroundHeight = tonumber(settings.backgroundHeight) or 90;
                     settings.backgroundOffsetY = DrawNumber(
@@ -1083,13 +1083,13 @@ function targetModule.DrawSettings(settings, context)
             if (settings.autoPlaceChevrons ~= false) then
                 settings.chevronAutoPlaceAnchor = DrawOption('Auto place by', autoPlaceAnchorOptions, settings.chevronAutoPlaceAnchor or 'Widest element', 'TargetModuleChevronsAnchorMode');
             end
-            settings.chevronSpacing = DrawNumber('Chevron spacing', settings.chevronSpacing, 0, 900, 5, 'TargetModuleChevronsSpacing');
+            settings.chevronSpacing = DrawNumber('Chevron spacing', settings.chevronSpacing, 0, 900, 1, 'TargetModuleChevronsSpacing');
 
             if (settings.autoPlaceChevrons == false) then
-                settings.chevronOffsetX = DrawNumber('Position X', settings.chevronOffsetX, -350, 350, 5, 'TargetModuleChevronsX');
+                settings.chevronOffsetX = DrawNumber('Position X', settings.chevronOffsetX, -350, 350, 1, 'TargetModuleChevronsX');
             end
 
-            settings.chevronOffsetY = DrawNumber('Position Y', settings.chevronOffsetY, -500, 500, 5, 'TargetModuleChevronsY');
+            settings.chevronOffsetY = DrawNumber('Position Y', settings.chevronOffsetY, -500, 500, 1, 'TargetModuleChevronsY');
             settings.chevronColor = DrawColorLabelFirst('Chevron tint', settings.chevronColor);
         end
     end);

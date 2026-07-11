@@ -1110,9 +1110,19 @@ end
 local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, resolvedRect)
     bar = bar or {};
     progress = math.max(0, math.min(300, tonumber(progress) or 0));
+    local showAtPercent = math.max(0, math.min(300, tonumber(bar.showAtPercent) or 300));
+
+    if (bar.enabled ~= true or progress < showAtPercent) then
+        return;
+    end
 
     if (bar.segmented ~= true) then
-        DrawBar(device, centerX, centerY, bar, progress / 3, defaultColor, resolvedRect);
+        local renderBar = {};
+        for key, value in pairs(bar) do
+            renderBar[key] = value;
+        end
+        renderBar.showAtPercent = 100;
+        DrawBar(device, centerX, centerY, renderBar, progress / 3, defaultColor, resolvedRect);
         return;
     end
 
@@ -1121,15 +1131,10 @@ local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, 
     local barX = centerX - (barW * 0.5) + (tonumber(bar.offsetX) or 0);
     local barY = centerY - (barH * 0.5) + (tonumber(bar.offsetY) or 0);
     local borderSize = math.max(0, tonumber(bar.borderSize) or 0);
-    local showAtPercent = math.max(1, math.min(300, tonumber(bar.showAtPercent) or 300));
     local gap = math.max(6, tonumber(bar.segmentGap) or 6);
     local segmentW = math.max(1, (barW - (gap * 2)) / 3);
     local section2Color = bar.color2 or { 0.80, 0.45, 1.0, 0.95 };
     local section3Color = bar.color3 or { 0.35, 0.75, 1.0, 0.95 };
-
-    if (bar.enabled ~= true or progress > showAtPercent) then
-        return;
-    end
 
     if (resolvedRect ~= nil) then
         local x1 = tonumber(resolvedRect.drawX1);

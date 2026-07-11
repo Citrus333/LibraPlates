@@ -20,6 +20,7 @@ local quickMenu = {};
 local pendingMenu = nil;
 local pendingConfirm = nil;
 local pendingInviteUntil = 0;
+local partyInviteDuration = 300;
 local pendingPartyRequestUntil = 0;
 local pendingSelfToggles = {};
 local popupId = 'LibraPlates Quick Menu';
@@ -647,6 +648,7 @@ local function EnsureSettings()
     if (menu.self.leaveParty == nil) then menu.self.leaveParty = true; end
     if (menu.self.leaveAlliance == nil) then menu.self.leaveAlliance = true; end
     if (menu.self.cancelPartyRequest == nil) then menu.self.cancelPartyRequest = true; end
+    if (menu.self.mogHouseExit == nil) then menu.self.mogHouseExit = true; end
     if (menu.self.aceTownMog == nil) then menu.self.aceTownMog = true; end
     if (menu.self.mount == nil) then menu.self.mount = true; end
     local ownedMountChoices = mounts.GetOwnedChoices();
@@ -1133,9 +1135,15 @@ local function GetPartyContext(targetIndex)
     };
 end
 
-local function MenuItem(label, iconFile, action, menu, keepOpen, textureIdOverride)
+local function MenuItem(label, iconFile, action, menu, keepOpen, textureIdOverride, timerProgress)
     local rowStartX = imgui.GetCursorPosX ~= nil and imgui.GetCursorPosX() or nil;
     local rowStartY = imgui.GetCursorPosY ~= nil and imgui.GetCursorPosY() or nil;
+    local rowScreenX, rowScreenY = nil, nil;
+
+    if (imgui.GetCursorScreenPos ~= nil) then
+        rowScreenX, rowScreenY = imgui.GetCursorScreenPos();
+    end
+
     local iconSize = tonumber(menu.iconSize) or 22;
     local rowHeight = math.max(24, iconSize + 2);
     local rowWidth = math.max(160, (tonumber(menu.width) or 270) - 26);
@@ -1165,6 +1173,41 @@ local function MenuItem(label, iconFile, action, menu, keepOpen, textureIdOverri
 
         imgui.TextColored(GetReadableTextColor(menu), label);
 
+        if (
+            timerProgress ~= nil and
+            rowScreenX ~= nil and
+            rowScreenY ~= nil and
+            imgui.GetWindowDrawList ~= nil
+        ) then
+            local drawList = imgui.GetWindowDrawList();
+
+            if (drawList ~= nil and drawList.AddCircleFilled ~= nil and drawList.AddTriangleFilled ~= nil) then
+                local progress = math.max(0, math.min(1, tonumber(timerProgress) or 0));
+                local radius = 7;
+                local centerX = rowScreenX + rowWidth - 12;
+                local centerY = rowScreenY + (rowHeight * 0.5);
+                local timerBg = ColorToU32({ 0.13, 0.20, 0.20, 1.0 });
+                local timerColor = ColorToU32({ 0.15, 0.78, 0.57, 1.0 });
+
+                drawList:AddCircleFilled({ centerX, centerY }, radius, timerBg, 32);
+
+                local segmentCount = 32;
+                local filledSegments = progress * segmentCount;
+
+                for segment = 0, math.ceil(filledSegments) - 1 do
+                    local segmentEnd = math.min(segment + 1, filledSegments);
+                    local angleA = (-math.pi * 0.5) + ((segment / segmentCount) * math.pi * 2);
+                    local angleB = (-math.pi * 0.5) + ((segmentEnd / segmentCount) * math.pi * 2);
+                    drawList:AddTriangleFilled(
+                        { centerX, centerY },
+                        { centerX + math.cos(angleA) * radius, centerY + math.sin(angleA) * radius },
+                        { centerX + math.cos(angleB) * radius, centerY + math.sin(angleB) * radius },
+                        timerColor
+                    );
+                end
+            end
+        end
+
         if (afterX ~= nil and afterY ~= nil and imgui.SetCursorPosX ~= nil and imgui.SetCursorPosY ~= nil) then
             imgui.SetCursorPosX(afterX);
             imgui.SetCursorPosY(afterY);
@@ -1188,6 +1231,7 @@ local function MenuItem(label, iconFile, action, menu, keepOpen, textureIdOverri
                 textureId = textureIdOverride,
                 rowHeight = rowHeight,
                 iconSize = iconSize,
+                timerProgress = timerProgress,
             };
         end
         return;
@@ -1423,6 +1467,32 @@ local function DrawForegroundMenu(menu)
         if (drawList.AddText ~= nil) then
             drawList:AddText({ labelX, rowY + 3 }, textColor, tostring(row.label or ''));
         end
+
+        if (row.timerProgress ~= nil and drawList.AddCircleFilled ~= nil and drawList.AddTriangleFilled ~= nil) then
+            local progress = math.max(0, math.min(1, tonumber(row.timerProgress) or 0));
+            local radius = 7;
+            local centerX = x + width - 20;
+            local centerY = rowY + ((tonumber(row.rowHeight) or 24) * 0.5);
+            local timerBg = ColorToU32({ 0.13, 0.20, 0.20, 1.0 });
+            local timerColor = ColorToU32({ 0.15, 0.78, 0.57, 1.0 });
+
+            drawList:AddCircleFilled({ centerX, centerY }, radius, timerBg, 32);
+
+            local segmentCount = 32;
+            local filledSegments = progress * segmentCount;
+
+            for segment = 0, math.ceil(filledSegments) - 1 do
+                local segmentEnd = math.min(segment + 1, filledSegments);
+                local angleA = (-math.pi * 0.5) + ((segment / segmentCount) * math.pi * 2);
+                local angleB = (-math.pi * 0.5) + ((segmentEnd / segmentCount) * math.pi * 2);
+                drawList:AddTriangleFilled(
+                    { centerX, centerY },
+                    { centerX + math.cos(angleA) * radius, centerY + math.sin(angleA) * radius },
+                    { centerX + math.cos(angleB) * radius, centerY + math.sin(angleB) * radius },
+                    timerColor
+                );
+            end
+        end
     end
 
     for _, row in ipairs(foreground.textRows or {}) do
@@ -1484,11 +1554,16 @@ end
 function quickMenu.HandlePacketIn(e)
     warpMenu.HandlePacketIn(e);
 
+    if (e ~= nil and e.id == 0x000A) then
+        pendingInviteUntil = 0;
+        return;
+    end
+
     if (e == nil or e.id ~= 0x00DC or type(e.data) ~= 'string') then
         return;
     end
 
-    pendingInviteUntil = os.clock() + 60;
+    pendingInviteUntil = os.clock() + partyInviteDuration;
 end
 
 function quickMenu.HandlePacketOut(e)
@@ -1529,7 +1604,7 @@ function quickMenu.HandleTextIn(e)
         (text:find('alliance invitation', 1, true) ~= nil) or
         (text:find('invitation from', 1, true) ~= nil and text:find('party', 1, true) ~= nil)
     ) then
-        pendingInviteUntil = os.clock() + 60;
+        pendingInviteUntil = os.clock() + partyInviteDuration;
         return;
     end
 
@@ -1895,6 +1970,7 @@ function quickMenu.Render()
             local questLineLinkResolver = (menu.npc.openLink == true) and CreateQuestLineLinkResolver(menu.npc.maxQuestLinks, linkTextColor, info) or nil;
             local bodyWidth = math.max(160, (tonumber(menu.width) or 270) - 24);
 
+
             if (isHomePointWarpTarget == true) then
                 local ok, err = pcall(function()
                     warpMenu.RenderHomePointMenu({
@@ -2086,10 +2162,11 @@ function quickMenu.Render()
             local hasPendingInvite = quickMenu.HasPendingInvite() == true;
 
             if (menu.self.acceptInvite == true and hasPendingInvite == true) then
+                local inviteProgress = math.max(0, math.min(1, ((tonumber(pendingInviteUntil) or 0) - os.clock()) / partyInviteDuration));
                 MenuItem('Accept Invite', 'accept-invite.png', function()
                     QueueCommand('/join');
                     pendingInviteUntil = 0;
-                end, menu);
+                end, menu, false, nil, inviteProgress);
             end
 
             if (menu.self.declineInvite == true and hasPendingInvite == true) then
@@ -2118,7 +2195,7 @@ function quickMenu.Render()
                 end, menu);
             end
 
-            if (mogHouseExit.IsAvailable() == true) then
+            if (menu.self.mogHouseExit == true and mogHouseExit.IsAvailable() == true) then
                 local destinations = mogHouseExit.GetDestinations();
 
                 if (#destinations > 0) then
@@ -2141,7 +2218,7 @@ function quickMenu.Render()
                 local presetRows = GetPresetRows(menu);
 
                 if (#presetRows > 0) then
-                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'ACE Mog House');
+                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Job Change');
 
                     for _, row in ipairs(presetRows) do
                         MenuItem(row.label, nil, function()
@@ -2163,13 +2240,14 @@ function quickMenu.Render()
                     end, menu);
                 else
                     local selectedMount = tostring(menu.self.selectedMount or 'Chocobo');
+                    local mountRecastProgress = mounts.GetRecastProgress();
                     MenuItem('Mount: ' .. (selectedMount ~= '' and selectedMount or 'None found'), 'mount.png', function()
                         local mountName = selectedMount == 'Random' and mounts.GetRandomOwnedChoice() or selectedMount;
 
                         if (mountName ~= nil and tostring(mountName or '') ~= '') then
                             QueueCommand('/mount "' .. tostring(mountName) .. '"', 1);
                         end
-                    end, menu);
+                    end, menu, false, nil, mountRecastProgress);
                 end
             end
 

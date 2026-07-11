@@ -1416,7 +1416,11 @@ local function ParseStoredText(text)
 
     if (text:lower():find("don't recognize that item", 1, true) ~= nil and #pendingExtracts > 0) then
         local request = table.remove(pendingExtracts, #pendingExtracts);
-        if (request ~= nil and RemoveCachedItem(request.category, request.itemName) == true) then
+        if (
+            request ~= nil and
+            NormalizeItemText(request.commandItemName or request.itemName) == NormalizeItemText(request.itemName) and
+            RemoveCachedItem(request.category, request.itemName) == true
+        ) then
             SaveCache();
             SetStatus('Removed non-item E.Box row: ' .. tostring(request.itemName));
         end
@@ -1707,13 +1711,27 @@ function ephemeralBox.RequestExtract(category, itemName, amount, context)
 
     EnsureCacheLoaded();
     ClearPendingAutomation();
+
+    local commandItemName = itemName;
+    local categoryEntry = cache.categories[GetCategoryKey(category)];
+    local cachedItem = categoryEntry ~= nil and categoryEntry.items ~= nil and categoryEntry.items[itemName] or nil;
+    if (cachedItem ~= nil and CleanMenuText(cachedItem.name) ~= '') then
+        commandItemName = CleanMenuText(cachedItem.name);
+    else
+        local resolvedItem = ResolveRealItem(itemName);
+        if (resolvedItem ~= nil and CleanMenuText(resolvedItem.name) ~= '') then
+            commandItemName = CleanMenuText(resolvedItem.name);
+        end
+    end
+
     pendingExtracts[#pendingExtracts + 1] = {
         category = category,
         itemName = itemName,
+        commandItemName = commandItemName,
         amount = amount,
         requestedAt = Now(),
     };
-    QueueCommand('!box ' .. tostring(amount) .. ' ' .. itemName, 1);
+    QueueCommand('!box ' .. tostring(amount) .. ' ' .. commandItemName, 1);
     return true;
 end
 

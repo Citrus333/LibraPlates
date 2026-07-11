@@ -57,7 +57,6 @@ local scanCache = {
     range = nil,
     players = nil,
 };
-local mountedPlateLift = 1.05;
 local idleScanCacheSeconds = 0.20;
 local idleDirectDynamicCacheSeconds = 0.35;
 local idleDirectStaticCacheSeconds = 2.00;
@@ -1642,7 +1641,7 @@ local function QueuePlayer(player)
     end
 
     local playerMounted = require('core.mounted').IsStatus(player.status);
-    local plateWorldOffsetY = playerMounted and (0.05 - mountedPlateLift) or 0.05;
+    local plateWorldOffsetY = playerMounted and (0.05 - require('core.mounted').GetPlateLift(player.index)) or 0.05;
 
     if (cacheEligible == true and cacheKey ~= nil and signature ~= nil) then
         plateCache[cacheKey] = {

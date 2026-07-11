@@ -430,11 +430,6 @@ local function StartPlan(plan, lockstyleSet, macroBook, macroPage, options)
     end
 
     sequenceActive = (#queuedActions > 0);
-    if (useRemoteMog == true) then
-        log.Info('Queued ACE town job change via !mog.');
-    else
-        log.Info('Queued job change via ' .. tostring(npc.name) .. ' at ' .. string.format('%.1f', tonumber(npc.distance) or 0) .. ' yalms.');
-    end
     return true;
 end
 
@@ -525,22 +520,10 @@ function jobChange.Update()
     local action = nextAction.action or {};
 
     if (action.kind == 'poke') then
-        local ok = SendOutgoingPacket(0x01A, BuildNpcPokePacket(action.serverId, action.targetIndex));
-        if (ok == true) then
-            log.Info('Poked ' .. tostring(action.npcName or 'Moogle') .. ' for job change.');
-        end
+        SendOutgoingPacket(0x01A, BuildNpcPokePacket(action.serverId, action.targetIndex));
     elseif (action.kind == 'job') then
         local packet = BuildJobPacket(action.jobId, action.isMain == true);
-        local ok = SendOutgoingPacket(0x100, packet);
-        local jobCode = GetJobCode(action.jobId) or tostring(action.jobId);
-
-        if (ok == true) then
-            if (action.isConflict == true) then
-                log.Info('Resolving conflict: changing ' .. (action.isMain == true and 'main' or 'sub') .. ' job to ' .. tostring(jobCode) .. '.');
-            else
-                log.Info('Changing ' .. (action.isMain == true and 'main' or 'sub') .. ' job to ' .. tostring(jobCode) .. '.');
-            end
-        end
+        SendOutgoingPacket(0x100, packet);
     elseif (action.kind == 'command') then
         QueueCommand(action.command, action.mode or 1);
     end

@@ -120,15 +120,15 @@ local function DrawCheckbox(label, value)
     return nextValue, changed;
 end
 
-local function DrawSpacingControl(key, settings)
+local function DrawSpacingControl(key, settings, labelWidth, controlWidth)
     local value = math.max(0, math.min(64, tonumber(settings.anchorSpacing) or 6));
     local beganTable = false;
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         beganTable = imgui.BeginTable('##anchor_spacing_row_' .. tostring(key), 2, tableFlags) == true;
         if (beganTable == true) then
-            imgui.TableSetupColumn('##label', 0, 145);
-            imgui.TableSetupColumn('##control', 0, 170);
+            imgui.TableSetupColumn('##label', 0, tonumber(labelWidth) or 145);
+            imgui.TableSetupColumn('##control', 0, tonumber(controlWidth) or 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
         end
@@ -182,8 +182,8 @@ function anchorControls.IsCollapsedChild(settings)
     return settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate' and settings.anchorCollapse == true;
 end
 
-function anchorControls.DrawSpacing(settings, key)
-    DrawSpacingControl(tostring(key or 'spacing'), settings);
+function anchorControls.DrawSpacing(settings, key, labelWidth, controlWidth)
+    DrawSpacingControl(tostring(key or 'spacing'), settings, labelWidth, controlWidth);
 end
 
 local function DrawReleaseConfirm(settings, key)

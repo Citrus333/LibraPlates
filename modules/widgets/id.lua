@@ -210,17 +210,17 @@ local function DrawColor(label, color)
     imgui.TextColored(valueColor, tostring(red) .. '/' .. tostring(green) .. '/' .. tostring(blue));
     imgui.SameLine();
 
-    if (ClickText('red-', actionColor) == true) then red = math.max(0, red - 5); end
+    if (ClickText('red-', actionColor) == true) then red = math.max(0, red - 1); end
     imgui.SameLine();
-    if (ClickText('red+', actionColor) == true) then red = math.min(255, red + 5); end
+    if (ClickText('red+', actionColor) == true) then red = math.min(255, red + 1); end
     imgui.SameLine();
-    if (ClickText('green-', actionColor) == true) then green = math.max(0, green - 5); end
+    if (ClickText('green-', actionColor) == true) then green = math.max(0, green - 1); end
     imgui.SameLine();
-    if (ClickText('green+', actionColor) == true) then green = math.min(255, green + 5); end
+    if (ClickText('green+', actionColor) == true) then green = math.min(255, green + 1); end
     imgui.SameLine();
-    if (ClickText('blue-', actionColor) == true) then blue = math.max(0, blue - 5); end
+    if (ClickText('blue-', actionColor) == true) then blue = math.max(0, blue - 1); end
     imgui.SameLine();
-    if (ClickText('blue+', actionColor) == true) then blue = math.min(255, blue + 5); end
+    if (ClickText('blue+', actionColor) == true) then blue = math.min(255, blue + 1); end
 
     color[1] = red / 255;
     color[2] = green / 255;
@@ -400,7 +400,7 @@ function id.DrawSettings(settings, context)
 
     DrawPanel('ID', function()
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, 'id_position');
+            anchorControls.DrawSpacing(settings, 'id_position', 118, 170);
         else
             settings.offsetX, settings.offsetY = DrawNumberPair(
                 'position',

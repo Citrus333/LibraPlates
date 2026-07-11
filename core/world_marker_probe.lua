@@ -42,9 +42,16 @@ ffi.cdef[[
         float x, y, z;
     } lp_d3dx_vector3_t;
 
+    typedef struct {
+        long x, y;
+    } lp_mouse_snap_point_t;
+
     typedef void (__thiscall* lp_get_nameplate_offset_f)(void* pThis, int32_t idx, lp_d3dx_vector3_t* vec3);
     void* __stdcall GetForegroundWindow(void);
     void* __stdcall GetActiveWindow(void);
+    int __stdcall ClientToScreen(void* hWnd, lp_mouse_snap_point_t* point);
+    int __stdcall SetCursorPos(int x, int y);
+    short __stdcall GetAsyncKeyState(int key);
 ]];
 
 local D3DPT_TRIANGLELIST = 4;
@@ -4533,6 +4540,10 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         selfClickRect = pendingSelfClickRect;
         selfClickRects = pendingSelfClickRects;
 
+        if worldMarkerProbe.ApplyMouseSnap ~= nil then
+            worldMarkerProbe.ApplyMouseSnap();
+        end
+
         return;
     end
 
@@ -4801,6 +4812,110 @@ local function GetMousePosition()
     return
         tonumber(io.MousePos.x or io.MousePos.X or io.MousePos[1]),
         tonumber(io.MousePos.y or io.MousePos.Y or io.MousePos[2]);
+end
+
+function worldMarkerProbe._MouseSnapKinds(mode)
+    if mode == 'Name' then return { name = true }; end
+    if mode == 'HP bar' then return { hp = true }; end
+    if mode == 'Name + HP bar' then return { name = true, hp = true }; end
+    return nil;
+end
+
+function worldMarkerProbe.ApplyMouseSnap()
+    if enabled ~= true or replacePlates ~= true or IsGameWindowFocused() ~= true then
+        return;
+    end
+
+    local settings = targeting.GetSettings();
+    local pcKinds = worldMarkerProbe._MouseSnapKinds(settings.pcMouseSnapMode);
+    local enemyKinds = worldMarkerProbe._MouseSnapKinds(settings.enemyMouseSnapMode);
+
+    if pcKinds == nil and enemyKinds == nil then
+        return;
+    end
+
+    if IsImguiCapturingMouse() == true then
+        return;
+    end
+
+    local lib = GetUser32();
+    if lib == nil then
+        return;
+    end
+
+    local buttonsDown = false;
+    pcall(function()
+        buttonsDown =
+            bit.band(lib.GetAsyncKeyState(0x01), 0x8000) ~= 0 or
+            bit.band(lib.GetAsyncKeyState(0x02), 0x8000) ~= 0 or
+            bit.band(lib.GetAsyncKeyState(0x04), 0x8000) ~= 0;
+    end);
+    if buttonsDown == true then
+        return;
+    end
+
+    local mouseX, mouseY = GetMousePosition();
+    if mouseX == nil or mouseY == nil or IsPointInNoGoZone(mouseX, mouseY, settings) == true then
+        return;
+    end
+
+    local best = nil;
+    local captureDistance = 56;
+
+    for _, entry in ipairs(clickRects or {}) do
+        local targetType = tostring(entry.targetType or '');
+        local allowedKinds = targetType == 'pc' and pcKinds or (targetType == 'enemy' and enemyKinds or nil);
+
+        if allowedKinds ~= nil then
+            for _, rect in ipairs(entry.rects or {}) do
+                local kind = tostring(rect.kind or '');
+                local x1 = tonumber(rect.x1);
+                local y1 = tonumber(rect.y1);
+                local x2 = tonumber(rect.x2);
+                local y2 = tonumber(rect.y2);
+
+                if rect.anchorOnly ~= true and allowedKinds[kind] == true and x1 ~= nil and y1 ~= nil and x2 ~= nil and y2 ~= nil then
+                    local nearestX = math.max(x1, math.min(x2, mouseX));
+                    local nearestY = math.max(y1, math.min(y2, mouseY));
+                    local edgeDx = mouseX - nearestX;
+                    local edgeDy = mouseY - nearestY;
+                    local edgeDistance = math.sqrt((edgeDx * edgeDx) + (edgeDy * edgeDy));
+
+                    if edgeDistance <= captureDistance and (best == nil or edgeDistance < best.distance) then
+                        best = {
+                            x = (x1 + x2) * 0.5,
+                            y = (y1 + y2) * 0.5,
+                            distance = edgeDistance,
+                        };
+                    end
+                end
+            end
+        end
+    end
+
+    if best == nil then
+        return;
+    end
+
+    local strength = math.max(1, math.min(10, tonumber(settings.mouseSnapStrength) or 5));
+    local pull = 0.04 + (strength * 0.041);
+    local nextX = mouseX + ((best.x - mouseX) * pull);
+    local nextY = mouseY + ((best.y - mouseY) * pull);
+
+    if math.abs(nextX - mouseX) < 0.5 and math.abs(nextY - mouseY) < 0.5 then
+        return;
+    end
+
+    pcall(function()
+        local point = ffi.new('lp_mouse_snap_point_t[1]');
+        point[0].x = math.floor(nextX + 0.5);
+        point[0].y = math.floor(nextY + 0.5);
+        local window = lib.GetActiveWindow();
+
+        if window ~= nil and lib.ClientToScreen(window, point) ~= 0 then
+            lib.SetCursorPos(point[0].x, point[0].y);
+        end
+    end);
 end
 
 function worldMarkerProbe.IsPlateHovered(targetIndex, targetType)

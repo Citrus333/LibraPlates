@@ -260,17 +260,17 @@ local function DrawColor(label, value)
     if (ClickText('blue+', actionColor) == true) then edit = 'blue+'; end
 
     if (edit == 'red-') then
-        red = math.max(0, red - 5);
+        red = math.max(0, red - 1);
     elseif (edit == 'red+') then
-        red = math.min(255, red + 5);
+        red = math.min(255, red + 1);
     elseif (edit == 'green-') then
-        green = math.max(0, green - 5);
+        green = math.max(0, green - 1);
     elseif (edit == 'green+') then
-        green = math.min(255, green + 5);
+        green = math.min(255, green + 1);
     elseif (edit == 'blue-') then
-        blue = math.max(0, blue - 5);
+        blue = math.max(0, blue - 1);
     elseif (edit == 'blue+') then
-        blue = math.min(255, blue + 5);
+        blue = math.min(255, blue + 1);
     end
 
     color[1] = red / 255;
@@ -516,7 +516,7 @@ function textWidget.DrawSettings(settings, context)
 
     local function DrawBody()
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, tostring(label) .. '_position');
+            anchorControls.DrawSpacing(settings, tostring(label) .. '_position', 145, 170);
         else
             settings.offsetX, settings.offsetY = DrawSliderPair(
                 'position',

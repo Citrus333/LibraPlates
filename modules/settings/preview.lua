@@ -907,13 +907,36 @@ local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind)
         return;
     end
 
+    local offsetX = tonumber(settings.offsetX) or defaultX;
+    local offsetY = tonumber(settings.offsetY) or defaultY;
+
+    if (
+        settings.anchorCollapse == true and
+        tostring(settings.anchorTo or 'Plate') ~= 'Plate'
+    ) then
+        local spacing = math.max(0, math.min(64, tonumber(settings.anchorSpacing) or 6));
+        local anchorPoint = tostring(settings.anchorPoint or 'Center');
+
+        if (anchorPoint:find('Left', 1, true) ~= nil) then
+            offsetX = offsetX - spacing;
+        elseif (anchorPoint:find('Right', 1, true) ~= nil) then
+            offsetX = offsetX + spacing;
+        end
+
+        if (anchorPoint:find('Top', 1, true) ~= nil) then
+            offsetY = offsetY - spacing;
+        elseif (anchorPoint:find('Bottom', 1, true) ~= nil) then
+            offsetY = offsetY + spacing;
+        end
+    end
+
     table.insert(icons, {
         kind = kind,
         textureId = textureId,
         tint = kind == 'enmity' and settings.color or settings.tint,
         size = tonumber(settings.iconSize) or 16,
-        offsetX = tonumber(settings.offsetX) or defaultX,
-        offsetY = tonumber(settings.offsetY) or defaultY,
+        offsetX = offsetX,
+        offsetY = offsetY,
         anchorTo = settings.anchorTo,
         anchorPoint = settings.anchorPoint,
         anchorCollapse = settings.anchorCollapse,
@@ -2176,6 +2199,8 @@ local function BuildPlate(entityName, stateName, context)
     local hpColor = hpBarSettings.color or { 0.20, 0.95, 0.34, 0.95 };
     local mpColor = mpBarSettings.color or { 0.25, 0.45, 1.0, 0.95 };
     local tpColor = tpBarSettings.color or { 1.0, 0.70, 0.18, 0.95 };
+    local tpColor2 = tpBarSettings.color2 or tpBarDefaults.color2;
+    local tpColor3 = tpBarSettings.color3 or tpBarDefaults.color3;
     local icons = {};
     local previewAoeActive = (
         stateName == 'Combat' and
@@ -2212,6 +2237,13 @@ local function BuildPlate(entityName, stateName, context)
         tpPercent <= (tonumber(tpBarSettings.lowColorPercent) or 25)
     ) then
         tpColor = tpBarSettings.lowColor or tpColor;
+    end
+
+
+    if (tpPercent >= 100) then
+        tpColor = tpBarSettings.fullColor or tpBarDefaults.fullColor or tpColor;
+        tpColor2 = tpColor;
+        tpColor3 = tpColor;
     end
 
     if (entityName == 'Pet (BST)') then
@@ -2409,8 +2441,8 @@ local function BuildPlate(entityName, stateName, context)
             anchorCollapse = tpBarSettings.anchorCollapse,
             anchorSpacing = tpBarSettings.anchorSpacing,
             textureId = barTextures.GetTextureId(tpBarSettings.texture),
-            color2 = tpBarSettings.color2 or tpBarDefaults.color2,
-            color3 = tpBarSettings.color3 or tpBarDefaults.color3,
+            color2 = tpColor2,
+            color3 = tpColor3,
             showAtPercent = tonumber(tpBarSettings.showAtPercent) or 100,
             segmented = tpBarSettings.segmented ~= false,
             segmentGap = tonumber(tpBarSettings.segmentGap) or 3,
@@ -3424,7 +3456,7 @@ local function GetQuickMenuPreviewRows(entityName, menu)
         if (menu.self.leaveParty == true) then rows[#rows + 1] = { 'Leave Party', 'LeaveParty.png' }; end
         if (menu.self.leaveAlliance == true) then rows[#rows + 1] = { 'Leave Alliance', 'LeaveAlliance.png' }; end
         if (menu.self.cancelPartyRequest == true) then rows[#rows + 1] = { 'Cancel Party Request', 'cancel-party-request.png' }; end
-        if (menu.self.aceTownMog == true) then rows[#rows + 1] = { 'ACE Mog House', 'catseye.png' }; end
+        if (menu.self.aceTownMog == true) then rows[#rows + 1] = { 'Job Change', 'catseye.png' }; end
         if (menu.self.mount == true) then rows[#rows + 1] = { 'Mount/Dismount', 'mount.png' }; end
         if (menu.self.ignoreTrust == true) then rows[#rows + 1] = { 'Ignore Other Trusts', 'ignore-trust-on.png' }; end
         if (menu.self.hideTrust == true) then rows[#rows + 1] = { 'Hide Other Trusts', 'hide-other-trusts-on.png' }; end

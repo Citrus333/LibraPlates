@@ -312,6 +312,7 @@ function bstCharmTimer.HandlePacketIn(e)
         return;
     end
 
+    e.blocked = true;
     local data = GetPacketData(e);
     local param1 = Read(data, 'l', 0x0C);
     local param2 = Read(data, 'L', 0x10);
@@ -330,7 +331,6 @@ function bstCharmTimer.HandlePacketIn(e)
             state.startTime = os.time();
             state.expireTime = expireTime;
             state.petType = 'charm';
-            e.blocked = true;
         end
     end
 

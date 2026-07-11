@@ -53,7 +53,6 @@ local worldMarkerProbe = require('core.world_marker_probe');
 local widgets = require('modules.widgets.init');
 
 local selfPlate = {};
-local mountedPlateLift = 1.05;
 local lagTestSuppressed = false;
 local cachedWorldPlates = {};
 local cachedWorldPlateLimit = 4;
@@ -266,7 +265,7 @@ end
 
 local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layoutStateName, plateTextureId, textureWidth, textureHeight, plateClickRects)
     local targetingSettings = targeting.GetSettings();
-    local plateWorldOffsetY = mounted.IsStatus(center.status) and (0.05 - mountedPlateLift) or 0.05;
+    local plateWorldOffsetY = mounted.IsStatus(center.status) and (0.05 - mounted.GetPlateLift(center.index)) or 0.05;
 
     worldMarkerProbe.QueuePlate({
         targetIndex = center.index,
@@ -820,6 +819,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local hpColor = hpBarSettings.color or { 0.90, 0.20, 0.20, 1.0 };
     local mpColor = mpBarSettings.color or { 0.25, 0.45, 1.0, 0.95 };
     local tpColor = tpBarSettings.color or { 1.0, 0.70, 0.18, 0.95 };
+    local tpColor2 = tpBarSettings.color2 or tpBarDefaults.color2;
+    local tpColor3 = tpBarSettings.color3 or tpBarDefaults.color3;
     local useTacticalOverlay = layoutStateName == 'Combat';
     local isEngaged = tonumber(center.status) == 1;
     local shouldLoadBuffs = ShouldLoadStatusRows(buffsSettings, isEngaged);
@@ -922,6 +923,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         tpPercent <= (tonumber(tpBarSettings.lowColorPercent) or 25)
     ) then
         tpColor = tpBarSettings.lowColor or tpColor;
+    end
+
+    if (tpPercent >= 100) then
+        tpColor = tpBarSettings.fullColor or tpBarDefaults.fullColor or tpColor;
+        tpColor2 = tpColor;
+        tpColor3 = tpColor;
     end
     local nameEnabled = nameLoaded == true;
     local defaultOffsetY = tonumber(nameDefaults.offsetY) or 0;
@@ -1257,9 +1264,9 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             texture = tpBarSettings.texture or 'Solid',
             textureStrength = tonumber(tpBarSettings.textureStrength) or 100,
             textureId = tpBarLoaded == true and barTextures.GetTextureId(tpBarSettings.texture) or nil,
-            color2 = tpBarSettings.color2 or tpBarDefaults.color2,
-            color3 = tpBarSettings.color3 or tpBarDefaults.color3,
-            showAtPercent = tonumber(tpBarSettings.showAtPercent) or 100,
+            color2 = tpColor2,
+            color3 = tpColor3,
+            showAtPercent = tonumber(tpBarSettings.showAtPercent) or tonumber(tpBarDefaults.showAtPercent) or 300,
             segmented = tpBarSettings.segmented ~= false,
             segmentGap = tonumber(tpBarSettings.segmentGap) or 3,
             text = tpBarLoaded == true and BuildResourceText(tpBarSettings, 'TP', tpValue, 3000, tpPercent) or '',

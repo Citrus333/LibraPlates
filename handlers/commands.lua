@@ -1436,6 +1436,77 @@ local function BuildRenderFlagText(debug)
     return table.concat(parts, ' | ');
 end
 
+function LibraPlatesCapturePlateHideProbe()
+    local targetIndex = targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
+    local debug = entities.GetEntityDebugInfo(targetIndex, targeting.GetSettings().enemyPlateRange);
+
+    if (debug == nil) then
+        log.Warn('Hide probe failed: no current target.');
+        return;
+    end
+
+    local zoneId = CommandSafeCall(nil, function()
+        return AshitaCore:GetMemoryManager():GetParty():GetMemberZone(0);
+    end);
+    local entityManager = CommandSafeCall(nil, function()
+        return AshitaCore:GetMemoryManager():GetEntity();
+    end);
+    local cleanName = tostring(debug.name or ''):gsub('\170', '');
+    local resolvedKind = nil;
+
+    if debug.isMob ~= true then
+        local rawKind = (tonumber(debug.type) == 2 or tonumber(debug.type) == 3) and 'Object' or 'NPC';
+        resolvedKind = select(1, npcObjectInfo.ResolveKind(cleanName, rawKind));
+    end
+
+    local function SafeField(value)
+        return tostring(value == nil and '' or value):gsub('[\r\n\t]', ' ');
+    end
+
+    local fields = {
+        'time=' .. SafeField(os.date('%Y-%m-%d %H:%M:%S')),
+        'zone_id=' .. SafeField(zoneId),
+        'zone_name=' .. SafeField(GetCurrentZoneName()),
+        'target_index=' .. SafeField(debug.index),
+        'server_id=' .. SafeField(GetDebugServerId(entityManager, debug.index)),
+        'name=' .. SafeField(cleanName),
+        'raw_name=' .. SafeField(debug.name),
+        'entity_type=' .. SafeField(debug.type),
+        'status=' .. SafeField(debug.status),
+        'hp_percent=' .. SafeField(debug.hpPercent),
+        'distance=' .. SafeField(debug.distance),
+        'spawn_flags=' .. FormatHex(debug.spawnFlags),
+        'is_mob=' .. SafeField(debug.isMob),
+        'is_party=' .. SafeField(debug.isParty),
+        'visible=' .. SafeField(debug.visible),
+        'visible_skeleton=' .. SafeField(debug.visibleWithSkeleton),
+        'index_allowed=' .. SafeField(debug.indexAllowed),
+        'status_allowed=' .. SafeField(debug.statusAllowed),
+        'npc_scan_allowed=' .. SafeField(debug.npcScanAllowed),
+        'tactical_npc_allowed=' .. SafeField(debug.tacticalNpcAllowed),
+        'resolved_kind=' .. SafeField(resolvedKind),
+        'layout=' .. SafeField(debug.layoutStateName),
+    };
+
+    for flagIndex = 0, 7 do
+        fields[#fields + 1] = 'render' .. tostring(flagIndex) .. '=' .. FormatHex(debug.renderFlags ~= nil and debug.renderFlags[flagIndex] or 0);
+    end
+
+    local path = GetAddonRoot() .. 'plate_hide_probes.txt';
+    local file = io.open(path, 'a');
+
+    if (file == nil) then
+        log.Warn('Hide probe failed: could not open plate_hide_probes.txt.');
+        return;
+    end
+
+    file:write(table.concat(fields, '\t'));
+    file:write('\n');
+    file:close();
+
+    log.Info('Hide probe saved: ' .. cleanName .. ' | ' .. GetCurrentZoneName() .. ' | server ' .. tostring(GetDebugServerId(entityManager, debug.index)) .. '.');
+end
+
 -- ============================================================
 -- Command handler
 -- ============================================================
@@ -1466,6 +1537,11 @@ function commands.Handle(e)
 
     if (subcommand == 'npc' or subcommand == 'npcadd') then
         AppendMissingNpc();
+        return;
+    end
+
+    if (subcommand == 'hideprobe') then
+        LibraPlatesCapturePlateHideProbe();
         return;
     end
 

@@ -8,6 +8,8 @@ return {
     outlineSize = 2,
     offsetX = 0,
     offsetY = 24,
+    anchorTo = 'Plate',
+    anchorPoint = 'Center',
     boxEnabled = true,
     boxBackgroundColor = { 0.45, 0.15, 0.15, 0.90 },
     boxDifficultyColorsEnabled = false,

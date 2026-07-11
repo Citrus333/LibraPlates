@@ -1518,15 +1518,24 @@ local function ResolveAnchorRects(rects, plate)
                 anchorTo = anchorTo,
                 anchorPoint = anchorPoint,
                 entries = {},
+                entriesByKind = {},
             };
-            groups[groupKey].entries[#groups[groupKey].entries + 1] = {
-                rect = rect,
-                visible = true,
-                slot = RectToBounds(rect),
-                padding = tonumber(rect.padding) or 0,
-                sourceOrder = #groups[groupKey].entries + 1,
-                anchorOrder = tonumber(layout.anchorOrder),
-            };
+            local entry = groups[groupKey].entriesByKind[kind];
+            if (entry == nil) then
+                entry = {
+                    rect = rect,
+                    rects = { rect },
+                    visible = true,
+                    slot = RectToBounds(rect),
+                    padding = tonumber(rect.padding) or 0,
+                    sourceOrder = #groups[groupKey].entries + 1,
+                    anchorOrder = tonumber(layout.anchorOrder),
+                };
+                groups[groupKey].entries[#groups[groupKey].entries + 1] = entry;
+                groups[groupKey].entriesByKind[kind] = entry;
+            else
+                entry.rects[#entry.rects + 1] = rect;
+            end
         end
     end
 
@@ -1583,6 +1592,28 @@ local function ResolveAnchorRects(rects, plate)
     end
 
     local function GetEntryBounds(entry)
+        if (entry ~= nil and entry.rects ~= nil and #entry.rects > 1) then
+            local minX = nil;
+            local minY = nil;
+            local maxX = nil;
+            local maxY = nil;
+
+            for _, rect in ipairs(entry.rects) do
+                minX = math.min(minX or rect.x1, tonumber(rect.x1) or 0);
+                minY = math.min(minY or rect.y1, tonumber(rect.y1) or 0);
+                maxX = math.max(maxX or rect.x2, tonumber(rect.x2) or 0);
+                maxY = math.max(maxY or rect.y2, tonumber(rect.y2) or 0);
+            end
+
+            return {
+                x = minX or 0,
+                y = minY or 0,
+                width = math.max(0, (maxX or 0) - (minX or 0)),
+                height = math.max(0, (maxY or 0) - (minY or 0)),
+                padding = 0,
+            };
+        end
+
         if (entry ~= nil and entry.rect ~= nil) then
             local rect = entry.rect;
             return {
@@ -1648,9 +1679,10 @@ local function ResolveAnchorRects(rects, plate)
                     for _, entry in ipairs(entries) do
                         if (entry.visible == true and entry.rect ~= nil) then
                             local rect = entry.rect;
-                            local currentX = tonumber(rect.drawX1) or 0;
-                            local currentY = tonumber(rect.drawY1) or 0;
                             local entryBounds = GetEntryBounds(entry);
+                            local groupedRects = entry.rects ~= nil and #entry.rects > 1;
+                            local currentX = groupedRects == true and (tonumber(entryBounds.x) or 0) or (tonumber(rect.drawX1) or 0);
+                            local currentY = groupedRects == true and (tonumber(entryBounds.y) or 0) or (tonumber(rect.drawY1) or 0);
                             local padding = tonumber(entryBounds.padding) or 0;
                             local itemW = math.max(0, tonumber(entryBounds.width) or 0);
                             local itemH = math.max(0, tonumber(entryBounds.height) or 0);
@@ -1683,7 +1715,15 @@ local function ResolveAnchorRects(rects, plate)
                                 end
                             end
 
-                            ApplyShift(rect, targetX - currentX, targetY - currentY);
+                            local shiftX = targetX - currentX;
+                            local shiftY = targetY - currentY;
+                            if groupedRects == true then
+                                for _, groupedRect in ipairs(entry.rects) do
+                                    ApplyShift(groupedRect, shiftX, shiftY);
+                                end
+                            else
+                                ApplyShift(rect, shiftX, shiftY);
+                            end
                         end
                     end
                 end

@@ -144,7 +144,11 @@ end
 function actionRelevance.IsOutsideFriendlyIndex(index)
     index = tonumber(index) or 0;
 
-    if (index <= 0 or actionRelevance.IsPartyOrAllianceIndex(index) == true) then
+    if (
+        index <= 0 or
+        actionRelevance.IsPartyOrAllianceIndex(index) == true or
+        entities.IsOwnPetIndex(index) == true
+    ) then
         return false;
     end
 

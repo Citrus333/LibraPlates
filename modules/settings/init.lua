@@ -1865,6 +1865,7 @@ _G.LibraPlatesSettingsGetAnchorChoices = function(entityName, stateName, widgetN
     local choices = { 'None' };
     local currentAnchor = '';
     local currentKey = widgetKeys[widgetName];
+    local editWidgetsForContext = GetEditWidgetsFor(entityName, stateName);
 
     if (currentKey ~= nil) then
         local currentSettings = state.GetWidgetSettings(
@@ -1876,11 +1877,42 @@ _G.LibraPlatesSettingsGetAnchorChoices = function(entityName, stateName, widgetN
         currentAnchor = tostring(currentSettings ~= nil and currentSettings.anchorTo or '');
     end
 
-    for _, candidate in ipairs(GetEditWidgetsFor(entityName, stateName)) do
+    local function WouldCreateCycle(candidate)
+        local cursor = candidate;
+        local visited = {};
+
+        for _ = 1, #editWidgetsForContext + 1 do
+            if cursor == widgetName then
+                return true;
+            end
+
+            if cursor == nil or cursor == 'Plate' or visited[cursor] == true then
+                return false;
+            end
+
+            visited[cursor] = true;
+            local cursorKey = widgetKeys[cursor];
+            if cursorKey == nil then
+                return false;
+            end
+
+            local cursorSettings = state.GetWidgetSettings(
+                GetStorageEntity(entityName),
+                GetWidgetStorageState(entityName, stateName, cursor),
+                cursorKey,
+                GetWidgetDefaults(cursor)
+            );
+            cursor = tostring(cursorSettings ~= nil and cursorSettings.anchorTo or 'Plate');
+        end
+
+        return false;
+    end
+
+    for _, candidate in ipairs(editWidgetsForContext) do
         if (
             candidate ~= widgetName and
             IsAnchorableWidget(candidate) == true and
-            (LibraPlatesSettingsIsWidgetAnchoredChild(entityName, stateName, candidate) ~= true or candidate == currentAnchor)
+            (candidate == currentAnchor or WouldCreateCycle(candidate) ~= true)
         ) then
             choices[#choices + 1] = candidate;
         end

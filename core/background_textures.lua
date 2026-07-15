@@ -32,13 +32,17 @@ local function AddFile(files, name)
     files[#files + 1] = name;
 end
 
+function backgroundTextures.GetFolderPath()
+    return GetAddonPath() .. 'assets\\images\\backgrounds\\';
+end
+
 function backgroundTextures.GetFiles()
     if (filesCache ~= nil) then
         return filesCache;
     end
 
     local files = T{ 'None' };
-    local folder = GetAddonPath() .. 'assets\\images\\backgrounds\\';
+    local folder = backgroundTextures.GetFolderPath();
     local pipe = io.popen('dir /b "' .. folder .. '*.png" 2>nul');
 
     if (pipe ~= nil) then

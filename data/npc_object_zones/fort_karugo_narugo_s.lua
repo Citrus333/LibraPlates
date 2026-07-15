@@ -38,7 +38,7 @@ return {
         },
         ["Galco-Ralico"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Jedh Gibohah"] = {
@@ -122,7 +122,7 @@ return {
         },
         ["Minchu-Rocchu"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Mortimer"] = {
@@ -152,7 +152,7 @@ return {
         },
         ["Oruchacha"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Patrol Worm"] = {
@@ -190,12 +190,12 @@ return {
         },
         ["Porlco-Glaico"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Pulkuku"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Punacchi-Mocchi"] = {
@@ -205,12 +205,12 @@ return {
         },
         ["Purottoto"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Quirro-Niiro"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Rachemace"] = {
@@ -245,12 +245,12 @@ return {
         },
         ["Rootie-Mootie"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Rormu-Rarlmu"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Rotih Moalghett"] = {

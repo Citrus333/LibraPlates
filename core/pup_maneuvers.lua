@@ -76,7 +76,7 @@ function pupManeuvers.AddIcons(plateData, settings, globalSettings, previewRows)
         return;
     end
 
-    local iconSize = math.max(6, math.min(128, tonumber(settings.iconSize) or 26));
+    local iconSize = math.max(6, math.min(256, tonumber(settings.iconSize) or 26));
     local spacing = math.max(0, math.min(80, tonumber(settings.iconSpacing) or 10));
     local totalWidth = (iconSize * 3) + (spacing * 2);
     local baseX = (tonumber(settings.offsetX) or 0) - (totalWidth * 0.5) + (iconSize * 0.5);

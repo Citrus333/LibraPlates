@@ -2,7 +2,6 @@ local imgui = require('imgui');
 local defaults = require('config.widgets.id');
 local textScale = require('core.text_scale');
 local anchorControls = require('modules.widgets.anchor_controls');
-local uiTooltip = require('core.ui_tooltip');
 
 local id = {};
 local unpackTable = table.unpack or unpack;
@@ -160,15 +159,55 @@ local function DrawTableNumber(label, idValue, value, minValue, maxValue)
     return DrawNumberControl(idValue, value, minValue, maxValue);
 end
 
+local function DrawSliderControl(idValue, value, minValue, maxValue, width, showButtons)
+    local current = math.floor((tonumber(value) or 0) + 0.5);
+    local minimum = minValue or -1000;
+    local maximum = maxValue or 1000;
+
+    if (showButtons ~= false and imgui.Button ~= nil) then
+        if (IsHeldButton('-##id_' .. idValue .. '_minus')) then
+            current = current - 1;
+        end
+        imgui.SameLine();
+    end
+
+    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(width or 95); end
+    local ref = { current };
+    if (showButtons ~= false and imgui.InputText ~= nil) then
+        ref = { tostring(current) };
+        imgui.InputText('##id_' .. idValue, ref, 16);
+    elseif (imgui.SliderInt ~= nil) then
+        imgui.SliderInt('##id_' .. idValue, ref, minimum, maximum);
+    end
+    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+    current = tonumber(ref[1]) or current;
+
+    if (showButtons ~= false and imgui.Button ~= nil) then
+        imgui.SameLine();
+        if (IsHeldButton('+##id_' .. idValue .. '_plus')) then
+            current = current + 1;
+        end
+    end
+
+    return math.max(minimum, math.min(maximum, current));
+end
+
+local function DrawTableSlider(label, idValue, value, minValue, maxValue, showButtons)
+    imgui.TextColored(labelColor, label);
+    imgui.TableNextColumn();
+    return DrawSliderControl(idValue, value, minValue, maxValue, showButtons == false and 140 or 95, showButtons);
+end
+
 local function DrawNumberPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local nextLeft = leftValue;
         local nextRight = rightValue;
 
         if (imgui.BeginTable('##id_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##left_label', 0, 118);
+            imgui.TableSetupColumn('##left_label', 0, 145);
             imgui.TableSetupColumn('##left_control', 0, 170);
-            imgui.TableSetupColumn('##right_label', 0, 118);
+            imgui.TableSetupColumn('##right_label', 0, 145);
             imgui.TableSetupColumn('##right_control', 0, 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -185,6 +224,25 @@ local function DrawNumberPair(rowId, leftLabel, leftId, leftValue, leftMin, left
     imgui.SameLine();
     local nextRight = DrawNumber(rightLabel, rightValue, rightMin, rightMax, 1);
     return nextLeft, nextRight;
+end
+
+local function DrawSingleNumberRow(rowId, label, idValue, value, minValue, maxValue)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local result = value;
+
+        if (imgui.BeginTable('##id_single_' .. rowId, 2, tableFlags)) then
+            imgui.TableSetupColumn('##label', 0, 145);
+            imgui.TableSetupColumn('##control', 0, 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            result = DrawTableNumber(label, idValue, value, minValue, maxValue);
+            imgui.EndTable();
+        end
+
+        return result;
+    end
+
+    return DrawNumber(label, value, minValue, maxValue, 1);
 end
 
 local function ClampChannel(value)
@@ -239,15 +297,19 @@ end
 local function DrawFontRow(settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##id_font_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##font_size_label', 0, 118);
+            imgui.TableSetupColumn('##font_size_label', 0, 145);
             imgui.TableSetupColumn('##font_size_control', 0, 170);
-            imgui.TableSetupColumn('##font_color_label', 0, 118);
-            imgui.TableSetupColumn('##font_color_control', 0, 170);
+            imgui.TableSetupColumn('##font_color_label', 0, 145);
+            imgui.TableSetupColumn('##font_color_control', 0, 240);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            settings.textSize = DrawTableNumber('Font size', 'font_size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
+            settings.textSize = DrawTableSlider('Font size', 'font_size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
             imgui.TableNextColumn();
-            settings.color = DrawColorCell('Font color', 'font_color', settings.color);
+            imgui.TextColored(labelColor, 'Font color');
+            imgui.TableNextColumn();
+            settings.color = DrawColor('font_color', settings.color);
+            imgui.SameLine();
+            settings.useSmallFont = DrawToggle('Small font', settings.useSmallFont);
             imgui.EndTable();
         end
 
@@ -256,18 +318,19 @@ local function DrawFontRow(settings)
 
     settings.textSize = DrawNumber('Font size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize(), 1);
     settings.color = DrawColor('font_color', settings.color);
+    settings.useSmallFont = DrawToggle('Small font', settings.useSmallFont);
 end
 
 local function DrawOutlineRow(settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##id_outline_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##outline_size_label', 0, 118);
+            imgui.TableSetupColumn('##outline_size_label', 0, 145);
             imgui.TableSetupColumn('##outline_size_control', 0, 170);
-            imgui.TableSetupColumn('##outline_color_label', 0, 118);
+            imgui.TableSetupColumn('##outline_color_label', 0, 145);
             imgui.TableSetupColumn('##outline_color_control', 0, 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            settings.outlineSize = DrawTableNumber('Outline size', 'outline_size', settings.outlineSize, 0, 8);
+            settings.outlineSize = DrawTableSlider('Outline size', 'outline_size', settings.outlineSize, 0, 8, false);
             imgui.TableNextColumn();
             settings.outlineColor = DrawColorCell('Outline color', 'outline_color', settings.outlineColor);
             imgui.EndTable();
@@ -283,9 +346,9 @@ end
 local function DrawBoxColorRow(settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##id_box_color_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##box_color_label', 0, 118);
+            imgui.TableSetupColumn('##box_color_label', 0, 145);
             imgui.TableSetupColumn('##box_color_control', 0, 170);
-            imgui.TableSetupColumn('##border_color_label', 0, 118);
+            imgui.TableSetupColumn('##border_color_label', 0, 145);
             imgui.TableSetupColumn('##border_color_control', 0, 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -400,7 +463,7 @@ function id.DrawSettings(settings, context)
 
     DrawPanel('ID', function()
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, 'id_position', 118, 170);
+            anchorControls.DrawSpacing(settings, 'id_position', 145, 170, 145);
         else
             settings.offsetX, settings.offsetY = DrawNumberPair(
                 'position',
@@ -412,13 +475,8 @@ function id.DrawSettings(settings, context)
 
     DrawPanel('Text Settings', function()
         DrawFontRow(settings);
-        settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
-        uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
-        settings.outlineEnabled = DrawToggle('Outline', settings.outlineEnabled);
-
-        if (settings.outlineEnabled == true) then
-            DrawOutlineRow(settings);
-        end
+        DrawOutlineRow(settings);
+        settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
     end);
 
     DrawPanel('Box Settings', function()
@@ -431,7 +489,7 @@ function id.DrawSettings(settings, context)
                 'Box size', 'box_size', settings.boxSize, 4, 160,
                 'Corner radius', 'corner_radius', settings.cornerRadius, 0, 40
             );
-            settings.boxBorderSize = DrawNumber('Border size', settings.boxBorderSize, 0, 20, 1);
+            settings.boxBorderSize = DrawSingleNumberRow('border_size', 'Border size', 'border_size', settings.boxBorderSize, 0, 20);
             settings.boxDifficultyColorsEnabled = DrawToggle('Use difficulty box colors', settings.boxDifficultyColorsEnabled);
 
             if (settings.boxDifficultyColorsEnabled == true) then

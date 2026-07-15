@@ -13,6 +13,9 @@ local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlag
 local DrawChoice = nil;
 local DrawColor = nil;
 local DrawBarTextureChoice = nil;
+local gridColumnWidth = 125;
+local numericFieldWidth = 58;
+local comboFieldWidth = 108;
 local function DrawSectionHeader(label)
     if (imgui.SetWindowFontScale ~= nil) then
         imgui.SetWindowFontScale(1.18);
@@ -74,6 +77,26 @@ local function DrawToggle(label, value)
     return value == true;
 end
 
+local function DrawLabeledToggleRow(rowId, toggleLabel, value)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##cast_bar_toggle_' .. rowId, 4, tableFlags)) then
+            imgui.TableSetupColumn('##left_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##left_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_control', 0, gridColumnWidth);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, toggleLabel);
+            imgui.TableNextColumn();
+            value = DrawToggle('##' .. rowId, value);
+            imgui.EndTable();
+        end
+        return value;
+    end
+
+    return DrawToggle(toggleLabel, value);
+end
+
 local function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
     local amount = 1;
@@ -130,7 +153,7 @@ local function DrawNumberControl(id, value, minValue, maxValue)
         local ref = { tostring(math.floor(current + 0.5)) };
 
         if (imgui.PushItemWidth ~= nil) then
-            imgui.PushItemWidth(92);
+            imgui.PushItemWidth(numericFieldWidth);
         end
 
         imgui.InputText('##cast_bar_' .. id .. '_input', ref, 16);
@@ -163,7 +186,7 @@ local function DrawTextInput(id, value, maxLength)
         local ref = { current };
 
         if (imgui.PushItemWidth ~= nil) then
-            imgui.PushItemWidth(170);
+            imgui.PushItemWidth(comboFieldWidth);
         end
 
         imgui.InputText('##cast_bar_' .. id, ref, tonumber(maxLength) or 64);
@@ -185,10 +208,10 @@ local function DrawPairedNumberRow(rowId, leftLabel, leftId, leftValue, leftMin,
         local nextRight = rightValue;
 
         if (imgui.BeginTable('##cast_bar_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##left_label', 0, 118);
-            imgui.TableSetupColumn('##left_control', 0, 170);
-            imgui.TableSetupColumn('##right_label', 0, 118);
-            imgui.TableSetupColumn('##right_control', 0, 170);
+            imgui.TableSetupColumn('##left_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##left_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, leftLabel);
@@ -217,24 +240,26 @@ local function DrawColorTextureRow(rowId, fillColor, backgroundColor, texture)
         local nextTexture = texture;
 
         if (imgui.BeginTable('##cast_bar_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##left_label', 0, 118);
-            imgui.TableSetupColumn('##left_control', 0, 170);
-            imgui.TableSetupColumn('##right_label', 0, 118);
-            imgui.TableSetupColumn('##right_control', 0, 170);
+            imgui.TableSetupColumn('##left_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##left_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_control', 0, gridColumnWidth);
 
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Fill color');
             imgui.TableNextColumn();
             nextFill = DrawColor('##fill_color', fillColor);
-            imgui.SameLine(nil, 20);
+            imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'BG color');
-            imgui.SameLine(nil, 8);
+            imgui.TableNextColumn();
             nextBackground = DrawColor('##bg_color', backgroundColor);
+
+            imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Texture');
             imgui.TableNextColumn();
-            nextTexture = DrawBarTextureChoice(texture, 'texture', 170);
+            nextTexture = DrawBarTextureChoice(texture, 'texture', comboFieldWidth);
 
             imgui.EndTable();
         end
@@ -242,7 +267,7 @@ local function DrawColorTextureRow(rowId, fillColor, backgroundColor, texture)
         return nextFill, nextBackground, nextTexture;
     end
 
-    return DrawColor('Fill color', fillColor), DrawColor('BG color', backgroundColor), DrawBarTextureChoice(texture, 'texture', 170);
+    return DrawColor('Fill color', fillColor), DrawColor('BG color', backgroundColor), DrawBarTextureChoice(texture, 'texture', comboFieldWidth);
 end
 
 local function DrawBorderRow(rowId, borderColor, borderSize)
@@ -251,10 +276,10 @@ local function DrawBorderRow(rowId, borderColor, borderSize)
         local nextBorderSize = borderSize;
 
         if (imgui.BeginTable('##cast_bar_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##color_label', 0, 118);
-            imgui.TableSetupColumn('##color_control', 0, 170);
-            imgui.TableSetupColumn('##size_label', 0, 118);
-            imgui.TableSetupColumn('##size_control', 0, 170);
+            imgui.TableSetupColumn('##color_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##color_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##size_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##size_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Border color');
@@ -276,10 +301,10 @@ end
 local function DrawTextSettingsRows(settings, defaults)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##cast_bar_text_settings', 4, tableFlags)) then
-            imgui.TableSetupColumn('##left_label', 0, 118);
-            imgui.TableSetupColumn('##left_control', 0, 170);
-            imgui.TableSetupColumn('##right_label', 0, 118);
-            imgui.TableSetupColumn('##right_control', 0, 170);
+            imgui.TableSetupColumn('##left_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##left_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_control', 0, gridColumnWidth);
 
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -328,15 +353,24 @@ local function DrawTextSettingsRows(settings, defaults)
 end
 
 local function DrawInterruptBarSettingsRows(settings, defaults)
-    settings.interruptBarEnabled = DrawToggle('Interrupt bar', settings.interruptBarEnabled ~= false);
-
-    if (settings.interruptBarEnabled ~= true) then
-        return;
-    end
-
+    settings.interruptBarEnabled = true;
     settings.interruptColorEnabled = true;
-    imgui.SameLine();
-    settings.interruptedColor = DrawColor('##interrupt_color', settings.interruptedColor or defaults.interruptedColor);
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##cast_bar_interrupt_color', 4, tableFlags)) then
+            imgui.TableSetupColumn('##left_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##left_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_control', 0, gridColumnWidth);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Interrupt bar');
+            imgui.TableNextColumn();
+            settings.interruptedColor = DrawColor('##interrupt_color', settings.interruptedColor or defaults.interruptedColor);
+            imgui.EndTable();
+        end
+    else
+        settings.interruptedColor = DrawColor('Interrupt bar', settings.interruptedColor or defaults.interruptedColor);
+    end
 end
 
 local function SyncInterruptTextStyle(settings)
@@ -353,25 +387,21 @@ local function DrawInterruptTextSettingsRows(settings, defaults, compact)
         return;
     end
 
-    settings.interruptTextEnabled = DrawToggle('Interrupt text', settings.interruptTextEnabled == true);
-
-    if (settings.interruptTextEnabled ~= true) then
-        return;
-    end
+    settings.interruptTextEnabled = true;
 
     if (compact == true) then
         SyncInterruptTextStyle(settings);
 
         if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
             if (imgui.BeginTable('##cast_bar_interrupt_compact_settings', 4, tableFlags)) then
-                imgui.TableSetupColumn('##left_label', 0, 118);
-                imgui.TableSetupColumn('##left_control', 0, 170);
-                imgui.TableSetupColumn('##right_label', 0, 118);
-                imgui.TableSetupColumn('##right_control', 0, 170);
+            imgui.TableSetupColumn('##left_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##left_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_control', 0, gridColumnWidth);
 
                 imgui.TableNextRow();
                 imgui.TableNextColumn();
-                imgui.TextColored(labelColor, 'Text');
+                imgui.TextColored(labelColor, 'Interrupt text');
                 imgui.TableNextColumn();
                 settings.interruptedText = DrawTextInput('interrupt_text', settings.interruptedText or defaults.interruptedText or 'Interrupted', 64);
                 imgui.TableNextColumn();
@@ -389,14 +419,14 @@ local function DrawInterruptTextSettingsRows(settings, defaults, compact)
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##cast_bar_interrupt_settings', 4, tableFlags)) then
-            imgui.TableSetupColumn('##left_label', 0, 118);
-            imgui.TableSetupColumn('##left_control', 0, 170);
-            imgui.TableSetupColumn('##right_label', 0, 118);
-            imgui.TableSetupColumn('##right_control', 0, 170);
+            imgui.TableSetupColumn('##left_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##left_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_control', 0, gridColumnWidth);
 
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            imgui.TextColored(labelColor, 'Text');
+            imgui.TextColored(labelColor, 'Interrupt text');
             imgui.TableNextColumn();
             settings.interruptedText = DrawTextInput('interrupt_text', settings.interruptedText or defaults.interruptedText or 'Interrupted', 64);
             imgui.TableNextColumn();
@@ -454,16 +484,16 @@ end
 local function DrawSpellIconRows(settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##cast_bar_spell_icon_settings', 4, tableFlags)) then
-            imgui.TableSetupColumn('##left_label', 0, 118);
-            imgui.TableSetupColumn('##left_control', 0, 170);
-            imgui.TableSetupColumn('##right_label', 0, 118);
-            imgui.TableSetupColumn('##right_control', 0, 170);
+            imgui.TableSetupColumn('##left_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##left_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_control', 0, gridColumnWidth);
 
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Icon size');
             imgui.TableNextColumn();
-            settings.spellIconSize = DrawNumberControl('spell_icon_size', settings.spellIconSize, 6, 96);
+            settings.spellIconSize = DrawNumberControl('spell_icon_size', settings.spellIconSize, 6, 256);
             imgui.TableNextColumn();
             imgui.TableNextColumn();
 
@@ -483,7 +513,7 @@ local function DrawSpellIconRows(settings)
         return;
     end
 
-    settings.spellIconSize = DrawNumber('Icon size', settings.spellIconSize, 6, 96, 1);
+    settings.spellIconSize = DrawNumber('Icon size', settings.spellIconSize, 6, 256, 1);
     settings.spellIconOffsetX = DrawNumber('Position X', settings.spellIconOffsetX, -400, 400, 1);
     settings.spellIconOffsetY = DrawNumber('Position Y', settings.spellIconOffsetY, -400, 400, 1);
 end
@@ -755,7 +785,7 @@ function castBar.DrawSettings(settings, context)
     DrawPanel('Bar Settings', function()
         settings.width, settings.height = DrawPairedNumberRow('size', 'Width', 'width', settings.width, 20, 600, 'Height', 'height', settings.height, 2, 80);
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, 'cast_bar_position', 118, 170);
+            anchorControls.DrawSpacing(settings, 'cast_bar_position', gridColumnWidth, gridColumnWidth, gridColumnWidth);
         else
             settings.offsetX, settings.offsetY = DrawPairedNumberRow('position', 'Position X', 'offset_x', settings.offsetX, -400, 400, 'Position Y', 'offset_y', settings.offsetY, -400, 400);
         end
@@ -765,7 +795,7 @@ function castBar.DrawSettings(settings, context)
     end, true);
 
     DrawPanel('Text Settings', function()
-        settings.showSpellName = DrawToggle('Show spell name', settings.showSpellName ~= false);
+        settings.showSpellName = DrawLabeledToggleRow('show_spell_name', 'Show name', settings.showSpellName ~= false);
 
         if (settings.showSpellName ~= false) then
             settings.useSmallFont = true;
@@ -776,7 +806,7 @@ function castBar.DrawSettings(settings, context)
     end);
 
     DrawPanel('Spell Icon', function()
-        settings.showSpellIcon = DrawToggle('Show spell icon', settings.showSpellIcon);
+        settings.showSpellIcon = DrawLabeledToggleRow('show_spell_icon', 'Show icon', settings.showSpellIcon);
 
         if (settings.showSpellIcon == true) then
             DrawSpellIconRows(settings);

@@ -159,13 +159,17 @@ local function DrawOffsetControl(label, value, id, showLabel)
     return value;
 end
 
-local function DrawFineOffsetControls(key, settings, labelWidth, controlWidth)
+local function DrawFineOffsetControls(key, settings, labelWidth, controlWidth, rightLabelWidth)
+    labelWidth = tonumber(labelWidth) or 104;
+    controlWidth = tonumber(controlWidth) or 124;
+    rightLabelWidth = tonumber(rightLabelWidth) or labelWidth;
+
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##anchor_fine_offset_row_' .. tostring(key), 4, tableFlags)) then
-            imgui.TableSetupColumn('##x_label', 0, 104);
-            imgui.TableSetupColumn('##x_control', 0, 124);
-            imgui.TableSetupColumn('##y_label', 0, 104);
-            imgui.TableSetupColumn('##y_control', 0, 124);
+            imgui.TableSetupColumn('##x_label', 0, labelWidth);
+            imgui.TableSetupColumn('##x_control', 0, controlWidth);
+            imgui.TableSetupColumn('##y_label', 0, rightLabelWidth);
+            imgui.TableSetupColumn('##y_control', 0, controlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, 'Position X');
@@ -188,8 +192,8 @@ function anchorControls.IsCollapsedChild(settings)
     return settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate' and settings.anchorCollapse == true;
 end
 
-function anchorControls.DrawSpacing(settings, key, labelWidth, controlWidth)
-    DrawFineOffsetControls(tostring(key or 'fine_offset'), settings, labelWidth, controlWidth);
+function anchorControls.DrawSpacing(settings, key, labelWidth, controlWidth, rightLabelWidth)
+    DrawFineOffsetControls(tostring(key or 'fine_offset'), settings, labelWidth, controlWidth, rightLabelWidth);
 end
 
 local function DrawReleaseConfirm(settings, key)
@@ -518,9 +522,11 @@ function anchorControls.Draw(settings, context, label)
         end
 
         if (hasAnchorPoint == true) then
-            local reservedWidth = 168;
-            pointComboWidth = math.max(58, math.min(155, math.floor((remainingWidth - reservedWidth) * 0.34)));
-            anchorComboWidth = math.max(70, math.min(180, remainingWidth - pointComboWidth - reservedWidth));
+            local comboSpacing = 8;
+            local releaseWidth = 82;
+            local sharedComboWidth = math.max(140, math.min(180, math.floor((remainingWidth - comboSpacing - releaseWidth) * 0.5)));
+            anchorComboWidth = sharedComboWidth;
+            pointComboWidth = sharedComboWidth;
         else
             anchorComboWidth = math.max(80, math.min(180, remainingWidth - 30));
         end
@@ -532,6 +538,8 @@ function anchorControls.Draw(settings, context, label)
     if (anchorTo ~= settings.anchorTo) then
         settings.anchorTo = anchorTo;
         settings.anchorOrder = nil;
+        settings.offsetX = 0;
+        settings.offsetY = 0;
 
         if (anchorTo == 'Plate') then
             settings.anchorPoint = nil;
@@ -544,7 +552,13 @@ function anchorControls.Draw(settings, context, label)
 
     if (tostring(settings.anchorTo or 'Plate') ~= 'Plate') then
         imgui.SameLine();
-        settings.anchorPoint = DrawCombo(key .. '_point', settings.anchorPoint or 'Center', points, pointComboWidth, false);
+        local anchorPoint = DrawCombo(key .. '_point', settings.anchorPoint or 'Center', points, pointComboWidth, false);
+        if (anchorPoint ~= settings.anchorPoint) then
+            settings.anchorPoint = anchorPoint;
+            settings.anchorOrder = nil;
+            settings.offsetX = 0;
+            settings.offsetY = 0;
+        end
         imgui.SameLine();
 
         if (imgui.Button ~= nil) then

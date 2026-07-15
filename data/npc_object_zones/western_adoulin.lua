@@ -128,7 +128,7 @@ return {
         },
         ["Cefantia"] = {
             ["_source"] = "npc",
-            ["icon"] = "Delivery.png",
+            ["icon"] = "ItemDeliverer.png",
             ["note"] = "Coordinates item distribution and player storage systems.",
             ["type"] = "Delivery",
         },

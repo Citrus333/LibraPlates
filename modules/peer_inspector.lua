@@ -6,6 +6,7 @@ local textureLoader = require('core.texture_loader');
 local worldMarkerProbe = require('core.world_marker_probe');
 local entities = require('core.entities');
 local mobInfoData = require('core.mobinfo_data');
+local npcObjectInfo = require('core.npc_object_info');
 local adaptivePerformance = require('core.adaptive_performance');
 local gameMode = require('core.game_mode');
 local playerIndicators = require('core.player_indicators');
@@ -1053,6 +1054,134 @@ DrawPeerPanelBox = function(drawList, x, y, w, h, peerSettings)
     end
 end
 
+local function WrapInspectorText(value, maxChars, maxLines)
+    local text = tostring(value or ''):gsub('\r', '');
+    local lines = {};
+    maxChars = math.max(12, tonumber(maxChars) or 48);
+    maxLines = math.max(1, tonumber(maxLines) or 8);
+
+    for paragraph in (text .. '\n'):gmatch('(.-)\n') do
+        local line = '';
+
+        for word in paragraph:gmatch('%S+') do
+            local candidate = line == '' and word or (line .. ' ' .. word);
+
+            if (#candidate > maxChars and line ~= '') then
+                lines[#lines + 1] = line;
+                line = word;
+
+                if (#lines >= maxLines) then
+                    break;
+                end
+            else
+                line = candidate;
+            end
+        end
+
+        if (#lines >= maxLines) then
+            break;
+        end
+
+        if (line ~= '') then
+            lines[#lines + 1] = line;
+        end
+
+        if (#lines >= maxLines) then
+            break;
+        end
+    end
+
+    if (#lines == maxLines and #text > 0) then
+        lines[#lines] = LimitText(lines[#lines], math.max(4, maxChars - 1));
+    end
+
+    return lines;
+end
+
+local function DrawNpcObjectInspector(hovered, entityName, peerSettings)
+    local drawList = imgui.GetForegroundDrawList ~= nil and imgui.GetForegroundDrawList() or imgui.GetWindowDrawList();
+
+    if (drawList == nil) then
+        return;
+    end
+
+    local mouseX, mouseY = GetMousePos();
+
+    if (mouseX == nil or mouseY == nil) then
+        return;
+    end
+
+    local displayName = tostring(hovered.name or hovered.rawName or ''):gsub('\170', ''):gsub('%c', '');
+    local resolvedEntityName, info = npcObjectInfo.ResolveKind(displayName, entityName, {
+        targetIndex = hovered.targetIndex,
+    });
+    local typeText = tostring(info ~= nil and info.type or resolvedEntityName or entityName);
+    local noteLines = WrapInspectorText(info ~= nil and info.note or '', 54, 8);
+    local displayW, displayH = GetDisplaySize();
+    local w = math.max(320, GetPeerInspectorWidth(peerSettings, 430));
+    local h = 64 + (#noteLines * 18);
+
+    if (typeText ~= '') then
+        h = h + 26;
+    end
+
+    local x = mouseX + 22;
+    local y = mouseY + 18;
+
+    if ((x + w) > (displayW - 12)) then
+        x = mouseX - w - 22;
+    end
+
+    if ((y + h) > (displayH - 12)) then
+        y = displayH - h - 12;
+    end
+
+    x = math.max(12, x);
+    y = math.max(12, y);
+
+    local text = ColorU32(peerSettings.textColor or { 0.94, 0.94, 0.90, 1.0 });
+    local outline = ColorU32(peerSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 });
+    local outlineSize = tonumber(peerSettings.textOutlineSize) or 0;
+    local muted = ColorU32({ 0.68, 0.72, 0.74, 1.0 });
+    local heading = ColorU32({ 1.0, 0.84, 0.0, 1.0 });
+
+    DrawPeerPanelBox(drawList, x, y, w, h, peerSettings);
+
+    if (peerSettings.showName ~= false) then
+        DrawOutlinedText(drawList, x + 14, y + 10, text, LimitText(displayName, 36), outlineSize + 1, outline);
+    end
+
+    if (peerSettings.showDistance ~= false) then
+        DrawOutlinedText(
+            drawList,
+            x + w - 54,
+            y + 10,
+            muted,
+            string.format('%.1f', tonumber(hovered.distance) or 0):gsub(',', '.'),
+            outlineSize,
+            outline
+        );
+    end
+
+    local rowY = y + 42;
+
+    if (typeText ~= '') then
+        DrawOutlinedText(drawList, x + 14, rowY, heading, 'Type', outlineSize, outline);
+        DrawOutlinedText(drawList, x + 86, rowY, text, LimitText(typeText, 42), outlineSize, outline);
+        rowY = rowY + 26;
+    end
+
+    if (#noteLines > 0) then
+        DrawOutlinedText(drawList, x + 14, rowY, heading, 'Notes', outlineSize, outline);
+        rowY = rowY + 20;
+
+        for _, line in ipairs(noteLines) do
+            DrawOutlinedText(drawList, x + 14, rowY, text, line, outlineSize, outline);
+            rowY = rowY + 18;
+        end
+    end
+end
+
 local function DrawEnemyTextInspector(enemy, info, peerSettings)
     local drawList = imgui.GetForegroundDrawList ~= nil and imgui.GetForegroundDrawList() or imgui.GetWindowDrawList();
 
@@ -1203,7 +1332,7 @@ local function DrawEnemyInspector(enemy, info, peerSettings)
     local bad = ColorU32({ 1.0, 0.58, 0.50, 1.0 });
     local heading = ColorU32({ 1.0, 0.84, 0.0, 1.0 });
     local iconStyle = SanitizeIconStyle(peerSettings.iconStyle);
-    local iconSize = math.max(18, math.min(30, tonumber(peerSettings.iconSize) or 22));
+    local iconSize = math.max(6, math.min(256, tonumber(peerSettings.iconSize) or 22));
     local labelX = x + 14;
     local contentX = x + 142;
     local contentW = w - 156;
@@ -1342,6 +1471,22 @@ function peerInspector.Render()
 
             if (player ~= nil) then
                 DrawPlayerInspector(player, activePeerSettings);
+            end
+        end
+
+        return;
+    end
+
+    if (targetType == 'npc' or targetType == 'object') then
+        local entityName = targetType == 'object' and 'Object' or 'NPC';
+        local layoutStateName = tostring(hovered.layoutStateName or 'Idle');
+        local npcObjectPeerSettings = state.GetWidgetSettings(entityName, layoutStateName, 'Peer', { enabled = true });
+
+        if (PeerWidgetLoads(npcObjectPeerSettings) == true) then
+            local activePeerSettings = MergePeerSettings(peerSettings, npcObjectPeerSettings);
+
+            if (IsModifierActive(activePeerSettings) == true) then
+                DrawNpcObjectInspector(hovered, entityName, activePeerSettings);
             end
         end
 

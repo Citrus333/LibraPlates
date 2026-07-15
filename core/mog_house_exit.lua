@@ -6,10 +6,21 @@ local log = require('core.log');
 local mogHouseExit = {};
 
 local debugEnabled = false;
+-- Default to the locked state so reloading the addon while already inside a
+-- Mog House still shows useful quest guidance. The next 0x00A packet replaces
+-- this with the server-authoritative value.
+local currentExitBit = 0;
+
+-- The server writes MyRoomExitBit into the 0x00A zone-in packet. It is 0 when
+-- the character has not unlocked alternate exits for the current city, and is
+-- the city's exit bit when the corresponding Mog House quest is complete.
+local LOGIN_PACKET_ID = 0x00A;
+local LOGIN_PACKET_MOG_HOUSE_EXIT_BIT_OFFSET = 0x0AE;
 
 local cityGroups = {
     {
         bit = 1,
+        unlockQuest = "Growing Flowers",
         zones = {
             { zoneId = 230, label = "Southern San d'Oria", mode = 1 },
             { zoneId = 231, label = "Northern San d'Oria", mode = 2 },
@@ -18,6 +29,7 @@ local cityGroups = {
     },
     {
         bit = 2,
+        unlockQuest = "A Lady's Heart",
         zones = {
             { zoneId = 234, label = 'Bastok Mines', mode = 1 },
             { zoneId = 235, label = 'Bastok Markets', mode = 2 },
@@ -26,6 +38,7 @@ local cityGroups = {
     },
     {
         bit = 3,
+        unlockQuest = "Flower Child",
         zones = {
             { zoneId = 238, label = 'Windurst Waters', mode = 1 },
             { zoneId = 239, label = 'Windurst Walls', mode = 2 },
@@ -35,6 +48,7 @@ local cityGroups = {
     },
     {
         bit = 4,
+        unlockQuest = "Pretty Little Things",
         zones = {
             { zoneId = 243, label = "Ru'Lude Gardens", mode = 1 },
             { zoneId = 244, label = 'Upper Jeuno', mode = 2 },
@@ -44,6 +58,7 @@ local cityGroups = {
     },
     {
         bit = 5,
+        unlockQuest = "Keeping Notes",
         zones = {
             { zoneId = 49, label = 'Al Zahbi', mode = 1 },
             { zoneId = 50, label = 'Aht Urhgan Whitegate', mode = 2 },
@@ -132,8 +147,55 @@ function mogHouseExit.SetDebugEnabled(value)
     debugEnabled = value == true;
 end
 
+function mogHouseExit.HandlePacketIn(e)
+    if (e == nil or tonumber(e.id) ~= LOGIN_PACKET_ID) then
+        return;
+    end
+
+    local packetData = e.data or e.data_modified;
+    if (packetData == nil) then
+        return;
+    end
+
+    local ok, value = pcall(struct.unpack, 'B', packetData, LOGIN_PACKET_MOG_HOUSE_EXIT_BIT_OFFSET + 1);
+    if (ok == true and tonumber(value) ~= nil) then
+        currentExitBit = tonumber(value);
+    end
+
+    if (debugEnabled == true) then
+        log.Info('Mog House Exit zone flag=' .. tostring(currentExitBit));
+    end
+end
+
 function mogHouseExit.IsAvailable()
-    return entities.IsMogHouseObjectSuppressionArea() == true and zoneToGroup[GetCurrentZoneId()] ~= nil;
+    if (entities.IsMogHouseObjectSuppressionArea() ~= true) then
+        return false;
+    end
+
+    local group = zoneToGroup[GetCurrentZoneId()];
+    if (group == nil) then
+        return false;
+    end
+
+    return tonumber(currentExitBit) == tonumber(group.bit);
+end
+
+function mogHouseExit.IsLocked()
+    if (entities.IsMogHouseObjectSuppressionArea() ~= true) then
+        return false;
+    end
+
+    local group = zoneToGroup[GetCurrentZoneId()];
+    return group ~= nil and group.unlockQuest ~= nil and tonumber(currentExitBit) == 0;
+end
+
+function mogHouseExit.GetUnlockQuest()
+    if (entities.IsMogHouseObjectSuppressionArea() ~= true) then
+        return nil;
+    end
+
+    local group = zoneToGroup[GetCurrentZoneId()];
+    return group ~= nil and group.unlockQuest or nil;
 end
 
 function mogHouseExit.GetDestinations()

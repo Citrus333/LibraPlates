@@ -2042,7 +2042,7 @@ function fishing.AddIcon(plateData, settings)
     plateData.icons[#plateData.icons + 1] = {
         kind = 'fishing',
         textureId = textureId,
-        size = math.max(6, math.min(200, tonumber(settings.iconSize) or 42)),
+        size = math.max(6, math.min(256, tonumber(settings.iconSize) or 42)),
         offsetX = tonumber(settings.offsetX) or 0,
         offsetY = tonumber(settings.offsetY) or 38,
         timerText = (settings.showLabel ~= false and result ~= nil) and result.label or '',

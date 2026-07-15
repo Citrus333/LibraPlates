@@ -21,6 +21,8 @@ end
 local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local heldButtonState = {};
 local pendingReset = nil;
+local gridColumnWidth = 125;
+local numericFieldWidth = 58;
 
 local function ClickText(label, color)
     imgui.TextColored(color or valueColor, label);
@@ -104,7 +106,7 @@ end
 
 local function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
@@ -134,7 +136,7 @@ end
 
 local function DrawSliderControl(id, value, minValue, maxValue, step, width)
     local current = math.floor((tonumber(value) or 0) + 0.5);
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     if (imgui.InputText == nil and imgui.SliderInt == nil) then
         return DrawNumber('', value, minValue, maxValue, amount);
@@ -178,7 +180,7 @@ end
 local function DrawTableSlider(label, id, value, minValue, maxValue, step)
     imgui.TextColored(labelColor, label);
     imgui.TableNextColumn();
-    return DrawSliderControl(id, value, minValue, maxValue, step or 1, 95);
+    return DrawSliderControl(id, value, minValue, maxValue, step or 1, numericFieldWidth);
 end
 
 local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax, step)
@@ -187,10 +189,10 @@ local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, left
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##game_mode_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 145);
-            imgui.TableSetupColumn('##control_left', 0, 170);
-            imgui.TableSetupColumn('##label_right', 0, 145);
-            imgui.TableSetupColumn('##control_right', 0, 170);
+            imgui.TableSetupColumn('##label_left', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control_left', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##label_right', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control_right', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax, step or 1);
@@ -259,8 +261,8 @@ local function DrawSingleSliderRow(rowId, label, id, value, minValue, maxValue, 
         local result = value;
 
         if (imgui.BeginTable('##game_mode_' .. rowId, 2, tableFlags)) then
-            imgui.TableSetupColumn('##label', 0, 145);
-            imgui.TableSetupColumn('##control', 0, 170);
+            imgui.TableSetupColumn('##label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             result = DrawTableSlider(label, id, value, minValue, maxValue, step or 1);
@@ -438,9 +440,9 @@ function gameModeIcon.DrawSettings(settings, context)
         return;
     end
     local function DrawBody()
-        settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, 6, 64, 1);
+        settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, 6, 256, 1);
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, 'game_mode_icon_position', 145, 170);
+            anchorControls.DrawSpacing(settings, 'game_mode_icon_position', gridColumnWidth, gridColumnWidth, gridColumnWidth);
         else
             settings.offsetX, settings.offsetY = DrawSliderPair(
                 'position',
@@ -454,7 +456,7 @@ function gameModeIcon.DrawSettings(settings, context)
                 settings.offsetY,
                 -400,
                 400,
-                5
+                1
             );
         end
     end

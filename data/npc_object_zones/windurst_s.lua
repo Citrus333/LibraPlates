@@ -16,7 +16,7 @@ return {
         },
         ["Aihn Sowlmirih"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Ajen-Myoojen (S)"] = {
@@ -39,7 +39,7 @@ return {
         },
         ["Amfafa"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Ampiro-Mapiro"] = {
@@ -124,7 +124,7 @@ return {
         },
         ["Eih Lhogotan"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Ekki-Mokki"] = {
@@ -301,7 +301,7 @@ Involved in Missions:\
         },
         ["Kristen"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Kuron-Makaron"] = {
@@ -819,7 +819,7 @@ Involved in Missions:\
         },
         ["Tahl Mhioguch"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Tek Lengyon (S)"] = {

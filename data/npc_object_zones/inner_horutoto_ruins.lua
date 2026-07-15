@@ -130,7 +130,7 @@ Hakken.\
         },
         ["Red Circle"] = {
             ["_source"] = "item",
-            ["icon"] = "Red Circle.png",
+            ["icon"] = "RedCircle.png",
             ["note"] = "A crimson ancient geometric engraving etched directly into the chamber stone. Inspecting its unique runic geometries aligns your parameters to unlock advanced side tasks.",
             ["type"] = "Quest Node",
         },

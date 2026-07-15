@@ -1385,6 +1385,11 @@ function state.GetGlobalSettings(defaults)
         end
     end
 
+    if (profile.global.enemyIconStyle == nil or tostring(profile.global.enemyIconStyle) == '') then
+        local peerStyle = type(profile.global.peer) == 'table' and profile.global.peer.iconStyle or nil;
+        profile.global.enemyIconStyle = tostring(peerStyle or 'round');
+    end
+
     return profile.global;
 end
 

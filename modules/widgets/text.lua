@@ -70,7 +70,7 @@ end
 
 local function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     imgui.TextColored(labelColor, label);
     imgui.SameLine();

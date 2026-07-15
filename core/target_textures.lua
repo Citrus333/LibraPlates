@@ -106,6 +106,10 @@ local function AddFile(files, category, name)
     files[#files + 1] = name;
 end
 
+function targetTextures.GetFolderPath(category)
+    return GetAddonPath() .. 'assets\\images\\target\\' .. tostring(category or 'arrows') .. '\\';
+end
+
 function targetTextures.GetFiles(category)
     category = tostring(category or 'arrows');
 
@@ -114,7 +118,7 @@ function targetTextures.GetFiles(category)
     end
 
     local files = T{ 'None' };
-    local folder = GetAddonPath() .. 'assets\\images\\target\\' .. category .. '\\';
+    local folder = targetTextures.GetFolderPath(category);
     local pipe = io.popen('dir /b "' .. folder .. '*.png" 2>nul');
 
     if (pipe ~= nil) then

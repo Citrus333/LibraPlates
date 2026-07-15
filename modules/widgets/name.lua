@@ -27,6 +27,10 @@ local colorEditFlags = bit ~= nil and bit.bor ~= nil
 local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local pendingReset = nil;
 local heldButtonState = {};
+local gridColumnWidth = 125;
+local claimLabelColumnWidth = 160;
+local numericFieldWidth = 58;
+local sliderFieldWidth = 108;
 
 local function ClickText(label, color)
     imgui.TextColored(color or { 0.65, 0.90, 1.0, 1.0 }, label);
@@ -83,7 +87,7 @@ end
 
 local function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
-    local amount = step or 1;
+    local amount = 1;
 
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
@@ -209,7 +213,7 @@ end
 local function DrawTableSlider(label, id, value, minValue, maxValue, showButtons)
     imgui.TextColored(labelColor, label);
     imgui.TableNextColumn();
-    return DrawSliderControl(id, value, minValue, maxValue, showButtons == false and 140 or 95, showButtons);
+    return DrawSliderControl(id, value, minValue, maxValue, showButtons == false and sliderFieldWidth or numericFieldWidth, showButtons);
 end
 
 local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax)
@@ -218,10 +222,10 @@ local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, left
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##name_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 120);
-            imgui.TableSetupColumn('##control_left', 0, 170);
-            imgui.TableSetupColumn('##label_right', 0, 120);
-            imgui.TableSetupColumn('##control_right', 0, 170);
+            imgui.TableSetupColumn('##label_left', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control_left', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##label_right', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control_right', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax);
@@ -363,10 +367,10 @@ local DrawColorCell = nil;
 local function DrawClaimColorRow(label, colorValue, outlineValue)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##claim_color_' .. label:gsub('%s+', '_'), 4, tableFlags)) then
-            imgui.TableSetupColumn('##claim_color_label', 0, 170);
-            imgui.TableSetupColumn('##claim_color_control', 0, 170);
-            imgui.TableSetupColumn('##claim_outline_label', 0, 170);
-            imgui.TableSetupColumn('##claim_outline_control', 0, 170);
+            imgui.TableSetupColumn('##claim_color_label', 0, claimLabelColumnWidth);
+            imgui.TableSetupColumn('##claim_color_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##claim_outline_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##claim_outline_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             colorValue = DrawColorCell(label, colorValue);
@@ -395,11 +399,11 @@ local function DrawFontRow(settings, context)
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##name_font_row', showColor == true and 4 or 2, tableFlags)) then
-            imgui.TableSetupColumn('##font_size_label', 0, 120);
-            imgui.TableSetupColumn('##font_size_control', 0, 170);
+            imgui.TableSetupColumn('##font_size_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##font_size_control', 0, gridColumnWidth);
             if (showColor == true) then
-                imgui.TableSetupColumn('##font_color_label', 0, 120);
-                imgui.TableSetupColumn('##font_color_control', 0, 170);
+                imgui.TableSetupColumn('##font_color_label', 0, gridColumnWidth);
+                imgui.TableSetupColumn('##font_color_control', 0, gridColumnWidth);
             end
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -423,10 +427,10 @@ end
 local function DrawOutlineRow(settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##name_outline_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##outline_size_label', 0, 120);
-            imgui.TableSetupColumn('##outline_size_control', 0, 170);
-            imgui.TableSetupColumn('##outline_color_label', 0, 120);
-            imgui.TableSetupColumn('##outline_color_control', 0, 170);
+            imgui.TableSetupColumn('##outline_size_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##outline_size_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##outline_color_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##outline_color_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.outlineSize = DrawTableSlider('Outline size', 'outline_size', settings.outlineSize, 0, 12, false);
@@ -676,7 +680,7 @@ function name.DrawSettings(settings, context)
 
     DrawPanel('Name', function()
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, 'name_position');
+            anchorControls.DrawSpacing(settings, 'name_position', gridColumnWidth, gridColumnWidth, gridColumnWidth);
         else
             settings.offsetX, settings.offsetY = DrawSliderPair(
                 'position',
@@ -703,18 +707,16 @@ function name.DrawSettings(settings, context)
         end
         DrawOutlineRow(settings);
         settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
+    end, true);
 
-        if (context ~= nil and context.entity == 'Enemy') then
-            if (imgui.Spacing ~= nil) then
-                imgui.Spacing();
-            end
-            DrawSectionHeader('Claim colors');
+    if (context ~= nil and context.entity == 'Enemy') then
+        DrawPanel('Claim colors', function()
             settings.claimUnclaimedColor, settings.claimUnclaimedOutlineColor = DrawClaimColorRow('Unclaimed', settings.claimUnclaimedColor, settings.claimUnclaimedOutlineColor);
             settings.claimPartyColor, settings.claimPartyOutlineColor = DrawClaimColorRow('Claimed', settings.claimPartyColor, settings.claimPartyOutlineColor);
             settings.claimOtherColor, settings.claimOtherOutlineColor = DrawClaimColorRow('Claimed by others', settings.claimOtherColor, settings.claimOtherOutlineColor);
             settings.claimCallForHelpColor, settings.claimCallForHelpOutlineColor = DrawClaimColorRow('Call for help', settings.claimCallForHelpColor, settings.claimCallForHelpOutlineColor);
-        end
-    end, true);
+        end);
+    end
 
     if (context ~= nil and context.boxed == true) then
         imgui.Spacing();

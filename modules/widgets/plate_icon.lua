@@ -1,5 +1,7 @@
 local imgui = require('imgui');
 local anchorControls = require('modules.widgets.anchor_controls');
+local fileManager = require('core.file_manager');
+local state = require('core.state');
 
 local plateIcon = {};
 local unpackTable = table.unpack or unpack;
@@ -20,6 +22,8 @@ end
 local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local heldButtonState = {};
 local pendingReset = nil;
+local gridColumnWidth = 125;
+local numericFieldWidth = 58;
 
 local function ClickText(label, color)
     imgui.TextColored(color or valueColor, label);
@@ -103,7 +107,7 @@ end
 
 local function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
@@ -133,7 +137,7 @@ end
 
 local function DrawSliderControl(id, value, minValue, maxValue, step, width)
     local current = math.floor((tonumber(value) or 0) + 0.5);
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     if (imgui.InputText == nil and imgui.SliderInt == nil) then
         return DrawNumber('', value, minValue, maxValue, amount);
@@ -177,7 +181,7 @@ end
 local function DrawTableSlider(label, id, value, minValue, maxValue, step)
     imgui.TextColored(labelColor, label);
     imgui.TableNextColumn();
-    return DrawSliderControl(id, value, minValue, maxValue, step or 1, 95);
+    return DrawSliderControl(id, value, minValue, maxValue, step or 1, numericFieldWidth);
 end
 
 local function DrawSingleSliderRow(rowId, label, id, value, minValue, maxValue, step)
@@ -185,8 +189,8 @@ local function DrawSingleSliderRow(rowId, label, id, value, minValue, maxValue, 
         local result = value;
 
         if (imgui.BeginTable('##plate_icon_' .. rowId, 2, tableFlags)) then
-            imgui.TableSetupColumn('##label', 0, 145);
-            imgui.TableSetupColumn('##control', 0, 170);
+            imgui.TableSetupColumn('##label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             result = DrawTableSlider(label, id, value, minValue, maxValue, step or 1);
@@ -199,16 +203,72 @@ local function DrawSingleSliderRow(rowId, label, id, value, minValue, maxValue, 
     return DrawNumber(label, value, minValue, maxValue, step or 1);
 end
 
+local function DrawEnemyIconPackRow(settings, context, label)
+    local options = context ~= nil and context.enemyIconPackOptions or nil;
+    if (options == nil or #options == 0) then return; end
+
+    local current = tostring(settings.iconStyle or 'Use Settings theme default');
+    if (current == '' or current == 'Use enemy default') then
+        current = 'Use Settings theme default';
+    end
+
+    local function DrawControl()
+        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(260); end
+        if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+            if (imgui.BeginCombo('##plate_icon_enemy_pack_' .. tostring(label), current) == true) then
+                for _, option in ipairs(options) do
+                    local value = tostring(option);
+                    local selected = value == current;
+                    if (imgui.Selectable(value, selected) == true) then
+                        current = value;
+                        settings.iconStyle = value;
+                        state.Save();
+                    end
+                    if (selected == true and imgui.SetItemDefaultFocus ~= nil) then
+                        imgui.SetItemDefaultFocus();
+                    end
+                end
+                imgui.EndCombo();
+            end
+        else
+            imgui.TextColored(valueColor, current);
+        end
+        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+        if (context.enemyIconPackFolder ~= nil) then
+            fileManager.Draw(context.enemyIconPackFolder, 'EnemyIconPack_' .. tostring(label));
+        end
+    end
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##plate_icon_enemy_pack_row_' .. tostring(label), 2, tableFlags)) then
+            imgui.TableSetupColumn('##label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control', 0, 292);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Icon pack');
+            imgui.TableNextColumn();
+            DrawControl();
+            imgui.EndTable();
+        end
+    else
+        imgui.TextColored(labelColor, 'Icon pack');
+        imgui.SameLine();
+        DrawControl();
+    end
+
+end
+
 local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax, step)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local leftResult = leftValue;
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##plate_icon_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 145);
-            imgui.TableSetupColumn('##control_left', 0, 170);
-            imgui.TableSetupColumn('##label_right', 0, 145);
-            imgui.TableSetupColumn('##control_right', 0, 170);
+            imgui.TableSetupColumn('##label_left', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control_left', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##label_right', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control_right', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax, step or 1);
@@ -414,10 +474,6 @@ function plateIcon.DrawSettings(settings, context)
     if ((context == nil or context.onlyPlacement ~= true) and (context == nil or context.boxed ~= true)) then
         DrawSectionHeader(label .. ' settings');
     end
-    if ((context == nil or context.onlyPlacement ~= true) and tonumber(defaults.minIconSize) == 0) then
-        imgui.TextColored(labelColor, 'Icon size 0 follows the plate font size.');
-    end
-
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end
@@ -431,9 +487,41 @@ function plateIcon.DrawSettings(settings, context)
     end
 
     local function DrawBody()
-        settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, tonumber(defaults.minIconSize) or 6, tonumber(defaults.maxIconSize) or 64, 1);
+        DrawEnemyIconPackRow(settings, context, label);
+        local supportsAutoSize = tonumber(defaults.minIconSize) == 0;
+        local autoSize = supportsAutoSize == true and (tonumber(settings.iconSize) or 0) <= 0;
+
+        if (supportsAutoSize == true) then
+            local nextAutoSize = DrawCheckbox('Auto size', autoSize);
+
+            if (nextAutoSize ~= autoSize) then
+                if (nextAutoSize == true) then
+                    if ((tonumber(settings.iconSize) or 0) > 0) then
+                        settings.manualIconSize = tonumber(settings.iconSize);
+                    end
+
+                    settings.iconSize = 0;
+                else
+                    settings.iconSize = math.max(
+                        1,
+                        math.min(
+                            tonumber(defaults.maxIconSize) or 256,
+                            tonumber(settings.manualIconSize) or 64
+                        )
+                    );
+                end
+
+                state.Save();
+                autoSize = nextAutoSize;
+            end
+        end
+
+        if (autoSize ~= true) then
+            settings.iconSize = DrawSingleSliderRow('icon_size', 'Icon size', 'icon_size', settings.iconSize, math.max(1, tonumber(defaults.minIconSize) or 6), tonumber(defaults.maxIconSize) or 256, 1);
+        end
+
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, label .. '_position');
+            anchorControls.DrawSpacing(settings, label .. '_position', gridColumnWidth, gridColumnWidth, gridColumnWidth);
         else
             settings.offsetX, settings.offsetY = DrawSliderPair(
                 'position',
@@ -463,6 +551,10 @@ function plateIcon.DrawSettings(settings, context)
         imgui.Spacing();
     else
         imgui.Separator();
+    end
+
+    if (context ~= nil and type(context.extraBeforeReset) == 'function') then
+        context.extraBeforeReset(settings, defaults);
     end
 
     if (DrawActionButton('Reset ' .. label .. ' position') == true) then

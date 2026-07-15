@@ -9,17 +9,17 @@ return {
         },
         ["Ada (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Ajido-Marujido (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Akta (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Aladoverre (A)"] = {
@@ -55,7 +55,7 @@ return {
         },
         ["Amar (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Amaura (A)"] = {
@@ -67,7 +67,7 @@ return {
         },
         ["Anguysh (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Apururu (A)"] = {
@@ -80,31 +80,31 @@ return {
         },
         ["Ardea (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Argus (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Atma Fabricant"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "AtmaFabricant.png",
             ["note"] = "Notes:\
 * Creates Synthetic Atma from completed mission memories and cruor.",
             ["type"] = "Atma Fabrication",
         },
         ["Atma Infusionist"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "AtmaInfusionist.png",
             ["note"] = "Notes:\
 * Activates Atma effects if you have a Lunar Abyssite.",
             ["type"] = "Atma Infusion",
         },
         ["Aulavia (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Ayame (A)"] = {
@@ -153,7 +153,7 @@ return {
         },
         ["Bastion Prefect"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "BastionPrefect.png",
             ["type"] = "Bastion",
         },
         ["Belgidiveau (A)"] = {
@@ -165,7 +165,7 @@ return {
         },
         ["Big Harvest (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Biggorf (A)"] = {
@@ -177,12 +177,12 @@ return {
         },
         ["Bogharg (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Bonarpant (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Bopa Greso (A)"] = {
@@ -216,7 +216,7 @@ return {
         },
         ["Callort (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Cannau (A)"] = {
@@ -235,12 +235,12 @@ return {
         },
         ["Chamama (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Chapi Galepilai (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Chemioue (A)"] = {
@@ -335,7 +335,7 @@ Involved in Quests:\
         },
         ["Crying Wind (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Curilla (A)"] = {
@@ -347,12 +347,12 @@ Involved in Quests:\
         },
         ["Danngogg (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Daveille (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Deadly Spider (A)"] = {
@@ -371,7 +371,7 @@ Involved in Quests:\
         },
         ["Dheo Nbolo (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Diegai (A)"] = {
@@ -394,27 +394,27 @@ Involved in Quests:\
         },
         ["Dulsie (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Echo Hawk (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Ehrhard (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Eight of Clubs (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Eight of Hearts (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Elmemague"] = {
@@ -499,27 +499,27 @@ Involved in Quests:\
         },
         ["Fuepepe (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Fulchia (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Furakku-Norakku (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Furan-Furin (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Gabriele (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Gallijaux (A)"] = {
@@ -570,7 +570,7 @@ Involved in Quests:\
         },
         ["Gottah Maporushanoh (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Guilboire (A)"] = {
@@ -592,12 +592,12 @@ Involved in Quests:\
         },
         ["Gurdern (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Hakkuru-Rinkuru (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Halver (A)"] = {
@@ -616,7 +616,7 @@ Involved in Quests:\
         },
         ["Helga (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["High Bear (A)"] = {
@@ -634,7 +634,7 @@ Involved in Quests:\
         },
         ["Hildith (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Honoi-Gomoi (A)"] = {
@@ -651,7 +651,7 @@ Involved in Quests:\
         },
         ["Ihsan (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Iron Eater (A)"] = {
@@ -676,7 +676,7 @@ Involved in Quests:\
         },
         ["Janshura-Rashura (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Jonette (A)"] = {
@@ -696,12 +696,12 @@ Involved in Quests:\
         },
         ["Julio (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Justinius (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Ken (A)"] = {
@@ -727,12 +727,12 @@ Involved in Quests:\
         },
         ["Kororo (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Kuah Dakonsa (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Kuoh Rhel (A)"] = {
@@ -752,7 +752,7 @@ Involved in Quests:\
         },
         ["Kuroido-Moido (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Kurou-Morou (A)"] = {
@@ -778,12 +778,12 @@ Involved in Quests:\
         },
         ["Leepe-Hoppe (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Leporaitceau (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Lined Casket"] = {
@@ -795,12 +795,12 @@ Involved in Quests:\
         },
         ["Louis"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Lucius (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Lumber Chest"] = {
@@ -812,12 +812,12 @@ Involved in Quests:\
         },
         ["Maabu-Sonbu (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Maat (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Machine Outfitter"] = {
@@ -846,7 +846,7 @@ Involved in Quests:\
         },
         ["Malduc (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Malene (A)"] = {
@@ -877,7 +877,7 @@ Involved in Quests:\
         },
         ["Mengrenaux (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Mhabi Molkot (A)"] = {
@@ -889,7 +889,7 @@ Involved in Quests:\
         },
         ["Mheca Khetashipah (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Miageau (A)"] = {
@@ -908,17 +908,17 @@ Involved in Quests:\
         },
         ["Milchupain (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Mojuro-Nojuro (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Monberaux (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Moogle (A)"] = {
@@ -937,7 +937,7 @@ Involved in Quests:\
         },
         ["Morlepiche (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Nachou (A)"] = {
@@ -965,7 +965,7 @@ Involved in Quests:\
         },
         ["Nanaa Mihgo (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Naruru (A)"] = {
@@ -980,7 +980,7 @@ Involved in Quests:\
         },
         ["Navisse (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Nicadio (A)"] = {
@@ -999,7 +999,7 @@ Involved in Quests:\
         },
         ["Offa (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Ohbiru-Dohbiru (A)"] = {
@@ -1011,7 +1011,7 @@ Involved in Quests:\
         },
         ["Ohruru (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Oiheaurese (A)"] = {
@@ -1030,7 +1030,7 @@ Involved in Quests:\
         },
         ["Ondieulix (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Oruga (A)"] = {
@@ -1042,7 +1042,7 @@ Involved in Quests:\
         },
         ["Pakke-Pokke (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Panta-Putta (A)"] = {
@@ -1054,7 +1054,7 @@ Involved in Quests:\
         },
         ["Parcarin (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Parnika (A)"] = {
@@ -1078,7 +1078,7 @@ Involved in Quests:\
         },
         ["Pherimociel (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Piketo-Puketo (A)"] = {
@@ -1090,7 +1090,7 @@ Involved in Quests:\
         },
         ["Polikal-Ramikal (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Polly (A)"] = {
@@ -1138,7 +1138,7 @@ Involved in Quests:\
         },
         ["Qiqirn Trapper"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["info"] = "*Two spawn at the beginning of every Bastion battle.",
             ["type"] = "Survivor",
         },
@@ -1169,17 +1169,17 @@ Involved in Quests:\
         },
         ["Raifa (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Rainhard (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Ranpi-Monpi (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Rashid (A)"] = {
@@ -1227,12 +1227,12 @@ Involved in Quests:\
         },
         ["Rhy Epocan (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Rielle (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Romaa Mihgo (A)"] = {
@@ -1249,7 +1249,7 @@ Involved in Quests:\
         },
         ["Rugiette (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Rukususu (A)"] = {
@@ -1274,7 +1274,7 @@ Involved in Quests:\
         },
         ["Shomo Pochachilo (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Sieglinde (A)"] = {
@@ -1286,32 +1286,32 @@ Involved in Quests:\
         },
         ["Silver Owl (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Simmie (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Sola Jaab (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Solgierte (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Soni-Muni (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Steel Bones (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Talib (A)"] = {
@@ -1323,7 +1323,7 @@ Involved in Quests:\
         },
         ["Tancredi (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Tapoh Lihzeh (A)"] = {
@@ -1335,7 +1335,7 @@ Involved in Quests:\
         },
         ["Taraihi-Perunhi (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Teigero-Bangero (A)"] = {
@@ -1347,7 +1347,7 @@ Involved in Quests:\
         },
         ["Tiger Tooth (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Titus (A)"] = {
@@ -1379,17 +1379,17 @@ Involved in Missions:\
         },
         ["Tosuka-Porika (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Trion (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Tsugumi (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Tyamah (A)"] = {
@@ -1402,7 +1402,7 @@ Involved in Missions:\
         },
         ["Ufanne (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Valderotaux (A)"] = {
@@ -1428,7 +1428,7 @@ Involved in Missions:\
         },
         ["Volker (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Wanzo-Unzozo (A)"] = {
@@ -1440,12 +1440,12 @@ Involved in Missions:\
         },
         ["Waylea (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Wolfgang (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Yachemidot"] = {
@@ -1480,7 +1480,7 @@ Involved in Missions:\
         },
         ["Yuhito-Kubhito (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Yurim (A)"] = {
@@ -1505,7 +1505,7 @@ Involved in Missions:\
         },
         ["Zahsa Syalmhaia (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Zauko (A)"] = {
@@ -1524,7 +1524,7 @@ Involved in Missions:\
         },
         ["Zeid (A)"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Zoriboh (A)"] = {

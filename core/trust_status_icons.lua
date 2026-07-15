@@ -10,6 +10,7 @@ local nextOrder = 1;
 local statusOnMessages = T{ 100, 144, 160, 164, 166, 186, 194, 203, 205, 230, 236, 266, 267, 268, 269, 271, 272, 277, 278, 279, 280, 319, 320, 375, 412, 420, 421, 424, 425, 645, 754, 755, 804 };
 local statusOffMessages = T{ 64, 159, 168, 204, 206, 321, 322, 341, 342, 343, 344, 350, 378, 531, 647, 805, 806 };
 local deathMessages = T{ 6, 20, 97, 113, 406, 605, 646 };
+local spellDamageMessages = T{ 2, 252, 264, 265 };
 local statusDurations = {
     [33] = 180,   -- Haste
     [34] = 180,   -- Blaze Spikes
@@ -186,6 +187,12 @@ local function GetStatusIdBySpellId(spellId)
         return spellToBuff[spellId];
     end
 
+    local debuffId = statusEffects.GetDebuffIdBySpellId(spellId);
+
+    if (debuffId ~= nil) then
+        return debuffId;
+    end
+
     local spellName = string.lower(tostring(GetSpellName(spellId) or ''));
 
     spellName = string.gsub(spellName, '_', ' ');
@@ -222,7 +229,21 @@ local function GetStatusIdBySpellId(spellId)
     return nil;
 end
 
-local function GetTrustStatusDuration(statusId)
+local function GetTrustStatusDuration(statusId, spellId)
+    spellId = tonumber(spellId) or 0;
+
+    if (spellId == 23 or spellId == 33 or spellId == 230) then
+        return 60;
+    elseif (spellId == 24 or spellId == 231) then
+        return 120;
+    elseif (spellId == 25 or spellId == 232) then
+        return 150;
+    elseif (spellId >= 220 and spellId <= 229) then
+        return 120;
+    elseif (spellId >= 235 and spellId <= 240) then
+        return 120;
+    end
+
     return statusDurations[tonumber(statusId) or 0] or 300;
 end
 
@@ -276,13 +297,19 @@ local function HandleActionPacket(packet)
 
     for _, target in ipairs(packet.Targets or {}) do
         for _, action in ipairs(target.Actions or {}) do
-            local statusId = (tonumber(packet.Type) == 4) and GetStatusIdBySpellId(packet.Param) or tonumber(action.Param);
+            local spellId = tonumber(packet.Param) or 0;
+            local statusId = (tonumber(packet.Type) == 4) and GetStatusIdBySpellId(spellId) or tonumber(action.Param);
             local message = tonumber(action.Message) or 0;
 
             if (statusOffMessages:contains(message)) then
                 ClearStatus(target.Id, statusId);
+            elseif (tonumber(packet.Type) == 4 and spellDamageMessages:contains(message) and (statusId == 134 or statusId == 135)) then
+                -- Dia and Bio report their initial damage rather than a normal
+                -- status-on message. They overwrite one another in game.
+                ClearStatus(target.Id, statusId == 134 and 135 or 134);
+                TrackStatus(target.Id, statusId, GetTrustStatusDuration(statusId, spellId));
             elseif (statusOnMessages:contains(message)) then
-                TrackStatus(target.Id, statusId, GetTrustStatusDuration(statusId));
+                TrackStatus(target.Id, statusId, GetTrustStatusDuration(statusId, spellId));
             end
         end
     end

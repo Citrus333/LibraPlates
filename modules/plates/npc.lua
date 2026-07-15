@@ -131,7 +131,7 @@ local function NumberKey(value)
 end
 
 local function FormatDistanceText(settings, distance)
-    return tostring(settings ~= nil and settings.prefix or '') .. string.format('%.0f', tonumber(distance) or 0);
+    return tostring(settings ~= nil and settings.prefix or '') .. string.format('%.1f', tonumber(distance) or 0):gsub(',', '.');
 end
 
 local function SettingKey(settings, fields)
@@ -256,6 +256,19 @@ local function IsAlliedTacticalNpc(entity)
     end
 
     return HasText(displayName, 'Ascetic') == true;
+end
+
+local function IsResolvedNpc(entity)
+    if (entity == nil) then
+        return false;
+    end
+
+    local displayName = CleanDisplayName(entity.name);
+    local resolvedEntityName = npcObjectInfo.ResolveKind(displayName, tostring(entity.entityType or 'NPC'), {
+        targetIndex = entity.index,
+    });
+
+    return resolvedEntityName == 'NPC';
 end
 
 local function HasReadableDisplayName(name)
@@ -482,7 +495,7 @@ local function QueueNpcObject(entity)
     end
 
     local settingsTimer = perfMeter.BeginDetail('npc.settings');
-    local showDistanceBadge = targetStateName == 'Target' or targetStateName == 'Subtarget';
+    local showDistanceBadge = settingsEntityName == 'Object';
 
     local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isTacticalTarget == true);
     local backgroundSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Background', backgroundDefaults);
@@ -756,7 +769,11 @@ local function QueueTacticalNpc(entity)
     local backgroundSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Background', backgroundDefaults);
     local nameSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Name', nameDefaults);
     local hpBarSettings = state.GetWidgetSettings('NPC', layoutStateName, 'HP Bar', barDefaults);
+    local distanceSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Distance', distanceDefaults);
     local hpPercent = math.max(0, math.min(100, tonumber(entity.hpPercent) or 100));
+    local distanceText = distanceSettings.enabled == true and entity.distance ~= nil
+        and FormatDistanceText(distanceSettings, entity.distance)
+        or nil;
     local targetMarker = targetStateName ~= 'Idle'
         and targetModuleMarker.Build('NPC', layoutStateName, targetStateName, hpBarSettings, entity.distance)
         or { enabled = false };
@@ -791,6 +808,11 @@ local function QueueTacticalNpc(entity)
         nameOffsetY = tonumber(nameSettings.offsetY) or -54,
         nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        anchorMap = {
+            ['Name'] = 'name',
+            ['HP Bar'] = 'hp',
+            ['Distance'] = 'distance',
+        },
         hpBar = {
             enabled = hpBarSettings.enabled == true,
             width = tonumber(hpBarSettings.width) or 180,
@@ -817,6 +839,29 @@ local function QueueTacticalNpc(entity)
             textOutlineSize = tonumber(hpBarSettings.textOutlineSize) or 1,
         },
     };
+
+    if (distanceText ~= nil) then
+        plateData.badges = plateData.badges or {};
+        plateData.badges[#plateData.badges + 1] = {
+            kind = 'distance',
+            text = distanceText,
+            offsetX = tonumber(distanceSettings.offsetX) or distanceDefaults.offsetX,
+            offsetY = tonumber(distanceSettings.offsetY) or distanceDefaults.offsetY,
+            fontFamily = fonts.GetRole(globalSettings, distanceSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, distanceSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(distanceSettings.textSize, distanceDefaults.textSize),
+            textColor = distanceSettings.color or distanceDefaults.color,
+            textOutlineEnabled = (tonumber(distanceSettings.outlineSize) or 0) > 0,
+            textOutlineColor = distanceSettings.outlineColor or distanceDefaults.outlineColor,
+            textOutlineSize = tonumber(distanceSettings.outlineSize) or distanceDefaults.outlineSize,
+            anchorTo = distanceSettings.anchorTo or distanceDefaults.anchorTo,
+            anchorPoint = distanceSettings.anchorPoint or distanceDefaults.anchorPoint,
+            anchorCollapse = distanceSettings.anchorCollapse,
+            anchorSpacing = distanceSettings.anchorSpacing,
+            anchorOrder = distanceSettings.anchorOrder,
+            backgroundEnabled = false,
+        };
+    end
 
     local textureKey = 'npc-tactical-' .. tostring(entity.index);
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
@@ -891,10 +936,12 @@ local function AnyTacticalNpcWidgetCanLoad()
     local hpBarSettings = state.GetWidgetSettings('NPC', 'Combat', 'HP Bar', barDefaults);
     local nameSettings = state.GetWidgetSettings('NPC', 'Combat', 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('NPC', 'Combat', 'Background', backgroundDefaults);
+    local distanceSettings = state.GetWidgetSettings('NPC', 'Combat', 'Distance', distanceDefaults);
 
     return hpBarSettings.enabled == true or
         nameSettings.enabled == true or
-        backgroundSettings.enabled == true;
+        backgroundSettings.enabled == true or
+        distanceSettings.enabled == true;
 end
 
 local function AnyNpcTargetModuleCanLoad()
@@ -961,8 +1008,9 @@ function npcPlate.Render()
         adaptivePerformance.GetWorldRefreshSeconds('object')
     );
     local entitiesList = nil;
+    local tacticalNpcIndexes = {};
 
-    if (canRenderTargetNpcs == true) then
+    if (canRenderTacticalNpcs == true or canRenderTargetNpcs == true) then
         local queuedTargets = {};
         local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
         local targetIndexes = { targetIndex, subTargetIndex };
@@ -975,7 +1023,8 @@ function npcPlate.Render()
                 queuedTargets[index] = true;
 
                 local tacticalEntity = entities.GetTacticalNpcByIndex(index, range);
-                if (tacticalEntity ~= nil and IsAlliedTacticalNpc(tacticalEntity) == true) then
+                if (tacticalEntity ~= nil and IsResolvedNpc(tacticalEntity) == true) then
+                    tacticalNpcIndexes[tonumber(tacticalEntity.index) or 0] = true;
                     QueueTacticalNpc(tacticalEntity);
                 end
             end
@@ -1032,11 +1081,13 @@ function npcPlate.Render()
         end
     end
 
-    local tacticalNpcIndexes = {};
     for _, entity in ipairs(tacticalEntities) do
         if (IsAlliedTacticalNpc(entity) == true) then
-            tacticalNpcIndexes[tonumber(entity.index) or 0] = true;
-            QueueTacticalNpc(entity);
+            local tacticalIndex = tonumber(entity.index) or 0;
+            if (tacticalNpcIndexes[tacticalIndex] ~= true) then
+                tacticalNpcIndexes[tacticalIndex] = true;
+                QueueTacticalNpc(entity);
+            end
         end
     end
 

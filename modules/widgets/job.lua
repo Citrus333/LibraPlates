@@ -14,8 +14,8 @@ local colorEditFlags = bit ~= nil and bit.bor ~= nil
     and bit.bor(_G.ImGuiColorEditFlags_NoAlpha or 0, _G.ImGuiColorEditFlags_NoInputs or 0)
     or ((_G.ImGuiColorEditFlags_NoAlpha or 0) + (_G.ImGuiColorEditFlags_NoInputs or 0));
 local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
-local rowLabelWidth = 122;
-local rowControlWidth = 124;
+local rowLabelWidth = 125;
+local rowControlWidth = 125;
 local heldButtonState = {};
 
 local function ClickText(label, color)
@@ -111,7 +111,7 @@ end
 
 local function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     if (imgui.SliderInt ~= nil) then
         local ref = { math.floor(current + 0.5) };
@@ -323,25 +323,27 @@ local function DrawDisplayRow(settings)
     end
 end
 
-local function DrawSliderControl(id, value, minValue, maxValue, step, width)
+local function DrawSliderControl(id, value, minValue, maxValue, step, width, showButtons)
     local current = tonumber(value) or 0;
     local original = current;
     local minimum = tonumber(minValue) or -1000;
     local maximum = tonumber(maxValue) or 1000;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
     local itemId = tostring(id or 'value');
 
     current = math.max(minimum, math.min(maximum, current));
 
-    if (imgui.Button ~= nil and IsHeldButton('-##job_' .. itemId .. '_minus') == true) then
-        current = current - amount;
-    elseif (imgui.Button == nil and ClickText('-', actionColor) == true) then
-        current = current - amount;
+    if (showButtons ~= false) then
+        if (imgui.Button ~= nil and IsHeldButton('-##job_' .. itemId .. '_minus') == true) then
+            current = current - amount;
+        elseif (imgui.Button == nil and ClickText('-', actionColor) == true) then
+            current = current - amount;
+        end
+
+        imgui.SameLine();
     end
 
-    imgui.SameLine();
-
-    if (imgui.InputText ~= nil) then
+    if (showButtons ~= false and imgui.InputText ~= nil) then
         local ref = { tostring(math.floor(current + 0.5)) };
         if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(tonumber(width) or 58); end
         if (imgui.InputText('##job_' .. itemId, ref, 16) == true) then
@@ -359,12 +361,14 @@ local function DrawSliderControl(id, value, minValue, maxValue, step, width)
         imgui.TextColored(valueColor, tostring(current));
     end
 
-    imgui.SameLine();
+    if (showButtons ~= false) then
+        imgui.SameLine();
 
-    if (imgui.Button ~= nil and IsHeldButton('+##job_' .. itemId .. '_plus') == true) then
-        current = current + amount;
-    elseif (imgui.Button == nil and ClickText('+', actionColor) == true) then
-        current = current + amount;
+        if (imgui.Button ~= nil and IsHeldButton('+##job_' .. itemId .. '_plus') == true) then
+            current = current + amount;
+        elseif (imgui.Button == nil and ClickText('+', actionColor) == true) then
+            current = current + amount;
+        end
     end
 
     current = math.max(minimum, math.min(maximum, current));
@@ -447,7 +451,7 @@ local function DrawColorControl(id, color)
     return color;
 end
 
-local function DrawSliderAndColorRow(sizeLabel, sizeId, sizeValue, minValue, maxValue, colorLabel, colorId, colorValue, labelWidth)
+local function DrawSliderAndColorRow(sizeLabel, sizeId, sizeValue, minValue, maxValue, colorLabel, colorId, colorValue, labelWidth, showButtons)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local sizeResult = sizeValue;
         local colorResult = colorValue;
@@ -462,7 +466,7 @@ local function DrawSliderAndColorRow(sizeLabel, sizeId, sizeValue, minValue, max
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, sizeLabel);
             imgui.TableNextColumn();
-            sizeResult = DrawSliderControl(sizeId, sizeValue, minValue, maxValue, 1, 58);
+            sizeResult = DrawSliderControl(sizeId, sizeValue, minValue, maxValue, 1, showButtons == false and 108 or 58, showButtons);
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, colorLabel);
             imgui.TableNextColumn();
@@ -621,13 +625,13 @@ function job.DrawSettings(settings, context)
     local function DrawBody()
         DrawDisplayRow(settings);
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, 'job_position');
+            anchorControls.DrawSpacing(settings, 'job_position', rowLabelWidth, rowControlWidth, rowLabelWidth);
         else
             settings.offsetX, settings.offsetY = DrawPlacementPair('Position X', settings.offsetX, 'offset_x', 'Position Y', settings.offsetY, 'offset_y', -400, 400, 1);
         end
 
         if ((tonumber(settings.displayModeIndex) or 1) == 2) then
-            settings.iconSize = DrawSingleSlider('Icon size', 'icon_size', settings.iconSize, 8, 160, 1);
+            settings.iconSize = DrawSingleSlider('Icon size', 'icon_size', settings.iconSize, 8, 256, 1);
         else
             settings.textSize, settings.color = DrawSliderAndColorRow(
                 'Font size',
@@ -639,36 +643,19 @@ function job.DrawSettings(settings, context)
                 'text_color',
                 settings.color
             );
-            if (context ~= nil and context.entity == 'Enemy') then
-                settings.outlineSize, settings.outlineColor = DrawSliderAndColorRow(
-                    'Outline size',
-                    'outline_size',
-                    settings.outlineSize,
-                    0,
-                    8,
-                    'Outline color',
-                    'outline_color',
-                    settings.outlineColor,
-                    122
-                );
-                settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
-            else
-                settings.outlineEnabled = DrawToggle('Text outline', settings.outlineEnabled);
-
-                if (settings.outlineEnabled == true) then
-                    settings.outlineSize, settings.outlineColor = DrawSliderAndColorRow(
-                        'Outline size',
-                        'outline_size',
-                        settings.outlineSize,
-                        0,
-                        8,
-                        'Outline color',
-                        'outline_color',
-                        settings.outlineColor,
-                        122
-                    );
-                end
-            end
+            settings.outlineSize, settings.outlineColor = DrawSliderAndColorRow(
+                'Outline size',
+                'outline_size',
+                settings.outlineSize,
+                0,
+                8,
+                'Outline color',
+                'outline_color',
+                settings.outlineColor,
+                125,
+                false
+            );
+            settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
         end
     end
 

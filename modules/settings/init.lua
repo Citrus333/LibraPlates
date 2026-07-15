@@ -5,11 +5,14 @@ local state = require('core.state');
 local widgets = require('modules.widgets.init');
 local anchorControls = require('modules.widgets.anchor_controls');
 local preview = require('modules.settings.preview');
+LibraPlatesPetPlate = require('modules.plates.pet');
 LibraPlatesSettingsWindowLayout = require('modules.settings.window_layout');
+LibraPlatesHelpSearchTerms = require('data.help_search_terms');
 local textureLoader = require('core.texture_loader');
 local jobIconTextures = require('core.job_icon_textures');
 LibraPlatesEnmityIcons = require('core.enmity_icons');
 local uiTooltip = require('core.ui_tooltip');
+LibraPlatesFileManager = require('core.file_manager');
 local arrowAnimation = require('core.target_arrow_animation');
 local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
@@ -58,6 +61,7 @@ local settingsLabelColor = { 0.92, 0.92, 0.90, 1.0 };
 settingsUi.homePointRefreshMessage = settingsUi.homePointRefreshMessage or '';
 local settingsHeaderColor = { 1.0, 0.84, 0.0, 1.0 };
 LibraPlatesSettingsUiIconCache = LibraPlatesSettingsUiIconCache or {};
+LibraPlatesEnemyIconPreviewCache = LibraPlatesEnemyIconPreviewCache or {};
 LibraPlatesSettingsPalette = {
     shellBg = { 0.094, 0.094, 0.094, 1.0 },
     panelBg = { 0.145, 0.145, 0.145, 1.0 },
@@ -1019,7 +1023,6 @@ local npcEditWidgets = T{
     'Background',
     'Name',
     'Type line',
-    'Distance',
     'Icon',
     'Peer (module)',
     'Quick Menu (module)',
@@ -1653,6 +1656,34 @@ function GetEditWidgets()
     return GetEditWidgetsFor(selectedEntity, selectedState);
 end
 
+function GetAnchorHierarchySettings(entityName, stateName, widgetName)
+    local global = state.GetGlobalSettings(globalDefaults);
+    local globalModuleKeys = {
+        ['Resting (module)'] = 'resting',
+        ['Crafting (module)'] = 'crafting',
+        ['Fishing (module)'] = 'fishing',
+        ['Gathering (module)'] = 'gathering',
+    };
+    local globalKey = globalModuleKeys[widgetName];
+
+    if (globalKey ~= nil) then
+        global[globalKey] = global[globalKey] or {};
+        return global[globalKey];
+    end
+
+    local widgetKey = widgetKeys[widgetName];
+    if (widgetKey == nil) then
+        return nil;
+    end
+
+    return state.GetWidgetSettings(
+        GetStorageEntity(entityName),
+        GetWidgetStorageState(entityName, stateName, widgetName),
+        widgetKey,
+        GetWidgetDefaults(widgetName)
+    );
+end
+
 function GetEditWidgetHierarchyRows()
     local widgetsList = GetEditWidgets();
     local available = {};
@@ -1671,12 +1702,7 @@ function GetEditWidgetHierarchyRows()
         local widgetKey = widgetKeys[widget];
 
         if widgetKey ~= nil and IsAnchorableWidget(widget) == true then
-            local settings = state.GetWidgetSettings(
-                GetStorageEntity(selectedEntity),
-                GetWidgetStorageState(selectedEntity, selectedState, widget),
-                widgetKey,
-                GetWidgetDefaults(widget)
-            );
+            local settings = GetAnchorHierarchySettings(selectedEntity, selectedState, widget);
             local parent = tostring(settings ~= nil and settings.anchorTo or 'Plate');
 
             if parent ~= widget and available[parent] == true and IsAnchorableWidget(parent) == true then
@@ -1688,8 +1714,8 @@ function GetEditWidgetHierarchyRows()
 
     for _, children in pairs(childrenByWidget) do
         table.sort(children, function(left, right)
-            local leftSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, left), widgetKeys[left], GetWidgetDefaults(left));
-            local rightSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, right), widgetKeys[right], GetWidgetDefaults(right));
+            local leftSettings = GetAnchorHierarchySettings(selectedEntity, selectedState, left);
+            local rightSettings = GetAnchorHierarchySettings(selectedEntity, selectedState, right);
             local leftOrder = tonumber(leftSettings ~= nil and leftSettings.anchorOrder or nil);
             local rightOrder = tonumber(rightSettings ~= nil and rightSettings.anchorOrder or nil);
 
@@ -1759,14 +1785,14 @@ function MoveAnchoredWidget(widget, direction)
         return false;
     end
 
-    local widgetSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, widget), widgetKeys[widget], GetWidgetDefaults(widget));
+    local widgetSettings = GetAnchorHierarchySettings(selectedEntity, selectedState, widget);
     local parent = tostring(widgetSettings ~= nil and widgetSettings.anchorTo or 'Plate');
 
     for _, row in ipairs(rows) do
         local candidate = row.widget;
         local candidateKey = widgetKeys[candidate];
         if candidateKey ~= nil then
-            local candidateSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, candidate), candidateKey, GetWidgetDefaults(candidate));
+            local candidateSettings = GetAnchorHierarchySettings(selectedEntity, selectedState, candidate);
             if tostring(candidateSettings ~= nil and candidateSettings.anchorTo or 'Plate') == parent then
                 siblings[#siblings + 1] = candidate;
             end
@@ -1788,7 +1814,7 @@ function MoveAnchoredWidget(widget, direction)
 
     siblings[currentIndex], siblings[targetIndex] = siblings[targetIndex], siblings[currentIndex];
     for index, sibling in ipairs(siblings) do
-        local siblingSettings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), GetWidgetStorageState(selectedEntity, selectedState, sibling), widgetKeys[sibling], GetWidgetDefaults(sibling));
+        local siblingSettings = GetAnchorHierarchySettings(selectedEntity, selectedState, sibling);
         siblingSettings.anchorOrder = index;
     end
 
@@ -1797,6 +1823,10 @@ function MoveAnchoredWidget(widget, direction)
 end
 
 function GetWidgetListDisplayLabel(widget)
+    if (tostring(widget or '') == 'Special icon') then
+        return 'Special target';
+    end
+
     return tostring(GetWidgetDisplayLabel(widget)):gsub('%s+[Ii]con$', '');
 end
 
@@ -1830,8 +1860,15 @@ end
 function IsAnchorableWidget(widgetName)
     widgetName = tostring(widgetName or '');
 
-    if (widgetName == '' or widgetName == 'Target' or widgetName == 'Subtarget' or string.find(widgetName, '%(module%)') ~= nil) then
+    if (widgetName == '' or widgetName == 'Target' or widgetName == 'Subtarget') then
         return false;
+    end
+
+    if (string.find(widgetName, '%(module%)') ~= nil) then
+        return widgetName == 'Resting (module)' or
+            widgetName == 'Crafting (module)' or
+            widgetName == 'Fishing (module)' or
+            widgetName == 'Gathering (module)';
     end
 
     if (widgetName == 'Maneuvers') then
@@ -1851,12 +1888,7 @@ function LibraPlatesSettingsIsWidgetAnchoredChild(entityName, stateName, widgetN
         return false;
     end
 
-    local settings = state.GetWidgetSettings(
-        GetStorageEntity(entityName),
-        GetWidgetStorageState(entityName, stateName, widgetName),
-        widgetKey,
-        GetWidgetDefaults(widgetName)
-    );
+    local settings = GetAnchorHierarchySettings(entityName, stateName, widgetName);
 
     return settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate';
 end
@@ -1868,12 +1900,7 @@ _G.LibraPlatesSettingsGetAnchorChoices = function(entityName, stateName, widgetN
     local editWidgetsForContext = GetEditWidgetsFor(entityName, stateName);
 
     if (currentKey ~= nil) then
-        local currentSettings = state.GetWidgetSettings(
-            GetStorageEntity(entityName),
-            GetWidgetStorageState(entityName, stateName, widgetName),
-            currentKey,
-            GetWidgetDefaults(widgetName)
-        );
+        local currentSettings = GetAnchorHierarchySettings(entityName, stateName, widgetName);
         currentAnchor = tostring(currentSettings ~= nil and currentSettings.anchorTo or '');
     end
 
@@ -1896,12 +1923,7 @@ _G.LibraPlatesSettingsGetAnchorChoices = function(entityName, stateName, widgetN
                 return false;
             end
 
-            local cursorSettings = state.GetWidgetSettings(
-                GetStorageEntity(entityName),
-                GetWidgetStorageState(entityName, stateName, cursor),
-                cursorKey,
-                GetWidgetDefaults(cursor)
-            );
+            local cursorSettings = GetAnchorHierarchySettings(entityName, stateName, cursor);
             cursor = tostring(cursorSettings ~= nil and cursorSettings.anchorTo or 'Plate');
         end
 
@@ -2037,7 +2059,6 @@ function GetChecklistActiveSettings(widget)
     if (widget == 'Enemy Alerts (module)') then
         local global = state.GetGlobalSettings(globalDefaults);
         global.enemyAlerts = global.enemyAlerts or {};
-        if (global.enemyAlerts.enabled == nil) then global.enemyAlerts.enabled = false; end
         return global.enemyAlerts;
     end
 
@@ -2423,7 +2444,7 @@ function DrawCombo(label, items, selected, onSelect, displayLabelFn)
     end
 end
 
-function DrawInlineCombo(label, items, selected, onSelect, displayLabelFn)
+function DrawInlineCombo(label, items, selected, onSelect, displayLabelFn, widthOverride)
     local current = tostring(selected or items[1] or 'Default');
     local currentLabel = displayLabelFn ~= nil and displayLabelFn(current) or current;
     local labelText = tostring(label or '');
@@ -2435,7 +2456,7 @@ function DrawInlineCombo(label, items, selected, onSelect, displayLabelFn)
 
     if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
         if (imgui.PushItemWidth ~= nil) then
-            imgui.PushItemWidth(242);
+            imgui.PushItemWidth(tonumber(widthOverride) or 242);
         end
 
         if (imgui.BeginCombo(comboId, currentLabel) == true) then
@@ -2465,7 +2486,7 @@ function DrawInlineCombo(label, items, selected, onSelect, displayLabelFn)
     DrawCombo(label, items, current, onSelect, displayLabelFn);
 end
 
-function DrawInlineComboRow(label, items, selected, onSelect, id, labelColorOverride, labelWidth, tableFlagsOverride, controlWidthOverride)
+function DrawInlineComboRow(label, items, selected, onSelect, id, labelColorOverride, labelWidth, tableFlagsOverride, controlWidthOverride, folderPath)
     local current = tostring(selected or items[1] or 'Default');
     local comboId = '##' .. tostring(id or label or 'combo');
     local controlWidth = tonumber(controlWidthOverride) or 260;
@@ -2496,6 +2517,10 @@ function DrawControl()
                 imgui.PopItemWidth();
             end
 
+            if (folderPath ~= nil) then
+                LibraPlatesFileManager.Draw(folderPath, 'SettingsFile_' .. tostring(id or label));
+            end
+
             return;
         end
 
@@ -2508,12 +2533,16 @@ function DrawControl()
                 openDropdown = comboId;
             end
         end
+
+        if (folderPath ~= nil) then
+            LibraPlatesFileManager.Draw(folderPath, 'SettingsFile_' .. tostring(id or label));
+        end
     end
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##settings_combo_' .. tostring(id or label or 'combo'), 2, tableFlagsOverride or settingsTableFlags)) then
             imgui.TableSetupColumn('##label', 0, tonumber(labelWidth) or 78);
-            imgui.TableSetupColumn('##control', 0, controlWidth);
+            imgui.TableSetupColumn('##control', 0, controlWidth + (folderPath ~= nil and 32 or 0));
             imgui.TableNextRow();
             imgui.TableNextColumn();
             if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
@@ -3199,7 +3228,7 @@ end
 function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
     local changed = false;
-    step = tonumber(step) or 1;
+    step = 1;
 
     if (minValue ~= nil) then current = math.max(tonumber(minValue) or current, current); end
     if (maxValue ~= nil) then current = math.min(tonumber(maxValue) or current, current); end
@@ -3272,7 +3301,7 @@ function DrawPlacementNumber(label, value, minValue, maxValue, step, id)
     local original = current;
     local minimum = tonumber(minValue) or -1000;
     local maximum = tonumber(maxValue) or 1000;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
     local precision = 0;
     local scaledStep = amount;
 
@@ -3429,7 +3458,7 @@ DrawPlacementControl = function(value, minValue, maxValue, step, id, sliderWidth
     local original = current;
     local minimum = tonumber(minValue) or -1000;
     local maximum = tonumber(maxValue) or 1000;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
     local itemId = tostring(id or 'placement');
     local precision = 0;
     local scaledStep = amount;
@@ -3937,7 +3966,10 @@ function LibraPlatesSettingsShouldDrawLoadMode(entityName, stateName)
     local entity = NormalizeEntityName(entityName);
     local normalizedState = NormalizeStateName(stateName);
 
-    if (entity == 'Self' and (normalizedState == 'World' or normalizedState == 'Tactical')) then
+    if (
+        entity == 'Self' and
+        (normalizedState == 'World' or normalizedState == 'Tactical' or normalizedState == 'Fishing')
+    ) then
         return false;
     end
 
@@ -3993,7 +4025,7 @@ function LibraPlatesSettingsDrawWidgetLoadMode(settings, entityName, stateName, 
     DrawInlineComboRow('Load', LibraPlatesSettingsGetLoadModeOptions(entityName, stateName), settings.loadMode, function(value)
         settings.loadMode = LibraPlatesSettingsCoerceLoadModeForContext(value, entityName, stateName, 'Always');
         state.Save();
-    end, 'LoadMode' .. tostring(entityName) .. tostring(stateName) .. tostring(widgetName), { 1.0, 1.0, 1.0, 1.0 });
+    end, 'LoadMode' .. tostring(entityName) .. tostring(stateName) .. tostring(widgetName), { 1.0, 1.0, 1.0, 1.0 }, nil, 0);
 
     loadModeDrawn = true;
 end
@@ -4238,6 +4270,22 @@ function DrawManeuverResetConfirm(settings)
     end
 end
 
+function DrawSpecialTargetExtraSettings(settings)
+    DrawYellowHeader('Target types');
+
+    DrawCheckbox('T3 Incursion mobs', settings.showTier3Incursion ~= false, function(value)
+        settings.showTier3Incursion = value == true;
+        state.Save();
+    end);
+
+    DrawCheckbox('AP mobs', settings.showActivityPoints ~= false, function(value)
+        settings.showActivityPoints = value == true;
+        state.Save();
+    end);
+
+    imgui.Spacing();
+end
+
 function DrawPetTimerExtraSettings(settings)
     imgui.Separator();
     if (settings.displayMode == 'Icon + time') then
@@ -4262,7 +4310,7 @@ function DrawPetTimerExtraSettings(settings)
     if (timerYChanged == true) then settings.textOffsetY = timerY; state.Save(); end
 
     if (settings.displayMode == 'Icon') then
-        local value, changed = DrawPlacementSingle('Icon size', settings.iconSize, 'PetTimerIconSize', 6, 96, 1);
+        local value, changed = DrawPlacementSingle('Icon size', settings.iconSize, 'PetTimerIconSize', 6, 256, 1);
         if (changed == true) then settings.iconSize = value; state.Save(); end
     end
 end
@@ -4294,7 +4342,7 @@ function DrawPetStateExtraSettings(settings)
     if (labelYChanged == true) then settings.labelOffsetY = labelY; state.Save(); end
 
     if (displayMode == 'Icon') then
-        local value, changed = DrawPlacementSingle('Icon size', settings.iconSize, 'PetStateIconSize', 6, 128, 1);
+        local value, changed = DrawPlacementSingle('Icon size', settings.iconSize, 'PetStateIconSize', 6, 256, 1);
         if (changed == true) then settings.iconSize = value; state.Save(); end
     end
 end
@@ -4306,7 +4354,7 @@ function DrawManeuverSettings(settings)
     if (xChanged == true) then settings.offsetX = x; state.Save(); end
     if (yChanged == true) then settings.offsetY = y; state.Save(); end
 
-    local iconSize, iconSizeChanged, spacing, spacingChanged = DrawPlacementPair('Icon size', settings.iconSize, 'ManeuverIconSize', 'Icon spacer', settings.iconSpacing, 'ManeuverIconSpacer', 0, 160, 1);
+    local iconSize, iconSizeChanged, spacing, spacingChanged = DrawPlacementPair('Icon size', settings.iconSize, 'ManeuverIconSize', 'Icon spacer', settings.iconSpacing, 'ManeuverIconSpacer', 0, 256, 1);
     if (iconSizeChanged == true) then settings.iconSize = math.max(1, iconSize); state.Save(); end
     if (spacingChanged == true) then settings.iconSpacing = math.max(0, spacing); state.Save(); end
 
@@ -4465,7 +4513,7 @@ function DrawTargetModulePlacementSettings(settings, defaults, label, entityName
             settings.backgroundEnabled = tostring(value or 'None') ~= 'None';
             settings.showBackground = settings.backgroundEnabled;
             state.Save();
-        end, 'TargetModuleHighlightImage');
+        end, 'TargetModuleHighlightImage', nil, nil, nil, nil, require('core.target_textures').GetFolderPath('backgrounds'));
     end;
 
     if (allowHighlight == true and tostring(settings.backgroundFile or 'None') ~= 'None' and (settings.backgroundEnabled ~= false or settings.showBackground == true)) then
@@ -5091,6 +5139,7 @@ function SelectPreviewElement(kind, context)
         level = 'Level',
         id = 'ID',
         distance = 'Distance',
+        npc_object_icon = 'Icon',
         petTimer = 'Pet timer',
         petState = 'Pet state',
         ready = 'Ready bar',
@@ -5109,6 +5158,7 @@ function SelectPreviewElement(kind, context)
         detectsIcon = 'Detects icon',
         linksIcon = 'Links icon',
         specialIcon = 'Special icon',
+        catseyeSpecialNameIcon = 'Special icon',
         ['Behavior icon'] = 'Behavior icon',
         ['Detects icon'] = 'Detects icon',
         ['Links icon'] = 'Links icon',
@@ -5197,6 +5247,7 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         ['Stars icon'] = true,
         ['Level sync icon'] = true,
         ['New adventurer icon'] = true,
+        ['Icon'] = true,
     };
 
     if (deltaX == 0 and deltaY == 0) then
@@ -5391,6 +5442,7 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         level = 'Level',
         id = 'ID',
         distance = 'Distance',
+        npc_object_icon = 'Icon',
         petTimer = 'Pet timer',
         petState = 'Pet state',
         ready = 'Ready bar',
@@ -5406,6 +5458,7 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         detectsIcon = 'Detects icon',
         linksIcon = 'Links icon',
         specialIcon = 'Special icon',
+        catseyeSpecialNameIcon = 'Special icon',
         ['Behavior icon'] = 'Behavior icon',
         ['Detects icon'] = 'Detects icon',
         ['Links icon'] = 'Links icon',
@@ -5642,6 +5695,13 @@ function GetPreviewSelection()
                 widgetKey = widgetKeys[selectedWidget] or selectedWidget,
             };
         end
+
+        if (
+            selectedEntity == 'Self' and
+            ListContains(GetEditWidgets(), 'Crafting (module)') == true
+        ) then
+            context.previewCraftingResult = true;
+        end
     end
 
     context.sourceEntity = selectedEntity;
@@ -5686,10 +5746,53 @@ function DrawRightPanel()
     );
 
     local settingsHeight = math.max(minSettingsHeight, rightHeight - previewHeight - splitterHeight);
-
     DrawChild('##settings_scroll_panel', { 0, settingsHeight }, true, function()
         DrawSelectedEditor();
     end);
+end
+
+function GetEnemyIconPackPreviewTextureId(iconPack, iconName)
+    iconPack = tostring(iconPack or 'round'):gsub('[\\/]', '');
+    iconName = tostring(iconName or ''):gsub('[\\/]', '');
+    if (iconPack == '' or iconName == '') then return nil; end
+
+    local key = iconPack .. ':' .. iconName;
+    if (LibraPlatesEnemyIconPreviewCache[key] == nil) then
+        LibraPlatesEnemyIconPreviewCache[key] = textureLoader.ToTextureId(textureLoader.Load(
+            GetEnemyIconPackFolderPath() .. iconPack .. '\\' .. iconName .. '.png'
+        ));
+    end
+
+    return LibraPlatesEnemyIconPreviewCache[key];
+end
+
+function DrawEnemyIconPackPreview(iconPack)
+    local samples = {
+        { icon = 'AggroNQ', label = 'Behavior: Aggressive' },
+        { icon = 'PassiveNQ', label = 'Behavior: Passive' },
+        { icon = 'Sight', label = 'Detects: Sight' },
+        { icon = 'Sound', label = 'Detects: Sound' },
+        { icon = 'Magic', label = 'Detects: Magic' },
+        { icon = 'Scent', label = 'Detects: Scent' },
+        { icon = 'Link', label = 'Links' },
+    };
+
+    imgui.Spacing();
+    imgui.TextColored(settingsLabelColor, 'Examples');
+
+    for index, sample in ipairs(samples) do
+        if (index > 1) then imgui.SameLine(); end
+
+        local textureId = GetEnemyIconPackPreviewTextureId(iconPack, sample.icon);
+        if (textureId ~= nil) then
+            imgui.Image(textureId, { 24, 24 }, { 0, 0 }, { 1, 1 });
+            if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and imgui.SetTooltip ~= nil) then
+                imgui.SetTooltip(sample.label);
+            end
+        else
+            imgui.TextColored({ 0.60, 0.62, 0.66, 1.0 }, '--');
+        end
+    end
 end
 
 function LibraPlatesSettingsIsProtectedTargetWidget(widget)
@@ -5821,13 +5924,13 @@ function DrawPlatesSelector()
         selectedEntity = entity;
         EnsureSelectedStateAllowed();
         EnsureSelectedWidgetAllowed();
-    end, GetEntityDisplayLabel);
+    end, GetEntityDisplayLabel, 224);
 
     EnsureSelectedStateAllowed();
     DrawInlineCombo('Plate', GetStates(selectedEntity), selectedState, function(stateName)
         selectedState = stateName;
         EnsureSelectedWidgetAllowed();
-    end);
+    end, nil, 224);
 
     EnsureSelectedWidgetAllowed();
     imgui.Separator();
@@ -6148,20 +6251,31 @@ function LibraPlatesSettingsDrawPlatesHeaderBand(render, heightOverride)
     imgui.SetCursorScreenPos({ x, y + height });
 end
 
-function LibraPlatesSettingsGetPlatesHeaderBandHeight(settings, compact, hideLoadMode)
+function LibraPlatesSettingsGetPlatesHeaderBandHeight(settings, compact, hideLoadMode, noCopyRow, copyOnly)
     if (compact == true) then
         return 48;
     end
 
+    if (copyOnly == true) then
+        return hideLoadMode == true and 48 or 80;
+    end
+
+    local anchorTo = tostring(settings ~= nil and settings.anchorTo or 'Plate');
+    local hasParentAnchor = anchorTo ~= 'Plate' and anchorTo ~= 'None';
+
+    if (noCopyRow == true) then
+        return hasParentAnchor == true and 80 or 48;
+    end
+
     if (hideLoadMode == true) then
-        if (settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate') then
+        if (hasParentAnchor == true) then
             return 108;
         end
 
         return 80;
     end
 
-    if (settings ~= nil and tostring(settings.anchorTo or 'Plate') ~= 'Plate') then
+    if (hasParentAnchor == true) then
         return 136;
     end
 
@@ -6222,6 +6336,20 @@ function addStyle(value)
     table.sort(styles, function(a, b) return string.lower(tostring(a)) < string.lower(tostring(b)); end);
 
     return styles;
+end
+
+function GetEnemyIconPackChoices()
+    local choices = T{ 'Use Settings theme default' };
+
+    for _, style in ipairs(GetPeerIconStyles()) do
+        choices[#choices + 1] = style;
+    end
+
+    return choices;
+end
+
+function GetEnemyIconPackFolderPath()
+    return tostring(addon.path or '') .. '\\assets\\images\\peer-icons\\';
 end
 
 local peerEnemyInfoItems = T{
@@ -6521,7 +6649,7 @@ function DrawPeerJobComponentSettings(settings)
     end
 
     if (tostring(peer.jobDisplay or 'Text') == 'Icon') then
-        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', peer.jobIconSize, 'PeerJobIconSize', 6, 160, 1);
+        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', peer.jobIconSize, 'PeerJobIconSize', 6, 256, 1);
         if (iconSizeChanged == true) then
             peer.jobIconSize = iconSize;
             state.Save();
@@ -6548,7 +6676,7 @@ function DrawPeerIconComponentSettings(settings, activeKey, prefix, label)
         state.Save();
     end
 
-    local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', peer[prefix .. 'IconSize'], 'Peer' .. label .. 'IconSize', 6, 64, 1, 104, 124, 58);
+    local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', peer[prefix .. 'IconSize'], 'Peer' .. label .. 'IconSize', 6, 256, 1, 104, 124, 58);
     if (iconSizeChanged == true) then
         peer[prefix .. 'IconSize'] = iconSize;
         state.Save();
@@ -6869,7 +6997,7 @@ function LibraPlatesSettingsDrawPeerModuleSettings(settings, options)
             state.Save();
         end
 
-        if (options.hideDisplayMode ~= true) then
+        if (options.hideDisplayMode ~= true and options.hideDisplayDropdown ~= true) then
             DrawInlineComboRow('Display', T{ 'Text', 'Icons' }, settings.peer.displayMode, function(value)
                 settings.peer.displayMode = value;
                 state.Save();
@@ -6877,10 +7005,10 @@ function LibraPlatesSettingsDrawPeerModuleSettings(settings, options)
         end
     end, true);
 
-    if (options.hideDisplayMode ~= true) then
+    if (options.hideDisplayMode ~= true or options.forceTextDisplay == true) then
         LibraPlatesSettingsDrawBoxedPanel('Display', function()
-            if (tostring(settings.peer.displayMode or 'Icons') == 'Text') then
-            local textColor, textColorChanged = DrawSettingsColor('Font color', settings.peer.textColor, 'PeerTextColor');
+            if (options.forceTextDisplay == true or tostring(settings.peer.displayMode or 'Icons') == 'Text') then
+            local textColor, textColorChanged = DrawSettingsColor('Font color', settings.peer.textColor, 'PeerTextColor', 96);
             settings.peer.textColor = textColor;
             if (textColorChanged == true) then state.Save(); end
 
@@ -6906,7 +7034,7 @@ function LibraPlatesSettingsDrawPeerModuleSettings(settings, options)
                 state.Save();
             end, 'PeerIconStyle', settingsLabelColor, 104, nil, 210);
 
-            local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.peer.iconSize, 'PeerInspectorIconSize', 6, 64, 1, 104, 124, 58);
+            local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.peer.iconSize, 'PeerInspectorIconSize', 6, 256, 1, 104, 124, 58);
             if (iconSizeChanged == true) then
                 settings.peer.iconSize = iconSize;
                 state.Save();
@@ -6993,37 +7121,41 @@ function DrawEnmityIconComboRow(label, items, selected, onSelect, id, fallback)
                 imgui.PopItemWidth();
             end
 
+            LibraPlatesFileManager.Draw(LibraPlatesEnmityIcons.GetFolderPath(), 'EnmityIcon_' .. tostring(id or label));
+
             return;
         end
 
-        DrawInlineComboRow(label, items, current, onSelect, id, nil, 94, settingsTableFlagsNoBorders);
+        DrawInlineComboRow(label, items, current, onSelect, id, nil, 94, settingsTableFlagsNoBorders, 260, LibraPlatesEnmityIcons.GetFolderPath());
     end
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##settings_enmity_icon_combo_' .. tostring(id or label or 'combo'), 2, settingsTableFlagsNoBorders)) then
-            imgui.TableSetupColumn('##label', 0, 94);
-            imgui.TableSetupColumn('##control', 0, 260);
+            imgui.TableSetupColumn('##label', 0, 104);
+            imgui.TableSetupColumn('##control', 0, 292);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, label);
+            imgui.TextColored(settingsLabelColor, label);
             imgui.TableNextColumn();
             DrawControl();
             imgui.EndTable();
         end
     else
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, label);
+        imgui.TextColored(settingsLabelColor, label);
         imgui.SameLine();
         DrawControl();
     end
 end
 
-function DrawEnmityMarkerSettings(enmitySettings, role)
+function DrawEnmityMarkerSettings(enmitySettings, role, hideHeader)
     local prefix = role == 'enemy' and 'enemy' or 'ally';
     local title = role == 'enemy' and 'Enemy control marker' or 'Ally danger marker';
     local idPrefix = role == 'enemy' and 'EnemyControl' or 'AllyDanger';
 
-    DrawYellowHeader(title);
-    imgui.Spacing();
+    if (hideHeader ~= true) then
+        DrawYellowHeader(title);
+        imgui.Spacing();
+    end
 
     local iconKey = prefix .. 'IconFile';
     local colorKey = prefix .. 'Color';
@@ -7036,7 +7168,7 @@ function DrawEnmityMarkerSettings(enmitySettings, role)
         enmitySettings[iconKey] = LibraPlatesEnmityIcons.ResolveFile(value, currentIcon);
         state.Save();
     end, idPrefix .. 'IconFile', currentIcon);
-    local iconColor, iconColorChanged = DrawSettingsColor('Color', enmitySettings[colorKey], idPrefix .. 'Color');
+    local iconColor, iconColorChanged = DrawSettingsColor('Color', enmitySettings[colorKey], idPrefix .. 'Color', 104);
     if (iconColorChanged == true) then
         enmitySettings[colorKey] = iconColor;
         state.Save();
@@ -7049,7 +7181,7 @@ function DrawEnmityMarkerSettings(enmitySettings, role)
         state.Save();
     end
 
-    local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', enmitySettings[sizeKey], idPrefix .. 'IconSize', 6, 160, 1, 104, 124, 58);
+    local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', enmitySettings[sizeKey], idPrefix .. 'IconSize', 6, 256, 1, 104, 124, 58);
     if (iconSizeChanged == true) then
         enmitySettings[sizeKey] = iconSize;
         state.Save();
@@ -7098,7 +7230,7 @@ function LibraPlatesSettingsDrawEnmityModuleSettings(settings, options)
         return;
     end
 
-    DrawEnmityMarkerSettings(settings.enmity, role);
+    DrawEnmityMarkerSettings(settings.enmity, role, options.hideMarkerHeader == true);
 end
 
 function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
@@ -7587,7 +7719,7 @@ function LibraPlatesSettingsDrawFishingModuleSettings(settings, hideActive, sele
                 DrawInlineComboRow('Background image', require('core.background_textures').GetFiles(), settings.fishing.backgroundTexture or 'None', function(value)
                     settings.fishing.backgroundTexture = value;
                     state.Save();
-                end, 'FishingHudBackgroundTexture', nil, 136, settingsTableFlagsNoBorders, 260);
+                end, 'FishingHudBackgroundTexture', nil, 136, settingsTableFlagsNoBorders, 260, require('core.background_textures').GetFolderPath());
 
                 local backgroundColor, backgroundColorChanged, backgroundOpacity, backgroundOpacityChanged = DrawColorAndPlacementRow('Fill color', settings.fishing.backgroundColor, 'FishingHudBackgroundColor', 'Opacity', settings.fishing.backgroundOpacity, 'FishingHudBackgroundOpacity', 0, 100, 1);
                 if (backgroundColorChanged == true) then
@@ -7736,94 +7868,15 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
         LibraPlatesSettingsDrawBoxedPanel(label, render, first);
     end
 
-    DrawPanel('Interaction', function()
-        DrawCheckbox('Right-click gathering actions', settings.gathering.enableRightClickGathering == true, function(value)
-            settings.gathering.enableRightClickGathering = value == true;
-            state.Save();
-        end);
-        uiTooltip.Info('Master switch for right-click gathering on known object plates.');
-
-        DrawCheckbox('Show gathering points', settings.gathering.showGatheringPoints ~= false, function(value)
-            settings.gathering.showGatheringPoints = value == true;
-            state.Save();
-        end);
-
-        DrawCheckbox('Only show if matching tool is in inventory', settings.gathering.showGatheringPointsOnlyWithTool == true, function(value)
-            settings.gathering.showGatheringPointsOnlyWithTool = value == true;
-            state.Save();
-        end);
-        uiTooltip.Info('When enabled, logging/harvest/mining/excavation points only show if the matching tool is available in inventory.');
-
-        if (settings.gathering.enableRightClickGathering == true) then
-            imgui.Indent();
-
-            imgui.TextColored(settingsLabelColor, 'Right-click gathering if the tool is equipped:');
-
-            DrawCheckbox('Pickaxe: start mining', settings.gathering.enableRightClickMining == true, function(value)
-                settings.gathering.enableRightClickMining = value == true;
-                state.Save();
-            end);
-
-            DrawCheckbox('Sickle: start harvesting', settings.gathering.enableRightClickHarvesting == true, function(value)
-                settings.gathering.enableRightClickHarvesting = value == true;
-                state.Save();
-            end);
-
-            DrawCheckbox('Hatchet: start logging', settings.gathering.enableRightClickLogging == true, function(value)
-                settings.gathering.enableRightClickLogging = value == true;
-                state.Save();
-            end);
-
-            DrawCheckbox('Pickaxe: start excavation', settings.gathering.enableRightClickExcavation == true, function(value)
-                settings.gathering.enableRightClickExcavation = value == true;
-                state.Save();
-            end);
-
-            uiTooltip.Info('Known mappings: Mining Point -> Pickaxe, Harvest Point -> Sickle, Logging Point -> Hatchet, Excavation Point -> Pickaxe.');
-
-            imgui.Unindent();
-        end
-    end, true);
-
     DrawPanel('Gathering', function()
         DrawInlineComboRow('Display mode', T{ 'Tool only', 'Count only', 'Tool + count' }, settings.gathering.displayMode or 'Tool + count', function(value)
             settings.gathering.displayMode = value;
             state.Save();
         end, 'GatheringDisplayMode', nil, 120);
-
-        local anchorTargets = T{ 'None' };
-        for _, widgetName in ipairs(GetEditWidgetsFor('Self', 'World')) do
-            if (widgetName ~= 'Gathering (module)') then
-                anchorTargets[#anchorTargets + 1] = widgetName;
-            end
-        end
-
-        local beforeAnchorTo = settings.gathering.anchorTo;
-        local beforeAnchorPoint = settings.gathering.anchorPoint;
-        local beforeOffsetX = settings.gathering.offsetX;
-        local beforeOffsetY = settings.gathering.offsetY;
-
-        anchorControls.Draw(settings.gathering, {
-            entity = 'Self',
-            state = 'World',
-            widget = 'Gathering',
-            defaults = globalDefaults.gathering,
-            anchorChoices = anchorTargets,
-            suppressHeaderSeparators = true,
-            headerControlOffset = 90,
-        }, 'Gathering');
-        if (
-            beforeAnchorTo ~= settings.gathering.anchorTo or
-            beforeAnchorPoint ~= settings.gathering.anchorPoint or
-            beforeOffsetX ~= settings.gathering.offsetX or
-            beforeOffsetY ~= settings.gathering.offsetY
-        ) then
-            state.Save();
-        end
-    end);
+    end, true);
 
     DrawPanel('Icon', function()
-        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.gathering.iconSize, 'GatheringIconSize', 1, 200, 1, 120, 124, 58);
+        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.gathering.iconSize, 'GatheringIconSize', 1, 256, 1, 120, 124, 58);
         if (iconSizeChanged == true) then
             settings.gathering.iconSize = iconSize;
             state.Save();
@@ -7888,6 +7941,45 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
             settings.gathering.countOutlineColor = outlineColor;
             state.Save();
         end
+    end);
+
+    DrawPanel('Interaction', function()
+        DrawCheckbox('Show gathering points', settings.gathering.showGatheringPoints ~= false, function(value)
+            settings.gathering.showGatheringPoints = value == true;
+            state.Save();
+        end);
+
+        DrawCheckbox('Only show if matching tool is in inventory', settings.gathering.showGatheringPointsOnlyWithTool == true, function(value)
+            settings.gathering.showGatheringPointsOnlyWithTool = value == true;
+            state.Save();
+        end);
+        uiTooltip.Info('When enabled, logging/harvest/mining/excavation points only show if the matching tool is available in inventory.');
+    end);
+
+    DrawPanel('', function()
+        DrawYellowHeader('Right-click gathering');
+        uiTooltip.Info('Choose which gathering points can be activated by right-clicking their plates: Mining and Excavation use a Pickaxe, Harvesting uses a Sickle, and Logging uses a Hatchet.');
+        imgui.Spacing();
+
+        DrawCheckbox('Pickaxe: start mining', settings.gathering.enableRightClickMining == true, function(value)
+            settings.gathering.enableRightClickMining = value == true;
+            state.Save();
+        end);
+
+        DrawCheckbox('Sickle: start harvesting', settings.gathering.enableRightClickHarvesting == true, function(value)
+            settings.gathering.enableRightClickHarvesting = value == true;
+            state.Save();
+        end);
+
+        DrawCheckbox('Hatchet: start logging', settings.gathering.enableRightClickLogging == true, function(value)
+            settings.gathering.enableRightClickLogging = value == true;
+            state.Save();
+        end);
+
+        DrawCheckbox('Pickaxe: start excavation', settings.gathering.enableRightClickExcavation == true, function(value)
+            settings.gathering.enableRightClickExcavation = value == true;
+            state.Save();
+        end);
     end);
 
     if (imgui.Spacing ~= nil) then
@@ -7984,7 +8076,7 @@ function LibraPlatesSettingsDrawCraftingModuleSettings(settings, hideActive)
         state.Save();
     end, 'CraftingDisplayMode', { 1.0, 1.0, 1.0, 1.0 }, 104, nil, 220);
 
-    DrawInlineComboRow('Preview result', crafting.GetResultChoices(), settings.crafting.previewResultName or 'High-Quality', function(value)
+    DrawInlineComboRow('Preview icon', crafting.GetResultChoices(), settings.crafting.previewResultName or 'High-Quality', function(value)
         settings.crafting.previewResultName = value;
         state.Save();
     end, 'CraftingPreviewResult', { 1.0, 1.0, 1.0, 1.0 }, 104, nil, 220);
@@ -7997,7 +8089,7 @@ function LibraPlatesSettingsDrawCraftingModuleSettings(settings, hideActive)
     end
 
     if (tostring(settings.crafting.displayMode or 'Icon') == 'Icon') then
-        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.crafting.iconSize, 'CraftingIconSize', 1, 200, 1, 104, 124, 58);
+        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.crafting.iconSize, 'CraftingIconSize', 1, 256, 1, 104, 124, 58);
         if (iconSizeChanged == true) then
             settings.crafting.iconSize = iconSize;
             state.Save();
@@ -8106,7 +8198,7 @@ local function DrawQuickMenuIconRow(menu)
     end);
 
     if (menu.iconsEnabled == true) then
-        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', menu.iconSize, 'QuickMenuIconSize', 8, 64, 1, 130, 124, 58);
+        local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', menu.iconSize, 'QuickMenuIconSize', 8, 256, 1, 130, 124, 58);
         if (iconSizeChanged == true) then
             menu.iconSize = iconSize;
             state.Save();
@@ -8129,15 +8221,11 @@ local function DrawQuickMenuColorRow(menu)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local changed = false;
 
-        if (imgui.BeginTable('##quick_menu_color_settings', 8, settingsTableFlags)) then
-            imgui.TableSetupColumn('##background_label', 0, 92);
-            imgui.TableSetupColumn('##background_control', 0, 62);
-            imgui.TableSetupColumn('##header_label', 0, 72);
-            imgui.TableSetupColumn('##header_control', 0, 62);
-            imgui.TableSetupColumn('##text_label', 0, 54);
-            imgui.TableSetupColumn('##text_control', 0, 62);
-            imgui.TableSetupColumn('##link_label', 0, 50);
-            imgui.TableSetupColumn('##link_control', 0, 62);
+        if (imgui.BeginTable('##quick_menu_color_settings', 4, settingsTableFlags)) then
+            imgui.TableSetupColumn('##left_label', 0, 125);
+            imgui.TableSetupColumn('##left_control', 0, 125);
+            imgui.TableSetupColumn('##right_label', 0, 125);
+            imgui.TableSetupColumn('##right_control', 0, 125);
             imgui.TableNextRow();
 
             imgui.TableNextColumn();
@@ -8158,6 +8246,7 @@ local function DrawQuickMenuColorRow(menu)
                 imgui.TextColored(menu.headerColor, 'sample');
             end
 
+            imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(settingsLabelColor, 'Text');
             imgui.TableNextColumn();
@@ -8323,30 +8412,6 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
                 state.Save();
             end);
 
-            if (imgui.Button ~= nil and imgui.Button('Refresh Home Point unlocks##QuickMenuWarpRefreshUnlocks') == true) then
-                local ok, message = require('core.home_point_warp').ForceRefreshFromCurrentTarget();
-                settingsUi.homePointRefreshMessage = tostring(message or '');
-                if (ok == true) then
-                    log.Info(settingsUi.homePointRefreshMessage);
-                else
-                    log.Warn(settingsUi.homePointRefreshMessage);
-                end
-            end
-            uiTooltip.Info('Target a Home Point crystal before refreshing. This updates the saved unlock cache used by the quick menu.');
-
-            local summary = require('core.home_point_warp').GetUnlockSummary();
-            if (summary.pending == 'refresh') then
-                imgui.TextColored({ 0.72, 0.85, 1.0, 1.0 }, 'Checking Home Point unlocks...');
-            elseif (settingsUi.homePointRefreshMessage ~= '') then
-                imgui.TextColored(settingsLabelColor, settingsUi.homePointRefreshMessage);
-            elseif (summary.known == true) then
-                imgui.TextColored(settingsLabelColor, 'Last cache: ' .. tostring(summary.unlocked or 0) .. '/' .. tostring(summary.total or 0));
-            end
-
-            DrawCheckbox('Debug info', menu.warp.debug == true, function(value)
-                menu.warp.debug = value == true;
-                state.Save();
-            end);
         end);
     end
 
@@ -8782,6 +8847,16 @@ local function DrawGeneralFontSection(global)
             uiTooltip.Info('This pack is used by all Buffs and Debuffs across LibraPlates. Individual plates still keep their own icon size, spacing, and position settings.');
             DrawStatusIconPackPreview(statusIconTextures);
         end);
+
+        LibraPlatesSettingsDrawBoxedPanel('Enemy icon pack', function()
+            DrawInlineCombo('', GetPeerIconStyles(), global.enemyIconStyle or 'round', function(iconPack)
+                global.enemyIconStyle = tostring(iconPack or 'round');
+                state.Save();
+            end);
+            LibraPlatesFileManager.Draw(GetEnemyIconPackFolderPath(), 'EnemyDefaultIconPackFolder');
+            uiTooltip.Info('This is the default pack used by Enemy Behavior, Detects, and Links icons. Each of those widgets can either follow this default or select its own pack. Peer Inspector has a separate icon-pack setting.');
+            DrawEnemyIconPackPreview(global.enemyIconStyle or 'round');
+        end);
     end);
 end
 
@@ -8825,7 +8900,6 @@ local function DrawGeneralNativeUiSection(settings)
             uiTooltip.Info('When on, LibraPlates names use known native special colors such as /anon blue and CW/UCW orange. Use native names still hides LibraPlates name text.');
 
             if (nativeUiForced == true) then
-                imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, 'Mog House forces native targeting at runtime.');
             end
         end);
     end);
@@ -9103,7 +9177,6 @@ local function DrawGeneralMouseSection()
                 settings.rightClickAttackRange = math.max(3.0, math.min(29.9, tonumber(value) or 4.5));
             end, 'MouseRightClickAttackRange');
 
-            DrawMouseWrappedText('Range includes a small hitbox allowance, matching the old addon behavior.');
         end
     end);
 
@@ -10784,14 +10857,6 @@ local function DrawGeneralScalingSection(settings)
                 StageGlobalDistanceScale(settings.pcDistanceScaleStart, settings.pcDistanceScaleEnd, value, 'max');
             end, nil, 'Largest scale used for far-away plates.');
 
-            DrawCheckbox('Custom entity distance scaling', settings.customEntityDistanceScaling == true, function(value)
-                settings.customEntityDistanceScaling = value == true;
-                if (settings.customEntityDistanceScaling == true) then
-                    EnsureEntityDistanceScales();
-                end
-                state.Save();
-            end);
-            uiTooltip.Info('Use separate distance scaling values for PC, Enemy, Trust, Pet, NPC, and Object plates.', true);
         end, true);
 
         LibraPlatesSettingsDrawBoxedPanel('Character height adjustments', function()
@@ -10839,8 +10904,18 @@ local function DrawGeneralScalingSection(settings)
             end
         end
 
-        if (settings.customEntityDistanceScaling == true) then
-            LibraPlatesSettingsDrawBoxedPanel('Entity distance scaling', function()
+        LibraPlatesSettingsDrawBoxedPanel('Entity distance scaling', function()
+            DrawCheckbox('Custom entity distance scaling', settings.customEntityDistanceScaling == true, function(value)
+                settings.customEntityDistanceScaling = value == true;
+                if (settings.customEntityDistanceScaling == true) then
+                    EnsureEntityDistanceScales();
+                end
+                state.Save();
+            end);
+            uiTooltip.Info('Use separate distance scaling values for PC, Enemy, Trust, Pet, NPC, and Object plates.', true);
+
+            if (settings.customEntityDistanceScaling == true) then
+                imgui.Spacing();
                 imgui.TextWrapped('Fine-tune distance scaling per entity type with its own start distance, max distance, and max scale.');
                 imgui.Spacing();
 
@@ -10851,8 +10926,8 @@ local function DrawGeneralScalingSection(settings)
                 DrawEntityScale('Pet', 'pet');
                 DrawEntityScale('NPC', 'npc');
                 DrawEntityScale('Object', 'object');
-            end);
-        end
+            end
+        end);
 
         if (imgui.SetNextWindowSize ~= nil) then
             imgui.SetNextWindowSize({ 430, 120 }, _G.ImGuiCond_Appearing or 8);
@@ -11021,6 +11096,7 @@ local helpEntries = {
     { kind = 'Setting', title = 'Hide distant world plates', path = 'Settings > Performance > World plates', text = 'Hides world plates past the distance limit while keeping target/subtarget/tactical plates.', tab = 'Settings', section = 'Performance' },
     { kind = 'Setting', title = 'AOE font color', path = 'Plates > Enemy > Tactical > AOE range (module)', text = 'Font color used for offensive AOE affected enemy names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
     { kind = 'Setting', title = 'AOE icon', path = 'Plates > Enemy/Self > Tactical > AOE range (module)', text = 'Optional icon shown with AOE affected names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
+    { kind = 'Setting', title = 'Enemy default icon pack', path = 'Settings > Theme > Enemy icon pack', text = 'Default icon pack for Enemy Behavior, Detects, and Links widgets. Each widget can override this default.', tab = 'Settings', section = 'Theme' },
 };
 
 local helpWidgetDescriptions = {
@@ -11049,10 +11125,10 @@ local helpWidgetDescriptions = {
     ['Stars icon'] = 'Catseye/new adventurer star icon display, size, position, and anchor settings.',
     ['Level sync icon'] = 'Level sync icon display, size, position, and anchor settings.',
     ['New adventurer icon'] = 'New adventurer icon display, size, position, and anchor settings.',
-    ['Behavior icon'] = 'Enemy behavior icon display, size, position, and anchor settings.',
-    ['Detects icon'] = 'Enemy detection icon display, size, position, and anchor settings.',
-    ['Links icon'] = 'Enemy links icon display, size, position, and anchor settings.',
-    ['Special icon'] = 'Enemy special/Catseye star icon display, size, position, and anchor settings.',
+    ['Behavior icon'] = 'Enemy behavior icon pack override, display, size, position, and anchor settings.',
+    ['Detects icon'] = 'Enemy detection icon pack override, display, size, position, and anchor settings.',
+    ['Links icon'] = 'Enemy links icon pack override, display, size, position, and anchor settings.',
+    ['Special icon'] = 'Enemy Special target markers for T3 Incursion and Activity Point mobs, including display, size, position, and anchor settings.',
     ['Icon'] = 'NPC/Object icon display, size, position, and anchor settings.',
     ['NPC icon'] = 'NPC icon display, size, position, and anchor settings.',
     ['Object icon'] = 'Object icon display, size, position, and anchor settings.',
@@ -11080,17 +11156,134 @@ local helpWidgetDescriptions = {
 
 local helpGeneralEntries = {
     { kind = 'Settings', title = 'Profiles', path = 'Settings > Profiles', text = 'Create, copy, rename, delete, reset, and auto-switch profiles.', tab = 'Settings', section = 'Profiles' },
-    { kind = 'Settings', title = 'Theme', path = 'Settings > Theme', text = 'Global large/small font selection, font install status, and the global Buff/Debuff icon pack.', tab = 'Settings', section = 'Theme' },
+    { kind = 'Settings', title = 'Theme', path = 'Settings > Theme', text = 'Global fonts, Buff/Debuff status icons, and the default Enemy icon pack.', tab = 'Settings', section = 'Theme' },
     { kind = 'Settings', title = 'Native UI', path = 'Settings > Native UI', text = 'Native name/target UI replacement and hiding behavior.', tab = 'Settings', section = 'Native UI' },
     { kind = 'Settings', title = 'Mouse', path = 'Settings > Mouse', text = 'Mouse adornment, mouse movement, click blocking, targeting, and right-click behavior.', tab = 'Settings', section = 'Mouse' },
     { kind = 'Settings', title = 'Visibility', path = 'Settings > Visibility', text = 'World plate filters, hide other players pet plates, plate stacking, tactical screen limits.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Help', title = 'Custom Alerts', path = 'Help > Custom Alerts', text = 'How to use custom Screen Alert triggers, Contains matching, Lua patterns, wildcards, anchors, escaping, and examples.', tab = 'Help', section = 'Custom Alerts' },
-    { kind = 'Settings', title = 'Scaling', path = 'Settings > Scaling', text = 'Global and per-entity distance scaling and plate position settings.', tab = 'Settings', section = 'Scaling' },
+    { kind = 'Settings', title = 'Scaling', path = 'Settings > Scaling', text = 'Global and per-entity distance scaling, plate position, and model height adjustments.', tab = 'Settings', section = 'Scaling' },
     { kind = 'Settings', title = 'Performance', path = 'Settings > Performance', text = 'Performance monitor, FPS mode, presets, world plate performance, texture cache, and safety settings.', tab = 'Settings', section = 'Performance' },
 };
 
 local function NormalizeHelpText(value)
     return tostring(value or ''):lower():gsub('[^%w%s]+', ' '):gsub('%s+', ' '):gsub('^%s+', ''):gsub('%s+$', '');
+end
+
+function LibraPlatesSettingsGetHelpQueryAlternatives(word)
+    word = NormalizeHelpText(word);
+    local alternatives = { word };
+    local seen = { [word] = true };
+
+    for _, group in ipairs((LibraPlatesHelpSearchTerms or {}).aliases or {}) do
+        local groupMatches = false;
+        for _, term in ipairs(group) do
+            local normalizedTerm = NormalizeHelpText(term);
+            for termWord in normalizedTerm:gmatch('%S+') do
+                if (termWord == word) then
+                    groupMatches = true;
+                    break;
+                end
+            end
+            if (groupMatches == true) then
+                break;
+            end
+        end
+
+        if (groupMatches == true) then
+            for _, term in ipairs(group) do
+                local normalizedTerm = NormalizeHelpText(term);
+                if (seen[normalizedTerm] ~= true) then
+                    seen[normalizedTerm] = true;
+                    alternatives[#alternatives + 1] = normalizedTerm;
+                end
+            end
+        end
+    end
+
+    return alternatives;
+end
+
+function LibraPlatesSettingsBuildHelpSearchTerms(entry)
+    local searchTerms = LibraPlatesHelpSearchTerms or {};
+    local parts = {};
+
+    local function add(value)
+        value = tostring(value or '');
+        if (value ~= '') then
+            parts[#parts + 1] = value;
+        end
+    end
+
+    add((searchTerms.settings or {})[entry.section]);
+    add((searchTerms.entities or {})[entry.entity]);
+    add((searchTerms.states or {})[entry.state]);
+    add((searchTerms.widgets or {})[entry.widget]);
+    add((searchTerms.features or {})[entry.title]);
+    add(entry.terms);
+
+    return table.concat(parts, ' ');
+end
+
+function LibraPlatesSettingsHelpWordsAreClose(left, right)
+    left = tostring(left or '');
+    right = tostring(right or '');
+    local leftLength = #left;
+    local rightLength = #right;
+
+    if (math.min(leftLength, rightLength) < 3 or math.abs(leftLength - rightLength) > 1) then
+        return false;
+    end
+
+    if (leftLength == rightLength) then
+        local differences = 0;
+        for index = 1, leftLength do
+            if (left:sub(index, index) ~= right:sub(index, index)) then
+                differences = differences + 1;
+                if (differences > 1) then
+                    return false;
+                end
+            end
+        end
+        return differences == 1;
+    end
+
+    local shorter = leftLength < rightLength and left or right;
+    local longer = leftLength < rightLength and right or left;
+    local shortIndex = 1;
+    local longIndex = 1;
+    local skipped = false;
+
+    while (shortIndex <= #shorter and longIndex <= #longer) do
+        if (shorter:sub(shortIndex, shortIndex) == longer:sub(longIndex, longIndex)) then
+            shortIndex = shortIndex + 1;
+            longIndex = longIndex + 1;
+        elseif (skipped == false) then
+            skipped = true;
+            longIndex = longIndex + 1;
+        else
+            return false;
+        end
+    end
+
+    return true;
+end
+
+function LibraPlatesSettingsHelpAlternativeMatches(haystack, alternative, allowFuzzy)
+    if (haystack:find(alternative, 1, true) ~= nil) then
+        return true;
+    end
+
+    if (allowFuzzy ~= true or alternative:find(' ', 1, true) ~= nil) then
+        return false;
+    end
+
+    for haystackWord in haystack:gmatch('%S+') do
+        if (LibraPlatesSettingsHelpWordsAreClose(alternative, haystackWord) == true) then
+            return true;
+        end
+    end
+
+    return false;
 end
 
 local function BuildHelpEntries()
@@ -11102,6 +11295,7 @@ local function BuildHelpEntries()
             return;
         end
 
+        entry.searchTerms = LibraPlatesSettingsBuildHelpSearchTerms(entry);
         local key = tostring(entry.kind or '') .. '|' .. tostring(entry.path or '') .. '|' .. tostring(entry.title or '');
         if (seen[key] == true) then
             return;
@@ -11112,6 +11306,7 @@ local function BuildHelpEntries()
     end
 
     for _, entry in ipairs(helpEntries) do add(entry); end
+    for _, entry in ipairs((LibraPlatesHelpSearchTerms or {}).destinations or {}) do add(entry); end
     for _, entry in ipairs(helpGeneralEntries) do add(entry); end
 
     for _, entity in ipairs(entities) do
@@ -11134,20 +11329,188 @@ local function BuildHelpEntries()
     return results;
 end
 
-local function HelpEntryMatches(entry, query)
+local function HelpEntryMatches(entry, query, allowFuzzy)
     if (query == '') then
         return true;
     end
 
-    local haystack = NormalizeHelpText(tostring(entry.kind or '') .. ' ' .. tostring(entry.title or '') .. ' ' .. tostring(entry.path or '') .. ' ' .. tostring(entry.text or ''));
+    local haystack = NormalizeHelpText(tostring(entry.kind or '') .. ' ' .. tostring(entry.title or '') .. ' ' .. tostring(entry.path or '') .. ' ' .. tostring(entry.text or '') .. ' ' .. tostring(entry.searchTerms or ''));
+    local exactWordCount = 0;
+    local queryWordCount = 0;
 
     for word in query:gmatch('%S+') do
-        if (haystack:find(word, 1, true) == nil) then
+        queryWordCount = queryWordCount + 1;
+        local wordMatched = false;
+        for _, alternative in ipairs(LibraPlatesSettingsGetHelpQueryAlternatives(word)) do
+            if (haystack:find(alternative, 1, true) ~= nil) then
+                exactWordCount = exactWordCount + 1;
+                wordMatched = true;
+                break;
+            end
+        end
+        if (wordMatched ~= true and allowFuzzy == true) then
+            for _, alternative in ipairs(LibraPlatesSettingsGetHelpQueryAlternatives(word)) do
+                if (LibraPlatesSettingsHelpAlternativeMatches(haystack, alternative, true) == true) then
+                    wordMatched = true;
+                    break;
+                end
+            end
+        end
+        if (wordMatched ~= true) then
             return false;
         end
     end
 
+    if (allowFuzzy == true and queryWordCount > 1 and exactWordCount == 0) then
+        return false;
+    end
+
     return true;
+end
+
+function LibraPlatesSettingsGetHelpTextSize(text)
+    if (imgui.CalcTextSize == nil) then
+        return #tostring(text or '') * 8, 16;
+    end
+
+    local sizeA, sizeB = imgui.CalcTextSize(tostring(text or ''));
+    if (type(sizeA) == 'table') then
+        return tonumber(sizeA.x or sizeA[1]) or 0, tonumber(sizeA.y or sizeA[2]) or 16;
+    end
+
+    return tonumber(sizeA) or 0, tonumber(sizeB) or 16;
+end
+
+function LibraPlatesSettingsDrawHighlightedHelpText(text, query, wrapText)
+    text = tostring(text or '');
+    query = NormalizeHelpText(query);
+
+    if (query == '' or imgui.GetWindowDrawList == nil or imgui.GetColorU32 == nil or imgui.Dummy == nil) then
+        if (wrapText == true and imgui.TextWrapped ~= nil) then
+            imgui.TextWrapped(text);
+        else
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, text);
+        end
+        return;
+    end
+
+    local matched = {};
+    local lowerText = text:lower();
+    for word in query:gmatch('%S+') do
+        for _, alternative in ipairs(LibraPlatesSettingsGetHelpQueryAlternatives(word)) do
+            local searchFrom = 1;
+            while (searchFrom <= #lowerText) do
+                local matchStart, matchEnd = lowerText:find(alternative, searchFrom, true);
+                if (matchStart == nil) then
+                    break;
+                end
+                for index = matchStart, matchEnd do
+                    matched[index] = true;
+                end
+                searchFrom = matchEnd + 1;
+            end
+        end
+    end
+
+    local totalWidth, textHeight = LibraPlatesSettingsGetHelpTextSize(text);
+    local x, y = GetCursorScreenPos();
+    local drawList = imgui.GetWindowDrawList();
+    local normalColor = imgui.GetColorU32({ 0.92, 0.92, 0.90, 1.0 });
+    local highlightColor = imgui.GetColorU32({ 0.72, 0.58, 0.08, 0.82 });
+    local highlightTextColor = imgui.GetColorU32({ 0.08, 0.07, 0.02, 1.0 });
+    local offsetX = 0;
+    local offsetY = 0;
+    local availableWidth = math.max(1, select(1, GetContentRegionAvail()) or totalWidth);
+
+    local function DrawRange(rangeStart, rangeEnd)
+        if (rangeStart > rangeEnd) then return; end
+
+        local segmentStart = rangeStart;
+        local segmentMatched = matched[rangeStart] == true;
+        for index = rangeStart + 1, rangeEnd + 1 do
+            local nextMatched = index <= rangeEnd and matched[index] == true or nil;
+            if (index > rangeEnd or nextMatched ~= segmentMatched) then
+                local segmentText = text:sub(segmentStart, index - 1);
+                local segmentWidth = LibraPlatesSettingsGetHelpTextSize(segmentText);
+                if (segmentMatched == true) then
+                    drawList:AddRectFilled(
+                        { x + offsetX - 1, y + offsetY },
+                        { x + offsetX + segmentWidth + 1, y + offsetY + textHeight },
+                        highlightColor
+                    );
+                end
+                drawList:AddText(
+                    { x + offsetX, y + offsetY },
+                    segmentMatched == true and highlightTextColor or normalColor,
+                    segmentText
+                );
+                offsetX = offsetX + segmentWidth;
+                segmentStart = index;
+                segmentMatched = nextMatched;
+            end
+        end
+    end
+
+    local cursor = 1;
+    while (cursor <= #text) do
+        local wordStart, wordEnd = text:find('%S+', cursor);
+        if (wordStart == nil) then
+            DrawRange(cursor, #text);
+            break;
+        end
+
+        if (wordStart > cursor) then
+            DrawRange(cursor, wordStart - 1);
+        end
+
+        local nextWordStart = text:find('%S+', wordEnd + 1);
+        local tokenEnd = nextWordStart ~= nil and (nextWordStart - 1) or #text;
+        local tokenWidth = LibraPlatesSettingsGetHelpTextSize(text:sub(wordStart, tokenEnd));
+        if (wrapText == true and offsetX > 0 and (offsetX + tokenWidth) > availableWidth) then
+            offsetX = 0;
+            offsetY = offsetY + textHeight;
+        end
+        DrawRange(wordStart, tokenEnd);
+        cursor = tokenEnd + 1;
+    end
+
+    imgui.Dummy({ math.max(1, math.min(totalWidth, availableWidth)), math.max(1, offsetY + textHeight) });
+end
+
+function LibraPlatesSettingsDrawHighlightedHelpPath(path, query)
+    LibraPlatesSettingsDrawHighlightedHelpText(path, query, false);
+end
+
+function LibraPlatesSettingsDrawHelpKind(kind)
+    kind = tostring(kind or 'Help');
+    local lowerKind = kind:lower();
+    local background = nil;
+
+    if (lowerKind == 'setting' or lowerKind == 'settings') then
+        background = { 0.28, 0.50, 0.61, 0.82 };
+    elseif (lowerKind == 'feature') then
+        background = { 0.30, 0.56, 0.36, 0.82 };
+    elseif (lowerKind == 'plate') then
+        background = { 0.62, 0.53, 0.25, 0.82 };
+    elseif (lowerKind == 'help') then
+        background = { 0.58, 0.34, 0.50, 0.82 };
+    end
+
+    if (background == nil or imgui.GetWindowDrawList == nil or imgui.GetColorU32 == nil or imgui.Dummy == nil) then
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, kind);
+        return;
+    end
+
+    local textWidth, textHeight = LibraPlatesSettingsGetHelpTextSize(kind);
+    local x, y = GetCursorScreenPos();
+    local drawList = imgui.GetWindowDrawList();
+    drawList:AddRectFilled(
+        { x - 2, y },
+        { x + textWidth + 3, y + textHeight },
+        imgui.GetColorU32(background)
+    );
+    drawList:AddText({ x, y }, imgui.GetColorU32({ 0.92, 0.92, 0.90, 1.0 }), kind);
+    imgui.Dummy({ math.max(1, textWidth + 2), math.max(1, textHeight) });
 end
 
 local function GoToHelpEntry(entry)
@@ -11196,6 +11559,7 @@ local helpGuideSections = {
         lines = {
             '- Custom nameplates for self, enemies, players, trusts, pets, luopans, NPCs, and objects.',
             '- Quick menus for common player, party, trust, mount, blacklist, and job-change actions.',
+            '- Quick access to supported teleportation, Mog House exits, Field Manual regimes, and the Ephemeral Box.',
             '- NPC and object labels with quest, mission, service, event, and wiki quick links.',
             '- Enemy mob info, cast alerts, AOE range highlights, claim colors, and enmity markers.',
             '- Direct click targeting and right-click auto-attack, including automatic dismounting when mounted.',
@@ -11212,8 +11576,11 @@ local helpGuideSections = {
             '- HP, MP, TP, cast bars, buffs, debuffs, job, level, distance, target markers, and status icons.',
             '- Linkshell icons with the correct linkshell color.',
             '- Low-resource bar warning animations.',
+            '- HP/MP/TP visibility thresholds, including always-visible bars at 0%.',
+            '- TP full-color support when TP reaches 100% or more.',
             '- Plate stacking to reduce overlap.',
-            '- Distance scaling for nameplates.',
+            '- Global or per-entity distance scaling for nameplates.',
+            '- Per-group plate height adjustments, including mounted plate handling.',
             '- Native name and target UI replacement options.',
             '- Custom mouse pointer overlay.',
         },
@@ -11227,6 +11594,28 @@ local helpGuideSections = {
             '- Zoom the preview in and out.',
             '- Preview plates under different lighting conditions.',
             '- Preview textures, backgrounds, icons, fonts, colors, and modules before using them in-game.',
+            '- Preview auto-stacked anchor chains and reorder their children from the widget list.',
+        },
+    },
+    {
+        title = 'Widget layout and anchoring',
+        lines = {
+            '- Anchor widgets to the plate or to another widget such as Name or HP Bar.',
+            '- Auto-stack arranges anchored children into a clean chain without manually spacing every item.',
+            '- Position X and Position Y fine-tune a child within its anchored position.',
+            '- The widget list groups children beneath their parent and provides arrows to change child order.',
+            '- Releasing an anchor returns the widget to plate-based positioning.',
+            '- Copy settings can include anchor parent, side, stacking, spacing, and child order.',
+        },
+    },
+    {
+        title = 'Scaling and mouse controls',
+        lines = {
+            '- Global distance scaling controls when distant world plates begin growing and their maximum scale.',
+            '- Custom entity distance scaling gives PC, Enemy, Trust, Pet, NPC, and Object plates separate values.',
+            '- PC and Enemy mouse snap can pull the pointer toward a configured plate target.',
+            '- Mouse snap Strength controls how aggressively the pointer is pulled.',
+            '- Mouse adornment offers several cursor shapes with independently colored outer, inner, and center elements.',
         },
     },
     {
@@ -11274,6 +11663,32 @@ local helpGuideSections = {
             '- Trust visibility actions: ignore other trusts, hide other trusts, emote trust.',
             '- Mount and dismount actions from the self quick menu.',
             '- Job-change favorites from supported job-change flows.',
+            '- Self quick-menu travel actions for supported Home Point, Survival Guide, Field Manual, and related menus.',
+            '- A pending party invitation shows a five-minute radial timer; zoning cancels the invitation immediately.',
+            '- Mount shows the remaining one-minute remount cooldown after dismounting.',
+        },
+    },
+    {
+        title = 'Teleportation and Mog House travel',
+        lines = {
+            '- Home Point destinations use the unlocks learned from the native Home Point menu.',
+            '- Home Point unlocks can be refreshed while targeting a Home Point crystal.',
+            '- Field Manual training regimes started from the quick menu are set to repeat.',
+            '- Inside a Mog House, the self quick menu can show the city exits available from that Mog House.',
+            '- Mog House exit destinations require the corresponding Mog House Exit Quest; LibraPlates does not bypass that requirement.',
+            '- Area you entered from is shown first in the Mog House exit list.',
+        },
+    },
+    {
+        title = 'Ephemeral Box',
+        lines = {
+            '- The Ephemeral Box quick menu can store inventory, browse stored items, search, and extract a selected quantity.',
+            '- Favorites keep frequently used stored items together at the top of the menu.',
+            '- Scan learns the native E.Box category and folder hierarchy sent by the CatsEye server.',
+            '- Item names are resolved to real item IDs; folders are never treated as extractable items.',
+            '- Scan results are saved per character and loaded again after LibraPlates reloads.',
+            '- Smart scanning compares the native categories and rescans missing, changed, or unverified areas.',
+            '- Stay near the box until the scan completes.',
         },
     },
     {
@@ -11283,6 +11698,7 @@ local helpGuideSections = {
             '- ACE town job change from the self quick menu without targeting a Moogle.',
             '- Presets can change main job, sub job, or both.',
             '- Presets can apply a lockstyle set.',
+            '- Presets can select a macro book and macro page after changing jobs.',
             '- Handles main/sub job swap conflicts with a temporary job step.',
         },
     },
@@ -11293,6 +11709,7 @@ local helpGuideSections = {
             '- Dismount from the quick menu.',
             '- Random mount option.',
             '- Tracks owned/learned mounts from mount use and mount packets.',
+            '- A radial indicator shows the one-minute remount cooldown after dismounting.',
         },
     },
     {
@@ -11303,6 +11720,8 @@ local helpGuideSections = {
             '- Logout/shutdown countdown sound.',
             '- Fishing result display from fishing messages.',
             '- Right-click fishing when a rod is equipped.',
+            '- Fishing HUD can show stamina/readiness, recent results, catch details, rod, bait, and target.',
+            '- Fishing HUD can show local fatigue where supported and CatsEye fishing Ventures information.',
             '- One-click gathering on mining, excavation, logging, and harvesting points.',
             '- Gathering uses the matching tool: Pickaxe, Hatchet, or Sickle.',
             '- Gathering tool icon and remaining tool count.',
@@ -11324,6 +11743,8 @@ local helpGuideSections = {
             '- Wyvern plate support.',
             '- Automaton HP/MP/TP and maneuvers.',
             '- Pet action alerts.',
+            '- DRG alerts cover elemental breaths, Healing Breath I-IV, and status-removal breaths.',
+            '- SMN Avatar and Spirit plates support cast bars, enmity, alerts, detached frames, and pet resource bars where available.',
         },
     },
     {
@@ -11336,6 +11757,9 @@ local helpGuideSections = {
             '- Pet action alerts.',
             '- Custom text alerts.',
             '- Built-in alerts for Campaign, Wildkeeper Reive, Ventures/VNM, Voidwatch, learned Blue Magic, Dynamis, and Incursion.',
+            '- Built-in, custom, magic, ability, and pet alert lanes can be enabled and styled independently.',
+            '- Duplicate alerts can stack into counters, with optional sound replay and priority handling when the screen is full.',
+            '- Layout mode allows alert lines to be moved and resized directly.',
         },
     },
     {
@@ -11381,7 +11805,10 @@ local helpGuideSections = {
             '- Multiple profiles.',
             '- Create, copy, rename, delete, reset, and switch profiles.',
             '- Auto-switch profiles by job assignment.',
+            '- Streamer Mode replaces local player names with Player1, Player2, and similar labels.',
             '- Help tab, custom alert guide, setting search, and troubleshooter.',
+            '- Find Settings searches real destinations using FFXI terminology, abbreviations, synonyms, and light typo tolerance.',
+            '- Matching words are highlighted and each result can open its destination directly.',
             '- Performance overlay and reports.',
             '- FPS/adaptive performance modes.',
             '- Nameplate count cap.',
@@ -11494,6 +11921,56 @@ local troubleshooterEntries = {
         },
     },
     {
+        title = 'A plate widget is not showing',
+        path = 'Plates > entity > state > widget',
+        aliases = 'why is my widget not showing missing invisible hidden disabled load mode always target tactical world combat idle alpha anchor position',
+        tab = 'Plates',
+        entity = 'Self',
+        state = 'World',
+        widget = 'Name',
+        checks = {
+            'Check that the widget is enabled for the exact entity and state currently being displayed. World, Combat/Tactical, Target, and Subtarget can use different saved settings.',
+            'Check Load mode. A widget set to Target, Subtarget, Tactical, or another conditional mode will intentionally disappear when that condition is inactive.',
+            'Check whether the widget has a feature-specific hide option, Show at % threshold, combat-state filter, or empty-data rule.',
+            'Check Position X/Y, size, opacity, color alpha, anchor target, anchor position, and whether another widget is covering it.',
+            'If the widget is anchored, confirm its parent widget is loaded and the selected anchor point is appropriate.',
+            'Some widgets require live data. Status icons need active statuses, Cast bar needs an active cast, and role/state icons need their matching game condition.',
+        },
+    },
+    {
+        title = 'Buffs or debuffs are not showing',
+        path = 'Plates > entity > state > Buffs/Debuffs',
+        aliases = 'buff buffs debuff debuffs status icons missing invisible hidden world combat hide filter duration xi view icon pack self party trust enemy',
+        tab = 'Plates',
+        entity = 'Self',
+        state = 'World',
+        widget = 'Buffs',
+        checks = {
+            'Check that Buffs or Debuffs is enabled for the exact entity and state you are viewing.',
+            'Check Buff Filtering. Hide buffs combined with Out of combat hides the row on World plates; combined with In combat hides it while engaged.',
+            'Check Hide buffs longer than. Active statuses above that duration are intentionally filtered out.',
+            'The row is not drawn when no matching live statuses exist.',
+            'Check Max buffs/debuffs, icons per row, icon size, Position X/Y, anchor target, and anchor point.',
+            'Check the selected status-icon pack. A status whose texture cannot be loaded is skipped.',
+        },
+    },
+    {
+        title = 'HP, MP, or TP bar is not showing',
+        path = 'Plates > entity > state > HP Bar/MP Bar/TP Bar',
+        aliases = 'hp mp tp resource bar missing invisible hidden show at percent percentage threshold full empty 100 300',
+        tab = 'Plates',
+        entity = 'Self',
+        state = 'World',
+        widget = 'TP Bar',
+        checks = {
+            'Check that the resource bar is enabled for the exact entity and state you are viewing.',
+            'Check Show at HP %, Show at MP %, or Show at TP %. The bar intentionally stays hidden until its configured threshold condition is met.',
+            'For HP and MP, compare the current percentage with the configured Show at % value.',
+            'For TP, remember that 100 equals 1000 TP and 300 equals 3000 TP.',
+            'Check Load mode, Width/Height, Position X/Y, anchor target, opacity, and whether another widget covers the bar.',
+        },
+    },
+    {
         title = 'Other players pet plates still show',
         path = 'Settings > Visibility',
         aliases = 'pet avatar wyvern automaton other players hide carbuncle fenrir ramuh smn drg pup',
@@ -11528,7 +12005,7 @@ local troubleshooterEntries = {
         state = 'World',
         widget = 'Cast bar',
         checks = {
-            'Check Interrupt bar is enabled in the Cast bar settings.',
+            'Check the Interrupt bar color and Interrupt text fields in the Cast bar settings.',
             'Movement/self-interrupts should stop the LibraPlates bar early and show the remaining lockout color.',
             'Some server interrupt messages arrive late, matching the native bar behavior, so those may only update when the message arrives.',
         },
@@ -11709,6 +12186,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
                     imgui.EndCombo();
                 end
                 if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+                LibraPlatesFileManager.Draw(alertSounds.GetFolderPath(), 'EnemyAlertsPlateSound_' .. tostring(label));
             else
                 imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
             end
@@ -11768,18 +12246,13 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
             DrawSettingsHeader('Screen Alerts');
         end
 
-        DrawScreenAlertsWrappedText('Screen Alerts shows short on-screen messages and can play sounds when events are triggered, such as enemy casts, readied abilities, VNM messages, or learned Blue Magic. Built-in alerts can be toggled here, and custom text triggers can be added.');
+        DrawScreenAlertsWrappedText('Screen Alerts shows short on-screen messages and can play sounds when events are triggered, such as enemy casts, readied abilities, VNM messages, or learned Blue Magic. Built-in alerts can be toggled here, and custom text triggers can be added. Full Log is required because Screen Alerts uses chat messages to detect events; alerts may not trigger while Simple Log is enabled.');
     end
 
     local function DrawGeneralControls(showHeader)
         if (showHeader ~= false) then
             DrawSettingsHeader('Global alert settings');
         end
-
-        DrawCheckbox('Enabled', settings.enabled == true, function(value)
-            settings.enabled = value == true;
-            state.Save();
-        end);
 
         local duration, durationChanged, fadeDuration, fadeDurationChanged = DrawScreenAlertsPlacementRow('Duration', settings.duration or 3, 'EnemyAlertsPlateDuration', 'Fade time', settings.fadeDuration or 1.5, 'EnemyAlertsPlateFadeDuration', 0, 10, 1);
         if (durationChanged == true or fadeDurationChanged == true) then
@@ -11936,6 +12409,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
                 imgui.EndCombo();
             end
             if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+            LibraPlatesFileManager.Draw(alertSounds.GetFolderPath(), 'CustomAlertSound_' .. tostring(index));
         else
             imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
         end
@@ -12172,6 +12646,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
                     imgui.EndCombo();
                 end
                 if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+                LibraPlatesFileManager.Draw(alertSounds.GetFolderPath(), 'BuiltInAlertSoundFile_' .. tostring(soundPrefix));
             else
                 imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
             end
@@ -12242,6 +12717,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
                     imgui.EndCombo();
                 end
                 if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+                LibraPlatesFileManager.Draw(alertSounds.GetFolderPath(), 'BuiltInCompactAlertSoundFile_' .. tostring(soundPrefix));
             else
                 imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
             end
@@ -12294,6 +12770,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
                     imgui.EndCombo();
                 end
                 if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+                LibraPlatesFileManager.Draw(alertSounds.GetFolderPath(), 'BuiltInFishingAlertSoundFile_' .. tostring(soundPrefix));
             else
                 imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(soundFile));
             end
@@ -12363,6 +12840,11 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
             DrawBuiltInSoundFolderHelp();
             imgui.Spacing();
         end
+
+        DrawCheckbox('Enabled', settings.builtInAlertsEnabled ~= false, function(value)
+            settings.builtInAlertsEnabled = value == true;
+            state.Save();
+        end);
 
         if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
             if (imgui.BeginTable('##BuiltInAlertSoundRows', 4, settingsTableFlags)) then
@@ -12689,28 +13171,44 @@ local function DrawHelpFindSettings()
     local entries = BuildHelpEntries();
     local maxVisible = (query == '') and 80 or 140;
     local resultCount = 0;
+    local useFuzzy = false;
 
     for _, entry in ipairs(entries) do
-        if (HelpEntryMatches(entry, query) == true) then
+        if (HelpEntryMatches(entry, query, false) == true) then
             resultCount = resultCount + 1;
         end
     end
 
-    DrawSettingsHeader(query == '' and 'Feature and setting list' or ('Results ' .. tostring(resultCount)));
+    if (resultCount == 0 and query ~= '') then
+        useFuzzy = true;
+        for _, entry in ipairs(entries) do
+            if (HelpEntryMatches(entry, query, true) == true) then
+                resultCount = resultCount + 1;
+            end
+        end
+    end
+
+    if (imgui.BeginChild ~= nil) then
+        imgui.BeginChild('##FindSettingsResults', { 0, 0 }, false);
+    end
+
+    if (query ~= '') then
+        DrawSettingsHeader('Results ' .. tostring(resultCount));
+    end
 
     local row = 0;
     for _, entry in ipairs(entries) do
-        if (HelpEntryMatches(entry, query) == true) then
+        if (HelpEntryMatches(entry, query, useFuzzy) == true) then
             row = row + 1;
             if (row > maxVisible) then
                 break;
             end
             imgui.Separator();
-            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, tostring(entry.kind or 'Help'));
+            LibraPlatesSettingsDrawHelpKind(entry.kind);
             imgui.SameLine();
-            imgui.Text(tostring(entry.title or ''));
-            imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, tostring(entry.path or ''));
-            imgui.TextWrapped(tostring(entry.text or ''));
+            LibraPlatesSettingsDrawHighlightedHelpText(entry.title, query, false);
+            LibraPlatesSettingsDrawHighlightedHelpPath(entry.path, query);
+            LibraPlatesSettingsDrawHighlightedHelpText(entry.text, query, true);
 
             if (entry.tab ~= nil and imgui.Button ~= nil) then
                 local clicked = imgui.Button('Go to ' .. tostring(entry.tab) .. '##HelpGo' .. tostring(row));
@@ -12730,6 +13228,10 @@ local function DrawHelpFindSettings()
     elseif (resultCount > maxVisible) then
         imgui.Separator();
         imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Showing ' .. tostring(maxVisible) .. ' of ' .. tostring(resultCount) .. '. Type more words to narrow the search.');
+    end
+
+    if (imgui.EndChild ~= nil) then
+        imgui.EndChild();
     end
 end
 
@@ -12863,7 +13365,9 @@ if (selectedTab == 'Modules') then
             LibraPlatesSettingsDrawPeerModuleSettings({ peer = peerSettings }, {
                 entity = storageEntity,
                 hideDisplayMode = storageEntity == 'Self' or storageEntity == 'PC',
-                hideSections = storageEntity == 'Self' or storageEntity == 'PC',
+                hideDisplayDropdown = storageEntity == 'Object' or storageEntity == 'NPC',
+                forceTextDisplay = storageEntity == 'Object' or storageEntity == 'NPC',
+                hideSections = storageEntity == 'Self' or storageEntity == 'PC' or storageEntity == 'Object' or storageEntity == 'NPC',
             });
             return;
         end
@@ -12946,7 +13450,9 @@ local function DrawSelectedEditorPlatesModules()
         LibraPlatesSettingsDrawPeerModuleSettings({ peer = peerSettings }, {
             entity = storageEntity,
             hideDisplayMode = storageEntity == 'Self' or storageEntity == 'PC',
-            hideSections = storageEntity == 'Self' or storageEntity == 'PC',
+            hideDisplayDropdown = storageEntity == 'Object' or storageEntity == 'NPC',
+            forceTextDisplay = storageEntity == 'Object' or storageEntity == 'NPC',
+            hideSections = storageEntity == 'Self' or storageEntity == 'PC' or storageEntity == 'Object' or storageEntity == 'NPC',
         });
         return;
     end
@@ -13015,13 +13521,38 @@ function LibraPlatesSettingsIsBoxedSpecialPlateModule(widgetName)
         widget == 'Crafting (module)' or
         widget == 'Fishing (module)' or
         widget == 'Gathering (module)' or
-        widget == 'Quick Menu (module)'
+        widget == 'Quick Menu (module)' or
+        widget == 'Detached frame' or
+        widget == 'Enmity (module)' or
+        widget == 'AOE range (module)' or
+        widget == 'Alerts'
     );
 end
 
 function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
     if (LibraPlatesSettingsIsBoxedSpecialPlateModule(selectedWidget) ~= true) then
         return false;
+    end
+
+    if (selectedWidget == 'Detached frame') then
+        LibraPlatesSettingsDrawBoxedBreadcrumb(T{ selectedTab, GetEntityDisplayLabel(selectedEntity), selectedState, GetWidgetDisplayLabel(selectedWidget) });
+        LibraPlatesSettingsDrawPlatesHeaderBand(function()
+            local loadWidgetKey = widgetKeys[selectedWidget];
+            local loadSettings = state.GetWidgetSettings(
+                GetStorageEntity(selectedEntity),
+                GetWidgetStorageState(selectedEntity, selectedState, selectedWidget),
+                loadWidgetKey,
+                GetWidgetDefaults(selectedWidget)
+            );
+            LibraPlatesSettingsDrawWidgetLoadMode(loadSettings, selectedEntity, selectedState, selectedWidget);
+        end, 54);
+
+        if (imgui.Spacing ~= nil) then
+            imgui.Spacing();
+        end
+
+        settingsUi.DrawDetachedFrameSettings();
+        return true;
     end
 
     local storageEntity = GetStorageEntity(selectedEntity);
@@ -13057,10 +13588,22 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
         globalSettings.quickMenu = globalSettings.quickMenu or {};
         moduleSettings = globalSettings.quickMenu;
         moduleDefaults = globalDefaults.quickMenu;
+    elseif (selectedWidget == 'Enmity (module)') then
+        globalSettings.enmity = globalSettings.enmity or {};
+        moduleSettings = globalSettings.enmity;
+        moduleDefaults = globalDefaults.enmity;
+    elseif (selectedWidget == 'AOE range (module)') then
+        moduleSettings = state.GetWidgetSettings(storageEntity, storageState, widgetKeys[selectedWidget], aoeRangeDefaults);
+        moduleDefaults = aoeRangeDefaults;
     end
 
     LibraPlatesSettingsDrawBoxedBreadcrumb(T{ selectedTab, GetEntityDisplayLabel(selectedEntity), selectedState, GetWidgetDisplayLabel(selectedWidget) });
-    LibraPlatesSettingsDrawPlatesHeaderBand(function(headerInnerWidth)
+    if (
+        selectedWidget ~= 'Quick Menu (module)' and
+        selectedWidget ~= 'Peer (module)' and
+        selectedWidget ~= 'Enmity (module)'
+    ) then
+        LibraPlatesSettingsDrawPlatesHeaderBand(function(headerInnerWidth)
         local headerRowX = nil;
         if (GetCursorScreenPos ~= nil) then
             local posA = GetCursorScreenPos();
@@ -13095,7 +13638,10 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
             selectedWidget ~= 'Quick Menu (module)' and
             selectedWidget ~= 'Peer (module)' and
             selectedWidget ~= 'Target (module)' and
-            selectedWidget ~= 'Subtarget (module)'
+            selectedWidget ~= 'Subtarget (module)' and
+            selectedWidget ~= 'Enmity (module)' and
+            selectedWidget ~= 'AOE range (module)' and
+            selectedWidget ~= 'Alerts'
         );
         local loadComboWidth = 180;
         if (GetContentRegionAvail ~= nil) then
@@ -13149,7 +13695,11 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
 
         local nextHeaderRowY = (loadRowY or 0) + (showLoadMode == true and 28 or 0);
 
-        if (selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)') then
+        if (
+            selectedWidget == 'Target (module)' or
+            selectedWidget == 'Subtarget (module)' or
+            selectedWidget == 'AOE range (module)'
+        ) then
             if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
                 imgui.SetCursorScreenPos({ headerRowX, nextHeaderRowY });
             elseif (imgui.Dummy ~= nil) then
@@ -13194,11 +13744,20 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
                 state.Save();
             end
         end
-    end, LibraPlatesSettingsGetPlatesHeaderBandHeight(moduleSettings, (
-        selectedWidget == 'Quick Menu (module)' or
-        selectedWidget == 'Peer (module)' or
-        LibraPlatesSettingsIsFishingHudWidget(selectedWidget) == true
-    ), LibraPlatesSettingsShouldDrawLoadMode(selectedEntity, selectedState) ~= true));
+        end, LibraPlatesSettingsGetPlatesHeaderBandHeight(moduleSettings, (
+            selectedWidget == 'Peer (module)' or
+            LibraPlatesSettingsIsFishingHudWidget(selectedWidget) == true
+        ), LibraPlatesSettingsShouldDrawLoadMode(selectedEntity, selectedState) ~= true, (
+            selectedWidget == 'Resting (module)' or
+            selectedWidget == 'Crafting (module)' or
+            selectedWidget == 'Fishing (module)' or
+            selectedWidget == 'Gathering (module)'
+        ), (
+            selectedWidget == 'Target (module)' or
+            selectedWidget == 'Subtarget (module)' or
+            selectedWidget == 'AOE range (module)'
+        )));
+    end
 
     if (imgui.Spacing ~= nil) then
         imgui.Spacing();
@@ -13208,7 +13767,9 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
         LibraPlatesSettingsDrawPeerModuleSettings({ peer = moduleSettings }, {
             entity = storageEntity,
             hideDisplayMode = storageEntity == 'Self' or storageEntity == 'PC',
-            hideSections = storageEntity == 'Self' or storageEntity == 'PC',
+            hideDisplayDropdown = storageEntity == 'Object' or storageEntity == 'NPC',
+            forceTextDisplay = storageEntity == 'Object' or storageEntity == 'NPC',
+            hideSections = storageEntity == 'Self' or storageEntity == 'PC' or storageEntity == 'Object' or storageEntity == 'NPC',
         });
     elseif (selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)') then
         widgets.targetModule.DrawSettings(moduleSettings, {
@@ -13232,6 +13793,28 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
         LibraPlatesSettingsDrawGatheringModuleSettings(state.GetGlobalSettings(globalDefaults), true);
     elseif (selectedWidget == 'Quick Menu (module)') then
         LibraPlatesSettingsDrawQuickMenuModuleSettings(state.GetGlobalSettings(globalDefaults), true);
+    elseif (selectedWidget == 'Enmity (module)') then
+        LibraPlatesSettingsDrawBoxedPanel('Enmity settings', function()
+            LibraPlatesSettingsDrawEnmityModuleSettings(state.GetGlobalSettings(globalDefaults), {
+                role = storageEntity == 'Enemy' and 'enemy' or 'ally',
+                hideMarkerHeader = true,
+            });
+        end, true);
+    elseif (selectedWidget == 'AOE range (module)') then
+        widgets.aoeRange.DrawSettings(moduleSettings, {
+            drawPanel = function(title, draw)
+                LibraPlatesSettingsDrawBoxedPanel(title, draw, true);
+            end,
+        });
+    elseif (selectedWidget == 'Alerts') then
+        LibraPlatesSettingsDrawBoxedPanel('Pet alerts', function()
+            if (imgui.TextWrapped ~= nil) then
+                imgui.TextWrapped('Pet action alerts are active for this pet plate. Configure style, sound, and layout in Settings > Screen Alerts > Pet alerts.');
+            else
+                imgui.TextColored(settingsLabelColor, 'Pet action alerts are active for this pet plate.');
+                imgui.TextColored(settingsLabelColor, 'Configure style, sound, and layout in Settings > Screen Alerts > Pet alerts.');
+            end
+        end, true);
     end
 
     return true;
@@ -13412,6 +13995,14 @@ function LibraPlatesSettingsGetBoxedPlateWidgetInfo()
     ) then
         defaults = GetWidgetDefaults(widgetName);
         drawFn = widgets.plateIcon.DrawSettings;
+        if (widgetName == 'Behavior icon' or widgetName == 'Detects icon' or widgetName == 'Links icon') then
+            local global = state.GetGlobalSettings(globalDefaults);
+            extras.enemyIconPackOptions = GetEnemyIconPackChoices();
+            extras.enemyDefaultIconPack = global.enemyIconStyle or 'round';
+            extras.enemyIconPackFolder = GetEnemyIconPackFolderPath();
+        elseif (widgetName == 'Special icon') then
+            extras.extraBeforeReset = DrawSpecialTargetExtraSettings;
+        end
     elseif (widgetName == 'HP Bar' or widgetName == 'MP Bar' or widgetName == 'TP Bar') then
         defaults = barDefaults;
         extras.resourceName = 'TP';
@@ -13520,41 +14111,50 @@ function settingsUi.DrawDetachedFrameSettings()
     local mode = tostring(settings[modeKey] or 'Normal');
     local detached = mode ~= 'Normal';
 
-    DrawYellowHeader('Detached frame');
-    DrawCheckbox('Detach ' .. petLabel .. ' frame', detached, function(value)
-        if (value == true) then
-            if (settings[modeKey] == nil or tostring(settings[modeKey]) == 'Normal') then
-                settings[modeKey] = 'Detach from pet';
+    LibraPlatesSettingsDrawBoxedPanel('Detached frame', function()
+        DrawCheckbox('Detach ' .. petLabel .. ' frame', detached, function(value)
+            if (value == true) then
+                if (settings[modeKey] == nil or tostring(settings[modeKey]) == 'Normal') then
+                    settings[modeKey] = 'Detach from pet';
+                end
+            else
+                settings[modeKey] = 'Normal';
+                settings[editKey] = false;
             end
-        else
-            settings[modeKey] = 'Normal';
-            settings[editKey] = false;
+            state.Save();
+        end);
+        uiTooltip.Info('Shows a second pet frame on screen. The name can stay on the pet or the full pet plate can also remain there.');
+
+        if (detached == true) then
+            if (imgui.RadioButton ~= nil) then
+                if (imgui.RadioButton('Detached only##' .. prefix .. 'PetDetachedOnly', mode == 'Detach from pet') == true) then
+                    settings[modeKey] = 'Detach from pet';
+                    state.Save();
+                end
+                uiTooltip.Info('Shows the pet name on the pet and moves the bars to the second frame.');
+
+                if (imgui.RadioButton('Pet + detached##' .. prefix .. 'PetBoth', mode == 'Both') == true) then
+                    settings[modeKey] = 'Both';
+                    state.Save();
+                end
+                uiTooltip.Info('Keeps the full pet plate on the pet and also shows the second frame.');
+            else
+                DrawInlineComboRow('Mode', T{ 'Detach from pet', 'Both' }, mode == 'Both' and 'Both' or 'Detach from pet', function(value)
+                    settings[modeKey] = value;
+                    state.Save();
+                end, prefix .. 'PetDetachedMode');
+            end
+
+            DrawCheckbox('Edit detached frame', settings[editKey] == true, function(value)
+                settings[editKey] = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('Shows a draggable setup frame. A preview is used when that pet is not summoned.');
         end
-        state.Save();
-    end);
-    uiTooltip.Info('Shows a second pet frame on screen. The name can stay on the pet or the full pet plate can also remain there.');
+    end, true);
 
     if (detached ~= true) then
         return;
-    end
-
-    if (imgui.RadioButton ~= nil) then
-        if (imgui.RadioButton('Detached only##' .. prefix .. 'PetDetachedOnly', mode == 'Detach from pet') == true) then
-            settings[modeKey] = 'Detach from pet';
-            state.Save();
-        end
-        uiTooltip.Info('Shows the pet name on the pet and moves the bars to the second frame.');
-
-        if (imgui.RadioButton('Pet + detached##' .. prefix .. 'PetBoth', mode == 'Both') == true) then
-            settings[modeKey] = 'Both';
-            state.Save();
-        end
-        uiTooltip.Info('Keeps the full pet plate on the pet and also shows the second frame.');
-    else
-        DrawInlineComboRow('Mode', T{ 'Detach from pet', 'Both' }, mode == 'Both' and 'Both' or 'Detach from pet', function(value)
-            settings[modeKey] = value;
-            state.Save();
-        end, prefix .. 'PetDetachedMode');
     end
 
     settings[backgroundSettingsKey] = settings[backgroundSettingsKey] or LibraPlatesSettingsCopyTable(backgroundDefaults);
@@ -13572,15 +14172,20 @@ function settingsUi.DrawDetachedFrameSettings()
     bg.offsetY = bg.offsetY or 0;
     bg.texture = bg.texture or 'None';
     bg.color = bg.color or { 0.0, 0.0, 0.0, 0.45 };
+    bg.color[4] = math.max(0.0, math.min(1.0, tonumber(bg.color[4]) or 1.0));
+    if (bg.imageOpacity == nil) then
+        -- Older detached backgrounds only stored the visible Opacity control in
+        -- the fill color. Migrate that value so the image matches the UI.
+        bg.imageOpacity = math.floor((bg.color[4] * 100) + 0.5);
+    end
     bg.borderColor = bg.borderColor or { 0.0, 0.0, 0.0, 0.80 };
     bg.borderSize = bg.borderSize or 0;
 
-    DrawYellowHeader('Detached background');
-
-    DrawCheckbox('Use background', bg.enabled == true, function(value)
+    LibraPlatesSettingsDrawBoxedPanel('Detached background', function()
+        DrawCheckbox('Use background', bg.enabled == true, function(value)
         bg.enabled = value == true;
         state.Save();
-    end);
+        end);
 
     local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', bg.width, prefix .. 'DetachedBgWidth', 'Height', bg.height, prefix .. 'DetachedBgHeight', 8, 1000, 1);
     if (widthChanged == true or heightChanged == true) then
@@ -13599,14 +14204,14 @@ function settingsUi.DrawDetachedFrameSettings()
     DrawInlineComboRow('Background image', require('core.background_textures').GetFiles(), bg.texture or 'None', function(value)
         bg.texture = value;
         state.Save();
-    end, prefix .. 'DetachedBgTexture');
+    end, prefix .. 'DetachedBgTexture', nil, nil, nil, nil, require('core.background_textures').GetFolderPath());
 
-    bg.color[4] = math.max(0.0, math.min(1.0, tonumber(bg.color[4]) or 1.0));
     local opacity = math.floor((bg.color[4] * 100) + 0.5);
     local fillColor, fillChanged, nextOpacity, opacityChanged = DrawColorAndPlacementRow('Fill color', bg.color, prefix .. 'DetachedBgFillColor', 'Opacity', opacity, prefix .. 'DetachedBgOpacity', 0, 100, 1);
     if (fillChanged == true or opacityChanged == true) then
         bg.color = fillColor;
         bg.color[4] = math.max(0.0, math.min(1.0, (tonumber(nextOpacity) or opacity) / 100));
+        bg.imageOpacity = math.floor((bg.color[4] * 100) + 0.5);
         state.Save();
     end
 
@@ -13616,14 +14221,7 @@ function settingsUi.DrawDetachedFrameSettings()
         bg.borderSize = math.floor((tonumber(borderSize) or 0) + 0.5);
         state.Save();
     end
-
-    DrawCheckbox('Edit detached frame', settings[editKey] == true, function(value)
-        settings[editKey] = value == true;
-        state.Save();
-    end);
-    uiTooltip.Info('Shows the detached frame edit mode while that pet is summoned.');
-
-    imgui.Separator();
+    end, true);
 
     if (DrawResetActionButton('Reset Detached frame position', prefix .. 'DetachedFramePosition') == true) then
         local defaults = (globalDefaults.targeting or {});
@@ -13895,7 +14493,12 @@ local function DrawSelectedEditorPlates()
         elseif (selectedWidget == 'New adventurer icon') then
             defaults = newAdventurerIconDefaults;
         end
-        DrawSelectedEditorPlatesWidgetWithStorageDefaults(selectedWidget, defaults, widgets.plateIcon.DrawSettings);
+        DrawSelectedEditorPlatesWidgetWithStorageDefaults(
+            selectedWidget,
+            defaults,
+            widgets.plateIcon.DrawSettings,
+            selectedWidget == 'Special icon' and { extraBeforeReset = DrawSpecialTargetExtraSettings } or nil
+        );
     end
     if (selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon') then
         DrawSelectedEditorPlatesWidgetWithStorageDefaults(selectedWidget, require('config.widgets.npc_object_icon'), widgets.plateIcon.DrawSettings);
@@ -14077,6 +14680,16 @@ function settingsUi.Unload()
     PersistUiSelection();
 end
 
+function settingsUi.OpenJobChangePresets()
+    selectedTab = 'Plates';
+    selectedEntity = 'Self';
+    selectedState = 'World';
+    selectedWidget = 'Quick Menu (module)';
+    windowOpen[1] = true;
+    state.SetConfigOpen(true);
+    PersistUiSelection();
+end
+
 function settingsUi.SyncScreenAlertsPreviewVisibility()
     local enemyAlerts = require('core.enemy_alerts');
     local shouldShowPreview = state.GetConfigOpen() == true and selectedTab == 'Settings' and selectedGeneralSection == 'Screen Alerts';
@@ -14084,6 +14697,37 @@ function settingsUi.SyncScreenAlertsPreviewVisibility()
     if (shouldShowPreview ~= true and enemyAlerts.GetPreviewEnabled() == true) then
         enemyAlerts.SetPreviewEnabled(false);
     end
+end
+
+function settingsUi.QueueDetachedPetSetupPreview()
+    if (selectedTab ~= 'Plates' or preview.BuildPlateData == nil or LibraPlatesPetPlate.QueueDetachedSetupPreview == nil) then
+        return;
+    end
+
+    local prefix = settingsUi.GetDetachedFramePrefix();
+    if (prefix == nil) then
+        return;
+    end
+
+    local targetingSettings = targeting.GetSettings();
+    if (
+        targetingSettings == nil or
+        targetingSettings[prefix .. 'PetStaticEditFrame'] ~= true or
+        tostring(targetingSettings[prefix .. 'PetPlateMode'] or 'Normal') == 'Normal'
+    ) then
+        return;
+    end
+
+    local previewState = GetStorageState(selectedState);
+    local previewContext = {
+        entityName = GetStorageEntity(selectedEntity),
+        stateName = previewState,
+        widgetKey = widgetKeys[selectedWidget] or selectedWidget,
+        sourceEntity = selectedEntity,
+        sourceState = selectedState,
+    };
+    local previewPlate = preview.BuildPlateData(selectedEntity, previewState, previewContext);
+    LibraPlatesPetPlate.QueueDetachedSetupPreview(prefix, previewState, previewPlate);
 end
 
 -- ============================================================
@@ -14187,13 +14831,6 @@ function settingsUi.Render()
                     end
                 end
 
-                if (selectedTab == 'Settings' and selectedGeneralSection == 'Screen Alerts') then
-                    local enemyAlerts = require('core.enemy_alerts');
-                    if (enemyAlerts.GetPreviewEnabled() == true) then
-                        enemyAlerts.RenderPreview();
-                    end
-                end
-
                 DrawChild('##right_panel', { math.max(280, availWidth - selectorWidth - 12), math.max(260, availHeight - 24) }, rightPanelBorder, function()
                     if (selectedTab == 'Settings' or selectedTab == 'Help') then
                         DrawSelectedEditor();
@@ -14208,6 +14845,8 @@ function settingsUi.Render()
             else
                 DrawSelectedEditor();
             end
+
+            settingsUi.QueueDetachedPetSetupPreview();
         end);
 
         if (ok ~= true) then

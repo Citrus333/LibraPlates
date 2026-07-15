@@ -40,13 +40,17 @@ local function AddFile(files, name)
     files[#files + 1] = name;
 end
 
+function enmityIcons.GetFolderPath()
+    return GetAddonPath() .. 'assets\\images\\enmity\\';
+end
+
 function enmityIcons.GetFiles()
     if (filesCache ~= nil) then
         return filesCache;
     end
 
     local files = T{};
-    local folder = GetAddonPath() .. 'assets\\images\\enmity\\';
+    local folder = enmityIcons.GetFolderPath();
     local pipe = io.popen('dir /b "' .. folder .. '*.png" 2>nul');
 
     if (pipe ~= nil) then

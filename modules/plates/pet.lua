@@ -39,6 +39,7 @@ local jugIconTextureId = nil;
 local petStateIconTextureIds = {};
 local staticPanelEditDrag = nil;
 local DrawStaticPlateTexture = nil;
+local detachedSetupPreview = nil;
 local petAnchorBone = 12;
 local petWorldOffsetY = 0.16;
 local wyvernRestingAnchorBone = 0;
@@ -175,11 +176,11 @@ local function ColorKey(color)
     }, ',');
 end
 
-local function BuildStaticPetBackground(targetingSettings, prefix, plateBackground, staticScale)
+local function BuildStaticPetBackground(targetingSettings, prefix, staticScale)
     local settings = targetingSettings[prefix .. 'PetStaticBackgroundSettings'];
     if (type(settings) ~= 'table') then
         local defaults = (globalDefaults.targeting or {})[prefix .. 'PetStaticBackgroundSettings'];
-        settings = type(defaults) == 'table' and defaults or plateBackground or backgroundDefaults;
+        settings = type(defaults) == 'table' and defaults or backgroundDefaults;
     end
 
     local scaleInverse = 1 / math.max(0.10, tonumber(staticScale) or 1.0);
@@ -216,12 +217,50 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background)
     }, '|');
 end
 
+local function GetStaticPetContentCrop(plateData, textureWidth, textureHeight)
+    local sourceW = math.max(1, tonumber(textureWidth) or 1024);
+    local sourceH = math.max(1, tonumber(textureHeight) or 512);
+    local minX, minY, maxX, maxY = nil, nil, nil, nil;
+    local rects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+
+    for _, rect in ipairs(rects or {}) do
+        if (rect.anchorOnly ~= true) then
+            local x1 = tonumber(rect.x1) or tonumber(rect.drawX1);
+            local y1 = tonumber(rect.y1) or tonumber(rect.drawY1);
+            local x2 = tonumber(rect.x2) or tonumber(rect.drawX2);
+            local y2 = tonumber(rect.y2) or tonumber(rect.drawY2);
+
+            if (x1 ~= nil and y1 ~= nil and x2 ~= nil and y2 ~= nil and x2 > x1 and y2 > y1) then
+                minX = minX == nil and x1 or math.min(minX, x1);
+                minY = minY == nil and y1 or math.min(minY, y1);
+                maxX = maxX == nil and x2 or math.max(maxX, x2);
+                maxY = maxY == nil and y2 or math.max(maxY, y2);
+            end
+        end
+    end
+
+    if (minX == nil or minY == nil or maxX == nil or maxY == nil) then
+        return 0, 0, sourceW, sourceH;
+    end
+
+    local padding = 4;
+    minX = math.max(0, math.floor(minX - padding));
+    minY = math.max(0, math.floor(minY - padding));
+    maxX = math.min(sourceW, math.ceil(maxX + padding));
+    maxY = math.min(sourceH, math.ceil(maxY + padding));
+
+    return minX, minY, math.max(1, maxX - minX), math.max(1, maxY - minY);
+end
+
 local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targetingSettings, windowId)
     local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings[prefix .. 'PetStaticScale']) or 35) / 100));
-    local staticBackground = BuildStaticPetBackground(targetingSettings, prefix, plateData.background, staticScale);
+    local staticBackground = BuildStaticPetBackground(targetingSettings, prefix, staticScale);
     local staticPlateData = CopySettingsWith(plateData, {
         background = staticBackground,
     });
+    -- The source plate may already contain layout bounds for its normal Background
+    -- widget. Detached frames have their own background and must rebuild those bounds.
+    staticPlateData._elementRects = nil;
     local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, BuildStaticPetTextureKey(prefix, petIndex, staticBackground));
     local staticTextureId = canvasTexture.GetTextureId(staticTexture);
 
@@ -229,20 +268,87 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
         return;
     end
 
+    local cropX, cropY, cropWidth, cropHeight = GetStaticPetContentCrop(staticPlateData, staticTextureWidth, staticTextureHeight);
+    local uv1 = { cropX / staticTextureWidth, cropY / staticTextureHeight };
+    local uv2 = { (cropX + cropWidth) / staticTextureWidth, (cropY + cropHeight) / staticTextureHeight };
+
     DrawStaticPlateTexture(
         staticTextureId,
         tonumber(targetingSettings[prefix .. 'PetStaticX']) or 170,
         tonumber(targetingSettings[prefix .. 'PetStaticY']) or 690,
-        staticTextureWidth * staticScale,
-        staticTextureHeight * staticScale,
+        cropWidth * staticScale,
+        cropHeight * staticScale,
         windowId,
         targetingSettings[prefix .. 'PetStaticEditFrame'] == true,
         function(nextX, nextY, nextW)
             targetingSettings[prefix .. 'PetStaticX'] = nextX;
             targetingSettings[prefix .. 'PetStaticY'] = nextY;
-            targetingSettings[prefix .. 'PetStaticScale'] = math.max(10, math.min(200, math.floor(((tonumber(nextW) or staticTextureWidth) / math.max(1, staticTextureWidth) * 100) + 0.5)));
+            targetingSettings[prefix .. 'PetStaticScale'] = math.max(10, math.min(200, math.floor(((tonumber(nextW) or cropWidth) / math.max(1, cropWidth) * 100) + 0.5)));
             state.Save();
-        end
+        end,
+        uv1,
+        uv2
+    );
+end
+
+local function HasLivePetForPrefix(prefix)
+    if (prefix == 'bst') then
+        return entities.GetOwnBstPet() ~= nil;
+    elseif (prefix == 'smn') then
+        return entities.GetOwnSmnPet() ~= nil;
+    elseif (prefix == 'drg') then
+        return entities.GetOwnDrgPet() ~= nil;
+    elseif (prefix == 'pup') then
+        return entities.GetOwnPupPet() ~= nil;
+    end
+
+    return false;
+end
+
+function petPlate.QueueDetachedSetupPreview(prefix, stateName, plateData)
+    prefix = tostring(prefix or '');
+
+    if (plateData == nil) then
+        return false;
+    end
+
+    detachedSetupPreview = {
+        prefix = prefix,
+        stateName = tostring(stateName or 'pet'),
+        plateData = plateData,
+    };
+    return true;
+end
+
+local function DrawQueuedDetachedSetupPreview()
+    local request = detachedSetupPreview;
+    detachedSetupPreview = nil;
+
+    if (
+        request == nil or
+        HasLivePetForPrefix(request.prefix) == true or
+        DrawStaticPlateTexture == nil
+    ) then
+        return;
+    end
+
+    local targetingSettings = targeting.GetSettings();
+
+    if (
+        targetingSettings == nil or
+        targetingSettings[request.prefix .. 'PetStaticEditFrame'] ~= true or
+        tostring(targetingSettings[request.prefix .. 'PetPlateMode'] or 'Normal') == 'Normal'
+    ) then
+        return;
+    end
+
+    local previewKey = 'setup-' .. request.prefix .. '-' .. request.stateName;
+    DrawDetachedStaticPetFrame(
+        request.prefix,
+        previewKey,
+        request.plateData,
+        targetingSettings,
+        'static_' .. request.prefix .. '_pet_setup'
     );
 end
 
@@ -733,16 +839,17 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, global
         return;
     end
 
-    local maxIcons = math.max(1, math.min(64, tonumber(iconSettings.maxIcons) or 12));
+    local maxIcons = math.max(1, math.min(32, tonumber(iconSettings.maxIcons) or 12));
     local iconsPerRow = math.max(1, math.min(24, tonumber(iconSettings.iconsPerRow) or 6));
-    local iconSize = math.max(6, math.min(160, tonumber(iconSettings.iconSize) or 18));
+    local iconSize = math.max(6, math.min(256, tonumber(iconSettings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(iconSettings.iconSpacing) or 2));
+    local rowSpacing = math.max(0, math.min(32, tonumber(iconSettings.rowSpacing) or 2));
     local growLeft = tostring(iconSettings.growthDirection or 'Right') == 'Left';
     local anchored = tostring(iconSettings.anchorTo or 'Plate') ~= 'Plate';
-    local rowHeight = iconSize + spacing;
+    local rowHeight = iconSize + rowSpacing;
 
     if (iconSettings.showTimers == true) then
-        rowHeight = iconSize + math.max(spacing, (tonumber(iconSettings.timerFontSize) or 8) + math.max(0, tonumber(iconSettings.timerOffsetY) or 0) + 2);
+        rowHeight = iconSize + math.max(rowSpacing, (tonumber(iconSettings.timerFontSize) or 8) + math.max(0, tonumber(iconSettings.timerOffsetY) or 0) + 2);
     end
 
     local baseX = tonumber(iconSettings.offsetX) or 0;
@@ -773,16 +880,16 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, global
         if (textureId ~= nil) then
             local row = math.floor((i - 1) / iconsPerRow);
             local col = (i - 1) % iconsPerRow;
-            local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
-            local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local layoutRowCount = math.min(iconsPerRow, total);
+            local rowWidth = (layoutRowCount * iconSize) + ((layoutRowCount - 1) * spacing);
             local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
             local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
             local timerText = nil;
 
             if (anchored == true) then
-                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
-            elseif (growLeft == true) then
-                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+                iconOffsetX = growLeft == true
+                    and (baseX - rowWidth + (col * (iconSize + spacing)))
+                    or (baseX + (col * (iconSize + spacing)));
             end
 
             if (iconSettings.showTimers == true and timerSeconds ~= nil and timerSeconds > 0) then
@@ -856,7 +963,7 @@ local function AddDistanceToPlate(plateData, pet, distanceSettings, globalSettin
     plateData.badges = plateData.badges or {};
     plateData.badges[#plateData.badges + 1] = {
         kind = 'distance',
-        text = tostring(distanceSettings.prefix or '') .. string.format('%.1f', distance),
+        text = tostring(distanceSettings.prefix or '') .. string.format('%.1f', distance):gsub(',', '.'),
         offsetX = tonumber(distanceSettings.offsetX) or 66,
         offsetY = tonumber(distanceSettings.offsetY) or -52,
         fontFamily = fonts.GetRole(globalSettings, distanceSettings.useSmallFont == true),
@@ -1008,6 +1115,9 @@ local function BuildExtraBar(settings, defaults, progress, text, kind, iconName,
         offsetY = tonumber(settings.offsetY) or defaults.offsetY,
         anchorTo = settings.anchorTo or defaults.anchorTo,
         anchorPoint = settings.anchorPoint or defaults.anchorPoint,
+        anchorCollapse = settings.anchorCollapse,
+        anchorSpacing = settings.anchorSpacing,
+        anchorOrder = settings.anchorOrder,
         color = settings.color or defaults.color,
         backgroundColor = settings.backgroundColor or defaults.backgroundColor,
         borderColor = settings.borderColor or defaults.borderColor,
@@ -1156,13 +1266,19 @@ local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, on
         return;
     end
 
-    local fillColor = imgui.GetColorU32({ 1.0, 0.80, 0.10, 0.28 });
+    local fillColor = imgui.GetColorU32({ 1.0, 0.80, 0.10, 0.06 });
     local borderColor = imgui.GetColorU32({ 1.0, 0.80, 0.10, 1.0 });
+    local borderShadowColor = imgui.GetColorU32({ 0.0, 0.0, 0.0, 0.92 });
+    local labelBackgroundColor = imgui.GetColorU32({ 0.0, 0.0, 0.0, 0.78 });
     local textColor = imgui.GetColorU32({ 1.0, 1.0, 1.0, 1.0 });
     local handleColor = imgui.GetColorU32({ 1.0, 1.0, 1.0, 0.82 });
 
-    drawList:AddRectFilled({ x, y }, { x + w, y + h }, fillColor);
-    drawList:AddRect({ x, y }, { x + w, y + h }, borderColor, 0, 0, 4);
+    if (staticPanelEditDrag ~= nil and staticPanelEditDrag.id == id) then
+        drawList:AddRectFilled({ x, y }, { x + w, y + h }, fillColor);
+    end
+
+    drawList:AddRect({ x, y }, { x + w, y + h }, borderShadowColor, 0, 0, 6);
+    drawList:AddRect({ x, y }, { x + w, y + h }, borderColor, 0, 0, 3);
 
     if (drawList.AddTriangleFilled ~= nil) then
         drawList:AddTriangleFilled(
@@ -1187,11 +1303,12 @@ local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, on
     end
 
     if (drawList.AddText ~= nil) then
-        drawList:AddText({ x + 6, y + 6 }, textColor, 'Detached avatar');
+        drawList:AddRectFilled({ x + 4, y + 4 }, { x + 112, y + 26 }, labelBackgroundColor, 3);
+        drawList:AddText({ x + 9, y + 7 }, textColor, 'Detached pet');
     end
 end
 
-DrawStaticPlateTexture = function(textureId, centerX, centerY, width, height, windowId, editEnabled, onEdited)
+DrawStaticPlateTexture = function(textureId, centerX, centerY, width, height, windowId, editEnabled, onEdited, uv1, uv2)
     if (imgui == nil or textureId == nil) then
         return false;
     end
@@ -1237,7 +1354,7 @@ DrawStaticPlateTexture = function(textureId, centerX, centerY, width, height, wi
             imgui.SetCursorPos({ 0, 0 });
         end
 
-        imgui.Image(textureId, { drawW, drawH }, { 0, 0 }, { 1, 1 });
+        imgui.Image(textureId, { drawW, drawH }, uv1 or { 0, 0 }, uv2 or { 1, 1 });
 
     end
 
@@ -1273,7 +1390,6 @@ local function QueueBstPet(pet)
     local tpValue = ClampTp(pet.tp);
     local tpPercent = tpValue / 10;
     local hpColor = hpBarSettings.color or { 0.95, 0.45, 0.45, 1.0 };
-    hpBarSettings.showValue = false;
 
     local hpLowActive = (
         hpBarSettings.lowColorEnabled == true and
@@ -1790,6 +1906,8 @@ local function QueueWyvernPet(pet)
     local tpPercent = tpValue / 10;
     local hpColor = hpBarSettings.color or barDefaults.color;
     local tpColor = tpBarSettings.color or tpBarDefaults.color;
+    local tpColor2 = tpBarSettings.color2 or tpBarDefaults.color2;
+    local tpColor3 = tpBarSettings.color3 or tpBarDefaults.color3;
 
     local hpLowActive = (
         hpBarSettings.lowColorEnabled == true and
@@ -1806,6 +1924,12 @@ local function QueueWyvernPet(pet)
 
     if (tpLowActive == true) then
         tpColor = tpBarSettings.lowColor or tpColor;
+    end
+
+    if (tpPercent >= 100) then
+        tpColor = tpBarSettings.fullColor or tpBarDefaults.fullColor or tpColor;
+        tpColor2 = tpColor;
+        tpColor3 = tpColor;
     end
 
     local plateData = {
@@ -1892,8 +2016,8 @@ local function QueueWyvernPet(pet)
             animationTextureId = barAnimations.GetTextureId(tpBarSettings.lowAnimation),
             animationSpeed = tonumber(tpBarSettings.lowAnimationSpeed) or tpBarDefaults.lowAnimationSpeed,
             animationColor = tpBarSettings.lowAnimationColor,
-            color2 = tpBarSettings.color2 or tpBarDefaults.color2,
-            color3 = tpBarSettings.color3 or tpBarDefaults.color3,
+            color2 = tpColor2,
+            color3 = tpColor3,
             showAtPercent = tonumber(tpBarSettings.showAtPercent) or tpBarDefaults.showAtPercent,
             segmented = tpBarSettings.segmented ~= false,
             segmentGap = tonumber(tpBarSettings.segmentGap) or tpBarDefaults.segmentGap,
@@ -2394,6 +2518,8 @@ function petPlate.GetPositionDebugText()
 end
 
 function petPlate.Render()
+    DrawQueuedDetachedSetupPreview();
+
     if (state.GetWorldEnabled() ~= true) then
         return;
     end

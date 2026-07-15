@@ -110,6 +110,8 @@ local scanCache = {
 local idleScanCacheSeconds = 0.20;
 local idleDirectCacheSeconds = 2.00;
 local layoutSettingsCacheSeconds = 0.05;
+local distanceRefreshSeconds = 0.25;
+local distanceRefreshSlots = 16;
 local layoutSettingsCache = {};
 local nonCombatZoneIds = {
     [26] = true, -- Tavnazian Safehold
@@ -431,6 +433,20 @@ local function SanitizeIconStyle(iconStyle)
     return style;
 end
 
+local function ResolveEnemyIconStyle(globalSettings, iconSettings)
+    local style = tostring(iconSettings ~= nil and iconSettings.iconStyle or 'Use Settings theme default');
+
+    if (style == '' or style == 'Use enemy default' or style == 'Use Settings theme default') then
+        style = tostring(
+            globalSettings ~= nil and globalSettings.enemyIconStyle or
+            (globalSettings ~= nil and globalSettings.peer ~= nil and globalSettings.peer.iconStyle) or
+            'round'
+        );
+    end
+
+    return SanitizeIconStyle(style);
+end
+
 local function GetMobInfoIconPath(iconName, iconStyle)
     return GetAddonPath() ..
         'assets\\images\\peer-icons\\' ..
@@ -476,8 +492,14 @@ local function GetCatseyeIconTextureId(iconName)
     return catseyeIconTextureIds[iconName];
 end
 
-local function AddActivityPointIconToPlate(plateData, enemyName, nameSettings)
-    if (mobInfoData.HasActivityPointMarker(enemyName) ~= true) then
+local function AddActivityPointIconToPlate(plateData, context)
+    if (
+        context == nil or
+        context.specialIconSettings == nil or
+        context.specialIconSettings.enabled ~= true or
+        context.specialIconSettings.showActivityPoints == false or
+        mobInfoData.HasActivityPointMarker(context.enemy ~= nil and context.enemy.name or '') ~= true
+    ) then
         return;
     end
 
@@ -487,21 +509,25 @@ local function AddActivityPointIconToPlate(plateData, enemyName, nameSettings)
         return;
     end
 
+    local nameSettings = context.nameSettings or nameDefaults;
+    local iconSettings = context.specialIconSettings or enemySpecialIconDefaults;
     local nameSize = tonumber(nameSettings.textSize) or tonumber(nameDefaults.textSize) or 24;
-    local iconSize = math.max(24, math.min(96, math.floor((nameSize * 2.2) + 0.5)));
+    local configuredSize = tonumber(iconSettings.iconSize) or 0;
+    local iconSize = configuredSize > 0 and configuredSize or math.floor((nameSize * 2.2) + 0.5);
+    iconSize = math.max(6, math.min(tonumber(iconSettings.maxIconSize) or enemySpecialIconDefaults.maxIconSize or 256, iconSize));
 
     plateData.icons = plateData.icons or {};
     plateData.icons[#plateData.icons + 1] = {
-        kind = 'catseyeAp',
+        kind = 'catseyeSpecialNameIcon',
         textureId = textureId,
         size = iconSize,
-        offsetX = (tonumber(nameSettings.offsetX) or 0) - iconSize - 8,
-        offsetY = (tonumber(nameSettings.offsetY) or -54) + 1,
-        anchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
-        anchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
-        anchorCollapse = nameSettings.anchorCollapse,
-        anchorSpacing = nameSettings.anchorSpacing,
-        anchorOrder = nameSettings.anchorOrder,
+        offsetX = tonumber(iconSettings.offsetX) or enemySpecialIconDefaults.offsetX,
+        offsetY = tonumber(iconSettings.offsetY) or enemySpecialIconDefaults.offsetY,
+        anchorTo = iconSettings.anchorTo or enemySpecialIconDefaults.anchorTo,
+        anchorPoint = iconSettings.anchorPoint or enemySpecialIconDefaults.anchorPoint,
+        anchorCollapse = iconSettings.anchorCollapse,
+        anchorSpacing = iconSettings.anchorSpacing,
+        anchorOrder = iconSettings.anchorOrder,
     };
 end
 
@@ -518,6 +544,7 @@ local function AddCatseyeSpecialNameIconToPlate(plateData, context)
         context == nil or
         context.specialIconSettings == nil or
         context.specialIconSettings.enabled ~= true or
+        context.specialIconSettings.showTier3Incursion == false or
         IsCatseyeSpecialNameIcon(context.enemy) ~= true
     ) then
         return;
@@ -534,7 +561,7 @@ local function AddCatseyeSpecialNameIconToPlate(plateData, context)
     local nameSize = tonumber(nameSettings.textSize) or tonumber(nameDefaults.textSize) or 24;
     local configuredSize = tonumber(iconSettings.iconSize) or 0;
     local iconSize = configuredSize > 0 and configuredSize or math.floor((nameSize * 3.70) + 0.5);
-    iconSize = math.max(6, math.min(tonumber(iconSettings.maxIconSize) or enemySpecialIconDefaults.maxIconSize or 180, iconSize));
+    iconSize = math.max(6, math.min(tonumber(iconSettings.maxIconSize) or enemySpecialIconDefaults.maxIconSize or 256, iconSize));
 
     plateData.icons = plateData.icons or {};
     plateData.icons[#plateData.icons + 1] = {
@@ -564,7 +591,7 @@ local function AddJobToPlate(plateData, jobText, jobSettings, globalSettings)
             plateData.icons[#plateData.icons + 1] = {
                 kind = 'job',
                 textureId = textureId,
-                size = math.max(8, math.min(160, tonumber(jobSettings.iconSize) or 16)),
+                size = math.max(8, math.min(256, tonumber(jobSettings.iconSize) or 16)),
                 offsetX = tonumber(jobSettings.offsetX) or 0,
                 offsetY = tonumber(jobSettings.offsetY) or -54,
                 anchorTo = jobSettings.anchorTo or jobDefaults.anchorTo,
@@ -645,7 +672,7 @@ local function AddEnemyMobInfoWidgetIcons(plateData, iconNames, iconSettings, de
     end
 
     local renderIcons = {};
-    local size = math.max(6, math.min(96, tonumber(iconSettings.iconSize) or tonumber(defaultSettings.iconSize) or 18));
+    local size = math.max(6, math.min(256, tonumber(iconSettings.iconSize) or tonumber(defaultSettings.iconSize) or 18));
     local x = tonumber(iconSettings.offsetX);
     local y = tonumber(iconSettings.offsetY);
 
@@ -731,9 +758,9 @@ local function GetEnemyMobInfoIconWidgetSignature(widgetSettings)
     widgetSettings = widgetSettings or {};
 
     return table.concat({
-        'behaviorIconSettings=' .. SettingKey(widgetSettings.behavior, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-        'detectsIconSettings=' .. SettingKey(widgetSettings.detects, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-        'linksIconSettings=' .. SettingKey(widgetSettings.links, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+        'behaviorIconSettings=' .. SettingKey(widgetSettings.behavior, { 'enabled', 'iconStyle', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+        'detectsIconSettings=' .. SettingKey(widgetSettings.detects, { 'enabled', 'iconStyle', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+        'linksIconSettings=' .. SettingKey(widgetSettings.links, { 'enabled', 'iconStyle', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
     }, '\n');
 end
 
@@ -776,8 +803,8 @@ local function BuildMissingEnemyInfoAnchorRects(context)
             settings = jobSettings,
             defaults = jobDefaults,
             enabled = jobSettings.enabled == true,
-            width = ((tonumber(jobSettings.displayModeIndex) or 1) == 2) and math.max(8, math.min(160, tonumber(jobSettings.iconSize) or 16)) or jobWidth,
-            height = ((tonumber(jobSettings.displayModeIndex) or 1) == 2) and math.max(8, math.min(160, tonumber(jobSettings.iconSize) or 16)) or jobHeight,
+            width = ((tonumber(jobSettings.displayModeIndex) or 1) == 2) and math.max(8, math.min(256, tonumber(jobSettings.iconSize) or 16)) or jobWidth,
+            height = ((tonumber(jobSettings.displayModeIndex) or 1) == 2) and math.max(8, math.min(256, tonumber(jobSettings.iconSize) or 16)) or jobHeight,
             defaultY = -54,
         },
         {
@@ -817,7 +844,7 @@ local function BuildMissingEnemyInfoAnchorRects(context)
         local settings = definition.settings or {};
         local defaults = definition.defaults or {};
         if (definition.enabled == true or IsEnemyMobInfoWidgetEnabled(settings) == true or anyAnchored == true) then
-            local size = math.max(6, math.min(96, tonumber(settings.iconSize) or tonumber(defaults.iconSize) or 18));
+            local size = math.max(6, math.min(256, tonumber(settings.iconSize) or tonumber(defaults.iconSize) or 18));
             local width = tonumber(definition.width) or size;
             local height = tonumber(definition.height) or size;
             local offsetX = tonumber(settings.offsetX) or tonumber(defaults.offsetX) or 0;
@@ -853,7 +880,6 @@ local function AddEnemyMobInfoIconWidgetsToPlate(plateData, layoutStateName, mob
 
     widgetSettings = widgetSettings or {};
 
-    local iconStyle = SanitizeIconStyle((globalSettings.peer or {}).iconStyle);
     local behaviorIcons = {};
     local detectionIcons = {};
     local linkIcons = {};
@@ -868,9 +894,9 @@ local function AddEnemyMobInfoIconWidgetsToPlate(plateData, layoutStateName, mob
         end
     end
 
-    AddEnemyMobInfoWidgetIcons(plateData, behaviorIcons, widgetSettings.behavior, enemyBehaviorIconDefaults, iconStyle, 'Behavior icon');
-    AddEnemyMobInfoWidgetIcons(plateData, detectionIcons, widgetSettings.detects, enemyDetectsIconDefaults, iconStyle, 'Detects icon');
-    AddEnemyMobInfoWidgetIcons(plateData, linkIcons, widgetSettings.links, enemyLinksIconDefaults, iconStyle, 'Links icon');
+    AddEnemyMobInfoWidgetIcons(plateData, behaviorIcons, widgetSettings.behavior, enemyBehaviorIconDefaults, ResolveEnemyIconStyle(globalSettings, widgetSettings.behavior), 'Behavior icon');
+    AddEnemyMobInfoWidgetIcons(plateData, detectionIcons, widgetSettings.detects, enemyDetectsIconDefaults, ResolveEnemyIconStyle(globalSettings, widgetSettings.detects), 'Detects icon');
+    AddEnemyMobInfoWidgetIcons(plateData, linkIcons, widgetSettings.links, enemyLinksIconDefaults, ResolveEnemyIconStyle(globalSettings, widgetSettings.links), 'Links icon');
 end
 
 local function GetPeerTextOptions(peerSettings, prefix)
@@ -887,7 +913,7 @@ local function AddPeerIconRow(icons, iconNames, peerSettings, prefix, iconStyle)
         return;
     end
 
-    local iconSize = math.max(6, math.min(64, tonumber(peerSettings[prefix .. 'IconSize']) or tonumber(peerSettings.iconSize) or 18));
+    local iconSize = math.max(6, math.min(256, tonumber(peerSettings[prefix .. 'IconSize']) or tonumber(peerSettings.iconSize) or 18));
     local x = tonumber(peerSettings[prefix .. 'OffsetX']) or tonumber(peerSettings.iconOffsetX) or -190;
     local y = tonumber(peerSettings[prefix .. 'OffsetY']) or tonumber(peerSettings.iconOffsetY) or -16;
     local maxX = x + 395;
@@ -924,7 +950,7 @@ local function AddPeerAggroText(texts, iconNames, peerSettings, globalSettings)
         return;
     end
 
-    local iconSize = math.max(6, math.min(64, tonumber(peerSettings.aggroIconSize) or tonumber(peerSettings.iconSize) or 18));
+    local iconSize = math.max(6, math.min(256, tonumber(peerSettings.aggroIconSize) or tonumber(peerSettings.iconSize) or 18));
     local x = (tonumber(peerSettings.aggroOffsetX) or -95) + iconSize + 4;
     local y = tonumber(peerSettings.aggroOffsetY) or -16;
     local options = GetPeerTextOptions(peerSettings, 'aggro');
@@ -1132,7 +1158,7 @@ local function BuildMobInfoRows(enemy, globalSettings, peerSettings)
                 icons[#icons + 1] = {
                     kind = 'peerJob',
                     textureId = textureId,
-                    size = math.max(6, math.min(160, tonumber(peerSettings.jobIconSize) or 18)),
+                    size = math.max(6, math.min(256, tonumber(peerSettings.jobIconSize) or 18)),
                     offsetX = tonumber(peerSettings.jobOffsetX) or -190,
                     offsetY = tonumber(peerSettings.jobOffsetY) or -16,
                 };
@@ -1166,7 +1192,7 @@ local function BuildMobInfoRows(enemy, globalSettings, peerSettings)
     if (peerSettings.showRange ~= false and enemy.distance ~= nil) then
         AddMobInfoText(
             texts,
-            string.format('%.1f', tonumber(enemy.distance) or 0),
+            string.format('%.1f', tonumber(enemy.distance) or 0):gsub(',', '.'),
             tonumber(peerSettings.rangeOffsetX) or 92,
             tonumber(peerSettings.rangeOffsetY) or -54,
             globalSettings,
@@ -1206,7 +1232,7 @@ local function BuildMobInfoRows(enemy, globalSettings, peerSettings)
     end
 
     if (peerSettings.showModifiers ~= false) then
-        local iconSize = math.max(6, math.min(64, tonumber(peerSettings.modifierIconSize) or tonumber(peerSettings.iconSize) or 18));
+        local iconSize = math.max(6, math.min(256, tonumber(peerSettings.modifierIconSize) or tonumber(peerSettings.iconSize) or 18));
         local x = tonumber(peerSettings.modifierOffsetX) or 120;
         local y = tonumber(peerSettings.modifierOffsetY) or -16;
         local maxX = x + 395;
@@ -1476,7 +1502,7 @@ local function AddIdToPlate(plateData, enemy, idSettings, mobInfo, globalSetting
         fontFlags = fonts.GetRoleFlags(globalSettings, idSettings.useSmallFont == true),
         fontSize = textScale.ToTextureFontSize(idSettings.textSize, idDefaults.textSize),
         textColor = idSettings.color or idDefaults.color,
-        textOutlineEnabled = idSettings.outlineEnabled == true,
+        textOutlineEnabled = (tonumber(idSettings.outlineSize) or 0) > 0,
         textOutlineColor = idSettings.outlineColor or idDefaults.outlineColor,
         textOutlineSize = tonumber(idSettings.outlineSize) or idDefaults.outlineSize,
         anchorTo = idSettings.anchorTo or idDefaults.anchorTo,
@@ -1510,7 +1536,7 @@ local function AddDistanceToPlate(plateData, enemy, distanceSettings, globalSett
     plateData.badges = plateData.badges or {};
     plateData.badges[#plateData.badges + 1] = {
         kind = 'distance',
-        text = tostring(distanceSettings.prefix or '') .. string.format('%.1f', distance),
+        text = tostring(distanceSettings.prefix or '') .. string.format('%.1f', distance):gsub(',', '.'),
         offsetX = tonumber(distanceSettings.offsetX) or 92,
         offsetY = tonumber(distanceSettings.offsetY) or -54,
         fontFamily = fonts.GetRole(globalSettings, distanceSettings.useSmallFont == true),
@@ -1556,16 +1582,17 @@ local function AddStatusIconsToPlate(plateData, statusIds, iconSettings, isEngag
         return;
     end
 
-    local maxIcons = math.max(1, math.min(64, tonumber(iconSettings.maxIcons) or 12));
+    local maxIcons = math.max(1, math.min(32, tonumber(iconSettings.maxIcons) or 12));
     local iconsPerRow = math.max(1, math.min(24, tonumber(iconSettings.iconsPerRow) or 6));
-    local iconSize = math.max(6, math.min(160, tonumber(iconSettings.iconSize) or 18));
+    local iconSize = math.max(6, math.min(256, tonumber(iconSettings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(iconSettings.iconSpacing) or 2));
+    local rowSpacing = math.max(0, math.min(32, tonumber(iconSettings.rowSpacing) or 2));
     local growLeft = tostring(iconSettings.growthDirection or 'Right') == 'Left';
     local anchored = tostring(iconSettings.anchorTo or 'Plate') ~= 'Plate';
-    local rowHeight = iconSize + spacing;
+    local rowHeight = iconSize + rowSpacing;
 
     if (iconSettings.showTimers == true) then
-        rowHeight = iconSize + math.max(spacing, (tonumber(iconSettings.timerFontSize) or 8) + math.max(0, tonumber(iconSettings.timerOffsetY) or 0) + 2);
+        rowHeight = iconSize + math.max(rowSpacing, (tonumber(iconSettings.timerFontSize) or 8) + math.max(0, tonumber(iconSettings.timerOffsetY) or 0) + 2);
     end
 
     local baseX = tonumber(iconSettings.offsetX) or 0;
@@ -1597,16 +1624,16 @@ local function AddStatusIconsToPlate(plateData, statusIds, iconSettings, isEngag
         if (textureId ~= nil) then
             local row = math.floor((i - 1) / iconsPerRow);
             local col = (i - 1) % iconsPerRow;
-            local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
-            local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local layoutRowCount = math.min(iconsPerRow, total);
+            local rowWidth = (layoutRowCount * iconSize) + ((layoutRowCount - 1) * spacing);
             local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
             local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
             local timerText = nil;
 
             if (anchored == true) then
-                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
-            elseif (growLeft == true) then
-                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+                iconOffsetX = growLeft == true
+                    and (baseX - rowWidth + (col * (iconSize + spacing)))
+                    or (baseX + (col * (iconSize + spacing)));
             end
 
             if (iconSettings.showTimers == true and timerSeconds ~= nil and timerSeconds > 0) then
@@ -1759,6 +1786,14 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
     return true;
 end
 
+local function GetDistanceRefreshBucket(enemyIndex, now)
+    local interval = math.max(0.05, tonumber(distanceRefreshSeconds) or 0.25);
+    local slots = math.max(1, math.floor(tonumber(distanceRefreshSlots) or 16));
+    local slot = (math.floor(tonumber(enemyIndex) or 0) % slots) / slots;
+
+    return math.floor(((tonumber(now) or os.clock()) + (slot * interval)) / interval);
+end
+
 local function QueueFreshIdleCache(enemy)
     if (state.GetConfigOpen() == true) then
         return false;
@@ -1786,6 +1821,13 @@ local function QueueFreshIdleCache(enemy)
     local cached = plateCache[indexed.cacheKey];
 
     if (cached == nil or cached.texture == nil) then
+        return false;
+    end
+
+    if (
+        cached.dynamicDistance == true and
+        tonumber(cached.distanceRefreshBucket) ~= GetDistanceRefreshBucket(enemy.index, os.clock())
+    ) then
         return false;
     end
 
@@ -1928,7 +1970,7 @@ local function BuildEnemyQueueContext(enemy)
     end
 
     if (showDistanceBadge == true and enemy.distance ~= nil) then
-        distanceText = tostring(distanceSettings.prefix or '') .. string.format('%.1f', tonumber(enemy.distance) or 0);
+        distanceText = tostring(distanceSettings.prefix or '') .. string.format('%.1f', tonumber(enemy.distance) or 0):gsub(',', '.');
     end
 
     return {
@@ -1990,6 +2032,7 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
         'v=10',
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'statusIconPack=' .. tostring(context.globalSettings ~= nil and context.globalSettings.statusIcons ~= nil and context.globalSettings.statusIcons.iconPack or ''),
+        'enemyIconStyle=' .. tostring(context.globalSettings ~= nil and context.globalSettings.enemyIconStyle or ''),
         'activeDetail=' .. tostring(context.hasActiveDetail),
         'name=' .. tostring(context.displayName or ''),
         'server=' .. tostring(enemy.serverId or ''),
@@ -2008,10 +2051,10 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
         'claim=' .. tostring(context.claimCategory or ''),
         'ap=' .. tostring(mobInfoData.HasActivityPointMarker(enemy.name) == true),
         'catseyeSpecialNameIcon=' .. tostring(IsCatseyeSpecialNameIcon(enemy) == true),
-        'specialIconSettings=' .. SettingKey(context.specialIconSettings, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+        'specialIconSettings=' .. SettingKey(context.specialIconSettings, { 'enabled', 'showTier3Incursion', 'showActivityPoints', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
         'nm=' .. tostring(context.mobInfo ~= nil and context.mobInfo.IsNM or ''),
         'aoe=' .. (context.aoeRangeSettings.enabled == true and aoeNameHighlight.GetSignature(enemy.index, 'enemy') or 'aoe-name:0'),
-        'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
+        'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'highlightFile', 'highlightClickable', 'highlightAutoPlace', 'highlightAutoPlaceBy', 'highlightSpacing', 'highlightOffsetX', 'highlightOffsetY', 'highlightWidth', 'highlightHeight', 'highlightColor', 'highlightOpacity', 'iconEnabled', 'iconFile', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
         'bg=' .. SettingKey(context.backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
         'nameSettings=' .. SettingKey(context.nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'claimUnclaimedOutlineColor', 'claimPartyOutlineColor', 'claimOtherOutlineColor', 'claimCallForHelpOutlineColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
         'hpSettings=' .. (context.hpBarSettings.enabled == true and SettingKey(context.hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor' }) or ''),
@@ -2112,7 +2155,7 @@ local function BuildEnemyPlateData(context)
         tpBar = { enabled = false },
         castBar = context.castBar,
     };
-    AddActivityPointIconToPlate(plateData, enemy.name, context.nameSettings);
+    AddActivityPointIconToPlate(plateData, context);
     AddCatseyeSpecialNameIconToPlate(plateData, context);
     AddJobToPlate(plateData, context.jobText, context.jobSettings, context.globalSettings);
     AddLevelToPlate(plateData, context.levelText, context.levelSettings, context.mobInfo, context.globalSettings);
@@ -2203,8 +2246,7 @@ local function QueueEnemy(enemy)
         and #context.buffRows == 0
         and #context.debuffRows == 0
         and context.isHovered ~= true
-        and (context.aoeRangeSettings.enabled ~= true or aoeNameHighlight.HasLiveAoe() ~= true)
-        and hasDynamicDistance ~= true;
+        and (context.aoeRangeSettings.enabled ~= true or aoeNameHighlight.HasLiveAoe() ~= true);
     local cacheKey = nil;
     local signature = nil;
 
@@ -2215,6 +2257,10 @@ local function QueueEnemy(enemy)
         local indexed = indexCache[tonumber(enemy.index) or 0];
         local staleCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
         local cached = indexed ~= nil and indexed.signature == signature and staleCached or nil;
+
+        if (cached ~= nil and hasDynamicDistance == true) then
+            cached.distanceRefreshBucket = GetDistanceRefreshBucket(enemy.index, os.clock());
+        end
 
         local cachedLiveHpBar = liveHpBarStyle;
         if (QueueCachedEnemy(enemy, cached, context.stateName, context.importantAlwaysOnTop, context.hpPercent, cachedLiveHpBar) == true) then
@@ -2339,6 +2385,8 @@ local function QueueEnemy(enemy)
             plateWorldHeight = 1.18 * plateScale,
             hpBar = liveHpBarStyle,
             dynamicHpBar = context.hpBarSettings.enabled == true and useLiveHpBar ~= true,
+            dynamicDistance = hasDynamicDistance == true,
+            distanceRefreshBucket = hasDynamicDistance == true and GetDistanceRefreshBucket(enemy.index, os.clock()) or nil,
         };
         indexCache[tonumber(enemy.index) or 0] = {
             cacheKey = cacheKey,

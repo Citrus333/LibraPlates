@@ -1642,7 +1642,9 @@ local function ResolveAnchorRects(rects, plate)
             if (#entries > 0) then
                 local anchorPoint = tostring(group.anchorPoint or 'Center');
                 local axis = (anchorPoint == 'Top' or anchorPoint == 'Top Left' or anchorPoint == 'Top Right' or anchorPoint == 'Bottom' or anchorPoint == 'Bottom Left' or anchorPoint == 'Bottom Right') and 'y' or 'x';
-                local nearHigh = (anchorPoint == 'Left' or anchorPoint == 'Top Left' or anchorPoint == 'Bottom Left' or anchorPoint == 'Top');
+                local nearHigh = axis == 'y'
+                    and (anchorPoint == 'Top' or anchorPoint == 'Top Left' or anchorPoint == 'Top Right')
+                    or (anchorPoint == 'Left');
 
                 table.sort(entries, function(left, right)
                     local leftOrder = tonumber(left.anchorOrder);
@@ -1752,9 +1754,13 @@ end
 
 local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
     bar = bar or {};
-    progress = math.max(0, math.min(100, tonumber(progress) or 100));
+    local isTp = tostring(kind or '') == 'tp';
+    local maxProgress = isTp == true and 300 or 100;
+    progress = math.max(0, math.min(maxProgress, tonumber(progress) or maxProgress));
 
-    local showAtPercent = math.max(1, math.min(100, tonumber(bar.showAtPercent) or 100));
+    local showAtPercent = isTp == true
+        and math.max(0, math.min(300, tonumber(bar.showAtPercent) or 300))
+        or math.max(1, math.min(100, tonumber(bar.showAtPercent) or 100));
 
     if (bar.enabled ~= true) then
         return;
@@ -1767,6 +1773,9 @@ local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
     local barY = centerY - (barH * 0.5) + (tonumber(bar.offsetY) or 0);
     local borderSize = math.max(0, tonumber(bar.borderSize) or 0);
     local hiddenByThreshold = progress > showAtPercent;
+    if (isTp == true) then
+        hiddenByThreshold = progress < showAtPercent;
+    end
 
     AddRect(rects, barX - borderSize, barY - borderSize, barW + (borderSize * 2), barH + (borderSize * 2), 4, kind, bar, hiddenByThreshold);
 
@@ -2165,7 +2174,7 @@ function canvasTexture.GetElementRects(plate)
 
     AddBarRect(rects, centerX, centerY, plate.hpBar, hp, 'hp');
     AddBarRect(rects, centerX, centerY, plate.mpBar, mp, 'mp');
-    AddBarRect(rects, centerX, centerY, plate.tpBar, math.max(0, math.min(100, tonumber(plate.tp) or 0)), 'tp');
+    AddBarRect(rects, centerX, centerY, plate.tpBar, math.max(0, math.min(300, tonumber(plate.tp) or 0)), 'tp');
     AddBarRect(rects, centerX, centerY, plate.castBar, math.max(0, math.min(100, tonumber(plate.cast) or 0)), 'cast');
 
     for _, extraBar in ipairs(plate.extraBars or {}) do
@@ -2561,6 +2570,31 @@ function canvasTexture.Render(plate, key)
             local mp = math.max(0, math.min(100, tonumber(plate.mp) or 100));
             local tp = math.max(0, math.min(300, tonumber(plate.tp) or 0));
             local elementRects = canvasTexture.GetElementRects(plate);
+            local aoeHighlightRect = nil;
+
+            if (plate.aoeHighlight ~= nil and plate.aoeHighlight.textureId ~= nil) then
+                local highlight = plate.aoeHighlight;
+                local highlightW = tonumber(highlight.width) or 220;
+                local highlightH = tonumber(highlight.height) or 74;
+                local highlightX = centerX - (highlightW * 0.5) + (tonumber(highlight.offsetX) or 0);
+                local highlightY = centerY - (highlightH * 0.5) + (tonumber(highlight.offsetY) or 0);
+
+                if (highlight.autoPlace ~= false) then
+                    local anchorRect = GetElementAnchorRect(elementRects, highlight.anchorKinds);
+                    if (anchorRect ~= nil) then
+                        local spacing = math.max(0, tonumber(highlight.spacing) or 0);
+                        highlightX = anchorRect.x1 - spacing + (tonumber(highlight.offsetX) or 0);
+                        highlightY = anchorRect.y1 - spacing + (tonumber(highlight.offsetY) or 0);
+                        highlightW = (anchorRect.x2 - anchorRect.x1) + (spacing * 2);
+                        highlightH = (anchorRect.y2 - anchorRect.y1) + (spacing * 2);
+                    end
+                end
+
+                aoeHighlightRect = { x = highlightX, y = highlightY, w = highlightW, h = highlightH };
+                if (highlight.clickable ~= false) then
+                    AddRect(elementRects, highlightX, highlightY, highlightW, highlightH, 0, 'aoeHighlight');
+                end
+            end
 
             plate._elementRects = elementRects;
 
@@ -2596,6 +2630,17 @@ function canvasTexture.Render(plate, key)
             PrepareTargetMarker(plate.targetMarker);
 
             DrawPlateBackground(device, centerX, centerY, plate.background, FindRect(elementRects, 'background'));
+            if (aoeHighlightRect ~= nil) then
+                DrawTexture(
+                    device,
+                    plate.aoeHighlight.textureId,
+                    aoeHighlightRect.x,
+                    aoeHighlightRect.y,
+                    aoeHighlightRect.w,
+                    aoeHighlightRect.h,
+                    ColorToD3D(plate.aoeHighlight.color, { 1.0, 0.82, 0.10, 0.95 })
+                );
+            end
             DrawTargetMarkerStack(plate.targetMarker, 'background');
             DrawTargetMarkerStack(plate.targetMarker, 'foreground');
             DrawBar(device, centerX, centerY, plate.mpBar, mp, { 0.25, 0.45, 1.0, 0.95 }, FindRect(elementRects, 'mp'));
@@ -2619,6 +2664,16 @@ function canvasTexture.Render(plate, key)
                 else
                     DrawBar(device, centerX, centerY, extraBar, math.max(0, math.min(100, tonumber(extraBar.progress) or 0)), extraBar.color or { 0.90, 0.65, 0.25, 1.0 }, extraBarRect);
                 end
+            end
+
+            local hpTextRect = FindRect(elementRects, 'hp');
+            if (plate.hpBar ~= nil and hpTextRect ~= nil and hpTextRect.anchorOnly ~= true and tostring(plate.hpBar.text or '') ~= '') then
+                local hpBorderSize = math.max(0, tonumber(plate.hpBar.borderSize) or 0);
+                local hpTextX = (tonumber(hpTextRect.drawX1) or tonumber(hpTextRect.x1) or 0) + hpBorderSize;
+                local hpTextY = (tonumber(hpTextRect.drawY1) or tonumber(hpTextRect.y1) or 0) + hpBorderSize;
+                local hpTextW = math.max(1, (tonumber(hpTextRect.drawX2) or tonumber(hpTextRect.x2) or hpTextX) - hpTextX - hpBorderSize);
+                local hpTextH = math.max(1, (tonumber(hpTextRect.drawY2) or tonumber(hpTextRect.y2) or hpTextY) - hpTextY - hpBorderSize);
+                DrawBarLabel(device, hpTextX, hpTextY, hpTextW, hpTextH, plate.hpBar);
             end
 
             local badgeOccurrences = {};
@@ -2741,6 +2796,10 @@ function canvasTexture.Render(plate, key)
 
                             local padX = tonumber(icon.timerBackgroundPaddingX) or 2;
                             local padY = tonumber(icon.timerBackgroundPaddingY) or 1;
+                            -- GDI text textures reserve ascender space above the visible glyphs.
+                            -- Move the box down slightly so the visible timer text, rather than
+                            -- the texture's transparent bounds, is vertically centered.
+                            local visualCenterOffsetY = math.max(0, math.floor((timerH * 0.15) + 0.5));
                             local boxColor = ColorToD3D(
                                 (timerBoxWarningColor ~= nil and icon.timerWarningBoxColorEnabled == true) and timerBoxWarningColor or GetTimerBackgroundColor(icon),
                                 { 0.0, 0.0, 0.0, 0.80 }
@@ -2750,7 +2809,7 @@ function canvasTexture.Render(plate, key)
                             DrawRoundedRectWithBorder(
                                 device,
                                 timerBoxX - padX,
-                                timerY - padY,
+                                timerY - padY + visualCenterOffsetY,
                                 timerBoxW + (padX * 2),
                                 timerBoxH + (padY * 2),
                                 boxColor,

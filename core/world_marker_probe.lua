@@ -2457,7 +2457,7 @@ local function DrawDistanceWithState(device, distance, wx, wy, wz, style)
         return;
     end
 
-    DrawTextWithState(device, string.format('%.1fm', value), wx, wy, wz, style, 'small');
+    DrawTextWithState(device, string.format('%.1fm', value):gsub(',', '.'), wx, wy, wz, style, 'small');
 end
 
 local function FindNameplateHelper()

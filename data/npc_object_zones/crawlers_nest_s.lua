@@ -34,7 +34,7 @@ return {
         },
         ["Herral-Droal"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Kalsu-Kalasu"] = {
@@ -49,7 +49,7 @@ Involved in Missions:\
         },
         ["Khoh Moui"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Landon, C.A."] = {
@@ -68,7 +68,7 @@ Involved in Missions:\
         },
         ["Minea-Matea"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Mukmimi"] = {
@@ -131,7 +131,7 @@ Involved in Missions:\
         },
         ["Yuilam-Kailam"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
     },

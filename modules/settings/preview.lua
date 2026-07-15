@@ -42,6 +42,7 @@ local linkshellIconDefaults = require('config.widgets.linkshell_icon');
 local enemyBehaviorIconDefaults = require('config.widgets.enemy_behavior_icon');
 local enemyDetectsIconDefaults = require('config.widgets.enemy_detects_icon');
 local enemyLinksIconDefaults = require('config.widgets.enemy_links_icon');
+local enemySpecialIconDefaults = require('config.widgets.enemy_special_icon');
 local awayIconDefaults = require('config.widgets.away_icon');
 local disconnectIconDefaults = require('config.widgets.disconnect_icon');
 local anonIconDefaults = require('config.widgets.anon_icon');
@@ -482,6 +483,32 @@ local function SanitizePeerIconStyle(iconStyle)
     end
 
     return style;
+end
+
+local function LoadCatseyeIcon(fileName)
+    local cacheKey = 'catseye:' .. tostring(fileName or '');
+
+    if (iconCache[cacheKey] ~= nil) then
+        return iconCache[cacheKey];
+    end
+
+    local path = addon.path .. '\\assets\\images\\catseye_icons\\' .. tostring(fileName or '');
+    iconCache[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return iconCache[cacheKey];
+end
+
+local function ResolveEnemyPreviewIconStyle(globalSettings, iconSettings)
+    local style = tostring(iconSettings ~= nil and iconSettings.iconStyle or 'Use Settings theme default');
+
+    if (style == '' or style == 'Use enemy default' or style == 'Use Settings theme default') then
+        style = tostring(
+            globalSettings ~= nil and globalSettings.enemyIconStyle or
+            (globalSettings ~= nil and globalSettings.peer ~= nil and globalSettings.peer.iconStyle) or
+            'round'
+        );
+    end
+
+    return SanitizePeerIconStyle(style);
 end
 
 local function LoadPeerIcon(iconName, iconStyle)
@@ -930,6 +957,7 @@ local function GetEnemyMobInfoPreviewIconSettings(storageEntityName, stateName)
         behavior = state.GetWidgetSettings(storageEntityName, stateName, 'Behavior icon', enemyBehaviorIconDefaults),
         detects = state.GetWidgetSettings(storageEntityName, stateName, 'Detects icon', enemyDetectsIconDefaults),
         links = state.GetWidgetSettings(storageEntityName, stateName, 'Links icon', enemyLinksIconDefaults),
+        special = state.GetWidgetSettings(storageEntityName, stateName, 'Special icon', enemySpecialIconDefaults),
     };
 end
 
@@ -981,16 +1009,66 @@ local function AddPlayerPreviewIcons(icons, playerIconSettings, entityName, stat
     AddIcon(icons, playerIconSettings.newAdventurer, LoadWidgetIcon('new_adventurer.png'), 24, -54, 'newAdventurerIcon');
 end
 
-local function AddEnemyWorldMobInfoPreviewIcons(icons, globalSettings, widgetSettings, context)
+local function AddEnemySpecialTargetPreviewIcon(icons, nameSettings, iconSettings, context)
+    if (iconSettings == nil or iconSettings.enabled ~= true) then
+        return;
+    end
+
+    local showTier3 = iconSettings.showTier3Incursion ~= false;
+    local showAp = iconSettings.showActivityPoints ~= false;
+    local editingSpecialTarget = context ~= nil and tostring(context.widgetKey or '') == 'Special icon';
+    local iconName = nil;
+    local autoScale = 3.70;
+
+    if (editingSpecialTarget == true and showAp == true) then
+        iconName = 'AP.png';
+        autoScale = 2.2;
+    elseif (showTier3 == true) then
+        iconName = 'star.png';
+    elseif (showAp == true) then
+        iconName = 'AP.png';
+        autoScale = 2.2;
+    end
+
+    if (iconName == nil) then
+        return;
+    end
+
+    local textureId = LoadCatseyeIcon(iconName);
+
+    if (textureId == nil) then
+        return;
+    end
+
+    local nameSize = tonumber(nameSettings ~= nil and nameSettings.textSize) or tonumber(nameDefaults.textSize) or 24;
+    local configuredSize = tonumber(iconSettings.iconSize) or 0;
+    local iconSize = configuredSize > 0 and configuredSize or math.floor((nameSize * autoScale) + 0.5);
+    iconSize = math.max(6, math.min(tonumber(iconSettings.maxIconSize) or enemySpecialIconDefaults.maxIconSize or 256, iconSize));
+
+    icons[#icons + 1] = {
+        kind = 'catseyeSpecialNameIcon',
+        textureId = textureId,
+        size = iconSize,
+        offsetX = tonumber(iconSettings.offsetX) or enemySpecialIconDefaults.offsetX,
+        offsetY = tonumber(iconSettings.offsetY) or enemySpecialIconDefaults.offsetY,
+        anchorTo = iconSettings.anchorTo or enemySpecialIconDefaults.anchorTo,
+        anchorPoint = iconSettings.anchorPoint or enemySpecialIconDefaults.anchorPoint,
+        anchorCollapse = iconSettings.anchorCollapse,
+        anchorSpacing = iconSettings.anchorSpacing,
+        anchorOrder = iconSettings.anchorOrder,
+    };
+end
+
+local function AddEnemyWorldMobInfoPreviewIcons(icons, globalSettings, widgetSettings, nameSettings, context)
     widgetSettings = widgetSettings or {};
-    local iconStyle = SanitizePeerIconStyle(globalSettings.peer ~= nil and globalSettings.peer.iconStyle or 'round');
     local behaviorSettings = widgetSettings.behavior;
     local detectsSettings = widgetSettings.detects;
     local linksSettings = widgetSettings.links;
 
-    AddIcon(icons, behaviorSettings, LoadPeerIcon('AggroNQ', iconStyle), -96, -34, 'Behavior icon');
-    AddIcon(icons, detectsSettings, LoadPeerIcon('Sound', iconStyle), -72, -34, 'Detects icon');
-    AddIcon(icons, linksSettings, LoadPeerIcon('Link', iconStyle), -48, -34, 'Links icon');
+    AddIcon(icons, behaviorSettings, LoadPeerIcon('AggroNQ', ResolveEnemyPreviewIconStyle(globalSettings, behaviorSettings)), -96, -34, 'Behavior icon');
+    AddIcon(icons, detectsSettings, LoadPeerIcon('Sound', ResolveEnemyPreviewIconStyle(globalSettings, detectsSettings)), -72, -34, 'Detects icon');
+    AddIcon(icons, linksSettings, LoadPeerIcon('Link', ResolveEnemyPreviewIconStyle(globalSettings, linksSettings)), -48, -34, 'Links icon');
+    AddEnemySpecialTargetPreviewIcon(icons, nameSettings, widgetSettings.special, context);
 end
 
 local function BuildPreviewAnchorFallbackRects(definitions)
@@ -999,7 +1077,7 @@ local function BuildPreviewAnchorFallbackRects(definitions)
     for _, definition in ipairs(definitions or {}) do
         local settings = definition.settings or {};
         local defaults = definition.defaults or {};
-        local size = math.max(6, math.min(160, tonumber(settings.iconSize) or tonumber(defaults.iconSize) or 16));
+        local size = math.max(6, math.min(256, tonumber(settings.iconSize) or tonumber(defaults.iconSize) or 16));
         local offsetX = tonumber(settings.offsetX) or tonumber(definition.defaultX) or tonumber(defaults.offsetX) or 0;
         local offsetY = tonumber(settings.offsetY) or tonumber(definition.defaultY) or tonumber(defaults.offsetY) or 0;
 
@@ -1093,7 +1171,11 @@ local function AddFishingPreviewIcon(plateData, globalSettings, context)
 end
 
 local function AddCraftingPreviewWidget(plateData, globalSettings, context)
-    if (plateData == nil or context == nil or context.widgetKey ~= 'Crafting') then
+    if (
+        plateData == nil or
+        context == nil or
+        (context.widgetKey ~= 'Crafting' and context.previewCraftingResult ~= true)
+    ) then
         return;
     end
 
@@ -1235,16 +1317,17 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
         return;
     end
 
-    local maxIcons = math.max(1, math.min(64, tonumber(settings.maxIcons) or 12));
+    local maxIcons = math.max(1, math.min(32, tonumber(settings.maxIcons) or 12));
     local iconsPerRow = math.max(1, math.min(24, tonumber(settings.iconsPerRow) or 6));
-    local iconSize = math.max(6, math.min(160, tonumber(settings.iconSize) or 18));
+    local iconSize = math.max(6, math.min(256, tonumber(settings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(settings.iconSpacing) or 2));
-    local rowHeight = iconSize + spacing;
+    local rowSpacing = math.max(0, math.min(32, tonumber(settings.rowSpacing) or 2));
+    local rowHeight = iconSize + rowSpacing;
     local growLeft = tostring(settings.growthDirection or 'Right') == 'Left';
     local anchored = tostring(settings.anchorTo or 'Plate') ~= 'Plate';
 
     if (settings.showTimers == true) then
-        rowHeight = iconSize + math.max(spacing, (tonumber(settings.timerFontSize) or 8) + math.max(0, tonumber(settings.timerOffsetY) or 0) + 2);
+        rowHeight = iconSize + math.max(rowSpacing, (tonumber(settings.timerFontSize) or 8) + math.max(0, tonumber(settings.timerOffsetY) or 0) + 2);
     end
 
     local baseX = tonumber(settings.offsetX) or 0;
@@ -1274,8 +1357,8 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
         if (textureId ~= nil) then
             local row = math.floor((i - 1) / iconsPerRow);
             local col = (i - 1) % iconsPerRow;
-            local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
-            local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local layoutRowCount = math.min(iconsPerRow, total);
+            local rowWidth = (layoutRowCount * iconSize) + ((layoutRowCount - 1) * spacing);
             local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
             local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
             local timerText = nil;
@@ -1285,9 +1368,9 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
             end
 
             if (anchored == true) then
-                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
-            elseif (growLeft == true) then
-                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+                iconOffsetX = growLeft == true
+                    and (baseX - rowWidth + (col * (iconSize + spacing)))
+                    or (baseX + (col * (iconSize + spacing)));
             end
 
             icons[#icons + 1] = {
@@ -1548,10 +1631,26 @@ local function CopySettingsWith(settings, overrides)
 end
 
 local function ShouldShowDistancePreview(context, distanceSettings)
-    return (
-        (distanceSettings ~= nil and distanceSettings.enabled == true) or
-        (context ~= nil and context.widgetKey == 'Distance')
-    );
+    return distanceSettings ~= nil and distanceSettings.enabled == true;
+end
+
+local function GetTpPreviewValue(tpBarSettings, context, fallbackValue)
+    local value = tonumber(fallbackValue) or 1375;
+
+    if (context ~= nil and context.widgetKey == 'TP Bar') then
+        local threshold = math.max(0, math.min(300, tonumber(tpBarSettings ~= nil and tpBarSettings.showAtPercent) or 300));
+        value = math.max(2600, threshold * 10);
+    end
+
+    return value;
+end
+
+local function GetTpPreviewThreshold(tpBarSettings, context, fallbackValue)
+    if (context ~= nil and context.widgetKey == 'TP Bar') then
+        return 0;
+    end
+
+    return tonumber(tpBarSettings ~= nil and tpBarSettings.showAtPercent) or tonumber(fallbackValue) or 300;
 end
 
 local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings, hpBarSettings, tpBarSettings, globalSettings, context)
@@ -1563,10 +1662,9 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
     local hp = 985;
     local maxHp = 1074;
     local hpPercent = ClampPercent((hp / maxHp) * 100, 92);
-    local tpValue = 1375;
+    local tpValue = GetTpPreviewValue(tpBarSettings, context, 3000);
     local tpPercent = tpValue / 10;
     local hpColor = hpBarSettings.color or { 0.95, 0.45, 0.45, 1.0 };
-    hpBarSettings.showValue = false;
 
     if (
         hpBarSettings.lowColorEnabled == true and
@@ -1583,7 +1681,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
     local plateData = {
         hp = hpPercent,
         tp = tpPercent,
-        targetMarker = { enabled = false },
+        targetMarker = BuildTargetMarker(context, hpBarSettings),
         background = {
             enabled = backgroundSettings.enabled == true,
             width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
@@ -1637,7 +1735,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
             animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or 40,
             animationColor = hpBarSettings.lowAnimationColor,
             showAtPercent = tonumber(hpBarSettings.showAtPercent) or 100,
-            text = pupPreview == true and BuildPercentFallbackResourceText(hpBarSettings, 'HP', hp, maxHp, hpPercent) or BuildResourceText(hpBarSettings, 'HP', hp, maxHp, hpPercent),
+            text = BuildPercentFallbackResourceText(hpBarSettings, 'HP', nil, nil, hpPercent),
             textOffsetX = tonumber(hpBarSettings.textOffsetX) or 0,
             textOffsetY = tonumber(hpBarSettings.textOffsetY) or 0,
             fontFamily = fonts.GetRole(globalSettings, hpBarSettings.useSmallFont == true),
@@ -1667,7 +1765,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
             textureId = barTextures.GetTextureId(tpBarSettings.texture),
             color2 = tpBarSettings.color2 or tpBarDefaults.color2,
             color3 = tpBarSettings.color3 or tpBarDefaults.color3,
-            showAtPercent = tonumber(tpBarSettings.showAtPercent) or 300,
+            showAtPercent = GetTpPreviewThreshold(tpBarSettings, context, 300),
             segmented = tpBarSettings.segmented ~= false,
             segmentGap = tonumber(tpBarSettings.segmentGap) or 6,
             text = BuildResourceText(tpBarSettings, 'TP', tpValue, 3000, tpPercent),
@@ -1714,7 +1812,7 @@ end
 
 local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, hpBarSettings, tpBarSettings, distanceSettings, globalSettings, context)
     local hpPercent = 92;
-    local tpValue = 1375;
+    local tpValue = GetTpPreviewValue(tpBarSettings, context, 3000);
     local tpPercent = tpValue / 10;
     local hpColor = hpBarSettings.color or barDefaults.color;
     local tpColor = tpBarSettings.color or tpBarDefaults.color;
@@ -1849,7 +1947,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
             animationColor = tpBarSettings.lowAnimationColor,
             color2 = tpBarSettings.color2 or tpBarDefaults.color2,
             color3 = tpBarSettings.color3 or tpBarDefaults.color3,
-            showAtPercent = tonumber(tpBarSettings.showAtPercent) or tpBarDefaults.showAtPercent,
+            showAtPercent = GetTpPreviewThreshold(tpBarSettings, context, tpBarDefaults.showAtPercent),
             segmented = tpBarSettings.segmented ~= false,
             segmentGap = tonumber(tpBarSettings.segmentGap) or tpBarDefaults.segmentGap,
             text = BuildResourceText(tpBarSettings, 'TP', tpValue, 3000, tpPercent),
@@ -1901,7 +1999,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
     local maxHp = isSpirit and 886 or 1074;
     local mp = 612;
     local maxMp = 886;
-    local tpValue = 1375;
+    local tpValue = GetTpPreviewValue(tpBarSettings, context, 3000);
     local hpPercent = ClampPercent((hp / maxHp) * 100, 92);
     local mpPercent = ClampPercent((mp / maxMp) * 100, 69);
     local tpPercent = tpValue / 10;
@@ -1930,7 +2028,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
         mp = mpPercent,
         tp = tpPercent,
         cast = isSpirit and 62 or 0,
-        targetMarker = { enabled = false },
+        targetMarker = BuildTargetMarker(context, hpBarSettings),
         background = {
             enabled = backgroundSettings.enabled == true,
             width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
@@ -2045,7 +2143,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             textureId = barTextures.GetTextureId(tpBarSettings.texture),
             color2 = tpBarSettings.color2 or tpBarDefaults.color2,
             color3 = tpBarSettings.color3 or tpBarDefaults.color3,
-            showAtPercent = tonumber(tpBarSettings.showAtPercent) or 300,
+            showAtPercent = GetTpPreviewThreshold(tpBarSettings, context, 300),
             segmented = tpBarSettings.segmented ~= false,
             segmentGap = tonumber(tpBarSettings.segmentGap) or 6,
             text = BuildResourceText(tpBarSettings, 'TP', tpValue, 3000, tpPercent),
@@ -2154,6 +2252,7 @@ local function BuildPlate(entityName, stateName, context)
     local mp = 612;
     local maxMp = 886;
     local tp = 1375;
+    local tpBarDemoPreview = context ~= nil and context.widgetKey == 'TP Bar';
     local pupPreview = (entityName == 'Pet (PUP)');
 
     if (pupPreview == true) then
@@ -2161,8 +2260,9 @@ local function BuildPlate(entityName, stateName, context)
         maxHp = nil;
         mp = nil;
         maxMp = nil;
-        tp = 152;
+        tp = 3000;
     end
+    tp = GetTpPreviewValue(tpBarSettings, context, tp);
     local previewNames = {
         ['PC'] = 'Libra',
         ['Enemy'] = (enemyPreviewNameMode == 'Short') and 'Puk' or 'Sabotender Enamorado',
@@ -2240,7 +2340,7 @@ local function BuildPlate(entityName, stateName, context)
     end
 
 
-    if (tpPercent >= 100) then
+    if (tpPercent >= 100 and tpBarDemoPreview ~= true) then
         tpColor = tpBarSettings.fullColor or tpBarDefaults.fullColor or tpColor;
         tpColor2 = tpColor;
         tpColor3 = tpColor;
@@ -2279,6 +2379,7 @@ local function BuildPlate(entityName, stateName, context)
             backgroundSettings,
             hpBarSettings,
             tpBarSettings,
+            distanceSettings,
             globalSettings,
             context
         );
@@ -2289,23 +2390,56 @@ local function BuildPlate(entityName, stateName, context)
     end
 
     if ((entityName == 'Enemy' or entityName == 'Self' or entityName == 'Trust' or (entityName == 'PC' and stateName == 'Combat')) and (context == nil or context.widgetKey ~= 'Peer')) then
-        local buffRows = T{
-            { id = 33, seconds = 148 },
-            { id = 40, seconds = 82 },
-            { id = 41, seconds = 28 },
+        local buffRows = T{};
+        local buffStatusIds = {
+            27, 33, 35, 36, 37, 39, 40, 41,
+            42, 43, 48, 84, 85, 93, 94, 101,
+            107, 113, 189, 199, 327, 328, 539, 541,
+            160, 161, 0, 69, 70, 71, 574, 585,
         };
-        local debuffRows = T{
-            { id = 4, seconds = 118 },
-            { id = 13, seconds = 44 },
-            { id = 134, seconds = 12 },
+        local buffDurations = {
+            2, 4, 9, 20, 36, 58,
+            60, 120, 300, 360, 540, 720,
+            840, 960, 1320, 1440, 1500, 2040,
+            3120, 3600, 14400, 21600, 28800, 36000,
+            43200, 50400, 57600, 64800, 72000, 75600,
+            79200, 82800,
         };
+        for index, statusId in ipairs(buffStatusIds) do
+            buffRows[#buffRows + 1] = {
+                id = statusId,
+                seconds = buffDurations[index],
+            };
+        end
+
+        local debuffRows = T{};
+        local debuffStatusIds = {
+            4, 13, 134, 2, 3, 5, 6, 7,
+            8, 9, 10, 11, 12, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28, 29, 30, 31, 32,
+        };
+        for index, statusId in ipairs(debuffStatusIds) do
+            debuffRows[#debuffRows + 1] = {
+                id = statusId,
+                seconds = buffDurations[index],
+            };
+        end
 
         AddStatusPreviewIcons(icons, buffsSettings, buffRows, 'buffs');
         AddStatusPreviewIcons(icons, debuffsSettings, debuffRows, 'debuffs');
     end
 
-    if (entityName == 'Enemy' and (stateName == 'Idle' or stateName == 'World')) then
-        AddEnemyWorldMobInfoPreviewIcons(icons, globalSettings, enemyMobInfoIconSettings, context);
+    if (
+        entityName == 'Enemy' and
+        (
+            stateName == 'Idle' or
+            stateName == 'World' or
+            stateName == 'Combat' or
+            stateName == 'Tactical'
+        )
+    ) then
+        AddEnemyWorldMobInfoPreviewIcons(icons, globalSettings, enemyMobInfoIconSettings, nameSettings, context);
     end
 
     local plateData = {
@@ -2342,6 +2476,7 @@ local function BuildPlate(entityName, stateName, context)
             ['Behavior icon'] = 'Behavior icon',
             ['Detects icon'] = 'Detects icon',
             ['Links icon'] = 'Links icon',
+            ['Special icon'] = 'catseyeSpecialNameIcon',
             ['Bazaar icon'] = 'bazaarIcon',
             ['Away icon'] = 'awayIcon',
             ['Disconnect icon'] = 'disconnectIcon',
@@ -2447,7 +2582,7 @@ local function BuildPlate(entityName, stateName, context)
             textureId = barTextures.GetTextureId(tpBarSettings.texture),
             color2 = tpColor2,
             color3 = tpColor3,
-            showAtPercent = tonumber(tpBarSettings.showAtPercent) or 100,
+            showAtPercent = tpBarDemoPreview == true and 0 or (tonumber(tpBarSettings.showAtPercent) or 300),
             segmented = tpBarSettings.segmented ~= false,
             segmentGap = tonumber(tpBarSettings.segmentGap) or 3,
             text = BuildResourceText(tpBarSettings, 'TP', tp, 3000, tpPercent),
@@ -2540,7 +2675,7 @@ local function BuildPlate(entityName, stateName, context)
                 plateData.icons[#plateData.icons + 1] = {
                     kind = 'job',
                     textureId = textureId,
-                    size = math.max(8, math.min(160, tonumber(jobSettings.iconSize) or 16)),
+                    size = math.max(8, math.min(256, tonumber(jobSettings.iconSize) or 16)),
                     offsetX = tonumber(jobSettings.offsetX) or 0,
                     offsetY = tonumber(jobSettings.offsetY) or -54,
                     anchorTo = jobSettings.anchorTo or jobDefaults.anchorTo,
@@ -2606,7 +2741,7 @@ local function BuildPlate(entityName, stateName, context)
             fontFlags = fonts.GetRoleFlags(globalSettings, idSettings.useSmallFont == true),
             fontSize = textScale.ToTextureFontSize(idSettings.textSize, idDefaults.textSize),
             textColor = idSettings.color or idDefaults.color,
-            textOutlineEnabled = idSettings.outlineEnabled == true,
+            textOutlineEnabled = (tonumber(idSettings.outlineSize) or 0) > 0,
             textOutlineColor = idSettings.outlineColor or idDefaults.outlineColor,
             textOutlineSize = tonumber(idSettings.outlineSize) or idDefaults.outlineSize,
             anchorTo = idSettings.anchorTo or idDefaults.anchorTo,
@@ -3134,7 +3269,7 @@ local function AddPeerPreviewIconRow(plateData, iconNames, peerSettings, prefix)
     plateData.icons = plateData.icons or {};
 
     local iconStyle = SanitizePeerIconStyle(peerSettings.iconStyle);
-    local iconSize = math.max(6, math.min(64, tonumber(peerSettings[prefix .. 'IconSize']) or tonumber(peerSettings.iconSize) or 18));
+    local iconSize = math.max(6, math.min(256, tonumber(peerSettings[prefix .. 'IconSize']) or tonumber(peerSettings.iconSize) or 18));
     local x = tonumber(peerSettings[prefix .. 'OffsetX']) or tonumber(peerSettings.iconOffsetX) or -190;
     local y = tonumber(peerSettings[prefix .. 'OffsetY']) or tonumber(peerSettings.iconOffsetY) or -16;
     local maxX = x + 395;
@@ -3280,7 +3415,7 @@ AddPeerPreview = function(plateData, globalSettings)
                 plateData.icons[#plateData.icons + 1] = {
                     kind = 'peerJob',
                     textureId = textureId,
-                    size = math.max(6, math.min(160, tonumber(peerSettings.jobIconSize) or 18)),
+                    size = math.max(6, math.min(256, tonumber(peerSettings.jobIconSize) or 18)),
                     offsetX = tonumber(peerSettings.jobOffsetX) or -190,
                     offsetY = tonumber(peerSettings.jobOffsetY) or -16,
                 };
@@ -3338,7 +3473,7 @@ AddPeerPreview = function(plateData, globalSettings)
         AddPeerPreviewText(
             plateData,
             'Aggro',
-            (tonumber(peerSettings.aggroOffsetX) or -95) + math.max(6, math.min(64, tonumber(peerSettings.aggroIconSize) or tonumber(peerSettings.iconSize) or 18)) + 4,
+            (tonumber(peerSettings.aggroOffsetX) or -95) + math.max(6, math.min(256, tonumber(peerSettings.aggroIconSize) or tonumber(peerSettings.iconSize) or 18)) + 4,
             tonumber(peerSettings.aggroOffsetY) or -16,
             globalSettings,
             peerSettings,
@@ -3359,7 +3494,7 @@ AddPeerPreview = function(plateData, globalSettings)
         plateData.icons = plateData.icons or {};
 
         local iconStyle = SanitizePeerIconStyle(peerSettings.iconStyle);
-        local iconSize = math.max(6, math.min(64, tonumber(peerSettings.modifierIconSize) or tonumber(peerSettings.iconSize) or 18));
+        local iconSize = math.max(6, math.min(256, tonumber(peerSettings.modifierIconSize) or tonumber(peerSettings.iconSize) or 18));
         local x = tonumber(peerSettings.modifierOffsetX) or 120;
         local y = tonumber(peerSettings.modifierOffsetY) or -16;
         local modifierIcons = T{
@@ -3872,7 +4007,7 @@ local function DrawPeerInspectorPreview(drawList, x, y, previewWidth, previewHei
         return;
     end
 
-    local iconSize = math.max(18, math.min(30, tonumber(peerSettings.iconSize) or 22));
+    local iconSize = math.max(6, math.min(256, tonumber(peerSettings.iconSize) or 22));
     local contentX = panelX + 142;
     local contentW = panelW - 156;
 
@@ -4071,13 +4206,19 @@ local function DrawPcPeerPreview(drawList, x, y, previewWidth, previewHeight, co
     rowY = rowY + rowStep;
 
     DrawPreviewText(drawList, labelX, rowY, heading, 'HP', outlineSize, outlineColor);
-    DrawPreviewText(drawList, valueX, rowY, textColor, '87%', outlineSize, outlineColor);
+    DrawPreviewText(drawList, valueX, rowY, textColor, '89%', outlineSize, outlineColor);
+    rowY = rowY + rowStep;
+
     DrawPreviewText(drawList, labelX, rowY, heading, 'Mode', outlineSize, outlineColor);
     DrawPreviewText(drawList, valueX, rowY, textColor, 'ACE', outlineSize, outlineColor);
     rowY = rowY + rowStep;
 
     DrawPreviewText(drawList, labelX, rowY, heading, 'Target', outlineSize, outlineColor);
     DrawPreviewText(drawList, valueX, rowY, textColor, 'Wild Rabbit', outlineSize, outlineColor);
+end
+
+function preview.BuildPlateData(entityName, stateName, context)
+    return BuildPlate(entityName, stateName, context);
 end
 
 function preview.Draw(entityName, stateName, context)

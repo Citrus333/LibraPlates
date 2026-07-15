@@ -55,10 +55,6 @@ local function GetSettings()
     return settings;
 end
 
-local function IsEnabled()
-    return GetSettings().enabled == true;
-end
-
 local function IsDebugEnabled()
     if (debugUntil ~= nil and os.clock() >= debugUntil) then
         debugEnabled = false;
@@ -445,7 +441,7 @@ local function GetLaneSettings(settings, lane)
         };
     elseif (lane == 'builtIn') then
         return {
-            enabled = true,
+            enabled = settings.builtInAlertsEnabled ~= false,
             color = settings.builtInColor or { 0.65, 0.90, 1.0, 1.0 },
             outlineColor = settings.builtInOutlineColor or settings.outlineColor,
             fontSize = tonumber(settings.builtInFontSize) or 30,
@@ -539,6 +535,16 @@ local function TrimAlertsToLimit(settings)
     end
 end
 
+local function CleanAlertDisplayText(value)
+    return tostring(value or '')
+        :gsub(string.char(0x1E) .. '.', '')
+        :gsub('[%z\1-\31]', '')
+        :gsub('[\127-\255]', '')
+        :gsub('%s+', ' ')
+        :gsub('^%s*(.-)%s*$', '%1')
+        :gsub('^[^%w]+', '');
+end
+
 local function PushAlert(kind, lane, actorName, actionName, options)
     local settings = GetSettings();
     local laneSettings = GetLaneSettings(settings, lane);
@@ -552,9 +558,9 @@ local function PushAlert(kind, lane, actorName, actionName, options)
     local duration = math.max(0.5, tonumber(settings.duration) or 3.0);
     local fadeDuration = math.max(0.0, tonumber(settings.fadeDuration) or 0.0);
     local verb = (kind == 'MA') and 'starts casting' or 'uses';
-    local text = tostring(options.text or (tostring(actorName or 'Enemy') .. ' ' .. verb .. ' ' .. tostring(actionName or '')));
+    local text = CleanAlertDisplayText(options.text or (tostring(actorName or 'Enemy') .. ' ' .. verb .. ' ' .. tostring(actionName or '')));
     local stackKey = tostring(lane or 'default') .. '\30' .. tostring(kind or 'Alert') .. '\30';
-    local stackAction = tostring(actionName or ''):gsub('^%s*(.-)%s*$', '%1');
+    local stackAction = CleanAlertDisplayText(actionName);
 
     if (stackAction ~= '') then
         stackKey = stackKey .. stackAction:lower();
@@ -672,6 +678,19 @@ local function GetPetAlertSource(packet)
         end
     end
 
+    local drgPet = entities.GetOwnDrgPet();
+    if (
+        drgPet ~= nil and
+        (tonumber(drgPet.index) == userIndex or tonumber(drgPet.serverId) == userId) and
+        IsPetAlertWidgetEnabled('Wyvern', 'Wyvern') == true
+    ) then
+        return {
+            entity = 'Pet (DRG)',
+            state = 'Wyvern',
+            name = drgPet.name,
+        };
+    end
+
     return nil;
 end
 
@@ -710,7 +729,7 @@ local function GetPetTextAlertSource(actorName)
 
     local drgPet = entities.GetOwnDrgPet();
     if (drgPet ~= nil and tostring(drgPet.name or ''):gsub('%s+', '') == compactActor) then
-        if (IsPetAlertWidgetEnabled('Pet (DRG)', 'Wyvern') == true) then
+        if (IsPetAlertWidgetEnabled('Wyvern', 'Wyvern') == true) then
             return { entity = 'Pet (DRG)', state = 'Wyvern', name = drgPet.name };
         end
     end
@@ -873,10 +892,6 @@ local function HandleActionPacket(packet)
 
     local settings = GetSettings();
 
-    if (settings.enabled ~= true) then
-        return;
-    end
-
     if (IsEnemyIndex(packet.UserIndex) ~= true) then
         return;
     end
@@ -974,6 +989,7 @@ end
 
 local function FormatIncursionDetail(text)
     text = TrimText(text);
+    text = text:gsub('%s*%(Expires in %d+ Minutes?%)!?%s*$', '');
     text = text:gsub('%(([%u]%-?%d+)%)', '%1');
     text = text:gsub('%(Map #(%d+)%)', 'Map %1');
     text = text:gsub('%s+', ' ');
@@ -1173,10 +1189,6 @@ end
 function enemyAlerts.HandleTextIn(e)
     local settings = GetSettings();
 
-    if (settings.enabled ~= true) then
-        return;
-    end
-
     local message = e ~= nil and e.message or nil;
     if (type(message) ~= 'string') then
         message = StripControlCodes(
@@ -1200,7 +1212,7 @@ function enemyAlerts.HandleTextIn(e)
         return;
     end
 
-    if (settings.builtInWildkeeperEnabled ~= false) then
+    if (settings.builtInAlertsEnabled ~= false and settings.builtInWildkeeperEnabled ~= false) then
         local zone, notorious = message:match('members%-wembers in (.-) says that (.-) could appear anytime in the next 5 minutes');
         if (zone ~= nil and notorious ~= nil) then
             PushSystemAlert('Wildkeeper Reive', string.format('Wildkeeper Reive: %s in %s soon', notorious, zone), 'builtInWildkeeper');
@@ -1210,7 +1222,7 @@ function enemyAlerts.HandleTextIn(e)
         end
     end
 
-    if (settings.builtInCampaignEnabled ~= false) then
+    if (settings.builtInAlertsEnabled ~= false and settings.builtInCampaignEnabled ~= false) then
         local zone = message:match('Enemy forces are headed towards (.-)!');
         if (zone ~= nil and zone ~= '') then
             PushSystemAlert('Campaign', 'Campaign: enemy forces headed to ' .. zone, 'builtInCampaign');
@@ -1220,7 +1232,7 @@ function enemyAlerts.HandleTextIn(e)
         end
     end
 
-    if (settings.builtInVenturesEnabled ~= false) then
+    if (settings.builtInAlertsEnabled ~= false and settings.builtInVenturesEnabled ~= false) then
         local venturesMessage = CleanChatLine(message):gsub('^%{[^}]+%}%s*', '');
         local coord, zone = venturesMessage:match('Hmm%.%.%. Something is interrupting ventures at %((.-)%) in (.-)%.%.%.');
         if (coord ~= nil and zone ~= nil) then
@@ -1243,7 +1255,7 @@ function enemyAlerts.HandleTextIn(e)
         end
     end
 
-    if (settings.builtInVoidwatchEnabled ~= false) then
+    if (settings.builtInAlertsEnabled ~= false and settings.builtInVoidwatchEnabled ~= false) then
         local linkshell, zone, coord, notorious = message:match('heroic deeds of (.-) have caused a Rift to appear in (.-) %((.-)%)! Champions, stop (.-)%.?s escape!');
         if (linkshell ~= nil and zone ~= nil and coord ~= nil and notorious ~= nil) then
             PushSystemAlert('Voidwatch', string.format('Voidwatch: %s in %s (%s)', notorious, zone, coord), 'builtInVoidwatch');
@@ -1253,7 +1265,7 @@ function enemyAlerts.HandleTextIn(e)
         end
     end
 
-    if (settings.builtInBlueMagicEnabled ~= false) then
+    if (settings.builtInAlertsEnabled ~= false and settings.builtInBlueMagicEnabled ~= false) then
         local learnedSpell = message:match('>>> Learned new spell: %[([^%]]+)%]');
         if (learnedSpell ~= nil and learnedSpell ~= '') then
             local displayText = string.format('Learned Blue Spell: %s', learnedSpell);
@@ -1266,7 +1278,7 @@ function enemyAlerts.HandleTextIn(e)
         end
     end
 
-    if (settings.builtInDynamisEnabled ~= false) then
+    if (settings.builtInAlertsEnabled ~= false and settings.builtInDynamisEnabled ~= false) then
         if (message:find('The sands of the prismatic hourglass have begun to fall%.') ~= nil) then
             PushSystemAlert('Dynamis', 'Dynamis: hourglass started', 'builtInDynamis');
             lastDebug = 'text-dynamis started';
@@ -1299,7 +1311,7 @@ function enemyAlerts.HandleTextIn(e)
         end
     end
 
-    if (settings.builtInIncursionEnabled ~= false) then
+    if (settings.builtInAlertsEnabled ~= false and settings.builtInIncursionEnabled ~= false) then
         local incursionMinutes = message:match('You have (%d+) minutes remaining inside this Incursion%.');
         if (incursionMinutes ~= nil) then
             PushSystemAlert('Incursion', 'Incursion: ' .. incursionMinutes .. ' min remaining', 'builtInIncursion');
@@ -1343,6 +1355,13 @@ function enemyAlerts.HandleTextIn(e)
             return;
         end
 
+        if (message:match('Incursion %[[^%]]+%] Bonus Objective Complete!') ~= nil) then
+            PushSystemAlert('Incursion', 'Bonus objective complete', 'builtInIncursion');
+            lastDebug = 'text-incursion bonus-complete';
+            if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
+            return;
+        end
+
         local bonusObjective = message:match('Incursion %[[^%]]+%] Bonus Objective:%s*(.+)');
         if (bonusObjective ~= nil and bonusObjective ~= '') then
             local bonusName, bonusProgress = bonusObjective:match('^(.-)%s+(%d+/%d+)$');
@@ -1356,9 +1375,11 @@ function enemyAlerts.HandleTextIn(e)
             return;
         end
 
-        if (message:match('Incursion %[[^%]]+%] Bonus Objective Complete!') ~= nil) then
-            PushSystemAlert('Incursion', 'Bonus objective complete', 'builtInIncursion');
-            lastDebug = 'text-incursion bonus-complete';
+        local newBonusObjective = message:match('Bonus Objective:%s*(.+)');
+        if (newBonusObjective ~= nil and newBonusObjective ~= '') then
+            local displayBonus = FormatIncursionDetail(newBonusObjective);
+            PushSystemAlert('Incursion', 'Bonus: ' .. displayBonus, 'builtInIncursion');
+            lastDebug = 'text-incursion bonus-new=' .. tostring(displayBonus);
             if (IsDebugEnabled() == true) then log.Info('Enemy Alerts: ' .. lastDebug); end
             return;
         end
@@ -1656,7 +1677,10 @@ local function DrawAlertRows(settings, rows, drawListOverride, viewportWidth, vi
     local y = (viewportH * 0.28) + (tonumber(settings.offsetY) or 0);
     local pushedClip = false;
 
-    if (previewEnabled ~= true and drawList.PushClipRect ~= nil and drawList.PopClipRect ~= nil) then
+    -- Foreground draw lists can retain the clip rectangle of the most recently
+    -- rendered ImGui child/card. Always establish a full-screen clip for both
+    -- live and preview alerts so Settings scrolling cannot clip the game UI.
+    if (drawList.PushClipRect ~= nil and drawList.PopClipRect ~= nil) then
         drawList:PushClipRect({ 0, 0 }, { viewportW, viewportH }, false);
         pushedClip = true;
     end
@@ -1693,14 +1717,15 @@ local function BuildPreviewRows(settings)
     local fishingHookType = GetLaneSettings(settings, 'fishingHookType');
     local fishingCatchInfo = GetLaneSettings(settings, 'fishingCatchInfo');
     local rows = {};
-    local builtInEnabled =
+    local builtInEnabled = settings.builtInAlertsEnabled ~= false and (
         settings.builtInWildkeeperEnabled ~= false or
         settings.builtInCampaignEnabled ~= false or
         settings.builtInVenturesEnabled ~= false or
         settings.builtInVoidwatchEnabled ~= false or
         settings.builtInBlueMagicEnabled ~= false or
         settings.builtInDynamisEnabled ~= false or
-        settings.builtInIncursionEnabled ~= false;
+        settings.builtInIncursionEnabled ~= false
+    );
 
     local function AddPreviewRow(laneSettings, row)
         if (laneSettings.enabled == true) then
@@ -1837,11 +1862,6 @@ function enemyAlerts.Render()
         return;
     end
 
-    if (settings.enabled ~= true) then
-        alerts = {};
-        return;
-    end
-
     if (#alerts == 0) then
         return;
     end
@@ -1926,19 +1946,6 @@ function enemyAlerts.TestCustomTrigger(index)
     lastDebug = 'test custom trigger: ' .. tostring(index);
 end
 
-function enemyAlerts.SetEnabled(value)
-    local enabled = value == true;
-    GetSettings().enabled = enabled;
-
-    if (enabled ~= true) then
-        alerts = {};
-    end
-end
-
-function enemyAlerts.GetEnabled()
-    return IsEnabled();
-end
-
 function enemyAlerts.SetPreviewEnabled(value)
     previewEnabled = value == true;
 end
@@ -1959,8 +1966,7 @@ end
 function enemyAlerts.GetStatusText()
     local settings = GetSettings();
 
-    return 'enabled=' .. tostring(settings.enabled == true) ..
-        ' showMA=' .. tostring(settings.showMagic ~= false) ..
+    return 'showMA=' .. tostring(settings.showMagic ~= false) ..
         ' offensiveMA=' .. tostring(settings.offensiveMagicEnabled ~= false) ..
         ' defensiveMA=' .. tostring(settings.defensiveMagicEnabled ~= false) ..
         ' showJA=' .. tostring(settings.showAbilities == true) ..

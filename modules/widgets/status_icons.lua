@@ -27,6 +27,9 @@ local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlag
 local heldButtonState = {};
 local DrawComboRow = nil;
 local pendingReset = nil;
+local gridColumnWidth = 125;
+local numericFieldWidth = 58;
+local comboFieldWidth = 108;
 
 local function ClickText(label, color)
     imgui.TextColored(color or valueColor, label);
@@ -157,7 +160,7 @@ end
 
 local function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
@@ -218,7 +221,7 @@ end
 
 local function DrawSliderControl(id, value, minValue, maxValue, step, width, showButtons)
     local current = math.floor((tonumber(value) or 0) + 0.5);
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     if (showButtons == false and imgui.SliderInt == nil) then
         return DrawNumber('', value, minValue, maxValue, amount);
@@ -271,7 +274,7 @@ end
 local function DrawTableSlider(label, id, value, minValue, maxValue, step, showButtons)
     imgui.TextColored(labelColor, label);
     imgui.TableNextColumn();
-    return DrawSliderControl(id, value, minValue, maxValue, step or 1, showButtons == false and 140 or 95, showButtons);
+    return DrawSliderControl(id, value, minValue, maxValue, step or 1, showButtons == false and comboFieldWidth or numericFieldWidth, showButtons);
 end
 
 local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax, step)
@@ -280,10 +283,10 @@ local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, left
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##status_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 145);
-            imgui.TableSetupColumn('##control_left', 0, 170);
-            imgui.TableSetupColumn('##label_right', 0, 145);
-            imgui.TableSetupColumn('##control_right', 0, 170);
+            imgui.TableSetupColumn('##label_left', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control_left', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##label_right', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control_right', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax, step or 1);
@@ -306,8 +309,8 @@ local function DrawSingleSliderRow(rowId, label, id, value, minValue, maxValue, 
         local result = value;
 
         if (imgui.BeginTable('##status_' .. rowId, 2, tableFlags)) then
-            imgui.TableSetupColumn('##label', 0, 145);
-            imgui.TableSetupColumn('##control', 0, 170);
+            imgui.TableSetupColumn('##label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             result = DrawTableSlider(label, id, value, minValue, maxValue, step or 1);
@@ -367,10 +370,10 @@ local function DrawSliderAndColorRow(rowId, sliderLabel, sliderId, sliderValue, 
         local colorResult = colorValue;
 
         if (imgui.BeginTable('##status_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##slider_label', 0, 145);
-            imgui.TableSetupColumn('##slider_control', 0, 170);
-            imgui.TableSetupColumn('##color_label', 0, 145);
-            imgui.TableSetupColumn('##color_control', 0, 170);
+            imgui.TableSetupColumn('##slider_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##slider_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##color_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##color_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             sliderResult = DrawTableSlider(sliderLabel, sliderId, sliderValue, minValue, maxValue);
@@ -395,10 +398,10 @@ local function DrawColorAndSliderRow(rowId, colorLabel, colorId, colorValue, sli
         local sliderResult = sliderValue;
 
         if (imgui.BeginTable('##status_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##color_label', 0, 145);
-            imgui.TableSetupColumn('##color_control', 0, 170);
-            imgui.TableSetupColumn('##slider_label', 0, 145);
-            imgui.TableSetupColumn('##slider_control', 0, 170);
+            imgui.TableSetupColumn('##color_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##color_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##slider_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##slider_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             colorResult = DrawColorCell(colorLabel, colorId, colorValue);
@@ -424,10 +427,10 @@ local function DrawColorPairRow(rowId, leftLabel, leftId, leftValue, rightLabel,
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##status_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##left_label', 0, 145);
-            imgui.TableSetupColumn('##left_control', 0, 170);
-            imgui.TableSetupColumn('##right_label', 0, 145);
-            imgui.TableSetupColumn('##right_control', 0, 170);
+            imgui.TableSetupColumn('##left_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##left_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             leftResult = DrawColorCell(leftLabel, leftId, leftValue);
@@ -528,16 +531,16 @@ local function DrawComboAndSliderRow(rowId, comboLabel, items, selected, comboId
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##status_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##combo_label', 0, 145);
-            imgui.TableSetupColumn('##combo_control', 0, 170);
-            imgui.TableSetupColumn('##slider_label', 0, 145);
-            imgui.TableSetupColumn('##slider_control', 0, 170);
+            imgui.TableSetupColumn('##combo_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##combo_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##slider_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##slider_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, comboLabel);
             imgui.TableNextColumn();
             if (imgui.PushItemWidth ~= nil) then
-                imgui.PushItemWidth(140);
+                imgui.PushItemWidth(comboFieldWidth);
             end
 
             comboResult = tostring(selected or items[1] or '');
@@ -575,25 +578,29 @@ end
 local function DrawStageTimeRow(rowId, settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##status_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##stage1', 0, 175);
-            imgui.TableSetupColumn('##stage2', 0, 175);
-            imgui.TableSetupColumn('##stage3', 0, 175);
-            imgui.TableSetupColumn('##unit', 0, 70);
+            imgui.TableSetupColumn('##stage1', 0, 125);
+            imgui.TableSetupColumn('##stage2', 0, 125);
+            imgui.TableSetupColumn('##stage3', 0, 125);
+            imgui.TableSetupColumn('##unit', 0, 40);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            imgui.TextColored(labelColor, 'Stage 1');
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(labelColor, 'S1');
             imgui.SameLine();
-            settings.timerWarningStage1Seconds = DrawSliderControl('timer_warning_stage_1', settings.timerWarningStage1Seconds, 1, 300, 1, 56);
+            settings.timerWarningStage1Seconds = DrawSliderControl('timer_warning_stage_1', settings.timerWarningStage1Seconds, 1, 300, 1, 40);
             imgui.TableNextColumn();
-            imgui.TextColored(labelColor, 'Stage 2');
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(labelColor, 'S2');
             imgui.SameLine();
-            settings.timerWarningStage2Seconds = DrawSliderControl('timer_warning_stage_2', settings.timerWarningStage2Seconds, 1, settings.timerWarningStage1Seconds, 1, 56);
+            settings.timerWarningStage2Seconds = DrawSliderControl('timer_warning_stage_2', settings.timerWarningStage2Seconds, 1, settings.timerWarningStage1Seconds, 1, 40);
             imgui.TableNextColumn();
-            imgui.TextColored(labelColor, 'Stage 3');
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(labelColor, 'S3');
             imgui.SameLine();
-            settings.timerWarningStage3Seconds = DrawSliderControl('timer_warning_stage_3', settings.timerWarningStage3Seconds, 1, settings.timerWarningStage2Seconds, 1, 56);
+            settings.timerWarningStage3Seconds = DrawSliderControl('timer_warning_stage_3', settings.timerWarningStage3Seconds, 1, settings.timerWarningStage2Seconds, 1, 40);
             imgui.TableNextColumn();
-            imgui.TextColored(labelColor, 'Seconds');
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(labelColor, 'sec');
             imgui.EndTable();
         end
 
@@ -671,10 +678,10 @@ local function DrawTextFontRows(fontSize, fontColor, outlineSize, outlineColor)
         local outlineColorResult = outlineColor;
 
         if (imgui.BeginTable('##status_timer_text_font_rows', 4, tableFlags)) then
-            imgui.TableSetupColumn('##font_label', 0, 105);
-            imgui.TableSetupColumn('##font_control', 0, 170);
-            imgui.TableSetupColumn('##color_label', 0, 125);
-            imgui.TableSetupColumn('##color_control', 0, 170);
+            imgui.TableSetupColumn('##font_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##font_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##color_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##color_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             fontResult = DrawTableSlider('Font size', 'timer_font_size', fontSize, 3, textScale.GetMaxVisualSize(), 1);
@@ -709,7 +716,7 @@ DrawComboRow = function(label, items, selected, onSelect, id)
     imgui.SameLine();
 
     if (imgui.PushItemWidth ~= nil) then
-        imgui.PushItemWidth(140);
+        imgui.PushItemWidth(comboFieldWidth);
     end
 
     local current = tostring(selected or items[1] or '');
@@ -1028,22 +1035,35 @@ function statusIcons.DrawSettings(settings, context)
 
     DrawPanel(itemLabel .. ' Settings', function()
         settings.iconPack = nil;
-        settings.growthDirection, settings.iconSize = DrawComboAndSliderRow(
-            'icon_size_growth',
-            'Growth direction',
-            { 'Right', 'Left' },
-            settings.growthDirection or defaults.growthDirection or 'Right',
-            'growth_direction_' .. tostring(label),
-            itemLabel .. ' size',
-            'icon_size',
-            settings.iconSize,
-            8,
-            160,
-            1
-        );
+
+        if (tostring(settings.anchorTo or 'Plate') ~= 'Plate') then
+            settings.growthDirection, settings.iconSize = DrawComboAndSliderRow(
+                'icon_size_growth',
+                'Grow',
+                { 'Right', 'Left' },
+                settings.growthDirection or defaults.growthDirection or 'Right',
+                'growth_direction_' .. tostring(label),
+                itemLabel .. ' size',
+                'icon_size',
+                settings.iconSize,
+                8,
+                256,
+                1
+            );
+        else
+            settings.iconSize = DrawSingleSliderRow(
+                'icon_size',
+                itemLabel .. ' size',
+                'icon_size',
+                settings.iconSize,
+                8,
+                256,
+                1
+            );
+        end
 
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, tostring(label) .. '_position');
+            anchorControls.DrawSpacing(settings, tostring(label) .. '_position', gridColumnWidth, gridColumnWidth, gridColumnWidth);
         else
             settings.offsetX, settings.offsetY = DrawSliderPair(
                 'position',
@@ -1067,11 +1087,21 @@ function statusIcons.DrawSettings(settings, context)
             settings.iconWarningPadding,
             0,
             32,
-            itemLabel .. ' spacer',
+            'Icon spacing',
             'icon_spacing',
             settings.iconSpacing,
             0,
             32
+        );
+
+        settings.rowSpacing = DrawSingleSliderRow(
+            'row_spacing',
+            'Row spacing',
+            'row_spacing',
+            settings.rowSpacing or defaults.rowSpacing or 2,
+            0,
+            32,
+            1
         );
 
         settings.maxIcons, settings.iconsPerRow = DrawSliderPair(
@@ -1080,7 +1110,7 @@ function statusIcons.DrawSettings(settings, context)
             'max_icons',
             settings.maxIcons,
             1,
-            64,
+            32,
             itemPlural .. ' per row',
             'icons_per_row',
             settings.iconsPerRow,

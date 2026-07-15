@@ -78,7 +78,7 @@ Involved in Quests:\
         },
         ["Assai Nybaem"] = {
             ["_source"] = "npc",
-            ["icon"] = "Survivor,png",
+            ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
         ["Assistant"] = {

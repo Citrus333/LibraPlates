@@ -68,7 +68,7 @@ function gathering.AddWidget(plateData, settings)
     plateData.icons[#plateData.icons + 1] = {
         kind = 'gathering',
         textureId = textureId,
-        size = math.max(6, math.min(200, tonumber(settings.iconSize) or 42)),
+        size = math.max(6, math.min(256, tonumber(settings.iconSize) or 42)),
         anchorTo = settings.anchorTo or 'Name',
         anchorPoint = settings.anchorPoint or 'Bottom',
         offsetX = tonumber(settings.offsetX) or 0,

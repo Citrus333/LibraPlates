@@ -1,6 +1,7 @@
 local imgui = require('imgui');
 local anchorControls = require('modules.widgets.anchor_controls');
 local backgroundTextures = require('core.background_textures');
+local fileManager = require('core.file_manager');
 
 local background = {};
 local unpackTable = table.unpack or unpack;
@@ -95,7 +96,7 @@ local function DrawTextureFile(label, current, id)
         if (imgui.GetContentRegionAvail ~= nil) then
             local availA, availB = imgui.GetContentRegionAvail();
             local availableWidth = type(availA) == 'table' and tonumber(availA.x or availA[1]) or tonumber(availA or availB);
-            comboWidth = math.max(160, math.min(300, (availableWidth or 300) - 16));
+            comboWidth = math.max(100, math.min(300, (availableWidth or 300) - 16));
         end
 
         if (imgui.PushItemWidth ~= nil) then
@@ -126,16 +127,19 @@ local function DrawTextureFile(label, current, id)
             imgui.PopItemWidth();
         end
 
+        fileManager.Draw(backgroundTextures.GetFolderPath(), 'BackgroundTexture_' .. tostring(comboId));
+
         return value;
     end
 
     imgui.TextColored(valueColor, '[' .. value .. ' v]');
+    fileManager.Draw(backgroundTextures.GetFolderPath(), 'BackgroundTexture_' .. tostring(comboId));
     return value;
 end
 
 local function DrawNumberFallback(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
@@ -394,7 +398,7 @@ local function DrawColorAndSliderRow(rowId, colorLabel, color, sliderLabel, slid
 
         if (imgui.BeginTable('##background_' .. rowId, 4, tableFlags)) then
             imgui.TableSetupColumn('##color_label', 0, 104);
-            imgui.TableSetupColumn('##color_control', 0, 60);
+            imgui.TableSetupColumn('##color_control', 0, 124);
             imgui.TableSetupColumn('##slider_label', 0, 104);
             imgui.TableSetupColumn('##slider_control', 0, 124);
             imgui.TableNextRow();
@@ -434,7 +438,7 @@ local function DrawTextureAndSliderRow(rowId, textureLabel, textureValue, slider
 
         if (imgui.BeginTable('##background_' .. rowId, 4, tableFlags)) then
             imgui.TableSetupColumn('##texture_label', 0, 104);
-            imgui.TableSetupColumn('##texture_control', 0, 260);
+            imgui.TableSetupColumn('##texture_control', 0, 124);
             imgui.TableSetupColumn('##slider_label', 0, 104);
             imgui.TableSetupColumn('##slider_control', 0, 124);
             imgui.TableNextRow();

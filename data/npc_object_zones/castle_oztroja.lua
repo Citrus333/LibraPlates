@@ -92,7 +92,7 @@ recurring entry cost.",
         },
         ["Brass Statue"] = {
             ["_source"] = "item",
-            ["icon"] = "BrassStatue.png",
+            ["icon"] = "Brass Statue.png",
             ["note"] = "An ancient, weathered idol standing as a sentinel deep inside the beastman stronghold. Studying its stone surfaces uncovers rotating security passwords required to unlock elite inner doors.",
             ["type"] = "Quest Node",
         },

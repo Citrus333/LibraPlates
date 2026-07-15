@@ -461,7 +461,7 @@ Sells key items required for High-Tier Mission Battlefields. See the Phantom Gem
         },
         ["Newlyn"] = {
             ["_source"] = "npc",
-            ["icon"] = "Service-Clerk",
+            ["icon"] = "Service-Clerk.png",
             ["type"] = "Service Clerk",
         },
         ["Nine of Clubs"] = {

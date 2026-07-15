@@ -266,6 +266,16 @@ function targetModuleMarker.GetEffectiveActionRange()
     return tonumber(range) + actionRangeAllowance;
 end
 
+function targetModuleMarker.GetEffectiveLiveSubtargetActionRange()
+    local range = GetSubtargetActionRange();
+
+    if (range == nil) then
+        return nil;
+    end
+
+    return tonumber(range) + actionRangeAllowance;
+end
+
 local function GetAutoPlaceAnchorKinds(value)
     if (tostring(value or '') == 'Name') then
         return { 'name' };
@@ -474,23 +484,6 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         thickness = 2,
         cornerLength = 12,
     };
-
-    if (targetStateName == 'Subtarget' and (options == nil or options.previewMode ~= true)) then
-        local targetIndex = targeting.GetCurrentTargetIndex();
-        local subTargetIndex = targeting.GetCurrentSubTargetIndex();
-        local sameTargetSubtarget =
-            targeting.IsSubTargetModeActive() == true and
-            targetIndex ~= nil and
-            (subTargetIndex == nil or tonumber(subTargetIndex) == tonumber(targetIndex));
-
-        if (sameTargetSubtarget == true) then
-            local stackedTarget = targetModuleMarker.Build(entityName, layoutStateName, 'Target', hpBarSettings, distance);
-
-            if (stackedTarget ~= nil and stackedTarget.enabled == true) then
-                result.stackedMarkers = { stackedTarget };
-            end
-        end
-    end
 
     return Finish(result);
 end

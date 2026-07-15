@@ -650,7 +650,7 @@ local function DrawObjectTargetInfo(drawList, index)
     local typeText = tostring(info.type or '');
     local iconTextureId = npcObjectInfo.GetTextureIdForInfo(info) or npcObjectInfo.GetTextureId(displayName, 'Object', { targetIndex = index });
     local fallbackScale = 0.38;
-    local iconSize = math.max(10, math.min(48, tonumber(iconSettings.iconSize) or npcObjectIconDefaults.iconSize or 22));
+    local iconSize = math.max(6, math.min(256, tonumber(iconSettings.iconSize) or npcObjectIconDefaults.iconSize or 22));
     local nameTextureId = nil;
     local nameOutlineTextureId = nil;
     local nameOutlineRadius = 0;
@@ -1237,9 +1237,12 @@ function targetOverlay.Render()
 
     if (mainIndex ~= nil) then
         local context = ResolveEntityContext(mainIndex);
-        local unknownRawObjectNeedsFallback = IsUnknownRawObjectNpcContext(context) == true and HasNpcObjectWorldPlateRect(mainIndex) ~= true;
+        local needsFallback =
+            context.valid == true and
+            (context.targetType == 'npc' or context.targetType == 'object' or IsUnknownRawObjectNpcContext(context) == true) and
+            HasNpcObjectWorldPlateRect(mainIndex) ~= true;
 
-        if (context.valid == true and (context.targetType == 'npc' or context.targetType == 'object' or unknownRawObjectNeedsFallback == true)) then
+        if (needsFallback == true) then
             DrawOne(drawList, mainIndex, 'Target', 0, true);
         end
 
@@ -1248,9 +1251,12 @@ function targetOverlay.Render()
 
     if (mainIndex ~= nil and subIndex ~= nil and subIndex ~= mainIndex) then
         local context = ResolveEntityContext(subIndex);
-        local unknownRawObjectNeedsFallback = IsUnknownRawObjectNpcContext(context) == true and HasNpcObjectWorldPlateRect(subIndex) ~= true;
+        local needsFallback =
+            context.valid == true and
+            (context.targetType == 'npc' or context.targetType == 'object' or IsUnknownRawObjectNpcContext(context) == true) and
+            HasNpcObjectWorldPlateRect(subIndex) ~= true;
 
-        if (context.valid == true and (context.targetType == 'npc' or context.targetType == 'object' or unknownRawObjectNeedsFallback == true)) then
+        if (needsFallback == true) then
             DrawOne(drawList, subIndex, 'Subtarget', -18, true);
         end
 

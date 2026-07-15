@@ -104,7 +104,7 @@ end
 
 local function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
@@ -229,7 +229,7 @@ local function DrawTableSlider(label, id, value, minValue, maxValue, showButtons
     return DrawSliderControl(id, value, minValue, maxValue, width or (showButtons == false and 140 or 95), showButtons);
 end
 
-local function DrawSingleSlider(label, id, value, minValue, maxValue, showButtons, labelWidth, controlWidth, suffix)
+local function DrawSingleSlider(label, id, value, minValue, maxValue, showButtons, labelWidth, controlWidth, suffix, numericWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local result = value;
         local hasSuffix = suffix ~= nil and tostring(suffix) ~= '';
@@ -241,7 +241,7 @@ local function DrawSingleSlider(label, id, value, minValue, maxValue, showButton
             imgui.TableNextColumn();
             imgui.TextColored(labelColor, label);
             imgui.TableNextColumn();
-            local sliderWidth = (showButtons == false) and (hasSuffix and 95 or 140) or 95;
+            local sliderWidth = numericWidth or ((showButtons == false) and (hasSuffix and 95 or 140) or 95);
             result = DrawSliderControl(id, value, minValue, maxValue, sliderWidth, showButtons);
             if (hasSuffix == true) then
                 imgui.SameLine();
@@ -256,7 +256,7 @@ local function DrawSingleSlider(label, id, value, minValue, maxValue, showButton
 
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
-    local sliderWidth = (showButtons == false) and ((suffix ~= nil and tostring(suffix) ~= '') and 95 or 140) or 95;
+    local sliderWidth = numericWidth or ((showButtons == false) and ((suffix ~= nil and tostring(suffix) ~= '') and 95 or 140) or 95);
     local result = DrawSliderControl(id, value, minValue, maxValue, sliderWidth, showButtons);
     if (suffix ~= nil and tostring(suffix) ~= '') then
         imgui.SameLine();
@@ -934,17 +934,20 @@ local function DrawToggleGroupRow(rowId, items)
     end
 end
 
-local function DrawFontRow(settings, defaults, idPrefix)
+local function DrawFontRow(settings, defaults, idPrefix, labelWidth, controlWidth, numericWidth, rightLabelWidth)
     idPrefix = tostring(idPrefix or '');
+    labelWidth = labelWidth or pairLabelWidth;
+    rightLabelWidth = rightLabelWidth or labelWidth;
+    controlWidth = controlWidth or pairControlWidth;
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##bar_' .. idPrefix .. 'font_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##font_size_label', 0, pairLabelWidth);
-            imgui.TableSetupColumn('##font_size_control', 0, pairControlWidth);
-            imgui.TableSetupColumn('##font_color_label', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##font_size_label', 0, labelWidth);
+            imgui.TableSetupColumn('##font_size_control', 0, controlWidth);
+            imgui.TableSetupColumn('##font_color_label', 0, rightLabelWidth);
             imgui.TableSetupColumn('##font_color_control', 0, colorControlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            settings.fontSize = DrawTableSlider('Font size', idPrefix .. 'font_size', textScale.NormalizeSetting(settings.fontSize, defaults.fontSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
+            settings.fontSize = DrawTableSlider('Font size', idPrefix .. 'font_size', textScale.NormalizeSetting(settings.fontSize, defaults.fontSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize(), true, numericWidth);
             imgui.TableNextColumn();
             settings.textColor = DrawColorCell('Font color', 'font_color', settings.textColor);
             imgui.EndTable();
@@ -957,17 +960,20 @@ local function DrawFontRow(settings, defaults, idPrefix)
     settings.textColor = DrawColor('font_color', settings.textColor);
 end
 
-local function DrawOutlineRow(settings, idPrefix)
+local function DrawOutlineRow(settings, idPrefix, labelWidth, controlWidth, numericWidth, rightLabelWidth)
     idPrefix = tostring(idPrefix or '');
+    labelWidth = labelWidth or pairLabelWidth;
+    rightLabelWidth = rightLabelWidth or labelWidth;
+    controlWidth = controlWidth or pairControlWidth;
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##bar_' .. idPrefix .. 'outline_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##outline_size_label', 0, pairLabelWidth);
-            imgui.TableSetupColumn('##outline_size_control', 0, pairControlWidth);
-            imgui.TableSetupColumn('##outline_color_label', 0, pairLabelWidth);
+            imgui.TableSetupColumn('##outline_size_label', 0, labelWidth);
+            imgui.TableSetupColumn('##outline_size_control', 0, controlWidth);
+            imgui.TableSetupColumn('##outline_color_label', 0, rightLabelWidth);
             imgui.TableSetupColumn('##outline_color_control', 0, colorControlWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            settings.textOutlineSize = DrawTableSlider('Outline size', idPrefix .. 'outline_size', settings.textOutlineSize, 0, 12, false);
+            settings.textOutlineSize = DrawTableSlider('Outline size', idPrefix .. 'outline_size', settings.textOutlineSize, 0, 12, true, numericWidth);
             imgui.TableNextColumn();
             settings.textOutlineColor = DrawColorCell('Outline color', 'outline_color', settings.textOutlineColor);
             imgui.EndTable();
@@ -1115,6 +1121,7 @@ function bar.DrawSettings(settings, context)
         resourceName ~= 'Rage'
     );
     local labelIconOptions = context ~= nil and context.labelIconOptions == true;
+    local boxedSettings = context ~= nil and context.boxed == true;
     local boxedResourceBar = context ~= nil and context.boxed == true and (label == 'HP Bar' or label == 'MP Bar' or label == 'TP Bar');
 
     ApplyDefaults(settings, defaults);
@@ -1132,7 +1139,7 @@ function bar.DrawSettings(settings, context)
     end
 
     local function DrawPanel(panelLabel, render, first)
-        if (boxedResourceBar == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then
+        if (boxedSettings == true and _G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then
             _G.LibraPlatesSettingsDrawBoxedPanel(panelLabel, render, first);
             return;
         end
@@ -1162,8 +1169,70 @@ function bar.DrawSettings(settings, context)
 
     if (boxedResourceBar == true) then
         local resourceLabel = resourceName;
-        local barLabelWidth = 120;
-        local barControlWidth = 170;
+        local barLabelWidth = 125;
+        local barRightLabelWidth = 125;
+        local barControlWidth = 125;
+        local barNumericWidth = 58;
+        local barComboWidth = 108;
+
+        local function DrawHpToggleRows(rowId, items)
+            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                if (imgui.BeginTable('##bar_hp_' .. rowId, 4, tableFlags)) then
+                    imgui.TableSetupColumn('##label_left', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##control_left', 0, barControlWidth);
+                    imgui.TableSetupColumn('##label_right', 0, barRightLabelWidth);
+                    imgui.TableSetupColumn('##control_right', 0, barControlWidth);
+
+                    for index, item in ipairs(items) do
+                        if index % 2 == 1 then
+                            imgui.TableNextRow();
+                            imgui.TableNextColumn();
+                        end
+
+                        imgui.TextColored(labelColor, item.label);
+                        imgui.TableNextColumn();
+                        item.value = DrawToggle('##bar_hp_' .. rowId .. '_' .. tostring(index), item.value);
+
+                        if index % 2 == 1 then
+                            imgui.TableNextColumn();
+                        end
+                    end
+
+                    imgui.EndTable();
+                end
+                return;
+            end
+
+            DrawToggleGroupRow(rowId, items);
+        end
+
+        local function DrawHpLabeledToggle(rowId, toggleLabel, value)
+            local items = { { label = toggleLabel, value = value } };
+            DrawHpToggleRows(rowId, items);
+            return items[1].value;
+        end
+
+        local function DrawHpLowWarningRow(rowId, percentValue, warningColor)
+            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                if (imgui.BeginTable('##bar_hp_' .. rowId, 4, tableFlags)) then
+                    imgui.TableSetupColumn('##label_left', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##control_left', 0, barControlWidth);
+                    imgui.TableSetupColumn('##label_right', 0, barRightLabelWidth);
+                    imgui.TableSetupColumn('##control_right', 0, barControlWidth);
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    imgui.TextColored(labelColor, 'Warn at %%');
+                    imgui.TableNextColumn();
+                    percentValue = DrawSliderControl(rowId .. '_percent', percentValue, 1, 100, barNumericWidth, true);
+                    imgui.TableNextColumn();
+                    imgui.TextColored(labelColor, 'Warning color');
+                    imgui.TableNextColumn();
+                    warningColor = DrawColor(rowId .. '_color', warningColor);
+                    imgui.EndTable();
+                end
+            end
+            return percentValue, warningColor;
+        end
 
         local function DrawHpSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax)
             if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
@@ -1173,13 +1242,13 @@ function bar.DrawSettings(settings, context)
                 if (imgui.BeginTable('##bar_hp_' .. rowId, 4, tableFlags)) then
                     imgui.TableSetupColumn('##label_left', 0, barLabelWidth);
                     imgui.TableSetupColumn('##control_left', 0, barControlWidth);
-                    imgui.TableSetupColumn('##label_right', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##label_right', 0, barRightLabelWidth);
                     imgui.TableSetupColumn('##control_right', 0, barControlWidth);
                     imgui.TableNextRow();
                     imgui.TableNextColumn();
-                    leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax, true, 95);
+                    leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax, true, barNumericWidth);
                     imgui.TableNextColumn();
-                    rightResult = DrawTableSlider(rightLabel, rightId, rightValue, rightMin, rightMax, true, 95);
+                    rightResult = DrawTableSlider(rightLabel, rightId, rightValue, rightMin, rightMax, true, barNumericWidth);
                     imgui.EndTable();
                 end
 
@@ -1187,6 +1256,41 @@ function bar.DrawSettings(settings, context)
             end
 
             return DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax);
+        end
+
+        local function DrawHpGeometryRows()
+            local width = settings.width;
+            local height = settings.height;
+            local offsetX = settings.offsetX;
+            local offsetY = settings.offsetY;
+
+            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                if (imgui.BeginTable('##bar_hp_' .. idPrefix .. 'geometry', 4, tableFlags)) then
+                    imgui.TableSetupColumn('##label_left', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##control_left', 0, barControlWidth);
+                    imgui.TableSetupColumn('##label_right', 0, barRightLabelWidth);
+                    imgui.TableSetupColumn('##control_right', 0, barControlWidth);
+
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    width = DrawTableSlider('Width', idPrefix .. 'width', width, 20, 800, true, barNumericWidth);
+                    imgui.TableNextColumn();
+                    height = DrawTableSlider('Height', idPrefix .. 'height', height, 1, 160, true, barNumericWidth);
+
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    offsetX = DrawTableSlider('Position X', idPrefix .. 'offset_x', offsetX, -400, 400, true, barNumericWidth);
+                    imgui.TableNextColumn();
+                    offsetY = DrawTableSlider('Position Y', idPrefix .. 'offset_y', offsetY, -400, 400, true, barNumericWidth);
+                    imgui.EndTable();
+                end
+
+                return width, height, offsetX, offsetY;
+            end
+
+            width, height = DrawHpSliderPair(idPrefix .. 'size', 'Width', idPrefix .. 'width', settings.width, 20, 800, 'Height', idPrefix .. 'height', settings.height, 1, 160);
+            offsetX, offsetY = DrawHpSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
+            return width, height, offsetX, offsetY;
         end
 
         local function DrawHpColorPair(rowId, leftLabel, leftId, leftValue, rightLabel, rightId, rightValue)
@@ -1197,7 +1301,7 @@ function bar.DrawSettings(settings, context)
                 if (imgui.BeginTable('##bar_hp_' .. rowId, 4, tableFlags)) then
                     imgui.TableSetupColumn('##label_left', 0, barLabelWidth);
                     imgui.TableSetupColumn('##control_left', 0, barControlWidth);
-                    imgui.TableSetupColumn('##label_right', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##label_right', 0, barRightLabelWidth);
                     imgui.TableSetupColumn('##control_right', 0, barControlWidth);
                     imgui.TableNextRow();
                     imgui.TableNextColumn();
@@ -1223,17 +1327,17 @@ function bar.DrawSettings(settings, context)
                 if (imgui.BeginTable('##bar_hp_' .. key .. '_texture', 4, tableFlags)) then
                     imgui.TableSetupColumn('##label_left', 0, barLabelWidth);
                     imgui.TableSetupColumn('##control_left', 0, barControlWidth);
-                    imgui.TableSetupColumn('##label_right', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##label_right', 0, barRightLabelWidth);
                     imgui.TableSetupColumn('##control_right', 0, barControlWidth);
                     imgui.TableNextRow();
                     imgui.TableNextColumn();
                     imgui.TextColored(labelColor, 'Texture');
                     imgui.TableNextColumn();
-                    nextTexture = DrawBarTextureChoice(texture, key .. '_texture', 170);
+                    nextTexture = DrawBarTextureChoice(texture, key .. '_texture', barComboWidth);
                     imgui.TableNextColumn();
                     imgui.TextColored(labelColor, 'Strength');
                     imgui.TableNextColumn();
-                    nextTextureStrength = DrawSliderControl(key .. '_texture_strength', nextTextureStrength, 0, 100, 95, true);
+                    nextTextureStrength = DrawSliderControl(key .. '_texture_strength', nextTextureStrength, 0, 100, barNumericWidth, true);
                     imgui.EndTable();
                 end
             else
@@ -1257,7 +1361,7 @@ function bar.DrawSettings(settings, context)
                 if (imgui.BeginTable('##bar_hp_' .. key, 4, tableFlags)) then
                     imgui.TableSetupColumn('##color_label', 0, barLabelWidth);
                     imgui.TableSetupColumn('##color_control', 0, barControlWidth);
-                    imgui.TableSetupColumn('##size_label', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##size_label', 0, barRightLabelWidth);
                     imgui.TableSetupColumn('##size_control', 0, barControlWidth);
                     imgui.TableNextRow();
                     imgui.TableNextColumn();
@@ -1267,7 +1371,7 @@ function bar.DrawSettings(settings, context)
                     imgui.TableNextColumn();
                     imgui.TextColored(labelColor, 'Border size');
                     imgui.TableNextColumn();
-                    nextBorderSize = DrawSliderControl(key .. '_size', borderSize, 0, 24, 95, true);
+                    nextBorderSize = DrawSliderControl(key .. '_size', borderSize, 0, 24, barNumericWidth, true);
                     imgui.EndTable();
                 end
 
@@ -1285,15 +1389,13 @@ function bar.DrawSettings(settings, context)
                 if (imgui.BeginTable('##bar_tp_' .. rowId, 4, tableFlags)) then
                     imgui.TableSetupColumn('##threshold_label', 0, barLabelWidth);
                     imgui.TableSetupColumn('##threshold_control', 0, barControlWidth);
-                    imgui.TableSetupColumn('##full_color_label', 0, barLabelWidth);
+                    imgui.TableSetupColumn('##full_color_label', 0, barRightLabelWidth);
                     imgui.TableSetupColumn('##full_color_control', 0, barControlWidth);
                     imgui.TableNextRow();
                     imgui.TableNextColumn();
-                    imgui.TextColored(labelColor, 'Show at TP');
+                    imgui.TextColored(labelColor, 'Show at TP %%');
                     imgui.TableNextColumn();
-                    nextShowAtPercent = DrawSliderControl(rowId .. '_threshold', nextShowAtPercent, 0, 300, 95, true);
-                    imgui.SameLine();
-                    imgui.TextColored(labelColor, '%%');
+                    nextShowAtPercent = DrawSliderControl(rowId .. '_threshold', nextShowAtPercent, 0, 300, barNumericWidth, true);
                     imgui.TableNextColumn();
                     imgui.TextColored(labelColor, 'Full color');
                     imgui.TableNextColumn();
@@ -1304,7 +1406,7 @@ function bar.DrawSettings(settings, context)
                 return nextShowAtPercent, nextFullColor;
             end
 
-            nextShowAtPercent = DrawSingleSlider('Show at TP', rowId .. '_threshold', nextShowAtPercent, 0, 300, true, barLabelWidth, 150, '%');
+            nextShowAtPercent = DrawSingleSlider('Show at TP %%', rowId .. '_threshold', nextShowAtPercent, 0, 300, true, barLabelWidth, barControlWidth, nil, barNumericWidth);
             imgui.TextColored(labelColor, 'Full color');
             imgui.SameLine();
             nextFullColor = DrawColor(rowId .. '_full_color', nextFullColor);
@@ -1312,24 +1414,24 @@ function bar.DrawSettings(settings, context)
         end
 
         DrawPanel('Bar Settings', function()
-            settings.width, settings.height = DrawHpSliderPair(idPrefix .. 'size', 'Width', idPrefix .. 'width', settings.width, 20, 800, 'Height', idPrefix .. 'height', settings.height, 1, 160);
             if (anchorControls.IsCollapsedChild(settings) == true) then
-                anchorControls.DrawSpacing(settings, idPrefix .. 'position', barLabelWidth, barControlWidth);
+                settings.width, settings.height = DrawHpSliderPair(idPrefix .. 'size', 'Width', idPrefix .. 'width', settings.width, 20, 800, 'Height', idPrefix .. 'height', settings.height, 1, 160);
+                anchorControls.DrawSpacing(settings, idPrefix .. 'position', barLabelWidth, barControlWidth, barRightLabelWidth);
             else
-                settings.offsetX, settings.offsetY = DrawHpSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
+                settings.width, settings.height, settings.offsetX, settings.offsetY = DrawHpGeometryRows();
             end
             settings.color, settings.backgroundColor, settings.texture, settings.textureStrength = DrawHpTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture, settings.textureStrength);
             settings.borderColor, settings.borderSize = DrawHpBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
 
             if (resourceName == 'HP' or resourceName == 'MP') then
-                settings.showAtPercent = DrawSingleSlider('Show at ' .. resourceLabel, idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, barLabelWidth, 150, '%');
+                settings.showAtPercent = DrawSingleSlider('Show at ' .. resourceLabel .. ' %%', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, barLabelWidth, barControlWidth, nil, barNumericWidth);
             elseif (resourceName == 'TP') then
                 settings.showAtPercent, settings.fullColor = DrawTpThresholdColorRow(idPrefix .. 'show_at_full_color', settings.showAtPercent, settings.fullColor);
             end
 
             if (context ~= nil and context.showOutOfRangeOpacity == true) then
                 if (imgui.Spacing ~= nil) then imgui.Spacing(); end
-                settings.outOfRangeOpacityEnabled = DrawToggle('Use out of range color', settings.outOfRangeOpacityEnabled);
+                settings.outOfRangeOpacityEnabled = DrawHpLabeledToggle(idPrefix .. 'out_of_range_toggle', 'Use out of range color', settings.outOfRangeOpacityEnabled);
 
                 if (settings.outOfRangeOpacityEnabled == true) then
                     imgui.TextColored(labelColor, 'Out of range color');
@@ -1356,10 +1458,10 @@ function bar.DrawSettings(settings, context)
         end
 
         DrawPanel('Text Settings', function()
-            DrawFontRow(settings, defaults, idPrefix);
-            DrawOutlineRow(settings, idPrefix);
+            DrawFontRow(settings, defaults, idPrefix, barLabelWidth, barControlWidth, barNumericWidth, barRightLabelWidth);
+            DrawOutlineRow(settings, idPrefix, barLabelWidth, barControlWidth, barNumericWidth, barRightLabelWidth);
             settings.textOutlineEnabled = (tonumber(settings.textOutlineSize) or 0) > 0;
-            settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'text_position', 'Position X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Position Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
+            settings.textOffsetX, settings.textOffsetY = DrawHpSliderPair(idPrefix .. 'text_position', 'Position X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Position Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
 
             local textToggles = {};
             local showValueIndex = nil;
@@ -1374,12 +1476,12 @@ function bar.DrawSettings(settings, context)
             end
 
             showPercentIndex = #textToggles + 1;
-            textToggles[showPercentIndex] = { label = 'Show ' .. resourceLabel .. ' percent', value = settings.showPercent };
+            textToggles[showPercentIndex] = { label = 'Show ' .. resourceLabel .. ' %%', value = settings.showPercent };
 
             useSmallFontIndex = #textToggles + 1;
             textToggles[useSmallFontIndex] = { label = 'Use small font', value = settings.useSmallFont };
 
-            DrawToggleGroupRow(idPrefix .. 'text_toggles', textToggles);
+            DrawHpToggleRows(idPrefix .. 'text_toggles', textToggles);
 
             if (showValueIndex ~= nil) then
                 settings.showValue = textToggles[showValueIndex].value;
@@ -1394,19 +1496,21 @@ function bar.DrawSettings(settings, context)
 
         if (showLowState == true) then
             DrawPanel('Low ' .. resourceLabel .. ' warning', function()
-                settings.lowColorEnabled = DrawToggle('Enable low ' .. resourceLabel .. ' state', settings.lowColorEnabled);
+                settings.lowColorEnabled = DrawHpLabeledToggle(idPrefix .. 'low_state_toggle', 'Low ' .. resourceLabel .. ' state', settings.lowColorEnabled);
 
                 if (settings.lowColorEnabled == true) then
-                    settings.lowColorPercent, settings.lowColor = DrawLowWarningRow(idPrefix .. 'low_warning', settings.lowColorPercent, settings.lowColor);
+                    settings.lowColorPercent, settings.lowColor = DrawHpLowWarningRow(idPrefix .. 'low_warning', settings.lowColorPercent, settings.lowColor);
 
                     local animation = settings.lowAnimationEnabled == true and tostring(settings.lowAnimation or defaults.lowAnimation or 'Important') or 'None';
                     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-                        if (imgui.BeginTable('##bar_hp_low_animation', 2, tableFlags)) then
+                        if (imgui.BeginTable('##bar_hp_low_animation', 4, tableFlags)) then
                             imgui.TableSetupColumn('##animation_label', 0, barLabelWidth);
                             imgui.TableSetupColumn('##animation_control', 0, barControlWidth);
+                            imgui.TableSetupColumn('##speed_label', 0, barRightLabelWidth);
+                            imgui.TableSetupColumn('##speed_control', 0, barControlWidth);
                             imgui.TableNextRow();
                             imgui.TableNextColumn();
-                            imgui.TextColored(labelColor, 'Warning animation');
+                            imgui.TextColored(labelColor, 'Animation');
                             imgui.TableNextColumn();
                             animation = DrawAnimationChoice(
                                 animation,
@@ -1415,8 +1519,14 @@ function bar.DrawSettings(settings, context)
                                 { 1.0, 1.0, 1.0, 0.35 },
                                 settings.lowColor,
                                 settings.backgroundColor,
-                                170
+                                barComboWidth
                             );
+                            if (animation ~= 'None') then
+                                imgui.TableNextColumn();
+                                imgui.TextColored(labelColor, 'Speed');
+                                imgui.TableNextColumn();
+                                settings.lowAnimationSpeed = DrawSliderControl(idPrefix .. 'low_animation_speed', settings.lowAnimationSpeed, 0, 240, barComboWidth, false);
+                            end
                             imgui.EndTable();
                         end
                     else
@@ -1429,6 +1539,12 @@ function bar.DrawSettings(settings, context)
                             settings.backgroundColor,
                             170
                         );
+                        if (animation ~= 'None') then
+                            imgui.SameLine();
+                            imgui.TextColored(labelColor, 'Speed');
+                            imgui.SameLine();
+                            settings.lowAnimationSpeed = DrawSliderControl(idPrefix .. 'low_animation_speed', settings.lowAnimationSpeed, 0, 240, barComboWidth, false);
+                        end
                     end
 
                     if (animation == 'None') then
@@ -1436,11 +1552,73 @@ function bar.DrawSettings(settings, context)
                     else
                         settings.lowAnimationEnabled = true;
                         settings.lowAnimation = animation;
-                        settings.lowAnimationSpeed = DrawSingleSlider('Animation speed', idPrefix .. 'low_animation_speed', settings.lowAnimationSpeed, 0, 240, false);
                     end
                 end
             end);
         end
+
+        imgui.Spacing();
+        imgui.Spacing();
+
+        if (DrawActionButton('Reset ' .. label .. ' position') == true) then
+            RequestReset('position', label .. ' position');
+        end
+
+        if (DrawActionButton('Reset ' .. label .. ' settings') == true) then
+            RequestReset('settings', label .. ' settings');
+        end
+
+        DrawResetConfirm(settings, defaults, label);
+        return;
+    end
+
+    if (boxedSettings == true and labelIconOptions == true and (resourceName == 'Ward' or resourceName == 'Rage')) then
+        local panelLabelWidth = 150;
+        local panelControlWidth = 170;
+
+        DrawPanel('Bar Settings', function()
+            settings.width, settings.height = DrawSliderPair(idPrefix .. 'size', 'Width', idPrefix .. 'width', settings.width, 20, 800, 'Height', idPrefix .. 'height', settings.height, 1, 160);
+            if (anchorControls.IsCollapsedChild(settings) == true) then
+                anchorControls.DrawSpacing(settings, idPrefix .. 'position', panelLabelWidth, panelControlWidth);
+            else
+                settings.offsetX, settings.offsetY = DrawSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
+            end
+            settings.color, settings.backgroundColor, settings.texture, settings.textureStrength = DrawColorTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture, settings.textureStrength);
+            settings.borderColor, settings.borderSize = DrawBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
+            settings.fillDirection = DrawComboRow('Fill direction', settings.fillDirection or defaults.fillDirection or 'Left to right', { 'Left to right', 'Right to left' }, idPrefix .. 'fill_direction', 150);
+        end, true);
+
+        DrawPanel(resourceName .. ' Icon/Text', function()
+            if (settings.labelDisplayMode == 'Icon + text') then
+                settings.labelDisplayMode = 'Text';
+            end
+            settings.labelDisplayMode = DrawComboRow('Display', settings.labelDisplayMode or 'Text', { 'None', 'Text', 'Icon' }, idPrefix .. 'label_display');
+
+            if (settings.labelDisplayMode == 'Text' or settings.labelDisplayMode == 'Icon') then
+                local positionLabel = settings.labelDisplayMode == 'Icon' and 'Icon' or 'Label';
+                settings.labelIconOffsetX, settings.labelIconOffsetY = DrawSliderPair(idPrefix .. 'label_position', positionLabel .. ' X', idPrefix .. 'label_icon_offset_x', settings.labelIconOffsetX, -400, 400, positionLabel .. ' Y', idPrefix .. 'label_icon_offset_y', settings.labelIconOffsetY, -400, 400);
+            end
+
+            if (settings.labelDisplayMode == 'Icon') then
+                settings.labelIconSize = DrawSingleSlider('Icon size', idPrefix .. 'label_icon_size', settings.labelIconSize, 6, 256);
+            end
+        end);
+
+        DrawPanel('Timer Text', function()
+            settings.showValue = false;
+            settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' timer', settings.showPercent ~= false);
+            if (settings.showPercent == true) then
+                settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'timer_position', 'Timer X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Timer Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
+            end
+
+            if (settings.labelDisplayMode == 'Text' or settings.showPercent == true) then
+                DrawFontRow(settings, defaults, idPrefix);
+                DrawOutlineRow(settings, idPrefix);
+                settings.textOutlineEnabled = (tonumber(settings.textOutlineSize) or 0) > 0;
+                settings.useSmallFont = DrawToggle('Use small font', settings.useSmallFont);
+                uiTooltip.Info('When enabled, this uses the Small text font style configured in General > Font.');
+            end
+        end);
 
         imgui.Spacing();
         imgui.Spacing();
@@ -1589,7 +1767,7 @@ function bar.DrawSettings(settings, context)
         end
 
         if (settings.labelDisplayMode == 'Icon') then
-            settings.labelIconSize = DrawSingleSlider('Icon size', idPrefix .. 'label_icon_size', settings.labelIconSize, 6, 128);
+            settings.labelIconSize = DrawSingleSlider('Icon size', idPrefix .. 'label_icon_size', settings.labelIconSize, 6, 256);
         end
 
         if (resourceName == 'Ready') then

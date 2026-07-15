@@ -195,11 +195,11 @@ function cursorOverlay.Render()
         end
     else
         if (drawOuter == true) then
-            drawList:AddCircle({ x + 1, y + 1 }, radius + 1, shadow, 32, 4);
-            drawList:AddCircle({ x, y }, radius, ring, 32, 2);
+            drawList:AddCircle({ x + 1, y + 1 }, radius + 5, shadow, 32, 4);
+            drawList:AddCircle({ x, y }, radius + 4, ring, 32, 2);
         end
         if (drawInner == true) then
-            drawList:AddCircle({ x, y }, radius + 4, accent, 32, 1);
+            drawList:AddCircle({ x, y }, radius, accent, 32, 1);
         end
     end
 

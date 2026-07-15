@@ -2152,7 +2152,10 @@ function quickMenu.Render()
                         end, menu, false, row.textureId);
                     end
                 else
-                    imgui.TextColored(GetReadableTextColor(menu), 'No presets configured in Settings > Quick Menu.');
+                    MenuItem('Open preset settings', nil, function()
+                        local settingsUi = require('modules.settings.init');
+                        settingsUi.OpenJobChangePresets();
+                    end, menu);
                 end
             end
         elseif (pendingMenu.targetType == 'self') then
@@ -2195,22 +2198,35 @@ function quickMenu.Render()
                 end, menu);
             end
 
-            if (menu.self.mogHouseExit == true and mogHouseExit.IsAvailable() == true) then
-                local destinations = mogHouseExit.GetDestinations();
+            if (menu.self.mogHouseExit == true) then
+                if (mogHouseExit.IsAvailable() == true) then
+                    local destinations = mogHouseExit.GetDestinations();
 
-                if (#destinations > 0) then
-                    imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Mog House Exit');
+                    if (#destinations > 0) then
+                        imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Mog House Exit');
 
-                    for _, destination in ipairs(destinations) do
-                        MenuItem(destination.label, nil, function()
-                            local ok, err = mogHouseExit.Exit(destination);
-                            if (ok ~= true) then
-                                log.Warn('Mog House Exit failed: ' .. tostring(err or destination.label));
-                            end
-                        end, menu);
+                        for _, destination in ipairs(destinations) do
+                            MenuItem(destination.label, nil, function()
+                                local ok, err = mogHouseExit.Exit(destination);
+                                if (ok ~= true) then
+                                    log.Warn('Mog House Exit failed: ' .. tostring(err or destination.label));
+                                end
+                            end, menu);
+                        end
+
+                        imgui.Separator();
                     end
+                elseif (mogHouseExit.IsLocked() == true) then
+                    local unlockQuest = mogHouseExit.GetUnlockQuest();
 
-                    imgui.Separator();
+                    if (unlockQuest ~= nil) then
+                        imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Mog House Exit');
+                        imgui.TextColored(GetReadableTextColor(menu), 'Alternate exits are locked.');
+                        MenuItem('Complete ' .. unlockQuest .. ' to unlock them.', 'catseye.png', function()
+                            OpenUrl(BuildWikiLink(unlockQuest));
+                        end, menu);
+                        imgui.Separator();
+                    end
                 end
             end
 

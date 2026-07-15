@@ -1540,6 +1540,11 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'questtest' or subcommand == 'questlogtest') then
+        require('core.quest_log_test').Request();
+        return;
+    end
+
     if (subcommand == 'hideprobe') then
         LibraPlatesCapturePlateHideProbe();
         return;

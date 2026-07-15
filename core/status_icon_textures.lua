@@ -207,7 +207,7 @@ function statusIconTextures.GetTextureId(statusId, iconPack)
     statusId = tonumber(statusId) or 0;
     iconPack = GetGlobalPack();
 
-    if (statusId <= 0) then
+    if (statusId < 0) then
         return nil;
     end
 

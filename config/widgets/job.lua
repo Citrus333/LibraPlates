@@ -7,7 +7,7 @@ return {
     color = { 1.0, 1.0, 1.0, 1.0 },
     outlineEnabled = false,
     outlineColor = { 0.0, 0.0, 0.0, 1.0 },
-    outlineSize = 1,
+    outlineSize = 0,
     offsetX = 0,
     offsetY = -54,
 };

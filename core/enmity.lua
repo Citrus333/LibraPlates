@@ -1,5 +1,6 @@
 local bit = require('bit');
 local enmityIcons = require('core.enmity_icons');
+local engagedEnemies = require('core.engaged_enemies');
 
 local enmity = {};
 local enemyTargetServerIds = {};
@@ -44,6 +45,30 @@ local function GetServerId(index)
     end);
 
     return tonumber(serverId);
+end
+
+local function GetLiveTargetIndex(index)
+    index = tonumber(index) or 0;
+
+    if (index == 0) then
+        return nil, false;
+    end
+
+    local entityManager = GetEntityManager();
+
+    if (entityManager == nil or entityManager.GetTargetedIndex == nil) then
+        return nil, false;
+    end
+
+    local ok, targetIndex = pcall(function()
+        return entityManager:GetTargetedIndex(index);
+    end);
+
+    if (ok ~= true) then
+        return nil, false;
+    end
+
+    return tonumber(targetIndex) or 0, true;
 end
 
 local function ResolveServerId(serverId, index)
@@ -110,6 +135,20 @@ local function GetOwnPetIndex()
     local self = GetEntity(selfIndex);
 
     return tonumber(self ~= nil and self.PetTargetIndex) or 0;
+end
+
+local function IsOwnPetCommand(actorServerId, actionType)
+    local ownPetIndex = GetOwnPetIndex();
+    local memory = AshitaCore:GetMemoryManager();
+    local party = memory ~= nil and memory:GetParty() or nil;
+    local selfIndex = party ~= nil and SafeCall(0, function()
+        return party:GetMemberTargetIndex(0);
+    end) or 0;
+
+    return
+        ownPetIndex ~= 0 and
+        tonumber(actorServerId) == tonumber(GetServerId(selfIndex)) and
+        tonumber(actionType) == 6;
 end
 
 local function IsEnemyIndex(index)
@@ -243,14 +282,8 @@ function enmity.HandlePacketIn(e)
     local targetIndex = GetIndexFromServerId(targetServerId);
 
     if (IsEnemyIndex(actorIndex) ~= true) then
-        if (
-            actionType ~= 8 and
-            actionType ~= 9 and
-            IsEnemyIndex(targetIndex) == true and
-            IsProtectedTargetServerId(actorServerId, actorIndex) == true
-        ) then
-            enemyTargetServerIds[targetServerId] = actorServerId;
-            enemyTargetClocks[targetServerId] = os.clock();
+        if (IsOwnPetCommand(actorServerId, actionType) == true) then
+            return;
         end
 
         enemyTargetServerIds[actorServerId] = nil;
@@ -284,7 +317,19 @@ function enmity.IsEnemyTargetingSelf(enemy)
 
     PruneExpired();
 
-    local serverId = ResolveServerId(enemy.serverId, enemy.index);
+    local enemyIndex = tonumber(enemy.index) or GetIndexFromServerId(enemy.serverId);
+    local liveTargetIndex, liveTargetAvailable = GetLiveTargetIndex(enemyIndex);
+    local memory = AshitaCore:GetMemoryManager();
+    local party = memory ~= nil and memory:GetParty() or nil;
+    local selfIndex = party ~= nil and SafeCall(0, function()
+        return party:GetMemberTargetIndex(0);
+    end) or 0;
+
+    if (liveTargetAvailable == true) then
+        return liveTargetIndex ~= 0 and tonumber(liveTargetIndex) == tonumber(selfIndex);
+    end
+
+    local serverId = ResolveServerId(enemy.serverId, enemyIndex);
     local selfServerId = GetSelfServerId();
 
     return serverId ~= nil and selfServerId ~= nil and enemyTargetServerIds[serverId] == selfServerId;
@@ -298,6 +343,49 @@ function enmity.IsServerIdTargeted(serverId, index)
     end
 
     PruneExpired();
+
+    local allyIndex = tonumber(index) or 0;
+
+    if (allyIndex == 0) then
+        allyIndex = GetIndexFromServerId(serverId);
+    end
+
+    local checkedEnemyIndexes = {};
+    local liveTargetApiAvailable = false;
+
+    local function CheckEnemyIndex(enemyIndex)
+        enemyIndex = tonumber(enemyIndex) or 0;
+
+        if (enemyIndex == 0 or checkedEnemyIndexes[enemyIndex] == true or IsEnemyIndex(enemyIndex) ~= true) then
+            return false;
+        end
+
+        checkedEnemyIndexes[enemyIndex] = true;
+        local liveTargetIndex, available = GetLiveTargetIndex(enemyIndex);
+
+        if (available == true) then
+            liveTargetApiAvailable = true;
+            return liveTargetIndex ~= 0 and tonumber(liveTargetIndex) == allyIndex;
+        end
+
+        return false;
+    end
+
+    for _, enemyIndex in ipairs(engagedEnemies.GetTrackedIndexes()) do
+        if (CheckEnemyIndex(enemyIndex) == true) then
+            return true;
+        end
+    end
+
+    for enemyServerId in pairs(enemyTargetServerIds) do
+        if (CheckEnemyIndex(GetIndexFromServerId(enemyServerId)) == true) then
+            return true;
+        end
+    end
+
+    if (liveTargetApiAvailable == true) then
+        return false;
+    end
 
     for enemyServerId, targetServerId in pairs(enemyTargetServerIds) do
         if (IsEnemyIndex(GetIndexFromServerId(enemyServerId)) ~= true) then
@@ -360,7 +448,7 @@ function enmity.AddIcon(plateData, settings, role)
         kind = 'enmity',
         textureId = textureId,
         tint = marker.color,
-        size = math.max(6, math.min(160, tonumber(marker.iconSize) or 31)),
+        size = math.max(6, math.min(256, tonumber(marker.iconSize) or 31)),
         offsetX = tonumber(marker.offsetX) or -108,
         offsetY = tonumber(marker.offsetY) or -17,
     };

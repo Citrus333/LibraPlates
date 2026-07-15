@@ -34,6 +34,8 @@ local crafting = require('core.crafting');
 local textureLoader = require('core.texture_loader');
 local npcObjectInfo = require('core.npc_object_info');
 local quickMenu = require('core.quick_menu');
+local mogHouseExit = require('core.mog_house_exit');
+local questLogTest = require('core.quest_log_test');
 local mounts = require('core.mounts');
 local anonStatus = require('core.anon_status');
 local playerBlacklist = require('core.player_blacklist');
@@ -166,6 +168,8 @@ ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
     trustStatusIcons.HandlePacketIn(e);
     luopanStatuses.HandlePacketIn(e);
     bstCharmTimer.HandlePacketIn(e);
+    mogHouseExit.HandlePacketIn(e);
+    questLogTest.HandlePacketIn(e);
     quickMenu.HandlePacketIn(e);
     fishing.HandlePacketIn(e);
     crafting.HandlePacketIn(e);

@@ -1,5 +1,6 @@
 local imgui = require('imgui');
 local uiTooltip = require('core.ui_tooltip');
+local fileManager = require('core.file_manager');
 local arrowAnimation = require('core.target_arrow_animation');
 local targetTextures = require('core.target_textures');
 local state = require('core.state');
@@ -204,7 +205,7 @@ end
 
 local function DrawNumberControl(value, minValue, maxValue, step, id, sliderWidth)
     local current = tonumber(value) or 0;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
     local minimum = tonumber(minValue) or -1000;
     local maximum = tonumber(maxValue) or 1000;
     local itemId = tostring(id or 'number'):gsub('[^%w_]', '_');
@@ -257,12 +258,12 @@ local function DrawNumberControl(value, minValue, maxValue, step, id, sliderWidt
     return math.max(minimum, math.min(maximum, current));
 end
 
-local function DrawNumber(label, value, minValue, maxValue, step, id)
+local function DrawNumber(label, value, minValue, maxValue, step, id, labelColumnWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local result = value;
 
         if (imgui.BeginTable('##target_module_number_' .. tostring(id or label), 2, targetModuleTableFlags)) then
-            imgui.TableSetupColumn('##label', 0, 122);
+            imgui.TableSetupColumn('##label', 0, tonumber(labelColumnWidth) or 122);
             imgui.TableSetupColumn('##control', 0, 124);
             imgui.TableNextRow();
             imgui.TableNextColumn();
@@ -285,7 +286,7 @@ local function DrawNumber(label, value, minValue, maxValue, step, id)
     return current;
 end
 
-local function DrawNumberPair(leftLabel, leftValue, rightLabel, rightValue, minValue, maxValue, step, leftId, rightId)
+local function DrawNumberPair(leftLabel, leftValue, rightLabel, rightValue, minValue, maxValue, step, leftId, rightId, labelColumnWidth)
     leftId = leftId or leftLabel;
     rightId = rightId or rightLabel;
 
@@ -294,7 +295,7 @@ local function DrawNumberPair(leftLabel, leftValue, rightLabel, rightValue, minV
         local right = rightValue;
 
         if (imgui.BeginTable('##target_module_pair_' .. tostring(leftId) .. '_' .. tostring(rightId), 5, targetModuleTableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 122);
+            imgui.TableSetupColumn('##label_left', 0, tonumber(labelColumnWidth) or 122);
             imgui.TableSetupColumn('##control_left', 0, 124);
             imgui.TableSetupColumn('##spacer', 0, 28);
             imgui.TableSetupColumn('##label_right', 0, 104);
@@ -699,7 +700,7 @@ local function DrawFile(label, category, current, filesOverride, displayNameFn)
     local function DrawCombo()
         if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
             if (imgui.PushItemWidth ~= nil) then
-                imgui.PushItemWidth(300);
+                imgui.PushItemWidth(282);
             end
 
             local comboOpen = imgui.BeginCombo('##' .. label .. category, GetDisplayName(value)) == true;
@@ -726,6 +727,8 @@ local function DrawFile(label, category, current, filesOverride, displayNameFn)
                 imgui.PopItemWidth();
             end
 
+            fileManager.Draw(targetTextures.GetFolderPath(category), 'TargetFile_' .. tostring(label) .. '_' .. tostring(category));
+
             return;
         end
 
@@ -749,6 +752,8 @@ local function DrawFile(label, category, current, filesOverride, displayNameFn)
 
             value = files[index] or value;
         end
+
+        fileManager.Draw(targetTextures.GetFolderPath(category), 'TargetFile_' .. tostring(label) .. '_' .. tostring(category));
     end
 
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
@@ -1010,7 +1015,7 @@ function targetModule.DrawSettings(settings, context)
             uiTooltip.Info('Choose an animation set. The dropdown shows one entry per animation, not every frame.');
 
             if (tostring(settings.arrowFile or 'None') ~= 'None') then
-                settings.arrowAnimationSpeed = DrawNumber('Animation speed', settings.arrowAnimationSpeed, 1, 60, 1, 'TargetModuleArrowAnimationSpeed');
+                settings.arrowAnimationSpeed = DrawNumber('Animation speed', settings.arrowAnimationSpeed, 1, 60, 1, 'TargetModuleArrowAnimationSpeed', 140);
             end
         else
             local stillFiles = targetTextures.GetArrowStillFiles();
@@ -1029,7 +1034,8 @@ function targetModule.DrawSettings(settings, context)
                 200,
                 1,
                 'TargetModuleArrowWidth',
-                'TargetModuleArrowHeight'
+                'TargetModuleArrowHeight',
+                140
             );
 
             settings.arrowOffsetX, settings.arrowOffsetY = DrawNumberPair(
@@ -1041,7 +1047,8 @@ function targetModule.DrawSettings(settings, context)
                 500,
                 5,
                 'TargetModuleArrowX',
-                'TargetModuleArrowY'
+                'TargetModuleArrowY',
+                140
             );
             if (isSubtargetModule == true and entityName ~= 'Self') then
                 DrawBoxedPanel('Range colors', function()

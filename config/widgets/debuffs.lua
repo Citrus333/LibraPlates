@@ -5,6 +5,7 @@ return {
     iconPack = 'XIView',
     iconSize = 18,
     iconSpacing = 2,
+    rowSpacing = 2,
     growthDirection = 'Right',
     iconWarningPadding = 6,
     offsetX = 0,

@@ -1357,7 +1357,7 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
     local global = state.GetGlobalSettings(globalDefaults);
     local gatheringSettings = GetGatheringSettings(global);
 
-    if (gatheringSettings.enabled == false or gatheringSettings.enableRightClickGathering ~= true) then
+    if (gatheringSettings.enabled == false) then
         lastGatheringInteractStatus = 'disabled';
         return false;
     end

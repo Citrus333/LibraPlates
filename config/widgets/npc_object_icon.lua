@@ -5,5 +5,5 @@ return {
     offsetY = 0,
     anchorTo = 'Name',
     anchorPoint = 'Left',
-    maxIconSize = 96,
+    maxIconSize = 256,
 };

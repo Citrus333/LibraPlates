@@ -24,6 +24,9 @@ local colorEditFlags = bit ~= nil and bit.bor ~= nil
     or ((_G.ImGuiColorEditFlags_NoAlpha or 0) + (_G.ImGuiColorEditFlags_NoInputs or 0));
 local tableFlags = (_G.ImGuiTableFlags_SizingFixedFit or 0) + (_G.ImGuiTableFlags_BordersInnerH or 0);
 local heldButtonState = {};
+local gridColumnWidth = 125;
+local numericFieldWidth = 58;
+local sliderFieldWidth = 108;
 
 local function ClickText(label, color)
     imgui.TextColored(color or valueColor, label);
@@ -74,7 +77,7 @@ end
 
 local function DrawNumber(label, value, minValue, maxValue, step)
     local current = tonumber(value) or 0;
-    local amount = tonumber(step) or 1;
+    local amount = 1;
 
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
@@ -195,7 +198,7 @@ end
 local function DrawTableSlider(label, id, value, minValue, maxValue, showButtons)
     imgui.TextColored(labelColor, label);
     imgui.TableNextColumn();
-    return DrawSliderControl(id, value, minValue, maxValue, showButtons == false and 140 or 95, showButtons);
+    return DrawSliderControl(id, value, minValue, maxValue, showButtons == false and sliderFieldWidth or numericFieldWidth, showButtons);
 end
 
 local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax)
@@ -204,10 +207,10 @@ local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, left
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##level_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 145);
-            imgui.TableSetupColumn('##control_left', 0, 170);
-            imgui.TableSetupColumn('##label_right', 0, 145);
-            imgui.TableSetupColumn('##control_right', 0, 170);
+            imgui.TableSetupColumn('##label_left', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control_left', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##label_right', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##control_right', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax);
@@ -277,10 +280,10 @@ end
 local function DrawFontRow(settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##level_font_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##font_size_label', 0, 145);
-            imgui.TableSetupColumn('##font_size_control', 0, 170);
-            imgui.TableSetupColumn('##font_color_label', 0, 145);
-            imgui.TableSetupColumn('##font_color_control', 0, 170);
+            imgui.TableSetupColumn('##font_size_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##font_size_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##font_color_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##font_color_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.textSize = DrawTableSlider('Font size', 'font_size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
@@ -298,12 +301,16 @@ end
 
 local function DrawOutlineRow(settings)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##level_outline_row', 2, tableFlags)) then
-            imgui.TableSetupColumn('##outline_size_label', 0, 145);
-            imgui.TableSetupColumn('##outline_size_control', 0, 170);
+        if (imgui.BeginTable('##level_outline_row', 4, tableFlags)) then
+            imgui.TableSetupColumn('##outline_size_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##outline_size_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##outline_color_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##outline_color_control', 0, gridColumnWidth);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.outlineSize = DrawTableSlider('Outline size', 'outline_size', settings.outlineSize, 0, 12, false);
+            imgui.TableNextColumn();
+            settings.outlineColor = DrawColorCell('Outline color', settings.outlineColor);
             imgui.EndTable();
         end
 
@@ -311,30 +318,106 @@ local function DrawOutlineRow(settings)
     end
 
     settings.outlineSize = DrawNumber('Outline size', settings.outlineSize, 0, 12, 1);
+    settings.outlineColor = DrawColor('Outline color', settings.outlineColor);
 end
 
-local function DrawDifficultyColor(label, color, continueLine)
+local function DrawLevelLayout(settings, showPosition)
+    if (imgui.BeginTable == nil or imgui.TableSetupColumn == nil) then
+        if (showPosition == true) then
+            settings.offsetX, settings.offsetY = DrawSliderPair(
+                'position', 'Position X', 'offset_x', settings.offsetX, -400, 400,
+                'Position Y', 'offset_y', settings.offsetY, -400, 400
+            );
+        end
+        DrawFontRow(settings);
+        DrawOutlineRow(settings);
+        return;
+    end
+
+    if (showPosition == true) then
+        imgui.TextColored(labelColor, 'Position X');
+        imgui.SameLine();
+        if (imgui.GetCursorPosX ~= nil and imgui.SetCursorPosX ~= nil) then
+            imgui.SetCursorPosX(imgui.GetCursorPosX() + 7);
+        end
+        settings.offsetX = DrawSliderControl('offset_x', settings.offsetX, -400, 400, 95, true);
+        imgui.SameLine(244);
+        imgui.TextColored(labelColor, 'Position Y');
+        imgui.SameLine(356);
+        settings.offsetY = DrawSliderControl('offset_y', settings.offsetY, -400, 400, 95, true);
+    end
+
+    if (imgui.BeginTable('##level_layout_mockup_v4', 4, tableFlags)) then
+        imgui.TableSetupColumn('##level_label_left', 0, 110);
+        imgui.TableSetupColumn('##level_control_left', 0, 150);
+        imgui.TableSetupColumn('##level_label_right', 0, 110);
+        imgui.TableSetupColumn('##level_control_right', 0, 125);
+
+        imgui.TableNextRow();
+        imgui.TableNextColumn();
+        imgui.TextColored(labelColor, 'Font size');
+        imgui.TableNextColumn();
+        settings.textSize = DrawSliderControl(
+            'font_size',
+            textScale.NormalizeSetting(settings.textSize, defaults.textSize),
+            textScale.GetMinVisualSize(),
+            textScale.GetMaxVisualSize(),
+            95,
+            true
+        );
+
+        imgui.TableNextRow();
+        imgui.TableNextColumn();
+        imgui.TextColored(labelColor, 'Font color');
+        imgui.TableNextColumn();
+        settings.color = DrawColor('font_color', settings.color);
+
+        imgui.TableNextRow();
+        imgui.TableNextColumn();
+        imgui.TextColored(labelColor, 'Outline size');
+        imgui.TableNextColumn();
+        settings.outlineSize = DrawSliderControl('outline_size', settings.outlineSize, 0, 12, 140, false);
+
+        imgui.TableNextRow();
+        imgui.TableNextColumn();
+        imgui.TextColored(labelColor, 'Outline color');
+        imgui.TableNextColumn();
+        settings.outlineColor = DrawColor('outline_color', settings.outlineColor);
+
+        imgui.EndTable();
+    end
+end
+
+local function DrawDifficultyColorRow(label, color, outlineColor)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##level_difficulty_color_' .. tostring(label), 4, tableFlags)) then
+            imgui.TableSetupColumn('##difficulty_label', 0, 160);
+            imgui.TableSetupColumn('##difficulty_color', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##difficulty_outline_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##difficulty_outline_color', 0, gridColumnWidth);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, label);
+            imgui.TableNextColumn();
+            color = DrawColor('difficulty_' .. label, color);
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Outline color');
+            imgui.TableNextColumn();
+            outlineColor = DrawColor('difficulty_outline_' .. label, outlineColor);
+            imgui.EndTable();
+        end
+
+        return color, outlineColor;
+    end
+
     imgui.TextColored(labelColor, label);
     imgui.SameLine();
     color = DrawColor('difficulty_' .. label, color);
-
-    if (continueLine == true) then
-        imgui.SameLine();
-    end
-
-    return color;
-end
-
-local function DrawDifficultyOutlineColor(label, color, continueLine)
-    imgui.TextColored(labelColor, label);
     imgui.SameLine();
-    color = DrawColor('difficulty_outline_' .. label, color);
-
-    if (continueLine == true) then
-        imgui.SameLine();
-    end
-
-    return color;
+    imgui.TextColored(labelColor, 'Outline color');
+    imgui.SameLine();
+    outlineColor = DrawColor('difficulty_outline_' .. label, outlineColor);
+    return color, outlineColor;
 end
 
 local function DrawAnchorCombo(id, current, choices)
@@ -433,7 +516,7 @@ function level.DrawSettings(settings, context)
 
     DrawPanel('Level', function()
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, 'level_position');
+            anchorControls.DrawSpacing(settings, 'level_position', gridColumnWidth, gridColumnWidth, gridColumnWidth);
         else
             settings.offsetX, settings.offsetY = DrawSliderPair(
                 'position',
@@ -449,37 +532,31 @@ function level.DrawSettings(settings, context)
                 400
             );
         end
+        if (imgui.Spacing ~= nil) then
+            imgui.Spacing();
+        end
         DrawFontRow(settings);
+        if (imgui.Spacing ~= nil) then
+            imgui.Spacing();
+        end
         DrawOutlineRow(settings);
         settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
     end, true);
 
     if (context ~= nil and context.entity == 'Enemy') then
-        DrawPanel('Difficulty font colors', function()
-            settings.difficultyColorsEnabled = DrawToggle('Use difficulty font colors', settings.difficultyColorsEnabled);
+        DrawPanel('Difficulty colors', function()
+            settings.difficultyColorsEnabled = DrawCheckbox('Use difficulty font colors', settings.difficultyColorsEnabled);
 
             if (settings.difficultyColorsEnabled == true) then
-                settings.twColor = DrawDifficultyColor('TW', settings.twColor, true);
-                settings.epColor = DrawDifficultyColor('EP', settings.epColor, true);
-                settings.dcColor = DrawDifficultyColor('DC', settings.dcColor, true);
-                settings.emColor = DrawDifficultyColor('EM', settings.emColor, true);
-                settings.tColor = DrawDifficultyColor('T', settings.tColor, true);
-                settings.vtColor = DrawDifficultyColor('VT', settings.vtColor, true);
-                settings.itColor = DrawDifficultyColor('IT', settings.itColor, false);
+                settings.twColor, settings.twOutlineColor = DrawDifficultyColorRow('TW', settings.twColor, settings.twOutlineColor);
+                settings.epColor, settings.epOutlineColor = DrawDifficultyColorRow('EP', settings.epColor, settings.epOutlineColor);
+                settings.dcColor, settings.dcOutlineColor = DrawDifficultyColorRow('DC', settings.dcColor, settings.dcOutlineColor);
+                settings.emColor, settings.emOutlineColor = DrawDifficultyColorRow('EM', settings.emColor, settings.emOutlineColor);
+                settings.tColor, settings.tOutlineColor = DrawDifficultyColorRow('T', settings.tColor, settings.tOutlineColor);
+                settings.vtColor, settings.vtOutlineColor = DrawDifficultyColorRow('VT', settings.vtColor, settings.vtOutlineColor);
+                settings.itColor, settings.itOutlineColor = DrawDifficultyColorRow('IT', settings.itColor, settings.itOutlineColor);
             end
         end);
-
-        if (settings.difficultyColorsEnabled == true) then
-            DrawPanel('Difficulty outline colors', function()
-                settings.twOutlineColor = DrawDifficultyOutlineColor('TW', settings.twOutlineColor, true);
-                settings.epOutlineColor = DrawDifficultyOutlineColor('EP', settings.epOutlineColor, true);
-                settings.dcOutlineColor = DrawDifficultyOutlineColor('DC', settings.dcOutlineColor, true);
-                settings.emOutlineColor = DrawDifficultyOutlineColor('EM', settings.emOutlineColor, true);
-                settings.tOutlineColor = DrawDifficultyOutlineColor('T', settings.tOutlineColor, true);
-                settings.vtOutlineColor = DrawDifficultyOutlineColor('VT', settings.vtOutlineColor, true);
-                settings.itOutlineColor = DrawDifficultyOutlineColor('IT', settings.itOutlineColor, false);
-            end);
-        end
     end
 
     if (context ~= nil and context.boxed == true) then

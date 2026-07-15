@@ -394,7 +394,7 @@ local function AddJobToPlate(plateData, jobText, jobSettings, globalSettings)
             plateData.icons[#plateData.icons + 1] = {
                 kind = 'job',
                 textureId = textureId,
-                size = math.max(8, math.min(160, tonumber(jobSettings.iconSize) or 16)),
+                size = math.max(8, math.min(256, tonumber(jobSettings.iconSize) or 16)),
                 offsetX = tonumber(jobSettings.offsetX) or 0,
                 offsetY = tonumber(jobSettings.offsetY) or -54,
                 anchorTo = jobSettings.anchorTo or jobDefaults.anchorTo,
@@ -410,7 +410,7 @@ local function AddJobToPlate(plateData, jobText, jobSettings, globalSettings)
     plateData.jobFontFlags = fonts.GetRoleFlags(globalSettings, true);
     plateData.jobFontSize = textScale.ToTextureFontSize(jobSettings.textSize, jobDefaults.textSize);
     plateData.jobColor = jobSettings.color or jobDefaults.color;
-    plateData.jobOutlineEnabled = jobSettings.outlineEnabled == true;
+    plateData.jobOutlineEnabled = (tonumber(jobSettings.outlineSize) or 0) > 0;
     plateData.jobOutlineColor = jobSettings.outlineColor or jobDefaults.outlineColor;
     plateData.jobOutlineSize = tonumber(jobSettings.outlineSize) or jobDefaults.outlineSize;
     plateData.jobOffsetX = tonumber(jobSettings.offsetX) or 0;
@@ -541,13 +541,14 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
         return;
     end
 
-    local maxIcons = math.max(1, math.min(64, tonumber(iconSettings.maxIcons) or 12));
+    local maxIcons = math.max(1, math.min(32, tonumber(iconSettings.maxIcons) or 12));
     local iconsPerRow = math.max(1, math.min(24, tonumber(iconSettings.iconsPerRow) or 6));
-    local iconSize = math.max(6, math.min(160, tonumber(iconSettings.iconSize) or 18));
+    local iconSize = math.max(6, math.min(256, tonumber(iconSettings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(iconSettings.iconSpacing) or 2));
+    local rowSpacing = math.max(0, math.min(32, tonumber(iconSettings.rowSpacing) or 2));
     local growLeft = tostring(iconSettings.growthDirection or 'Right') == 'Left';
     local anchored = tostring(iconSettings.anchorTo or 'Plate') ~= 'Plate';
-    local rowHeight = iconSize + spacing;
+    local rowHeight = iconSize + rowSpacing;
     local baseX = tonumber(iconSettings.offsetX) or 0;
     local baseY = tonumber(iconSettings.offsetY) or 0;
     local total = math.min(maxIcons, #statusRows);
@@ -562,14 +563,14 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
         if (textureId ~= nil) then
             local row = math.floor((i - 1) / iconsPerRow);
             local col = (i - 1) % iconsPerRow;
-            local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
-            local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local layoutRowCount = math.min(iconsPerRow, total);
+            local rowWidth = (layoutRowCount * iconSize) + ((layoutRowCount - 1) * spacing);
             local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
 
             if (anchored == true) then
-                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
-            elseif (growLeft == true) then
-                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+                iconOffsetX = growLeft == true
+                    and (baseX - rowWidth + (col * (iconSize + spacing)))
+                    or (baseX + (col * (iconSize + spacing)));
             end
 
             plateData.icons[#plateData.icons + 1] = {
@@ -733,15 +734,15 @@ local function QueueTrust(trust)
             'tp=' .. tostring(tpValue),
             'enmity=' .. BoolKey(enmityEnabled),
             'aoe=' .. (aoeRangeSettings.enabled == true and aoeNameHighlight.GetSignature(trust.index, 'trust') or 'aoe-name:0'),
-            'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'iconEnabled', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
+            'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'highlightFile', 'highlightClickable', 'highlightAutoPlace', 'highlightAutoPlaceBy', 'highlightSpacing', 'highlightOffsetX', 'highlightOffsetY', 'highlightWidth', 'highlightHeight', 'highlightColor', 'highlightOpacity', 'iconEnabled', 'iconFile', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'job:' .. SettingKey(jobSettings, { 'enabled', 'displayModeIndex', 'iconTheme', 'iconSize', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
             'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
             'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
-            'buffs:' .. SettingKey(buffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'hideCombatMode', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(buffRows),
-            'debuffs:' .. SettingKey(debuffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'hideCombatMode', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(debuffRows),
+            'buffs:' .. SettingKey(buffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'rowSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'hideCombatMode', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(buffRows),
+            'debuffs:' .. SettingKey(debuffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'rowSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'hideCombatMode', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(debuffRows),
             'targetMarker:' .. BuildTargetMarkerKey(targetMarker),
         }, '\n');
 

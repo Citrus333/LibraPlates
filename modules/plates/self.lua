@@ -324,7 +324,7 @@ local function BuildPlayerIndicatorAnchorFallbackRects(definitions)
     for _, definition in ipairs(definitions or {}) do
         local settings = definition.settings or {};
         local defaults = definition.defaults or {};
-        local size = math.max(6, math.min(160, tonumber(settings.iconSize) or tonumber(defaults.iconSize) or 16));
+        local size = math.max(6, math.min(256, tonumber(settings.iconSize) or tonumber(defaults.iconSize) or 16));
         local offsetX = tonumber(settings.offsetX) or tonumber(definition.defaultX) or tonumber(defaults.offsetX) or 0;
         local offsetY = tonumber(settings.offsetY) or tonumber(definition.defaultY) or tonumber(defaults.offsetY) or 0;
 
@@ -360,16 +360,17 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
         return;
     end
 
-    local maxIcons = math.max(1, math.min(64, tonumber(iconSettings.maxIcons) or 12));
+    local maxIcons = math.max(1, math.min(32, tonumber(iconSettings.maxIcons) or 12));
     local iconsPerRow = math.max(1, math.min(24, tonumber(iconSettings.iconsPerRow) or 6));
-    local iconSize = math.max(6, math.min(160, tonumber(iconSettings.iconSize) or 18));
+    local iconSize = math.max(6, math.min(256, tonumber(iconSettings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(iconSettings.iconSpacing) or 2));
+    local rowSpacing = math.max(0, math.min(32, tonumber(iconSettings.rowSpacing) or 2));
     local growLeft = tostring(iconSettings.growthDirection or 'Right') == 'Left';
     local anchored = tostring(iconSettings.anchorTo or 'Plate') ~= 'Plate';
-    local rowHeight = iconSize + spacing;
+    local rowHeight = iconSize + rowSpacing;
 
     if (iconSettings.showTimers == true) then
-        rowHeight = iconSize + math.max(spacing, (tonumber(iconSettings.timerFontSize) or 8) + math.max(0, tonumber(iconSettings.timerOffsetY) or 0) + 2);
+        rowHeight = iconSize + math.max(rowSpacing, (tonumber(iconSettings.timerFontSize) or 8) + math.max(0, tonumber(iconSettings.timerOffsetY) or 0) + 2);
     end
 
     local baseX = tonumber(iconSettings.offsetX) or 0;
@@ -401,16 +402,16 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
         if (textureId ~= nil) then
             local row = math.floor((i - 1) / iconsPerRow);
             local col = (i - 1) % iconsPerRow;
-            local rowCount = math.min(iconsPerRow, total - (row * iconsPerRow));
-            local rowWidth = (rowCount * iconSize) + ((rowCount - 1) * spacing);
+            local layoutRowCount = math.min(iconsPerRow, total);
+            local rowWidth = (layoutRowCount * iconSize) + ((layoutRowCount - 1) * spacing);
             local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
             local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
             local timerText = nil;
 
             if (anchored == true) then
-                iconOffsetX = baseX + ((growLeft == true and -iconSize or 0) + ((growLeft == true and -1 or 1) * col * (iconSize + spacing)));
-            elseif (growLeft == true) then
-                iconOffsetX = baseX + (rowWidth * 0.5) - (iconSize * 0.5) - (col * (iconSize + spacing));
+                iconOffsetX = growLeft == true
+                    and (baseX - rowWidth + (col * (iconSize + spacing)))
+                    or (baseX + (col * (iconSize + spacing)));
             end
 
             if (iconSettings.showTimers == true and timerSeconds ~= nil and timerSeconds > 0) then
@@ -1138,7 +1139,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         'aoe=' .. tostring(nameAoeActive == true),
         'size=' .. tostring(nameTextSize or ''),
         'color=' .. StableTableKey(nameAoeActive == true and aoeRangeSettings.fontColor or nameColor),
-        'icon=' .. tostring(aoeRangeSettings.iconEnabled == true) .. ':' .. tostring(aoeRangeSettings.iconSize or '') .. ':' .. tostring(aoeRangeSettings.iconOffsetX or '') .. ':' .. tostring(aoeRangeSettings.iconOffsetY or ''),
+        'icon=' .. tostring(aoeRangeSettings.iconEnabled == true) .. ':' .. tostring(aoeRangeSettings.iconFile or '') .. ':' .. tostring(aoeRangeSettings.iconSize or '') .. ':' .. tostring(aoeRangeSettings.iconOffsetX or '') .. ':' .. tostring(aoeRangeSettings.iconOffsetY or ''),
     }, ';');
     local streamerNames = require('core.streamer_names');
     local displayName = streamerNames.GetSelfDisplayName(center.name, targeting.GetSettings());

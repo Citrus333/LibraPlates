@@ -41,7 +41,9 @@ local lastRenderSize = '';
 local maxTextures = 96;
 local width = 1024;
 local height = 512;
-local renderVersion = 6;
+local drawOffsetX = 0;
+local drawOffsetY = 0;
+local renderVersion = 7;
 
 local D3DPT_TRIANGLELIST = 4;
 local D3DFVF_XYZRHW_DIFFUSE = 0x044;
@@ -338,8 +340,8 @@ local function GetNameFontSize(plate, plateName)
 end
 
 local function DrawRect(device, x, y, w, h, color)
-    local x1 = tonumber(x) or 0;
-    local y1 = tonumber(y) or 0;
+    local x1 = (tonumber(x) or 0) - drawOffsetX;
+    local y1 = (tonumber(y) or 0) - drawOffsetY;
     local x2 = x1 + (tonumber(w) or 0);
     local y2 = y1 + (tonumber(h) or 0);
     local z = 0;
@@ -363,6 +365,9 @@ local function DrawRect(device, x, y, w, h, color)
 end
 
 local function DrawRingSegment(device, centerX, centerY, outerRadius, innerRadius, startAngle, endAngle, color, segmentCount)
+    centerX = (tonumber(centerX) or 0) - drawOffsetX;
+    centerY = (tonumber(centerY) or 0) - drawOffsetY;
+
     local outer = math.max(1, tonumber(outerRadius) or 1);
     local inner = math.max(0, math.min(outer - 1, tonumber(innerRadius) or 0));
     local start = tonumber(startAngle) or 0;
@@ -735,8 +740,8 @@ DrawTexture = function(device, textureId, x, y, w, h, color, u2, v2, flipX)
         return;
     end
 
-    local x1 = tonumber(x) or 0;
-    local y1 = tonumber(y) or 0;
+    local x1 = (tonumber(x) or 0) - drawOffsetX;
+    local y1 = (tonumber(y) or 0) - drawOffsetY;
     local x2 = x1 + (tonumber(w) or 0);
     local y2 = y1 + (tonumber(h) or 0);
     local texU1 = (flipX == true) and (tonumber(u2) or 1) or 0;
@@ -1227,6 +1232,128 @@ local function AddRect(rects, x, y, w, h, padding, kind, layout, anchorOnly)
         anchorLayout = layout,
         anchorOnly = anchorOnly == true,
     };
+end
+
+local function NextPowerOfTwo(value)
+    local result = 1;
+    local wanted = math.max(1, math.ceil(tonumber(value) or 1));
+
+    while (result < wanted) do
+        result = result * 2;
+    end
+
+    return result;
+end
+
+local function BuildContentCrop(rects, fullWidth, fullHeight)
+    fullWidth = math.max(1, tonumber(fullWidth) or 1024);
+    fullHeight = math.max(1, tonumber(fullHeight) or 512);
+
+    local minX = fullWidth;
+    local maxX = 0;
+    local minY = fullHeight;
+    local maxY = 0;
+    local found = false;
+
+    for _, rect in ipairs(rects or {}) do
+        local x1 = tonumber(rect.x1) or tonumber(rect.drawX1);
+        local y1 = tonumber(rect.y1) or tonumber(rect.drawY1);
+        local x2 = tonumber(rect.x2) or tonumber(rect.drawX2);
+        local y2 = tonumber(rect.y2) or tonumber(rect.drawY2);
+
+        if (x1 ~= nil and y1 ~= nil and x2 ~= nil and y2 ~= nil and x2 >= x1 and y2 >= y1) then
+            minX = math.min(minX, x1);
+            maxX = math.max(maxX, x2);
+            minY = math.min(minY, y1);
+            maxY = math.max(maxY, y2);
+            found = true;
+        end
+    end
+
+    if (found ~= true) then
+        return {
+            x = 0,
+            y = 0,
+            width = fullWidth,
+            height = fullHeight,
+            fullWidth = fullWidth,
+            fullHeight = fullHeight,
+        };
+    end
+
+    local padding = 28;
+    minX = math.max(0, math.floor(minX - padding));
+    minY = math.max(0, math.floor(minY - padding));
+    maxX = math.min(fullWidth, math.ceil(maxX + padding));
+    maxY = math.min(fullHeight, math.ceil(maxY + padding));
+
+    local contentWidth = math.max(1, maxX - minX);
+    local contentHeight = math.max(1, maxY - minY);
+    local cropWidth = math.min(fullWidth, math.max(128, NextPowerOfTwo(contentWidth)));
+    local cropHeight = math.min(fullHeight, math.max(64, NextPowerOfTwo(contentHeight)));
+    local contentCenterX = (minX + maxX) * 0.5;
+    local contentCenterY = (minY + maxY) * 0.5;
+    local cropX = math.floor(contentCenterX - (cropWidth * 0.5) + 0.5);
+    local cropY = math.floor(contentCenterY - (cropHeight * 0.5) + 0.5);
+
+    cropX = math.max(0, math.min(fullWidth - cropWidth, cropX));
+    cropY = math.max(0, math.min(fullHeight - cropHeight, cropY));
+
+    return {
+        x = cropX,
+        y = cropY,
+        width = cropWidth,
+        height = cropHeight,
+        fullWidth = fullWidth,
+        fullHeight = fullHeight,
+    };
+end
+
+local function ShiftRect(rect, dx, dy)
+    local shifted = {};
+
+    for key, value in pairs(rect or {}) do
+        shifted[key] = value;
+    end
+
+    for _, key in ipairs({ 'x1', 'y1', 'x2', 'y2', 'drawX1', 'drawY1', 'drawX2', 'drawY2', 'baseX1', 'baseY1', 'baseX2', 'baseY2' }) do
+        if (type(shifted[key]) == 'number') then
+            if (string.find(key, 'Y', 1, true) ~= nil or key == 'y1' or key == 'y2') then
+                shifted[key] = shifted[key] + dy;
+            else
+                shifted[key] = shifted[key] + dx;
+            end
+        end
+    end
+
+    return shifted;
+end
+
+local function ShiftRects(rects, dx, dy)
+    local shifted = {};
+
+    for _, rect in ipairs(rects or {}) do
+        shifted[#shifted + 1] = ShiftRect(rect, dx, dy);
+    end
+
+    return shifted;
+end
+
+function canvasTexture.GetWorldSize(baseWidth, baseHeight, textureWidth, textureHeight)
+    local tw = math.max(1, tonumber(textureWidth) or 1024);
+    local th = math.max(1, tonumber(textureHeight) or 512);
+
+    return
+        (tonumber(baseWidth) or 2.35) * (tw / 1024),
+        (tonumber(baseHeight) or 1.18) * (th / 512);
+end
+
+function canvasTexture.GetTextureCrop(value)
+    local id = TextureId(value) or tonumber(value);
+    local key = id ~= nil and textureIdToKey[id] or nil;
+    local info = key ~= nil and textureInfo[key] or nil;
+
+    return info ~= nil and info.crop or nil;
 end
 
 local function HasRectKind(rects, kind)
@@ -2498,12 +2625,20 @@ function canvasTexture.Render(plate, key)
 
     local oldWidth = width;
     local oldHeight = height;
-    width = math.max(1024, tonumber(plate ~= nil and plate.canvasWidth) or oldWidth);
-    height = math.max(512, tonumber(plate ~= nil and plate.canvasHeight) or oldHeight);
+    local oldDrawOffsetX = drawOffsetX;
+    local oldDrawOffsetY = drawOffsetY;
+    local fullWidth = math.max(1024, tonumber(plate ~= nil and plate.canvasWidth) or oldWidth);
+    local fullHeight = math.max(512, tonumber(plate ~= nil and plate.canvasHeight) or oldHeight);
+    width = fullWidth;
+    height = fullHeight;
+    drawOffsetX = 0;
+    drawOffsetY = 0;
 
     local function Finish(resultTexture, resultWidth, resultHeight)
         width = oldWidth;
         height = oldHeight;
+        drawOffsetX = oldDrawOffsetX;
+        drawOffsetY = oldDrawOffsetY;
         return resultTexture, resultWidth, resultHeight;
     end
 
@@ -2513,8 +2648,64 @@ function canvasTexture.Render(plate, key)
         return Finish(nil, width, height);
     end
 
+    local centerX = fullWidth * 0.5;
+    local centerY = fullHeight * 0.5;
+    local elementRects = canvasTexture.GetElementRects(plate);
+    local aoeHighlightRect = nil;
+
+    if (plate.aoeHighlight ~= nil and plate.aoeHighlight.textureId ~= nil) then
+        local highlight = plate.aoeHighlight;
+        local highlightW = tonumber(highlight.width) or 220;
+        local highlightH = tonumber(highlight.height) or 74;
+        local highlightX = centerX - (highlightW * 0.5) + (tonumber(highlight.offsetX) or 0);
+        local highlightY = centerY - (highlightH * 0.5) + (tonumber(highlight.offsetY) or 0);
+
+        if (highlight.autoPlace ~= false) then
+            local anchorRect = GetElementAnchorRect(elementRects, highlight.anchorKinds);
+            if (anchorRect ~= nil) then
+                local spacing = math.max(0, tonumber(highlight.spacing) or 0);
+                highlightX = anchorRect.x1 - spacing + (tonumber(highlight.offsetX) or 0);
+                highlightY = anchorRect.y1 - spacing + (tonumber(highlight.offsetY) or 0);
+                highlightW = (anchorRect.x2 - anchorRect.x1) + (spacing * 2);
+                highlightH = (anchorRect.y2 - anchorRect.y1) + (spacing * 2);
+            end
+        end
+
+        aoeHighlightRect = { x = highlightX, y = highlightY, w = highlightW, h = highlightH };
+        if (highlight.clickable ~= false) then
+            AddRect(elementRects, highlightX, highlightY, highlightW, highlightH, 0, 'aoeHighlight');
+        end
+    end
+
+    local function PrepareTargetMarker(marker)
+        if (marker == nil) then
+            return;
+        end
+
+        marker.anchorRect = GetElementAnchorRect(elementRects, marker.anchorKinds);
+        marker.backgroundAnchorRect = GetElementAnchorRect(elementRects, marker.backgroundAnchorKinds or marker.anchorKinds);
+        marker.chevronAnchorRect = GetElementAnchorRect(elementRects, marker.chevronAnchorKinds or marker.anchorKinds);
+        marker.arrowAnchorRect = GetElementAnchorRect(elementRects, marker.arrowAnchorKinds);
+        AddTargetMarkerBackgroundRect(elementRects, centerX, centerY, marker);
+        AddTargetMarkerForegroundRects(elementRects, centerX, centerY, marker);
+
+        for _, stackedMarker in ipairs(marker.stackedMarkers or {}) do
+            PrepareTargetMarker(stackedMarker);
+        end
+    end
+
+    PrepareTargetMarker(plate.targetMarker);
+
+    local crop = BuildContentCrop(elementRects, fullWidth, fullHeight);
+    width = crop.width;
+    height = crop.height;
+    drawOffsetX = crop.x;
+    drawOffsetY = crop.y;
+    plate._elementRects = ShiftRects(elementRects, -drawOffsetX, -drawOffsetY);
+    plate._canvasCrop = crop;
+
     local baseKey = tostring(key or 'world');
-    local textureKey = baseKey .. '|size=' .. tostring(width) .. 'x' .. tostring(height);
+    local textureKey = baseKey .. '|crop=' .. tostring(crop.x) .. ',' .. tostring(crop.y) .. ',' .. tostring(width) .. 'x' .. tostring(height);
     lastRenderBaseKey = baseKey;
     lastRenderTextureKey = textureKey;
     lastRenderSize = tostring(width) .. 'x' .. tostring(height);
@@ -2523,6 +2714,10 @@ function canvasTexture.Render(plate, key)
     if (targetTexture == nil or targetTexture.GetSurfaceLevel == nil) then
         return Finish(nil, width, height);
     end
+
+    local textureInfoEntry = textureInfo[textureKey] or {};
+    textureInfoEntry.crop = crop;
+    textureInfo[textureKey] = textureInfoEntry;
 
     local okSurface, hrSurface, surface = pcall(function()
         return targetTexture:GetSurfaceLevel(0);
@@ -2564,56 +2759,9 @@ function canvasTexture.Render(plate, key)
             device:SetRenderState(D3DRS_SRCBLEND, 5);
             device:SetRenderState(D3DRS_DESTBLEND, 6);
 
-            local centerX = width * 0.5;
-            local centerY = height * 0.5;
             local hp = math.max(0, math.min(100, tonumber(plate.hp) or 100)) / 100;
             local mp = math.max(0, math.min(100, tonumber(plate.mp) or 100));
             local tp = math.max(0, math.min(300, tonumber(plate.tp) or 0));
-            local elementRects = canvasTexture.GetElementRects(plate);
-            local aoeHighlightRect = nil;
-
-            if (plate.aoeHighlight ~= nil and plate.aoeHighlight.textureId ~= nil) then
-                local highlight = plate.aoeHighlight;
-                local highlightW = tonumber(highlight.width) or 220;
-                local highlightH = tonumber(highlight.height) or 74;
-                local highlightX = centerX - (highlightW * 0.5) + (tonumber(highlight.offsetX) or 0);
-                local highlightY = centerY - (highlightH * 0.5) + (tonumber(highlight.offsetY) or 0);
-
-                if (highlight.autoPlace ~= false) then
-                    local anchorRect = GetElementAnchorRect(elementRects, highlight.anchorKinds);
-                    if (anchorRect ~= nil) then
-                        local spacing = math.max(0, tonumber(highlight.spacing) or 0);
-                        highlightX = anchorRect.x1 - spacing + (tonumber(highlight.offsetX) or 0);
-                        highlightY = anchorRect.y1 - spacing + (tonumber(highlight.offsetY) or 0);
-                        highlightW = (anchorRect.x2 - anchorRect.x1) + (spacing * 2);
-                        highlightH = (anchorRect.y2 - anchorRect.y1) + (spacing * 2);
-                    end
-                end
-
-                aoeHighlightRect = { x = highlightX, y = highlightY, w = highlightW, h = highlightH };
-                if (highlight.clickable ~= false) then
-                    AddRect(elementRects, highlightX, highlightY, highlightW, highlightH, 0, 'aoeHighlight');
-                end
-            end
-
-            plate._elementRects = elementRects;
-
-            local function PrepareTargetMarker(marker)
-                if (marker == nil) then
-                    return;
-                end
-
-                marker.anchorRect = GetElementAnchorRect(elementRects, marker.anchorKinds);
-                marker.backgroundAnchorRect = GetElementAnchorRect(elementRects, marker.backgroundAnchorKinds or marker.anchorKinds);
-                marker.chevronAnchorRect = GetElementAnchorRect(elementRects, marker.chevronAnchorKinds or marker.anchorKinds);
-                marker.arrowAnchorRect = GetElementAnchorRect(elementRects, marker.arrowAnchorKinds);
-                AddTargetMarkerBackgroundRect(elementRects, centerX, centerY, marker);
-                AddTargetMarkerForegroundRects(elementRects, centerX, centerY, marker);
-
-                for _, stackedMarker in ipairs(marker.stackedMarkers or {}) do
-                    PrepareTargetMarker(stackedMarker);
-                end
-            end
 
             local function DrawTargetMarkerStack(marker, pass)
                 if (marker == nil) then
@@ -2626,8 +2774,6 @@ function canvasTexture.Render(plate, key)
 
                 DrawTargetMarker(device, centerX, centerY, marker, pass);
             end
-
-            PrepareTargetMarker(plate.targetMarker);
 
             DrawPlateBackground(device, centerX, centerY, plate.background, FindRect(elementRects, 'background'));
             if (aoeHighlightRect ~= nil) then
@@ -2979,7 +3125,7 @@ function canvasTexture.Render(plate, key)
             if (plate.debugClickRects == true) then
                 local debugColor = tonumber(plate.debugClickRectColor) or 0xDDFFD400;
 
-                for _, rect in ipairs(plate._elementRects or {}) do
+                for _, rect in ipairs(elementRects or {}) do
                     DrawRectOutline(
                         device,
                         rect.x1,

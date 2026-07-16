@@ -413,10 +413,14 @@ local function TargetMarkerKey(marker)
         'showArrow=' .. BoolKey(marker.showArrow == true),
         'showLock=' .. BoolKey(marker.showLock == true),
         'showChevrons=' .. BoolKey(marker.showChevrons == true),
-        'backgroundTextureId=' .. tostring(marker.backgroundTextureId or ''),
-        'arrowTextureId=' .. tostring(marker.arrowTextureId or ''),
-        'lockTextureId=' .. tostring(marker.lockTextureId or ''),
-        'chevronTextureId=' .. tostring(marker.chevronTextureId or ''),
+        'backgroundFile=' .. tostring(marker.backgroundFile or ''),
+        'arrowFile=' .. tostring(marker.arrowFile or ''),
+        'arrowAnimated=' .. BoolKey(marker.arrowAnimated == true),
+        'arrowAnimationSpeed=' .. tostring(marker.arrowAnimationSpeed or ''),
+        'lockFile=' .. tostring(marker.lockFile or ''),
+        'lockAnimated=' .. BoolKey(marker.lockAnimated == true),
+        'lockAnimationSpeed=' .. tostring(marker.lockAnimationSpeed or ''),
+        'chevronFile=' .. tostring(marker.chevronFile or ''),
         'backgroundOffsetX=' .. tostring(marker.backgroundOffsetX or 0),
         'backgroundOffsetY=' .. tostring(marker.backgroundOffsetY or 0),
         'arrowOffsetX=' .. tostring(marker.arrowOffsetX or 0),
@@ -2317,8 +2321,7 @@ local function QueueEnemy(enemy)
     local cacheSkipReason = nil;
     local hasDynamicDistance = context.distanceText ~= nil and context.distanceText ~= '';
     local cacheableTargetState = context.stateName == 'Idle' or context.stateName == 'Target' or context.stateName == 'Subtarget';
-    local cacheEligible = cacheableTargetState == true
-        and context.isHovered ~= true;
+    local cacheEligible = cacheableTargetState == true;
     local cacheKey = nil;
     local signature = nil;
 
@@ -2437,6 +2440,8 @@ local function QueueEnemy(enemy)
         return;
     end
 
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35 * plateScale, 1.18 * plateScale, textureWidth, textureHeight);
+
     if (cacheEligible == true and cacheKey ~= nil and signature ~= nil) then
         plateCache[cacheKey] = {
             signature = signature,
@@ -2450,8 +2455,8 @@ local function QueueEnemy(enemy)
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = plateClickRects,
-            plateWorldWidth = 2.35 * plateScale,
-            plateWorldHeight = 1.18 * plateScale,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             hpBar = liveHpBarStyle,
             dynamicHpBar = context.hpBarSettings.enabled == true and useLiveHpBar ~= true,
             dynamicDistance = hasDynamicDistance == true,
@@ -2476,8 +2481,8 @@ local function QueueEnemy(enemy)
         plateTacticalOverlayOnly = tacticalOverlayOnly,
         anchorBone = ResolveEnemyAnchorBone(enemy),
         useExactNameplateAnchor = UseExactEnemyNameplateAnchor(enemy),
-        plateWorldWidth = 2.35 * plateScale,
-        plateWorldHeight = 1.18 * plateScale,
+        plateWorldWidth = plateWorldWidth,
+        plateWorldHeight = plateWorldHeight,
         plateWorldOffsetY = plateWorldOffsetY,
         plateDistanceScaleOffsetY = 0.28,
         plateTextureWidth = textureWidth,
@@ -2598,6 +2603,35 @@ local function AnyEnemyPlateWorkCanLoad()
     return result == true;
 end
 
+local function GetCombatBackgroundEnemyLimit(combatLike)
+    if (combatLike ~= true) then
+        return nil;
+    end
+
+    local mode = adaptivePerformance.GetEffectiveMode();
+
+    if (mode == 'Performance') then
+        return 0;
+    end
+
+    if (mode == 'Balanced' or mode == 'Quality') then
+        return 8;
+    end
+
+    return nil;
+end
+
+local function SortBackgroundEnemies(left, right)
+    local leftDistance = tonumber(left ~= nil and left.distance) or 9999;
+    local rightDistance = tonumber(right ~= nil and right.distance) or 9999;
+
+    if (leftDistance ~= rightDistance) then
+        return leftDistance < rightDistance;
+    end
+
+    return (tonumber(left ~= nil and left.index) or 0) < (tonumber(right ~= nil and right.index) or 0);
+end
+
 function enemyPlate.Render(importantOnly)
     if (state.GetWorldEnabled() ~= true) then
         return;
@@ -2645,14 +2679,42 @@ function enemyPlate.Render(importantOnly)
         return true;
     end
 
-    QueueByIndex(currentSubTargetIndex, true);
-    QueueByIndex(currentTargetIndex, true);
+    local targetQueuedCount = 0;
+    if (QueueByIndex(currentSubTargetIndex, true) == true) then
+        targetQueuedCount = targetQueuedCount + 1;
+    end
+    if (QueueByIndex(currentTargetIndex, true) == true) then
+        targetQueuedCount = targetQueuedCount + 1;
+    end
 
+    local trackedCount = 0;
     for _, index in ipairs(engagedEnemies.GetTrackedIndexes()) do
+        trackedCount = trackedCount + 1;
         QueueByIndex(index, false);
     end
 
-    if (importantOnly == true) then
+    local playerEngaged = targeting.IsPlayerEngaged() == true;
+    local combatLike = playerEngaged == true or trackedCount > 0;
+    local backgroundLimit = GetCombatBackgroundEnemyLimit(combatLike);
+
+    perfMeter.SetCounter('enemyPlayerEngaged', playerEngaged == true and 1 or 0);
+    perfMeter.SetCounter('enemyCombatLike', combatLike == true and 1 or 0);
+    perfMeter.SetCounter('enemyTargetQueued', targetQueuedCount);
+    perfMeter.SetCounter('enemyBackgroundLimit', backgroundLimit ~= nil and backgroundLimit or -1);
+
+    local performanceImportantOnly =
+        adaptivePerformance.GetEffectiveMode() == 'Performance' and
+        combatLike == true;
+
+    if (importantOnly == true or performanceImportantOnly == true) then
+        local count = 0;
+        for _, _ in pairs(queued) do
+            count = count + 1;
+        end
+        perfMeter.SetCounter('enemyQueued', count);
+        perfMeter.SetCounter('enemyTracked', trackedCount);
+        perfMeter.SetCounter('enemyScanned', 0);
+        perfMeter.SetCounter('enemyBackgroundQueued', 0);
         return;
     end
 
@@ -2673,10 +2735,12 @@ function enemyPlate.Render(importantOnly)
         (now - (tonumber(scanCache.clock) or 0)) < adaptivePerformance.GetWorldRefreshSeconds('enemy')
     ) then
         enemies = scanCache.enemies;
+        perfMeter.SetCounter('enemyScanned', #(enemies or {}));
     else
         local scanTimer = perfMeter.BeginDetail('enemy.scan');
         enemies = entities.GetNearbyEnemies(range);
         perfMeter.EndDetail(scanTimer);
+        perfMeter.SetCounter('enemyScanned', #(enemies or {}));
 
         if (canUseScanCache == true) then
             scanCache.clock = now;
@@ -2687,12 +2751,18 @@ function enemyPlate.Render(importantOnly)
         end
     end
 
+    if (backgroundLimit ~= nil and #enemies > 1) then
+        table.sort(enemies, SortBackgroundEnemies);
+    end
+
+    local backgroundQueued = 0;
     for _, enemy in ipairs(enemies) do
         if (queued[enemy.index] == true) then
             -- Already queued target/subtarget above.
-        else
+        elseif (backgroundLimit == nil or backgroundQueued < backgroundLimit) then
             queued[enemy.index] = true;
             QueueEnemy(enemy);
+            backgroundQueued = backgroundQueued + 1;
         end
     end
 
@@ -2701,6 +2771,8 @@ function enemyPlate.Render(importantOnly)
         count = count + 1;
     end
     perfMeter.SetCounter('enemyQueued', count);
+    perfMeter.SetCounter('enemyTracked', trackedCount);
+    perfMeter.SetCounter('enemyBackgroundQueued', backgroundQueued);
 end
 
 return enemyPlate;

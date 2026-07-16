@@ -2328,6 +2328,44 @@ DrawPlateOverlayScreen = function(device, textureId, wx, wy, wz, worldWidth, wor
     );
 end
 
+function worldMarkerProbe._ApplyCanvasCropWorldOffset(device, textureId, wx, wy, wz, worldWidth, worldHeight)
+    local textureModule = package.loaded['core.canvas_texture'];
+    local crop = textureModule ~= nil and textureModule.GetTextureCrop ~= nil and textureModule.GetTextureCrop(textureId) or nil;
+
+    if (
+        crop == nil or
+        tonumber(crop.fullWidth) == nil or
+        tonumber(crop.fullHeight) == nil or
+        tonumber(crop.width) == nil or
+        tonumber(crop.height) == nil or
+        tonumber(crop.x) == nil or
+        tonumber(crop.y) == nil
+    ) then
+        return wx, wy, wz;
+    end
+
+    local fullWidth = math.max(1, tonumber(crop.fullWidth) or 1024);
+    local fullHeight = math.max(1, tonumber(crop.fullHeight) or 512);
+    local cropWidth = math.max(1, tonumber(crop.width) or fullWidth);
+    local cropHeight = math.max(1, tonumber(crop.height) or fullHeight);
+    local deltaX = ((tonumber(crop.x) or 0) + (cropWidth * 0.5)) - (fullWidth * 0.5);
+    local deltaY = ((tonumber(crop.y) or 0) + (cropHeight * 0.5)) - (fullHeight * 0.5);
+
+    if (math.abs(deltaX) < 0.01 and math.abs(deltaY) < 0.01) then
+        return wx, wy, wz;
+    end
+
+    local rx, ry, rz, ux, uy, uz = GetBillboardVectors(device);
+    local worldDx = deltaX * ((tonumber(worldWidth) or 0) / cropWidth);
+    local worldDy = deltaY * ((tonumber(worldHeight) or 0) / cropHeight);
+
+    wx = wx + (rx * worldDx) - (ux * worldDy);
+    wy = wy + (ry * worldDx) - (uy * worldDy);
+    wz = wz + (rz * worldDx) - (uz * worldDy);
+
+    return wx, wy, wz;
+end
+
 DrawTextureWithState = function(device, textureId, wx, wy, wz, worldSize, offsetX, offsetY, offsetWorldScale, usePixelOffsets, worldHeight, alwaysOnTop)
     textureId = tonumber(textureId);
 
@@ -4042,6 +4080,7 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         local plateZ = wy + plateWorldOffsetZ;
         local plateWorldWidth = (tonumber(style.plateWorldWidth) or 0.84) * plateScale;
         local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
+        plateX, plateY, plateZ = worldMarkerProbe._ApplyCanvasCropWorldOffset(device, style.plateTextureId, plateX, plateY, plateZ, plateWorldWidth, plateWorldHeight);
 
         do
             local marker = style.targetMarker;
@@ -4426,9 +4465,6 @@ local function GetDrawableQueuedPlates()
         local targetType = tostring(plate ~= nil and plate.clickTargetType or ''):lower();
 
         if (plate ~= nil and plate.isProtectedPlate == true) then
-            out[#out + 1] = plate;
-            reservedCount = reservedCount + 1;
-        elseif (targetType == 'enemy') then
             out[#out + 1] = plate;
             reservedCount = reservedCount + 1;
         else

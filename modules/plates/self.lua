@@ -265,6 +265,7 @@ end
 
 local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layoutStateName, plateTextureId, textureWidth, textureHeight, plateClickRects)
     local plateWorldOffsetY = mounted.IsStatus(center.status) and (0.05 - mounted.GetPlateLift(center.index)) or 0.05;
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, textureWidth, textureHeight);
 
     worldMarkerProbe.QueuePlate({
         targetIndex = center.index,
@@ -282,8 +283,8 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = plateWorldOffsetY,
             pcBodyPlateOffsetEnabled = true,
             plateDistanceScaleOffsetY = -0.12,

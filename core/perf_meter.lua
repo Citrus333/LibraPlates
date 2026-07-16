@@ -1224,6 +1224,20 @@ function perfMeter.GetSummaryLines()
         tostring(GetCounter('canvasTargeted'))
     );
     lines[#lines + 1] = string.format(
+        'Entity scan detail enemyScanned=%s enemyQueued=%s enemyTracked=%s enemyBackground=%s enemyLimit=%s engaged=%s combatLike=%s targetQueued=%s npcScanned=%s npcTacticalScanned=%s npcCombatSkip=%s',
+        tostring(GetCounter('enemyScanned')),
+        tostring(GetCounter('enemyQueued')),
+        tostring(GetCounter('enemyTracked')),
+        tostring(GetCounter('enemyBackgroundQueued')),
+        tostring(GetCounter('enemyBackgroundLimit')),
+        tostring(GetCounter('enemyPlayerEngaged')),
+        tostring(GetCounter('enemyCombatLike')),
+        tostring(GetCounter('enemyTargetQueued')),
+        tostring(GetCounter('npcScanned')),
+        tostring(GetCounter('npcTacticalScanned')),
+        tostring(GetCounter('npcCombatSkip'))
+    );
+    lines[#lines + 1] = string.format(
         'Drawn canvases count=%s large=%s pixels=%.1fM worldArea=%.2f',
         tostring(GetLastCounter('drawCanvas.count')),
         tostring(GetLastCounter('drawCanvas.large')),

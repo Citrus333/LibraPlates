@@ -429,9 +429,11 @@ local function BuildTargetMarkerKey(marker)
         'bg=' .. BoolKey(marker.showBackground == true),
         'arrow=' .. BoolKey(marker.showArrow == true),
         'chev=' .. BoolKey(marker.showChevrons == true),
-        'arrowTex=' .. tostring(marker.arrowTextureId or ''),
-        'chevTex=' .. tostring(marker.chevronTextureId or ''),
-        'bgTex=' .. tostring(marker.backgroundTextureId or ''),
+        'arrowFile=' .. tostring(marker.arrowFile or ''),
+        'arrowAnimated=' .. BoolKey(marker.arrowAnimated == true),
+        'arrowAnimationSpeed=' .. NumberKey(marker.arrowAnimationSpeed),
+        'chevFile=' .. tostring(marker.chevronFile or ''),
+        'bgFile=' .. tostring(marker.backgroundFile or ''),
         'arrowW=' .. NumberKey(marker.arrowWidth),
         'arrowH=' .. NumberKey(marker.arrowHeight),
         'arrowX=' .. NumberKey(marker.arrowOffsetX),
@@ -916,6 +918,7 @@ local function QueueTrust(trust)
     end
 
     local plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, textureWidth, textureHeight);
 
     if (cacheEligible == true and cacheKey ~= nil and signature ~= nil) then
         plateCache[cacheKey] = {
@@ -926,8 +929,8 @@ local function QueueTrust(trust)
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = plateClickRects,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = plateWorldOffsetY,
         };
         indexCache[tonumber(trust.index) or 0] = {
@@ -954,8 +957,8 @@ local function QueueTrust(trust)
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = plateWorldOffsetY,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,

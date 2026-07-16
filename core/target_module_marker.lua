@@ -400,7 +400,8 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         and targetTextures.GetAnimatedTextureId('lock', settings.lockFile or 'lock.png', lockAnimated, Number(settings, 'lockAnimationSpeed', 12))
         or nil;
     local backgroundTextureId = backgroundEnabled == true and GetTextureId('backgrounds', settings.backgroundFile) or nil;
-    local chevronTextureId = GetTextureId('chevrons', GetChevronFile(settings));
+    local chevronFile = GetChevronFile(settings);
+    local chevronTextureId = GetTextureId('chevrons', chevronFile);
     local showArrow = arrowTextureId ~= nil;
     local showLock = lockTextureId ~= nil;
     local showChevrons = chevronTextureId ~= nil;
@@ -442,6 +443,14 @@ function targetModuleMarker.Build(entityName, layoutStateName, targetStateName, 
         arrowTextureId = arrowTextureId,
         lockTextureId = lockTextureId,
         chevronTextureId = chevronTextureId,
+        backgroundFile = tostring(settings.backgroundFile or 'None'),
+        arrowFile = tostring(settings.arrowFile or 'None'),
+        arrowAnimated = arrowAnimated == true,
+        arrowAnimationSpeed = Number(settings, 'arrowAnimationSpeed', 12),
+        lockFile = tostring(settings.lockFile or 'lock.png'),
+        lockAnimated = lockAnimated == true,
+        lockAnimationSpeed = Number(settings, 'lockAnimationSpeed', 12),
+        chevronFile = tostring(chevronFile or 'None'),
         backgroundAnchorToPlate = autoPlaceBackground == true,
         backgroundAnchorKinds = GetAutoPlaceAnchorKinds(settings.backgroundAutoPlaceAnchor),
         arrowAnchorToName = autoPlaceArrow == true,

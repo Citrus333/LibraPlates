@@ -1584,6 +1584,8 @@ local function QueueBstPet(pet)
         worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
     end
 
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, worldTextureWidth, worldTextureHeight);
+
     worldMarkerProbe.QueuePlate({
         targetIndex = pet.index,
         serverId = pet.serverId,
@@ -1600,8 +1602,8 @@ local function QueueBstPet(pet)
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
             anchorBone = petAnchorBone,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = petWorldOffsetY,
             plateTextureWidth = worldTextureWidth,
             plateTextureHeight = worldTextureHeight,
@@ -1859,6 +1861,8 @@ local function QueueSmnPet(pet)
         worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
     end
 
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, worldTextureWidth, worldTextureHeight);
+
     worldMarkerProbe.QueuePlate({
         targetIndex = pet.index,
         serverId = pet.serverId,
@@ -1875,8 +1879,8 @@ local function QueueSmnPet(pet)
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
             anchorBone = petAnchorBone,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = petWorldOffsetY,
             plateTextureWidth = worldTextureWidth,
             plateTextureHeight = worldTextureHeight,
@@ -2074,6 +2078,8 @@ local function QueueWyvernPet(pet)
         worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
     end
 
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, worldTextureWidth, worldTextureHeight);
+
     worldMarkerProbe.QueuePlate({
         targetIndex = pet.index,
         serverId = pet.serverId,
@@ -2090,8 +2096,8 @@ local function QueueWyvernPet(pet)
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
             anchorBone = wyvernAnchorBone,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = wyvernWorldOffsetY,
             plateOverlayOffsetY = wyvernOverlayOffsetY,
             plateTextureWidth = worldTextureWidth,
@@ -2322,6 +2328,8 @@ local function QueuePupPet(pet)
         worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
     end
 
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, worldTextureWidth, worldTextureHeight);
+
     worldMarkerProbe.QueuePlate({
         targetIndex = pet.index,
         serverId = pet.serverId,
@@ -2339,8 +2347,8 @@ local function QueuePupPet(pet)
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
             anchorBone = petAnchorBone,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = petWorldOffsetY,
             plateTextureWidth = worldTextureWidth,
             plateTextureHeight = worldTextureHeight,
@@ -2452,6 +2460,8 @@ local function QueueLuopan(pet)
         return;
     end
 
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, luopanPlateWorldHeight, textureWidth, textureHeight);
+
     worldMarkerProbe.QueuePlate({
         targetIndex = pet.index,
         serverId = pet.serverId,
@@ -2467,8 +2477,8 @@ local function QueueLuopan(pet)
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
             anchorBone = petAnchorBone,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = luopanPlateWorldHeight,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = luopanWorldOffsetY,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,

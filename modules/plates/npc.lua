@@ -289,9 +289,11 @@ local function BuildTargetMarkerKey(marker)
         BoolKey(marker.showBackground),
         BoolKey(marker.showArrow),
         BoolKey(marker.showChevrons),
-        tostring(marker.backgroundTextureId or ''),
-        tostring(marker.arrowTextureId or ''),
-        tostring(marker.chevronTextureId or ''),
+        tostring(marker.backgroundFile or ''),
+        tostring(marker.arrowFile or ''),
+        BoolKey(marker.arrowAnimated == true),
+        NumberKey(marker.arrowAnimationSpeed),
+        tostring(marker.chevronFile or ''),
         NumberKey(marker.arrowWidth),
         NumberKey(marker.arrowHeight),
         NumberKey(marker.arrowSpacing),
@@ -364,6 +366,7 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
     local isAlwaysReadableGatheringPoint = IsAlwaysReadableGatheringPoint(clickTargetType, displayName);
     local queueTimer = perfMeter.BeginDetail('npc.queue');
     local targetingSettings = targeting.GetSettings();
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, cached.textureWidth, cached.textureHeight);
 
     worldMarkerProbe.QueuePlate({
         targetIndex = entity.index,
@@ -380,8 +383,8 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
             plateAlwaysOnTop = isTacticalTarget == true or isAlwaysReadableGatheringPoint == true,
             plateSuppressWorldWhenAlwaysOnTop = isTacticalTarget == true,
             plateTacticalOverlayOnly = isTacticalTarget == true,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetX = cached.plateWorldOffsetX,
             plateWorldOffsetY = cached.plateWorldOffsetY,
             plateWorldOffsetZ = cached.plateWorldOffsetZ,
@@ -730,6 +733,7 @@ local function QueueNpcObject(entity)
     local isAlwaysReadableGatheringPoint = IsAlwaysReadableGatheringPoint(clickTargetType, displayName);
     local queueTimer = perfMeter.BeginDetail('npc.queue');
     local targetingSettings = targeting.GetSettings();
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, textureWidth, textureHeight);
 
     worldMarkerProbe.QueuePlate({
         targetIndex = entity.index,
@@ -747,8 +751,8 @@ local function QueueNpcObject(entity)
             plateSuppressWorldWhenAlwaysOnTop = isTacticalTarget == true,
             plateTacticalOverlayOnly = isTacticalTarget == true,
             anchorBone = anchorBone,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetX = plateWorldOffsetX,
             plateWorldOffsetY = plateWorldOffsetY,
             plateWorldOffsetZ = plateWorldOffsetZ,
@@ -919,6 +923,8 @@ local function QueueTacticalNpc(entity)
         return;
     end
 
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, textureWidth, textureHeight);
+
     worldMarkerProbe.QueuePlate({
         targetIndex = entity.index,
         serverId = entity.serverId,
@@ -934,8 +940,8 @@ local function QueueTacticalNpc(entity)
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = 0.50,
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,
@@ -1052,6 +1058,7 @@ function npcPlate.Render()
     end
 
     local playerEngaged = targeting.IsPlayerEngaged() == true;
+    local performanceImportantOnly = playerEngaged == true;
     local range = targeting.GetWorldPlateRange();
     local now = os.clock();
     local canUseScanCache = playerEngaged ~= true
@@ -1084,6 +1091,15 @@ function npcPlate.Render()
         end
     end
 
+    if (performanceImportantOnly == true) then
+        scanCache.entities = nil;
+        scanCache.tacticalEntities = nil;
+        perfMeter.SetCounter('npcScanned', 0);
+        perfMeter.SetCounter('npcTacticalScanned', 0);
+        perfMeter.SetCounter('npcCombatSkip', 1);
+        return;
+    end
+
     if (canRenderNpcObjects ~= true) then
         entitiesList = {};
         scanCache.entities = nil;
@@ -1098,6 +1114,7 @@ function npcPlate.Render()
         local scanTimer = perfMeter.BeginDetail('npc.scan');
         entitiesList = entities.GetNearbyNpcObjects(range);
         perfMeter.EndDetail(scanTimer);
+        perfMeter.SetCounter('npcScanned', #(entitiesList or {}));
 
         if (canUseScanCache == true) then
             scanCache.clock = now;
@@ -1124,6 +1141,7 @@ function npcPlate.Render()
         local tacticalScanTimer = perfMeter.BeginDetail('npc.tactical.scan');
         tacticalEntities = entities.GetNearbyTacticalNpcs(range);
         perfMeter.EndDetail(tacticalScanTimer);
+        perfMeter.SetCounter('npcTacticalScanned', #(tacticalEntities or {}));
 
         if (canUseScanCache == true) then
             scanCache.tacticalClock = now;

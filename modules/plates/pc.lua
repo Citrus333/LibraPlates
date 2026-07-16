@@ -670,6 +670,9 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
     end
 
     local queueTimer = perfMeter.BeginDetail('pc.queue');
+    local fallbackPlateWorldWidth, fallbackPlateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, cached.textureWidth, cached.textureHeight);
+    local cachedPlateWorldWidth = tonumber(cached.plateWorldWidth) or fallbackPlateWorldWidth;
+    local cachedPlateWorldHeight = tonumber(cached.plateWorldHeight) or fallbackPlateWorldHeight;
 
     worldMarkerProbe.QueuePlate({
         targetIndex = player.index,
@@ -693,8 +696,8 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             plateAlwaysOnTop = isProtectedPlate == true or useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,
             useExactNameplateAnchor = true,
-            plateWorldWidth = cached.plateWorldWidth or 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = cachedPlateWorldWidth,
+            plateWorldHeight = cachedPlateWorldHeight,
             plateWorldOffsetY = cached.plateWorldOffsetY,
             plateDistanceScaleOffsetY = 0.28,
             pcBodyPlateOffsetEnabled = true,
@@ -1335,8 +1338,9 @@ local function QueuePlayer(player)
     local buffRows = buffsLoad == true and partyStatuses.GetMemberRows(player.serverId, 'buff') or {};
     local debuffRows = debuffsLoad == true and partyStatuses.GetMemberRows(player.serverId, 'debuff') or {};
 
-    local function statusRowsSignature(rows)
+    local function statusRowsSignature(rows, iconSettings)
         local parts = {};
+        local showTimers = iconSettings ~= nil and iconSettings.showTimers == true;
 
         for index, row in ipairs(rows or {}) do
             local statusId = type(row) == 'table' and row.id or row;
@@ -1344,7 +1348,7 @@ local function QueuePlayer(player)
 
             parts[#parts + 1] = tostring(statusId or '');
 
-            if (seconds ~= nil and seconds >= 0) then
+            if (showTimers == true and seconds ~= nil and seconds >= 0) then
                 parts[#parts] = parts[#parts] .. ':' .. tostring(math.floor(seconds + 0.5));
             end
         end
@@ -1433,8 +1437,8 @@ local function QueuePlayer(player)
             'new=' .. tostring(newAdventurerIconTextureId or ''),
             'gm=' .. (isGameMaster == true and '1' or '0'),
             'aoe=' .. (isPartyPlayer == true and aoeRangeSettings.enabled == true and aoeNameHighlight.GetSignature(player.index, 'pc') or 'aoe-name:0'),
-            'buffs=' .. statusRowsSignature(buffRows),
-            'debuffs=' .. statusRowsSignature(debuffRows),
+            'buffs=' .. statusRowsSignature(buffRows, buffsSettings),
+            'debuffs=' .. statusRowsSignature(debuffRows, debuffsSettings),
             'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'highlightFile', 'highlightClickable', 'highlightAutoPlace', 'highlightAutoPlaceBy', 'highlightSpacing', 'highlightOffsetX', 'highlightOffsetY', 'highlightWidth', 'highlightHeight', 'highlightColor', 'highlightOpacity', 'iconEnabled', 'iconFile', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
@@ -1645,6 +1649,7 @@ local function QueuePlayer(player)
 
     local playerMounted = require('core.mounted').IsStatus(player.status);
     local plateWorldOffsetY = playerMounted and (0.05 - require('core.mounted').GetPlateLift(player.index)) or 0.05;
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, textureWidth, textureHeight);
 
     if (cacheEligible == true and cacheKey ~= nil and signature ~= nil) then
         plateCache[cacheKey] = {
@@ -1661,7 +1666,8 @@ local function QueuePlayer(player)
             textureWidth = textureWidth,
             textureHeight = textureHeight,
             elementRects = elementRects,
-            plateWorldWidth = 2.35,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = plateWorldOffsetY,
             hpBar = liveHpBarStyle,
             mpBar = liveMpBarStyle,
@@ -1700,8 +1706,8 @@ local function QueuePlayer(player)
             plateAlwaysOnTop = isProtectedPlate == true or useTargetOverlay == true,
             plateTacticalOverlayOnly = useTargetOverlay == true,
             useExactNameplateAnchor = true,
-            plateWorldWidth = 2.35,
-            plateWorldHeight = 1.18,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = plateWorldOffsetY,
             plateDistanceScaleOffsetY = 0.28,
             pcBodyPlateOffsetEnabled = true,

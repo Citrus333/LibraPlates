@@ -363,6 +363,10 @@ end
 function modules.SetPerfIsolation(name, value)
     name = tostring(name or ''):lower();
 
+    if (modules.plates.SetPerfIsolation(name, value) == true) then
+        return true;
+    end
+
     if (name == 'all') then
         local enabled = value == true;
         for key, _ in pairs(perfIsolation) do
@@ -393,6 +397,10 @@ end
 function modules.GetPerfIsolation(name)
     name = tostring(name or ''):lower();
 
+    if (modules.plates.GetPerfIsolation(name) == true) then
+        return true;
+    end
+
     if (name == 'all') then
         for _, enabled in pairs(perfIsolation) do
             if (enabled == true) then
@@ -409,7 +417,8 @@ function modules.GetPerfIsolationStatus()
     return 'targeting=' .. tostring(perfIsolation.targeting == true) ..
         ' native=' .. tostring(perfIsolation.native == true) ..
         ' mouse=' .. tostring(perfIsolation.mouse == true) ..
-        ' overlays=' .. tostring(perfIsolation.overlays == true);
+        ' overlays=' .. tostring(perfIsolation.overlays == true) ..
+        ' plates: ' .. modules.plates.GetPerfIsolationStatus();
 end
 
 function modules.ResetWorldMarker()

@@ -45,6 +45,7 @@ local adaptivePerformance = require('core.adaptive_performance');
 local perfMeter = require('core.perf_meter');
 local profileAutoSwitch = require('core.profile_auto_switch');
 local mogJobDebug = require('core.mog_job_debug');
+local itemFlickerTrace = require('core.item_flicker_trace');
 local nativeDrawHooksRegistered = false;
 
 local function RegisterNativeDrawHooks()
@@ -123,6 +124,7 @@ end);
 ashita.events.register('command', 'libraplates_command', function(e)
     local eventTimer = perfMeter.BeginDetail('event.command');
     local actionRangeTimer = perfMeter.BeginDetail('command.actionRange');
+    itemFlickerTrace.HandleCommandText(e.command);
     targetActionRange.HandleCommandText(e.command);
     perfMeter.EndDetail(actionRangeTimer);
     local aoeTimer = perfMeter.BeginDetail('command.aoe');
@@ -152,6 +154,7 @@ end);
 
 ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
     local eventTimer = perfMeter.BeginDetail('event.packetIn');
+    itemFlickerTrace.HandlePacketIn(e);
     blacklistModelReplace.HandlePacketIn(e);
     mounts.HandlePacketIn(e);
     targeting.HandlePacketIn(e);
@@ -178,6 +181,7 @@ end);
 
 ashita.events.register('packet_out', 'libraplates_packet_out', function(e)
     local eventTimer = perfMeter.BeginDetail('event.packetOut');
+    itemFlickerTrace.HandlePacketOut(e);
     mounts.HandlePacketOut(e);
     targetActionRange.HandlePacketOut(e);
     mogJobDebug.HandlePacketOut(e);
@@ -210,6 +214,7 @@ end
 
 ashita.events.register('text_in', 'libraplates_text_in', function(e)
     local eventTimer = perfMeter.BeginDetail('event.textIn');
+    itemFlickerTrace.HandleTextIn(e);
     if (fishing.HandleTextIn(e) == true or (e ~= nil and e.blocked == true)) then
         perfMeter.EndDetail(eventTimer);
         return;
@@ -235,6 +240,7 @@ ashita.events.register('d3d_present', 'libraplates_present', function()
         blacklistModelReplace.Update();
         mounts.Update();
         profileAutoSwitch.Update();
+        itemFlickerTrace.HandlePresent();
         nativeTargetArrow.SetTraceCapturePaused(false);
         nativeTargetArrow.EndTraceFrame();
         nativeTargetArrow.SetTraceCapturePaused(true);

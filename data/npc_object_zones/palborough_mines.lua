@@ -38,6 +38,7 @@ return {
             ["icon"] = "TreasureCasket.png",
             ["note"] = "A rusted, iron-banded container forgotten along the mining tracks. Searching through the junk retrieves critical key items and logs exploration metrics for active regional tasks.",
             ["type"] = "Loot Container",
+			["worldOffsetY"] = 0.35,
         },
         ["Peculiar Fissure"] = {
             ["_source"] = "item",

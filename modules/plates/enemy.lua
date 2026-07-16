@@ -400,6 +400,69 @@ local function SettingKey(settings, fields)
     return table.concat(parts, ';');
 end
 
+local function TargetMarkerKey(marker)
+    marker = marker or {};
+
+    if (marker.enabled ~= true) then
+        return 'target=0';
+    end
+
+    return table.concat({
+        'target=1',
+        'showBackground=' .. BoolKey(marker.showBackground == true),
+        'showArrow=' .. BoolKey(marker.showArrow == true),
+        'showLock=' .. BoolKey(marker.showLock == true),
+        'showChevrons=' .. BoolKey(marker.showChevrons == true),
+        'backgroundTextureId=' .. tostring(marker.backgroundTextureId or ''),
+        'arrowTextureId=' .. tostring(marker.arrowTextureId or ''),
+        'lockTextureId=' .. tostring(marker.lockTextureId or ''),
+        'chevronTextureId=' .. tostring(marker.chevronTextureId or ''),
+        'backgroundOffsetX=' .. tostring(marker.backgroundOffsetX or 0),
+        'backgroundOffsetY=' .. tostring(marker.backgroundOffsetY or 0),
+        'arrowOffsetX=' .. tostring(marker.arrowOffsetX or 0),
+        'arrowOffsetY=' .. tostring(marker.arrowOffsetY or 0),
+        'chevronOffsetX=' .. tostring(marker.chevronOffsetX or 0),
+        'chevronOffsetY=' .. tostring(marker.chevronOffsetY or 0),
+        'backgroundWidth=' .. tostring(marker.backgroundWidth or 0),
+        'backgroundHeight=' .. tostring(marker.backgroundHeight or 0),
+        'arrowWidth=' .. tostring(marker.arrowWidth or 0),
+        'arrowHeight=' .. tostring(marker.arrowHeight or 0),
+        'lockWidth=' .. tostring(marker.lockWidth or 0),
+        'lockHeight=' .. tostring(marker.lockHeight or 0),
+        'chevronWidth=' .. tostring(marker.chevronWidth or 0),
+        'chevronHeight=' .. tostring(marker.chevronHeight or 0),
+        'color=' .. ColorKey(marker.color),
+        'backgroundColor=' .. ColorKey(marker.backgroundColor),
+        'arrowColor=' .. ColorKey(marker.arrowColor),
+        'lockColor=' .. ColorKey(marker.lockColor),
+        'chevronColor=' .. ColorKey(marker.chevronColor),
+    }, ';');
+end
+
+local function CastBarKey(context)
+    local castData = context ~= nil and context.castData or nil;
+    local castBar = context ~= nil and context.castBar or nil;
+    local castSettings = context ~= nil and context.castBarSettings or nil;
+
+    if (castData == nil or castBar == nil or castBar.enabled ~= true) then
+        return 'cast=0';
+    end
+
+    local percent = math.max(0, math.min(100, tonumber(context.castPercent) or 0));
+    local bucket = math.floor((percent / 2) + 0.5) * 2;
+
+    return table.concat({
+        'cast=1',
+        'bucket=' .. tostring(bucket),
+        'spellId=' .. tostring(castData.spellId or ''),
+        'spellStatusId=' .. tostring(castData.spellStatusId or ''),
+        'spellIconId=' .. tostring(castData.spellIconId or ''),
+        'spellName=' .. tostring(castData.spellName or ''),
+        'castTime=' .. tostring(math.floor((tonumber(castData.castTime) or 0) * 10 + 0.5)),
+        'settings=' .. SettingKey(castSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showSpellName', 'fontSize', 'useSmallFont', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'textOffsetX', 'textOffsetY', 'showSpellIcon', 'spellIconSize', 'spellIconOffsetX', 'spellIconOffsetY' }),
+    }, ';');
+end
+
 local function ShortenName(name, maxLength)
     local text = tostring(name or '');
     local limit = tonumber(maxLength) or 0;
@@ -1744,7 +1807,6 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
     end
 
     local queueTimer = perfMeter.BeginDetail('enemy.queue');
-    local targetingSettings = targeting.GetSettings();
     local plateWorldOffsetY = ResolveEnemyWorldOffsetY(enemy);
     local tacticalOverlayOnly = importantAlwaysOnTop == true and (IsAlTaieuFish(enemy.name) ~= true or tostring(stateName or 'Idle') ~= 'Idle');
 
@@ -1806,8 +1868,7 @@ local function QueueFreshIdleCache(enemy)
     if (
         enemyCasts.GetActiveCast(enemy.serverId) ~= nil or
         engagedEnemies.IsEngaged(enemy.index) == true or
-        worldMarkerProbe.IsPlateHovered(enemy.index, 'enemy') == true or
-        (state.GetWidgetSettings('Enemy', 'Combat', 'AOE range', aoeRangeDefaults).enabled == true and aoeNameHighlight.HasLiveAoe() == true)
+        worldMarkerProbe.IsPlateHovered(enemy.index, 'enemy') == true
     ) then
         return false;
     end
@@ -1954,13 +2015,15 @@ local function BuildEnemyQueueContext(enemy)
     local mobInfo = mobInfoData.GetMobInfo(enemy.name, enemy.index);
     local jobText = mobInfoData.GetJobString(mobInfo);
     local levelText = mobInfoData.GetLevelString(mobInfo);
-    local buffRows = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(buffsSettings, isEngaged, hasActiveDetail) == true
+    local hasTrackedBuffs = buffsSettings ~= nil and buffsSettings.enabled == true and enemyStatuses.HasActiveStatus(enemy.serverId, 'buff') == true;
+    local hasTrackedDebuffs = debuffsSettings ~= nil and debuffsSettings.enabled == true and enemyStatuses.HasActiveStatus(enemy.serverId, 'debuff') == true;
+    local buffRows = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(buffsSettings, isEngaged, hasActiveDetail or hasTrackedBuffs) == true
         and enemyStatuses.GetActiveStatusRows(enemy.serverId, 'buff')
         or {};
-    local debuffRows = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(debuffsSettings, isEngaged, hasActiveDetail) == true
+    local debuffRows = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(debuffsSettings, isEngaged, hasActiveDetail or hasTrackedDebuffs) == true
         and enemyStatuses.GetActiveStatusRows(enemy.serverId, 'debuff')
         or {};
-    local geoAuraDebuffs = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(debuffsSettings, isEngaged, hasActiveDetail) == true
+    local geoAuraDebuffs = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(debuffsSettings, isEngaged, hasActiveDetail or hasTrackedDebuffs) == true
         and enemyStatuses.GetGeoAuraDebuffRows(enemy.distance, isEngaged)
         or {};
     local distanceText = nil;
@@ -2018,11 +2081,19 @@ end
 
 local function BuildEnemyCacheSignature(context, useLiveHpBar)
     local enemy = context.enemy;
-    local function StatusRowsKey(rows)
+    local function StatusRowsKey(rows, iconSettings)
         local parts = {};
+        local showTimers = iconSettings ~= nil and iconSettings.showTimers == true;
 
         for _, row in ipairs(rows or {}) do
-            parts[#parts + 1] = tostring(row.id) .. ':' .. tostring(math.floor(tonumber(row.seconds) or -1));
+            local statusId = type(row) == 'table' and row.id or row;
+            local timerText = '';
+
+            if (showTimers == true and type(row) == 'table' and row.seconds ~= nil) then
+                timerText = statusTimerFormat.Format(row.seconds);
+            end
+
+            parts[#parts + 1] = tostring(statusId) .. ':' .. timerText;
         end
 
         return table.concat(parts, ',');
@@ -2031,6 +2102,10 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
     return table.concat({
         'v=10',
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
+        'state=' .. tostring(context.stateName or 'Idle'),
+        'layoutState=' .. tostring(context.layoutStateName or 'Idle'),
+        'targetMarker=' .. TargetMarkerKey(context.targetMarker),
+        'castBar=' .. CastBarKey(context),
         'statusIconPack=' .. tostring(context.globalSettings ~= nil and context.globalSettings.statusIcons ~= nil and context.globalSettings.statusIcons.iconPack or ''),
         'enemyIconStyle=' .. tostring(context.globalSettings ~= nil and context.globalSettings.enemyIconStyle or ''),
         'activeDetail=' .. tostring(context.hasActiveDetail),
@@ -2043,8 +2118,8 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
         'job=' .. tostring(context.jobText or ''),
         'level=' .. tostring(context.levelText or ''),
         'mobFlags=' .. table.concat(mobInfoData.GetFlags(context.mobInfo), ','),
-        'buffRows=' .. StatusRowsKey(context.buffRows),
-        'debuffRows=' .. StatusRowsKey(context.debuffRows),
+        'buffRows=' .. StatusRowsKey(context.buffRows, context.buffsSettings),
+        'debuffRows=' .. StatusRowsKey(context.debuffRows, context.debuffsSettings),
         'geoAura=' .. enemyStatuses.GetGeoAuraSignature(),
         'id=' .. tostring(tonumber(enemy.serverId) or tonumber(enemy.index) or 0),
         'difficulty=' .. tostring(context.mobInfo ~= nil and context.mobInfo.Difficulty or ''),
@@ -2241,17 +2316,14 @@ local function QueueEnemy(enemy)
 
     local cacheSkipReason = nil;
     local hasDynamicDistance = context.distanceText ~= nil and context.distanceText ~= '';
-    local cacheEligible = context.stateName == 'Idle'
-        and context.castData == nil
-        and #context.buffRows == 0
-        and #context.debuffRows == 0
-        and context.isHovered ~= true
-        and (context.aoeRangeSettings.enabled ~= true or aoeNameHighlight.HasLiveAoe() ~= true);
+    local cacheableTargetState = context.stateName == 'Idle' or context.stateName == 'Target' or context.stateName == 'Subtarget';
+    local cacheEligible = cacheableTargetState == true
+        and context.isHovered ~= true;
     local cacheKey = nil;
     local signature = nil;
 
     if (cacheEligible == true) then
-        cacheKey = 'enemy:' .. tostring(enemy.index) .. ':' .. GetEnemyIdentityKey(enemy);
+        cacheKey = 'enemy:' .. tostring(enemy.index) .. ':' .. tostring(context.stateName or 'Idle') .. ':' .. GetEnemyIdentityKey(enemy);
         signature = BuildEnemyCacheSignature(context, useLiveHpBar);
 
         local indexed = indexCache[tonumber(enemy.index) or 0];
@@ -2273,6 +2345,9 @@ local function QueueEnemy(enemy)
             adaptivePerformance.ShouldThrottleBackground() == true and
             adaptivePerformance.AllowBackgroundBuild('enemy.idle.canvas', 1) ~= true
         ) then
+            if (QueueCachedEnemy(enemy, staleCached, context.stateName, context.importantAlwaysOnTop, context.hpPercent, cachedLiveHpBar) == true) then
+                perfMeter.Count('enemy.cache.staleHit', 1);
+            end
             perfMeter.Count('enemy.cache.defer', 1);
             perfMeter.EndDetail(settingsTimer);
             return;
@@ -2280,18 +2355,12 @@ local function QueueEnemy(enemy)
 
         perfMeter.Count('enemy.cache.miss', 1);
     else
-        if (context.stateName ~= 'Idle') then
+        if (cacheableTargetState ~= true) then
             cacheSkipReason = 'state_' .. tostring(context.stateName or 'unknown');
         elseif (context.castData ~= nil) then
             cacheSkipReason = 'cast';
-        elseif (#context.buffRows > 0) then
-            cacheSkipReason = 'buffs';
-        elseif (#context.debuffRows > 0) then
-            cacheSkipReason = 'debuffs';
         elseif (context.isHovered == true) then
             cacheSkipReason = 'hover';
-        elseif (context.aoeRangeSettings.enabled == true and aoeNameHighlight.HasLiveAoe() == true) then
-            cacheSkipReason = 'aoe';
         elseif (hasDynamicDistance == true) then
             cacheSkipReason = 'distance';
         else
@@ -2397,7 +2466,6 @@ local function QueueEnemy(enemy)
     end
 
     local queueTimer = perfMeter.BeginDetail('enemy.queue');
-    local targetingSettings = targeting.GetSettings();
     local plateWorldOffsetY = ResolveEnemyWorldOffsetY(enemy);
     local tacticalOverlayOnly = context.importantAlwaysOnTop == true and (IsAlTaieuFish(enemy.name) ~= true or tostring(context.stateName or 'Idle') ~= 'Idle');
     local worldMarker = ApplyEnemyPositionOverrides(enemy, targeting.ApplyPlateScalingSettings({
@@ -2556,7 +2624,6 @@ function enemyPlate.Render(importantOnly)
         return;
     end
 
-    local targetingSettings = targeting.GetSettings();
     local currentTargetIndex = targeting.GetCurrentTargetIndex();
     local currentSubTargetIndex = targeting.GetCurrentSubTargetIndex();
     local subTargetActive = targeting.IsSubTargetModeActive();
@@ -2628,6 +2695,12 @@ function enemyPlate.Render(importantOnly)
             QueueEnemy(enemy);
         end
     end
+
+    local count = 0;
+    for _, _ in pairs(queued) do
+        count = count + 1;
+    end
+    perfMeter.SetCounter('enemyQueued', count);
 end
 
 return enemyPlate;

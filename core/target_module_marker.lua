@@ -292,6 +292,7 @@ local tacticalTargetEntities = {
     Self = true,
     Enemy = true,
     NPC = true,
+    Object = true,
     PC = true,
     Trust = true,
 };

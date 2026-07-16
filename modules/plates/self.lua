@@ -264,7 +264,6 @@ local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, c
 end
 
 local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layoutStateName, plateTextureId, textureWidth, textureHeight, plateClickRects)
-    local targetingSettings = targeting.GetSettings();
     local plateWorldOffsetY = mounted.IsStatus(center.status) and (0.05 - mounted.GetPlateLift(center.index)) or 0.05;
 
     worldMarkerProbe.QueuePlate({
@@ -1433,7 +1432,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         end
     end
 
-    local cacheEligible = animatedBarActive ~= true and (aoeRangeSettings.enabled ~= true or aoeNameHighlight.HasLiveAoe() ~= true) and enmityActive ~= true;
+    local cacheEligible = animatedBarActive ~= true and enmityActive ~= true;
     local signature = nil;
     local vitalSignature = nil;
     local cacheKey = GetWorldCacheKey(stateName, targetStateName, layoutStateName, plateData.canvasWidth ~= nil);

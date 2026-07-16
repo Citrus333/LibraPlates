@@ -1535,6 +1535,19 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'itemtrace' or subcommand == 'traceitem') then
+        local itemFlickerTrace = require('core.item_flicker_trace');
+        local action = tostring(args[3] or 'start'):lower();
+
+        if (action == 'status') then
+            log.Info(itemFlickerTrace.GetStatusText());
+            return;
+        end
+
+        itemFlickerTrace.Start(tonumber(args[3]) or tonumber(args[4]) or 5);
+        return;
+    end
+
     if (subcommand == 'npc' or subcommand == 'npcadd') then
         AppendMissingNpc();
         return;
@@ -2167,21 +2180,21 @@ function commands.Handle(e)
 
         if (value == 'on' or value == 'disable' or value == 'disabled') then
             if (modules.SetPerfIsolation(name, true) ~= true) then
-                log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|all on|off|status');
+                log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|self|enemy|pc|trust|pet|npc|plates|all on|off|status');
                 return;
             end
         elseif (value == 'off' or value == 'enable' or value == 'enabled') then
             if (modules.SetPerfIsolation(name, false) ~= true) then
-                log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|all on|off|status');
+                log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|self|enemy|pc|trust|pet|npc|plates|all on|off|status');
                 return;
             end
         elseif (value == 'toggle' or value == '') then
             if (modules.SetPerfIsolation(name, modules.GetPerfIsolation(name) ~= true) ~= true) then
-                log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|all on|off|status');
+                log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|self|enemy|pc|trust|pet|npc|plates|all on|off|status');
                 return;
             end
         elseif (value ~= 'status') then
-            log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|all on|off|status');
+            log.Warn('Usage: /lp isolate targeting|native|mouse|overlays|self|enemy|pc|trust|pet|npc|plates|all on|off|status');
             return;
         end
 

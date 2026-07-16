@@ -11,6 +11,7 @@ local defaultImgui = require('imgui');
 local gdiTextTexture = require('ui.gdi_text_texture');
 local targeting = require('core.targeting');
 local entities = require('core.entities');
+local perfMeter = require('core.perf_meter');
 
 -- ==========================================================
 -- = D3D CONSTANTS =
@@ -508,6 +509,10 @@ local function AddPlateClickRects(targetIndex, targetType, rects, union, metadat
         distance = metadata ~= nil and metadata.distance or nil,
         modelHitboxSize = metadata ~= nil and metadata.modelHitboxSize or nil,
         plateTextureId = metadata ~= nil and metadata.plateTextureId or nil,
+        plateTextureWidth = metadata ~= nil and metadata.plateTextureWidth or nil,
+        plateTextureHeight = metadata ~= nil and metadata.plateTextureHeight or nil,
+        plateWorldWidth = metadata ~= nil and metadata.plateWorldWidth or nil,
+        plateWorldHeight = metadata ~= nil and metadata.plateWorldHeight or nil,
         plateOverlayOnly = metadata ~= nil and metadata.plateOverlayOnly == true,
         plateOverlayRect = metadata ~= nil and metadata.plateOverlayRect or nil,
         plateOverlayOffsetX = metadata ~= nil and metadata.plateOverlayOffsetX or nil,
@@ -691,6 +696,10 @@ local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, styl
         distance = style.distance,
         modelHitboxSize = style.modelHitboxSize,
         plateTextureId = style.plateAlwaysOnTop == true and style.plateTextureId or nil,
+        plateTextureWidth = textureWidth,
+        plateTextureHeight = textureHeight,
+        plateWorldWidth = worldWidth,
+        plateWorldHeight = worldHeight,
         plateOverlayOnly = style.plateTacticalOverlayOnly == true or (style.plateAlwaysOnTop == true and style.plateSuppressWorldWhenAlwaysOnTop == true),
         plateOverlayRect = nil,
         plateOverlayOffsetX = tonumber(style.plateOverlayOffsetX) or 0,
@@ -4035,13 +4044,12 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
 
         do
-            local settings = targeting.GetSettings();
             local marker = style.targetMarker;
             local isTacticalPlate =
                 tostring(plate.stateName or '') ~= 'Idle' or
                 (marker ~= nil and marker.enabled == true);
 
-            if (settings.tacticalScreenClampEnabled == true and isTacticalPlate == true) then
+            if (isTacticalPlate == true and targeting.GetSettings().tacticalScreenClampEnabled == true) then
                 local _, view = device:GetTransform(2);
                 local _, proj = device:GetTransform(3);
                 local _, viewport = device:GetViewport();
@@ -4188,6 +4196,16 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         end
 
         device:SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+
+        if (perfMeter ~= nil and perfMeter.CountDrawnCanvas ~= nil) then
+            perfMeter.CountDrawnCanvas(
+                style.clickTargetType or plate.clickTargetType or (plate.isSelf == true and 'self' or 'enemy'),
+                style.plateTextureWidth,
+                style.plateTextureHeight,
+                plateWorldWidth,
+                plateWorldHeight
+            );
+        end
 
         DrawTextureWithState(
             device,
@@ -5017,6 +5035,10 @@ function worldMarkerProbe.GetAlwaysVisiblePlates()
                     clickName = entry.name,
                     rawName = entry.rawName,
                     textureId = entry.plateTextureId,
+                    textureWidth = entry.plateTextureWidth,
+                    textureHeight = entry.plateTextureHeight,
+                    worldWidth = entry.plateWorldWidth,
+                    worldHeight = entry.plateWorldHeight,
                     rect = entry.plateOverlayRect,
                     overlayOffsetX = entry.plateOverlayOffsetX,
                     overlayOffsetY = entry.plateOverlayOffsetY,
@@ -5211,10 +5233,10 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
     elseif (
         message == 516 and
         interactTarget ~= nil and
-        (entry.targetType == 'object' or targeting.IsGatheringPointName(entry.name) == true)
+        (entry.targetType == 'object' or targeting.IsGatheringTarget(entry.targetIndex, entry.name) == true)
     ) then
         local ok = false;
-        local interactType = (targeting.IsGatheringPointName(entry.name) == true) and 'object' or entry.targetType;
+        local interactType = (targeting.IsGatheringTarget(entry.targetIndex, entry.name) == true) and 'object' or entry.targetType;
 
         pcall(function ()
             ok = interactTarget(entry.targetIndex, interactType, entry.distance);
@@ -5226,7 +5248,7 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
             return true;
         end
 
-        if (targeting.IsGatheringPointName(entry.name) == true) then
+        if (targeting.IsGatheringTarget(entry.targetIndex, entry.name) == true) then
             return true;
         end
 

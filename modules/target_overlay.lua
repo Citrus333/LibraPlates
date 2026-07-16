@@ -17,6 +17,7 @@ local worldMarkerProbe = require('core.world_marker_probe');
 local overlaySuppression = require('core.overlay_suppression');
 local targetModuleMarker = require('core.target_module_marker');
 local nativeUiPolicy = require('core.native_ui_policy');
+local perfMeter = require('core.perf_meter');
 
 local targetOverlay = {};
 local textureIds = {};
@@ -584,6 +585,16 @@ local function DrawAlwaysVisiblePlates(drawList)
             tonumber(rect.x2) ~= nil and
             tonumber(rect.y2) ~= nil
         ) then
+            if (perfMeter ~= nil and perfMeter.CountDrawnCanvas ~= nil) then
+                perfMeter.CountDrawnCanvas(
+                    plate.targetType,
+                    plate.textureWidth,
+                    plate.textureHeight,
+                    plate.worldWidth,
+                    plate.worldHeight
+                );
+            end
+
             drawList:AddImage(
                 textureId,
                 { rect.x1, rect.y1 },

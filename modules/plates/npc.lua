@@ -378,8 +378,8 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = isTacticalTarget == true or isAlwaysReadableGatheringPoint == true,
-            plateSuppressWorldWhenAlwaysOnTop = isTacticalTarget == true and clickTargetType ~= 'object',
-            plateTacticalOverlayOnly = false,
+            plateSuppressWorldWhenAlwaysOnTop = isTacticalTarget == true,
+            plateTacticalOverlayOnly = isTacticalTarget == true,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
             plateWorldOffsetX = cached.plateWorldOffsetX,
@@ -436,6 +436,11 @@ local function QueueNpcObject(entity)
     local clickTargetType = string.lower(resolvedEntityName);
     local targetStateName = targeting.GetTargetStateName(entity.index);
     local isTacticalTarget = targetStateName ~= 'Idle';
+    local layoutStateName = isTacticalTarget == true and 'Combat' or 'Idle';
+    -- Object only exposes one normal plate settings page in the UI. Targeted
+    -- Objects still use tactical overlay behavior, but their regular widgets
+    -- keep the same World settings as untargeted Objects.
+    local widgetLayoutStateName = settingsEntityName == 'Object' and 'Idle' or layoutStateName;
 
     if (targetStateName == 'Idle' and npcInfo ~= nil and npcInfo.hidden == true) then
         perfMeter.EndDetail(resolveTimer);
@@ -498,12 +503,14 @@ local function QueueNpcObject(entity)
     local showDistanceBadge = settingsEntityName == 'Object';
 
     local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isTacticalTarget == true);
-    local backgroundSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Background', backgroundDefaults);
-    local nameSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Name', nameDefaults);
-    local distanceSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Distance', distanceDefaults);
-    local typeLineSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Type line', typeLineDefaults);
-    local iconSettings = state.GetWidgetSettings(settingsEntityName, 'Idle', 'Icon', npcObjectIconDefaults);
-    local targetMarker = { enabled = false };
+    local backgroundSettings = state.GetWidgetSettings(settingsEntityName, widgetLayoutStateName, 'Background', backgroundDefaults);
+    local nameSettings = state.GetWidgetSettings(settingsEntityName, widgetLayoutStateName, 'Name', nameDefaults);
+    local distanceSettings = state.GetWidgetSettings(settingsEntityName, widgetLayoutStateName, 'Distance', distanceDefaults);
+    local typeLineSettings = state.GetWidgetSettings(settingsEntityName, widgetLayoutStateName, 'Type line', typeLineDefaults);
+    local iconSettings = state.GetWidgetSettings(settingsEntityName, widgetLayoutStateName, 'Icon', npcObjectIconDefaults);
+    local targetMarker = targetStateName ~= 'Idle'
+        and targetModuleMarker.Build(settingsEntityName, layoutStateName, targetStateName, nil, entity.distance)
+        or { enabled = false };
 
     ApplyNpcAnchorDefaults(iconSettings, npcObjectIconDefaults, -28, -30);
     ApplyNpcAnchorDefaults(typeLineSettings, typeLineDefaults, 0, -30);
@@ -527,6 +534,7 @@ local function QueueNpcObject(entity)
     local signatureTimer = perfMeter.BeginDetail('npc.signature');
     local cacheKey = table.concat({
         clickTargetType,
+        widgetLayoutStateName,
         displayName,
         targetStateName,
         tostring(distanceText or ''),
@@ -736,8 +744,8 @@ local function QueueNpcObject(entity)
             hpBar = { enabled = false },
             plateTextureId = plateTextureId,
             plateAlwaysOnTop = isTacticalTarget == true or isAlwaysReadableGatheringPoint == true,
-            plateSuppressWorldWhenAlwaysOnTop = isTacticalTarget == true and clickTargetType ~= 'object',
-            plateTacticalOverlayOnly = false,
+            plateSuppressWorldWhenAlwaysOnTop = isTacticalTarget == true,
+            plateTacticalOverlayOnly = isTacticalTarget == true,
             anchorBone = anchorBone,
             plateWorldWidth = 2.35,
             plateWorldHeight = 1.18,
@@ -751,7 +759,7 @@ local function QueueNpcObject(entity)
             clickTargetType = clickTargetType,
             clickName = displayName,
             rawName = entity.name,
-            layoutStateName = 'Idle',
+            layoutStateName = layoutStateName,
         }, resolvedEntityName == 'Object' and 'object' or 'npc', plateWorldOffsetX, plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
@@ -863,8 +871,49 @@ local function QueueTacticalNpc(entity)
         };
     end
 
-    local textureKey = 'npc-tactical-' .. tostring(entity.index);
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
+    local cacheKey = 'npc-tactical:' .. tostring(entity.index) .. ':' .. tostring(targetStateName or 'Idle');
+    local signature = table.concat({
+        'v=1',
+        'policy=' .. canvasTexture.GetRenderPolicyKey(),
+        'name=' .. tostring(displayName or ''),
+        'state=' .. tostring(targetStateName or 'Idle'),
+        'hp=' .. tostring(math.floor(hpPercent + 0.5)),
+        'distance=' .. tostring(distanceText or ''),
+        'target=' .. BuildTargetMarkerKey(targetMarker),
+        'bg=' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
+        'nameSettings=' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
+        'hpSettings=' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
+        'distanceSettings=' .. SettingKey(distanceSettings, { 'enabled', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder' }),
+    }, '\n');
+    local cached = plateCache[cacheKey];
+    local plateTexture = nil;
+    local textureWidth = nil;
+    local textureHeight = nil;
+    local elementRects = nil;
+
+    if (cached ~= nil and cached.signature == signature and cached.texture ~= nil) then
+        TouchPlateCacheEntry(cached);
+        plateTexture = cached.texture;
+        textureWidth = cached.textureWidth;
+        textureHeight = cached.textureHeight;
+        elementRects = cached.elementRects;
+        perfMeter.Count('npc.tactical.cache.hit', 1);
+    else
+        local textureKey = 'npc-tactical-' .. tostring(entity.index);
+        plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
+        elementRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+        plateCache[cacheKey] = {
+            signature = signature,
+            texture = plateTexture,
+            textureKey = textureKey,
+            lastUsed = os.clock(),
+            textureWidth = textureWidth,
+            textureHeight = textureHeight,
+            elementRects = elementRects,
+        };
+        perfMeter.Count('npc.tactical.cache.miss', 1);
+    end
+
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
     if (plateTextureId == nil) then
         return;
@@ -891,7 +940,7 @@ local function QueueTacticalNpc(entity)
             plateDistanceScaleOffsetY = 0.28,
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
-            plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData),
+            plateClickRects = elementRects or plateData._elementRects or canvasTexture.GetElementRects(plateData),
             clickTargetType = 'npc',
             clickName = displayName,
             rawName = entity.name,
@@ -900,12 +949,12 @@ local function QueueTacticalNpc(entity)
     });
 end
 
-local function AnyNpcObjectWidgetCanLoadForEntity(entityName)
-    local backgroundSettings = state.GetWidgetSettings(entityName, 'Idle', 'Background', backgroundDefaults);
-    local nameSettings = state.GetWidgetSettings(entityName, 'Idle', 'Name', nameDefaults);
-    local distanceSettings = state.GetWidgetSettings(entityName, 'Idle', 'Distance', distanceDefaults);
-    local typeLineSettings = state.GetWidgetSettings(entityName, 'Idle', 'Type line', typeLineDefaults);
-    local iconSettings = state.GetWidgetSettings(entityName, 'Idle', 'Icon', npcObjectIconDefaults);
+local function AnyNpcObjectWidgetCanLoadForEntity(entityName, layoutStateName)
+    local backgroundSettings = state.GetWidgetSettings(entityName, layoutStateName, 'Background', backgroundDefaults);
+    local nameSettings = state.GetWidgetSettings(entityName, layoutStateName, 'Name', nameDefaults);
+    local distanceSettings = state.GetWidgetSettings(entityName, layoutStateName, 'Distance', distanceDefaults);
+    local typeLineSettings = state.GetWidgetSettings(entityName, layoutStateName, 'Type line', typeLineDefaults);
+    local iconSettings = state.GetWidgetSettings(entityName, layoutStateName, 'Icon', npcObjectIconDefaults);
 
     return
         backgroundSettings.enabled == true or
@@ -923,8 +972,8 @@ local function AnyNpcObjectPlateWorkCanLoad()
     end
 
     local result =
-        AnyNpcObjectWidgetCanLoadForEntity('NPC') == true or
-        AnyNpcObjectWidgetCanLoadForEntity('Object') == true;
+        AnyNpcObjectWidgetCanLoadForEntity('NPC', 'Idle') == true or
+        AnyNpcObjectWidgetCanLoadForEntity('Object', 'Idle') == true;
 
     plateWorkGateCache.clock = now;
     plateWorkGateCache.result = result == true;
@@ -947,9 +996,13 @@ end
 local function AnyNpcTargetModuleCanLoad()
     local npcTargetSettings = targetModuleMarker.GetSettings('NPC', 'Combat', 'Target');
     local npcSubtargetSettings = targetModuleMarker.GetSettings('NPC', 'Combat', 'Subtarget');
+    local objectTargetSettings = targetModuleMarker.GetSettings('Object', 'Combat', 'Target');
+    local objectSubtargetSettings = targetModuleMarker.GetSettings('Object', 'Combat', 'Subtarget');
 
     return targetModuleMarker.HasDrawableSettings('NPC', npcTargetSettings) == true or
-        targetModuleMarker.HasDrawableSettings('NPC', npcSubtargetSettings) == true;
+        targetModuleMarker.HasDrawableSettings('NPC', npcSubtargetSettings) == true or
+        targetModuleMarker.HasDrawableSettings('Object', objectTargetSettings) == true or
+        targetModuleMarker.HasDrawableSettings('Object', objectSubtargetSettings) == true;
 end
 
 function npcPlate.Build()

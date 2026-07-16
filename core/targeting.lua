@@ -1103,6 +1103,11 @@ end
 
 local gatheringActions = {
     ['Mining Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickMining' },
+    ['Mythril Seam'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickMining' },
+    ['Gold Seam'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickMining' },
+    ['Rock Outcropping'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickMining' },
+    ['Ergon Locus'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickMining' },
+    ['Coalition Mining Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickMining' },
     ['Excavation Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickExcavation' },
     ['Excav. Point'] = { command = '/item "Pickaxe" <t>', tool = 'Pickaxe', settingKey = 'enableRightClickExcavation' },
     ['Logging Point'] = { command = '/item "Hatchet" <t>', tool = 'Hatchet', settingKey = 'enableRightClickLogging' },
@@ -1116,6 +1121,17 @@ end
 
 local function GetGatheringAction(name)
     return gatheringActions[NormalizeObjectName(name)];
+end
+
+local function GetGatheringActionForTarget(targetIndex, name)
+    local normalizedName = NormalizeObjectName(name);
+    local action = GetGatheringAction(normalizedName);
+
+    if (action ~= nil) then
+        return action, normalizedName;
+    end
+
+    return nil, normalizedName;
 end
 
 local function GetGatheringToolIconFile(toolName)
@@ -1371,7 +1387,7 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
 
     local entity = GetEntity(targetIndex);
     local name = NormalizeObjectName(entity ~= nil and entity.Name or '');
-    local action = GetGatheringAction(name);
+    local action, actionName = GetGatheringActionForTarget(targetIndex, name);
 
     if (action == nil) then
         lastGatheringInteractStatus = 'no mapping name=' .. tostring(name) .. ' type=' .. normalizedType;
@@ -1385,14 +1401,14 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
     end
 
     if (actionEnabled ~= true) then
-        lastGatheringInteractStatus = 'disabled action=' .. tostring(action.settingKey) .. ' name=' .. tostring(name);
+        lastGatheringInteractStatus = 'disabled action=' .. tostring(action.settingKey) .. ' name=' .. tostring(name) .. ' actionName=' .. tostring(actionName);
         return false;
     end
 
     local hasTool, container, index, count = HasInventoryItem(action.tool);
 
     if (hasTool ~= true) then
-        lastGatheringInteractStatus = 'missing tool=' .. tostring(action.tool) .. ' name=' .. tostring(name);
+        lastGatheringInteractStatus = 'missing tool=' .. tostring(action.tool) .. ' name=' .. tostring(name) .. ' actionName=' .. tostring(actionName);
         return false;
     end
 
@@ -1416,6 +1432,7 @@ function targeting.InteractFishingGatheringTarget(targetIndex, targetType, dista
         lastGatheringInteractStatus =
             'queued ' .. action.command ..
             ' name=' .. name ..
+            ' actionName=' .. tostring(actionName) ..
             ' tool=' .. tostring(action.tool) ..
             ' count=' .. tostring(count) ..
             ' c=' .. tostring(container) ..
@@ -1430,6 +1447,11 @@ end
 
 function targeting.IsGatheringPointName(name)
     return GetGatheringAction(name) ~= nil;
+end
+
+function targeting.IsGatheringTarget(targetIndex, name)
+    local action = GetGatheringActionForTarget(targetIndex, name);
+    return action ~= nil;
 end
 
 function targeting.GetGatheringDisplayInfo()

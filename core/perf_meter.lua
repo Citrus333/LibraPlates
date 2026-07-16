@@ -195,6 +195,16 @@ local function GetPlateCostColor(value)
     return { 0.56, 0.96, 0.70, 1.0 };
 end
 
+local function GetLastCounter(name)
+    local key = tostring(name or '');
+
+    if (lastCounters[key] ~= nil) then
+        return lastCounters[key];
+    end
+
+    return counters[key] or 0;
+end
+
 local function Record(name, elapsedMs)
     if (name == nil or elapsedMs == nil) then
         return;
@@ -675,6 +685,40 @@ local function DrawCountsLine()
             tostring(GetCounter('canvasRenders'))
         )
     );
+    imgui.TextColored(
+        { 1.0, 0.84, 0.30, 1.0 },
+        string.format(
+            'Rebuilds: S=%s E=%s T=%s PC=%s Pet=%s N/O=%s Targeted=%s',
+            tostring(GetLastCounter('canvasSelf')),
+            tostring(GetLastCounter('canvasEnemy')),
+            tostring(GetLastCounter('canvasTrust')),
+            tostring(GetLastCounter('canvasPc')),
+            tostring(GetLastCounter('canvasPet')),
+            tostring(GetLastCounter('canvasNpcObject')),
+            tostring(GetLastCounter('canvasTargeted'))
+        )
+    );
+    imgui.TextColored(
+        { 0.70, 0.90, 1.0, 1.0 },
+        string.format(
+            'Drawn canvases: %s | Large=%s | Pixels=%.1fM',
+            tostring(GetLastCounter('drawCanvas.count')),
+            tostring(GetLastCounter('drawCanvas.large')),
+            (tonumber(GetLastCounter('drawCanvas.pixels')) or 0) / 1000000.0
+        )
+    );
+    imgui.TextColored(
+        { 0.70, 0.90, 1.0, 1.0 },
+        string.format(
+            'Canvas types: T=%s %.1fM | E=%s %.1fM | N/O=%s %.1fM',
+            tostring(GetLastCounter('drawCanvas.trust')),
+            (tonumber(GetLastCounter('drawCanvas.trustPixels')) or 0) / 1000000.0,
+            tostring(GetLastCounter('drawCanvas.enemy')),
+            (tonumber(GetLastCounter('drawCanvas.enemyPixels')) or 0) / 1000000.0,
+            tostring(GetLastCounter('drawCanvas.npcObject')),
+            (tonumber(GetLastCounter('drawCanvas.npcObjectPixels')) or 0) / 1000000.0
+        )
+    );
 end
 
 local function DrawTextureCacheLine()
@@ -841,10 +885,6 @@ end
 function perfMeter.CountCanvasRender(plate, key)
     perfMeter.Count('canvasRenders', 1);
 
-    if (detailEnabled ~= true) then
-        return;
-    end
-
     local canvasKey = tostring(key or 'self');
     local targetMarker = plate ~= nil and plate.targetMarker or nil;
 
@@ -864,6 +904,45 @@ function perfMeter.CountCanvasRender(plate, key)
 
     if (targetMarker ~= nil and targetMarker.enabled == true) then
         perfMeter.Count('canvasTargeted', 1);
+    end
+end
+
+function perfMeter.CountDrawnCanvas(category, textureWidth, textureHeight, worldWidth, worldHeight)
+    local key = tostring(category or 'unknown'):lower();
+    local w = math.max(1, tonumber(textureWidth) or 1024);
+    local h = math.max(1, tonumber(textureHeight) or 512);
+    local pixels = w * h;
+    local worldArea = math.max(0, tonumber(worldWidth) or 0) * math.max(0, tonumber(worldHeight) or 0);
+
+    perfMeter.Count('drawCanvas.count', 1);
+    perfMeter.Count('drawCanvas.pixels', pixels);
+    perfMeter.Count('drawCanvas.worldArea1000', worldArea * 1000);
+
+    if (pixels >= (1024 * 512)) then
+        perfMeter.Count('drawCanvas.large', 1);
+    end
+
+    if (key == 'trust') then
+        perfMeter.Count('drawCanvas.trust', 1);
+        perfMeter.Count('drawCanvas.trustPixels', pixels);
+    elseif (key == 'enemy') then
+        perfMeter.Count('drawCanvas.enemy', 1);
+        perfMeter.Count('drawCanvas.enemyPixels', pixels);
+    elseif (key == 'npc' or key == 'object') then
+        perfMeter.Count('drawCanvas.npcObject', 1);
+        perfMeter.Count('drawCanvas.npcObjectPixels', pixels);
+    elseif (key == 'pc') then
+        perfMeter.Count('drawCanvas.pc', 1);
+        perfMeter.Count('drawCanvas.pcPixels', pixels);
+    elseif (key == 'self') then
+        perfMeter.Count('drawCanvas.self', 1);
+        perfMeter.Count('drawCanvas.selfPixels', pixels);
+    elseif (key == 'pet') then
+        perfMeter.Count('drawCanvas.pet', 1);
+        perfMeter.Count('drawCanvas.petPixels', pixels);
+    else
+        perfMeter.Count('drawCanvas.other', 1);
+        perfMeter.Count('drawCanvas.otherPixels', pixels);
     end
 end
 
@@ -1133,6 +1212,40 @@ function perfMeter.GetSummaryLines()
         tostring(GetCounter('drawn')),
         tostring(GetCounter('clickRects')),
         tostring(GetCounter('canvasRenders'))
+    );
+    lines[#lines + 1] = string.format(
+        'Canvas rebuild detail self=%s enemy=%s trust=%s pc=%s pet=%s npcObject=%s targeted=%s',
+        tostring(GetCounter('canvasSelf')),
+        tostring(GetCounter('canvasEnemy')),
+        tostring(GetCounter('canvasTrust')),
+        tostring(GetCounter('canvasPc')),
+        tostring(GetCounter('canvasPet')),
+        tostring(GetCounter('canvasNpcObject')),
+        tostring(GetCounter('canvasTargeted'))
+    );
+    lines[#lines + 1] = string.format(
+        'Drawn canvases count=%s large=%s pixels=%.1fM worldArea=%.2f',
+        tostring(GetLastCounter('drawCanvas.count')),
+        tostring(GetLastCounter('drawCanvas.large')),
+        (tonumber(GetLastCounter('drawCanvas.pixels')) or 0) / 1000000.0,
+        (tonumber(GetLastCounter('drawCanvas.worldArea1000')) or 0) / 1000.0
+    );
+    lines[#lines + 1] = string.format(
+        'Drawn canvas detail self=%s/%.1fM enemy=%s/%.1fM trust=%s/%.1fM pc=%s/%.1fM npcObject=%s/%.1fM pet=%s/%.1fM other=%s/%.1fM',
+        tostring(GetLastCounter('drawCanvas.self')),
+        (tonumber(GetLastCounter('drawCanvas.selfPixels')) or 0) / 1000000.0,
+        tostring(GetLastCounter('drawCanvas.enemy')),
+        (tonumber(GetLastCounter('drawCanvas.enemyPixels')) or 0) / 1000000.0,
+        tostring(GetLastCounter('drawCanvas.trust')),
+        (tonumber(GetLastCounter('drawCanvas.trustPixels')) or 0) / 1000000.0,
+        tostring(GetLastCounter('drawCanvas.pc')),
+        (tonumber(GetLastCounter('drawCanvas.pcPixels')) or 0) / 1000000.0,
+        tostring(GetLastCounter('drawCanvas.npcObject')),
+        (tonumber(GetLastCounter('drawCanvas.npcObjectPixels')) or 0) / 1000000.0,
+        tostring(GetLastCounter('drawCanvas.pet')),
+        (tonumber(GetLastCounter('drawCanvas.petPixels')) or 0) / 1000000.0,
+        tostring(GetLastCounter('drawCanvas.other')),
+        (tonumber(GetLastCounter('drawCanvas.otherPixels')) or 0) / 1000000.0
     );
 
     if (detailEnabled == true) then

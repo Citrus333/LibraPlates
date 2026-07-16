@@ -624,8 +624,6 @@ local function QueueCachedTrust(trust, cached, targetStateName, layoutStateName,
     end
 
     local queueTimer = perfMeter.BeginDetail('trust.queue');
-    local targetingSettings = targeting.GetSettings();
-
     worldMarkerProbe.QueuePlate({
         targetIndex = trust.index,
         serverId = trust.serverId,
@@ -939,7 +937,6 @@ local function QueueTrust(trust)
     end
 
     local queueTimer = perfMeter.BeginDetail('trust.queue');
-    local targetingSettings = targeting.GetSettings();
     worldMarkerProbe.QueuePlate({
         targetIndex = trust.index,
         serverId = trust.serverId,
@@ -1066,18 +1063,23 @@ function trustPlate.Render()
 
     perfMeter.EndDetail(scanTimer);
     local queued = {};
+    local queuedCount = 0;
 
     for _, trust in ipairs(trusts) do
         queued[tonumber(trust.index) or 0] = true;
+        queuedCount = queuedCount + 1;
         QueueTrust(trust);
     end
 
     for _, trust in ipairs(nearbyTrusts) do
         if (queued[tonumber(trust.index) or 0] ~= true) then
             queued[tonumber(trust.index) or 0] = true;
+            queuedCount = queuedCount + 1;
             QueueTrust(trust);
         end
     end
+
+    perfMeter.SetCounter('trustQueued', queuedCount);
 end
 
 return trustPlate;

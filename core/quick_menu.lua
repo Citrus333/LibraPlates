@@ -1702,7 +1702,7 @@ function quickMenu.OpenForPlate(entry, x, y)
 
     local rawName = tostring(entry.rawName or entry.name or '');
 
-    if (targeting.IsGatheringPointName(name) == true) then
+    if (targeting.IsGatheringPointName(name) == true or targeting.IsGatheringTarget(entry.targetIndex, name) == true) then
         return false;
     end
 

@@ -11,11 +11,47 @@ local debugTargetServerId = 0;
 local debugLines = {};
 local AddDebugLine = nil;
 local GetDuration = nil;
+local TrackStatus = nil;
+local ClearStatus = nil;
 
-local statusOnMessages = T{144, 160, 164, 166, 186, 194, 203, 205, 230, 236, 266, 267, 268, 269, 237, 271, 272, 277, 278, 279, 280, 319, 320, 375, 412, 645, 754, 755, 804};
+local statusOnMessages = T{100, 144, 160, 164, 166, 186, 194, 203, 205, 230, 236, 266, 267, 268, 269, 237, 271, 272, 277, 278, 279, 280, 319, 320, 375, 412, 420, 421, 424, 425, 645, 754, 755, 804};
 local statusOffMessages = T{206, 64, 159, 168, 204, 321, 322, 341, 342, 343, 344, 350, 378, 531, 647, 805, 806};
 local deathMessages = T{6, 20, 97, 113, 406, 605, 646};
 local spellDamageMessages = T{2, 252, 264, 265};
+local statusDurations = {
+    [33] = 180,   -- Haste
+    [34] = 180,   -- Blaze Spikes
+    [35] = 180,   -- Ice Spikes
+    [36] = 300,   -- Blink
+    [37] = 300,   -- Stoneskin
+    [38] = 180,   -- Shock Spikes
+    [39] = 600,   -- Aquaveil
+    [40] = 1800,  -- Protect
+    [41] = 1800,  -- Shell
+    [42] = 90,    -- Regen
+    [43] = 150,   -- Refresh
+    [116] = 180,  -- Phalanx
+};
+local spellToBuff = {
+    [43] = 40, [44] = 40, [45] = 40, [46] = 40, [47] = 40,
+    [48] = 41, [49] = 41, [50] = 41, [51] = 41, [52] = 41,
+    [53] = 36,
+    [54] = 37,
+    [55] = 39,
+    [57] = 33,
+    [108] = 42,
+    [109] = 43,
+    [110] = 42,
+    [111] = 42,
+    [115] = 116,
+    [116] = 116,
+    [125] = 40, [126] = 40, [127] = 40, [128] = 40, [129] = 40,
+    [130] = 41, [131] = 41, [132] = 41, [133] = 41, [134] = 41,
+    [249] = 34,
+    [250] = 35,
+    [251] = 38,
+    [511] = 33,
+};
 
 local LUNAR_CRY_BP_ID = 530;
 local LUNAR_CRY_EFFECT_A = 146;
@@ -67,6 +103,21 @@ local indiEnemyNameToAura = {
     ['indi-slow'] = { spellId = 795, statusId = 566 },
     ['indi-paralysis'] = { spellId = 796, statusId = 567 },
     ['indi-gravity'] = { spellId = 797, statusId = 568 },
+};
+
+local statusNameToBuff = {
+    ['haste'] = 33,
+    ['blaze spikes'] = 34,
+    ['ice spikes'] = 35,
+    ['blink'] = 36,
+    ['stoneskin'] = 37,
+    ['shock spikes'] = 38,
+    ['aquaveil'] = 39,
+    ['protect'] = 40,
+    ['shell'] = 41,
+    ['regen'] = 42,
+    ['refresh'] = 43,
+    ['phalanx'] = 116,
 };
 
 local function ParseActionPacket(e)
@@ -244,6 +295,85 @@ local function StripControlCodes(text)
     return tostring(text or ''):gsub(string.char(0x1E) .. '.', ''):gsub('[%z\1-\31]', '');
 end
 
+local function SafeEntityCall(fallback, fn)
+    local ok, result = pcall(fn);
+
+    if (ok ~= true or result == nil) then
+        return fallback;
+    end
+
+    return result;
+end
+
+local function NormalizeName(text)
+    text = StripControlCodes(text);
+    text = text:gsub('^The%s+', '');
+    text = text:gsub('^the%s+', '');
+    text = text:gsub('^%s+', ''):gsub('%s+$', '');
+    return text:lower();
+end
+
+local function NormalizeStatusName(text)
+    text = StripControlCodes(text);
+    text = text:gsub('_', ' ');
+    text = text:gsub('%s+', ' ');
+    text = text:gsub('^%s+', ''):gsub('%s+$', '');
+    text = text:gsub('%.+$', '');
+    return text:lower();
+end
+
+local function GetServerIdByVisibleName(name)
+    local wanted = NormalizeName(name);
+
+    if (wanted == '') then
+        return 0;
+    end
+
+    local memory = AshitaCore:GetMemoryManager();
+    local entityManager = memory ~= nil and memory:GetEntity() or nil;
+
+    if (entityManager == nil) then
+        return 0;
+    end
+
+    for index = 0, 2303 do
+        local entity = SafeEntityCall(nil, function()
+            return entityManager:GetEntity(index);
+        end);
+        local entityName = entity ~= nil and tostring(entity.Name or '') or '';
+
+        if (entityName ~= '' and NormalizeName(entityName) == wanted) then
+            local serverId = SafeEntityCall(0, function()
+                return entityManager:GetServerId(index);
+            end);
+
+            serverId = tonumber(serverId) or 0;
+
+            if (serverId > 0 and actionRelevance.IsPartyOrAllianceServerId(serverId) ~= true) then
+                return serverId;
+            end
+        end
+    end
+
+    return 0;
+end
+
+local function GetStatusIdByStatusName(name)
+    local normalized = NormalizeStatusName(name);
+
+    if (statusNameToBuff[normalized] ~= nil) then
+        return statusNameToBuff[normalized];
+    end
+
+    for prefix, statusId in pairs(statusNameToBuff) do
+        if (string.find(normalized, prefix, 1, true) ~= nil) then
+            return statusId;
+        end
+    end
+
+    return nil;
+end
+
 local function SetGeoEnemyAuraFromName(name)
     local aura = indiEnemyNameToAura[tostring(name or ''):lower()];
 
@@ -300,6 +430,38 @@ function enemyStatuses.HandleTextIn(e)
         return;
     end
 
+    local gainedName, gainedStatus = message:match('^The%s+(.+)%s+gains the effect of%s+(.+)%.?$');
+    if (gainedName == nil) then
+        gainedName, gainedStatus = message:match('^(.+)%s+gains the effect of%s+(.+)%.?$');
+    end
+
+    if (gainedName ~= nil and gainedStatus ~= nil and TrackStatus ~= nil) then
+        local serverId = GetServerIdByVisibleName(gainedName);
+        local statusId = GetStatusIdByStatusName(gainedStatus);
+
+        if (serverId > 0 and statusId ~= nil) then
+            TrackStatus(serverId, statusId, 300);
+            AddDebugLine('text tracked buff name=' .. tostring(gainedName) .. ' status=' .. tostring(gainedStatus) .. ' id=' .. tostring(statusId));
+            return;
+        end
+    end
+
+    local wearsName, wearsStatus = message:match("^The%s+(.+)'s%s+(.+)%s+effect wears off%.?$");
+    if (wearsName == nil) then
+        wearsName, wearsStatus = message:match("^(.+)'s%s+(.+)%s+effect wears off%.?$");
+    end
+
+    if (wearsName ~= nil and wearsStatus ~= nil and ClearStatus ~= nil) then
+        local serverId = GetServerIdByVisibleName(wearsName);
+        local statusId = GetStatusIdByStatusName(wearsStatus);
+
+        if (serverId > 0 and statusId ~= nil) then
+            ClearStatus(serverId, statusId);
+            AddDebugLine('text cleared buff name=' .. tostring(wearsName) .. ' status=' .. tostring(wearsStatus) .. ' id=' .. tostring(statusId));
+            return;
+        end
+    end
+
     local indiName = message:match('starts casting%s+(Indi%-%S+)%s+on%s+');
 
     if (indiName ~= nil and SetGeoEnemyAuraFromName(indiName) == true) then
@@ -326,7 +488,7 @@ local function GetSelfGeoStatusText()
     return #parts > 0 and table.concat(parts, ',') or 'none';
 end
 
-local function TrackStatus(serverId, statusId, duration)
+TrackStatus = function(serverId, statusId, duration)
     serverId = tonumber(serverId) or 0;
     statusId = tonumber(statusId) or 0;
 
@@ -360,7 +522,7 @@ local function ShouldDebugTarget(serverId)
     return targetServerId == 0 or targetServerId == (tonumber(serverId) or 0);
 end
 
-local function ClearStatus(serverId, statusId)
+ClearStatus = function(serverId, statusId)
     serverId = tonumber(serverId) or 0;
     statusId = tonumber(statusId) or 0;
 
@@ -428,6 +590,70 @@ local function GetSpellStatusByResource(spellId)
     return nil;
 end
 
+local function GetSpellName(spellId)
+    local spell = GetSpellResourceById(spellId);
+
+    if (spell == nil) then
+        return '';
+    end
+
+    return SafeCall('', function()
+        if (type(spell.Name) == 'table') then
+            return spell.Name[1] or spell.Name[0] or spell.Name.en or spell.Name.English or '';
+        end
+
+        return spell.Name or spell.NameSingle or '';
+    end);
+end
+
+local function GetStatusIdBySpellId(spellId)
+    spellId = tonumber(spellId) or 0;
+
+    if (spellToBuff[spellId] ~= nil) then
+        return spellToBuff[spellId];
+    end
+
+    local statusId = GetSpellStatusByResource(spellId) or statusEffects.GetDebuffIdBySpellId(spellId);
+
+    if (statusId ~= nil and tonumber(statusId) > 0) then
+        return statusId;
+    end
+
+    local spellName = string.lower(tostring(GetSpellName(spellId) or ''));
+    spellName = string.gsub(spellName, '_', ' ');
+    spellName = string.gsub(spellName, '%s+', ' ');
+    spellName = string.gsub(spellName, '^%s+', '');
+    spellName = string.gsub(spellName, '%s+$', '');
+
+    if (string.find(spellName, 'protect', 1, true) ~= nil) then
+        return 40;
+    elseif (string.find(spellName, 'shell', 1, true) ~= nil) then
+        return 41;
+    elseif (string.find(spellName, 'haste', 1, true) ~= nil) then
+        return 33;
+    elseif (string.find(spellName, 'refresh', 1, true) ~= nil) then
+        return 43;
+    elseif (string.find(spellName, 'regen', 1, true) ~= nil) then
+        return 42;
+    elseif (spellName == 'blink') then
+        return 36;
+    elseif (spellName == 'stoneskin') then
+        return 37;
+    elseif (spellName == 'aquaveil') then
+        return 39;
+    elseif (string.find(spellName, 'phalanx', 1, true) ~= nil) then
+        return 116;
+    elseif (spellName == 'blaze spikes') then
+        return 34;
+    elseif (spellName == 'ice spikes') then
+        return 35;
+    elseif (spellName == 'shock spikes') then
+        return 38;
+    end
+
+    return nil;
+end
+
 local function GetSpellDurationByResource(spellId)
     local spell = GetSpellResourceById(spellId);
 
@@ -468,7 +694,7 @@ GetDuration = function(spellId)
     if (spellId >= 220 and spellId <= 229) then return 120; end
     if (spellId >= 235 and spellId <= 240) then return 120; end
 
-    return 300;
+    return statusDurations[tonumber(GetStatusIdBySpellId(spellId)) or 0] or 300;
 end
 
 local function HandleActionPacket(packet)
@@ -533,25 +759,34 @@ local function HandleActionPacket(packet)
                     tracked[target.Id][134] = nil;
                     tracked[target.Id][135] = expiry;
                 end
-            elseif (statusOnMessages:contains(message)) then
+            else
                 local statusId = tonumber(action.Param);
+                local inferredSpellStatusId = nil;
 
-                if ((statusId == nil or statusId <= 0) and packet.Type == 4) then
-                    statusId = GetSpellStatusByResource(spellId) or statusEffects.GetDebuffIdBySpellId(spellId);
+                if (packet.Type == 4) then
+                    inferredSpellStatusId = GetStatusIdBySpellId(spellId);
+
+                    if (statusId == nil or statusId <= 0) then
+                        statusId = inferredSpellStatusId;
+                    end
                 end
 
-                TrackStatus(target.Id, statusId, GetDuration(spellId));
-                if (tonumber(target.Id) == GetSelfServerId()) then
-                    RefreshGeoEnemyAura(spellId, statusId);
-                end
-                if (ShouldDebugTarget(target.Id) == true) then
-                    AddDebugLine(
-                        'tracked status target=' .. tostring(target.Id) ..
-                        ' id=' .. tostring(statusId) ..
-                        ' duration=' .. tostring(GetDuration(spellId)) ..
-                        ' isBuff=' .. tostring(statusEffects.IsBuff(statusId)) ..
-                        ' isDebuff=' .. tostring(statusEffects.IsDebuff(statusId))
-                    );
+                if (statusOnMessages:contains(message) or (packet.Type == 4 and inferredSpellStatusId ~= nil and statusEffects.IsBuff(inferredSpellStatusId) == true)) then
+                    statusId = (statusEffects.IsBuff(inferredSpellStatusId) == true) and inferredSpellStatusId or statusId;
+                    TrackStatus(target.Id, statusId, GetDuration(spellId));
+                    if (tonumber(target.Id) == GetSelfServerId()) then
+                        RefreshGeoEnemyAura(spellId, statusId);
+                    end
+                    if (ShouldDebugTarget(target.Id) == true) then
+                        AddDebugLine(
+                            'tracked status target=' .. tostring(target.Id) ..
+                            ' id=' .. tostring(statusId) ..
+                            ' duration=' .. tostring(GetDuration(spellId)) ..
+                            ' isBuff=' .. tostring(statusEffects.IsBuff(statusId)) ..
+                            ' isDebuff=' .. tostring(statusEffects.IsDebuff(statusId)) ..
+                            ' inferred=' .. tostring(inferredSpellStatusId ~= nil)
+                        );
+                    end
                 end
             end
         end
@@ -685,6 +920,34 @@ function enemyStatuses.GetGeoAuraSignature()
     end
 
     return tostring(activeGeoEnemyAura.spellId) .. ':' .. tostring(activeGeoEnemyAura.statusId) .. ':' .. tostring(activeGeoEnemyAura.expiresAt ~= nil and ((tonumber(activeGeoEnemyAura.expiresAt) or 0) > os.time()) or 'aura');
+end
+
+function enemyStatuses.HasActiveStatus(serverId, kind)
+    serverId = tonumber(serverId) or 0;
+
+    if (serverId == 0 or tracked[serverId] == nil) then
+        return false;
+    end
+
+    local now = os.time();
+
+    for statusId, expiresAt in pairs(tracked[serverId]) do
+        local seconds = (tonumber(expiresAt) or 0) - now;
+
+        if (seconds > 0) then
+            if (
+                (kind == 'buff' and statusEffects.IsBuff(statusId)) or
+                (kind == 'debuff' and statusEffects.IsDebuff(statusId)) or
+                (kind ~= 'buff' and kind ~= 'debuff')
+            ) then
+                return true;
+            end
+        else
+            tracked[serverId][statusId] = nil;
+        end
+    end
+
+    return false;
 end
 
 function enemyStatuses.GetActiveStatusRows(serverId, kind)

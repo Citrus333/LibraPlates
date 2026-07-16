@@ -185,6 +185,39 @@ local function IsMobIndex(entityManager, index)
     return ok == true and spawnFlags ~= nil and bit.band(spawnFlags, 0x10) ~= 0;
 end
 
+local function IsActivePartyMemberIndex(index)
+    index = tonumber(index);
+
+    if (index == nil or index == 0) then
+        return false;
+    end
+
+    local party = AshitaCore:GetMemoryManager():GetParty();
+
+    if (party == nil) then
+        return false;
+    end
+
+    for slot = 0, 17 do
+        local active = 0;
+        local memberIndex = 0;
+
+        pcall(function()
+            active = party:GetMemberIsActive(slot);
+        end);
+
+        pcall(function()
+            memberIndex = party:GetMemberTargetIndex(slot);
+        end);
+
+        if (active == 1 and tonumber(memberIndex) == index) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
 local function IsNpcObjectStatusAllowed(status)
     return status == nil or status == 0 or status == 32 or status == 33 or status == 34 or status == 38 or status == 39 or status == 40 or status == 41 or status == 47 or status == 50;
 end
@@ -571,7 +604,7 @@ function entities.GetEnemy(index, allowHidden)
         return nil;
     end
 
-    if (IsMobIndex(entityManager, index) ~= true) then
+    if (IsMobIndex(entityManager, index) ~= true or IsActivePartyMemberIndex(index) == true) then
         return nil;
     end
 
@@ -631,6 +664,7 @@ function entities.GetNearbyEnemies(maxDistance)
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
                 tonumber(index) ~= tonumber(ownPetIndex) and
+                IsActivePartyMemberIndex(index) ~= true and
                 IsMobIndex(entityManager, index) == true and
                 IsHiddenUntilAggroEnemy(ent) ~= true and
                 IsVisibleEntity(entityManager, index, false) == true
@@ -1272,36 +1306,7 @@ local function GetTrustMemberTP(party, slot)
 end
 
 function entities.IsPartyMemberIndex(index)
-    index = tonumber(index);
-
-    if (index == nil or index == 0) then
-        return false;
-    end
-
-    local party = AshitaCore:GetMemoryManager():GetParty();
-
-    if (party == nil) then
-        return false;
-    end
-
-    for slot = 0, 17 do
-        local active = 0;
-        local memberIndex = 0;
-
-        pcall(function()
-            active = party:GetMemberIsActive(slot);
-        end);
-
-        pcall(function()
-            memberIndex = party:GetMemberTargetIndex(slot);
-        end);
-
-        if (active == 1 and tonumber(memberIndex) == index) then
-            return true;
-        end
-    end
-
-    return false;
+    return IsActivePartyMemberIndex(index);
 end
 
 local function BuildPartyMemberIndexSet()

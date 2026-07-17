@@ -1509,10 +1509,17 @@ function entities.GetNearbyPlayers(maxDistance)
     end
 
     for index = 1024, 1791 do
-        if (index ~= selfIndex and IsMobIndex(entityManager, index) ~= true and IsVisibleEntity(entityManager, index, true) == true) then
+        if (
+            index ~= selfIndex and
+            IsMobIndex(entityManager, index) ~= true and
+            IsVisibleEntity(entityManager, index, false) == true and
+            HasLoadedSkeleton(entityManager, index) == true
+        ) then
             local ent = GetEntity(index);
             local isCurrentTargetContext = tonumber(index) == tonumber(targetIndex) or tonumber(index) == tonumber(subTargetIndex);
             local objectCostumePlayer = IsObjectCostumePlayer(entityManager, index, ent);
+
+            local isPartyListed = partyDataByIndex[index] ~= nil;
 
             if (
                 ent ~= nil and
@@ -1523,7 +1530,8 @@ function entities.GetNearbyPlayers(maxDistance)
                 ent.Distance <= maxDistanceSq and
                 objectCostumePlayer ~= true and
                 IsCampaignBattleActor(entityManager, index, ent) ~= true and
-                entities.ShouldHideOtherPlayerPet(index, ent.Name) ~= true
+                entities.ShouldHideOtherPlayerPet(index, ent.Name) ~= true and
+                (isPartyListed == true or trustNames.IsKnownTrustName(ent.Name) ~= true)
             ) then
                 results[#results + 1] = {
                     index = index,
@@ -1572,6 +1580,7 @@ function entities.GetPlayerByIndex(index, maxDistance, partyDataByIndex)
     local subTargetIndex = targeting.GetCurrentSubTargetIndex();
     local isCurrentTargetContext = tonumber(index) == tonumber(targetIndex) or tonumber(index) == tonumber(subTargetIndex);
     local campaignBattleActor = IsCampaignBattleActor(entityManager, index, ent);
+    local partyData = partyDataByIndex ~= nil and partyDataByIndex[index] or GetPartyMemberDataByTargetIndex(index);
 
     if (
         ent == nil or
@@ -1582,7 +1591,8 @@ function entities.GetPlayerByIndex(index, maxDistance, partyDataByIndex)
         ent.Distance > maxDistanceSq or
         IsObjectCostumePlayer(entityManager, index, ent) == true or
         campaignBattleActor == true or
-        entities.ShouldHideOtherPlayerPet(index, ent.Name) == true
+        entities.ShouldHideOtherPlayerPet(index, ent.Name) == true or
+        (partyData == nil and trustNames.IsKnownTrustName(ent.Name) == true)
     ) then
         return nil;
     end
@@ -1596,7 +1606,6 @@ function entities.GetPlayerByIndex(index, maxDistance, partyDataByIndex)
         hpPercent = ent.HPPercent or 100,
     };
 
-    local partyData = partyDataByIndex ~= nil and partyDataByIndex[index] or GetPartyMemberDataByTargetIndex(index);
     if (partyData ~= nil) then
         for key, value in pairs(partyData) do
             result[key] = value;

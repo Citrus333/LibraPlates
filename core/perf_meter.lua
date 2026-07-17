@@ -679,6 +679,23 @@ local function WritePerformanceReport()
         tostring(GetCounter('clickRects')),
         tostring(GetCounter('canvasRenders'))
     ));
+    file:write(string.format(
+        'clickRectsByType=self:%s pc:%s enemy:%s npc:%s object:%s trust:%s pet:%s other:%s\n',
+        tostring(GetCounter('clickRects.self')),
+        tostring(GetCounter('clickRects.pc')),
+        tostring(GetCounter('clickRects.enemy')),
+        tostring(GetCounter('clickRects.npc')),
+        tostring(GetCounter('clickRects.object')),
+        tostring(GetCounter('clickRects.trust')),
+        tostring(GetCounter('clickRects.pet')),
+        tostring(GetCounter('clickRects.other'))
+    ));
+    file:write(string.format(
+        'pcExpensiveWidgets=setting:%s suppressed:%s protected:%s\n',
+        tostring(GetCounter('pc.expensiveSetting')),
+        tostring(GetCounter('pc.expensiveSuppressed')),
+        tostring(GetCounter('pc.expensiveProtected'))
+    ));
     file:write('canvasSizesAll=' .. tostring(GetCanvasSizeBreakdown('')) .. '\n');
     file:write('canvasSizesPc=' .. tostring(GetCanvasSizeBreakdown('pc')) .. '\n');
 

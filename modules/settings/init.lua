@@ -668,6 +668,7 @@ local heldButtonState = {};
 local targetModulePendingReset = nil;
 local maneuverPendingReset = nil;
 LibraPlatesSettingsWidgetsBulkActionPending = LibraPlatesSettingsWidgetsBulkActionPending or nil;
+LibraPlatesSettingsWidgetsBulkActionApplyPending = LibraPlatesSettingsWidgetsBulkActionApplyPending or nil;
 local loadModeDrawn = false;
 local useNativeTopTabs = false;
 
@@ -5848,6 +5849,17 @@ function LibraPlatesSettingsApplyWidgetsBulkAction(enabled)
     end
 end
 
+function LibraPlatesSettingsApplyPendingWidgetsBulkAction()
+    local pendingApply = LibraPlatesSettingsWidgetsBulkActionApplyPending;
+
+    if (pendingApply == nil) then
+        return;
+    end
+
+    LibraPlatesSettingsWidgetsBulkActionApplyPending = nil;
+    LibraPlatesSettingsApplyWidgetsBulkAction(pendingApply == true);
+end
+
 function LibraPlatesSettingsDrawWidgetsBulkActionWarning()
     local pending = LibraPlatesSettingsWidgetsBulkActionPending;
 
@@ -5900,7 +5912,7 @@ function LibraPlatesSettingsDrawWidgetsBulkActionWarning()
         imgui.SameLine();
 
         if (imgui.Button((pending == 'select' and 'Select all' or 'Deselect all') .. '##widgets_bulk_confirm')) then
-            LibraPlatesSettingsApplyWidgetsBulkAction(pending == 'select');
+            LibraPlatesSettingsWidgetsBulkActionApplyPending = pending == 'select';
             LibraPlatesSettingsWidgetsBulkActionPending = nil;
             if (imgui.CloseCurrentPopup ~= nil) then imgui.CloseCurrentPopup(); end
         end
@@ -5913,13 +5925,15 @@ function LibraPlatesSettingsDrawWidgetsBulkActionWarning()
         end
         imgui.SameLine();
         if (ClickText(pending == 'select' and 'Select all' or 'Deselect all', uiAccent) == true) then
-            LibraPlatesSettingsApplyWidgetsBulkAction(pending == 'select');
+            LibraPlatesSettingsWidgetsBulkActionApplyPending = pending == 'select';
             LibraPlatesSettingsWidgetsBulkActionPending = nil;
         end
     end
 end
 
 function DrawPlatesSelector()
+    LibraPlatesSettingsApplyPendingWidgetsBulkAction();
+
     DrawInlineCombo('Entity', entities, selectedEntity, function(entity)
         selectedEntity = entity;
         EnsureSelectedStateAllowed();

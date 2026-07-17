@@ -8,6 +8,7 @@ local GetParty = nil;
 local GetPartySlotByTargetIndex = nil;
 local anonNameColor = { 0x1A / 255, 0x4C / 255, 0x97 / 255, 1.0 };
 local campaignNameColor = { 0xFF / 255, 0x9A / 255, 0x45 / 255, 1.0 };
+local gameMasterNameColor = { 0xC8 / 255, 0x3A / 255, 0x3A / 255, 1.0 };
 
 local function CopyColor(color)
     return {
@@ -383,6 +384,10 @@ function indicators.GetCampaignNameColor()
     return CopyColor(campaignNameColor);
 end
 
+function indicators.GetGameMasterNameColor()
+    return CopyColor(gameMasterNameColor);
+end
+
 function indicators.GetCampaignNameColorHex()
     return 'FF9A45';
 end
@@ -429,6 +434,14 @@ function indicators.GetGameMasterDebugText(targetIndex)
         ' r1=0x' .. string.format('%X', tonumber(r1) or 0) ..
         ' r2=0x' .. string.format('%X', tonumber(r2) or 0) ..
         ' actor20=0x' .. string.format('%X', tonumber(actorMarker) or 0);
+end
+
+function indicators.GetGameMasterIconTextureId(targetIndex)
+    if (indicators.IsGameMaster(targetIndex) ~= true) then
+        return nil;
+    end
+
+    return LoadIcon('gm');
 end
 
 function indicators.GetPartyLeaderIconTextureId(targetIndex)

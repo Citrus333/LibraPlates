@@ -2217,6 +2217,22 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'clickmode' or subcommand == 'clickrects') then
+        local value = tostring(args[3] or 'status'):lower();
+
+        if (value == 'legacy' or value == 'old' or value == 'off') then
+            worldMarkerProbe.SetClickHitMode('legacy');
+        elseif (value == 'ondemand' or value == 'on-demand' or value == 'on_demand' or value == 'new') then
+            worldMarkerProbe.SetClickHitMode('ondemand');
+        elseif (value ~= 'status' and value ~= '') then
+            log.Warn('Usage: /lp clickmode legacy|ondemand|status');
+            return;
+        end
+
+        log.Info('Click hit testing: ' .. worldMarkerProbe.GetClickHitStatusText());
+        return;
+    end
+
     if (subcommand == 'canvasdebug' or subcommand == 'canvascenter') then
         local value = tostring(args[3] or ''):lower();
 
@@ -2616,7 +2632,7 @@ function commands.Handle(e)
             perfMeter.WritePerformanceReport();
             log.Info('Performance report saved.');
             return;
-        elseif (value == 'record') then
+        elseif (value == 'record' or value == 'capture') then
             local recordValue = tostring(args[4] or '60'):lower();
 
             if (recordValue == 'status') then
@@ -2635,7 +2651,7 @@ function commands.Handle(e)
             log.Info('Performance recording started for ' .. tostring(duration) .. ' seconds. Reproduce the freeze; report will save automatically.');
             return;
         elseif (value ~= 'status' and value ~= '') then
-            log.Warn('Usage: /lp perf [on|off|reset|report|record|status] | /lp perf detail [on|off|status] | /lp perf record [seconds|status|cancel]');
+            log.Warn('Usage: /lp perf [on|off|reset|report|record|capture|status] | /lp perf detail [on|off|status] | /lp perf capture [seconds|status|cancel]');
             return;
         end
 

@@ -149,6 +149,12 @@ local lastSelfJobMode = 0;
 local clickSelectTarget = nil;
 worldMarkerProbe._stackScreenOffsetState = {};
 worldMarkerProbe._lastStackSmoothingClock = nil;
+worldMarkerProbe._clickHitMode = 'legacy';
+worldMarkerProbe._lastClickPlates = {};
+worldMarkerProbe._lastClickGetEntityManager = nil;
+worldMarkerProbe._lastClickGetBone = nil;
+worldMarkerProbe._pendingStackRects = {};
+worldMarkerProbe._collectFrameClickRects = true;
 function worldMarkerProbe._HasStackScreenOffset(plate)
     return
         (tonumber(plate ~= nil and plate._stackScreenOffsetX) or 0) ~= 0 or
@@ -521,6 +527,16 @@ local function AddPlateClickRects(targetIndex, targetType, rects, union, metadat
         rects = rects,
         union = union,
     };
+
+    worldMarkerProbe._pendingStackRects[#worldMarkerProbe._pendingStackRects + 1] = entry;
+
+    if (worldMarkerProbe._collectFrameClickRects ~= true) then
+        if (entry.targetType == 'object') then
+            pendingClickRects[#pendingClickRects + 1] = entry;
+        end
+
+        return;
+    end
 
     pendingClickRects[#pendingClickRects + 1] = entry;
 
@@ -1966,13 +1982,30 @@ local function ShouldHardHidePlateByNoGoZone(targetIndex)
         return false;
     end
 
-    for _, entry in ipairs(pendingClickRects or {}) do
+    for _, entry in ipairs(worldMarkerProbe._pendingStackRects or {}) do
         if (tonumber(entry.targetIndex) == index and entry.union ~= nil) then
             return RectIntersectsNoGoZone(entry.union.x1, entry.union.y1, entry.union.x2, entry.union.y2, settings);
         end
     end
 
     return false;
+end
+
+function worldMarkerProbe._ShouldKeepFrameClickRects()
+    if (worldMarkerProbe._clickHitMode ~= 'ondemand') then
+        worldMarkerProbe._clickFrameRectsReason = 'legacy';
+        return true;
+    end
+
+    local settings = targeting.GetSettings();
+
+    if (settings == nil) then
+        worldMarkerProbe._clickFrameRectsReason = 'no-settings';
+        return true;
+    end
+
+    worldMarkerProbe._clickFrameRectsReason = 'nonobject-safety';
+    return true;
 end
 
 local function DrawScreenTextureRect(device, left, top, right, bottom, rect, z)
@@ -3832,7 +3865,7 @@ local function ApplyScreenPlateStacking(drawablePlates)
         plate._stackScreenOffsetY = 0;
     end
 
-    if (settings.plateStackingEnabled ~= true or #pendingClickRects <= 1) then
+    if (settings.plateStackingEnabled ~= true or #worldMarkerProbe._pendingStackRects <= 1) then
         if (settings.plateStackingEnabled ~= true) then
             worldMarkerProbe._stackScreenOffsetState = {};
         end
@@ -3841,7 +3874,7 @@ local function ApplyScreenPlateStacking(drawablePlates)
     end
 
     local entriesByIndex = {};
-    for _, entry in ipairs(pendingClickRects) do
+    for _, entry in ipairs(worldMarkerProbe._pendingStackRects) do
         local targetIndex = tonumber(entry.targetIndex);
         local union = GetStackCollisionUnion(entry);
 
@@ -4579,8 +4612,28 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         pendingSelfClickRect = nil;
         pendingSelfClickRects = nil;
         pendingClickRects = {};
+        worldMarkerProbe._pendingStackRects = {};
 
         local drawablePlates = SortDrawablePlatesForDraw(GetDrawableQueuedPlates());
+        worldMarkerProbe._lastClickPlates = drawablePlates;
+        worldMarkerProbe._lastClickGetEntityManager = getEntityManager;
+        worldMarkerProbe._lastClickGetBone = getBone;
+
+        local keepFrameClickRects = worldMarkerProbe._ShouldKeepFrameClickRects() == true;
+        local settings = targeting.GetSettings();
+        local needsFrameBounds = settings ~= nil and (
+            settings.plateStackingEnabled == true or
+            settings.plateClickNoGoZonesMask == true
+        );
+        worldMarkerProbe._collectFrameClickRects = keepFrameClickRects;
+
+        if (keepFrameClickRects ~= true and needsFrameBounds ~= true) then
+            clickRects = {};
+            selfClickRect = nil;
+            selfClickRects = nil;
+            worldMarkerProbe._collectFrameClickRects = true;
+            return;
+        end
 
         for _, plate in ipairs(drawablePlates) do
             if (plate.worldMarker ~= nil) then
@@ -4593,8 +4646,9 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         ApplyScreenPlateStacking(drawablePlates);
 
         clickRects = pendingClickRects;
-        selfClickRect = pendingSelfClickRect;
-        selfClickRects = pendingSelfClickRects;
+        selfClickRect = keepFrameClickRects == true and pendingSelfClickRect or nil;
+        selfClickRects = keepFrameClickRects == true and pendingSelfClickRects or nil;
+        worldMarkerProbe._collectFrameClickRects = true;
 
         if worldMarkerProbe.ApplyMouseSnap ~= nil then
             worldMarkerProbe.ApplyMouseSnap();
@@ -4609,6 +4663,9 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
 
     lastDrawCount = 0;
     local drawablePlates = SortDrawablePlatesForDraw(GetDrawableQueuedPlates());
+    worldMarkerProbe._lastClickPlates = drawablePlates;
+    worldMarkerProbe._lastClickGetEntityManager = getEntityManager;
+    worldMarkerProbe._lastClickGetBone = getBone;
 
     for _, plate in ipairs(drawablePlates) do
         local ok, err = pcall(function ()
@@ -4719,8 +4776,8 @@ function worldMarkerProbe.HandleSelfClick(selectTarget)
     return false;
 end
 
-local function IsPointInSelfClickRect(x, y)
-    if (selfClickRect == nil) then
+function worldMarkerProbe._IsPointInSelfClickRectData(x, y, clickRect, clickRectList)
+    if (clickRect == nil) then
         return false;
     end
 
@@ -4731,7 +4788,7 @@ local function IsPointInSelfClickRect(x, y)
         return false;
     end
 
-    local rects = selfClickRects or { selfClickRect };
+    local rects = clickRectList or { clickRect };
 
     for _, rect in ipairs(rects) do
         if (
@@ -4756,7 +4813,7 @@ local function IsPointInSelfClickRect(x, y)
     );
 end
 
-local function FindClickRectAt(x, y)
+function worldMarkerProbe._FindClickRectInList(rectList, x, y)
     local mouseX = tonumber(x);
     local mouseY = tonumber(y);
 
@@ -4764,8 +4821,8 @@ local function FindClickRectAt(x, y)
         return nil;
     end
 
-    for i = #clickRects, 1, -1 do
-        local entry = clickRects[i];
+    for i = #(rectList or {}), 1, -1 do
+        local entry = rectList[i];
 
         if (entry.clickEnabled ~= false) then
             for _, rect in ipairs(entry.rects or {}) do
@@ -4782,6 +4839,75 @@ local function FindClickRectAt(x, y)
     end
 
     return nil;
+end
+
+local function IsPointInSelfClickRect(x, y)
+    return worldMarkerProbe._IsPointInSelfClickRectData(x, y, selfClickRect, selfClickRects);
+end
+
+local function FindClickRectAt(x, y)
+    return worldMarkerProbe._FindClickRectInList(clickRects, x, y);
+end
+
+function worldMarkerProbe._BuildOnDemandClickRects()
+    if (worldMarkerProbe._clickHitMode ~= 'ondemand' or worldMarkerProbe._ShouldKeepFrameClickRects() == true) then
+        return nil, nil, nil;
+    end
+
+    if (worldMarkerProbe._lastClickPlates == nil or #worldMarkerProbe._lastClickPlates == 0 or worldMarkerProbe._lastClickGetEntityManager == nil or worldMarkerProbe._lastClickGetBone == nil) then
+        return nil, nil, nil;
+    end
+
+    local entityManager = worldMarkerProbe._lastClickGetEntityManager();
+    local device = d3d8.get_device();
+
+    if (entityManager == nil or device == nil) then
+        return nil, nil, nil;
+    end
+
+    local previousPendingClickRects = pendingClickRects;
+    local previousPendingSelfClickRect = pendingSelfClickRect;
+    local previousPendingSelfClickRects = pendingSelfClickRects;
+    local previousPendingStackRects = worldMarkerProbe._pendingStackRects;
+    local previousCollectFrameClickRects = worldMarkerProbe._collectFrameClickRects;
+
+    pendingClickRects = {};
+    pendingSelfClickRect = nil;
+    pendingSelfClickRects = nil;
+    worldMarkerProbe._pendingStackRects = {};
+    worldMarkerProbe._collectFrameClickRects = true;
+
+    for _, plate in ipairs(worldMarkerProbe._lastClickPlates) do
+        if (plate.worldMarker ~= nil) then
+            pcall(function ()
+                DrawOne(plate, entityManager, worldMarkerProbe._lastClickGetBone, device, true);
+            end);
+        end
+    end
+
+    local builtClickRects = pendingClickRects;
+    local builtSelfClickRect = pendingSelfClickRect;
+    local builtSelfClickRects = pendingSelfClickRects;
+
+    pendingClickRects = previousPendingClickRects;
+    pendingSelfClickRect = previousPendingSelfClickRect;
+    pendingSelfClickRects = previousPendingSelfClickRects;
+    worldMarkerProbe._pendingStackRects = previousPendingStackRects;
+    worldMarkerProbe._collectFrameClickRects = previousCollectFrameClickRects;
+
+    return builtClickRects or {}, builtSelfClickRect, builtSelfClickRects;
+end
+
+function worldMarkerProbe._FindClickRectOnDemandAt(x, y)
+    local rects, builtSelfClickRect, builtSelfClickRects = worldMarkerProbe._BuildOnDemandClickRects();
+
+    if (rects == nil) then
+        return nil;
+    end
+
+    local entry, rect = worldMarkerProbe._FindClickRectInList(rects, x, y);
+
+    return entry, rect, builtSelfClickRect, builtSelfClickRects;
 end
 
 local function IsImguiCapturingMouse()
@@ -5134,15 +5260,24 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
     end
 
     local entry = FindClickRectAt(e.x, e.y);
+    worldMarkerProbe._onDemandSelfClickRect = nil;
+    worldMarkerProbe._onDemandSelfClickRects = nil;
 
-    if (entry == nil and IsPointInSelfClickRect(e.x, e.y) == true) then
+    if (entry == nil and worldMarkerProbe._clickHitMode == 'ondemand') then
+        entry, _, worldMarkerProbe._onDemandSelfClickRect, worldMarkerProbe._onDemandSelfClickRects = worldMarkerProbe._FindClickRectOnDemandAt(e.x, e.y);
+    end
+
+    worldMarkerProbe._fallbackSelfClickRect = worldMarkerProbe._onDemandSelfClickRect or selfClickRect;
+    worldMarkerProbe._fallbackSelfClickRects = worldMarkerProbe._onDemandSelfClickRects or selfClickRects;
+
+    if (entry == nil and worldMarkerProbe._IsPointInSelfClickRectData(e.x, e.y, worldMarkerProbe._fallbackSelfClickRect, worldMarkerProbe._fallbackSelfClickRects) == true) then
         entry = {
-            targetIndex = selfClickRect.targetIndex,
+            targetIndex = worldMarkerProbe._fallbackSelfClickRect.targetIndex,
             targetType = 'self',
-            serverId = selfClickRect.serverId,
-            name = selfClickRect.name,
-            rawName = selfClickRect.rawName,
-            layoutStateName = selfClickRect.layoutStateName,
+            serverId = worldMarkerProbe._fallbackSelfClickRect.serverId,
+            name = worldMarkerProbe._fallbackSelfClickRect.name,
+            rawName = worldMarkerProbe._fallbackSelfClickRect.rawName,
+            layoutStateName = worldMarkerProbe._fallbackSelfClickRect.layoutStateName,
         };
     end
 
@@ -5349,6 +5484,36 @@ function worldMarkerProbe.GetClickBordersVisible()
     return clickDebugVisible == true;
 end
 
+function worldMarkerProbe.SetClickHitMode(mode)
+    local value = tostring(mode or ''):lower();
+
+    if (value == 'ondemand' or value == 'on-demand' or value == 'on_demand') then
+        worldMarkerProbe._clickHitMode = 'ondemand';
+    else
+        worldMarkerProbe._clickHitMode = 'legacy';
+    end
+
+    clickRects = {};
+    selfClickRect = nil;
+    selfClickRects = nil;
+    lastClickStatus = 'clickmode=' .. tostring(worldMarkerProbe._clickHitMode);
+end
+
+function worldMarkerProbe.GetClickHitMode()
+    return worldMarkerProbe._clickHitMode;
+end
+
+function worldMarkerProbe.GetClickHitStatusText()
+    local frameRects = worldMarkerProbe._ShouldKeepFrameClickRects() == true;
+
+    return
+        'clickmode=' .. tostring(worldMarkerProbe._clickHitMode) ..
+        ' frameRects=' .. tostring(frameRects) ..
+        ' reason=' .. tostring(worldMarkerProbe._clickFrameRectsReason or 'unknown') ..
+        ' clickplates=' .. tostring(clickRects ~= nil and #clickRects or 0) ..
+        ' candidates=' .. tostring(worldMarkerProbe._lastClickPlates ~= nil and #worldMarkerProbe._lastClickPlates or 0);
+end
+
 function worldMarkerProbe.DrawRawClickDebug()
     if (clickDebugEnabled ~= true or clickDebugVisible ~= true or imguiApi == nil) then
         return;
@@ -5403,6 +5568,8 @@ function worldMarkerProbe.GetStatusText()
         ' clickrect=' .. tostring(selfClickRect ~= nil) ..
         ' clickrects=' .. tostring(selfClickRects ~= nil and #selfClickRects or 0) ..
         ' clickplates=' .. tostring(clickRects ~= nil and #clickRects or 0) ..
+        ' clickmode=' .. tostring(worldMarkerProbe._clickHitMode) ..
+        ' frameclick=' .. tostring(worldMarkerProbe._ShouldKeepFrameClickRects()) ..
         ' clickdebug=' .. tostring(clickDebugEnabled) ..
         ' clickvisible=' .. tostring(clickDebugVisible) ..
         ' clickver=' .. tostring(clickVersion) ..
@@ -5411,10 +5578,25 @@ function worldMarkerProbe.GetStatusText()
 end
 
 function worldMarkerProbe.GetPerfStats()
+    local byType = {};
+
+    for _, entry in ipairs(clickRects or {}) do
+        local targetType = tostring(entry ~= nil and entry.targetType or 'unknown');
+        byType[targetType] = (tonumber(byType[targetType]) or 0) + 1;
+    end
+
     return {
         queued = tonumber(lastQueuedCount) or 0,
         drawn = tonumber(lastDrawCount) or 0,
         clickRects = clickRects ~= nil and #clickRects or 0,
+        clickRectsSelf = tonumber(byType.self) or 0,
+        clickRectsPc = tonumber(byType.pc) or 0,
+        clickRectsEnemy = tonumber(byType.enemy) or 0,
+        clickRectsNpc = tonumber(byType.npc) or 0,
+        clickRectsObject = tonumber(byType.object) or 0,
+        clickRectsTrust = tonumber(byType.trust) or 0,
+        clickRectsPet = tonumber(byType.pet) or 0,
+        clickRectsOther = tonumber(byType.other) or tonumber(byType.unknown) or 0,
     };
 end
 

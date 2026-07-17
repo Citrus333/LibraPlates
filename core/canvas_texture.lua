@@ -1252,7 +1252,7 @@ local function NextTextureBucket(value)
     return math.ceil(wanted / bucket) * bucket;
 end
 
-local function BuildContentCrop(rects, fullWidth, fullHeight)
+local function BuildContentCrop(rects, fullWidth, fullHeight, plate)
     fullWidth = math.max(1, tonumber(fullWidth) or 1024);
     fullHeight = math.max(1, tonumber(fullHeight) or 512);
 
@@ -1288,7 +1288,7 @@ local function BuildContentCrop(rects, fullWidth, fullHeight)
         };
     end
 
-    local padding = 28;
+    local padding = math.max(0, tonumber(plate ~= nil and plate.cropPadding) or 28);
     minX = math.max(0, math.floor(minX - padding));
     minY = math.max(0, math.floor(minY - padding));
     maxX = math.min(fullWidth, math.ceil(maxX + padding));
@@ -2325,13 +2325,15 @@ function canvasTexture.GetElementRects(plate)
 
     for _, icon in ipairs(plate.icons or {}) do
         local iconSize = tonumber(icon.size) or 16;
+        local iconW = tonumber(icon.width) or iconSize;
+        local iconH = tonumber(icon.height) or iconSize;
 
         AddRect(
             rects,
-            centerX - (iconSize * 0.5) + (tonumber(icon.offsetX) or 0),
-            centerY - (iconSize * 0.5) + (tonumber(icon.offsetY) or 0),
-            iconSize,
-            iconSize,
+            centerX - (iconW * 0.5) + (tonumber(icon.offsetX) or 0),
+            centerY - (iconH * 0.5) + (tonumber(icon.offsetY) or 0),
+            iconW,
+            iconH,
             4,
             icon.kind or 'icon',
             icon
@@ -2715,7 +2717,7 @@ function canvasTexture.Render(plate, key)
             fullHeight = fullHeight,
         };
     else
-        crop = BuildContentCrop(elementRects, fullWidth, fullHeight);
+        crop = BuildContentCrop(elementRects, fullWidth, fullHeight, plate);
     end
     width = crop.width;
     height = crop.height;
@@ -2854,8 +2856,10 @@ function canvasTexture.Render(plate, key)
 
             for _, icon in ipairs(plate.icons or {}) do
                 local iconSize = tonumber(icon.size) or 16;
-                local iconX = centerX - (iconSize * 0.5) + (tonumber(icon.offsetX) or 0);
-                local iconY = centerY - (iconSize * 0.5) + (tonumber(icon.offsetY) or 0);
+                local iconW = tonumber(icon.width) or iconSize;
+                local iconH = tonumber(icon.height) or iconSize;
+                local iconX = centerX - (iconW * 0.5) + (tonumber(icon.offsetX) or 0);
+                local iconY = centerY - (iconH * 0.5) + (tonumber(icon.offsetY) or 0);
                 local iconKind = tostring(icon.kind or 'icon');
 
                 iconOccurrences[iconKind] = (iconOccurrences[iconKind] or 0) + 1;
@@ -2865,7 +2869,9 @@ function canvasTexture.Render(plate, key)
                 if (iconRect ~= nil) then
                     iconX = tonumber(iconRect.drawX1) or iconX;
                     iconY = tonumber(iconRect.drawY1) or iconY;
-                    iconSize = math.max(1, (tonumber(iconRect.drawX2) or (iconX + iconSize)) - iconX);
+                    iconW = math.max(1, (tonumber(iconRect.drawX2) or (iconX + iconW)) - iconX);
+                    iconH = math.max(1, (tonumber(iconRect.drawY2) or (iconY + iconH)) - iconY);
+                    iconSize = math.max(iconW, iconH);
                 end
 
                 local iconBackgroundWarningColor = GetTimerWarningColor(icon, 'iconBackground');
@@ -2905,8 +2911,8 @@ function canvasTexture.Render(plate, key)
                     icon.textureId,
                     iconX,
                     iconY,
-                    iconSize,
-                    iconSize,
+                    iconW,
+                    iconH,
                     ColorToD3D(iconTint, { 1.0, 1.0, 1.0, 1.0 })
                 );
 

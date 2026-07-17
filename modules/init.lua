@@ -445,6 +445,14 @@ function modules.DrawWorldMarker()
         perfMeter.SetCounter('queued', stats.queued);
         perfMeter.SetCounter('drawn', stats.drawn);
         perfMeter.SetCounter('clickRects', stats.clickRects);
+        perfMeter.SetCounter('clickRects.self', stats.clickRectsSelf);
+        perfMeter.SetCounter('clickRects.pc', stats.clickRectsPc);
+        perfMeter.SetCounter('clickRects.enemy', stats.clickRectsEnemy);
+        perfMeter.SetCounter('clickRects.npc', stats.clickRectsNpc);
+        perfMeter.SetCounter('clickRects.object', stats.clickRectsObject);
+        perfMeter.SetCounter('clickRects.trust', stats.clickRectsTrust);
+        perfMeter.SetCounter('clickRects.pet', stats.clickRectsPet);
+        perfMeter.SetCounter('clickRects.other', stats.clickRectsOther);
     end
 
     if (ok ~= true) then

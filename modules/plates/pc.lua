@@ -57,7 +57,7 @@ local scanCache = {
     range = nil,
     players = nil,
 };
-local idleScanCacheSeconds = 0.20;
+local idleScanCacheSeconds = 0.50;
 local idleDirectDynamicCacheSeconds = 0.35;
 local idleDirectStaticCacheSeconds = 2.00;
 local pcIdleCanvasBuildsThisFrame = 0;
@@ -337,6 +337,8 @@ local function AddIcon(icons, settings, textureId, defaultX, defaultY, kind, tin
         kind = kind,
         textureId = textureId,
         size = tonumber(settings.iconSize) or 16,
+        width = tonumber(settings.iconWidth),
+        height = tonumber(settings.iconHeight),
         offsetX = tonumber(settings.offsetX) or defaultX,
         offsetY = tonumber(settings.offsetY) or defaultY,
         anchorTo = settings.anchorTo,
@@ -886,7 +888,9 @@ local function BuildPcPlateData(context)
     local playerBlacklist = require('core.player_blacklist');
     local streamerNames = require('core.streamer_names');
 
-    if (targetingSettings.overwriteNativeNameColors == false) then
+    if (playerIndicators.IsGameMaster(context.player.index) == true) then
+        nameColor = playerIndicators.GetGameMasterNameColor();
+    elseif (targetingSettings.overwriteNativeNameColors == false) then
         if (playerIndicators.HasAnonNameColor(context.player.index) == true) then
             nameColor = playerIndicators.GetAnonNameColor();
         else
@@ -1081,6 +1085,13 @@ local function QueuePlayer(player)
     local isProtectedPlate = isPartyPlayer == true or isTargetContext == true;
 
     local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isProtectedPlate);
+    perfMeter.SetCounter('pc.expensiveSetting', suppressExpensiveWorldWidgets == true and 1 or 0);
+    if (isProtectedPlate == true) then
+        perfMeter.Count('pc.expensiveProtected', 1);
+    end
+    if (suppressExpensiveWorldWidgets == true and isProtectedPlate ~= true) then
+        perfMeter.Count('pc.expensiveSuppressed', 1);
+    end
     local useTargetOverlay = isTargetContext == true;
     local layoutStateName = (isTacticalPlayer == true or isTargetContext == true) and 'Combat' or 'Idle';
     local targetModuleStateName = (isTacticalPlayer == true or isTargetContext == true) and 'Combat' or layoutStateName;
@@ -1110,21 +1121,10 @@ local function QueuePlayer(player)
     local tpValue = ClampTp(player.tp);
 
     local earlyDistanceSettings = nil;
-    local canUseFreshIdleCache = true;
+    local canUseFreshIdleCache = false;
 
     if (targetStateName == 'Idle' and useTargetOverlay ~= true and state.GetConfigOpen() ~= true) then
-        earlyDistanceSettings = state.GetWidgetSettings('PC', layoutStateName, 'Distance', distanceDefaults);
-
-        if (WidgetLoads(earlyDistanceSettings, 'Distance') == true) then
-            canUseFreshIdleCache = false;
-        end
-
-        local earlyHpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'HP Bar', barDefaults);
-
-        if (WidgetLoads(earlyHpBarSettings, 'HP Bar') == true and canUseLiveResourceBarSettings(earlyHpBarSettings) ~= true) then
-            canUseFreshIdleCache = false;
-        end
-
+        canUseFreshIdleCache = true;
     end
 
     local canUseTacticalCacheWindow = isPartyPlayer == true and isTargetContext ~= true;
@@ -1261,9 +1261,10 @@ local function QueuePlayer(player)
     local starsIconTextureId = nil;
     local levelSyncIconTextureId = nil;
     local newAdventurerIconTextureId = nil;
+    local gameMasterIconTextureId = nil;
     local allianceLeaderIconTextureId = nil;
     local partyLeaderIconTextureId = nil;
-    local playerGameModeText = gameMode.Resolve(player.index, false);
+    local playerGameModeText = suppressExpensiveWorldWidgets ~= true and gameMode.Resolve(player.index, false) or nil;
     local playerAnonNameColor = playerIndicators.HasAnonNameColor(player.index) == true;
     local isGameMaster = playerIndicators.IsGameMaster(player.index) == true;
 
@@ -1301,6 +1302,22 @@ local function QueuePlayer(player)
     if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(starsIconSettings, 'Stars icon') == true) then
         starsIconTextureId = playerIndicators.GetStarsIconTextureId(player.index);
         AddIcon(icons, starsIconSettings, starsIconTextureId, -48, -54, 'starsIcon');
+    end
+
+    if (isGameMaster == true) then
+        gameMasterIconTextureId = playerIndicators.GetGameMasterIconTextureId(player.index);
+        AddIcon(icons, {
+            enabled = true,
+            iconSize = 64,
+            iconWidth = 128,
+            iconHeight = 64,
+            offsetX = -112,
+            offsetY = -48,
+            anchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
+            anchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+            anchorCollapse = nameSettings.anchorCollapse,
+            anchorSpacing = nameSettings.anchorSpacing,
+        }, gameMasterIconTextureId, -112, -48, 'gameMasterIcon');
     end
 
     if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(levelSyncIconSettings, 'Level sync icon') == true and partyStatuses.HasLevelSyncStatus(player.serverId) == true) then
@@ -1426,19 +1443,20 @@ local function QueuePlayer(player)
             'hasTp=' .. (hasTp == true and '1' or '0'),
             'tpValue=' .. tostring(tpValue or ''),
             'distance=' .. tostring(distanceText or ''),
-            'game=' .. tostring(gameModeIconTextureId or ''),
-            'linkshell=' .. tostring(linkshellIconTextureId or ''),
-            'linkshellTint=' .. ColorKey(linkshellIconTint),
-            'bazaar=' .. tostring(bazaarIconTextureId or ''),
-            'away=' .. tostring(awayIconTextureId or ''),
-            'disconnect=' .. tostring(disconnectIconTextureId or ''),
-            'stars=' .. tostring(starsIconTextureId or ''),
+            suppressExpensiveWorldWidgets == true and 'expensiveWorldWidgets=suppressed' or ('game=' .. tostring(gameModeIconTextureId or '')),
+            suppressExpensiveWorldWidgets == true and 'linkshell=suppressed' or ('linkshell=' .. tostring(linkshellIconTextureId or '')),
+            suppressExpensiveWorldWidgets == true and 'linkshellTint=suppressed' or ('linkshellTint=' .. ColorKey(linkshellTint)),
+            suppressExpensiveWorldWidgets == true and 'bazaar=suppressed' or ('bazaar=' .. tostring(bazaarIconTextureId or '')),
+            suppressExpensiveWorldWidgets == true and 'away=suppressed' or ('away=' .. tostring(awayIconTextureId or '')),
+            suppressExpensiveWorldWidgets == true and 'disconnect=suppressed' or ('disconnect=' .. tostring(disconnectIconTextureId or '')),
+            suppressExpensiveWorldWidgets == true and 'stars=suppressed' or ('stars=' .. tostring(starsIconTextureId or '')),
+            'gmIcon=' .. tostring(gameMasterIconTextureId or ''),
             'lvsync=' .. tostring(levelSyncIconTextureId or ''),
-            'new=' .. tostring(newAdventurerIconTextureId or ''),
+            suppressExpensiveWorldWidgets == true and 'new=suppressed' or ('new=' .. tostring(newAdventurerIconTextureId or '')),
             'gm=' .. (isGameMaster == true and '1' or '0'),
             'aoe=' .. (isPartyPlayer == true and aoeRangeSettings.enabled == true and aoeNameHighlight.GetSignature(player.index, 'pc') or 'aoe-name:0'),
-            'buffs=' .. statusRowsSignature(buffRows, buffsSettings),
-            'debuffs=' .. statusRowsSignature(debuffRows, debuffsSettings),
+            suppressExpensiveWorldWidgets == true and 'buffs=suppressed' or ('buffs=' .. statusRowsSignature(buffRows, buffsSettings)),
+            suppressExpensiveWorldWidgets == true and 'debuffs=suppressed' or ('debuffs=' .. statusRowsSignature(debuffRows, debuffsSettings)),
             'aoeSettings=' .. SettingKey(aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'highlightFile', 'highlightClickable', 'highlightAutoPlace', 'highlightAutoPlaceBy', 'highlightSpacing', 'highlightOffsetX', 'highlightOffsetY', 'highlightWidth', 'highlightHeight', 'highlightColor', 'highlightOpacity', 'iconEnabled', 'iconFile', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
@@ -1446,15 +1464,15 @@ local function QueuePlayer(player)
             'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
             'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
             'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
-            'gameModeIcon:' .. SettingKey(gameModeIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-            'linkshellIcon:' .. SettingKey(linkshellIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-            'bazaarIcon:' .. SettingKey(bazaarIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-            'awayIcon:' .. SettingKey(awayIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-            'disconnectIcon:' .. SettingKey(disconnectIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-            'anonIcon:' .. SettingKey(anonIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-            'starsIcon:' .. SettingKey(starsIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            suppressExpensiveWorldWidgets == true and 'gameModeIcon:suppressed' or ('gameModeIcon:' .. SettingKey(gameModeIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
+            suppressExpensiveWorldWidgets == true and 'linkshellIcon:suppressed' or ('linkshellIcon:' .. SettingKey(linkshellIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
+            suppressExpensiveWorldWidgets == true and 'bazaarIcon:suppressed' or ('bazaarIcon:' .. SettingKey(bazaarIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
+            suppressExpensiveWorldWidgets == true and 'awayIcon:suppressed' or ('awayIcon:' .. SettingKey(awayIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
+            suppressExpensiveWorldWidgets == true and 'disconnectIcon:suppressed' or ('disconnectIcon:' .. SettingKey(disconnectIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
+            suppressExpensiveWorldWidgets == true and 'anonIcon:suppressed' or ('anonIcon:' .. SettingKey(anonIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
+            suppressExpensiveWorldWidgets == true and 'starsIcon:suppressed' or ('starsIcon:' .. SettingKey(starsIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
             'levelSyncIcon:' .. SettingKey(levelSyncIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-            'newAdventurerIcon:' .. SettingKey(newAdventurerIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+            suppressExpensiveWorldWidgets == true and 'newAdventurerIcon:suppressed' or ('newAdventurerIcon:' .. SettingKey(newAdventurerIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
             'partyLeaderIcon:' .. SettingKey(partyLeaderIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
             'allianceLeaderIcon:' .. SettingKey(allianceLeaderIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
             'icons=' .. tostring(#icons),
@@ -1534,7 +1552,7 @@ local function QueuePlayer(player)
         targetMarker = targetMarker,
         gameModeText = playerGameModeText,
         icons = icons,
-        anchorFallbackDefinitions = {
+        anchorFallbackDefinitions = suppressExpensiveWorldWidgets == true and {} or {
             { kind = 'gameModeIcon', settings = gameModeIconSettings, defaults = gameModeIconDefaults, defaultX = -72, defaultY = -54 },
             { kind = 'linkshellIcon', settings = linkshellIconSettings, defaults = linkshellIconDefaults, defaultX = 48, defaultY = -54 },
             { kind = 'bazaarIcon', settings = bazaarIconSettings, defaults = bazaarIconDefaults, defaultX = 72, defaultY = -54 },
@@ -1552,6 +1570,9 @@ local function QueuePlayer(player)
         globalSettings = globalSettings,
         aoeRangeSettings = aoeRangeSettings,
     });
+    if (cacheEligible == true and isProtectedPlate ~= true and plateData.aoeNameActive ~= true) then
+        plateData.cropPadding = 12;
+    end
     if (cacheEligible == true) then
         if (liveHpBarStyle.enabled == true) then
             plateData.hpBar = { enabled = false };
@@ -1574,7 +1595,7 @@ local function QueuePlayer(player)
         AddTextBadge(plateData, 'level', player.mainJobLevel, levelSettings, levelDefaults, globalSettings);
     end
 
-    if (isGameMaster == true) then
+    if (isGameMaster == true and gameMasterIconTextureId == nil) then
         AddTextBadge(plateData, 'gm', 'GM', {
             enabled = true,
             textSize = 11,
@@ -1818,7 +1839,7 @@ function pcPlate.Render()
         canUseScanCache == true and
         scanCache.players ~= nil and
         scanCache.range == range and
-        (now - (tonumber(scanCache.clock) or 0)) < adaptivePerformance.GetWorldRefreshSeconds('pc')
+        (now - (tonumber(scanCache.clock) or 0)) < math.min(adaptivePerformance.GetWorldRefreshSeconds('pc'), idleScanCacheSeconds)
     ) then
         perfMeter.Count('pc.scan.cacheHit', 1);
         players = scanCache.players;

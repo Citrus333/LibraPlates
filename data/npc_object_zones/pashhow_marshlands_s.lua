@@ -72,6 +72,12 @@ return {
             ["note"] = "A companion campaign treasure chest dropped onto tactical overworld battlefields. Opening this repository distributes elite armor supplies, munitions, and defensive tactical enhancements.",
             ["type"] = "Loot Container",
         },
+        ["Campaign Coffer"] = {
+            ["_source"] = "item",
+            ["icon"] = "TreasureCasket.png",
+            ["note"] = "A tactical campaign prize repository manifest across past-timeline conflict fields. Breaking its seal rewards your participating alliance with specialized armor provisions and items components.",
+            ["type"] = "Loot Container",
+        },
         ["Corroded Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",

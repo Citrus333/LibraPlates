@@ -4208,8 +4208,10 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         end
 
         if (updateClickOnly == true) then
+            local hasCanvasClickRects = style.plateClickRects ~= nil;
+
             if (SetSelfClickRectsFromCanvas(device, targetIndex, plateX, plateY, plateZ, style, plateWorldWidth, plateWorldHeight) ~= true) then
-                if (plate.isSelf == true) then
+                if (plate.isSelf == true and hasCanvasClickRects ~= true) then
                     SetSelfClickRectFromBillboard(device, targetIndex, plateX, plateY, plateZ, plateWorldWidth, plateWorldHeight);
                 end
             end

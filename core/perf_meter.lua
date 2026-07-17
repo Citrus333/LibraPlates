@@ -25,9 +25,13 @@ local recordingPeakFrameGapAt = 0;
 local eventTrail = {};
 local maxEventTrail = 80;
 local GetCounter = nil;
+local IsTimingRowVisible = nil;
 
 local displayOrder = {
+    'present.frame',
     'total',
+    'beginscene.frame',
+    'endscene.frame',
     'settings',
     'targeting',
     'native',
@@ -89,21 +93,24 @@ local detailOrder = {
 };
 
 local labels = {
+    ['present.frame'] = 'Present event',
     ['total'] = 'Total',
+    ['beginscene.frame'] = 'BeginScene event',
+    ['endscene.frame'] = 'EndScene event',
     ['settings'] = 'Settings',
     ['targeting'] = 'Targeting',
     ['native'] = 'Native hide',
     ['plates.total'] = 'Plates',
-    ['plates.self'] = 'Plate Self',
-    ['plates.enemy'] = 'Plate Enemy',
-    ['plates.pc'] = 'Plate PC',
-    ['plates.trust'] = 'Plate Trust',
-    ['plates.pet'] = 'Plate Pet',
-    ['plates.npc'] = 'Plate NPC/Object',
+    ['plates.self'] = 'Self module',
+    ['plates.enemy'] = 'Enemy module',
+    ['plates.pc'] = 'PC module',
+    ['plates.trust'] = 'Trust module',
+    ['plates.pet'] = 'Pet module',
+    ['plates.npc'] = 'NPC/Object module',
     ['world.draw'] = 'World draw',
-    ['target.overlay'] = 'Target overlay',
-    ['peer'] = 'Peer',
-    ['quick.menu'] = 'Quick menu',
+    ['target.overlay'] = 'Target overlay module',
+    ['peer'] = 'Peer module',
+    ['quick.menu'] = 'Quick menu module',
     ['event.command'] = 'Command event',
     ['event.textIn'] = 'Text event',
     ['event.packetIn'] = 'Packet in event',
@@ -248,6 +255,10 @@ local function AddEvent(name, details)
 end
 
 local function AddLine(lines, name)
+    if (IsTimingRowVisible ~= nil and IsTimingRowVisible(name) ~= true) then
+        return;
+    end
+
     local entry = samples[name];
 
     if (entry == nil) then
@@ -261,6 +272,116 @@ local function AddLine(lines, name)
         FormatMs(entry.peak),
         FormatMs(entry.last)
     );
+end
+
+local function HasCounterValue(...)
+    local keys = { ... };
+
+    for _, key in ipairs(keys) do
+        if ((tonumber(GetCounter(key)) or 0) > 0) then
+            return true;
+        end
+        if ((tonumber(GetLastCounter(key)) or 0) > 0) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
+local function GetCanvasSizeBreakdown(category)
+    local wanted = tostring(category or ''):lower();
+    local prefix = wanted ~= '' and ('drawCanvas.size.' .. wanted .. '.') or 'drawCanvas.size.';
+    local entries = {};
+
+    for name, value in pairs(counters) do
+        local text = tostring(name or '');
+        if (string.sub(text, 1, #prefix) == prefix) then
+            entries[#entries + 1] = {
+                size = string.sub(text, #prefix + 1),
+                count = tonumber(value) or 0,
+            };
+        end
+    end
+
+    for name, value in pairs(lastCounters) do
+        local text = tostring(name or '');
+        if (string.sub(text, 1, #prefix) == prefix and counters[text] == nil) then
+            entries[#entries + 1] = {
+                size = string.sub(text, #prefix + 1),
+                count = tonumber(value) or 0,
+            };
+        end
+    end
+
+    table.sort(entries, function(left, right)
+        if ((tonumber(left.count) or 0) ~= (tonumber(right.count) or 0)) then
+            return (tonumber(left.count) or 0) > (tonumber(right.count) or 0);
+        end
+
+        return tostring(left.size or '') < tostring(right.size or '');
+    end);
+
+    local parts = {};
+    for i = 1, math.min(5, #entries) do
+        local entry = entries[i];
+        if ((tonumber(entry.count) or 0) > 0) then
+            parts[#parts + 1] = tostring(entry.size or '?') .. '=' .. tostring(math.floor((tonumber(entry.count) or 0) + 0.5));
+        end
+    end
+
+    if (#parts == 0) then
+        return 'none';
+    end
+
+    return table.concat(parts, ' ');
+end
+
+IsTimingRowVisible = function(name)
+    local key = tostring(name or '');
+
+    if (key == 'plates.enemy') then
+        return HasCounterValue(
+            'drawCanvas.enemy',
+            'canvasEnemy',
+            'enemyScanned',
+            'enemyQueued',
+            'enemyTracked',
+            'enemyTargetQueued',
+            'enemyBackgroundQueued'
+        );
+    end
+
+    if (key == 'plates.self') then
+        return HasCounterValue(
+            'drawCanvas.self',
+            'canvasSelf'
+        );
+    end
+
+    if (key == 'plates.trust') then
+        return HasCounterValue(
+            'drawCanvas.trust',
+            'canvasTrust',
+            'trustQueued'
+        );
+    end
+
+    if (key == 'plates.pet') then
+        return HasCounterValue(
+            'drawCanvas.pet',
+            'canvasPet'
+        );
+    end
+
+    if (key == 'target.overlay') then
+        return HasCounterValue(
+            'canvasTargeted',
+            'target.marker.build.calls'
+        );
+    end
+
+    return true;
 end
 
 local function BuildTimingRows()
@@ -280,7 +401,7 @@ local function BuildTimingRows()
     for index, name in ipairs(order) do
         local entry = samples[name];
 
-        if (entry ~= nil and name ~= 'total') then
+        if (entry ~= nil and name ~= 'total' and IsTimingRowVisible(name) == true) then
             rows[#rows + 1] = {
                 name = name,
                 label = labels[name] or name,
@@ -558,6 +679,8 @@ local function WritePerformanceReport()
         tostring(GetCounter('clickRects')),
         tostring(GetCounter('canvasRenders'))
     ));
+    file:write('canvasSizesAll=' .. tostring(GetCanvasSizeBreakdown('')) .. '\n');
+    file:write('canvasSizesPc=' .. tostring(GetCanvasSizeBreakdown('pc')) .. '\n');
 
     file:write('\nTexture Cache\n');
     file:write(string.format(
@@ -917,6 +1040,8 @@ function perfMeter.CountDrawnCanvas(category, textureWidth, textureHeight, world
     perfMeter.Count('drawCanvas.count', 1);
     perfMeter.Count('drawCanvas.pixels', pixels);
     perfMeter.Count('drawCanvas.worldArea1000', worldArea * 1000);
+    perfMeter.Count('drawCanvas.size.' .. tostring(w) .. 'x' .. tostring(h), 1);
+    perfMeter.Count('drawCanvas.size.' .. key .. '.' .. tostring(w) .. 'x' .. tostring(h), 1);
 
     if (pixels >= (1024 * 512)) then
         perfMeter.Count('drawCanvas.large', 1);
@@ -1238,6 +1363,27 @@ function perfMeter.GetSummaryLines()
         tostring(GetCounter('npcCombatSkip'))
     );
     lines[#lines + 1] = string.format(
+        'PC scan detail pcScanned=%s world=%s party=%s target=%s enmity=%s',
+        tostring(GetCounter('pcScanned')),
+        tostring(GetCounter('pcGateWorld')),
+        tostring(GetCounter('pcGateParty')),
+        tostring(GetCounter('pcGateTarget')),
+        tostring(GetCounter('pcGateEnmity'))
+    );
+    lines[#lines + 1] = string.format(
+        'Trust scan detail party=%s nearby=%s hiddenByGame=%s queued=%s',
+        tostring(GetCounter('trustPartyScanned')),
+        tostring(GetCounter('trustNearbyScanned')),
+        tostring(GetCounter('trustHiddenByGame')),
+        tostring(GetCounter('trustQueued'))
+    );
+    lines[#lines + 1] = string.format(
+        'NPC/Object gate detail world=%s tactical=%s target=%s',
+        tostring(GetCounter('npcGateWorld')),
+        tostring(GetCounter('npcGateTactical')),
+        tostring(GetCounter('npcGateTarget'))
+    );
+    lines[#lines + 1] = string.format(
         'Drawn canvases count=%s large=%s pixels=%.1fM worldArea=%.2f',
         tostring(GetLastCounter('drawCanvas.count')),
         tostring(GetLastCounter('drawCanvas.large')),
@@ -1260,6 +1406,14 @@ function perfMeter.GetSummaryLines()
         (tonumber(GetLastCounter('drawCanvas.petPixels')) or 0) / 1000000.0,
         tostring(GetLastCounter('drawCanvas.other')),
         (tonumber(GetLastCounter('drawCanvas.otherPixels')) or 0) / 1000000.0
+    );
+    lines[#lines + 1] = string.format(
+        'Canvas sizes all: %s',
+        GetCanvasSizeBreakdown('')
+    );
+    lines[#lines + 1] = string.format(
+        'Canvas sizes pc: %s',
+        GetCanvasSizeBreakdown('pc')
     );
 
     if (detailEnabled == true) then

@@ -30,6 +30,7 @@ local aoeNameHighlight = require('core.aoe_name_highlight');
 local aoeRangeVisuals = require('core.aoe_range_visuals');
 local perfMeter = require('core.perf_meter');
 local adaptivePerformance = require('core.adaptive_performance');
+local quickMenu = require('core.quick_menu');
 
 local trustPlate = {};
 local plateCache = {};
@@ -1048,10 +1049,21 @@ function trustPlate.Render()
     local range = targeting.GetWorldPlateRange();
     local now = os.clock();
     local nearbyTrusts = nil;
+    local menuSettings = quickMenu.GetSettings();
+    local hideOtherPlayersTrusts = menuSettings ~= nil
+        and menuSettings.self ~= nil
+        and menuSettings.self.hideTrustState == true;
+
     local scanTimer = perfMeter.BeginDetail('trust.scan');
     local trusts = entities.GetPartyTrusts(range);
+    perfMeter.SetCounter('trustPartyScanned', #trusts);
 
-    if (
+    if (hideOtherPlayersTrusts == true) then
+        nearbyTrusts = {};
+        nearbyScanCache.trusts = nil;
+        nearbyScanCache.range = nil;
+        perfMeter.SetCounter('trustHiddenByGame', 1);
+    elseif (
         nearbyScanCache.trusts ~= nil and
         nearbyScanCache.range == range and
         (now - (tonumber(nearbyScanCache.clock) or 0)) < nearbyTrustScanCacheSeconds
@@ -1063,6 +1075,7 @@ function trustPlate.Render()
         nearbyScanCache.range = range;
         nearbyScanCache.trusts = nearbyTrusts;
     end
+    perfMeter.SetCounter('trustNearbyScanned', #nearbyTrusts);
 
     perfMeter.EndDetail(scanTimer);
     local queued = {};

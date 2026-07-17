@@ -4235,6 +4235,8 @@ function preview.Draw(entityName, stateName, context)
     if (quickMenuOnlyPreview ~= true) then
         plateTexture, textureWidth, textureHeight = canvasTexture.Render(plate, 'settings-preview');
         plateTextureId = canvasTexture.GetTextureId(plateTexture);
+        textureWidth = 1024;
+        textureHeight = 512;
     end
 
     local availWidth, availHeight = GetContentRegionAvail();

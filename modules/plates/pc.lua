@@ -1752,9 +1752,21 @@ function pcPlate.Render()
 
     currentPlayerEngaged = targeting.IsPlayerEngaged() == true;
 
+    if (AnyPcPlateWorkCanLoad() ~= true) then
+        scanCache.players = nil;
+        return;
+    end
+
     local canRenderWorldPlayers = AnyPcIdleWorldPlateWorkCanLoad() == true;
     local canRenderPartyPlayers = AnyPcPartyPlateWorkCanLoad() == true;
     local canRenderTargetPlayers = AnyPcTargetModuleCanLoad() == true;
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local enmitySettings = globalSettings ~= nil and globalSettings.enmity or nil;
+
+    perfMeter.SetCounter('pcGateWorld', canRenderWorldPlayers == true and 1 or 0);
+    perfMeter.SetCounter('pcGateParty', canRenderPartyPlayers == true and 1 or 0);
+    perfMeter.SetCounter('pcGateTarget', canRenderTargetPlayers == true and 1 or 0);
+    perfMeter.SetCounter('pcGateEnmity', (enmitySettings ~= nil and enmitySettings.enabled == true) and 1 or 0);
 
     if (canRenderWorldPlayers ~= true and canRenderPartyPlayers ~= true and canRenderTargetPlayers ~= true) then
         scanCache.players = nil;
@@ -1841,6 +1853,8 @@ function pcPlate.Render()
             QueuePlayer(player);
         end
     end
+
+    perfMeter.SetCounter('pcScanned', #(players or {}));
 
     pcIdleCanvasBuildLimitThisFrame = 0;
 end

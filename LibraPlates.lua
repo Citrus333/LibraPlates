@@ -235,6 +235,7 @@ ashita.events.register('text_in', 'libraplates_text_in', function(e)
 end);
 
 ashita.events.register('d3d_present', 'libraplates_present', function()
+    local eventStart = perfMeter.Start();
     local ok, err = pcall(function()
         adaptivePerformance.UpdateFrame();
         blacklistModelReplace.Update();
@@ -257,17 +258,22 @@ ashita.events.register('d3d_present', 'libraplates_present', function()
         state.SetConfigOpen(false);
         log.Warn('Config render disabled after error: ' .. tostring(err));
     end
+    perfMeter.Stop('present.frame', eventStart);
 end);
 
 ashita.events.register('d3d_beginscene', 'libraplates_world_marker_beginscene', function()
+    local eventStart = perfMeter.Start();
     modules.UpdateNativeTargetArrow();
     UpdateNativeDrawHooks();
     nativeTargetArrow.SetTraceCapturePaused(true);
     modules.DrawWorldMarker();
     nativeTargetArrow.SetTraceCapturePaused(false);
+    perfMeter.Stop('beginscene.frame', eventStart);
 end);
 
 ashita.events.register('d3d_endscene', 'libraplates_native_target_endscene', function()
+    local eventStart = perfMeter.Start();
     modules.UpdateNativeTargetArrow();
     UpdateNativeDrawHooks();
+    perfMeter.Stop('endscene.frame', eventStart);
 end);

@@ -40,6 +40,7 @@ local plateWorkGateCache = {
     result = true,
 };
 local idleScanCacheSeconds = 0.20;
+local combatTacticalScanCacheSeconds = 0.75;
 
 local function ColorKey(color)
     color = color or {};
@@ -670,21 +671,6 @@ local function QueueNpcObject(entity)
         };
     end
 
-    if (
-        plateTexture == nil and
-        throttleBackground == true and
-        targetStateName == 'Idle' and
-        adaptivePerformance.AllowBackgroundBuild('npc.idle.canvas', 1) ~= true
-    ) then
-        local indexed = indexCache[tonumber(entity.index) or 0];
-        local deferredCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
-
-        if (deferredCached ~= nil and deferredCached.fastReusable == true) then
-            QueueCachedPlate(entity, deferredCached, targetStateName, clickTargetType, displayName);
-            return;
-        end
-    end
-
     if (plateTexture == nil) then
         local canvasTimer = perfMeter.BeginDetail('npc.canvas');
         plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'npc-cache-' .. cacheKey);
@@ -1051,6 +1037,10 @@ function npcPlate.Render()
     local canRenderTacticalNpcs = AnyTacticalNpcWidgetCanLoad() == true;
     local canRenderTargetNpcs = AnyNpcTargetModuleCanLoad() == true;
 
+    perfMeter.SetCounter('npcGateWorld', canRenderNpcObjects == true and 1 or 0);
+    perfMeter.SetCounter('npcGateTactical', canRenderTacticalNpcs == true and 1 or 0);
+    perfMeter.SetCounter('npcGateTarget', canRenderTargetNpcs == true and 1 or 0);
+
     if (canRenderNpcObjects ~= true and canRenderTacticalNpcs ~= true and canRenderTargetNpcs ~= true) then
         scanCache.entities = nil;
         scanCache.tacticalEntities = nil;
@@ -1061,8 +1051,10 @@ function npcPlate.Render()
     local performanceImportantOnly = playerEngaged == true;
     local range = targeting.GetWorldPlateRange();
     local now = os.clock();
+    local configOpen = state.GetConfigOpen() == true;
     local canUseScanCache = playerEngaged ~= true
-        and state.GetConfigOpen() ~= true;
+        and configOpen ~= true;
+    local canUseTacticalScanCache = configOpen ~= true;
     local worldNpcObjectRefreshSeconds = math.min(
         adaptivePerformance.GetWorldRefreshSeconds('npc'),
         adaptivePerformance.GetWorldRefreshSeconds('object')
@@ -1092,15 +1084,11 @@ function npcPlate.Render()
     end
 
     if (performanceImportantOnly == true) then
+        entitiesList = {};
         scanCache.entities = nil;
-        scanCache.tacticalEntities = nil;
         perfMeter.SetCounter('npcScanned', 0);
-        perfMeter.SetCounter('npcTacticalScanned', 0);
         perfMeter.SetCounter('npcCombatSkip', 1);
-        return;
-    end
-
-    if (canRenderNpcObjects ~= true) then
+    elseif (canRenderNpcObjects ~= true) then
         entitiesList = {};
         scanCache.entities = nil;
     elseif (
@@ -1131,10 +1119,10 @@ function npcPlate.Render()
         tacticalEntities = {};
         scanCache.tacticalEntities = nil;
     elseif (
-        canUseScanCache == true and
+        canUseTacticalScanCache == true and
         scanCache.tacticalEntities ~= nil and
         scanCache.tacticalRange == range and
-        (now - (tonumber(scanCache.tacticalClock) or 0)) < idleScanCacheSeconds
+        (now - (tonumber(scanCache.tacticalClock) or 0)) < (playerEngaged == true and combatTacticalScanCacheSeconds or idleScanCacheSeconds)
     ) then
         tacticalEntities = scanCache.tacticalEntities;
     else
@@ -1143,7 +1131,7 @@ function npcPlate.Render()
         perfMeter.EndDetail(tacticalScanTimer);
         perfMeter.SetCounter('npcTacticalScanned', #(tacticalEntities or {}));
 
-        if (canUseScanCache == true) then
+        if (canUseTacticalScanCache == true) then
             scanCache.tacticalClock = now;
             scanCache.tacticalRange = range;
             scanCache.tacticalEntities = tacticalEntities;

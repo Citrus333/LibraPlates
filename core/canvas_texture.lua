@@ -43,7 +43,7 @@ local width = 1024;
 local height = 512;
 local drawOffsetX = 0;
 local drawOffsetY = 0;
-local renderVersion = 7;
+local renderVersion = 8;
 
 local D3DPT_TRIANGLELIST = 4;
 local D3DFVF_XYZRHW_DIFFUSE = 0x044;
@@ -1245,6 +1245,13 @@ local function NextPowerOfTwo(value)
     return result;
 end
 
+local function NextTextureBucket(value)
+    local wanted = math.max(1, math.ceil(tonumber(value) or 1));
+    local bucket = 16;
+
+    return math.ceil(wanted / bucket) * bucket;
+end
+
 local function BuildContentCrop(rects, fullWidth, fullHeight)
     fullWidth = math.max(1, tonumber(fullWidth) or 1024);
     fullHeight = math.max(1, tonumber(fullHeight) or 512);
@@ -1289,8 +1296,8 @@ local function BuildContentCrop(rects, fullWidth, fullHeight)
 
     local contentWidth = math.max(1, maxX - minX);
     local contentHeight = math.max(1, maxY - minY);
-    local cropWidth = math.min(fullWidth, math.max(128, NextPowerOfTwo(contentWidth)));
-    local cropHeight = math.min(fullHeight, math.max(64, NextPowerOfTwo(contentHeight)));
+    local cropWidth = math.min(fullWidth, math.max(64, NextTextureBucket(contentWidth)));
+    local cropHeight = math.min(fullHeight, math.max(64, NextTextureBucket(contentHeight)));
     local contentCenterX = (minX + maxX) * 0.5;
     local contentCenterY = (minY + maxY) * 0.5;
     local cropX = math.floor(contentCenterX - (cropWidth * 0.5) + 0.5);
@@ -2696,7 +2703,20 @@ function canvasTexture.Render(plate, key)
 
     PrepareTargetMarker(plate.targetMarker);
 
-    local crop = BuildContentCrop(elementRects, fullWidth, fullHeight);
+    local baseKey = tostring(key or 'world');
+    local crop = nil;
+    if (baseKey == 'settings-preview') then
+        crop = {
+            x = 0,
+            y = 0,
+            width = fullWidth,
+            height = fullHeight,
+            fullWidth = fullWidth,
+            fullHeight = fullHeight,
+        };
+    else
+        crop = BuildContentCrop(elementRects, fullWidth, fullHeight);
+    end
     width = crop.width;
     height = crop.height;
     drawOffsetX = crop.x;
@@ -2704,7 +2724,6 @@ function canvasTexture.Render(plate, key)
     plate._elementRects = ShiftRects(elementRects, -drawOffsetX, -drawOffsetY);
     plate._canvasCrop = crop;
 
-    local baseKey = tostring(key or 'world');
     local textureKey = baseKey .. '|crop=' .. tostring(crop.x) .. ',' .. tostring(crop.y) .. ',' .. tostring(width) .. 'x' .. tostring(height);
     lastRenderBaseKey = baseKey;
     lastRenderTextureKey = textureKey;

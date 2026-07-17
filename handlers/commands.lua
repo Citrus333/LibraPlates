@@ -168,7 +168,7 @@ local function ProbeEntityAtIndex(entityManager, index)
         return 'none';
     end
 
-    local ent = GetEntity(index);
+    local ent = entities.GetEntity(index);
     local render0 = CommandSafeCall(nil, function() return entityManager:GetRenderFlags0(index); end);
     local render1 = CommandSafeCall(nil, function() return entityManager:GetRenderFlags1(index); end);
     local spawn = CommandSafeCall(nil, function() return entityManager:GetSpawnFlags(index); end);
@@ -3204,7 +3204,7 @@ function commands.Handle(e)
 
         if (found == nil) then
             local entityManager = entities.GetEntityManager();
-            local ent = GetEntity(targetIndex);
+            local ent = entities.GetEntity(targetIndex);
             local debug = entities.GetEntityDebugInfo(targetIndex, targeting.GetSettings().enemyPlateRange);
 
             if (targetIndex == nil or ent == nil or tostring(ent.Name or '') == '' or tonumber(debug ~= nil and debug.type or -1) ~= 0) then
@@ -3226,7 +3226,7 @@ function commands.Handle(e)
         local jobSettings = state.GetWidgetSettings('PC', layoutStateName, 'Job', jobDefaults);
         local levelSettings = state.GetWidgetSettings('PC', layoutStateName, 'Level', levelDefaults);
         local debug = entities.GetEntityDebugInfo(found.index, targeting.GetSettings().enemyPlateRange);
-        local entity = GetEntity(found.index);
+        local entity = entities.GetEntity(found.index);
         local linkshellColor = tonumber(entity ~= nil and entity.LinkshellColor) or 0;
         local probeGameMode = require('core.game_mode');
         local probePlayerIndicators = require('core.player_indicators');

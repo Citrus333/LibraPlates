@@ -381,12 +381,43 @@ local function IsObjectCostumePlayer(entityManager, index, ent)
     return boneCount ~= nil and boneCount > 0 and boneCount <= 8;
 end
 
+local function IsCampaignBattleActor(entityManager, index, ent)
+    if (entityManager == nil or ent == nil or tonumber(ent.Type) ~= 0) then
+        return false;
+    end
+
+    if (entities.IsPartyMemberIndex(index) == true) then
+        return false;
+    end
+
+    local spawnFlags = tonumber(SafeCall(nil, function()
+        return entityManager:GetSpawnFlags(index);
+    end)) or 0;
+    local renderFlags1 = tonumber(SafeCall(nil, function()
+        return entityManager:GetRenderFlags1(index);
+    end)) or 0;
+
+    return
+        bit.band(spawnFlags, 0x02) == 0x02 and
+        bit.band(renderFlags1, 0x800) == 0x800 and
+        tonumber(ent.HPPercent) ~= nil and
+        tonumber(ent.HPPercent) > 0;
+end
+
 function entities.GetEntityManager()
     return AshitaCore:GetMemoryManager():GetEntity();
 end
 
 function entities.GetEntity(index)
-    return GetEntity(index);
+    index = tonumber(index);
+
+    if (index == nil or index <= 0) then
+        return nil;
+    end
+
+    return SafeCall(nil, function()
+        return GetEntity(index);
+    end);
 end
 
 function entities.GetBone(actorPointer, bone)
@@ -1488,10 +1519,10 @@ function entities.GetNearbyPlayers(maxDistance)
                 IsPlayerActorEntity(ent, index) == true and
                 ent.Name ~= nil and
                 ent.Name ~= '' and
-                (ent.HPPercent ~= nil or isCurrentTargetContext == true) and
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
-                (objectCostumePlayer ~= true or isCurrentTargetContext == true) and
+                objectCostumePlayer ~= true and
+                IsCampaignBattleActor(entityManager, index, ent) ~= true and
                 entities.ShouldHideOtherPlayerPet(index, ent.Name) ~= true
             ) then
                 results[#results + 1] = {
@@ -1501,6 +1532,7 @@ function entities.GetNearbyPlayers(maxDistance)
                     status = ent.Status,
                     distance = math.sqrt(ent.Distance),
                     hpPercent = ent.HPPercent or 100,
+                    missingHpPercent = ent.HPPercent == nil and isCurrentTargetContext ~= true,
                 };
 
                 local partyData = partyDataByIndex[index];
@@ -1539,6 +1571,7 @@ function entities.GetPlayerByIndex(index, maxDistance, partyDataByIndex)
     local targetIndex = targeting.GetCurrentTargetIndex();
     local subTargetIndex = targeting.GetCurrentSubTargetIndex();
     local isCurrentTargetContext = tonumber(index) == tonumber(targetIndex) or tonumber(index) == tonumber(subTargetIndex);
+    local campaignBattleActor = IsCampaignBattleActor(entityManager, index, ent);
 
     if (
         ent == nil or
@@ -1547,7 +1580,8 @@ function entities.GetPlayerByIndex(index, maxDistance, partyDataByIndex)
         ent.Name == '' or
         ent.Distance == nil or
         ent.Distance > maxDistanceSq or
-        (IsObjectCostumePlayer(entityManager, index, ent) == true and isCurrentTargetContext ~= true) or
+        IsObjectCostumePlayer(entityManager, index, ent) == true or
+        campaignBattleActor == true or
         entities.ShouldHideOtherPlayerPet(index, ent.Name) == true
     ) then
         return nil;
@@ -1626,8 +1660,15 @@ function entities.GetNearbyTacticalNpcs(maxDistance)
     end
 
     for index = 0, 2303 do
-        if (index < 1024 or index > 1791) then
-            local ent = GetEntity(index);
+        local ent = GetEntity(index);
+        local playerIndexRange = IsPlayerIndexRange(index) == true;
+        local objectCostumePlayer = IsObjectCostumePlayer(entityManager, index, ent) == true;
+        local campaignBattleActor = IsCampaignBattleActor(entityManager, index, ent) == true;
+        local rawEntityType = tonumber(ent ~= nil and ent.Type or nil);
+        local rawObject = rawEntityType == 2 or rawEntityType == 3;
+        local tacticalEntityType = (rawObject == true and objectCostumePlayer ~= true) and 'Object' or 'NPC';
+
+        if (playerIndexRange ~= true or objectCostumePlayer == true or campaignBattleActor == true) then
             local statusAllowsTactical =
                 tonumber(ent ~= nil and ent.Status or nil) == 1 or
                 IsNpcObjectStatusAllowed(ent ~= nil and ent.Status or nil) == true;
@@ -1640,6 +1681,7 @@ function entities.GetNearbyTacticalNpcs(maxDistance)
                 ent.HPPercent > 0 and
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
+                tacticalEntityType == 'NPC' and
                 statusAllowsTactical == true and
                 partyIndexes[index] ~= true and
                 tonumber(index) ~= tonumber(ownPetIndex) and
@@ -1653,7 +1695,7 @@ function entities.GetNearbyTacticalNpcs(maxDistance)
                     serverId = SafeCall(nil, function() return entityManager:GetServerId(index); end),
                     name = ent.Name,
                     status = ent.Status,
-                    entityType = 'NPC',
+                    entityType = tacticalEntityType,
                     layoutStateName = 'Combat',
                     tacticalNpc = true,
                     hpPercent = ent.HPPercent or 100,
@@ -1678,11 +1720,26 @@ function entities.GetTacticalNpcByIndex(index, maxDistance)
     local entityManager = AshitaCore:GetMemoryManager():GetEntity();
     local maxDistanceSq = (tonumber(maxDistance) or 50) * (tonumber(maxDistance) or 50);
 
-    if (index == nil or entityManager == nil or (index >= 1024 and index <= 1791)) then
+    if (index == nil or entityManager == nil) then
         return nil;
     end
 
     local ent = GetEntity(index);
+    local playerIndexRange = IsPlayerIndexRange(index) == true;
+    local objectCostumePlayer = IsObjectCostumePlayer(entityManager, index, ent) == true;
+    local campaignBattleActor = IsCampaignBattleActor(entityManager, index, ent) == true;
+    local rawEntityType = tonumber(ent ~= nil and ent.Type or nil);
+    local rawObject = rawEntityType == 2 or rawEntityType == 3;
+    local tacticalEntityType = (rawObject == true and objectCostumePlayer ~= true) and 'Object' or 'NPC';
+
+    if (playerIndexRange == true and objectCostumePlayer ~= true and campaignBattleActor ~= true) then
+        return nil;
+    end
+
+    if (tacticalEntityType ~= 'NPC') then
+        return nil;
+    end
+
     local spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(index); end);
     local statusAllowsTactical =
         tonumber(ent ~= nil and ent.Status or nil) == 1 or
@@ -1710,7 +1767,7 @@ function entities.GetTacticalNpcByIndex(index, maxDistance)
         serverId = SafeCall(nil, function() return entityManager:GetServerId(index); end),
         name = ent.Name,
         status = ent.Status,
-        entityType = 'NPC',
+        entityType = tacticalEntityType,
         layoutStateName = 'Combat',
         tacticalNpc = true,
         hpPercent = ent.HPPercent or 100,
@@ -1916,7 +1973,7 @@ function entities.GetEntityDebugInfo(index, maxDistance)
         return nil;
     end
 
-    local ent = GetEntity(targetIndex);
+    local ent = entities.GetEntity(targetIndex);
     local spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(targetIndex); end);
     local renderFlags = {};
 

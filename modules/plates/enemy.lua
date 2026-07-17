@@ -2002,7 +2002,6 @@ local function BuildEnemyQueueContext(enemy)
         isEngaged == true or
         castData ~= nil or
         isHovered == true;
-    local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(hasActiveDetail);
 
     if (
         hpBarSettings.lowColorEnabled == true and
@@ -2021,6 +2020,7 @@ local function BuildEnemyQueueContext(enemy)
     local levelText = mobInfoData.GetLevelString(mobInfo);
     local hasTrackedBuffs = buffsSettings ~= nil and buffsSettings.enabled == true and enemyStatuses.HasActiveStatus(enemy.serverId, 'buff') == true;
     local hasTrackedDebuffs = debuffsSettings ~= nil and debuffsSettings.enabled == true and enemyStatuses.HasActiveStatus(enemy.serverId, 'debuff') == true;
+    local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(hasActiveDetail or hasTrackedBuffs or hasTrackedDebuffs);
     local buffRows = suppressExpensiveWorldWidgets ~= true and ShouldLoadStatusRows(buffsSettings, isEngaged, hasActiveDetail or hasTrackedBuffs) == true
         and enemyStatuses.GetActiveStatusRows(enemy.serverId, 'buff')
         or {};

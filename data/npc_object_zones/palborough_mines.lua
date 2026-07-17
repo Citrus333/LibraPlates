@@ -14,6 +14,13 @@ return {
             ["note"] = "A crude, weighted floor handle linked to regional lift structures. Throwing your weight against the iron bar engages industrial pulley networks, hauling up mechanical platforms across vertical stronghold tiers.",
             ["type"] = "Dungeon Switch",
         },
+        ["Geomagnetic Fount"] = {
+            ["_source"] = "item",
+            ["icon"] = "GeomagneticFount.png",
+            ["note"] = "A pulsing crystalline fast-travel monument anchored to the regional ley lines. Interfacing with its energy lattice uncovers spatial archives and unlocks fast travel travel lines.",
+            ["type"] = "Proto-Waypoint",
+			["worldOffsetY"] = 0.15,
+        },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
@@ -32,6 +39,13 @@ return {
             ["icon"] = "MiningPoint.png",
             ["note"] = "A rich metallic vein shimmering along the damp tunnel rock faces. Striking this outcrop with an equipped pickaxe extracts precious mythril ore, archives mining telemetry, and advances early Republic scenarios.",
             ["type"] = "Mining Point",
+        },
+        ["Mining Point"] = {
+            ["_source"] = "item",
+            ["icon"] = "MiningPoint.png",
+            ["note"] = "A rich mineral vein shimmering along damp tunnel rock faces. Striking this outcrop with an equipped pickaxe extracts precious metallic ore, pristine gems, and archives mining telemetry.",
+            ["type"] = "Mining Point",
+			["worldOffsetY"] = 0.35,
         },
         ["Old Toolbox"] = {
             ["_source"] = "item",

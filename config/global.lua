@@ -7,6 +7,7 @@ return {
     statusIcons = {
         iconPack = 'XIView',
     },
+    assetIconPack = 'Built-in',
     settingsWindow = {
         x = nil,
         y = nil,

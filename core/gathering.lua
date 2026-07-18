@@ -3,6 +3,7 @@ local targeting = require('core.targeting');
 local fonts = require('core.fonts');
 local state = require('core.state');
 local globalDefaults = require('config.global');
+local iconPack = require('core.icon_pack');
 
 local gathering = {};
 local iconTextureIds = {};
@@ -19,13 +20,15 @@ local function GetIconTextureId(fileName)
         return nil;
     end
 
-    if (iconTextureIds[iconFile] ~= nil) then
-        return iconTextureIds[iconFile];
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. iconFile;
+
+    if (iconTextureIds[cacheKey] ~= nil) then
+        return iconTextureIds[cacheKey];
     end
 
-    local path = addon.path .. '\\assets\\images\\gathering\\' .. iconFile;
-    iconTextureIds[iconFile] = textureLoader.ToTextureId(textureLoader.Load(path));
-    return iconTextureIds[iconFile];
+    local path = iconPack.GetAssetPath('gathering', iconFile);
+    iconTextureIds[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return iconTextureIds[cacheKey];
 end
 
 function gathering.GetIconFiles()

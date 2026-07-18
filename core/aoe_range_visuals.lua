@@ -1,5 +1,6 @@
 local textureLoader = require('core.texture_loader');
 local targetTextures = require('core.target_textures');
+local iconPack = require('core.icon_pack');
 
 local aoeRangeVisuals = {};
 local textureIds = {};
@@ -67,8 +68,8 @@ end
 function aoeRangeVisuals.GetIconTextureId(fileName)
     fileName = tostring(fileName or 'aoe_range_00.png'):gsub('^.*[\\/]', '');
     return GetTextureId(
-        GetAddonPath() .. 'assets\\images\\widget-icons\\aoe\\' .. fileName,
-        'widget-icons/aoe/' .. fileName
+        iconPack.GetAssetPath('widget-icons', 'aoe\\' .. fileName),
+        tostring(iconPack.GetRevision()) .. ':widget-icons/aoe/' .. fileName
     );
 end
 

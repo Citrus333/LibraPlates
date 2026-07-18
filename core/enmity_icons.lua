@@ -1,4 +1,5 @@
 local textureLoader = require('core.texture_loader');
+local iconPack = require('core.icon_pack');
 
 local enmityIcons = {};
 local textureIds = {};
@@ -88,16 +89,17 @@ end
 
 function enmityIcons.GetTextureId(fileName)
     fileName = enmityIcons.ResolveFile(fileName);
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. fileName;
 
-    if (textureIds[fileName] ~= nil) then
-        return textureIds[fileName];
+    if (textureIds[cacheKey] ~= nil) then
+        return textureIds[cacheKey];
     end
 
-    textureIds[fileName] = textureLoader.ToTextureId(textureLoader.Load(
-        GetAddonPath() .. 'assets\\images\\enmity\\' .. fileName
+    textureIds[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(
+        iconPack.GetAssetPath('enmity', fileName)
     ));
 
-    return textureIds[fileName];
+    return textureIds[cacheKey];
 end
 
 return enmityIcons;

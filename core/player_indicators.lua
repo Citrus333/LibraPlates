@@ -1,5 +1,6 @@
 local textureLoader = require('core.texture_loader');
 local state = require('core.state');
+local iconPack = require('core.icon_pack');
 
 local indicators = {};
 local textureCache = {};
@@ -108,15 +109,16 @@ local function LoadIcon(name)
         return nil;
     end
 
-    if (textureCache[key] ~= nil) then
-        return textureCache[key];
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. key;
+
+    if (textureCache[cacheKey] ~= nil) then
+        return textureCache[cacheKey];
     end
 
-    local filePath = 'assets\\images\\widget-icons\\' .. key .. '.png';
-    local path = AshitaCore:GetInstallPath() .. '\\addons\\LibraPlates\\' .. filePath;
-    textureCache[key] = textureLoader.ToTextureId(textureLoader.Load(path));
+    local path = iconPack.GetAssetPath('widget-icons', key .. '.png');
+    textureCache[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path));
 
-    return textureCache[key];
+    return textureCache[cacheKey];
 end
 
 GetParty = function()

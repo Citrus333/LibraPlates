@@ -1,6 +1,7 @@
 require('common');
 
 local textureLoader = require('core.texture_loader');
+local iconPack = require('core.icon_pack');
 
 local crafting = {};
 local iconTextureIds = {};
@@ -152,13 +153,15 @@ local function GetIconTextureId(result)
         return nil;
     end
 
-    if (iconTextureIds[key] ~= nil) then
-        return iconTextureIds[key];
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. key;
+
+    if (iconTextureIds[cacheKey] ~= nil) then
+        return iconTextureIds[cacheKey];
     end
 
-    local path = addon.path .. '\\assets\\images\\crafting\\' .. iconFiles[key];
-    iconTextureIds[key] = textureLoader.ToTextureId(textureLoader.Load(path));
-    return iconTextureIds[key];
+    local path = iconPack.GetAssetPath('crafting', iconFiles[key]);
+    iconTextureIds[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return iconTextureIds[cacheKey];
 end
 
 function crafting.GetResultChoices()

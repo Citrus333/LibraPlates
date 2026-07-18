@@ -4852,8 +4852,7 @@ end
 
 function DrawStatusIconPackFolderHelp(statusIconTextures)
     imgui.TextWrapped('Status icon packs are loaded from the icon packs folder.');
-    imgui.Spacing();
-
+    imgui.SameLine();
     imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Click here');
 
     if (GetItemRectMin ~= nil and GetItemRectMax ~= nil and imgui.GetWindowDrawList ~= nil) then
@@ -4870,7 +4869,9 @@ function DrawStatusIconPackFolderHelp(statusIconTextures)
         statusIconTextures.OpenPackFolder();
     end
 
-    imgui.TextWrapped('to open the icon pack folder and save the pack there. The pack folder should contain PNG icons named by status ID, for example:');
+    imgui.SameLine();
+    imgui.Text('to open the icon pack folder.');
+    imgui.TextWrapped('Save the pack there. The pack folder should contain PNG icons named by status ID, for example:');
     imgui.TextWrapped('1.png, 2.png, 33.png');
 end
 
@@ -8768,6 +8769,7 @@ local function DrawGeneralFontSection(global)
     end
 
     local statusIconTextures = require('core.status_icon_textures');
+    local assetIconPack = require('core.icon_pack');
 
     LibraPlatesSettingsDrawBoxedPage('ThemePageContent', function()
         LibraPlatesSettingsDrawBoxedPanel('Theme', function()
@@ -8860,6 +8862,18 @@ local function DrawGeneralFontSection(global)
             end);
             uiTooltip.Info('This pack is used by all Buffs and Debuffs across LibraPlates. Individual plates still keep their own icon size, spacing, and position settings.');
             DrawStatusIconPackPreview(statusIconTextures);
+        end);
+
+        LibraPlatesSettingsDrawBoxedPanel('Icon pack', function()
+            imgui.TextWrapped('Changes the selected visual pack for supported LibraPlates icon categories. Missing pack files use the built-in icon automatically.');
+            imgui.Spacing();
+            DrawInlineCombo('', assetIconPack.GetPackNames(), global.assetIconPack or globalDefaults.assetIconPack, function(packName)
+                global.assetIconPack = tostring(packName or 'Built-in');
+                assetIconPack.Invalidate();
+                canvasTexture.Invalidate();
+                state.Save();
+            end);
+            LibraPlatesFileManager.Draw(assetIconPack.GetBuiltInRoot() .. 'packs\\', 'AssetIconPackFolder');
         end);
 
         LibraPlatesSettingsDrawBoxedPanel('Enemy icon pack', function()

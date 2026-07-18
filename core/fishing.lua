@@ -1,6 +1,7 @@
 require('common');
 
 local textureLoader = require('core.texture_loader');
+local iconPack = require('core.icon_pack');
 local log = require('core.log');
 local fishingDatabase = require('core.fishing_database');
 local gameMode = require('core.game_mode');
@@ -2003,13 +2004,15 @@ local function GetIconTextureId(fileName)
         fileName = 'fishing_01.png';
     end
 
-    if (iconTextureIds[fileName] ~= nil) then
-        return iconTextureIds[fileName];
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. fileName;
+
+    if (iconTextureIds[cacheKey] ~= nil) then
+        return iconTextureIds[cacheKey];
     end
 
-    local path = addon.path .. '\\assets\\images\\fishing\\' .. fileName;
-    iconTextureIds[fileName] = textureLoader.ToTextureId(textureLoader.Load(path));
-    return iconTextureIds[fileName];
+    local path = iconPack.GetAssetPath('fishing', fileName);
+    iconTextureIds[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return iconTextureIds[cacheKey];
 end
 
 function fishing.GetIconFiles()

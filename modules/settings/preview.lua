@@ -8,6 +8,7 @@ local statusIconTextures = require('core.status_icon_textures');
 local statusTimerFormat = require('core.status_timer_format');
 local jobIconTextures = require('core.job_icon_textures');
 local textureLoader = require('core.texture_loader');
+local iconPack = require('core.icon_pack');
 local backgroundTextures = require('core.background_textures');
 local targetModuleMarker = require('core.target_module_marker');
 local aoeRangeVisuals = require('core.aoe_range_visuals');
@@ -420,13 +421,15 @@ local function ClampPercent(value, fallback)
 end
 
 local function LoadWidgetIcon(fileName)
-    if (iconCache[fileName] ~= nil) then
-        return iconCache[fileName];
+    local cacheKey = 'widget:' .. tostring(iconPack.GetRevision()) .. ':' .. tostring(fileName or '');
+
+    if (iconCache[cacheKey] ~= nil) then
+        return iconCache[cacheKey];
     end
 
-    local path = addon.path .. '\\assets\\images\\widget-icons\\' .. fileName;
-    iconCache[fileName] = textureLoader.ToTextureId(textureLoader.Load(path));
-    return iconCache[fileName];
+    local path = iconPack.GetAssetPath('widget-icons', fileName);
+    iconCache[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return iconCache[cacheKey];
 end
 
 local function LoadPreviewInfoIcon()
@@ -486,13 +489,13 @@ local function SanitizePeerIconStyle(iconStyle)
 end
 
 local function LoadCatseyeIcon(fileName)
-    local cacheKey = 'catseye:' .. tostring(fileName or '');
+    local cacheKey = 'catseye:' .. tostring(iconPack.GetRevision()) .. ':' .. tostring(fileName or '');
 
     if (iconCache[cacheKey] ~= nil) then
         return iconCache[cacheKey];
     end
 
-    local path = addon.path .. '\\assets\\images\\catseye_icons\\' .. tostring(fileName or '');
+    local path = iconPack.GetAssetPath('catseye_icons', tostring(fileName or ''));
     iconCache[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path));
     return iconCache[cacheKey];
 end
@@ -538,13 +541,13 @@ local function LoadSelfElementIcon(iconName)
         return nil;
     end
 
-    local key = 'self-element:' .. iconName;
+    local key = 'self-element:' .. tostring(iconPack.GetRevision()) .. ':' .. iconName;
 
     if (iconCache[key] ~= nil) then
         return iconCache[key];
     end
 
-    local path = addon.path .. '\\assets\\images\\self-peer\\' .. iconName .. '.png';
+    local path = iconPack.GetAssetPath('self-peer', iconName .. '.png');
     iconCache[key] = textureLoader.ToTextureId(textureLoader.Load(path));
     return iconCache[key];
 end
@@ -598,20 +601,21 @@ end
 
 local function LoadQuickMenuIcon(fileName)
     local name = tostring(fileName or '');
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. name;
 
     if (name == '') then
         return nil;
     end
 
-    if (quickMenuMissingIcons[name] == true) then
+    if (quickMenuMissingIcons[cacheKey] == true) then
         return nil;
     end
 
-    if (quickMenuIconCache[name] ~= nil) then
-        return quickMenuIconCache[name];
+    if (quickMenuIconCache[cacheKey] ~= nil) then
+        return quickMenuIconCache[cacheKey];
     end
 
-    local path = addon.path .. '\\assets\\images\\quick-menu\\' .. name;
+    local path = iconPack.GetAssetPath('quick-menu', name);
     local exists = false;
 
     pcall(function()
@@ -623,7 +627,7 @@ local function LoadQuickMenuIcon(fileName)
     end
 
     if (exists ~= true) then
-        quickMenuMissingIcons[name] = true;
+        quickMenuMissingIcons[cacheKey] = true;
         return nil;
     end
 
@@ -636,21 +640,21 @@ local function LoadQuickMenuIcon(fileName)
     end
 
     if (ok ~= true or texture == nil) then
-        quickMenuMissingIcons[name] = true;
+        quickMenuMissingIcons[cacheKey] = true;
         return nil;
     end
 
-    quickMenuIconCache[name] = textureLoader.ToTextureId(texture);
+    quickMenuIconCache[cacheKey] = textureLoader.ToTextureId(texture);
 
-    if (quickMenuIconCache[name] == nil and name == 'emote-trusts-on.png') then
+    if (quickMenuIconCache[cacheKey] == nil and name == 'emote-trusts-on.png') then
         return LoadQuickMenuIcon('emote-trusts-off.png');
     end
 
-    if (quickMenuIconCache[name] == nil) then
-        quickMenuMissingIcons[name] = true;
+    if (quickMenuIconCache[cacheKey] == nil) then
+        quickMenuMissingIcons[cacheKey] = true;
     end
 
-    return quickMenuIconCache[name];
+    return quickMenuIconCache[cacheKey];
 end
 
 local function Number(settings, key, fallback)

@@ -1,4 +1,5 @@
 local textureLoader = require('core.texture_loader');
+local iconPack = require('core.icon_pack');
 
 local gameMode = {};
 local textureCache = {};
@@ -74,15 +75,17 @@ function gameMode.GetIconTextureId(modeText)
         return nil;
     end
 
-    if (textureCache[key] ~= nil) then
-        return textureCache[key];
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. key;
+
+    if (textureCache[cacheKey] ~= nil) then
+        return textureCache[cacheKey];
     end
 
-    local path = AshitaCore:GetInstallPath() .. '\\addons\\LibraPlates\\assets\\images\\widget-icons\\' .. key .. '.png';
+    local path = iconPack.GetAssetPath('widget-icons', key .. '.png');
     local texture = textureLoader.Load(path);
     local textureId = textureLoader.ToTextureId(texture);
 
-    textureCache[key] = textureId;
+    textureCache[cacheKey] = textureId;
     return textureId;
 end
 

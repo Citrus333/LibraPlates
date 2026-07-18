@@ -1,5 +1,6 @@
 local npcInfo = {};
 local textureLoader = require('core.texture_loader');
+local iconPack = require('core.icon_pack');
 local entities = require('core.entities');
 
 pcall(require, 'common');
@@ -657,17 +658,16 @@ local function BuildIconPath(info)
         folder = 'catseye_icons';
     end
 
-    local root = GetAddonRoot() .. 'assets\\images\\';
-    local path = root .. folder .. '\\' .. icon;
+    local path = iconPack.GetAssetPath(folder, icon);
 
     if (info.source == 'catseye_npc' and PathExists(path) ~= true) then
-        local fallbackPath = root .. 'npc_icons\\' .. icon;
+        local fallbackPath = iconPack.GetAssetPath('npc_icons', icon);
 
         if (PathExists(fallbackPath) == true) then
             return fallbackPath;
         end
     elseif (info.source == 'catseye_item' and PathExists(path) ~= true) then
-        local fallbackPath = root .. 'item_icons\\' .. icon;
+        local fallbackPath = iconPack.GetAssetPath('item_icons', icon);
 
         if (PathExists(fallbackPath) == true) then
             return fallbackPath;

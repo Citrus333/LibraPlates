@@ -3,6 +3,7 @@ local peerInspector = {};
 local imgui = require('imgui');
 local bit = require('bit');
 local textureLoader = require('core.texture_loader');
+local iconPack = require('core.icon_pack');
 local worldMarkerProbe = require('core.world_marker_probe');
 local entities = require('core.entities');
 local mobInfoData = require('core.mobinfo_data');
@@ -151,13 +152,15 @@ local function GetSelfElementIconTextureId(iconName)
         return nil;
     end
 
-    if (selfElementIconCache[iconName] ~= nil) then
-        return selfElementIconCache[iconName];
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. iconName;
+
+    if (selfElementIconCache[cacheKey] ~= nil) then
+        return selfElementIconCache[cacheKey];
     end
 
-    local path = tostring(addon.path or '') .. '\\assets\\images\\self-peer\\' .. iconName .. '.png';
-    selfElementIconCache[iconName] = textureLoader.ToTextureId(textureLoader.Load(path));
-    return selfElementIconCache[iconName];
+    local path = iconPack.GetAssetPath('self-peer', iconName .. '.png');
+    selfElementIconCache[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path));
+    return selfElementIconCache[cacheKey];
 end
 
 local function GetMousePos()

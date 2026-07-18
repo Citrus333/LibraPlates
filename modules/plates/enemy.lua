@@ -22,6 +22,7 @@ local canvasTexture = require('core.canvas_texture');
 local barTextures = require('core.bar_textures');
 local backgroundTextures = require('core.background_textures');
 local textureLoader = require('core.texture_loader');
+local iconPack = require('core.icon_pack');
 local jobIconTextures = require('core.job_icon_textures');
 local entities = require('core.entities');
 local mobInfoData = require('core.mobinfo_data');
@@ -548,15 +549,17 @@ local function GetCatseyeIconTextureId(iconName)
         return nil;
     end
 
-    if (catseyeIconTextureIds[iconName] ~= nil) then
-        return catseyeIconTextureIds[iconName];
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. iconName;
+
+    if (catseyeIconTextureIds[cacheKey] ~= nil) then
+        return catseyeIconTextureIds[cacheKey];
     end
 
-    catseyeIconTextureIds[iconName] = textureLoader.ToTextureId(textureLoader.Load(
-        GetAddonPath() .. 'assets\\images\\catseye_icons\\' .. iconName
+    catseyeIconTextureIds[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(
+        iconPack.GetAssetPath('catseye_icons', iconName)
     ));
 
-    return catseyeIconTextureIds[iconName];
+    return catseyeIconTextureIds[cacheKey];
 end
 
 local function AddActivityPointIconToPlate(plateData, context)

@@ -7,6 +7,7 @@ local gdiTextTexture = require('ui.gdi_text_texture');
 local fonts = require('core.fonts');
 local anchorGeometry = require('core.anchor_geometry');
 local nativeUiPolicy = require('core.native_ui_policy');
+local iconPack = require('core.icon_pack');
 
 ffi.cdef[[
     typedef struct {
@@ -3200,6 +3201,7 @@ end
 function canvasTexture.GetRenderPolicyKey()
     return 'libraNames=' .. tostring(nativeUiPolicy.ShouldDrawLibraNames() == true) ..
         '|libraTargeting=' .. tostring(nativeUiPolicy.ShouldDrawLibraTargetingSystem() == true) ..
+        '|assetIconPack=' .. tostring(iconPack.GetName()) ..
         '|renderVersion=' .. tostring(renderVersion);
 end
 

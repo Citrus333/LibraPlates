@@ -11,6 +11,7 @@ local mounts = require('core.mounts');
 local targeting = require('core.targeting');
 local playerBlacklist = require('core.player_blacklist');
 local warpMenu = require('core.warp_menu');
+local iconPack = require('core.icon_pack');
 local ephemeralBox = require('core.ephemeral_box');
 local mogHouseExit = require('core.mog_house_exit');
 local widgetDefaults = { enabled = true };
@@ -504,20 +505,21 @@ end
 
 local function GetIcon(fileName)
     local name = tostring(fileName or '');
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. name;
 
     if (name == '') then
         return nil;
     end
 
-    if (missingIcon[name] == true) then
+    if (missingIcon[cacheKey] == true) then
         return nil;
     end
 
-    if (iconCache[name] ~= nil) then
-        return iconCache[name];
+    if (iconCache[cacheKey] ~= nil) then
+        return iconCache[cacheKey];
     end
 
-    local path = addon.path .. '\\assets\\images\\quick-menu\\' .. name;
+    local path = iconPack.GetAssetPath('quick-menu', name);
     local exists = false;
 
     pcall(function()
@@ -525,7 +527,7 @@ local function GetIcon(fileName)
     end);
 
     if (exists ~= true) then
-        missingIcon[name] = true;
+        missingIcon[cacheKey] = true;
         return nil;
     end
 
@@ -534,17 +536,17 @@ local function GetIcon(fileName)
     end);
 
     if (ok ~= true or texture == nil) then
-        missingIcon[name] = true;
+        missingIcon[cacheKey] = true;
         return nil;
     end
 
-    iconCache[name] = textureLoader.ToTextureId(texture);
+    iconCache[cacheKey] = textureLoader.ToTextureId(texture);
 
-    if (iconCache[name] == nil) then
-        missingIcon[name] = true;
+    if (iconCache[cacheKey] == nil) then
+        missingIcon[cacheKey] = true;
     end
 
-    return iconCache[name];
+    return iconCache[cacheKey];
 end
 
 local function GetImageIcon(relativePath)
@@ -554,7 +556,7 @@ local function GetImageIcon(relativePath)
         return nil;
     end
 
-    local cacheKey = 'image:' .. name;
+    local cacheKey = tostring(iconPack.GetRevision()) .. ':image:' .. name;
 
     if (missingIcon[cacheKey] == true) then
         return nil;
@@ -565,6 +567,10 @@ local function GetImageIcon(relativePath)
     end
 
     local path = addon.path .. '\\assets\\images\\' .. name;
+
+    if (name:lower():sub(1, 13) == 'widget-icons\\') then
+        path = iconPack.GetAssetPath('widget-icons', name:sub(14));
+    end
     local exists = false;
 
     pcall(function()

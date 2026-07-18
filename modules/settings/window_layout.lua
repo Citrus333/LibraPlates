@@ -135,7 +135,10 @@ function windowLayout.Save()
     global.settingsWindow.width = width;
     global.settingsWindow.height = height;
 
-    state.SaveThrottled(1.0);
+    -- This runs while the native ImGui Settings window is active.  Defer the
+    -- actual profile write until the window has ended cleanly; settingsUi
+    -- performs that save immediately after imgui.End().
+    _G.LibraPlatesSettingsSaveRequested = true;
 end
 
 return windowLayout;

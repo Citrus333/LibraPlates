@@ -155,6 +155,7 @@ worldMarkerProbe._lastClickGetEntityManager = nil;
 worldMarkerProbe._lastClickGetBone = nil;
 worldMarkerProbe._pendingStackRects = {};
 worldMarkerProbe._collectFrameClickRects = true;
+worldMarkerProbe._pcModelBaselineCache = {};
 function worldMarkerProbe._HasStackScreenOffset(plate)
     return
         (tonumber(plate ~= nil and plate._stackScreenOffsetX) or 0) ~= 0 or
@@ -2882,29 +2883,48 @@ local function GetPcBucketAdjustmentY(adjustments, familyKey, sexKey, sizeKey)
 end
 
 local function GetPcBodyPlateOffset(actorPointer, targetIndex, entityManager)
-    local bounds = GetBoneBounds(actorPointer);
-    local family = GetPcBodyFamilyFromBounds(bounds);
-    local familyKey, sexKey = GetPcRaceFamilyKeyAndSex(ReadPcRaceId(entityManager, targetIndex), family);
+    local cacheKey = tonumber(targetIndex) or 0;
+    local modelCache = worldMarkerProbe._pcModelBaselineCache;
+    local cached = modelCache[cacheKey];
+    local familyKey = nil;
+    local sexKey = nil;
+    local sizeKey = nil;
+    local baselineY = 0;
 
-    if (familyKey == nil) then
-        return 0;
+    if (cached ~= nil and cached.actorPointer == actorPointer) then
+        familyKey = cached.familyKey;
+        sexKey = cached.sexKey;
+        sizeKey = cached.sizeKey;
+        baselineY = tonumber(cached.baselineY) or 0;
+    else
+        local bounds = GetBoneBounds(actorPointer);
+        local family = GetPcBodyFamilyFromBounds(bounds);
+        familyKey, sexKey = GetPcRaceFamilyKeyAndSex(ReadPcRaceId(entityManager, targetIndex), family);
+
+        if (familyKey == nil) then
+            return 0;
+        end
+
+        sizeKey = GetPcSizeBucket(ReadPcSizeScale(actorPointer), familyKey);
+        baselineY = GetPcBucketBaselineY(familyKey, sexKey, sizeKey);
+        modelCache[cacheKey] = {
+            actorPointer = actorPointer,
+            familyKey = familyKey,
+            sexKey = sexKey,
+            sizeKey = sizeKey,
+            baselineY = baselineY,
+        };
     end
 
     local settings = targeting.GetSettings();
     local adjustments = settings ~= nil and settings.pcRacePlateAdjustments or nil;
 
-    if (type(adjustments) ~= 'table' or adjustments.enabled == false) then
-        return 0;
+    local manualAdjustmentY = 0;
+    if (type(adjustments) == 'table' and adjustments.enabled ~= false) then
+        manualAdjustmentY = GetPcBucketAdjustmentY(adjustments, familyKey, sexKey, sizeKey);
     end
 
-    local race = type(adjustments[familyKey]) == 'table' and adjustments[familyKey] or nil;
-
-    if (race == nil) then
-        return 0;
-    end
-
-    local sizeKey = GetPcSizeBucket(ReadPcSizeScale(actorPointer), familyKey);
-    return (GetPcBucketBaselineY(familyKey, sexKey, sizeKey) + GetPcBucketAdjustmentY(adjustments, familyKey, sexKey, sizeKey)) * 0.01;
+    return (baselineY + manualAdjustmentY) * 0.01;
 end
 
 local function ReadFloatList(pointer, offsets)

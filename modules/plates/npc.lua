@@ -291,6 +291,15 @@ local function BuildTargetMarkerKey(marker)
         BoolKey(marker.showArrow),
         BoolKey(marker.showChevrons),
         tostring(marker.backgroundFile or ''),
+        BoolKey(marker.backgroundAnchorToPlate == true),
+        BoolKey(marker.backgroundClickable == true),
+        NumberKey(marker.backgroundWidth),
+        NumberKey(marker.backgroundHeight),
+        NumberKey(marker.backgroundSpacing),
+        NumberKey(marker.backgroundOffsetX),
+        NumberKey(marker.backgroundOffsetY),
+        NumberKey(marker.width),
+        NumberKey(marker.height),
         tostring(marker.arrowFile or ''),
         BoolKey(marker.arrowAnimated == true),
         NumberKey(marker.arrowAnimationSpeed),
@@ -308,6 +317,13 @@ local function BuildTargetMarkerKey(marker)
         ColorKey(marker.arrowColor),
         ColorKey(marker.chevronColor),
     }, '|');
+end
+
+local function HasAnimatedTargetMarker(marker)
+    return marker ~= nil and marker.enabled == true and (
+        marker.arrowAnimated == true or
+        marker.lockAnimated == true
+    );
 end
 
 local function BuildPlateSignature(displayName, renderedDisplayName, resolvedEntityName, targetStateName, npcInfo, settings, values)
@@ -561,7 +577,7 @@ local function QueueNpcObject(entity)
     local textureHeight = nil;
     local elementRects = nil;
 
-    if (cached ~= nil and cached.signature == signature and cached.texture ~= nil) then
+    if (HasAnimatedTargetMarker(targetMarker) ~= true and cached ~= nil and cached.signature == signature and cached.texture ~= nil) then
         TouchPlateCacheEntry(cached);
         plateTexture = cached.texture;
         textureWidth = cached.textureWidth;
@@ -763,11 +779,18 @@ local function QueueTacticalNpc(entity)
 
     local layoutStateName = 'Combat';
     local targetStateName = targeting.GetTargetStateName(entity.index);
+    local _, npcInfo = npcObjectInfo.ResolveKind(displayName, 'NPC', { targetIndex = entity.index });
     local globalSettings = state.GetGlobalSettings(globalDefaults);
     local backgroundSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Background', backgroundDefaults);
     local nameSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Name', nameDefaults);
     local hpBarSettings = state.GetWidgetSettings('NPC', layoutStateName, 'HP Bar', barDefaults);
     local distanceSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Distance', distanceDefaults);
+    local typeLineSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Type line', typeLineDefaults);
+    local iconSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Icon', npcObjectIconDefaults);
+    ApplyNpcAnchorDefaults(iconSettings, npcObjectIconDefaults, -28, -30);
+    ApplyNpcAnchorDefaults(typeLineSettings, typeLineDefaults, 0, -30);
+    local iconTextureId = iconSettings.enabled == true and npcObjectInfo.GetTextureIdForInfo(npcInfo) or nil;
+    local typeText = typeLineSettings.enabled == true and npcInfo ~= nil and tostring(npcInfo.type or '') or nil;
     local hpPercent = math.max(0, math.min(100, tonumber(entity.hpPercent) or 100));
     local distanceText = distanceSettings.enabled == true and entity.distance ~= nil
         and FormatDistanceText(distanceSettings, entity.distance)
@@ -807,9 +830,12 @@ local function QueueTacticalNpc(entity)
         nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
         nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
         anchorMap = {
+            ['Background'] = 'background',
             ['Name'] = 'name',
             ['HP Bar'] = 'hp',
             ['Distance'] = 'distance',
+            ['Icon'] = 'npc_object_icon',
+            ['Type line'] = 'type',
         },
         hpBar = {
             enabled = hpBarSettings.enabled == true,
@@ -821,6 +847,7 @@ local function QueueTacticalNpc(entity)
             backgroundColor = hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(hpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(hpBarSettings.cornerRadius) or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             texture = hpBarSettings.texture or 'Solid',
@@ -861,19 +888,56 @@ local function QueueTacticalNpc(entity)
         };
     end
 
+    if (iconTextureId ~= nil) then
+        plateData.icons = plateData.icons or {};
+        plateData.icons[#plateData.icons + 1] = {
+            kind = 'npc_object_icon',
+            textureId = iconTextureId,
+            size = tonumber(iconSettings.iconSize) or npcObjectIconDefaults.iconSize,
+            offsetX = tonumber(iconSettings.offsetX) or npcObjectIconDefaults.offsetX,
+            offsetY = tonumber(iconSettings.offsetY) or npcObjectIconDefaults.offsetY,
+            anchorTo = iconSettings.anchorTo or npcObjectIconDefaults.anchorTo,
+            anchorPoint = iconSettings.anchorPoint or npcObjectIconDefaults.anchorPoint,
+        };
+    end
+
+    if (typeText ~= nil and typeText ~= '') then
+        plateData.texts = plateData.texts or {};
+        plateData.texts[#plateData.texts + 1] = {
+            kind = 'type',
+            text = typeText,
+            align = 'center',
+            offsetX = tonumber(typeLineSettings.offsetX) or typeLineDefaults.offsetX,
+            offsetY = tonumber(typeLineSettings.offsetY) or typeLineDefaults.offsetY,
+            anchorTo = typeLineSettings.anchorTo or typeLineDefaults.anchorTo,
+            anchorPoint = typeLineSettings.anchorPoint or typeLineDefaults.anchorPoint,
+            fontFamily = fonts.GetRole(globalSettings, typeLineSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, typeLineSettings.useSmallFont == true),
+            fontSize = textScale.ToTextureFontSize(typeLineSettings.textSize, typeLineDefaults.textSize),
+            color = typeLineSettings.color or typeLineDefaults.color,
+            outlineEnabled = typeLineSettings.outlineEnabled == true,
+            outlineColor = typeLineSettings.outlineColor or typeLineDefaults.outlineColor,
+            outlineSize = tonumber(typeLineSettings.outlineSize) or typeLineDefaults.outlineSize,
+        };
+    end
+
     local cacheKey = 'npc-tactical:' .. tostring(entity.index) .. ':' .. tostring(targetStateName or 'Idle');
     local signature = table.concat({
         'v=1',
         'policy=' .. canvasTexture.GetRenderPolicyKey(),
         'name=' .. tostring(displayName or ''),
+        'infoType=' .. tostring(npcInfo ~= nil and npcInfo.type or ''),
+        'iconTex=' .. tostring(iconTextureId or ''),
         'state=' .. tostring(targetStateName or 'Idle'),
         'hp=' .. tostring(math.floor(hpPercent + 0.5)),
         'distance=' .. tostring(distanceText or ''),
         'target=' .. BuildTargetMarkerKey(targetMarker),
         'bg=' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
         'nameSettings=' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
-        'hpSettings=' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
+        'hpSettings=' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
         'distanceSettings=' .. SettingKey(distanceSettings, { 'enabled', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder' }),
+        'typeSettings=' .. SettingKey(typeLineSettings, { 'enabled', 'useSmallFont', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
+        'iconSettings=' .. SettingKey(iconSettings, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
     }, '\n');
     local cached = plateCache[cacheKey];
     local plateTexture = nil;
@@ -881,7 +945,7 @@ local function QueueTacticalNpc(entity)
     local textureHeight = nil;
     local elementRects = nil;
 
-    if (cached ~= nil and cached.signature == signature and cached.texture ~= nil) then
+    if (HasAnimatedTargetMarker(targetMarker) ~= true and cached ~= nil and cached.signature == signature and cached.texture ~= nil) then
         TouchPlateCacheEntry(cached);
         plateTexture = cached.texture;
         textureWidth = cached.textureWidth;
@@ -978,11 +1042,15 @@ local function AnyTacticalNpcWidgetCanLoad()
     local nameSettings = state.GetWidgetSettings('NPC', 'Combat', 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('NPC', 'Combat', 'Background', backgroundDefaults);
     local distanceSettings = state.GetWidgetSettings('NPC', 'Combat', 'Distance', distanceDefaults);
+    local typeLineSettings = state.GetWidgetSettings('NPC', 'Combat', 'Type line', typeLineDefaults);
+    local iconSettings = state.GetWidgetSettings('NPC', 'Combat', 'Icon', npcObjectIconDefaults);
 
     return hpBarSettings.enabled == true or
         nameSettings.enabled == true or
         backgroundSettings.enabled == true or
-        distanceSettings.enabled == true;
+        distanceSettings.enabled == true or
+        typeLineSettings.enabled == true or
+        iconSettings.enabled == true;
 end
 
 local function AnyNpcTargetModuleCanLoad()

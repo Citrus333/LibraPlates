@@ -444,6 +444,13 @@ local function TargetMarkerKey(marker)
     }, ';');
 end
 
+local function HasAnimatedTargetMarker(marker)
+    return marker ~= nil and marker.enabled == true and (
+        marker.arrowAnimated == true or
+        marker.lockAnimated == true
+    );
+end
+
 local function CastBarKey(context)
     local castData = context ~= nil and context.castData or nil;
     local castBar = context ~= nil and context.castBar or nil;
@@ -2139,7 +2146,7 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
         'aoeSettings=' .. SettingKey(context.aoeRangeSettings, { 'enabled', 'fontSize', 'fontColor', 'highlightFile', 'highlightClickable', 'highlightAutoPlace', 'highlightAutoPlaceBy', 'highlightSpacing', 'highlightOffsetX', 'highlightOffsetY', 'highlightWidth', 'highlightHeight', 'highlightColor', 'highlightOpacity', 'iconEnabled', 'iconFile', 'iconSize', 'iconOffsetX', 'iconOffsetY' }),
         'bg=' .. SettingKey(context.backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
         'nameSettings=' .. SettingKey(context.nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'claimColorsEnabled', 'claimUnclaimedColor', 'claimPartyColor', 'claimOtherColor', 'claimCallForHelpColor', 'claimUnclaimedOutlineColor', 'claimPartyOutlineColor', 'claimOtherOutlineColor', 'claimCallForHelpOutlineColor', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-        'hpSettings=' .. (context.hpBarSettings.enabled == true and SettingKey(context.hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor' }) or ''),
+        'hpSettings=' .. (context.hpBarSettings.enabled == true and SettingKey(context.hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor' }) or ''),
         'jobSettings=' .. SettingKey(context.jobSettings, { 'enabled', 'displayModeIndex', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'iconTheme', 'iconSize' }),
         'levelSettings=' .. SettingKey(context.levelSettings, { 'enabled', 'textSize', 'color', 'difficultyColorsEnabled', 'twColor', 'epColor', 'dcColor', 'emColor', 'tColor', 'vtColor', 'itColor', 'outlineSize', 'outlineColor', 'twOutlineColor', 'epOutlineColor', 'dcOutlineColor', 'emOutlineColor', 'tOutlineColor', 'vtOutlineColor', 'itOutlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
         'idSettings=' .. SettingKey(context.idSettings, { 'enabled', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder', 'prefix' }),
@@ -2213,6 +2220,7 @@ local function BuildEnemyPlateData(context)
             backgroundColor = context.hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = context.hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(context.hpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(context.hpBarSettings.cornerRadius) or 0,
             anchorTo = context.hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = context.hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = context.hpBarSettings.anchorCollapse,
@@ -2324,7 +2332,9 @@ local function QueueEnemy(enemy)
     local cacheSkipReason = nil;
     local hasDynamicDistance = context.distanceText ~= nil and context.distanceText ~= '';
     local cacheableTargetState = context.stateName == 'Idle' or context.stateName == 'Target' or context.stateName == 'Subtarget';
-    local cacheEligible = cacheableTargetState == true;
+    -- Sprite markers are part of the rendered plate texture.  Refresh only
+    -- targeted animated markers so their frames advance; idle plates remain cached.
+    local cacheEligible = cacheableTargetState == true and HasAnimatedTargetMarker(context.targetMarker) ~= true;
     local cacheKey = nil;
     local signature = nil;
 

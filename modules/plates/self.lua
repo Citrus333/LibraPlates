@@ -340,6 +340,7 @@ local function BuildPlayerIndicatorAnchorFallbackRects(definitions)
                 anchorPoint = settings.anchorPoint or defaults.anchorPoint,
                 anchorCollapse = settings.anchorCollapse,
                 anchorSpacing = settings.anchorSpacing,
+                anchorOrder = settings.anchorOrder,
                 offsetX = offsetX,
                 offsetY = offsetY,
             },
@@ -982,6 +983,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             anchorPoint = gameModeIconSettings.anchorPoint,
             anchorCollapse = gameModeIconSettings.anchorCollapse,
             anchorSpacing = gameModeIconSettings.anchorSpacing,
+            anchorOrder = gameModeIconSettings.anchorOrder,
         });
     end
 
@@ -1119,6 +1121,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 anchorPoint = newAdventurerIconSettings.anchorPoint,
                 anchorCollapse = newAdventurerIconSettings.anchorCollapse,
                 anchorSpacing = newAdventurerIconSettings.anchorSpacing,
+                anchorOrder = newAdventurerIconSettings.anchorOrder,
             });
         end
     end
@@ -1192,6 +1195,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             backgroundColor = hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(hpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(hpBarSettings.cornerRadius) or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = hpBarSettings.anchorCollapse,
@@ -1225,6 +1229,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             backgroundColor = mpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = mpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(mpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(mpBarSettings.cornerRadius) or 0,
             anchorTo = mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
             anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
             anchorCollapse = mpBarSettings.anchorCollapse,
@@ -1258,6 +1263,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             backgroundColor = tpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = tpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(tpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(tpBarSettings.cornerRadius) or 0,
             anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             anchorCollapse = tpBarSettings.anchorCollapse,

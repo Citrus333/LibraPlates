@@ -44,6 +44,7 @@ local pcHeightBucketKeys = {
     'elvaan_female_small', 'elvaan_female_medium', 'elvaan_female_large',
     'galka_male_small', 'galka_male_medium', 'galka_male_large',
 };
+local pcHeightRaceKeys = { 'tarutaru', 'mithra', 'hume', 'elvaan', 'galka' };
 
 local function NormalizePlateClickNoGoZones(settings)
     if (type(settings.plateClickNoGoZones) ~= 'table') then
@@ -680,6 +681,34 @@ function targeting.GetPlatePositionOffset(entityName)
         x = (tonumber(settings.globalPlateOffsetX) or 0) + (tonumber(offsets.x) or 0),
         y = (tonumber(settings.globalPlateOffsetY) or 0) + (tonumber(offsets.y) or 0),
     };
+end
+
+function targeting.HasActivePcHeightAdjustments()
+    local settings = targeting.GetSettings();
+    local adjustments = settings ~= nil and settings.pcRacePlateAdjustments or nil;
+
+    if (type(adjustments) ~= 'table' or adjustments.enabled == false) then
+        return false;
+    end
+
+    -- A visible zero must really mean no correction.  Do this settings-only
+    -- check before any actor/skeleton data is read.
+    for _, key in ipairs(pcHeightBucketKeys) do
+        local bucket = type(adjustments.buckets) == 'table' and adjustments.buckets[key] or nil;
+        if (math.abs(tonumber(type(bucket) == 'table' and bucket.y) or 0) > 0) then
+            return true;
+        end
+    end
+
+    -- Keep older race-only profile values working too.
+    for _, key in ipairs(pcHeightRaceKeys) do
+        local race = adjustments[key];
+        if (math.abs(tonumber(type(race) == 'table' and race.y) or 0) > 0) then
+            return true;
+        end
+    end
+
+    return false;
 end
 
 function targeting.ApplyPlateScalingSettings(worldMarker, entityName, baseOffsetX, baseOffsetY)

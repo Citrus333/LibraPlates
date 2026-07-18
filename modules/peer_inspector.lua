@@ -1057,10 +1057,38 @@ DrawPeerPanelBox = function(drawList, x, y, w, h, peerSettings)
     end
 end
 
-local function WrapInspectorText(value, maxChars, maxLines)
+local function GetInspectorTextWidth(text)
+    text = tostring(text or '');
+
+    if (imgui.CalcTextSize ~= nil) then
+        local ok, sizeA, sizeB = pcall(function()
+            return imgui.CalcTextSize(text);
+        end);
+
+        if (ok == true) then
+            if (type(sizeA) == 'table') then
+                return tonumber(sizeA.x or sizeA[1]) or (#text * 8);
+            end
+
+            return tonumber(sizeA) or (#text * 8);
+        end
+    end
+
+    return #text * 8;
+end
+
+local function NormalizeInspectorNote(value)
+    local text = tostring(value or ''):gsub('\r', '');
+
+    -- Zone data historically stores notes as "Notes:\n...", while this panel
+    -- already supplies its own Notes heading.  Strip only that leading label.
+    return text:gsub('^%s*[Nn]otes:%s*', '');
+end
+
+local function WrapInspectorText(value, maxWidth, maxLines)
     local text = tostring(value or ''):gsub('\r', '');
     local lines = {};
-    maxChars = math.max(12, tonumber(maxChars) or 48);
+    maxWidth = math.max(120, tonumber(maxWidth) or 400);
     maxLines = math.max(1, tonumber(maxLines) or 8);
 
     for paragraph in (text .. '\n'):gmatch('(.-)\n') do
@@ -1069,7 +1097,7 @@ local function WrapInspectorText(value, maxChars, maxLines)
         for word in paragraph:gmatch('%S+') do
             local candidate = line == '' and word or (line .. ' ' .. word);
 
-            if (#candidate > maxChars and line ~= '') then
+            if (GetInspectorTextWidth(candidate) > maxWidth and line ~= '') then
                 lines[#lines + 1] = line;
                 line = word;
 
@@ -1094,10 +1122,6 @@ local function WrapInspectorText(value, maxChars, maxLines)
         end
     end
 
-    if (#lines == maxLines and #text > 0) then
-        lines[#lines] = LimitText(lines[#lines], math.max(4, maxChars - 1));
-    end
-
     return lines;
 end
 
@@ -1119,9 +1143,9 @@ local function DrawNpcObjectInspector(hovered, entityName, peerSettings)
         targetIndex = hovered.targetIndex,
     });
     local typeText = tostring(info ~= nil and info.type or resolvedEntityName or entityName);
-    local noteLines = WrapInspectorText(info ~= nil and info.note or '', 54, 8);
     local displayW, displayH = GetDisplaySize();
     local w = math.max(320, GetPeerInspectorWidth(peerSettings, 430));
+    local noteLines = WrapInspectorText(NormalizeInspectorNote(info ~= nil and info.note or ''), w - 28, 8);
     local h = 64 + (#noteLines * 18);
 
     if (typeText ~= '') then

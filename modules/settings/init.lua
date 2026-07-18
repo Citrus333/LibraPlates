@@ -652,7 +652,7 @@ local detectedGameFpsMode = 'Unknown';
 local openDropdown = nil;
 local helpSearchBuffer = { '' };
 _G.LibraPlatesUserGuideSearchBuffer = _G.LibraPlatesUserGuideSearchBuffer or { '' };
-local troubleshooterSearchBuffer = { '' };
+local troubleshooterExpandedTitle = nil;
 LibraPlatesCustomAlertTriggerBuffers = LibraPlatesCustomAlertTriggerBuffers or {};
 LibraPlatesCustomAlertExpandedIndex = LibraPlatesCustomAlertExpandedIndex or nil;
 LibraPlatesCustomAlertPendingDelete = LibraPlatesCustomAlertPendingDelete or nil;
@@ -1636,6 +1636,8 @@ GetEditWidgetsFor = function(entity, stateName)
             return T{
                 'Background',
                 'Name',
+                'Type line',
+                'Icon',
                 'Distance',
                 'HP Bar',
                 'Target (module)',
@@ -5846,7 +5848,10 @@ function LibraPlatesSettingsApplyWidgetsBulkAction(enabled)
     end
 
     if (changed == true) then
-        state.Save();
+        -- Do not write a profile while this function is running from inside an
+        -- ImGui child window.  Ashita's UI callbacks are native and a file
+        -- write is not needed until the frame has been closed cleanly.
+        _G.LibraPlatesSettingsSaveRequested = true;
     end
 end
 
@@ -10287,7 +10292,7 @@ local function DrawGeneralProfilesSection()
     DrawProfilePanel('Profiles', function()
         imgui.TextWrapped('LibraPlates offers a lot of customization, which can feel overwhelming at first. Several profiles are included to help you get started.');
         imgui.Spacing();
-        imgui.TextWrapped('A good approach is to make a copy of one of the included profiles that suits you best, then customize it to make it your own.');
+        imgui.TextWrapped('A good approach is to select one of the included presets that suits you best. This creates a profile you can customize and make your own.');
     end, true);
 
     local now = os.clock();
@@ -10299,6 +10304,45 @@ local function DrawGeneralProfilesSection()
     local names, activeName = _G.LibraPlatesSettingsProfileChoicesCache.names, _G.LibraPlatesSettingsProfileChoicesCache.active;
 
     local profilePopupToOpen = nil;
+
+    local presets = state.GetPresetNames();
+    local presetNames = {};
+    local presetIdsByName = {};
+
+    for _, preset in ipairs(presets) do
+        local name = tostring(preset.name or preset.id or 'Preset');
+        presetNames[#presetNames + 1] = name;
+        presetIdsByName[name] = preset.id;
+    end
+
+    if (_G.LibraPlatesProfilePresetSelection == nil or presetIdsByName[_G.LibraPlatesProfilePresetSelection] == nil) then
+        _G.LibraPlatesProfilePresetSelection = presetNames[1];
+    end
+
+    DrawProfilePanel('Presets', function()
+        if (#presetNames == 0) then
+            imgui.Text('No presets are installed.');
+            return;
+        end
+
+        DrawInlineCombo('', presetNames, _G.LibraPlatesProfilePresetSelection, function(value)
+            _G.LibraPlatesProfilePresetSelection = tostring(value or '');
+        end);
+
+        local selectedPreset = state.GetPreset(presetIdsByName[_G.LibraPlatesProfilePresetSelection]);
+
+        if (selectedPreset ~= nil and tostring(selectedPreset.description or '') ~= '') then
+            imgui.TextWrapped(tostring(selectedPreset.description));
+        end
+
+        if (imgui.Button('Use preset##ProfileUsePreset')) then
+            _G.LibraPlatesProfilePendingPreset = selectedPreset ~= nil and selectedPreset.id or nil;
+            profilePopupStatusMessage = '';
+            profilePopupToOpen = 'Use preset##libraplates_profile_use_preset';
+        end
+
+        uiTooltip.Info('Creates a new editable copy and makes it the current profile. Existing profiles are never overwritten.');
+    end);
 
     DrawProfilePanel('Current profile', function()
         DrawInlineCombo('', names, activeName, function(value)
@@ -10362,6 +10406,52 @@ local function DrawGeneralProfilesSection()
     DrawProfileNamePopup('Rename profile##libraplates_profile_rename', 'New Name:', 'Rename', profileRenameNameBuffer, function(name)
         return state.RenameProfile(activeName, name);
     end);
+
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ 440, 170 }, _G.ImGuiCond_Appearing or 8);
+    end
+
+    if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal('Use preset##libraplates_profile_use_preset')) then
+        local preset = state.GetPreset(_G.LibraPlatesProfilePendingPreset);
+        local copyName = state.GetPresetCopyName(_G.LibraPlatesProfilePendingPreset);
+
+        if (preset == nil or copyName == nil) then
+            imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, 'This preset is no longer available.');
+        else
+            imgui.Text('Use preset "' .. tostring(preset.name or preset.id) .. '"?');
+            imgui.TextWrapped('A new editable profile named "' .. tostring(copyName) .. '" will be created and made current. Existing profiles will not be overwritten.');
+        end
+
+        if (profilePopupStatusMessage ~= nil and profilePopupStatusMessage ~= '') then
+            imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, profilePopupStatusMessage);
+        end
+
+        if (imgui.Button('Cancel##ProfileUsePresetCancel')) then
+            _G.LibraPlatesProfilePendingPreset = nil;
+            profilePopupStatusMessage = '';
+            imgui.CloseCurrentPopup();
+        end
+
+        imgui.SameLine();
+
+        if (imgui.Button('Create copy##ProfileUsePresetConfirm')) then
+            local ok, message = state.CreateProfileFromPreset(_G.LibraPlatesProfilePendingPreset);
+
+            if (ok == true) then
+                _G.LibraPlatesSettingsProfileChoicesCache.names = nil;
+                _G.LibraPlatesSettingsProfileChoicesCache.clock = 0;
+                canvasTexture.Invalidate();
+                profileStatusMessage = '';
+                profilePopupStatusMessage = '';
+                _G.LibraPlatesProfilePendingPreset = nil;
+                imgui.CloseCurrentPopup();
+            else
+                profilePopupStatusMessage = tostring(message or 'Preset copy failed.');
+            end
+        end
+
+        imgui.EndPopup();
+    end
 
     if (imgui.SetNextWindowSize ~= nil) then
         imgui.SetNextWindowSize({ 390, 145 }, _G.ImGuiCond_Appearing or 8);
@@ -10813,7 +10903,7 @@ local function DrawGeneralScalingSection(settings)
     local function DrawPcRacePlateAdjustmentSettings()
         EnsurePcRacePlateAdjustments();
 
-        DrawCheckbox('Use model height adjustments', settings.pcRacePlateAdjustments.enabled ~= false, function(value)
+        DrawCheckbox('Use custom model height corrections', settings.pcRacePlateAdjustments.enabled ~= false, function(value)
             settings.pcRacePlateAdjustments.enabled = value == true;
             state.Save();
         end);
@@ -13286,62 +13376,32 @@ end
 
 local function DrawHelpTroubleshooter()
     LibraPlatesSettingsDrawBreadcrumb(T{ 'Help', 'Troubleshooter' });
-    DrawSettingsHeader('Search');
-
-    if (imgui.PushItemWidth ~= nil) then
-        imgui.PushItemWidth(430);
-    end
-
-    if (imgui.InputText ~= nil) then
-        imgui.InputText('##TroubleshooterSearch', troubleshooterSearchBuffer, 96);
-    else
-        imgui.Text(tostring(troubleshooterSearchBuffer[1] or ''));
-    end
-
-    if (imgui.PopItemWidth ~= nil) then
-        imgui.PopItemWidth();
-    end
-
+    DrawSettingsHeader('Checklists');
+    imgui.TextWrapped('Choose a topic to see its checklist.');
     imgui.Spacing();
 
-    local query = NormalizeHelpText(troubleshooterSearchBuffer[1]);
-    local resultCount = 0;
+    for row, entry in ipairs(troubleshooterEntries) do
+        local title = tostring(entry.title or 'Troubleshooter');
+        local expanded = troubleshooterExpandedTitle == title;
 
-    for _, entry in ipairs(troubleshooterEntries) do
-        if (TroubleshooterEntryMatches(entry, query) == true) then
-            resultCount = resultCount + 1;
+        if (imgui.Button ~= nil and imgui.Button((expanded and 'Hide ' or 'Show ') .. title .. '##TroubleshooterToggle' .. tostring(row)) == true) then
+            troubleshooterExpandedTitle = expanded and nil or title;
+            expanded = not expanded;
         end
-    end
 
-    DrawSettingsHeader(query == '' and 'Checklists' or ('Results ' .. tostring(resultCount)));
-
-    local row = 0;
-    for _, entry in ipairs(troubleshooterEntries) do
-        if (TroubleshooterEntryMatches(entry, query) == true) then
-            row = row + 1;
-            imgui.Separator();
-            imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, tostring(entry.title or 'Troubleshooter'));
+        if (expanded == true) then
             imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, tostring(entry.path or ''));
 
             for _, check in ipairs(entry.checks or {}) do
                 imgui.TextWrapped('- ' .. tostring(check));
             end
 
-            if (entry.tab ~= nil and imgui.Button ~= nil) then
-                local clicked = imgui.Button('Go to ' .. tostring(entry.tab) .. '##TroubleshooterGo' .. tostring(row));
-                if (clicked ~= true and imgui.IsItemClicked ~= nil) then
-                    clicked = imgui.IsItemClicked(0) == true;
-                end
-
-                if (clicked) then
-                    GoToHelpEntry(entry);
-                end
+            if (entry.tab ~= nil and imgui.Button ~= nil and imgui.Button('Go to ' .. tostring(entry.tab) .. '##TroubleshooterGo' .. tostring(row)) == true) then
+                GoToHelpEntry(entry);
             end
         end
-    end
 
-    if (resultCount == 0) then
-        imgui.TextColored({ 1.0, 0.35, 0.25, 1.0 }, 'No matching troubleshooting entries yet.');
+        imgui.Separator();
     end
 end
 
@@ -14796,6 +14856,9 @@ function settingsUi.Render()
         windowFlags = windowFlags + settingsWindowNoMoveFlag;
     end
 
+    -- state.Save defers any Settings-originated disk write while this native
+    -- ImGui window is active.  The flag is cleared immediately after End.
+    _G.LibraPlatesSettingsUiActive = true;
     local began = imgui.Begin('LibraPlates Settings', windowOpen, windowFlags);
 
     if (began) then
@@ -14883,6 +14946,7 @@ function settingsUi.Render()
     end
 
     imgui.End();
+    _G.LibraPlatesSettingsUiActive = nil;
     PopSettingsAccentStyle(styleCount);
 
     if (windowOpen[1] ~= true) then
@@ -14893,7 +14957,22 @@ function settingsUi.Render()
         error(renderError);
     end
 
+    -- Remember navigation in memory during the UI session.  Saving it while a
+    -- selector or modal is active means doing disk work from the native ImGui
+    -- callback, which is exactly the shared path behind the recent Settings
+    -- UI failures.  A real setting change requests a save above; ordinary
+    -- navigation is saved when the Settings window is closed.
     if (PersistUiSelection() == true) then
+        _G.LibraPlatesSettingsUiSelectionDirty = true;
+    end
+
+    if (_G.LibraPlatesSettingsSaveRequested == true) then
+        _G.LibraPlatesSettingsSaveRequested = nil;
+        state.Save();
+    end
+
+    if (windowOpen[1] ~= true and _G.LibraPlatesSettingsUiSelectionDirty == true) then
+        _G.LibraPlatesSettingsUiSelectionDirty = nil;
         state.SaveThrottled(1.0);
     end
 end

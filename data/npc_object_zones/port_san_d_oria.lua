@@ -25,10 +25,8 @@ can no longer use.",
         },
         ["Anoki"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
-            ["note"] = "Involved in Missions:\
-* Promathia Mission 5-1:The Enduring Tumult of War",
-            ["type"] = "Mission Associate",
+            ["icon"] = "AirshipTravelAgent.png",
+            ["type"] = "Airship Travel Agent",
         },
         ["Answald"] = {
             ["_source"] = "npc",
@@ -39,8 +37,8 @@ can no longer use.",
         },
         ["Anton"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Citizen",
+            ["icon"] = "AirshipTicketAgent.png",
+            ["type"] = "Airship Ticket Agent",
         },
         ["Antreneau"] = {
             ["_source"] = "npc",
@@ -302,14 +300,10 @@ Involved in Quests:\
         },
         ["Huebald"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
-            ["note"] = "Novice Trials:\
-* Starts no-cooldown equipment\
-augment trials.\
-* Can transfer completed NQ\
-augments to crafted HQ versions.\
-* Trials may be completed on any\
-job.",
+            ["icon"] = "Trials.png",
+            ["note"] = "* Starts equipment augment trials.\
+* Transfers NQ augments to HQ versions.\
+* Trials may be completed on any job.",
             ["type"] = "Novice Trials",
         },
         ["Ilgusin"] = {
@@ -360,8 +354,15 @@ Aye, 'tis true that San d'Oria joined Windurst, Bastok, and Jeuno in war twenty 
         },
         ["Liloune"] = {
             ["_source"] = "npc",
-            ["icon"] = "Defender.png",
-            ["type"] = "Defender",
+            ["icon"] = "Dialogue.png",
+            ["type"] = "Citizen",
+        },
+	        ["Louis"] = {
+            ["_source"] = "npc",
+            ["icon"] = "AirshipTravelAgent.png",
+            ["note"] = "\
+Stands outside the Air Travel Agency and gives the departure times for Airships.",
+            ["type"] = "Airship Travel",
         },
         ["Marquie"] = {
             ["_source"] = "npc",

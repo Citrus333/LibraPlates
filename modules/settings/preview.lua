@@ -1594,6 +1594,7 @@ local function BuildPreviewExtraBar(settings, defaults, progress, text, kind, ic
         backgroundColor = settings.backgroundColor or defaults.backgroundColor,
         borderColor = settings.borderColor or defaults.borderColor,
         borderSize = tonumber(settings.borderSize) or defaults.borderSize,
+        cornerRadius = tonumber(settings.cornerRadius) or 0,
         textureId = barTextures.GetTextureId(settings.texture),
         fillDirection = settings.fillDirection or defaults.fillDirection or 'Left to right',
         showAtPercent = segmented and 300 or (tonumber(settings.showAtPercent) or 100),
@@ -1728,6 +1729,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
             backgroundColor = hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(hpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(hpBarSettings.cornerRadius) or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = hpBarSettings.anchorCollapse,
@@ -1761,6 +1763,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
             backgroundColor = tpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = tpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(tpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(tpBarSettings.cornerRadius) or 0,
             anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             anchorCollapse = tpBarSettings.anchorCollapse,
@@ -1902,6 +1905,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
             backgroundColor = hpBarSettings.backgroundColor or barDefaults.backgroundColor,
             borderColor = hpBarSettings.borderColor or barDefaults.borderColor,
             borderSize = tonumber(hpBarSettings.borderSize) or barDefaults.borderSize,
+            cornerRadius = tonumber(hpBarSettings.cornerRadius) or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = hpBarSettings.anchorCollapse,
@@ -1938,6 +1942,7 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
             backgroundColor = tpBarSettings.backgroundColor or tpBarDefaults.backgroundColor,
             borderColor = tpBarSettings.borderColor or tpBarDefaults.borderColor,
             borderSize = tonumber(tpBarSettings.borderSize) or tpBarDefaults.borderSize,
+            cornerRadius = tonumber(tpBarSettings.cornerRadius) or 0,
             anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             anchorCollapse = tpBarSettings.anchorCollapse,
@@ -2075,6 +2080,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             backgroundColor = hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(hpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(hpBarSettings.cornerRadius) or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = hpBarSettings.anchorCollapse,
@@ -2107,6 +2113,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             backgroundColor = mpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = mpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(mpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(mpBarSettings.cornerRadius) or 0,
             anchorTo = mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
             anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
             anchorCollapse = mpBarSettings.anchorCollapse,
@@ -2139,6 +2146,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             backgroundColor = tpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = tpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(tpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(tpBarSettings.cornerRadius) or 0,
             anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             anchorCollapse = tpBarSettings.anchorCollapse,
@@ -2506,6 +2514,7 @@ local function BuildPlate(entityName, stateName, context)
             backgroundColor = hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(hpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(hpBarSettings.cornerRadius) or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             anchorCollapse = hpBarSettings.anchorCollapse,
@@ -2542,6 +2551,7 @@ local function BuildPlate(entityName, stateName, context)
             backgroundColor = mpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = mpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(mpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(mpBarSettings.cornerRadius) or 0,
             anchorTo = mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
             anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
             anchorCollapse = mpBarSettings.anchorCollapse,
@@ -2578,6 +2588,7 @@ local function BuildPlate(entityName, stateName, context)
             backgroundColor = tpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = tpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(tpBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(tpBarSettings.cornerRadius) or 0,
             anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             anchorCollapse = tpBarSettings.anchorCollapse,
@@ -2793,7 +2804,13 @@ local function BuildPlate(entityName, stateName, context)
     end
 
     if (entityName == 'NPC' or entityName == 'NPC/Object') then
-        local iconTextureId = npcObjectInfo.GetTextureId(previewName, 'NPC', { ignoreZone = true });
+        -- The NPC preview name can belong to a different zone than the player.
+        -- Resolve it first so zone-local data still previews accurately, then use
+        -- a known global NPC solely as an icon preview fallback.  This keeps the
+        -- selected NPC icon settings visible in every zone without affecting live
+        -- NPC lookup or the preview's display name/type line.
+        local iconTextureId = npcObjectInfo.GetTextureId(previewName, 'NPC', { ignoreZone = true })
+            or npcObjectInfo.GetTextureId('Almid', 'NPC', { ignoreZone = true });
 
         if (iconSettings ~= nil and iconSettings.enabled == true and iconTextureId ~= nil) then
             plateData.icons = plateData.icons or {};

@@ -8,6 +8,7 @@ return {
     backgroundColor = { 0.255, 0.255, 0.255, 1.0 },
     borderColor = { 0.0, 0.0, 0.0, 1.0 },
     borderSize = 0,
+    cornerRadius = 0,
     offsetX = 0,
     offsetY = 0,
     showValue = true,

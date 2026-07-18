@@ -1422,6 +1422,7 @@ function bar.DrawSettings(settings, context)
             end
             settings.color, settings.backgroundColor, settings.texture, settings.textureStrength = DrawHpTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture, settings.textureStrength);
             settings.borderColor, settings.borderSize = DrawHpBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
+            settings.cornerRadius = DrawSingleSlider('Corner radius', idPrefix .. 'corner_radius', settings.cornerRadius, 0, 80, true, barLabelWidth, barControlWidth, nil, barNumericWidth);
 
             if (resourceName == 'HP' or resourceName == 'MP') then
                 settings.showAtPercent = DrawSingleSlider('Show at ' .. resourceLabel .. ' %%', idPrefix .. 'show_at_percent', settings.showAtPercent, 1, 100, true, barLabelWidth, barControlWidth, nil, barNumericWidth);
@@ -1641,6 +1642,10 @@ function bar.DrawSettings(settings, context)
     settings.offsetX, settings.offsetY = DrawSliderPair(idPrefix .. 'position', 'Position X', idPrefix .. 'offset_x', settings.offsetX, -400, 400, 'Position Y', idPrefix .. 'offset_y', settings.offsetY, -400, 400);
     settings.color, settings.backgroundColor, settings.texture, settings.textureStrength = DrawColorTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture, settings.textureStrength);
     settings.borderColor, settings.borderSize = DrawBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
+
+    if (resourceName == 'HP' or resourceName == 'MP' or resourceName == 'TP') then
+        settings.cornerRadius = DrawSingleSlider('Corner radius', idPrefix .. 'corner_radius', settings.cornerRadius, 0, 80, true, 108, 150);
+    end
 
     if (resourceName == 'Ward' or resourceName == 'Rage') then
         settings.fillDirection = DrawComboRow('Fill direction', settings.fillDirection or defaults.fillDirection or 'Left to right', { 'Left to right', 'Right to left' }, idPrefix .. 'fill_direction', 150);

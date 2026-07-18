@@ -64,6 +64,7 @@ local D3DTOP_SELECTARG1 = 2;
 local D3DTOP_MODULATE = 4;
 local D3DTA_DIFFUSE = 0;
 local D3DTA_TEXTURE = 2;
+local DrawTexture = nil;
 
 local function ClampColorChannel(value)
     value = tonumber(value) or 0;
@@ -423,6 +424,93 @@ local function DrawRectOutline(device, x, y, w, h, color, thickness)
     DrawRect(device, x + w - line, y, line, h, color);
 end
 
+-- Draw a textured rounded rectangle in one primitive call.  The shape is
+-- generated only when a plate canvas is rebuilt, never during the regular
+-- world-position pass.
+local function DrawRoundedTexture(device, textureId, x, y, w, h, color, radius, u1, v1, u2, v2)
+    local rectW = math.max(0, tonumber(w) or 0);
+    local rectH = math.max(0, tonumber(h) or 0);
+    local r = math.max(0, math.min(tonumber(radius) or 0, math.floor(math.min(rectW, rectH) * 0.5)));
+
+    if (rectW <= 0 or rectH <= 0) then
+        return;
+    end
+
+    if (r <= 0) then
+        DrawTexture(device, textureId, x, y, rectW, rectH, color, u2, v2);
+        return;
+    end
+
+    local px = (tonumber(x) or 0) - drawOffsetX;
+    local py = (tonumber(y) or 0) - drawOffsetY;
+    local startU = tonumber(u1) or 0;
+    local startV = tonumber(v1) or 0;
+    local endU = tonumber(u2) or 1;
+    local endV = tonumber(v2) or 1;
+    local segments = 4;
+    local points = {};
+
+    local function AddPoint(pointX, pointY)
+        points[#points + 1] = { pointX, pointY };
+    end
+
+    AddPoint(px + r, py);
+    AddPoint(px + rectW - r, py);
+
+    local corners = {
+        { px + rectW - r, py + r, -math.pi * 0.5, 0 },
+        { px + rectW - r, py + rectH - r, 0, math.pi * 0.5 },
+        { px + r, py + rectH - r, math.pi * 0.5, math.pi },
+        { px + r, py + r, math.pi, math.pi * 1.5 },
+    };
+
+    for _, corner in ipairs(corners) do
+        local cx, cy, from, to = corner[1], corner[2], corner[3], corner[4];
+        for step = 1, segments do
+            local angle = from + ((to - from) * (step / segments));
+            AddPoint(cx + (math.cos(angle) * r), cy + (math.sin(angle) * r));
+        end
+    end
+
+    local centerX = px + (rectW * 0.5);
+    local centerY = py + (rectH * 0.5);
+    local vertexCount = #points * 3;
+    local vertices = ffi.new('lp_canvas_texture_vertex_t[?]', vertexCount);
+    local index = 0;
+
+    local function AddVertex(vertexX, vertexY)
+        local normalizedX = math.max(0, math.min(1, (vertexX - px) / rectW));
+        local normalizedY = math.max(0, math.min(1, (vertexY - py) / rectH));
+        vertices[index] = {
+            vertexX,
+            vertexY,
+            0,
+            1,
+            color,
+            startU + ((endU - startU) * normalizedX),
+            startV + ((endV - startV) * normalizedY),
+        };
+        index = index + 1;
+    end
+
+    for pointIndex = 1, #points do
+        local nextIndex = (pointIndex % #points) + 1;
+        AddVertex(centerX, centerY);
+        AddVertex(points[pointIndex][1], points[pointIndex][2]);
+        AddVertex(points[nextIndex][1], points[nextIndex][2]);
+    end
+
+    device:SetTexture(0, ffi.cast('IDirect3DBaseTexture8*', ffi.cast('uintptr_t', textureId)));
+    device:SetVertexShader(D3DFVF_XYZRHW_DIFFUSE_TEX1);
+    device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+    device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+    device:SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+    device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+    device:SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+    device:SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+    device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, #points, vertices, ffi.sizeof('lp_canvas_texture_vertex_t'));
+end
+
 local function DrawRoundedRect(device, x, y, w, h, color, radius)
     local rectW = math.max(0, tonumber(w) or 0);
     local rectH = math.max(0, tonumber(h) or 0);
@@ -582,7 +670,7 @@ local function GetTimerWarningColor(icon, target)
     return nil;
 end
 
-local DrawTexture = nil;
+DrawTexture = nil;
 
 local function DrawTargetMarker(device, centerX, centerY, marker, pass)
     marker = marker or {};
@@ -936,6 +1024,7 @@ local function DrawBar(device, centerX, centerY, bar, progress, defaultColor, re
     local barX = centerX - (barW * 0.5) + (tonumber(bar.offsetX) or 0);
     local barY = centerY - (barH * 0.5) + (tonumber(bar.offsetY) or 0);
     local borderSize = math.max(0, tonumber(bar.borderSize) or 0);
+    local cornerRadius = math.max(0, tonumber(bar.cornerRadius) or 0);
     local showAtPercent = math.max(1, math.min(100, tonumber(bar.showAtPercent) or 100));
 
     if (bar.enabled ~= true or (progress * 100) > showAtPercent) then
@@ -956,18 +1045,17 @@ local function DrawBar(device, centerX, centerY, bar, progress, defaultColor, re
         end
     end
 
-    if (borderSize > 0) then
-        DrawRect(
-            device,
-            barX - borderSize,
-            barY - borderSize,
-            barW + (borderSize * 2),
-            barH + (borderSize * 2),
-            ColorToD3D(bar.borderColor, { 0.0, 0.0, 0.0, 1.0 })
-        );
-    end
-
-    DrawRect(device, barX, barY, barW, barH, ColorToD3D(bar.backgroundColor, { 0.05, 0.05, 0.05, 0.85 }));
+    DrawRoundedRectWithBorder(
+        device,
+        barX - borderSize,
+        barY - borderSize,
+        barW + (borderSize * 2),
+        barH + (borderSize * 2),
+        ColorToD3D(bar.backgroundColor, { 0.05, 0.05, 0.05, 0.85 }),
+        ColorToD3D(bar.borderColor, { 0.0, 0.0, 0.0, 1.0 }),
+        borderSize,
+        cornerRadius + borderSize
+    );
 
     local fillW = barW * progress;
     local fillX = barX;
@@ -980,12 +1068,12 @@ local function DrawBar(device, centerX, centerY, bar, progress, defaultColor, re
 
     if (bar.textureId ~= nil and tonumber(bar.textureId) ~= nil and tonumber(bar.textureId) ~= 0 and textureStrength > 0) then
         if (textureStrength < 1) then
-            DrawRect(device, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor));
+            DrawRoundedRect(device, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor), cornerRadius);
         end
 
-        DrawTexture(device, bar.textureId, fillX, barY, fillW, barH, ColorWithAlphaMultiplier(bar.color, defaultColor, textureStrength), progress, 1);
+        DrawRoundedTexture(device, bar.textureId, fillX, barY, fillW, barH, ColorWithAlphaMultiplier(bar.color, defaultColor, textureStrength), cornerRadius, 0, 0, progress, 1);
     else
-        DrawRect(device, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor));
+        DrawRoundedRect(device, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor), cornerRadius);
     end
 
     if (bar.animationEnabled == true) then
@@ -1137,6 +1225,7 @@ local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, 
     local barX = centerX - (barW * 0.5) + (tonumber(bar.offsetX) or 0);
     local barY = centerY - (barH * 0.5) + (tonumber(bar.offsetY) or 0);
     local borderSize = math.max(0, tonumber(bar.borderSize) or 0);
+    local cornerRadius = math.max(0, tonumber(bar.cornerRadius) or 0);
     local gap = math.max(6, tonumber(bar.segmentGap) or 6);
     local segmentW = math.max(1, (barW - (gap * 2)) / 3);
     local section2Color = bar.color2 or { 0.80, 0.45, 1.0, 0.95 };
@@ -1168,30 +1257,29 @@ local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, 
             segmentColor = section3Color;
         end
 
-        if (borderSize > 0) then
-            DrawRect(
-                device,
-                segmentX - borderSize,
-                barY - borderSize,
-                segmentW + (borderSize * 2),
-                barH + (borderSize * 2),
-                ColorToD3D(bar.borderColor, { 0.0, 0.0, 0.0, 1.0 })
-            );
-        end
-
-        DrawRect(device, segmentX, barY, segmentW, barH, ColorToD3D(bar.backgroundColor, { 0.05, 0.05, 0.05, 0.85 }));
+        DrawRoundedRectWithBorder(
+            device,
+            segmentX - borderSize,
+            barY - borderSize,
+            segmentW + (borderSize * 2),
+            barH + (borderSize * 2),
+            ColorToD3D(bar.backgroundColor, { 0.05, 0.05, 0.05, 0.85 }),
+            ColorToD3D(bar.borderColor, { 0.0, 0.0, 0.0, 1.0 }),
+            borderSize,
+            cornerRadius + borderSize
+        );
 
         if (segmentProgress > 0) then
             local textureStrength = NormalizeTextureStrength(bar.textureStrength);
 
             if (bar.textureId ~= nil and tonumber(bar.textureId) ~= nil and tonumber(bar.textureId) ~= 0 and textureStrength > 0) then
                 if (textureStrength < 1) then
-                    DrawRect(device, segmentX, barY, segmentW * segmentProgress, barH, ColorToD3D(segmentColor, defaultColor));
+                    DrawRoundedRect(device, segmentX, barY, segmentW * segmentProgress, barH, ColorToD3D(segmentColor, defaultColor), cornerRadius);
                 end
 
-                DrawTexture(device, bar.textureId, segmentX, barY, segmentW * segmentProgress, barH, ColorWithAlphaMultiplier(segmentColor, defaultColor, textureStrength), segmentProgress, 1);
+                DrawRoundedTexture(device, bar.textureId, segmentX, barY, segmentW * segmentProgress, barH, ColorWithAlphaMultiplier(segmentColor, defaultColor, textureStrength), cornerRadius, 0, 0, segmentProgress, 1);
             else
-                DrawRect(device, segmentX, barY, segmentW * segmentProgress, barH, ColorToD3D(segmentColor, defaultColor));
+                DrawRoundedRect(device, segmentX, barY, segmentW * segmentProgress, barH, ColorToD3D(segmentColor, defaultColor), cornerRadius);
             end
         end
     end

@@ -22,6 +22,7 @@ local legacyProfileFileName = 'rebuild_profile.lua';
 local globalProfileName = 'global';
 local defaultUserProfileName = 'Default';
 local profilesFolderName = 'profiles';
+local presetsFolderName = 'presets';
 local backupsFolderName = 'backups';
 local profileSystemVersion = 1;
 local suspiciousShrinkRatio = 0.50;
@@ -40,6 +41,10 @@ local ApplyLoadedWorldEnabled = nil;
 
 local function GetConfigFolder()
     return AshitaCore:GetInstallPath() .. '\\config\\addons\\LibraPlates';
+end
+
+local function GetAddonFolder()
+    return AshitaCore:GetInstallPath() .. '\\addons\\LibraPlates';
 end
 
 local function SanitizeProfilePart(value)
@@ -98,6 +103,10 @@ end
 
 local function GetProfilesFolder(profileName)
     return GetProfileFolder(profileName) .. '\\' .. profilesFolderName;
+end
+
+local function GetPresetsFolder()
+    return GetAddonFolder() .. '\\' .. profilesFolderName .. '\\' .. presetsFolderName;
 end
 
 local function GetProfileDataPath(characterProfileName, userProfileName)
@@ -794,6 +803,14 @@ function state.Load()
 end
 
 function state.Save()
+    -- Ashita invokes ImGui from native code.  Do not perform filesystem work
+    -- while the LibraPlates Settings window is being drawn; settingsUi flushes
+    -- this request immediately after it has called imgui.End().
+    if (_G.LibraPlatesSettingsUiActive == true) then
+        _G.LibraPlatesSettingsSaveRequested = true;
+        return true;
+    end
+
     local profile = state.profile;
 
     if (type(profile) ~= 'table') then
@@ -1063,6 +1080,143 @@ function state.GetProfileNames()
     end);
 
     return names;
+end
+
+local function GetPresetFilePath(presetName)
+    local presetId = SanitizeProfilePart(presetName);
+
+    if (presetId == nil) then
+        return nil;
+    end
+
+    return GetPresetsFolder() .. '\\' .. presetId .. '.lua';
+end
+
+local function LoadPreset(presetName)
+    local path = GetPresetFilePath(presetName);
+    local loaded = LoadLuaTableFile(path);
+
+    if (type(loaded) ~= 'table') then
+        return nil;
+    end
+
+    local profile = type(loaded.profile) == 'table' and loaded.profile or loaded;
+
+    if (IsSettingsProfile(profile) ~= true) then
+        return nil;
+    end
+
+    local presetId = SanitizeProfilePart(presetName);
+    return {
+        id = presetId,
+        name = tostring(loaded.name or presetId),
+        description = tostring(loaded.description or ''),
+        profile = profile,
+    };
+end
+
+function state.GetPresetNames()
+    local presets = {};
+
+    for _, entry in ipairs(GetDirectoryEntries(GetPresetsFolder())) do
+        local fileName = GetDirectoryEntryName(entry):gsub('^.*[\\/]', '');
+        local presetId = fileName:gsub('%.lua$', '');
+
+        if (fileName:lower():match('%.lua$') ~= nil) then
+            local preset = LoadPreset(presetId);
+
+            if (preset ~= nil) then
+                presets[#presets + 1] = preset;
+            end
+        end
+    end
+
+    table.sort(presets, function(left, right)
+        return tostring(left.name or ''):lower() < tostring(right.name or ''):lower();
+    end);
+
+    return presets;
+end
+
+function state.GetPreset(presetName)
+    return LoadPreset(presetName);
+end
+
+function state.GetPresetCopyName(presetName)
+    local preset = LoadPreset(presetName);
+
+    if (preset == nil) then
+        return nil;
+    end
+
+    local manifest = state.GetProfileManifest();
+    local baseName = tostring(preset.name or preset.id);
+    local candidate = baseName;
+    local suffix = 2;
+
+    while (ProfileExists(manifest, candidate) == true) do
+        candidate = baseName .. ' ' .. tostring(suffix);
+        suffix = suffix + 1;
+    end
+
+    return candidate;
+end
+
+function state.CreateProfileFromPreset(presetName)
+    local preset = LoadPreset(presetName);
+
+    if (preset == nil) then
+        return false, 'Preset is missing or invalid.';
+    end
+
+    local manifest = state.GetProfileManifest();
+    local profileName = state.GetPresetCopyName(preset.id);
+    local profileId = GetProfileId(profileName);
+
+    if (profileName == nil or profileId == nil) then
+        return false, 'Preset profile name is invalid.';
+    end
+
+    if (ProfileExists(manifest, profileId) == true) then
+        return false, 'Profile name already exists.';
+    end
+
+    if (EnsureProfileSystemFolders(state.characterProfileName) ~= true) then
+        return false, 'Profile folder could not be created.';
+    end
+
+    state.Save();
+
+    local profile = CopyTable(preset.profile);
+    local profilePath = GetProfileDataPath(state.characterProfileName, profileId);
+
+    if (WriteLuaTableFile(profilePath, profile) ~= true) then
+        return false, 'Preset copy could not be saved.';
+    end
+
+    local now = GetTimestamp();
+    manifest.profiles[profileId] = {
+        name = profileName,
+        file = GetProfileRelativePath(profileId),
+        version = profileSystemVersion,
+        created = now,
+        modified = now,
+        preset = preset.id,
+        autoSwitch = {
+            enabled = false,
+            mainJob = 'WAR',
+            subJob = 'Any',
+        },
+    };
+    manifest.activeProfile = profileId;
+    SetActiveUserProfileName(profileId);
+    state.profile = profile;
+    state.loadedFromDisk = true;
+    state.savedThisSession = true;
+    ApplyLoadedWorldEnabled(state.profile);
+    SaveProfileManifest();
+
+    return true, profileName;
 end
 
 function state.GetProfileAutoSwitchEnabled()

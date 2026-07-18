@@ -111,7 +111,7 @@ job.",
             ["_source"] = "npc",
             ["icon"] = "AirshipTravelAgent.png",
             ["note"] = "Notes:\
-Stands outside the Air Travel Agency (Bastok) and gives the departure times for Airships.",
+Stands outside the Air Travel Agency and gives the departure times for Airships.",
             ["type"] = "Airship Travel",
         },
         ["Carey"] = {

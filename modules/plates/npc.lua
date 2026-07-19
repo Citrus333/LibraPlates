@@ -229,6 +229,7 @@ local function IsAlliedTacticalNpcInfo(info)
         HasText(typeText, 'Campaign Warrior') == true or
         HasText(typeText, 'Campaign Freelance') == true or
         HasText(typeText, 'Campaign Hero') == true or
+        HasText(typeText, 'Campaign Knight') == true or
         HasText(typeText, 'Domain Invasion Ally') == true
     ) then
         return true;
@@ -424,6 +425,18 @@ local function QueueNpcObject(entity)
     local resolveTimer = perfMeter.BeginDetail('npc.resolve');
     local entityName = tostring(entity.entityType or 'NPC');
     local displayName = CleanDisplayName(entity.name);
+
+    -- Idle allied forces are ordinary NPC World plates.  Campaign enemies
+    -- share their low-level entity flags, so only let a campaign actor through
+    -- when its current-zone record identifies it as an allied force.
+    if (
+        entity.campaignBattleActor == true and
+        entity.campaignAlly ~= true and
+        IsAlliedTacticalNpc(entity) ~= true
+    ) then
+        perfMeter.EndDetail(resolveTimer);
+        return;
+    end
 
     if (npcObjectInfo.ShouldHidePlate(displayName) == true) then
         perfMeter.EndDetail(resolveTimer);
@@ -1183,7 +1196,10 @@ function npcPlate.Render()
 
     local tacticalEntities = nil;
 
-    if (canRenderTacticalNpcs ~= true) then
+    if (
+        canRenderTacticalNpcs ~= true and
+        (performanceImportantOnly ~= true or canRenderNpcObjects ~= true)
+    ) then
         tacticalEntities = {};
         scanCache.tacticalEntities = nil;
     elseif (
@@ -1208,9 +1224,13 @@ function npcPlate.Render()
         end
     end
 
+    -- Campaign allies are active combat actors.  Render them through NPC
+    -- Tactical so their configured HP bar and combat presentation apply;
+    -- the World plate is only their idle fallback.
     for _, entity in ipairs(tacticalEntities) do
-        if (IsAlliedTacticalNpc(entity) == true) then
+        if (entity.campaignAlly == true or IsAlliedTacticalNpc(entity) == true) then
             local tacticalIndex = tonumber(entity.index) or 0;
+
             if (tacticalNpcIndexes[tacticalIndex] ~= true) then
                 tacticalNpcIndexes[tacticalIndex] = true;
                 QueueTacticalNpc(entity);

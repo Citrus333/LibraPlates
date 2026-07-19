@@ -1586,6 +1586,7 @@ function bar.DrawSettings(settings, context)
             end
             settings.color, settings.backgroundColor, settings.texture, settings.textureStrength = DrawColorTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture, settings.textureStrength);
             settings.borderColor, settings.borderSize = DrawBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
+            settings.cornerRadius = DrawSingleSlider('Corner radius', idPrefix .. 'corner_radius', settings.cornerRadius, 0, 80, true, panelLabelWidth, panelControlWidth);
             settings.fillDirection = DrawComboRow('Fill direction', settings.fillDirection or defaults.fillDirection or 'Left to right', { 'Left to right', 'Right to left' }, idPrefix .. 'fill_direction', 150);
         end, true);
 
@@ -1643,9 +1644,7 @@ function bar.DrawSettings(settings, context)
     settings.color, settings.backgroundColor, settings.texture, settings.textureStrength = DrawColorTextureRow(idPrefix .. 'colors_texture', settings.color, settings.backgroundColor, settings.texture, settings.textureStrength);
     settings.borderColor, settings.borderSize = DrawBorderRow(idPrefix .. 'border', settings.borderColor, settings.borderSize);
 
-    if (resourceName == 'HP' or resourceName == 'MP' or resourceName == 'TP') then
-        settings.cornerRadius = DrawSingleSlider('Corner radius', idPrefix .. 'corner_radius', settings.cornerRadius, 0, 80, true, 108, 150);
-    end
+    settings.cornerRadius = DrawSingleSlider('Corner radius', idPrefix .. 'corner_radius', settings.cornerRadius, 0, 80, true, 108, 150);
 
     if (resourceName == 'Ward' or resourceName == 'Rage') then
         settings.fillDirection = DrawComboRow('Fill direction', settings.fillDirection or defaults.fillDirection or 'Left to right', { 'Left to right', 'Right to left' }, idPrefix .. 'fill_direction', 150);

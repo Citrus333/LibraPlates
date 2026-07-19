@@ -130,12 +130,12 @@ local function GetTargetingSettings()
         global.targeting.customEntityDistanceScaling = false;
     end
 
-    if (global.targeting.globalPlateOffsetX == nil) then
-        global.targeting.globalPlateOffsetX = 0;
-    end
-
     if (global.targeting.globalPlateOffsetY == nil) then
         global.targeting.globalPlateOffsetY = 0;
+    end
+
+    if (global.targeting.customEntityPlatePosition == nil) then
+        global.targeting.customEntityPlatePosition = false;
     end
 
     if (type(global.targeting.platePositionOffsets) ~= 'table') then
@@ -407,8 +407,8 @@ local function GetTargetingSettings()
     end
     global.targeting.pcDistanceScaleMax = math.max(1.0, math.min(6.0, tonumber(global.targeting.pcDistanceScaleMax) or 2.65));
     global.targeting.customEntityDistanceScaling = global.targeting.customEntityDistanceScaling == true;
-    global.targeting.globalPlateOffsetX = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.globalPlateOffsetX) or 0) + 0.5)));
     global.targeting.globalPlateOffsetY = math.max(-100, math.min(100, math.floor((tonumber(global.targeting.globalPlateOffsetY) or 0) + 0.5)));
+    global.targeting.customEntityPlatePosition = global.targeting.customEntityPlatePosition == true;
     if (type(global.targeting.pcRacePlateAdjustments) ~= 'table') then
         global.targeting.pcRacePlateAdjustments = {};
     end
@@ -673,13 +673,16 @@ function targeting.GetPlatePositionOffset(entityName)
     local key = tostring(entityName or ''):lower();
     local offsets = type(settings.platePositionOffsets) == 'table' and settings.platePositionOffsets[key] or nil;
 
-    if (type(offsets) ~= 'table') then
-        offsets = {};
+    if (settings.customEntityPlatePosition == true and type(offsets) == 'table') then
+        return {
+            x = 0,
+            y = tonumber(offsets.y) or 0,
+        };
     end
 
     return {
-        x = (tonumber(settings.globalPlateOffsetX) or 0) + (tonumber(offsets.x) or 0),
-        y = (tonumber(settings.globalPlateOffsetY) or 0) + (tonumber(offsets.y) or 0),
+        x = 0,
+        y = tonumber(settings.globalPlateOffsetY) or 0,
     };
 end
 

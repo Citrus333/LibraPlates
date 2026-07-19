@@ -1122,6 +1122,7 @@ local function BuildExtraBar(settings, defaults, progress, text, kind, iconName,
         backgroundColor = settings.backgroundColor or defaults.backgroundColor,
         borderColor = settings.borderColor or defaults.borderColor,
         borderSize = tonumber(settings.borderSize) or defaults.borderSize,
+        cornerRadius = tonumber(settings.cornerRadius) or defaults.cornerRadius or 0,
         textureStrength = tonumber(settings.textureStrength) or 100,
         textureId = barTextures.GetTextureId(settings.texture),
         fillDirection = settings.fillDirection or defaults.fillDirection or 'Left to right',
@@ -1303,8 +1304,8 @@ local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, on
     end
 
     if (drawList.AddText ~= nil) then
-        drawList:AddRectFilled({ x + 4, y + 4 }, { x + 112, y + 26 }, labelBackgroundColor, 3);
-        drawList:AddText({ x + 9, y + 7 }, textColor, 'Detached pet');
+        drawList:AddRectFilled({ x + 4, y - 24 }, { x + 112, y - 2 }, labelBackgroundColor, 3);
+        drawList:AddText({ x + 9, y - 21 }, textColor, 'Detached pet');
     end
 end
 
@@ -1713,6 +1714,7 @@ local function QueueSmnPet(pet)
             backgroundColor = hpBarSettings.backgroundColor or smnHpBarDefaults.backgroundColor,
             borderColor = hpBarSettings.borderColor or smnHpBarDefaults.borderColor,
             borderSize = tonumber(hpBarSettings.borderSize) or smnHpBarDefaults.borderSize,
+            cornerRadius = tonumber(hpBarSettings.cornerRadius) or smnHpBarDefaults.cornerRadius or 0,
             anchorTo = hpBarSettings.anchorTo or smnHpBarDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or smnHpBarDefaults.anchorPoint,
             texture = hpBarSettings.texture or smnHpBarDefaults.texture,
@@ -1744,6 +1746,7 @@ local function QueueSmnPet(pet)
             backgroundColor = mpBarSettings.backgroundColor or smnMpBarDefaults.backgroundColor,
             borderColor = mpBarSettings.borderColor or smnMpBarDefaults.borderColor,
             borderSize = tonumber(mpBarSettings.borderSize) or smnMpBarDefaults.borderSize,
+            cornerRadius = tonumber(mpBarSettings.cornerRadius) or smnMpBarDefaults.cornerRadius or 0,
             anchorTo = mpBarSettings.anchorTo or smnMpBarDefaults.anchorTo,
             anchorPoint = mpBarSettings.anchorPoint or smnMpBarDefaults.anchorPoint,
             texture = mpBarSettings.texture or smnMpBarDefaults.texture,
@@ -1775,6 +1778,7 @@ local function QueueSmnPet(pet)
             backgroundColor = tpBarSettings.backgroundColor or smnTpBarDefaults.backgroundColor,
             borderColor = tpBarSettings.borderColor or smnTpBarDefaults.borderColor,
             borderSize = tonumber(tpBarSettings.borderSize) or smnTpBarDefaults.borderSize,
+            cornerRadius = tonumber(tpBarSettings.cornerRadius) or smnTpBarDefaults.cornerRadius or 0,
             anchorTo = tpBarSettings.anchorTo or smnTpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or smnTpBarDefaults.anchorPoint,
             texture = tpBarSettings.texture or smnTpBarDefaults.texture,
@@ -1979,6 +1983,7 @@ local function QueueWyvernPet(pet)
             backgroundColor = hpBarSettings.backgroundColor or barDefaults.backgroundColor,
             borderColor = hpBarSettings.borderColor or barDefaults.borderColor,
             borderSize = tonumber(hpBarSettings.borderSize) or barDefaults.borderSize,
+            cornerRadius = tonumber(hpBarSettings.cornerRadius) or barDefaults.cornerRadius or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             texture = hpBarSettings.texture or barDefaults.texture,
@@ -2013,6 +2018,7 @@ local function QueueWyvernPet(pet)
             backgroundColor = tpBarSettings.backgroundColor or tpBarDefaults.backgroundColor,
             borderColor = tpBarSettings.borderColor or tpBarDefaults.borderColor,
             borderSize = tonumber(tpBarSettings.borderSize) or tpBarDefaults.borderSize,
+            cornerRadius = tonumber(tpBarSettings.cornerRadius) or tpBarDefaults.cornerRadius or 0,
             anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             texture = tpBarSettings.texture or tpBarDefaults.texture,
@@ -2200,6 +2206,7 @@ local function QueuePupPet(pet)
             backgroundColor = hpBarSettings.backgroundColor or barDefaults.backgroundColor,
             borderColor = hpBarSettings.borderColor or barDefaults.borderColor,
             borderSize = tonumber(hpBarSettings.borderSize) or barDefaults.borderSize,
+            cornerRadius = tonumber(hpBarSettings.cornerRadius) or barDefaults.cornerRadius or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             texture = hpBarSettings.texture or barDefaults.texture,
@@ -2231,6 +2238,7 @@ local function QueuePupPet(pet)
             backgroundColor = mpBarSettings.backgroundColor or mpBarDefaults.backgroundColor,
             borderColor = mpBarSettings.borderColor or mpBarDefaults.borderColor,
             borderSize = tonumber(mpBarSettings.borderSize) or mpBarDefaults.borderSize,
+            cornerRadius = tonumber(mpBarSettings.cornerRadius) or mpBarDefaults.cornerRadius or 0,
             anchorTo = mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
             anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
             texture = mpBarSettings.texture or mpBarDefaults.texture,
@@ -2262,6 +2270,7 @@ local function QueuePupPet(pet)
             backgroundColor = tpBarSettings.backgroundColor or tpBarDefaults.backgroundColor,
             borderColor = tpBarSettings.borderColor or tpBarDefaults.borderColor,
             borderSize = tonumber(tpBarSettings.borderSize) or tpBarDefaults.borderSize,
+            cornerRadius = tonumber(tpBarSettings.cornerRadius) or tpBarDefaults.cornerRadius or 0,
             anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
             texture = tpBarSettings.texture or tpBarDefaults.texture,
@@ -2424,6 +2433,7 @@ local function QueueLuopan(pet)
             backgroundColor = hpBarSettings.backgroundColor or barDefaults.backgroundColor,
             borderColor = hpBarSettings.borderColor or barDefaults.borderColor,
             borderSize = tonumber(hpBarSettings.borderSize) or barDefaults.borderSize,
+            cornerRadius = tonumber(hpBarSettings.cornerRadius) or barDefaults.cornerRadius or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
             texture = hpBarSettings.texture or barDefaults.texture,

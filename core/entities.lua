@@ -1458,7 +1458,8 @@ function entities.GetNearbyTrusts(maxDistance)
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
                 IsTrustStatusAllowed(ent.Status) == true and
-                trustNames.IsKnownTrustName(ent.Name) == true
+                trustNames.IsKnownTrustName(ent.Name) == true and
+                IsCampaignBattleActor(entityManager, index, ent) ~= true
             ) then
                 partyIndexes = partyIndexes or BuildPartyMemberIndexSet();
 
@@ -1673,6 +1674,7 @@ function entities.GetNearbyTacticalNpcs(maxDistance)
         local playerIndexRange = IsPlayerIndexRange(index) == true;
         local objectCostumePlayer = IsObjectCostumePlayer(entityManager, index, ent) == true;
         local campaignBattleActor = IsCampaignBattleActor(entityManager, index, ent) == true;
+        local campaignAlly = campaignBattleActor == true and IsMobIndex(entityManager, index) ~= true;
         local rawEntityType = tonumber(ent ~= nil and ent.Type or nil);
         local rawObject = rawEntityType == 2 or rawEntityType == 3;
         local tacticalEntityType = (rawObject == true and objectCostumePlayer ~= true) and 'Object' or 'NPC';
@@ -1707,6 +1709,8 @@ function entities.GetNearbyTacticalNpcs(maxDistance)
                     entityType = tacticalEntityType,
                     layoutStateName = 'Combat',
                     tacticalNpc = true,
+                    campaignBattleActor = campaignBattleActor,
+                    campaignAlly = campaignAlly,
                     hpPercent = ent.HPPercent or 100,
                     distance = math.sqrt(ent.Distance),
                     spawnFlags = spawnFlags,
@@ -1879,30 +1883,49 @@ function entities.GetNearbyNpcObjects(maxDistance)
             local allowUnsettledCharacter = entityStatus == 40 or entityStatus == 47 or entityStatus == 50;
             local cleanName = tostring(ent.Name or ''):gsub('\170', '');
             local isMogHouseMoogle = mogHouseObjectSuppressionArea == true and cleanName == 'Moogle';
+            local isMob = IsMobIndex(entityManager, index) == true;
+            -- Campaign allies use status 1 (engaged), which ordinary NPC
+            -- World plates reject.  They are distinguished from campaign
+            -- enemies by not being mob-class entities.
+            local campaignBattleActor = tonumber(ent.Type) == 0
+                and tonumber(ent.HPPercent) ~= nil
+                and tonumber(ent.HPPercent) > 0
+                and IsCampaignBattleActor(entityManager, index, ent) == true;
+            local campaignAlly = campaignBattleActor == true and isMob ~= true;
 
             if (
                 ent.Name ~= nil and
                 ent.Name ~= '' and
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
-                IsNpcObjectStatusAllowed(entityStatus) == true and
+                (IsNpcObjectStatusAllowed(entityStatus) == true or campaignAlly == true) and
                 entities.ShouldHideOtherPlayerPet(index, ent.Name) ~= true and
                 IsMogHouseFurniturePlaceholder(entityManager, index, ent) ~= true and
                 (trustNames.IsKnownTrustName(ent.Name) ~= true or isMogHouseMoogle == true)
             ) then
                 partyIndexes = partyIndexes or BuildPartyMemberIndexSet();
 
+                -- Campaign allies use the same mob-class flag as campaign
+                -- enemies.  Keep the allied candidates available to the NPC
+                -- world renderer; it will discard any non-allied campaign
+                -- actor after resolving its data record.
                 if (
-                    IsMobIndex(entityManager, index) ~= true and
+                    (isMob ~= true or campaignAlly == true) and
                     partyIndexes[index] ~= true and
                     IsVisibleEntity(entityManager, index, false) == true and
-                    (isObject == true or allowUnsettledCharacter == true or HasSettledCharacterModel(entityManager, index) == true)
+                    -- Campaign allies can be fully visible in battle before the
+                    -- generic character-settle check reports ready.  They use
+                    -- the regular NPC World plate while idle, so do not drop
+                    -- them solely for that transient flag.
+                    (isObject == true or allowUnsettledCharacter == true or campaignAlly == true or HasSettledCharacterModel(entityManager, index) == true)
                 ) then
                     results[#results + 1] = {
                         index = index,
                         name = ent.Name,
                         distance = math.sqrt(ent.Distance),
                         entityType = isObject and 'Object' or 'NPC',
+                        campaignBattleActor = campaignBattleActor,
+                        campaignAlly = campaignAlly,
                     };
                 end
             end

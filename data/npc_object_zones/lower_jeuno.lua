@@ -1101,6 +1101,12 @@ Involved in Quests:\
             ["type"] = "EXP Guide",
             ["worldOffsetY"] = 0.25,
         },
+        ["Ephemeral Box"] = {
+            ["_source"] = "catseye_item",
+            ["icon"] = "EphemeralBox.png",
+            ["type"] = "CW Storage",
+            ["worldOffsetY"] = 0.25,
+        },
         ["Golden Tiger"] = {
             ["_source"] = "catseye_item",
             ["hidden"] = true,

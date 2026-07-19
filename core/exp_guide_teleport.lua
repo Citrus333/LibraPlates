@@ -317,8 +317,6 @@ function expGuideTeleport.Request(destination, context, option)
     };
     queue = {};
 
-    log.Info('EXP Guide teleport request targetIndex=' .. tostring(targetIndex) .. ' targetId=' .. tostring(targetId) .. ' destination=' .. tostring(destination.result or destination.label or '') .. ' page=' .. tostring(pending.targetPage) .. ' sigil=' .. tostring(withBuff == true) .. ' payment=' .. tostring(paymentResult or ''));
-
     return SendOutgoingPacket(0x01A, BuildNpcPokePacket(targetId, targetIndex), 'poke exp guide');
 end
 

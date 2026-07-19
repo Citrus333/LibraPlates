@@ -177,6 +177,11 @@ local suppressFocusClickUntil = 0;
 local suppressFocusRelease = false;
 local verts = ffi.new('lp_world_marker_vertex_t[?]', DOT_SEGMENTS * 3);
 local textVerts = ffi.new('lp_world_marker_text_vertex_t[?]', MAX_TEXT_CHARS * 6);
+-- Exact anchors are resolved for every visible PC each frame.  Keep the
+-- immutable FFI call wrapper and its sequential scratch vector instead of
+-- allocating both for every plate; the returned world position is still
+-- resolved live, so animation and movement remain exact.
+worldMarkerProbe._exactAnchorOffset = ffi.new('lp_d3dx_vector3_t');
 local identity = ffi.new('D3DMATRIX');
 identity._11 = 1;
 identity._22 = 1;
@@ -685,7 +690,7 @@ local function ProjectBillboardPoint(view, proj, viewport, wx, wy, wz, rx, ry, r
     );
 end
 
-local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, style, worldWidth, worldHeight)
+local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, style, worldWidth, worldHeight, boundsOnly)
     if (device == nil or targetIndex == nil or targetIndex == 0 or style == nil or style.plateClickRects == nil) then
         return false;
     end
@@ -779,6 +784,54 @@ local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, styl
     end
 
     setOverlayRect();
+
+    -- Stacking and no-go-zone masking only need the outside bounds of a
+    -- plate.  Projecting every individual widget rect here for idle PCs
+    -- turns the frame prepass into a full click-hitbox build every frame.
+    -- Keep exact widget rects for an actual click (and for features that
+    -- explicitly require live rects), but use one inexpensive union for the
+    -- ordinary stacking prepass.
+    if (boundsOnly == true) then
+        local points = {
+            { 0, 0 },
+            { textureWidth, 0 },
+            { textureWidth, textureHeight },
+            { 0, textureHeight },
+        };
+        local left = nil;
+        local top = nil;
+        local right = nil;
+        local bottom = nil;
+
+        for _, point in ipairs(points) do
+            local sx, sy = projectCanvasPixel(point[1], point[2]);
+
+            if (sx ~= nil and sy ~= nil) then
+                left = (left == nil) and sx or math.min(left, sx);
+                top = (top == nil) and sy or math.min(top, sy);
+                right = (right == nil) and sx or math.max(right, sx);
+                bottom = (bottom == nil) and sy or math.max(bottom, sy);
+            end
+        end
+
+        if (left == nil or top == nil or right == nil or bottom == nil) then
+            return false;
+        end
+
+        local bounds = {
+            kind = 'bounds',
+            anchorOnly = true,
+            targetIndex = targetIndex,
+            targetType = targetType,
+            x1 = left,
+            y1 = top,
+            x2 = right,
+            y2 = bottom,
+        };
+        local union = { x1 = left, y1 = top, x2 = right, y2 = bottom };
+        AddPlateClickRects(targetIndex, targetType, { bounds }, union, metadata);
+        return true;
+    end
 
     for _, rect in ipairs(style.plateClickRects) do
         if (rect.anchorOnly ~= true) then
@@ -2005,8 +2058,20 @@ function worldMarkerProbe._ShouldKeepFrameClickRects()
         return true;
     end
 
-    worldMarkerProbe._clickFrameRectsReason = 'nonobject-safety';
-    return true;
+    -- Mouse snap moves the cursor before a click exists, so it is the one
+    -- feature that genuinely needs detailed live rectangles for all eligible
+    -- plates.  Ordinary clicks build those detailed rectangles on demand.
+    local getSnapKinds = worldMarkerProbe._MouseSnapKinds;
+    local pcSnap = getSnapKinds ~= nil and getSnapKinds(settings.pcMouseSnapMode) or nil;
+    local enemySnap = getSnapKinds ~= nil and getSnapKinds(settings.enemyMouseSnapMode) or nil;
+
+    if (pcSnap ~= nil or enemySnap ~= nil) then
+        worldMarkerProbe._clickFrameRectsReason = 'mouse-snap';
+        return true;
+    end
+
+    worldMarkerProbe._clickFrameRectsReason = 'ondemand';
+    return false;
 end
 
 local function DrawScreenTextureRect(device, left, top, right, bottom, rect, z)
@@ -2596,9 +2661,15 @@ local function GetExactNameplateAnchor(actorPointer, bone)
         return nil;
     end
 
-    local offset = ffi.new('lp_d3dx_vector3_t', { 0, 0, 0 });
-    local func = ffi.cast('lp_get_nameplate_offset_f', helper);
-    func(ffi.cast('void*', objectPointer), NormalizeAnchorBone(bone), offset);
+    if (worldMarkerProbe._helperFunction == nil) then
+        worldMarkerProbe._helperFunction = ffi.cast('lp_get_nameplate_offset_f', helper);
+    end
+
+    local offset = worldMarkerProbe._exactAnchorOffset;
+    offset.x = 0;
+    offset.y = 0;
+    offset.z = 0;
+    worldMarkerProbe._helperFunction(ffi.cast('void*', objectPointer), NormalizeAnchorBone(bone), offset);
     helperStatus = 'ok';
 
     return baseX + offset.x, baseY + offset.z, baseZ + offset.y;
@@ -2820,18 +2891,18 @@ end
 local function GetPcBucketBaselineY(familyKey, sexKey, sizeKey)
     local baselines = {
         tarutaru = {
-            male = { small = 64, medium = 63, large = 52 },
-            female = { small = 70, medium = 64, large = 62 },
+            male = { small = 64, medium = 55, large = 56 },
+            female = { small = 63, medium = 64, large = 64 },
         },
         mithra = {
-            female = { small = 62, medium = 44, large = 42 },
+            female = { small = 62, medium = 53, large = 55 },
         },
         hume = {
-            male = { small = 30, medium = 28, large = 27 },
-            female = { small = 52, medium = 31, large = 29 },
+            male = { small = 30, medium = 28, large = 14 },
+            female = { small = 53, medium = 44, large = 29 },
         },
         elvaan = {
-            male = { small = 37, medium = 35, large = 33 },
+            male = { small = 53, medium = 43, large = 25 },
             female = { small = 48, medium = 38, large = 36 },
         },
         galka = {
@@ -2857,31 +2928,6 @@ local function GetPcBucketBaselineY(familyKey, sexKey, sizeKey)
     return fallback[tostring(familyKey or '')] or 0;
 end
 
-local function GetPcHeightBucketKey(familyKey, sexKey, sizeKey)
-    familyKey = tostring(familyKey or '');
-    sexKey = tostring(sexKey or '');
-    sizeKey = tostring(sizeKey or '');
-
-    if (familyKey == '' or sexKey == '' or sizeKey == '') then
-        return nil;
-    end
-
-    return familyKey .. '_' .. sexKey .. '_' .. sizeKey;
-end
-
-local function GetPcBucketAdjustmentY(adjustments, familyKey, sexKey, sizeKey)
-    local bucketKey = GetPcHeightBucketKey(familyKey, sexKey, sizeKey);
-    local buckets = type(adjustments) == 'table' and adjustments.buckets or nil;
-    local bucket = bucketKey ~= nil and type(buckets) == 'table' and buckets[bucketKey] or nil;
-
-    if (type(bucket) == 'table' and bucket.y ~= nil) then
-        return tonumber(bucket.y) or 0;
-    end
-
-    local race = type(adjustments) == 'table' and type(adjustments[familyKey]) == 'table' and adjustments[familyKey] or nil;
-    return tonumber(race ~= nil and race.y) or 0;
-end
-
 local function GetPcBodyPlateOffset(actorPointer, targetIndex, entityManager)
     local cacheKey = tonumber(targetIndex) or 0;
     local modelCache = worldMarkerProbe._pcModelBaselineCache;
@@ -2894,7 +2940,15 @@ local function GetPcBodyPlateOffset(actorPointer, targetIndex, entityManager)
     if (cached ~= nil and cached.actorPointer == actorPointer) then
         familyKey = cached.familyKey;
         sexKey = cached.sexKey;
-        sizeKey = cached.sizeKey;
+        -- A model can report its temporary default scale while it is still
+        -- loading.  Cache the expensive family/race work, but refresh this
+        -- single float so Small/Medium/Large corrections never get stuck on
+        -- the first observed bucket.
+        sizeKey = GetPcSizeBucket(ReadPcSizeScale(actorPointer), familyKey);
+        if (sizeKey ~= cached.sizeKey) then
+            cached.sizeKey = sizeKey;
+            cached.baselineY = GetPcBucketBaselineY(familyKey, sexKey, sizeKey);
+        end
         baselineY = tonumber(cached.baselineY) or 0;
     else
         local bounds = GetBoneBounds(actorPointer);
@@ -2916,15 +2970,7 @@ local function GetPcBodyPlateOffset(actorPointer, targetIndex, entityManager)
         };
     end
 
-    local settings = targeting.GetSettings();
-    local adjustments = settings ~= nil and settings.pcRacePlateAdjustments or nil;
-
-    local manualAdjustmentY = 0;
-    if (type(adjustments) == 'table' and adjustments.enabled ~= false) then
-        manualAdjustmentY = GetPcBucketAdjustmentY(adjustments, familyKey, sexKey, sizeKey);
-    end
-
-    return (baselineY + manualAdjustmentY) * 0.01;
+    return baselineY * 0.01;
 end
 
 local function ReadFloatList(pointer, offsets)
@@ -4073,6 +4119,26 @@ local function ApplyScreenPlateStacking(drawablePlates)
     end
 end
 
+local function NeedsDetailedFrameClickRects(plate, style)
+    -- On-demand clicks build precise widget hitboxes only at click time.
+    -- Retain live detailed rects where another live feature needs them:
+    -- self, party, protected target/subtarget, non-PC plates, and mouse snap.
+    if (worldMarkerProbe._collectFrameClickRects == true) then
+        return true;
+    end
+
+    if (plate ~= nil and (plate.isSelf == true or plate.isProtectedPlate == true or plate.isPartyPlayer == true)) then
+        return true;
+    end
+
+    if (style ~= nil and (style.protectedPlate == true or style.partyPlate == true or style.plateAlwaysOnTop == true)) then
+        return true;
+    end
+
+    local targetType = tostring((style ~= nil and style.clickTargetType) or (plate ~= nil and plate.clickTargetType) or ''):lower();
+    return targetType ~= 'pc';
+end
+
 local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
     local targetIndex = plate.targetIndex;
     local hpPercent = plate.hp;
@@ -4112,7 +4178,38 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         return;
     end
 
-    local wx, wy, wz = GetAnchor(actorPointer, getBone, style);
+    -- BeginScene performs a bounds/stacking pass followed by the actual draw
+    -- pass.  Both describe the same actor in the same render frame.  Reuse
+    -- the exact native nameplate anchor found during the first pass instead
+    -- of calling the FFI anchor helper twice per visible plate.
+    local resolvedAnchor = updateClickOnly ~= true and plate._resolvedAnchor or nil;
+    local wx = nil;
+    local wy = nil;
+    local wz = nil;
+
+    if (resolvedAnchor ~= nil and resolvedAnchor.actorPointer == actorPointer) then
+        wx = resolvedAnchor.x;
+        wy = resolvedAnchor.y;
+        wz = resolvedAnchor.z;
+        if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+            perfMeter.Count('world.anchor.reuse', 1);
+        end
+    else
+        wx, wy, wz = GetAnchor(actorPointer, getBone, style);
+
+        if (updateClickOnly == true and wx ~= nil and wy ~= nil and wz ~= nil) then
+            plate._resolvedAnchor = {
+                actorPointer = actorPointer,
+                x = wx,
+                y = wy,
+                z = wz,
+            };
+        end
+
+        if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+            perfMeter.Count('world.anchor.resolve', 1);
+        end
+    end
 
     if (wx == nil or wy == nil or wz == nil) then
         return;
@@ -4262,12 +4359,23 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
 
         if (updateClickOnly == true) then
             local hasCanvasClickRects = style.plateClickRects ~= nil;
+            local detailedFrameRects = NeedsDetailedFrameClickRects(plate, style) == true;
+            local boundsOnly = detailedFrameRects ~= true;
+            local previousCollectFrameClickRects = worldMarkerProbe._collectFrameClickRects;
 
-            if (SetSelfClickRectsFromCanvas(device, targetIndex, plateX, plateY, plateZ, style, plateWorldWidth, plateWorldHeight) ~= true) then
+            -- Keep detailed rects available for active/special plates even
+            -- while ordinary idle PCs use the lightweight bounds prepass.
+            if (detailedFrameRects == true) then
+                worldMarkerProbe._collectFrameClickRects = true;
+            end
+
+            if (SetSelfClickRectsFromCanvas(device, targetIndex, plateX, plateY, plateZ, style, plateWorldWidth, plateWorldHeight, boundsOnly) ~= true) then
                 if (plate.isSelf == true and hasCanvasClickRects ~= true) then
                     SetSelfClickRectFromBillboard(device, targetIndex, plateX, plateY, plateZ, plateWorldWidth, plateWorldHeight);
                 end
             end
+
+            worldMarkerProbe._collectFrameClickRects = previousCollectFrameClickRects;
 
             return;
         end
@@ -4666,8 +4774,8 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         ApplyScreenPlateStacking(drawablePlates);
 
         clickRects = pendingClickRects;
-        selfClickRect = keepFrameClickRects == true and pendingSelfClickRect or nil;
-        selfClickRects = keepFrameClickRects == true and pendingSelfClickRects or nil;
+        selfClickRect = pendingSelfClickRect;
+        selfClickRects = pendingSelfClickRects;
         worldMarkerProbe._collectFrameClickRects = true;
 
         if worldMarkerProbe.ApplyMouseSnap ~= nil then

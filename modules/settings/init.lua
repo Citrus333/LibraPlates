@@ -1027,8 +1027,6 @@ local npcEditWidgets = T{
     'Icon',
     'Peer (module)',
     'Quick Menu (module)',
-    'Subtarget (module)',
-    'Target (module)',
 };
 local objectEditWidgets = T{
     'Background',
@@ -10907,7 +10905,7 @@ local function DrawGeneralScalingSection(settings)
             settings.pcRacePlateAdjustments.enabled = value == true;
             state.Save();
         end);
-        uiTooltip.Info('Fine-tunes PC plate height by detected race, sex, and size. 0 means use the hidden built-in baseline for that exact model bucket.');
+        uiTooltip.Info('Use this only to correct a specific character build. The built-in model baseline is always used; 0 adds no extra correction.');
 
         if (settings.pcRacePlateAdjustments.enabled == false) then
             return;
@@ -10976,10 +10974,6 @@ local function DrawGeneralScalingSection(settings)
             end, nil, 'Largest scale used for far-away plates.');
 
         end, true);
-
-        LibraPlatesSettingsDrawBoxedPanel('Character height adjustments', function()
-            DrawPcRacePlateAdjustmentSettings();
-        end);
 
         local function DrawEntityScale(label, key)
             if (type(settings.plateDistanceScales[key]) ~= 'table') then
@@ -11075,25 +11069,33 @@ local function DrawGeneralScalingSection(settings)
         end
 
         LibraPlatesSettingsDrawBoxedPanel('Global plate position', function()
-            imgui.TextWrapped('Move all world plates together, then use entity plate position below for smaller per-type adjustments.');
+            imgui.TextWrapped('Moves all world plates up or down. Use Custom entity plate position below only when an entity type needs a different height.');
             imgui.Spacing();
-            local globalOffsetX, globalOffsetXChanged, globalOffsetY, globalOffsetYChanged = DrawScalingPlacementPair(
-                'Plate X',
-                settings.globalPlateOffsetX,
-                'GlobalPlateOffsetX',
-                'Plate Y',
+            local globalOffsetY, globalOffsetYChanged = DrawScalingPlacementSlider(
+                'Plate height',
                 settings.globalPlateOffsetY,
-                'GlobalPlateOffsetY'
+                'GlobalPlateOffsetY',
+                110,
+                150,
+                92
             );
-            if (globalOffsetXChanged == true) then
-                settings.globalPlateOffsetX = math.max(-100, math.min(100, math.floor((tonumber(globalOffsetX) or 0) + 0.5)));
-            end
             if (globalOffsetYChanged == true) then
                 settings.globalPlateOffsetY = math.max(-100, math.min(100, math.floor((tonumber(globalOffsetY) or 0) + 0.5)));
             end
         end);
 
         LibraPlatesSettingsDrawBoxedPanel('Entity plate position', function()
+            DrawCheckbox('Custom entity plate position', settings.customEntityPlatePosition == true, function(value)
+                settings.customEntityPlatePosition = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('When off, every plate uses Global plate height. Enable this only to set separate heights for individual entity types. Entity heights replace the global value; they do not add to it.');
+
+            if (settings.customEntityPlatePosition ~= true) then
+                return;
+            end
+
+            imgui.Spacing();
             if (type(settings.platePositionOffsets) ~= 'table') then
                 settings.platePositionOffsets = {};
             end
@@ -11124,17 +11126,14 @@ local function DrawGeneralScalingSection(settings)
             end
 
             local offsets = settings.platePositionOffsets[selectedKey];
-            local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawScalingPlacementPair(
-                'Plate X',
-                offsets.x,
-                'PlateOffset' .. selectedKey .. 'X',
-                'Plate Y',
+            local offsetY, offsetYChanged = DrawScalingPlacementSlider(
+                'Plate height',
                 offsets.y,
-                'PlateOffset' .. selectedKey .. 'Y'
+                'PlateOffset' .. selectedKey .. 'Y',
+                110,
+                150,
+                92
             );
-            if (offsetXChanged == true) then
-                offsets.x = math.max(-100, math.min(100, math.floor((tonumber(offsetX) or 0) + 0.5)));
-            end
             if (offsetYChanged == true) then
                 offsets.y = math.max(-100, math.min(100, math.floor((tonumber(offsetY) or 0) + 0.5)));
             end

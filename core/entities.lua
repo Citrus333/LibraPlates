@@ -1680,9 +1680,9 @@ function entities.GetNearbyTacticalNpcs(maxDistance)
         local tacticalEntityType = (rawObject == true and objectCostumePlayer ~= true) and 'Object' or 'NPC';
 
         if (playerIndexRange ~= true or objectCostumePlayer == true or campaignBattleActor == true) then
-            local statusAllowsTactical =
-                tonumber(ent ~= nil and ent.Status or nil) == 1 or
-                IsNpcObjectStatusAllowed(ent ~= nil and ent.Status or nil) == true;
+            -- NPC Tactical is for active combat actors.  Ordinary status-0
+            -- town/service NPCs remain NPC World plates even when targeted.
+            local statusAllowsTactical = tonumber(ent ~= nil and ent.Status or nil) == 1;
 
             if (
                 ent ~= nil and
@@ -1754,9 +1754,9 @@ function entities.GetTacticalNpcByIndex(index, maxDistance)
     end
 
     local spawnFlags = SafeCall(nil, function() return entityManager:GetSpawnFlags(index); end);
-    local statusAllowsTactical =
-        tonumber(ent ~= nil and ent.Status or nil) == 1 or
-        IsNpcObjectStatusAllowed(ent ~= nil and ent.Status or nil) == true;
+    -- See GetNearbyTacticalNpcs: do not route passive town NPCs through
+    -- the combat plate just because they have an HP percentage.
+    local statusAllowsTactical = tonumber(ent ~= nil and ent.Status or nil) == 1;
 
     if (
         ent == nil or
@@ -2044,7 +2044,7 @@ function entities.GetEntityDebugInfo(index, maxDistance)
     local spawnFlagValue = tonumber(spawnFlags) or 0;
     local hasNpcSpawnFlag = bit.band(spawnFlagValue, 0x02) == 0x02;
     local alliedTacticalInfo = nil;
-    local statusAllowsTactical = tonumber(status) == 1 or IsNpcObjectStatusAllowed(status) == true;
+    local statusAllowsTactical = tonumber(status) == 1;
     local tacticalNpcAllowed = indexAllowed == true
         and isParty ~= true
         and visible == true

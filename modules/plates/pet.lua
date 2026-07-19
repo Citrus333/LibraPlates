@@ -30,6 +30,7 @@ local bstCharmTimer = require('core.bst_charm_timer');
 local luopanStatuses = require('core.luopan_statuses');
 local pupManeuvers = require('core.pup_maneuvers');
 local targetModuleMarker = require('core.target_module_marker');
+local playerStatuses = require('core.player_statuses');
 local worldDepthPlate = require('core.world_depth_plate');
 local worldMarkerProbe = require('core.world_marker_probe');
 
@@ -467,6 +468,34 @@ local rageBarDefaults = {
     textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
     textOutlineSize = 1,
 };
+local favorBarDefaults = {
+    enabled = true,
+    width = 170,
+    height = 8,
+    texture = 'Solid',
+    fillDirection = 'Left to right',
+    labelDisplayMode = 'Text',
+    labelIconSize = 14,
+    labelIconOffsetX = 0,
+    labelIconOffsetY = 0,
+    color = { 0.55, 0.35, 0.95, 1.0 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    offsetX = 0,
+    offsetY = 34,
+    showValue = false,
+    showPercent = true,
+    showAtPercent = 100,
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 7,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
 local smnHpBarDefaults = CopySettingsWith(barDefaults, {
     width = 170,
     height = 14,
@@ -751,6 +780,20 @@ local function GetBstRewardBarData()
 end
 
 local bpRecastMaxTicks = {};
+local avatarFavorFallbackStartedAt = nil;
+local AVATAR_FAVOR_STATUS_ID = 431;
+local AVATAR_FAVOR_DURATION_SECONDS = 7200;
+local AVATAR_FAVOR_MAX_CHARGE_SECONDS = 75;
+local avatarFavorState = {
+    active = false,
+    statusElapsedSeconds = nil,
+    chargeSeconds = nil,
+    lastChargeSampleAt = nil,
+    avatarServerId = nil,
+    avatarName = nil,
+    lastBloodPactCommand = nil,
+    lastBloodPactAt = 0,
+};
 
 local function GetBloodPactBarData(timerId)
     local ticks = tonumber(abilityRecast.GetAbilityTimerByTimerId(timerId)) or 0;
@@ -1174,6 +1217,222 @@ local function ReadImguiVec2(first, second)
     end
 
     return tonumber(first) or 0, tonumber(second) or 0;
+end
+
+local function ResetAvatarFavorState()
+    avatarFavorFallbackStartedAt = nil;
+    avatarFavorState.active = false;
+    avatarFavorState.statusElapsedSeconds = nil;
+    avatarFavorState.chargeSeconds = nil;
+    avatarFavorState.lastChargeSampleAt = nil;
+    avatarFavorState.avatarServerId = nil;
+    avatarFavorState.avatarName = nil;
+    avatarFavorState.lastBloodPactCommand = nil;
+    avatarFavorState.lastBloodPactAt = 0;
+end
+
+local function FormatFavorCharge(seconds)
+    seconds = math.max(0, math.min(AVATAR_FAVOR_MAX_CHARGE_SECONDS, math.floor(tonumber(seconds) or 0)));
+    return string.format('%d:%02d / 1:15', math.floor(seconds / 60), seconds % 60);
+end
+
+local function GetAvatarFavorStatusElapsed()
+    local active = false;
+    local remainingSeconds = nil;
+
+    for _, row in ipairs(playerStatuses.GetSelfRows('all') or {}) do
+        if ((tonumber(row.id) or 0) == AVATAR_FAVOR_STATUS_ID) then
+            active = true;
+            remainingSeconds = tonumber(row.seconds);
+            break;
+        end
+    end
+
+    if (active ~= true) then
+        return false, nil;
+    end
+
+    local elapsedSeconds = 0;
+
+    -- The status timer is normally available immediately.  This fallback only
+    -- covers the brief period before Ashita exposes it, while keeping the bar
+    -- stable if the player reloads the addon with Favor already active.
+    if (remainingSeconds == nil or remainingSeconds <= 0) then
+        if (avatarFavorFallbackStartedAt == nil) then
+            avatarFavorFallbackStartedAt = os.clock();
+        end
+        elapsedSeconds = math.max(0, os.clock() - avatarFavorFallbackStartedAt);
+    else
+        elapsedSeconds = AVATAR_FAVOR_DURATION_SECONDS - math.min(AVATAR_FAVOR_DURATION_SECONDS, math.max(0, remainingSeconds));
+        avatarFavorFallbackStartedAt = os.clock() - elapsedSeconds;
+    end
+
+    return true, elapsedSeconds;
+end
+
+-- The stance itself stays active without an Avatar, but its strength only
+-- grows while one is actually summoned.  Track that separately from the
+-- two-hour status timer so dismissing an Avatar pauses the meter instead of
+-- silently adding no-Avatar time to it.
+local function UpdateAvatarFavorCharge(pet)
+    local active, elapsedSeconds = GetAvatarFavorStatusElapsed();
+    if (active ~= true) then
+        ResetAvatarFavorState();
+        return false;
+    end
+
+    local now = os.clock();
+    local statusRestarted = (
+        avatarFavorState.active == true and
+        avatarFavorState.statusElapsedSeconds ~= nil and
+        elapsedSeconds + 2 < avatarFavorState.statusElapsedSeconds
+    );
+
+    if (avatarFavorState.active ~= true or statusRestarted == true or avatarFavorState.chargeSeconds == nil) then
+        -- The exact Avatar uptime before an addon reload is not exposed by the
+        -- game.  Begin a truthful local meter here rather than treating the
+        -- stance's age as Avatar uptime.
+        avatarFavorState.chargeSeconds = 0;
+        avatarFavorState.lastChargeSampleAt = now;
+    end
+
+    local elapsedSinceSample = math.max(0, now - (tonumber(avatarFavorState.lastChargeSampleAt) or now));
+    local isAvatarOut = pet ~= nil and pet.petType == 'avatar';
+    if (isAvatarOut == true) then
+        avatarFavorState.chargeSeconds = math.min(
+            AVATAR_FAVOR_MAX_CHARGE_SECONDS,
+            math.max(0, tonumber(avatarFavorState.chargeSeconds) or 0) + elapsedSinceSample
+        );
+    end
+
+    avatarFavorState.active = true;
+    avatarFavorState.statusElapsedSeconds = elapsedSeconds;
+    avatarFavorState.lastChargeSampleAt = now;
+    return true;
+end
+
+local function GetAvatarFavorBarData(pet)
+    -- QueueSmnPet can also be called by preview/rebuild paths outside the
+    -- normal world render pass.  Refresh here as well so those paths never
+    -- lose the Favor bar merely because the shared state was not sampled yet.
+    if (UpdateAvatarFavorCharge(pet) ~= true or pet == nil or pet.petType ~= 'avatar') then
+        return nil, nil;
+    end
+
+    -- Favor is kept while Avatars are exchanged.  Preserve its accumulated
+    -- charge; only a completed Blood Pact or a new Favor stance starts over.
+    local petServerId = tonumber(pet.serverId);
+    local petName = tostring(pet.name or '');
+    if (petServerId ~= nil and petServerId > 0) then
+        avatarFavorState.avatarServerId = petServerId;
+        avatarFavorState.avatarName = petName;
+    end
+
+    local clampedChargeSeconds = math.min(
+        AVATAR_FAVOR_MAX_CHARGE_SECONDS,
+        math.max(0, tonumber(avatarFavorState.chargeSeconds) or 0)
+    );
+    return (clampedChargeSeconds / AVATAR_FAVOR_MAX_CHARGE_SECONDS) * 100, FormatFavorCharge(clampedChargeSeconds);
+end
+
+local function ResetAvatarFavorCharge()
+    if (avatarFavorState.active ~= true) then
+        return;
+    end
+
+    avatarFavorState.chargeSeconds = 0;
+    avatarFavorState.lastChargeSampleAt = os.clock();
+end
+
+local function IsBloodPactCommand(commandText)
+    local command = tostring(commandText or '')
+        :lower()
+        :gsub('^%s*/?', '')
+        :gsub('%s+', ' ')
+        :gsub('%s+$', '');
+    local prefix, action = command:match('^(%S+)%s+"?([^"<]+)');
+
+    if (prefix ~= 'pet' or action == nil) then
+        return false, nil;
+    end
+
+    action = tostring(action):gsub('^%s*(.-)%s*$', '%1');
+    local nonBloodPactCommands = {
+        fight = true,
+        heel = true,
+        stay = true,
+        leave = true,
+        assault = true,
+        retreat = true,
+        release = true,
+        deploy = true,
+        deactivate = true,
+        activate = true,
+    };
+
+    if (action == '' or nonBloodPactCommands[action] == true) then
+        return false, nil;
+    end
+
+    return true, action;
+end
+
+function petPlate.HandleCommandText(commandText)
+    if (avatarFavorState.active ~= true) then
+        return;
+    end
+
+    local isBloodPact, action = IsBloodPactCommand(commandText);
+    if (isBloodPact ~= true) then
+        return;
+    end
+
+    local now = os.clock();
+    if (
+        avatarFavorState.lastBloodPactCommand == action and
+        (now - (tonumber(avatarFavorState.lastBloodPactAt) or 0)) < 0.75
+    ) then
+        return;
+    end
+
+    avatarFavorState.lastBloodPactCommand = action;
+    avatarFavorState.lastBloodPactAt = now;
+    -- Do not reset here: a typed /pet command can be interrupted or rejected.
+    -- The matching "Avatar uses ..." chat message below confirms completion.
+end
+
+local function CleanFavorActionMessage(value)
+    return tostring(value or '')
+        :gsub(string.char(0x1E) .. '.', '')
+        :gsub('[%z\1-\31]', '')
+        :gsub('[\127-\255]', '')
+        :gsub('^%s*(.-)%s*$', '%1');
+end
+
+function petPlate.HandleTextIn(e)
+    if (avatarFavorState.active ~= true) then
+        return;
+    end
+
+    local pet = entities.GetOwnSmnPet();
+    if (pet == nil or pet.petType ~= 'avatar') then
+        return;
+    end
+
+    local message = CleanFavorActionMessage(
+        e ~= nil and (e.message or e.text or e.original or e.message_modified or e.modified) or ''
+    );
+    local actor = message:match('^[Tt]he%s+(.+)%s+uses%s+') or message:match('^(.+)%s+uses%s+');
+
+    if (actor == nil) then
+        return;
+    end
+
+    local compactActor = tostring(actor):lower():gsub('%s+', '');
+    local compactPet = tostring(pet.name or ''):lower():gsub('%s+', '');
+    if (compactActor ~= '' and compactActor == compactPet) then
+        ResetAvatarFavorCharge();
+    end
 end
 
 local function GetMousePosition()
@@ -1628,6 +1887,7 @@ local function QueueSmnPet(pet)
     local castBarSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Cast bar', smnCastBarDefaults);
     local wardSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Ward timer', wardBarDefaults);
     local rageSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Rage timer', rageBarDefaults);
+    local favorSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, "Avatar's Favor", favorBarDefaults);
     local targetMarker = targetModuleMarker.Build('Pet (SMN)', layoutStateName, targetStateName, hpBarSettings, pet.distance);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
     local targetingSettings = targeting.GetSettings();
@@ -1827,6 +2087,18 @@ local function QueueSmnPet(pet)
 
             if (rageBar ~= nil) then
                 plateData.extraBars[#plateData.extraBars + 1] = rageBar;
+            end
+        end
+
+        if (favorSettings.enabled == true) then
+            local favorProgress, favorText = GetAvatarFavorBarData(pet);
+
+            if (favorProgress ~= nil) then
+                local favorBar = BuildExtraBar(favorSettings, favorBarDefaults, favorProgress, (favorSettings.showPercent ~= false) and favorText or '', 'favor', nil, globalSettings, (tostring(favorSettings.labelDisplayMode or 'Text') == 'Text') and "Favor" or '');
+
+                if (favorBar ~= nil) then
+                    plateData.extraBars[#plateData.extraBars + 1] = favorBar;
+                end
             end
         end
     end
@@ -2564,6 +2836,9 @@ function petPlate.Render()
     end
 
     local smnPet = entities.GetOwnSmnPet();
+    -- Keep Favor's local charge clock current even while no Avatar is out so
+    -- the meter pauses cleanly between summons instead of gaining that time.
+    UpdateAvatarFavorCharge(smnPet);
 
     if (smnPet ~= nil) then
         QueueSmnPet(smnPet);

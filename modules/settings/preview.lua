@@ -236,6 +236,34 @@ local petRageBarDefaults = {
     textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
     textOutlineSize = 1,
 };
+local petFavorBarDefaults = {
+    enabled = true,
+    width = 170,
+    height = 8,
+    offsetX = 0,
+    offsetY = 34,
+    color = { 0.55, 0.35, 0.95, 1.0 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    texture = 'Solid',
+    fillDirection = 'Left to right',
+    labelDisplayMode = 'Text',
+    labelIconSize = 14,
+    labelIconOffsetX = 0,
+    labelIconOffsetY = 0,
+    showValue = false,
+    showPercent = true,
+    showAtPercent = 100,
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 7,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
 local smnHpBarDefaults = {
     enabled = true,
     width = 170,
@@ -2004,6 +2032,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
     local isSpirit = stateName == 'Spirit';
     local wardSettings = state.GetWidgetSettings('Pet (SMN)', stateName, 'Ward timer', petWardBarDefaults);
     local rageSettings = state.GetWidgetSettings('Pet (SMN)', stateName, 'Rage timer', petRageBarDefaults);
+    local favorSettings = state.GetWidgetSettings('Pet (SMN)', stateName, "Avatar's Favor", petFavorBarDefaults);
     local hp = isSpirit and 742 or 985;
     local maxHp = isSpirit and 886 or 1074;
     local mp = 612;
@@ -2210,6 +2239,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
         plateData.extraBars = plateData.extraBars or {};
         plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(wardSettings, petWardBarDefaults, 72, (wardSettings.showPercent ~= false) and '17' or '', 'ward', 'ward', globalSettings, (tostring(wardSettings.labelDisplayMode or 'Text') == 'Text') and 'Ward' or '');
         plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(rageSettings, petRageBarDefaults, 100, '', 'rage', 'rage', globalSettings, (tostring(rageSettings.labelDisplayMode or 'Text') == 'Text') and 'Rage' or '');
+        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(favorSettings, petFavorBarDefaults, 55, (favorSettings.showPercent ~= false) and '0:41 / 1:15' or '', 'favor', nil, globalSettings, (tostring(favorSettings.labelDisplayMode or 'Text') == 'Text') and 'Favor' or '');
     end
 
     AddEnmityPreviewIcon(plateData, globalSettings, context);

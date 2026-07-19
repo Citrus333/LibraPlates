@@ -469,7 +469,16 @@ local function QueueNpcObject(entity)
     local clickTargetType = string.lower(resolvedEntityName);
     local targetStateName = targeting.GetTargetStateName(entity.index);
     local isTacticalTarget = targetStateName ~= 'Idle';
-    local layoutStateName = isTacticalTarget == true and 'Combat' or 'Idle';
+    -- A normal town/service NPC keeps its World widgets while targeted.
+    -- Campaign allies are the exception: they are genuine combat actors and
+    -- use the Tactical NPC plate while fighting.
+    local useNpcCombatWidgets = settingsEntityName == 'NPC' and (
+        entity.campaignAlly == true or
+        IsAlliedTacticalNpc(entity) == true
+    );
+    local layoutStateName = (isTacticalTarget == true and (settingsEntityName ~= 'NPC' or useNpcCombatWidgets == true))
+        and 'Combat' or 'Idle';
+    local targetMarkerLayoutStateName = isTacticalTarget == true and 'Combat' or 'Idle';
     -- Object only exposes one normal plate settings page in the UI. Targeted
     -- Objects still use tactical overlay behavior, but their regular widgets
     -- keep the same World settings as untargeted Objects.
@@ -542,7 +551,7 @@ local function QueueNpcObject(entity)
     local typeLineSettings = state.GetWidgetSettings(settingsEntityName, widgetLayoutStateName, 'Type line', typeLineDefaults);
     local iconSettings = state.GetWidgetSettings(settingsEntityName, widgetLayoutStateName, 'Icon', npcObjectIconDefaults);
     local targetMarker = targetStateName ~= 'Idle'
-        and targetModuleMarker.Build(settingsEntityName, layoutStateName, targetStateName, nil, entity.distance)
+        and targetModuleMarker.Build(settingsEntityName, targetMarkerLayoutStateName, targetStateName, nil, entity.distance)
         or { enabled = false };
 
     ApplyNpcAnchorDefaults(iconSettings, npcObjectIconDefaults, -28, -30);
@@ -550,7 +559,9 @@ local function QueueNpcObject(entity)
 
     local globalSettings = state.GetGlobalSettings(globalDefaults);
     local lookupOptions = { targetIndex = entity.index };
-    local iconTextureId = suppressExpensiveWorldWidgets ~= true and iconSettings.enabled == true and (
+    -- NPC/object identity icons are part of the base World plate.  Do not
+    -- remove them merely because the optional expensive-widget policy is on.
+    local iconTextureId = iconSettings.enabled == true and (
         npcObjectInfo.GetTextureIdForInfo(npcInfo) or npcObjectInfo.GetTextureId(displayName, resolvedEntityName, lookupOptions)
     ) or nil;
     local typeText = suppressExpensiveWorldWidgets ~= true and typeLineSettings.enabled == true and (
@@ -577,7 +588,7 @@ local function QueueNpcObject(entity)
         name = nameSettings,
         distance = distanceSettings,
         typeLine = suppressExpensiveWorldWidgets == true and { enabled = false } or typeLineSettings,
-        icon = suppressExpensiveWorldWidgets == true and { enabled = false } or iconSettings,
+        icon = iconSettings,
     }, {
         iconTextureId = iconTextureId,
         typeText = typeText,

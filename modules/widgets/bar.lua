@@ -1118,7 +1118,8 @@ function bar.DrawSettings(settings, context)
         resourceName ~= 'Sic' and
         resourceName ~= 'Reward' and
         resourceName ~= 'Ward' and
-        resourceName ~= 'Rage'
+        resourceName ~= 'Rage' and
+        resourceName ~= 'Favor'
     );
     local labelIconOptions = context ~= nil and context.labelIconOptions == true;
     local boxedSettings = context ~= nil and context.boxed == true;
@@ -1573,7 +1574,7 @@ function bar.DrawSettings(settings, context)
         return;
     end
 
-    if (boxedSettings == true and labelIconOptions == true and (resourceName == 'Ward' or resourceName == 'Rage')) then
+    if (boxedSettings == true and labelIconOptions == true and (resourceName == 'Ward' or resourceName == 'Rage' or resourceName == 'Favor')) then
         local panelLabelWidth = 150;
         local panelControlWidth = 170;
 
@@ -1606,9 +1607,9 @@ function bar.DrawSettings(settings, context)
             end
         end);
 
-        DrawPanel('Timer Text', function()
+        DrawPanel(resourceName == 'Favor' and 'Charge Text' or 'Timer Text', function()
             settings.showValue = false;
-            settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' timer', settings.showPercent ~= false);
+            settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. (resourceName == 'Favor' and ' charge' or ' timer'), settings.showPercent ~= false);
             if (settings.showPercent == true) then
                 settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'timer_position', 'Timer X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Timer Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
             end
@@ -1646,7 +1647,7 @@ function bar.DrawSettings(settings, context)
 
     settings.cornerRadius = DrawSingleSlider('Corner radius', idPrefix .. 'corner_radius', settings.cornerRadius, 0, 80, true, 108, 150);
 
-    if (resourceName == 'Ward' or resourceName == 'Rage') then
+    if (resourceName == 'Ward' or resourceName == 'Rage' or resourceName == 'Favor') then
         settings.fillDirection = DrawComboRow('Fill direction', settings.fillDirection or defaults.fillDirection or 'Left to right', { 'Left to right', 'Right to left' }, idPrefix .. 'fill_direction', 150);
     end
 
@@ -1753,7 +1754,7 @@ function bar.DrawSettings(settings, context)
 
     if (labelIconOptions == true) then
         DrawInnerBreak();
-        if (resourceName == 'Ward' or resourceName == 'Rage') then
+        if (resourceName == 'Ward' or resourceName == 'Rage' or resourceName == 'Favor') then
             DrawInnerHeader(resourceName .. ' Icon/Text:');
         else
             DrawInnerHeader('Labels:');
@@ -1780,11 +1781,11 @@ function bar.DrawSettings(settings, context)
             if (settings.showPercent == true) then
                 settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'counter_position', 'Counter X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Counter Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
             end
-        elseif (resourceName == 'Ward' or resourceName == 'Rage') then
+        elseif (resourceName == 'Ward' or resourceName == 'Rage' or resourceName == 'Favor') then
             imgui.Separator();
-            DrawInnerHeader('Timer Text:');
+            DrawInnerHeader(resourceName == 'Favor' and 'Charge Text:' or 'Timer Text:');
             settings.showValue = false;
-            settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' timer', settings.showPercent ~= false);
+            settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. (resourceName == 'Favor' and ' charge' or ' timer'), settings.showPercent ~= false);
             if (settings.showPercent == true) then
                 settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'timer_position', 'Timer X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Timer Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
             end

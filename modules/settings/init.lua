@@ -512,6 +512,36 @@ local petRageBarDefaults = {
     textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
     textOutlineSize = 1,
 };
+-- Keep this global rather than adding another file-scope local: this settings
+-- module is already at Lua 5.1's 200-local limit.
+LibraPlatesPetFavorBarDefaults = {
+    enabled = true,
+    width = 170,
+    height = 8,
+    offsetX = 0,
+    offsetY = 34,
+    color = { 0.55, 0.35, 0.95, 1.0 },
+    backgroundColor = { 0.255, 0.255, 0.255, 0.95 },
+    borderColor = { 0.0, 0.0, 0.0, 1.0 },
+    borderSize = 0,
+    texture = 'Solid',
+    fillDirection = 'Left to right',
+    labelDisplayMode = 'Text',
+    labelIconSize = 14,
+    labelIconOffsetX = 0,
+    labelIconOffsetY = 0,
+    showValue = false,
+    showPercent = true,
+    showAtPercent = 100,
+    textOffsetX = 0,
+    textOffsetY = 0,
+    useSmallFont = true,
+    fontSize = 7,
+    textColor = { 1.0, 1.0, 1.0, 1.0 },
+    textOutlineEnabled = true,
+    textOutlineColor = { 0.0, 0.0, 0.0, 1.0 },
+    textOutlineSize = 1,
+};
 local smnHpBarDefaults = {
     enabled = true,
     width = 170,
@@ -966,6 +996,7 @@ local avatarEditWidgets = T{
     'Name',
     'Ward timer',
     'Rage timer',
+    "Avatar's Favor",
     'HP Bar',
     'TP Bar',
     'Alerts',
@@ -1099,6 +1130,7 @@ local widgetKeys = {
     ['Pet state'] = 'Pet state',
     ['Ward timer'] = 'Ward timer',
     ['Rage timer'] = 'Rage timer',
+    ["Avatar's Favor"] = "Avatar's Favor",
     ['Detached frame'] = 'Detached frame',
     ['Alerts'] = 'Alerts',
     ['Cast bar'] = 'Cast bar',
@@ -1985,6 +2017,7 @@ function GetWidgetDefaults(widget)
     if (widget == 'Pet state') then return petStateDefaults; end
     if (widget == 'Ward timer') then return petWardBarDefaults; end
     if (widget == 'Rage timer') then return petRageBarDefaults; end
+    if (widget == "Avatar's Favor") then return LibraPlatesPetFavorBarDefaults; end
     if (widget == 'Sic' or widget == 'Ready bar') then return petReadyBarDefaults; end
     if (widget == 'Reward') then return petRewardBarDefaults; end
     if (widget == 'Alerts') then return { enabled = false }; end
@@ -5149,6 +5182,7 @@ function SelectPreviewElement(kind, context)
         sic = 'Sic',
         ward = 'Ward timer',
         rage = 'Rage timer',
+        favor = "Avatar's Favor",
         targetModuleBackground = ListContains(GetEditWidgets(), 'Target') == true and 'Target' or 'Target (module)',
         targetModuleArrow = ListContains(GetEditWidgets(), 'Target') == true and 'Target' or 'Target (module)',
         targetModuleChevron = ListContains(GetEditWidgets(), 'Target') == true and 'Target' or 'Target (module)',
@@ -5452,6 +5486,7 @@ function DragPeerPreviewElement(kind, dx, dy, context)
         sic = 'Sic',
         ward = 'Ward timer',
         rage = 'Rage timer',
+        favor = "Avatar's Favor",
         allianceLeaderIcon = 'Alliance leader icon',
         partyLeaderIcon = 'Party leader icon',
         gameModeIcon = 'Game mode icon',
@@ -11253,6 +11288,7 @@ local helpWidgetDescriptions = {
     ['Pet state'] = 'BST pet state display and placement.',
     ['Ward timer'] = 'SMN Ward timer bar display and placement.',
     ['Rage timer'] = 'SMN Rage timer bar display and placement.',
+    ["Avatar's Favor"] = "Avatar's Favor charge bar display and placement.",
     ['Sic'] = 'BST Sic cooldown bar display and placement.',
     ['Ready bar'] = 'BST Ready cooldown bar display and placement.',
     ['Reward'] = 'BST Reward cooldown display and placement.',
@@ -14123,9 +14159,9 @@ function LibraPlatesSettingsGetBoxedPlateWidgetInfo()
         defaults = widgetName == 'Pet timer' and petTimerDefaults or petStateDefaults;
         extras.extraBeforeReset = widgetName == 'Pet timer' and DrawPetTimerExtraSettings or DrawPetStateExtraSettings;
         drawFn = widgets.text.DrawSettings;
-    elseif (widgetName == 'Ward timer' or widgetName == 'Rage timer') then
-        defaults = widgetName == 'Rage timer' and petRageBarDefaults or petWardBarDefaults;
-        extras.resourceName = widgetName == 'Rage timer' and 'Rage' or 'Ward';
+    elseif (widgetName == 'Ward timer' or widgetName == 'Rage timer' or widgetName == "Avatar's Favor") then
+        defaults = widgetName == 'Rage timer' and petRageBarDefaults or (widgetName == "Avatar's Favor" and LibraPlatesPetFavorBarDefaults or petWardBarDefaults);
+        extras.resourceName = widgetName == 'Rage timer' and 'Rage' or (widgetName == "Avatar's Favor" and 'Favor' or 'Ward');
         extras.labelIconOptions = true;
         drawFn = widgets.bar.DrawSettings;
     elseif (widgetName == 'Sic' or widgetName == 'Ready bar' or widgetName == 'Reward') then
@@ -14662,13 +14698,16 @@ local function DrawSelectedEditorPlates()
         });
     end
 
-    if (selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer') then
+    if (selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == "Avatar's Favor") then
         local storageEntity = GetStorageEntity(selectedEntity);
         local defaults = petWardBarDefaults;
         local resourceName = 'Ward';
         if (selectedWidget == 'Rage timer') then
             defaults = petRageBarDefaults;
             resourceName = 'Rage';
+        elseif (selectedWidget == "Avatar's Favor") then
+            defaults = LibraPlatesPetFavorBarDefaults;
+            resourceName = 'Favor';
         end
 
         local settings = state.GetWidgetSettings(storageEntity, LibraPlatesSettingsToStorageStateName(selectedState), widgetKeys[selectedWidget], defaults);
@@ -14730,7 +14769,7 @@ local function DrawSelectedEditorPlates()
         return;
     end
 
-    if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Behavior icon' or selectedWidget == 'Detects icon' or selectedWidget == 'Links icon' or selectedWidget == 'Special icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Gathering (module)' or selectedWidget == 'Quick Menu (module)' or selectedWidget == 'AOE range (module)') then
+    if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Behavior icon' or selectedWidget == 'Detects icon' or selectedWidget == 'Links icon' or selectedWidget == 'Special icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == "Avatar's Favor" or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Gathering (module)' or selectedWidget == 'Quick Menu (module)' or selectedWidget == 'AOE range (module)') then
         if (loadModeDrawn ~= true) then
             LibraPlatesSettingsDrawCurrentWidgetLoadMode();
         end

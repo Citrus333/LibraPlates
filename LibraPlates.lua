@@ -126,6 +126,7 @@ ashita.events.register('command', 'libraplates_command', function(e)
     local actionRangeTimer = perfMeter.BeginDetail('command.actionRange');
     itemFlickerTrace.HandleCommandText(e.command);
     targetActionRange.HandleCommandText(e.command);
+    modules.plates.pet.HandleCommandText(e.command);
     perfMeter.EndDetail(actionRangeTimer);
     local aoeTimer = perfMeter.BeginDetail('command.aoe');
     aoeNameHighlight.HandleCommandText(e.command);
@@ -226,6 +227,7 @@ ashita.events.register('text_in', 'libraplates_text_in', function(e)
     end
 
     restingTick.HandleTextIn(e);
+    modules.plates.pet.HandleTextIn(e);
     local alertsTimer = perfMeter.BeginDetail('alerts.text');
     enemyAlerts.HandleTextIn(e);
     perfMeter.EndDetail(alertsTimer);

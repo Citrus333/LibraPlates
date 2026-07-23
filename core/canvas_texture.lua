@@ -87,6 +87,24 @@ local function ColorToD3D(color, fallback)
     return (a * 0x1000000) + (r * 0x10000) + (g * 0x100) + b;
 end
 
+local function BarBorderColorToD3D(color, fallback, borderSize)
+    local source = color or fallback or { 0.0, 0.0, 0.0, 1.0 };
+
+    -- Bar color controls edit RGB only. Some pet-bar defaults historically
+    -- carried alpha 0, which made every positive border size remain invisible.
+    if ((tonumber(borderSize) or 0) > 0 and type(source) == 'table'
+        and (tonumber(source[4]) or 0) <= 0) then
+        source = {
+            tonumber(source[1]) or 0,
+            tonumber(source[2]) or 0,
+            tonumber(source[3]) or 0,
+            1.0,
+        };
+    end
+
+    return ColorToD3D(source, fallback);
+end
+
 local function BoostColor(color, boost, alpha)
     if (type(color) ~= 'table') then
         return color;
@@ -1052,28 +1070,42 @@ local function DrawBar(device, centerX, centerY, bar, progress, defaultColor, re
         barW + (borderSize * 2),
         barH + (borderSize * 2),
         ColorToD3D(bar.backgroundColor, { 0.05, 0.05, 0.05, 0.85 }),
-        ColorToD3D(bar.borderColor, { 0.0, 0.0, 0.0, 1.0 }),
+        BarBorderColorToD3D(bar.borderColor, { 0.0, 0.0, 0.0, 1.0 }, borderSize),
         borderSize,
         cornerRadius + borderSize
     );
 
-    local fillW = barW * progress;
+    local direction = tostring(bar.fillDirection or 'Left to right');
     local fillX = barX;
+    local fillY = barY;
+    local fillW = barW * progress;
+    local fillH = barH;
+    local u1, v1, u2, v2 = 0, 0, progress, 1;
 
-    if (tostring(bar.fillDirection or 'Left to right') == 'Right to left') then
+    if (direction == 'Right to left') then
         fillX = barX + barW - fillW;
+        u1, u2 = 1 - progress, 1;
+    elseif (direction == 'Bottom to top') then
+        fillW = barW;
+        fillH = barH * progress;
+        fillY = barY + barH - fillH;
+        v1, v2 = 1 - progress, 1;
+    elseif (direction == 'Top to bottom') then
+        fillW = barW;
+        fillH = barH * progress;
+        v1, v2 = 0, progress;
     end
 
     local textureStrength = NormalizeTextureStrength(bar.textureStrength);
 
     if (bar.textureId ~= nil and tonumber(bar.textureId) ~= nil and tonumber(bar.textureId) ~= 0 and textureStrength > 0) then
         if (textureStrength < 1) then
-            DrawRoundedRect(device, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor), cornerRadius);
+            DrawRoundedRect(device, fillX, fillY, fillW, fillH, ColorToD3D(bar.color, defaultColor), cornerRadius);
         end
 
-        DrawRoundedTexture(device, bar.textureId, fillX, barY, fillW, barH, ColorWithAlphaMultiplier(bar.color, defaultColor, textureStrength), cornerRadius, 0, 0, progress, 1);
+        DrawRoundedTexture(device, bar.textureId, fillX, fillY, fillW, fillH, ColorWithAlphaMultiplier(bar.color, defaultColor, textureStrength), cornerRadius, u1, v1, u2, v2);
     else
-        DrawRoundedRect(device, fillX, barY, fillW, barH, ColorToD3D(bar.color, defaultColor), cornerRadius);
+        DrawRoundedRect(device, fillX, fillY, fillW, fillH, ColorToD3D(bar.color, defaultColor), cornerRadius);
     end
 
     if (bar.animationEnabled == true) then
@@ -1123,7 +1155,7 @@ local function DrawRingProgress(device, centerX, centerY, ring, progress, defaul
             math.max(0, innerRadius - borderSize),
             startAngle,
             endAngle,
-            ColorToD3D(ring.borderColor, { 0.0, 0.0, 0.0, 1.0 }),
+            BarBorderColorToD3D(ring.borderColor, { 0.0, 0.0, 0.0, 1.0 }, borderSize),
             96
         );
     end
@@ -1264,7 +1296,7 @@ local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, 
             segmentW + (borderSize * 2),
             barH + (borderSize * 2),
             ColorToD3D(bar.backgroundColor, { 0.05, 0.05, 0.05, 0.85 }),
-            ColorToD3D(bar.borderColor, { 0.0, 0.0, 0.0, 1.0 }),
+            BarBorderColorToD3D(bar.borderColor, { 0.0, 0.0, 0.0, 1.0 }, borderSize),
             borderSize,
             cornerRadius + borderSize
         );

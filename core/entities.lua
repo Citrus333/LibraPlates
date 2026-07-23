@@ -775,6 +775,21 @@ function entities.GetOwnPetTargetIndex()
         return nil;
     end
 
+    local entityManager = AshitaCore:GetMemoryManager():GetEntity();
+    local petIndex = nil;
+
+    if (entityManager ~= nil and entityManager.GetPetTargetIndex ~= nil) then
+        pcall(function()
+            petIndex = entityManager:GetPetTargetIndex(selfIndex);
+        end);
+    end
+
+    if (tonumber(petIndex) ~= nil and tonumber(petIndex) ~= 0) then
+        return tonumber(petIndex);
+    end
+
+    -- Older Ashita builds may not expose GetPetTargetIndex; retain the entity
+    -- field as a compatibility fallback rather than using it as the live source.
     local playerEntity = GetEntity(selfIndex);
 
     if (playerEntity == nil or playerEntity.PetTargetIndex == nil or tonumber(playerEntity.PetTargetIndex) == 0) then

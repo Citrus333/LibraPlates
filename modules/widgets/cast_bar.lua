@@ -233,6 +233,29 @@ local function DrawPairedNumberRow(rowId, leftLabel, leftId, leftValue, leftMin,
     return nextLeft, nextRight;
 end
 
+local function DrawSingleNumberRow(rowId, label, id, value, minValue, maxValue)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local nextValue = value;
+
+        if (imgui.BeginTable('##cast_bar_' .. rowId, 4, tableFlags)) then
+            imgui.TableSetupColumn('##left_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##left_control', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_label', 0, gridColumnWidth);
+            imgui.TableSetupColumn('##right_control', 0, gridColumnWidth);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, label);
+            imgui.TableNextColumn();
+            nextValue = DrawNumberControl(id, value, minValue, maxValue);
+            imgui.EndTable();
+        end
+
+        return nextValue;
+    end
+
+    return DrawNumber(label, value, minValue, maxValue, 1);
+end
+
 local function DrawColorTextureRow(rowId, fillColor, backgroundColor, texture)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local nextFill = fillColor;
@@ -791,7 +814,12 @@ function castBar.DrawSettings(settings, context)
         end
         settings.color, settings.backgroundColor, settings.texture = DrawColorTextureRow('colors_texture', settings.color, settings.backgroundColor, settings.texture);
         settings.borderColor, settings.borderSize = DrawBorderRow('border', settings.borderColor, settings.borderSize);
-        DrawInterruptBarSettingsRows(settings, defaults);
+        if (context ~= nil and context.showCornerRadius == true) then
+            settings.cornerRadius = DrawSingleNumberRow('corner_radius', 'Corner radius', 'corner_radius', settings.cornerRadius or defaults.cornerRadius or 0, 0, 80);
+        end
+        if (context == nil or context.hideInterruptSettings ~= true) then
+            DrawInterruptBarSettingsRows(settings, defaults);
+        end
     end, true);
 
     DrawPanel('Text Settings', function()
@@ -802,7 +830,9 @@ function castBar.DrawSettings(settings, context)
             DrawTextSettingsRows(settings, defaults);
         end
 
-        DrawInterruptTextSettingsRows(settings, defaults, boxed);
+        if (context == nil or context.hideInterruptSettings ~= true) then
+            DrawInterruptTextSettingsRows(settings, defaults, boxed);
+        end
     end);
 
     DrawPanel('Spell Icon', function()
@@ -813,20 +843,22 @@ function castBar.DrawSettings(settings, context)
         end
     end);
 
-    if (boxed == true) then
-        imgui.Spacing();
-        imgui.Spacing();
-    else
-        imgui.Separator();
-    end
+    if (context == nil or context.hideResetControls ~= true) then
+        if (boxed == true) then
+            imgui.Spacing();
+            imgui.Spacing();
+        else
+            imgui.Separator();
+        end
 
-    if (DrawActionButton('Reset Cast bar position') == true) then
-        settings.offsetX = defaults.offsetX;
-        settings.offsetY = defaults.offsetY;
-    end
+        if (DrawActionButton('Reset Cast bar position') == true) then
+            settings.offsetX = defaults.offsetX;
+            settings.offsetY = defaults.offsetY;
+        end
 
-    if (DrawActionButton('Reset Cast bar settings') == true) then
-        ResetSettings(settings, defaults);
+        if (DrawActionButton('Reset Cast bar settings') == true) then
+            ResetSettings(settings, defaults);
+        end
     end
 end
 

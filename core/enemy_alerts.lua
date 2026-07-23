@@ -11,6 +11,7 @@ local textScale = require('core.text_scale');
 local alertSounds = require('core.alert_sounds');
 local gdiTextTexture = require('ui.gdi_text_texture');
 local globalDefaults = require('config.global');
+local petDurations = require('data.pet_durations');
 
 local enemyAlerts = {};
 local alerts = {};
@@ -21,7 +22,20 @@ local previewEnabled = false;
 local previewRenderedFrame = nil;
 local layoutPreviewEditDrag = nil;
 local testAlertIndex = 0;
-local lastPetTextAlert = nil;
+local cachedOwnPetTextSource = nil;
+local recentPetAlertEmissions = {};
+-- Packet and chat reports for the same pet action can arrive separately.
+-- Share one short identity window so the packet provides the early alert and
+-- the later chat line is consumed as confirmation instead of becoming x2.
+local petAlertDuplicateWindow = 3.0;
+local petAlertSettingKeys = {
+    charmed = 'petCharmedEnabled',
+    jug = 'petJugEnabled',
+    avatar = 'petAvatarEnabled',
+    spirit = 'petSpiritEnabled',
+    wyvern = 'petWyvernEnabled',
+    automaton = 'petAutomatonEnabled',
+};
 
 local function SafeCall(fallback, fn)
     local ok, result = pcall(fn);
@@ -417,7 +431,12 @@ local function GetLaneSettings(settings, lane)
         };
     elseif (lane == 'pet') then
         return {
-            enabled = settings.petAlertsEnabled ~= false,
+            enabled = settings.petCharmedEnabled ~= false or
+                settings.petJugEnabled ~= false or
+                settings.petAvatarEnabled ~= false or
+                settings.petSpiritEnabled ~= false or
+                settings.petWyvernEnabled ~= false or
+                settings.petAutomatonEnabled ~= false,
             color = settings.petColor or { 0.72, 1.0, 0.58, 1.0 },
             outlineColor = settings.petOutlineColor or settings.outlineColor,
             fontSize = tonumber(settings.petFontSize) or 32,
@@ -511,27 +530,64 @@ end
 
 local function TrimAlertsToLimit(settings)
     local maxVisibleAlerts = GetMaxVisibleAlerts(settings);
+    local petCount = 0;
+    local otherCount = 0;
 
-    while (#alerts > maxVisibleAlerts) do
-        local removeIndex = 1;
+    for _, alert in ipairs(alerts) do
+        if (alert.lane == 'pet') then
+            petCount = petCount + 1;
+        else
+            otherCount = otherCount + 1;
+        end
+    end
+
+    -- Pet alerts have their own capacity.  They must not be discarded before
+    -- rendering merely because unrelated offensive/ability alerts filled the
+    -- shared screen-alert queue first.
+    while (petCount > maxVisibleAlerts) do
+        for index, alert in ipairs(alerts) do
+            if (alert.lane == 'pet') then
+                table.remove(alerts, index);
+                petCount = petCount - 1;
+                break;
+            end
+        end
+    end
+
+    while (otherCount > maxVisibleAlerts) do
+        local removeIndex = nil;
 
         if (settings.dropLowerPriorityAlerts ~= false) then
             local worstPriority = -1;
             local oldestStart = math.huge;
 
             for index, alert in ipairs(alerts) do
-                local priority = GetAlertPriority(alert.lane);
-                local startTime = tonumber(alert.startTime) or 0;
+                if (alert.lane ~= 'pet') then
+                    local priority = GetAlertPriority(alert.lane);
+                    local startTime = tonumber(alert.startTime) or 0;
 
-                if (priority > worstPriority or (priority == worstPriority and startTime < oldestStart)) then
-                    worstPriority = priority;
-                    oldestStart = startTime;
+                    if (priority > worstPriority or (priority == worstPriority and startTime < oldestStart)) then
+                        worstPriority = priority;
+                        oldestStart = startTime;
+                        removeIndex = index;
+                    end
+                end
+            end
+        else
+            for index, alert in ipairs(alerts) do
+                if (alert.lane ~= 'pet') then
                     removeIndex = index;
+                    break;
                 end
             end
         end
 
+        if (removeIndex == nil) then
+            break;
+        end
+
         table.remove(alerts, removeIndex);
+        otherCount = otherCount - 1;
     end
 end
 
@@ -571,6 +627,13 @@ local function PushAlert(kind, lane, actorName, actionName, options)
     if (settings.stackDuplicateAlerts ~= false and options.noStack ~= true) then
         for _, alert in ipairs(alerts) do
             if (alert.stackKey == stackKey and (tonumber(alert.fadeEnds) or 0) > now) then
+                -- FFXI can report one owned-pet action more than once.  The
+                -- cleaned stack key proves these are the same visible pet
+                -- event, so keep the first fast alert instead of showing x2.
+                if (lane == 'pet') then
+                    return false, options.soundFile or laneSettings.soundFile;
+                end
+
                 alert.stackCount = (tonumber(alert.stackCount) or 1) + 1;
                 alert.text = tostring(alert.baseText or alert.text or text) .. ' x' .. tostring(alert.stackCount);
                 alert.startTime = now;
@@ -633,9 +696,19 @@ local function PushAlert(kind, lane, actorName, actionName, options)
     return soundPlayed, soundFile;
 end
 
-local function IsPetAlertWidgetEnabled(entityName, stateName)
-    local widgetSettings = state.GetWidgetSettings(tostring(entityName or ''), tostring(stateName or ''), 'Alerts', { enabled = false });
-    return widgetSettings ~= nil and widgetSettings.enabled == true;
+local function IsPetTypeAlertEnabled(petType)
+    local settings = GetSettings();
+    local key = petAlertSettingKeys[tostring(petType or ''):lower()];
+
+    return key ~= nil and settings[key] ~= false;
+end
+
+local function GetBstAlertState(pet)
+    if (pet ~= nil and petDurations.GetBstJugDurationMinutes(pet.name) ~= nil) then
+        return 'Jug Pet', 'jug';
+    end
+
+    return 'Charmed Pet', 'charmed';
 end
 
 local function GetPetAlertSource(packet)
@@ -652,7 +725,8 @@ local function GetPetAlertSource(packet)
         (tonumber(smnPet.index) == userIndex or tonumber(smnPet.serverId) == userId)
     ) then
         local stateName = smnPet.petType == 'spirit' and 'Spirit' or 'Avatar';
-        if (IsPetAlertWidgetEnabled('Pet (SMN)', stateName) == true) then
+        local petType = smnPet.petType == 'spirit' and 'spirit' or 'avatar';
+        if (IsPetTypeAlertEnabled(petType) == true) then
             return {
                 entity = 'Pet (SMN)',
                 state = stateName,
@@ -666,13 +740,11 @@ local function GetPetAlertSource(packet)
         bstPet ~= nil and
         (tonumber(bstPet.index) == userIndex or tonumber(bstPet.serverId) == userId)
     ) then
-        if (
-            IsPetAlertWidgetEnabled('Pet (BST)', 'Jug Pet') == true or
-            IsPetAlertWidgetEnabled('Pet (BST)', 'Charmed Pet') == true
-        ) then
+        local stateName, petType = GetBstAlertState(bstPet);
+        if (IsPetTypeAlertEnabled(petType) == true) then
             return {
                 entity = 'Pet (BST)',
-                state = 'Pet',
+                state = stateName,
                 name = bstPet.name,
             };
         end
@@ -682,12 +754,25 @@ local function GetPetAlertSource(packet)
     if (
         drgPet ~= nil and
         (tonumber(drgPet.index) == userIndex or tonumber(drgPet.serverId) == userId) and
-        IsPetAlertWidgetEnabled('Wyvern', 'Wyvern') == true
+        IsPetTypeAlertEnabled('wyvern') == true
     ) then
         return {
             entity = 'Pet (DRG)',
             state = 'Wyvern',
             name = drgPet.name,
+        };
+    end
+
+    local pupPet = entities.GetOwnPupPet();
+    if (
+        pupPet ~= nil and
+        (tonumber(pupPet.index) == userIndex or tonumber(pupPet.serverId) == userId) and
+        IsPetTypeAlertEnabled('automaton') == true
+    ) then
+        return {
+            entity = 'Pet (PUP)',
+            state = 'Automaton',
+            name = pupPet.name,
         };
     end
 
@@ -697,9 +782,41 @@ end
 local function GetPetTextAlertSource(actorName)
     local actorText = tostring(actorName or '');
     local compactActor = actorText:gsub('%s+', '');
+    local ownPetIndex = entities.GetOwnPetTargetIndex();
 
     if (compactActor == '') then
-        return nil;
+        return nil, false;
+    end
+
+    if (
+        ownPetIndex == nil or
+        (
+            cachedOwnPetTextSource ~= nil and
+            tonumber(cachedOwnPetTextSource.index) ~= tonumber(ownPetIndex)
+        )
+    ) then
+        cachedOwnPetTextSource = nil;
+    end
+
+    local function RememberPetSource(pet, petType, entityName, stateName)
+        cachedOwnPetTextSource = {
+            index = pet.index,
+            name = pet.name,
+            compactName = tostring(pet.name or ''):gsub('%s+', ''),
+            petType = petType,
+            entity = entityName,
+            state = stateName,
+        };
+
+        if (IsPetTypeAlertEnabled(petType) == true) then
+            return {
+                entity = entityName,
+                state = stateName,
+                name = pet.name,
+            }, true;
+        end
+
+        return nil, true;
     end
 
     local smnPet = entities.GetOwnSmnPet();
@@ -707,45 +824,52 @@ local function GetPetTextAlertSource(actorName)
         local compactPetName = tostring(smnPet.name or ''):gsub('%s+', '');
         if (compactPetName == compactActor) then
             local stateName = smnPet.petType == 'spirit' and 'Spirit' or 'Avatar';
-            if (IsPetAlertWidgetEnabled('Pet (SMN)', stateName) == true) then
-                return { entity = 'Pet (SMN)', state = stateName, name = smnPet.name };
-            end
+            local petType = smnPet.petType == 'spirit' and 'spirit' or 'avatar';
+            return RememberPetSource(smnPet, petType, 'Pet (SMN)', stateName);
         end
-    end
-
-    if (compactActor:match('Spirit$') ~= nil and IsPetAlertWidgetEnabled('Pet (SMN)', 'Spirit') == true) then
-        return { entity = 'Pet (SMN)', state = 'Spirit', name = actorText };
     end
 
     local bstPet = entities.GetOwnBstPet();
     if (bstPet ~= nil and tostring(bstPet.name or ''):gsub('%s+', '') == compactActor) then
-        if (
-            IsPetAlertWidgetEnabled('Pet (BST)', 'Jug Pet') == true or
-            IsPetAlertWidgetEnabled('Pet (BST)', 'Charmed Pet') == true
-        ) then
-            return { entity = 'Pet (BST)', state = 'Pet', name = bstPet.name };
-        end
+        local stateName, petType = GetBstAlertState(bstPet);
+        return RememberPetSource(bstPet, petType, 'Pet (BST)', stateName);
     end
 
     local drgPet = entities.GetOwnDrgPet();
     if (drgPet ~= nil and tostring(drgPet.name or ''):gsub('%s+', '') == compactActor) then
-        if (IsPetAlertWidgetEnabled('Wyvern', 'Wyvern') == true) then
-            return { entity = 'Pet (DRG)', state = 'Wyvern', name = drgPet.name };
-        end
+        return RememberPetSource(drgPet, 'wyvern', 'Pet (DRG)', 'Wyvern');
     end
 
     local pupPet = entities.GetOwnPupPet();
     if (pupPet ~= nil and tostring(pupPet.name or ''):gsub('%s+', '') == compactActor) then
-        if (IsPetAlertWidgetEnabled('Pet (PUP)', 'Automaton') == true) then
-            return { entity = 'Pet (PUP)', state = 'Automaton', name = pupPet.name };
-        end
+        return RememberPetSource(pupPet, 'automaton', 'Pet (PUP)', 'Automaton');
     end
 
-    return nil;
+    if (
+        cachedOwnPetTextSource ~= nil and
+        tonumber(cachedOwnPetTextSource.index) == tonumber(ownPetIndex) and
+        cachedOwnPetTextSource.compactName == compactActor
+    ) then
+        if (IsPetTypeAlertEnabled(cachedOwnPetTextSource.petType) == true) then
+            return {
+                entity = cachedOwnPetTextSource.entity,
+                state = cachedOwnPetTextSource.state,
+                name = cachedOwnPetTextSource.name,
+            }, true;
+        end
+
+        return nil, true;
+    end
+
+    -- Consume known pet chat that does not match the player's current pet so
+    -- it cannot fall through into the normal offensive/defensive alert lanes.
+    return nil, entities.IsKnownPetName(actorText) == true;
 end
 
 local function MatchPetTextAction(message, verb)
-    local text = tostring(message or ''):gsub('^%s*(.-)%s*$', '%1');
+    -- Normalize the chat payload before matching it.  FFXI can deliver the
+    -- same visible line with different hidden control bytes.
+    local text = CleanAlertDisplayText(message);
     local actorName, actionName = text:match('^The%s+(.-)%s+' .. verb .. '%s+(.+)%s*$');
 
     if (actorName == nil or actionName == nil) then
@@ -767,10 +891,9 @@ local function MatchPetTextAction(message, verb)
     return actorName, actionName;
 end
 
-local function IsRecentPetTextDuplicate(actorName, actionName)
-    local now = os.clock();
-    local function NormalizeKeyPart(value)
-        return tostring(value or '')
+local function IsDuplicatePetAlert(kind, actorName, actionName)
+    local function Normalize(value)
+        return CleanAlertDisplayText(value)
             :lower()
             :gsub('^the%s+', '')
             :gsub('[%.!]+', '')
@@ -778,22 +901,18 @@ local function IsRecentPetTextDuplicate(actorName, actionName)
             :gsub('^%s*(.-)%s*$', '%1');
     end
 
-    local key = NormalizeKeyPart(actorName) .. '\30' .. NormalizeKeyPart(actionName);
+    local now = os.clock();
+    local key = tostring(kind or '') .. '\30' .. Normalize(actorName) .. '\30' .. Normalize(actionName);
+    local previous = tonumber(recentPetAlertEmissions[key]);
+    recentPetAlertEmissions[key] = now;
 
-    if (
-        lastPetTextAlert ~= nil and
-        lastPetTextAlert.key == key and
-        (now - (tonumber(lastPetTextAlert.time) or 0)) < 10.0
-    ) then
-        return true;
+    for recentKey, seenAt in pairs(recentPetAlertEmissions) do
+        if (now - (tonumber(seenAt) or 0)) > petAlertDuplicateWindow then
+            recentPetAlertEmissions[recentKey] = nil;
+        end
     end
 
-    lastPetTextAlert = {
-        key = key,
-        time = now,
-    };
-
-    return false;
+    return previous ~= nil and (now - previous) <= petAlertDuplicateWindow;
 end
 
 local function HandlePetTextAlert(message)
@@ -814,12 +933,14 @@ local function HandlePetTextAlert(message)
         return false;
     end
 
-    local petSource = GetPetTextAlertSource(actorName);
+    local petSource, recognizedPet = GetPetTextAlertSource(actorName);
     if (petSource == nil) then
-        return false;
+        return recognizedPet == true;
     end
 
-    if (IsRecentPetTextDuplicate(actorName, actionName) == true) then
+    -- The same visible chat line can be delivered more than once with different
+    -- hidden formatting.  Keep only its first normalized occurrence.
+    if (IsDuplicatePetAlert(kind, actorName, actionName) == true) then
         return true;
     end
 
@@ -832,26 +953,17 @@ local function HandlePetTextAlert(message)
     return true;
 end
 
-local function HandlePetActionPacket(packet, settings)
+local function HandlePetActionPacket(packet)
     local petSource = GetPetAlertSource(packet);
     if (petSource == nil) then
         return false;
     end
 
-    local firstAction = packet.Targets[1] ~= nil and packet.Targets[1].Actions[1] or nil;
-    local actionParam = firstAction ~= nil and firstAction.Param or nil;
-    local message = firstAction ~= nil and firstAction.Message or nil;
     local kind = nil;
 
     if (packet.Type == 8) then
         kind = 'MA';
-    elseif (
-        packet.Type ~= 1 and
-        packet.Type ~= 4 and
-        packet.Type ~= 8 and
-        packet.Type ~= 9 and
-        packet.Type ~= 11
-    ) then
+    elseif (packet.Type == 13) then
         kind = 'JA';
     end
 
@@ -859,23 +971,30 @@ local function HandlePetActionPacket(packet, settings)
         return false;
     end
 
-    local actionInfo = ResolveAction(kind, packet.Type, packet.Param, actionParam);
+    local firstAction = packet.Targets[1] ~= nil and packet.Targets[1].Actions[1] or nil;
+    local actionInfo = ResolveAction(kind, packet.Type, packet.Param, nil);
     local actionName = actionInfo ~= nil and actionInfo.name or nil;
     local actorName = tostring(petSource.name or GetEntityName(packet.UserIndex) or 'Pet');
 
     if (actionName == nil or actionName == '') then
+        return false;
+    end
+
+    if (IsDuplicatePetAlert(kind, actorName, actionName) == true) then
         return true;
     end
 
     PushAlert(kind, 'pet', actorName, actionName);
     lastDebug = string.format(
-        'pet action entity=%s state=%s type=%s actor=%s action=%s message=%s',
+        'packet-pet entity=%s state=%s type=%s actor=%s action=%s id=%s method=%s message=%s',
         tostring(petSource.entity),
         tostring(petSource.state),
         tostring(packet.Type),
         tostring(actorName),
         tostring(actionName),
-        tostring(message)
+        tostring(actionInfo.id),
+        tostring(actionInfo.method),
+        tostring(firstAction ~= nil and firstAction.Message or nil)
     );
 
     if (IsDebugEnabled() == true) then
@@ -971,9 +1090,12 @@ function enemyAlerts.HandlePacketIn(e)
 
     if (e.id == 0x000A) then
         alerts = {};
+        cachedOwnPetTextSource = nil;
+        recentPetAlertEmissions = {};
         lastDebug = 'Enemy Alerts reset on zone.';
         return;
     end
+
 end
 
 local function StripControlCodes(text)

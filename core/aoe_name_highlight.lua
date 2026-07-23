@@ -24,6 +24,78 @@ local suppressUntil = 0;
 local suppressReason = nil;
 local recentCommandAction = nil;
 local GetLiveActionAoe = nil;
+local diffusionBuffId = 356;
+local diffusionAoeRange = 9;
+local liveWeaponSkillActionType = 23;
+
+local areaRangeLookup = {
+    [0x0001] = 1,
+    [0x0003] = 3,
+    [0x0004] = 4,
+    [0x0005] = 5,
+    [0x0006] = 6,
+    [0x0007] = 7,
+    [0x0008] = 8,
+    [0x000A] = 10,
+    [0x000C] = 12,
+    [0x000E] = 14,
+    [0x0010] = 16,
+    [0x0014] = 20,
+    [0x0019] = 25,
+    [0x001E] = 30,
+    [0x0023] = 35,
+};
+
+local function DecodeAreaRange(value)
+    local code = tonumber(value);
+
+    if (code == nil or code <= 0 or code == 0x00FF) then
+        return nil;
+    end
+
+    return areaRangeLookup[code] or code;
+end
+
+-- Windower's generated weapon-skills resource provides stable IDs and names,
+-- but no AOE flag (all offensive WS use targets=32). Keep the standard AOE
+-- membership explicit so neither Targets nor the live queue flags can turn a
+-- single-target WS into AOE. Radius is a fallback only; Ashita's decoded area
+-- range is preferred after membership has been confirmed.
+local weaponSkillAoeById = {
+    [6] = { name = 'spinning attack', range = 5, kind = 'enemy' },
+    [20] = { name = 'cyclone', range = 8, kind = 'enemy' },
+    [30] = { name = 'aeolian edge', range = 8, kind = 'enemy' },
+    [38] = { name = 'circle blade', range = 5, kind = 'enemy' },
+    [52] = { name = 'shockwave', range = 8, kind = 'enemy' },
+    [91] = { name = 'fell cleave', range = 5, kind = 'enemy' },
+    [100] = { name = 'spinning scythe', range = 5, kind = 'enemy' },
+    [123] = { name = 'sonic thrust', range = 10, kind = 'enemy' },
+    [164] = { name = 'moonlight', range = 20, kind = 'friendly', centerSelf = true },
+    [178] = { name = 'earth crusher', range = 8, kind = 'enemy' },
+    [189] = { name = 'cataclysm', range = 8, kind = 'enemy' },
+};
+local weaponSkillAoeByName = {};
+
+for _, data in pairs(weaponSkillAoeById) do
+    weaponSkillAoeByName[data.name] = data;
+end
+
+local function GetWeaponSkillAoeData(spellInfo)
+    if (spellInfo == nil) then
+        return nil;
+    end
+
+    local resolvedId = tonumber(spellInfo.resolvedId);
+    local actionId = tonumber(spellInfo.id);
+    local data = (resolvedId ~= nil and weaponSkillAoeById[resolvedId])
+        or (actionId ~= nil and weaponSkillAoeById[actionId]);
+
+    if (data ~= nil) then
+        return data;
+    end
+
+    return weaponSkillAoeByName[tostring(spellInfo.name or ''):lower()];
+end
 
 local function SafeNumber(fn)
     local ok, value = pcall(fn);
@@ -33,6 +105,33 @@ local function SafeNumber(fn)
     end
 
     return tonumber(value);
+end
+
+local function HasPlayerBuff(buffId)
+    local memory = AshitaCore:GetMemoryManager();
+    local player = memory ~= nil and memory:GetPlayer() or nil;
+
+    if (player == nil or player.GetBuffs == nil) then
+        return false;
+    end
+
+    local ok, buffs = pcall(function()
+        return player:GetBuffs();
+    end);
+
+    if (ok ~= true or buffs == nil) then
+        return false;
+    end
+
+    local wanted = tonumber(buffId) or 0;
+
+    for slot = 0, 31 do
+        if tonumber(buffs[slot]) == wanted or tonumber(buffs[slot + 1]) == wanted then
+            return true;
+        end
+    end
+
+    return false;
 end
 
 local function GetHighlightCache()
@@ -357,6 +456,14 @@ GetPetSkillInfo = function(spellInfo)
         return nil;
     end
 
+    if (
+        tostring(spellInfo.resourceMethod or '') == 'PetSkill' and
+        spellInfo.resource ~= nil and
+        tonumber(spellInfo.resource.aoe) ~= nil
+    ) then
+        return spellInfo.resource;
+    end
+
     local actionId = tonumber(spellInfo.id) or 0;
 
     if (actionId <= 0) then
@@ -598,6 +705,8 @@ local function BuildActionInfoFromResource(resource, resourceKind, resourceMetho
         isBlueMagic = (resourceKind == 'spell') and IsBlueMagicResource(resource, actionType) or false,
         targets = tonumber(resource.Targets or resource.targets or resource.Target or resource.target),
         range = tonumber(resource.Range or resource.range),
+        areaRange = tonumber(resource.AreaRange or resource.areaRange),
+        areaShapeType = tonumber(resource.AreaShapeType or resource.areaShapeType),
         status = tonumber(resource.Status or resource.status),
     };
 end
@@ -638,6 +747,9 @@ local function GetActionInfo(actionId, preferredCategory, preferredMethod)
         AddMethod('GetSpellById');
         AddMethod('GetAbilityById');
         AddMethod('GetAbilityByTimerId');
+    elseif (category == 7) then
+        AddMethod('GetWeaponSkillById');
+        AddMethod('GetMobSkillById');
     else
         AddMethod('GetSpellById');
         AddMethod('GetAbilityById');
@@ -711,6 +823,7 @@ local function GetActionInfoForQueuedAction(actionId, queuedAction)
 
         if (actionInfo ~= nil) then
             actionInfo.category = tonumber(queuedAction.category);
+            actionInfo.actionType = tostring(queuedAction.actionType or '');
             actionInfo.id = tonumber(actionId) or resolvedId;
             actionInfo.resolvedId = resolvedId;
             return actionInfo;
@@ -820,7 +933,25 @@ local function GetCachedActiveAoeCasts()
         return cache.activeCasts;
     end
 
-    cache.activeCasts = enemyCasts.GetActiveAoeCasts();
+    cache.activeCasts = {};
+
+    for _, castData in ipairs(enemyCasts.GetActiveAoeCasts()) do
+        local casterIndex = tonumber(castData.userIndex) or 0;
+        local ownedCaster = castData.isSelfCast == true or (
+            casterIndex > 0 and (
+                casterIndex == GetSelfIndex() or
+                casterIndex == GetOwnPetIndex()
+            )
+        );
+
+        -- Only the local player and their current pet may drive AOE name/icon
+        -- highlighting.  Trusts, party PCs, other PCs, NPCs, and enemies are
+        -- deliberately excluded even when their casts are otherwise tracked.
+        if (ownedCaster == true) then
+            cache.activeCasts[#cache.activeCasts + 1] = castData;
+        end
+    end
+
     return cache.activeCasts;
 end
 
@@ -914,22 +1045,112 @@ GetLiveActionAoe = function()
     local isActionAoe = SafeNumber(function() return targetManager:GetIsActionAoe(); end);
 
     local actionId = SafeNumber(function() return targetManager:GetActionId(); end);
+    local liveActionType = targetManager.GetActionType ~= nil and SafeNumber(function()
+        return targetManager:GetActionType();
+    end) or nil;
     local queuedAction = GetQueuedActionForId(actionId);
-    local spellInfo = GetActionInfoForQueuedAction(actionId, queuedAction);
+    local encodedPetSkill = actionId ~= nil and petSkills[actionId - 512] or nil;
+    local spellInfo = nil;
+
+    if liveActionType == liveWeaponSkillActionType then
+        local liveWeaponSkill = actionId ~= nil and weaponSkillAoeById[actionId] or nil;
+
+        -- The target manager identifies menu-selected weapon skills as type 23,
+        -- while its generic AOE flag is set even for single-target weapon
+        -- skills. Direct resource lookups also collide with spell/ability IDs.
+        -- Therefore only the explicit weapon-skill AOE list is authoritative.
+        if (liveWeaponSkill == nil) then
+            return nil;
+        end
+
+        spellInfo = {
+            resourceKind = 'ability',
+            resourceMethod = 'LiveWeaponSkill',
+            id = actionId,
+            resolvedId = actionId,
+            name = liveWeaponSkill.name,
+            category = 7,
+            actionType = 'weaponskill',
+        };
+    elseif encodedPetSkill ~= nil and (tonumber(GetOwnPetIndex()) or 0) > 0 then
+        spellInfo = BuildActionInfoFromResource(encodedPetSkill, 'ability', 'PetSkill', actionId);
+
+        if spellInfo ~= nil then
+            spellInfo.category = 18;
+            spellInfo.actionType = 'petskill';
+            spellInfo.resolvedId = actionId - 512;
+        end
+    else
+        spellInfo = GetActionInfoForQueuedAction(actionId, queuedAction);
+    end
+
     local rawActionAoeRange = targetManager.GetActionAoeRange ~= nil and SafeNumber(function() return targetManager:GetActionAoeRange(); end) or nil;
 
     if (actionId == nil or spellInfo == nil) then
         return nil;
     end
 
+    local isWeaponSkill = (
+        tostring(spellInfo.actionType or '') == 'weaponskill' or
+        tonumber(spellInfo.category) == 7 or
+        tostring(spellInfo.resourceMethod or '') == 'GetWeaponSkillById'
+    );
+    local petSkillInfo = GetPetSkillInfo(spellInfo);
+    local isPetSkill = (
+        tostring(spellInfo.actionType or '') == 'petskill' or
+        tostring(spellInfo.resourceMethod or '') == 'PetSkill' or
+        petSkillInfo ~= nil
+    );
+    local weaponSkillAoeRange = nil;
+    local weaponSkillAoeData = nil;
+
+    if (isWeaponSkill == true) then
+        weaponSkillAoeData = GetWeaponSkillAoeData(spellInfo);
+
+        if (weaponSkillAoeData == nil) then
+            return nil;
+        end
+
+        weaponSkillAoeRange = DecodeAreaRange(spellInfo.areaRange)
+            or tonumber(weaponSkillAoeData.range);
+    end
+
+    -- The server pet-skill table is the authoritative pet AOE allowlist.
+    -- Never let the generic target-manager AOE flag promote a known
+    -- single-target Blood Pact or pet weapon skill.
+    if (
+        isPetSkill == true and
+        (
+            petSkillInfo == nil or
+            tonumber(petSkillInfo.aoe) == nil or
+            tonumber(petSkillInfo.aoe) <= 0 or
+            tonumber(petSkillInfo.radius) == nil or
+            tonumber(petSkillInfo.radius) <= 0
+        )
+    ) then
+        return nil;
+    end
+
+    local isDiffusionAoe = (
+        spellInfo.resourceKind == 'spell' and
+        spellInfo.isBlueMagic == true and
+        statusEffects.IsBuff(spellInfo.status) == true and
+        HasPlayerBuff(diffusionBuffId) == true
+    );
+
     local isSelfOrFriendlySpellAoe = (
         spellInfo.resourceKind == 'spell' and
-        (isActionAoe == 1 or isActionAoe == 2) and
-        rawActionAoeRange ~= nil and
-        rawActionAoeRange > 0 and
         (
-            HasSelfTargetFlag(spellInfo.targets) == true or
-            HasFriendlyTargetFlag(spellInfo.targets) == true
+            isDiffusionAoe == true or
+            (
+                (isActionAoe == 1 or isActionAoe == 2) and
+                rawActionAoeRange ~= nil and
+                rawActionAoeRange > 0 and
+                (
+                    HasSelfTargetFlag(spellInfo.targets) == true or
+                    HasFriendlyTargetFlag(spellInfo.targets) == true
+                )
+            )
         )
     );
 
@@ -949,6 +1170,14 @@ GetLiveActionAoe = function()
     aoeKind = GetSpellAoeKind(spellInfo);
     actionTargetIndex = GetResolvedActionTargetIndex(spellInfo, targetManager);
     targetKind = GetDebugPlateKind(actionTargetIndex);
+
+    if (weaponSkillAoeData ~= nil) then
+        aoeKind = weaponSkillAoeData.kind or aoeKind;
+    end
+
+    if (isDiffusionAoe == true) then
+        aoeKind = 'friendly';
+    end
 
     if (
         aoeKind == 'enemy' and
@@ -987,6 +1216,10 @@ GetLiveActionAoe = function()
 
     if (resourceManager ~= nil and resourceManager.GetSpellRange ~= nil) then
         resourceAoeRange = SafeNumber(function() return resourceManager:GetSpellRange(actionId, true); end);
+    end
+
+    if (isDiffusionAoe == true) then
+        resourceAoeRange = diffusionAoeRange;
     end
 
     if (
@@ -1036,6 +1269,10 @@ GetLiveActionAoe = function()
         end
     end
 
+    if (isWeaponSkill == true) then
+        resourceAoeRange = weaponSkillAoeRange;
+    end
+
     if (
         isActionAoe ~= 1 and
         isActionAoe ~= 2 and
@@ -1059,7 +1296,10 @@ GetLiveActionAoe = function()
     if (resourceAoeRange ~= nil and resourceAoeRange > 0) then
         return {
             range = resourceAoeRange,
-            centerIndex = GetCurrentActionCenterIndex(spellInfo),
+            centerIndex = (
+                isDiffusionAoe == true or
+                (weaponSkillAoeData ~= nil and weaponSkillAoeData.centerSelf == true)
+            ) and GetSelfIndex() or GetCurrentActionCenterIndex(spellInfo),
             kind = aoeKind,
         };
     end
@@ -1111,6 +1351,106 @@ function aoeNameHighlight.GetCurrentActionTargetRange()
     return tonumber(spellInfo ~= nil and spellInfo.range) or nil;
 end
 
+local function ProbeTargetNumber(targetManager, methodName, ...)
+    if (targetManager == nil or type(targetManager[methodName]) ~= 'function') then
+        return nil;
+    end
+
+    local arguments = { ... };
+
+    return SafeNumber(function()
+        return targetManager[methodName](targetManager, unpack(arguments));
+    end);
+end
+
+local function ProbeResourceName(resourceManager, methodName, actionId)
+    local resource = GetResourceByMethod(resourceManager, methodName, actionId);
+    local name = GetActionResourceName(resource);
+
+    if (name == '') then
+        return '-';
+    end
+
+    return name;
+end
+
+local function FormatProbeQueuedAction(label, action)
+    if (action == nil) then
+        return label .. '=none';
+    end
+
+    local age = nil;
+    if (tonumber(action.updated) ~= nil) then
+        age = math.max(0, os.clock() - tonumber(action.updated));
+    end
+
+    return table.concat({
+        label .. '={',
+        'cat=' .. tostring(action.category),
+        ' id=' .. tostring(action.id),
+        ' type=' .. tostring(action.actionType),
+        ' method=' .. tostring(action.resourceMethod),
+        ' resolved=' .. tostring(action.resolvedId),
+        ' name=' .. tostring(action.name),
+        ' age=' .. (age ~= nil and string.format('%.2f', age) or 'nil'),
+        '}',
+    });
+end
+
+-- Read-only, direct-lookup probe for action-selection classification. This does
+-- not invoke the AOE resolver, iterate entities, or scan resource tables.
+function aoeNameHighlight.GetProbeText()
+    local memory = AshitaCore:GetMemoryManager();
+    local targetManager = memory ~= nil and memory:GetTarget() or nil;
+
+    if (targetManager == nil) then
+        return 'AOE probe: no target manager';
+    end
+
+    local actionId = ProbeTargetNumber(targetManager, 'GetActionId');
+    local actionType = ProbeTargetNumber(targetManager, 'GetActionType');
+    local isActionAoe = ProbeTargetNumber(targetManager, 'GetIsActionAoe');
+    local actionAoeRange = ProbeTargetNumber(targetManager, 'GetActionAoeRange');
+    local actionTargetMaxYalms = ProbeTargetNumber(targetManager, 'GetActionTargetMaxYalms');
+    local actionTargetActive = ProbeTargetNumber(targetManager, 'GetActionTargetActive');
+    local subTargetActive = ProbeTargetNumber(targetManager, 'GetIsSubTargetActive');
+    local resourceManager = AshitaCore:GetResourceManager();
+    local safeActionId = tonumber(actionId) or 0;
+    local petId = safeActionId - 512;
+    local petSkill = petId > 0 and petSkills[petId] or nil;
+    local wsAoe = weaponSkillAoeById[safeActionId];
+    local currentAction = targetActionRange.GetCurrentAction ~= nil and targetActionRange.GetCurrentAction() or nil;
+    local recentAction = targetActionRange.GetRecentAction ~= nil and targetActionRange.GetRecentAction() or nil;
+
+    return table.concat({
+        'AOE probe:',
+        ' live={',
+        'id=' .. tostring(actionId),
+        ' type=' .. tostring(actionType),
+        ' rawAoe=' .. tostring(isActionAoe),
+        ' rawRange=' .. tostring(actionAoeRange),
+        ' maxYalms=' .. tostring(actionTargetMaxYalms),
+        ' targetActive=' .. tostring(actionTargetActive),
+        ' subActive=' .. tostring(subTargetActive),
+        '}',
+        ' direct={',
+        'ws=' .. ProbeResourceName(resourceManager, 'GetWeaponSkillById', safeActionId),
+        ' spell=' .. ProbeResourceName(resourceManager, 'GetSpellById', safeActionId),
+        ' ability=' .. ProbeResourceName(resourceManager, 'GetAbilityById', safeActionId),
+        ' mob=' .. ProbeResourceName(resourceManager, 'GetMobSkillById', safeActionId),
+        '}',
+        ' wsAllow=' .. tostring(wsAoe ~= nil and wsAoe.name or '-'),
+        ' pet={',
+        'id=' .. tostring(petId > 0 and petId or nil),
+        ' name=' .. tostring(petSkill ~= nil and petSkill.name or nil),
+        ' aoe=' .. tostring(petSkill ~= nil and petSkill.aoe or nil),
+        ' radius=' .. tostring(petSkill ~= nil and petSkill.radius or nil),
+        '}',
+        ' ' .. FormatProbeQueuedAction('current', currentAction),
+        ' ' .. FormatProbeQueuedAction('recent', recentAction),
+    });
+end
+
 function aoeNameHighlight.GetDebugText()
     local memory = AshitaCore:GetMemoryManager();
     local targetManager = memory ~= nil and memory:GetTarget() or nil;
@@ -1120,6 +1460,7 @@ function aoeNameHighlight.GetDebugText()
     end
 
     local isActionAoe = targetManager.GetIsActionAoe ~= nil and SafeNumber(function() return targetManager:GetIsActionAoe(); end) or nil;
+    local actionType = targetManager.GetActionType ~= nil and SafeNumber(function() return targetManager:GetActionType(); end) or nil;
     local actionId = targetManager.GetActionId ~= nil and SafeNumber(function() return targetManager:GetActionId(); end) or nil;
     local slot0 = targetManager.GetTargetIndex ~= nil and SafeNumber(function() return targetManager:GetTargetIndex(0); end) or nil;
     local slot1 = targetManager.GetTargetIndex ~= nil and SafeNumber(function() return targetManager:GetTargetIndex(1); end) or nil;
@@ -1135,6 +1476,7 @@ function aoeNameHighlight.GetDebugText()
         rmTargetRange = SafeNumber(function() return resourceManager:GetSpellRange(actionId, false); end);
     end
     local liveAoe = GetLiveActionAoe();
+    local activeAoeCasts = GetCachedActiveAoeCasts();
     local actionTargetIndex = GetResolvedActionTargetIndex(spellInfo, targetManager);
     local debugTargetKind = GetDebugPlateKind(actionTargetIndex);
     spellInfo = ResolveSelfTargetAbilityCollision(actionId, spellInfo, debugTargetKind, isActionAoe, rawAoeRange);
@@ -1197,6 +1539,7 @@ function aoeNameHighlight.GetDebugText()
         return table.concat({
             'AOE debug:',
             'isAoe=' .. tostring(isActionAoe),
+            'actionType=' .. tostring(actionType),
             'actionId=' .. tostring(actionId),
             'sub=' .. tostring(subActive),
             'slot0=' .. tostring(slot0),
@@ -1208,6 +1551,7 @@ function aoeNameHighlight.GetDebugText()
     return table.concat({
         'AOE debug:',
         'isAoe=' .. tostring(isActionAoe),
+        'actionType=' .. tostring(actionType),
         'actionId=' .. tostring(actionId),
         'name=' .. tostring(spellInfo.name),
         'resource=' .. tostring(spellInfo.resourceKind),
@@ -1216,6 +1560,8 @@ function aoeNameHighlight.GetDebugText()
         'status=' .. tostring(spellInfo.status),
         'targets=' .. tostring(spellInfo.targets),
         'resRange=' .. tostring(spellInfo.range),
+        'areaRange=' .. tostring(spellInfo.areaRange),
+        'areaShape=' .. tostring(spellInfo.areaShapeType),
         'petSkill=' .. tostring(petSkill ~= nil and (tostring(petSkill.name) .. '#' .. tostring((tonumber(actionId) or 0) - 512)) or nil),
         'petValid=' .. tostring(petSkill ~= nil and petSkill.validTargets or nil),
         'petRadius=' .. tostring(petSkill ~= nil and petSkill.radius or nil),
@@ -1227,6 +1573,7 @@ function aoeNameHighlight.GetDebugText()
         'centerMode=' .. tostring(GetSpellAoeCenterMode(spellInfo)),
         'pet=' .. tostring(GetOwnPetIndex()),
         'liveRange=' .. tostring(liveAoe ~= nil and liveAoe.range or nil),
+        'activeCastAoes=' .. tostring(#activeAoeCasts),
         'center=' .. tostring(liveAoe ~= nil and liveAoe.centerIndex or nil),
         'targetDist=' .. tostring(targetDistance ~= nil and string.format('%.1f', targetDistance) or nil),
         'sub=' .. tostring(subActive),

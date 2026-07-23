@@ -22,6 +22,7 @@ local cursorOverlay = require('core.cursor_overlay');
 local perfMeter = require('core.perf_meter');
 local adaptivePerformance = require('core.adaptive_performance');
 local canvasTexture = require('core.canvas_texture');
+LibraPlatesBarTextures = require('core.bar_textures');
 local gameFps = require('core.game_fps');
 local log = require('core.log');
 local globalDefaults = require('config.global');
@@ -888,7 +889,6 @@ local enemyCombatWidgets = T{
     'Target (module)',
     'Subtarget (module)',
     'Enemy Alerts (module)',
-    'AOE range (module)',
     'Cast bar',
     'Special icon',
 };
@@ -970,7 +970,6 @@ local bstCharmedPetWidgets = T{
     'TP Bar',
     'Sic',
     'Reward',
-    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -985,7 +984,6 @@ local bstJugPetWidgets = T{
     'TP Bar',
     'Ready bar',
     'Reward',
-    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -996,10 +994,8 @@ local avatarEditWidgets = T{
     'Name',
     'Ward timer',
     'Rage timer',
-    "Avatar's Favor",
     'HP Bar',
     'TP Bar',
-    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -1011,7 +1007,6 @@ local spiritEditWidgets = T{
     'HP Bar',
     'MP Bar',
     'Cast bar',
-    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -1023,7 +1018,6 @@ local wyvernEditWidgets = T{
     'Distance',
     'HP Bar',
     'TP Bar',
-    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -1037,7 +1031,6 @@ local automatonEditWidgets = T{
     'MP Bar',
     'TP Bar',
     'Maneuvers',
-    'Alerts',
     'Enmity (module)',
     'Subtarget (module)',
     'Target (module)',
@@ -1569,6 +1562,16 @@ function settingsUi.GetDetachedFramePrefix()
     end
 
     return nil;
+end
+
+function settingsUi.GetDetachedFrameSettingsPrefix()
+    local prefix = settingsUi.GetDetachedFramePrefix();
+
+    if (prefix == 'smn') then
+        return GetStorageState(selectedState) == 'Spirit' and 'smnSpirit' or 'smnAvatar';
+    end
+
+    return prefix;
 end
 
 function GetStates(entity)
@@ -3021,7 +3024,7 @@ function DrawPeerOutlineRow(peer, prefix, label)
     if (outlineColorChanged == true) then state.Save(); end
 end
 
-function DrawColorAndPlacementRow(leftLabel, colorValue, colorId, rightLabel, rightValue, rightId, minValue, maxValue, step)
+function DrawColorAndPlacementRow(leftLabel, colorValue, colorId, rightLabel, rightValue, rightId, minValue, maxValue, step, gridColumnWidth, numericWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local colorResult = colorValue;
         local valueResult = rightValue;
@@ -3029,10 +3032,10 @@ function DrawColorAndPlacementRow(leftLabel, colorValue, colorId, rightLabel, ri
         local valueChanged = false;
 
         if (imgui.BeginTable('##settings_color_placement_' .. tostring(colorId) .. '_' .. tostring(rightId), 4, settingsTableFlags)) then
-            imgui.TableSetupColumn('##color_label', 0, 112);
-            imgui.TableSetupColumn('##color_control', 0, 60);
-            imgui.TableSetupColumn('##value_label', 0, 112);
-            imgui.TableSetupColumn('##value_control', 0, 160);
+            imgui.TableSetupColumn('##color_label', 0, tonumber(gridColumnWidth) or 112);
+            imgui.TableSetupColumn('##color_control', 0, tonumber(gridColumnWidth) or 60);
+            imgui.TableSetupColumn('##value_label', 0, tonumber(gridColumnWidth) or 112);
+            imgui.TableSetupColumn('##value_control', 0, tonumber(gridColumnWidth) or 160);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(settingsLabelColor, leftLabel);
@@ -3041,7 +3044,7 @@ function DrawColorAndPlacementRow(leftLabel, colorValue, colorId, rightLabel, ri
             imgui.TableNextColumn();
             imgui.TextColored(settingsLabelColor, rightLabel);
             imgui.TableNextColumn();
-            valueResult, valueChanged = DrawPlacementControl(rightValue, minValue, maxValue, step, rightId);
+            valueResult, valueChanged = DrawPlacementControl(rightValue, minValue, maxValue, step, rightId, tonumber(numericWidth) or nil);
             imgui.EndTable();
         end
 
@@ -3054,7 +3057,7 @@ function DrawColorAndPlacementRow(leftLabel, colorValue, colorId, rightLabel, ri
     return colorResult, colorChanged, valueResult, valueChanged;
 end
 
-function DrawPlacementAndColorRow(leftLabel, leftValue, leftId, minValue, maxValue, step, rightLabel, colorValue, colorId)
+function DrawPlacementAndColorRow(leftLabel, leftValue, leftId, minValue, maxValue, step, rightLabel, colorValue, colorId, gridColumnWidth, numericWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local valueResult = leftValue;
         local colorResult = colorValue;
@@ -3062,10 +3065,10 @@ function DrawPlacementAndColorRow(leftLabel, leftValue, leftId, minValue, maxVal
         local colorChanged = false;
 
         if (imgui.BeginTable('##settings_placement_color_' .. tostring(leftId) .. '_' .. tostring(colorId), 4, settingsTableFlags)) then
-            imgui.TableSetupColumn('##value_label', 0, 122);
-            imgui.TableSetupColumn('##value_control', 0, 124);
-            imgui.TableSetupColumn('##color_label', 0, 112);
-            imgui.TableSetupColumn('##color_control', 0, 60);
+            imgui.TableSetupColumn('##value_label', 0, tonumber(gridColumnWidth) or 122);
+            imgui.TableSetupColumn('##value_control', 0, tonumber(gridColumnWidth) or 124);
+            imgui.TableSetupColumn('##color_label', 0, tonumber(gridColumnWidth) or 112);
+            imgui.TableSetupColumn('##color_control', 0, tonumber(gridColumnWidth) or 60);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(settingsLabelColor, leftLabel);
@@ -3141,7 +3144,7 @@ function DrawRestingPlacementAndColorRow(leftLabel, leftValue, leftId, minValue,
             if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(settingsLabelColor, leftLabel);
             imgui.TableNextColumn();
-            valueResult, valueChanged = DrawPlacementControl(leftValue, minValue, maxValue, step, leftId, 58);
+            valueResult, valueChanged = DrawPlacementControl(leftValue, minValue, maxValue, step, leftId, tonumber(numericWidth) or 58);
             imgui.TableNextColumn();
             if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
             imgui.TextColored(settingsLabelColor, rightLabel);
@@ -3556,7 +3559,7 @@ DrawPlacementControl = function(value, minValue, maxValue, step, id, sliderWidth
     return current, current ~= original;
 end
 
-function DrawPlacementPair(leftLabel, leftValue, leftId, rightLabel, rightValue, rightId, minValue, maxValue, step)
+function DrawPlacementPair(leftLabel, leftValue, leftId, rightLabel, rightValue, rightId, minValue, maxValue, step, gridColumnWidth, numericWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local leftResult = leftValue;
         local rightResult = rightValue;
@@ -3564,19 +3567,19 @@ function DrawPlacementPair(leftLabel, leftValue, leftId, rightLabel, rightValue,
         local rightChanged = false;
 
         if (imgui.BeginTable('##settings_placement_' .. tostring(leftId) .. '_' .. tostring(rightId), 4, settingsTableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 104);
-            imgui.TableSetupColumn('##control_left', 0, 124);
-            imgui.TableSetupColumn('##label_right', 0, 104);
-            imgui.TableSetupColumn('##control_right', 0, 124);
+            imgui.TableSetupColumn('##label_left', 0, tonumber(gridColumnWidth) or 104);
+            imgui.TableSetupColumn('##control_left', 0, tonumber(gridColumnWidth) or 124);
+            imgui.TableSetupColumn('##label_right', 0, tonumber(gridColumnWidth) or 104);
+            imgui.TableSetupColumn('##control_right', 0, tonumber(gridColumnWidth) or 124);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             imgui.TextColored(settingsLabelColor, leftLabel);
             imgui.TableNextColumn();
-            leftResult, leftChanged = DrawPlacementControl(leftValue, minValue, maxValue, step, leftId, 58);
+            leftResult, leftChanged = DrawPlacementControl(leftValue, minValue, maxValue, step, leftId, tonumber(numericWidth) or 58);
             imgui.TableNextColumn();
             imgui.TextColored(settingsLabelColor, rightLabel);
             imgui.TableNextColumn();
-            rightResult, rightChanged = DrawPlacementControl(rightValue, minValue, maxValue, step, rightId, 58);
+            rightResult, rightChanged = DrawPlacementControl(rightValue, minValue, maxValue, step, rightId, tonumber(numericWidth) or 58);
             imgui.EndTable();
         end
 
@@ -5693,9 +5696,8 @@ function GetPreviewSelection()
                 previewQuickMenu = true,
             };
         elseif (selectedWidget == 'AOE range (module)') then
-            local previewAoeEntity = (selectedEntity == 'Enemy') and 'Enemy' or 'Self';
             context = {
-                entityName = previewAoeEntity,
+                entityName = 'Enemy',
                 stateName = 'Combat',
                 widgetKey = 'AOE range',
             };
@@ -5854,6 +5856,7 @@ function LibraPlatesSettingsSetPlateWidgetEnabled(widget, settings, enabled)
     if (widget == 'Detached frame') then
         local targetingSettings = targeting.GetSettings();
         local prefix = settingsUi.GetDetachedFramePrefix();
+        local settingsPrefix = settingsUi.GetDetachedFrameSettingsPrefix();
         if (nextEnabled == true) then
             if (prefix ~= nil and (targetingSettings[prefix .. 'PetPlateMode'] == nil or tostring(targetingSettings[prefix .. 'PetPlateMode']) == 'Normal')) then
                 targetingSettings[prefix .. 'PetPlateMode'] = 'Detach from pet';
@@ -5861,6 +5864,13 @@ function LibraPlatesSettingsSetPlateWidgetEnabled(widget, settings, enabled)
         elseif (prefix ~= nil) then
             targetingSettings[prefix .. 'PetPlateMode'] = 'Normal';
             targetingSettings[prefix .. 'PetStaticEditFrame'] = false;
+            if (settingsPrefix ~= nil) then
+                targetingSettings[settingsPrefix .. 'PetStaticEditFrame'] = false;
+            end
+            if (prefix == 'smn') then
+                targetingSettings.smnAvatarPetStaticEditFrame = false;
+                targetingSettings.smnSpiritPetStaticEditFrame = false;
+            end
         end
     elseif (widget == 'Lock-on icon') then
         settings.lockEnabled = nextEnabled;
@@ -11233,8 +11243,8 @@ end
 local helpEntries = {
     { kind = 'Feature', title = 'Plate stacking', path = 'Settings > Visibility > Plate stacking', text = 'Moves overlapping nameplates apart so plates stay readable and clickable.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Feature', title = 'Interrupted castbar', path = 'Plates > Self > World/Tactical > Cast bar', text = 'Stops LP self castbar early on movement interrupts and shows remaining lockout with Interrupt bar settings.', tab = 'Plates', entity = 'Self', state = 'World', widget = 'Cast bar' },
-    { kind = 'Feature', title = 'Offensive AOE helper', path = 'Plates > Enemy > Tactical > AOE range (module)', text = 'Highlights enemies affected by loaded offensive AOE actions during subtarget selection.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
-    { kind = 'Feature', title = 'Defensive AOE helper', path = 'Plates > Self/PC/Trust > Tactical > AOE range (module)', text = 'Highlights friendly/self plates affected by friendly AOE actions such as Curaga.', tab = 'Plates', entity = 'Self', state = 'Tactical', widget = 'AOE range (module)' },
+    { kind = 'Feature', title = 'Offensive AOE helper', path = 'Plates > Player > Tactical > AOE range (module) > Offensive', text = 'Highlights enemies affected by loaded offensive AOE actions originating from you or your pet.', tab = 'Plates', entity = 'Self', state = 'Tactical', widget = 'AOE range (module)' },
+    { kind = 'Feature', title = 'Defensive AOE helper', path = 'Plates > Player > Tactical > AOE range (module) > Defensive', text = 'Highlights friendly/self plates affected by friendly AOE actions originating from you or your pet.', tab = 'Plates', entity = 'Self', state = 'Tactical', widget = 'AOE range (module)' },
     { kind = 'Feature', title = 'Hide other players pet plates', path = 'Settings > Visibility > World plate filters', text = 'Hides plates for pets that belong to other players while keeping your own pet visible.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Feature', title = 'Performance monitor reports', path = 'Settings > Performance > Performance monitor', text = 'Performance monitor can show process timings and save text reports for testing.', tab = 'Settings', section = 'Performance' },
     { kind = 'Feature', title = 'Resting tick helper', path = 'Modules > Self > World > Resting', text = 'Shows resting tick timing and optional logout support while resting.', tab = 'Modules', entity = 'Self', state = 'World', widget = 'Resting' },
@@ -11246,8 +11256,8 @@ local helpEntries = {
     { kind = 'Setting', title = 'Stack padding', path = 'Settings > Visibility > Plate stacking', text = 'Controls how much space stacking keeps around plates. 0 allows a little overlap, 10 uses the plate/click area, and 20 adds extra space.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Stack travel speed', path = 'Settings > Visibility > Plate stacking', text = 'How quickly stacked plates travel to their new position.', tab = 'Settings', section = 'Visibility' },
     { kind = 'Setting', title = 'Hide distant world plates', path = 'Settings > Performance > World plates', text = 'Hides world plates past the distance limit while keeping target/subtarget/tactical plates.', tab = 'Settings', section = 'Performance' },
-    { kind = 'Setting', title = 'AOE font color', path = 'Plates > Enemy > Tactical > AOE range (module)', text = 'Font color used for offensive AOE affected enemy names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
-    { kind = 'Setting', title = 'AOE icon', path = 'Plates > Enemy/Self > Tactical > AOE range (module)', text = 'Optional icon shown with AOE affected names.', tab = 'Plates', entity = 'Enemy', state = 'Tactical', widget = 'AOE range (module)' },
+    { kind = 'Setting', title = 'AOE font color', path = 'Plates > Player > Tactical > AOE range (module)', text = 'Separate font colors for offensive and defensive AOE affected names.', tab = 'Plates', entity = 'Self', state = 'Tactical', widget = 'AOE range (module)' },
+    { kind = 'Setting', title = 'AOE icon', path = 'Plates > Player > Tactical > AOE range (module)', text = 'Separate optional icons for offensive and defensive AOE affected names.', tab = 'Plates', entity = 'Self', state = 'Tactical', widget = 'AOE range (module)' },
     { kind = 'Setting', title = 'Enemy default icon pack', path = 'Settings > Theme > Enemy icon pack', text = 'Default icon pack for Enemy Behavior, Detects, and Links widgets. Each widget can override this default.', tab = 'Settings', section = 'Theme' },
 };
 
@@ -12029,17 +12039,17 @@ local troubleshooterEntries = {
     },
     {
         title = 'AOE names are not changing color',
-        path = 'Plates > Enemy > Tactical > AOE range',
+        path = 'Plates > Player > Tactical > AOE range',
         aliases = 'aoe area radius circle red names offensive defensive spell st subtarget',
         tab = 'Plates',
-        entity = 'Enemy',
+        entity = 'Self',
         state = 'Tactical',
         widget = 'AOE range (module)',
         checks = {
             'AOE preview is driven by a loaded subtarget action; direct <t> casts do not always show the native helper.',
             'Offensive AOE should affect enemy plates only. Defensive AOE should affect self, party, alliance, trusts, and own pet where appropriate.',
-            'Check Enemy Tactical AOE range settings for offensive spells.',
-            'Check Self/PC/Trust/Pet Tactical AOE range settings for defensive spells.',
+            'Select Offensive in Player Tactical AOE range settings for enemy-targeting actions.',
+            'Select Defensive in Player Tactical AOE range settings for friendly/self-targeting actions.',
             'Some pet AOE abilities originate from the pet while cast range still checks your pet-to-target rules.',
         },
     },
@@ -12379,6 +12389,29 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
 
         DrawAlertLineStyleControls(label, prefix);
         DrawAlertLineSoundControls(label, prefix);
+    end
+
+    local function DrawPetAlertLane(showHeader)
+        if (showHeader ~= false) then
+            DrawSettingsHeader('Pet alerts');
+        end
+
+        for _, petType in ipairs({
+            { label = 'Charmed pet', key = 'petCharmedEnabled' },
+            { label = 'Jug pet', key = 'petJugEnabled' },
+            { label = 'Avatar', key = 'petAvatarEnabled' },
+            { label = 'Spirit', key = 'petSpiritEnabled' },
+            { label = 'Wyvern', key = 'petWyvernEnabled' },
+            { label = 'Automaton', key = 'petAutomatonEnabled' },
+        }) do
+            DrawCheckbox(petType.label, settings[petType.key] ~= false, function(value)
+                settings[petType.key] = value == true;
+                state.Save();
+            end);
+        end
+
+        DrawAlertLineStyleControls('Pet alerts', 'pet');
+        DrawAlertLineSoundControls('Pet alerts', 'pet');
     end
 
     local function DrawCustomAlertLane(showHeader)
@@ -13055,7 +13088,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         DrawSectionDivider();
         DrawLane('Job abilities', 'ability', 'showAbilities');
         DrawSectionDivider();
-        DrawLane('Pet alerts', 'pet', 'petAlertsEnabled', true);
+        DrawPetAlertLane(true);
         DrawSectionDivider();
         DrawLane('Defensive magic', 'defensive', 'defensiveMagicEnabled', true);
     end
@@ -13104,7 +13137,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
             DrawLane('Job abilities', 'ability', 'showAbilities', false);
         end);
         DrawAlertsPanel('Pet alerts', function()
-            DrawLane('Pet alerts', 'pet', 'petAlertsEnabled', false);
+            DrawPetAlertLane(false);
         end);
         DrawAlertsPanel('Defensive magic', function()
             DrawLane('Defensive magic', 'defensive', 'defensiveMagicEnabled', false);
@@ -13619,15 +13652,16 @@ local function DrawSelectedEditorPlatesModules()
     end
 
     if (selectedWidget == 'AOE range (module)') then
-        local settings = state.GetWidgetSettings(GetStorageEntity(selectedEntity), LibraPlatesSettingsToStorageStateName(selectedState), widgetKeys[selectedWidget], aoeRangeDefaults);
-
-        widgets.aoeRange.DrawSettings(settings, {
-            tab = selectedTab,
-            entity = GetStorageEntity(selectedEntity),
-            state = LibraPlatesSettingsToStorageStateName(selectedState),
-            widget = selectedWidget,
-            defaults = aoeRangeDefaults,
-        });
+        LibraPlatesSettingsDrawAoeSettingsBlock(
+            'Offensive AOE',
+            state.GetWidgetSettings('Enemy', 'Combat', widgetKeys[selectedWidget], aoeRangeDefaults),
+            'Offensive'
+        );
+        LibraPlatesSettingsDrawAoeSettingsBlock(
+            'Defensive AOE',
+            state.GetWidgetSettings('Self', 'Combat', widgetKeys[selectedWidget], aoeRangeDefaults),
+            'Defensive'
+        );
         return;
     end
 end
@@ -13650,6 +13684,27 @@ function LibraPlatesSettingsIsBoxedSpecialPlateModule(widgetName)
         widget == 'AOE range (module)' or
         widget == 'Alerts'
     );
+end
+
+function LibraPlatesSettingsDrawAoeSettingsBlock(title, settings, id)
+    LibraPlatesSettingsDrawBoxedPanel(title, function()
+        if (imgui.PushID ~= nil) then
+            imgui.PushID('AoeSettings' .. tostring(id));
+        end
+
+        widgets.aoeRange.DrawSettings(settings, {
+            drawPanel = function(sectionTitle, draw)
+                if (sectionTitle ~= 'AOE range settings') then
+                    DrawYellowHeader(sectionTitle);
+                end
+                draw();
+            end,
+        });
+
+        if (imgui.PopID ~= nil) then
+            imgui.PopID();
+        end
+    end, true);
 end
 
 function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
@@ -13684,6 +13739,7 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
     local globalSettings = state.GetGlobalSettings(globalDefaults);
     local moduleSettings = loadSettings;
     local moduleDefaults = GetWidgetDefaults(selectedWidget);
+    local moduleStorageEntity = storageEntity;
 
     if (selectedWidget == 'Peer (module)') then
         moduleSettings = loadSettings;
@@ -13716,7 +13772,6 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
         moduleSettings = globalSettings.enmity;
         moduleDefaults = globalDefaults.enmity;
     elseif (selectedWidget == 'AOE range (module)') then
-        moduleSettings = state.GetWidgetSettings(storageEntity, storageState, widgetKeys[selectedWidget], aoeRangeDefaults);
         moduleDefaults = aoeRangeDefaults;
     end
 
@@ -13724,7 +13779,8 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
     if (
         selectedWidget ~= 'Quick Menu (module)' and
         selectedWidget ~= 'Peer (module)' and
-        selectedWidget ~= 'Enmity (module)'
+        selectedWidget ~= 'Enmity (module)' and
+        selectedWidget ~= 'AOE range (module)'
     ) then
         LibraPlatesSettingsDrawPlatesHeaderBand(function(headerInnerWidth)
         local headerRowX = nil;
@@ -13829,7 +13885,7 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
                 imgui.Dummy({ 1, 2 });
             end
 
-            LibraPlatesSettingsDrawBoxedModuleCopyHeaderRow(moduleSettings, storageEntity, storageState, selectedWidget, moduleDefaults, headerRowX, headerLabelWidth);
+            LibraPlatesSettingsDrawBoxedModuleCopyHeaderRow(moduleSettings, moduleStorageEntity, storageState, selectedWidget, moduleDefaults, headerRowX, headerLabelWidth);
         end
 
         if (showHeaderAnchor == true) then
@@ -13924,11 +13980,16 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
             });
         end, true);
     elseif (selectedWidget == 'AOE range (module)') then
-        widgets.aoeRange.DrawSettings(moduleSettings, {
-            drawPanel = function(title, draw)
-                LibraPlatesSettingsDrawBoxedPanel(title, draw, true);
-            end,
-        });
+        LibraPlatesSettingsDrawAoeSettingsBlock(
+            'Offensive AOE',
+            state.GetWidgetSettings('Enemy', 'Combat', widgetKeys[selectedWidget], aoeRangeDefaults),
+            'Offensive'
+        );
+        LibraPlatesSettingsDrawAoeSettingsBlock(
+            'Defensive AOE',
+            state.GetWidgetSettings('Self', 'Combat', widgetKeys[selectedWidget], aoeRangeDefaults),
+            'Defensive'
+        );
     elseif (selectedWidget == 'Alerts') then
         LibraPlatesSettingsDrawBoxedPanel('Pet alerts', function()
             if (imgui.TextWrapped ~= nil) then
@@ -14200,10 +14261,340 @@ function LibraPlatesSettingsIsBoxedPlatesPage()
     return LibraPlatesSettingsGetBoxedPlateWidgetInfo() ~= nil or LibraPlatesSettingsIsBoxedSpecialPlatesPage() == true;
 end
 
+function LibraPlatesSettingsSetDefaultIfNil(settings, key, value)
+    if (settings[key] == nil) then
+        settings[key] = value;
+    end
+end
+
+function LibraPlatesSettingsEnsureDetachedAvatarMeterDefaults(meters)
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageWidth', 19);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageHeight', 20);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'ragePositionX', -11);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'ragePositionY', 17);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageTexture', 'Solid');
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageTextureStrength', 100);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageCornerRadius', 3);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageShowText', true);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageFontSize', 7);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageFontColor', { 1.0, 1.0, 1.0, 1.0 });
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageOutlineSize', 1);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageOutlineColor', { 0.0, 0.0, 0.0, 1.0 });
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageOffsetX', 0);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'rageOffsetY', 0);
+
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardWidth', 19);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardHeight', 20);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardPositionX', 31);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardPositionY', 17);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardTexture', 'Solid');
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardTextureStrength', 100);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardCornerRadius', 3);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardShowText', true);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardFontSize', 7);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardFontColor', { 1.0, 1.0, 1.0, 1.0 });
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardOutlineSize', 1);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardOutlineColor', { 0.0, 0.0, 0.0, 1.0 });
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardOffsetX', 0);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'wardOffsetY', 0);
+
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorWidth', 19);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorHeight', 20);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorPositionX', 72);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorPositionY', 17);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorTexture', 'Solid');
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorTextureStrength', 100);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorCornerRadius', 3);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorShowText', true);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorFontSize', 7);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorFontColor', { 1.0, 1.0, 1.0, 1.0 });
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorOutlineSize', 1);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorOutlineColor', { 0.0, 0.0, 0.0, 1.0 });
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorOffsetX', 0);
+    LibraPlatesSettingsSetDefaultIfNil(meters, 'favorOffsetY', 0);
+end
+
+function LibraPlatesSettingsApplyDetachedDefaults(settings, defaults)
+    for key, value in pairs(defaults or {}) do
+        if (settings[key] == nil) then
+            settings[key] = LibraPlatesSettingsCopyTable(value);
+        end
+    end
+end
+
+function LibraPlatesSettingsEnsureDetachedAvatarWidgetDefaults(bg)
+    local defaults = (((globalDefaults.targeting or {}).smnPetStaticBackgroundSettings) or {});
+    local meters = bg.avatarGemMeters or {};
+    bg.avatarNameSettings = bg.avatarNameSettings or {};
+    bg.avatarHpBarSettings = bg.avatarHpBarSettings or {};
+    bg.avatarMpBarSettings = bg.avatarMpBarSettings or {};
+    bg.avatarTpBarSettings = bg.avatarTpBarSettings or {};
+    bg.avatarCastBarSettings = bg.avatarCastBarSettings or {};
+    bg.avatarWardSettings = bg.avatarWardSettings or {};
+    bg.avatarRageSettings = bg.avatarRageSettings or {};
+    bg.avatarFavorSettings = bg.avatarFavorSettings or {};
+
+    local name = bg.avatarNameSettings;
+    if (name.offsetX == nil) then name.offsetX = name.positionX; end
+    if (name.offsetY == nil) then name.offsetY = name.positionY; end
+    if (name.textSize == nil) then name.textSize = name.fontSize; end
+
+    for _, resourceSettings in ipairs({ bg.avatarHpBarSettings, bg.avatarMpBarSettings, bg.avatarTpBarSettings }) do
+        if (resourceSettings.offsetX == nil) then resourceSettings.offsetX = resourceSettings.positionX; end
+        if (resourceSettings.offsetY == nil) then resourceSettings.offsetY = resourceSettings.positionY; end
+    end
+
+    local function MigrateMeter(settings, key, defaultColor)
+        local function CopyLegacy(settingKey, suffix)
+            if (settings[settingKey] == nil and meters[key .. suffix] ~= nil) then
+                settings[settingKey] = LibraPlatesSettingsCopyTable(meters[key .. suffix]);
+            end
+        end
+
+        CopyLegacy('width', 'Width');
+        CopyLegacy('height', 'Height');
+        CopyLegacy('offsetX', 'PositionX');
+        CopyLegacy('offsetY', 'PositionY');
+        CopyLegacy('color', 'Color');
+        CopyLegacy('backgroundColor', 'BackgroundColor');
+        CopyLegacy('borderColor', 'BorderColor');
+        CopyLegacy('borderSize', 'BorderSize');
+        CopyLegacy('cornerRadius', 'CornerRadius');
+        CopyLegacy('texture', 'Texture');
+        CopyLegacy('textureStrength', 'TextureStrength');
+        CopyLegacy('fontSize', 'FontSize');
+        CopyLegacy('textColor', 'FontColor');
+        CopyLegacy('textOutlineSize', 'OutlineSize');
+        CopyLegacy('textOutlineColor', 'OutlineColor');
+        CopyLegacy('textOffsetX', 'OffsetX');
+        CopyLegacy('textOffsetY', 'OffsetY');
+
+        if (settings.color == nil) then settings.color = LibraPlatesSettingsCopyTable(defaultColor); end
+        if (settings.showPercent == nil and meters[key .. 'ShowText'] ~= nil) then settings.showPercent = meters[key .. 'ShowText'] ~= false; end
+        if (settings.textOutlineEnabled == nil and settings.textOutlineSize ~= nil) then settings.textOutlineEnabled = (tonumber(settings.textOutlineSize) or 0) > 0; end
+        if (settings.useSmallFont == nil and meters[key .. 'UseSmallFont'] ~= nil) then settings.useSmallFont = meters[key .. 'UseSmallFont'] == true; end
+    end
+
+    MigrateMeter(bg.avatarWardSettings, 'ward', { 0.10, 0.55, 1.00, 1.0 });
+    MigrateMeter(bg.avatarRageSettings, 'rage', { 0.95, 0.12, 0.10, 1.0 });
+    MigrateMeter(bg.avatarFavorSettings, 'favor', meters.favorColor1 or meters.favorColor or { 1.00, 0.22, 0.08, 1.0 });
+    if (bg.avatarFavorSettings.color2 == nil) then bg.avatarFavorSettings.color2 = LibraPlatesSettingsCopyTable(meters.favorColor2); end
+    if (bg.avatarFavorSettings.color3 == nil) then bg.avatarFavorSettings.color3 = LibraPlatesSettingsCopyTable(meters.favorColor3); end
+    if (bg.avatarFavorSettings.segmentGap == nil) then bg.avatarFavorSettings.segmentGap = meters.favorSpacing; end
+    if (bg.avatarFavorSettings.iconSize == nil) then
+        bg.avatarFavorSettings.iconSize = tonumber(bg.avatarFavorSettings.labelIconSize)
+            or tonumber(bg.avatarFavorSettings.width)
+            or 20;
+    end
+
+    LibraPlatesSettingsApplyDetachedDefaults(bg.avatarNameSettings, defaults.avatarNameSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.avatarHpBarSettings, defaults.avatarHpBarSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.avatarMpBarSettings, defaults.avatarMpBarSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.avatarTpBarSettings, defaults.avatarTpBarSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.avatarCastBarSettings, defaults.avatarCastBarSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.avatarWardSettings, defaults.avatarWardSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.avatarRageSettings, defaults.avatarRageSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.avatarFavorSettings, defaults.avatarFavorSettings);
+end
+
+function LibraPlatesSettingsDrawDetachedAvatarBarSettings(title, meters, keyPrefix, labelPrefix, isFavor)
+    LibraPlatesSettingsDrawBoxedPanel(title, function()
+        local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', meters[keyPrefix .. 'Width'], labelPrefix .. 'Width', 'Height', meters[keyPrefix .. 'Height'], labelPrefix .. 'Height', 1, 800, 1);
+        if (widthChanged == true or heightChanged == true) then
+            meters[keyPrefix .. 'Width'] = math.floor((tonumber(width) or 19) + 0.5);
+            meters[keyPrefix .. 'Height'] = math.floor((tonumber(height) or 20) + 0.5);
+            state.Save();
+        end
+
+        local posX, posXChanged, posY, posYChanged = DrawPlacementPair('Position X', meters[keyPrefix .. 'PositionX'], labelPrefix .. 'PositionX', 'Position Y', meters[keyPrefix .. 'PositionY'], labelPrefix .. 'PositionY', -800, 800, 1);
+        if (posXChanged == true or posYChanged == true) then
+            meters[keyPrefix .. 'PositionX'] = math.floor((tonumber(posX) or 0) + 0.5);
+            meters[keyPrefix .. 'PositionY'] = math.floor((tonumber(posY) or 0) + 0.5);
+            state.Save();
+        end
+
+        if (isFavor == true) then
+            local fillColor1, fillChanged1 = DrawSettingsColor('Fill color 1', meters.favorColor1, labelPrefix .. 'FillColor1');
+            if (fillChanged1 == true) then
+                meters.favorColor1 = fillColor1;
+                state.Save();
+            end
+
+            local fillColor2, fillChanged2 = DrawSettingsColor('Fill color 2', meters.favorColor2, labelPrefix .. 'FillColor2');
+            if (fillChanged2 == true) then
+                meters.favorColor2 = fillColor2;
+                state.Save();
+            end
+
+            local fillColor3, fillChanged3 = DrawSettingsColor('Fill color 3', meters.favorColor3, labelPrefix .. 'FillColor3');
+            if (fillChanged3 == true) then
+                meters.favorColor3 = fillColor3;
+                state.Save();
+            end
+        else
+            local fillColor, fillChanged = DrawSettingsColor('Fill color', meters[keyPrefix .. 'Color'], labelPrefix .. 'FillColor');
+            if (fillChanged == true) then
+                meters[keyPrefix .. 'Color'] = fillColor;
+                state.Save();
+            end
+        end
+
+        local backgroundColor, backgroundChanged = DrawSettingsColor('BG color', meters[keyPrefix .. 'BackgroundColor'], labelPrefix .. 'BgColor');
+        if (backgroundChanged == true) then
+            meters[keyPrefix .. 'BackgroundColor'] = backgroundColor;
+            state.Save();
+        end
+
+        DrawInlineComboRow('Texture', LibraPlatesBarTextures.GetOptions(), meters[keyPrefix .. 'Texture'] or 'Solid', function(value)
+            meters[keyPrefix .. 'Texture'] = value;
+            state.Save();
+        end, labelPrefix .. 'Texture');
+
+        local strength, strengthChanged = DrawPlacementSingle('Strength', meters[keyPrefix .. 'TextureStrength'], labelPrefix .. 'TextureStrength', 0, 100, 1);
+        if (strengthChanged == true) then
+            meters[keyPrefix .. 'TextureStrength'] = math.floor((tonumber(strength) or 100) + 0.5);
+            state.Save();
+        end
+
+        local borderColor, borderChanged, borderSize, borderSizeChanged = DrawColorAndPlacementRow('Border color', meters[keyPrefix .. 'BorderColor'], labelPrefix .. 'BorderColor', 'Border size', meters[keyPrefix .. 'BorderSize'], labelPrefix .. 'BorderSize', 0, 100, 1);
+        if (borderChanged == true or borderSizeChanged == true) then
+            meters[keyPrefix .. 'BorderColor'] = borderColor;
+            meters[keyPrefix .. 'BorderSize'] = math.floor((tonumber(borderSize) or 0) + 0.5);
+            state.Save();
+        end
+
+        local cornerRadius, cornerChanged = DrawPlacementSingle('Corner radius', meters[keyPrefix .. 'CornerRadius'], labelPrefix .. 'CornerRadius', 0, 200, 1);
+        if (cornerChanged == true) then
+            meters[keyPrefix .. 'CornerRadius'] = math.floor((tonumber(cornerRadius) or 0) + 0.5);
+            state.Save();
+        end
+    end, true);
+end
+
+function LibraPlatesSettingsDrawDetachedAvatarNameSettings(settings, labelPrefix)
+    LibraPlatesSettingsDrawBoxedPanel('Name', function()
+        DrawCheckbox('Show name', settings.enabled ~= false, function(value)
+            settings.enabled = value == true;
+            state.Save();
+        end);
+
+        local posX, posXChanged, posY, posYChanged = DrawPlacementPair('Position X', settings.positionX, labelPrefix .. 'PositionX', 'Position Y', settings.positionY, labelPrefix .. 'PositionY', -800, 800, 1);
+        if (posXChanged == true or posYChanged == true) then
+            settings.positionX = math.floor((tonumber(posX) or 0) + 0.5);
+            settings.positionY = math.floor((tonumber(posY) or 0) + 0.5);
+            state.Save();
+        end
+
+        local fontSize, fontSizeChanged, fontColor, fontColorChanged = DrawPlacementAndColorRow('Font size', settings.fontSize, labelPrefix .. 'FontSize', 1, 80, 1, 'Font color', settings.color, labelPrefix .. 'FontColor');
+        if (fontSizeChanged == true or fontColorChanged == true) then
+            settings.fontSize = math.floor((tonumber(fontSize) or 14) + 0.5);
+            settings.color = fontColor;
+            state.Save();
+        end
+
+        local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawPlacementAndColorRow('Outline size', settings.outlineSize, labelPrefix .. 'OutlineSize', 0, 20, 1, 'Outline color', settings.outlineColor, labelPrefix .. 'OutlineColor');
+        if (outlineSizeChanged == true or outlineColorChanged == true) then
+            settings.outlineSize = math.floor((tonumber(outlineSize) or 0) + 0.5);
+            settings.outlineColor = outlineColor;
+            state.Save();
+        end
+    end, true);
+end
+
+function LibraPlatesSettingsDrawDetachedAvatarResourceBarSettings(title, settings, labelPrefix)
+    LibraPlatesSettingsDrawBoxedPanel(title, function()
+        DrawCheckbox('Show bar', settings.enabled ~= false, function(value)
+            settings.enabled = value == true;
+            state.Save();
+        end);
+
+        local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', settings.width, labelPrefix .. 'Width', 'Height', settings.height, labelPrefix .. 'Height', 1, 800, 1);
+        if (widthChanged == true or heightChanged == true) then
+            settings.width = math.floor((tonumber(width) or 150) + 0.5);
+            settings.height = math.floor((tonumber(height) or 10) + 0.5);
+            state.Save();
+        end
+
+        local posX, posXChanged, posY, posYChanged = DrawPlacementPair('Position X', settings.positionX, labelPrefix .. 'PositionX', 'Position Y', settings.positionY, labelPrefix .. 'PositionY', -800, 800, 1);
+        if (posXChanged == true or posYChanged == true) then
+            settings.positionX = math.floor((tonumber(posX) or 0) + 0.5);
+            settings.positionY = math.floor((tonumber(posY) or 0) + 0.5);
+            state.Save();
+        end
+
+        local fillColor, fillChanged = DrawSettingsColor('Fill color', settings.color, labelPrefix .. 'FillColor');
+        if (fillChanged == true) then
+            settings.color = fillColor;
+            state.Save();
+        end
+
+        local backgroundColor, backgroundChanged = DrawSettingsColor('BG color', settings.backgroundColor, labelPrefix .. 'BgColor');
+        if (backgroundChanged == true) then
+            settings.backgroundColor = backgroundColor;
+            state.Save();
+        end
+
+        DrawInlineComboRow('Texture', LibraPlatesBarTextures.GetOptions(), settings.texture or 'Solid', function(value)
+            settings.texture = value;
+            state.Save();
+        end, labelPrefix .. 'Texture');
+
+        local strength, strengthChanged = DrawPlacementSingle('Strength', settings.textureStrength, labelPrefix .. 'TextureStrength', 0, 100, 1);
+        if (strengthChanged == true) then
+            settings.textureStrength = math.floor((tonumber(strength) or 100) + 0.5);
+            state.Save();
+        end
+
+        local borderColor, borderChanged, borderSize, borderSizeChanged = DrawColorAndPlacementRow('Border color', settings.borderColor, labelPrefix .. 'BorderColor', 'Border size', settings.borderSize, labelPrefix .. 'BorderSize', 0, 100, 1);
+        if (borderChanged == true or borderSizeChanged == true) then
+            settings.borderColor = borderColor;
+            settings.borderSize = math.floor((tonumber(borderSize) or 0) + 0.5);
+            state.Save();
+        end
+
+        local cornerRadius, cornerChanged = DrawPlacementSingle('Corner radius', settings.cornerRadius, labelPrefix .. 'CornerRadius', 0, 200, 1);
+        if (cornerChanged == true) then
+            settings.cornerRadius = math.floor((tonumber(cornerRadius) or 0) + 0.5);
+            state.Save();
+        end
+    end, true);
+end
+
+function LibraPlatesSettingsDrawDetachedAvatarTimerTextSettings(title, meters, keyPrefix, labelPrefix)
+    LibraPlatesSettingsDrawBoxedPanel(title .. ' text', function()
+        DrawCheckbox('Timer text', meters[keyPrefix .. 'ShowText'] ~= false, function(value)
+            meters[keyPrefix .. 'ShowText'] = value == true;
+            state.Save();
+        end);
+
+        local fontSize, fontSizeChanged, fontColor, fontColorChanged = DrawPlacementAndColorRow('Font size', meters[keyPrefix .. 'FontSize'], labelPrefix .. 'FontSize', 1, 80, 1, 'Font color', meters[keyPrefix .. 'FontColor'], labelPrefix .. 'FontColor');
+        if (fontSizeChanged == true or fontColorChanged == true) then
+            meters[keyPrefix .. 'FontSize'] = math.floor((tonumber(fontSize) or 7) + 0.5);
+            meters[keyPrefix .. 'FontColor'] = fontColor;
+            state.Save();
+        end
+
+        local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawPlacementAndColorRow('Outline size', meters[keyPrefix .. 'OutlineSize'], labelPrefix .. 'OutlineSize', 0, 20, 1, 'Outline color', meters[keyPrefix .. 'OutlineColor'], labelPrefix .. 'OutlineColor');
+        if (outlineSizeChanged == true or outlineColorChanged == true) then
+            meters[keyPrefix .. 'OutlineSize'] = math.floor((tonumber(outlineSize) or 0) + 0.5);
+            meters[keyPrefix .. 'OutlineColor'] = outlineColor;
+            state.Save();
+        end
+
+        local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawPlacementPair('Text offset X', meters[keyPrefix .. 'OffsetX'], labelPrefix .. 'OffsetX', 'Text offset Y', meters[keyPrefix .. 'OffsetY'], labelPrefix .. 'OffsetY', -200, 200, 1);
+        if (offsetXChanged == true or offsetYChanged == true) then
+            meters[keyPrefix .. 'OffsetX'] = math.floor((tonumber(offsetX) or 0) + 0.5);
+            meters[keyPrefix .. 'OffsetY'] = math.floor((tonumber(offsetY) or 0) + 0.5);
+            state.Save();
+        end
+    end, true);
+end
+
 function settingsUi.DrawDetachedFrameSettings()
     local prefix = settingsUi.GetDetachedFramePrefix();
+    local settingsPrefix = settingsUi.GetDetachedFrameSettingsPrefix();
 
-    if (prefix == nil or selectedWidget ~= 'Detached frame') then
+    if (prefix == nil or settingsPrefix == nil or selectedWidget ~= 'Detached frame') then
         return;
     end
 
@@ -14213,41 +14604,40 @@ function settingsUi.DrawDetachedFrameSettings()
     end
 
     local modeKey = prefix .. 'PetPlateMode';
-    local editKey = prefix .. 'PetStaticEditFrame';
-    local xKey = prefix .. 'PetStaticX';
-    local yKey = prefix .. 'PetStaticY';
-    local scaleKey = prefix .. 'PetStaticScale';
-    local backgroundSettingsKey = prefix .. 'PetStaticBackgroundSettings';
+    local editKey = settingsPrefix .. 'PetStaticEditFrame';
+    local xKey = settingsPrefix .. 'PetStaticX';
+    local yKey = settingsPrefix .. 'PetStaticY';
+    local scaleKey = settingsPrefix .. 'PetStaticScale';
+    local backgroundSettingsKey = settingsPrefix .. 'PetStaticBackgroundSettings';
+    local sharedBackgroundSettingsKey = prefix .. 'PetStaticBackgroundSettings';
     local legacyBackgroundKey = prefix .. 'PetStaticBackground';
     local defaults = (globalDefaults.targeting or {});
-    local petLabel = ({
-        bst = 'BST pet',
-        smn = 'Avatar',
-        drg = 'Wyvern',
-        pup = 'Automaton',
-    })[prefix] or 'Pet';
+    if (settings[editKey] == nil) then
+        settings[editKey] = settings[prefix .. 'PetStaticEditFrame'] == true;
+    end
+    if (settings[xKey] == nil) then
+        settings[xKey] = tonumber(settings[prefix .. 'PetStaticX'] or defaults[prefix .. 'PetStaticX']) or 170;
+    end
+    if (settings[yKey] == nil) then
+        settings[yKey] = tonumber(settings[prefix .. 'PetStaticY'] or defaults[prefix .. 'PetStaticY']) or 690;
+    end
+    if (settings[scaleKey] == nil) then
+        settings[scaleKey] = tonumber(settings[prefix .. 'PetStaticScale'] or defaults[prefix .. 'PetStaticScale']) or 35;
+    end
+    if (settings[backgroundSettingsKey] == nil) then
+        local fallbackBackground = settings[sharedBackgroundSettingsKey]
+            or defaults[backgroundSettingsKey]
+            or defaults[sharedBackgroundSettingsKey];
 
-    if (settings[backgroundSettingsKey] == nil and type(defaults[backgroundSettingsKey]) == 'table') then
-        settings[backgroundSettingsKey] = LibraPlatesSettingsCopyTable(defaults[backgroundSettingsKey]);
+        if (type(fallbackBackground) == 'table') then
+            settings[backgroundSettingsKey] = LibraPlatesSettingsCopyTable(fallbackBackground);
+        end
     end
 
     local mode = tostring(settings[modeKey] or 'Normal');
     local detached = mode ~= 'Normal';
 
     LibraPlatesSettingsDrawBoxedPanel('Detached frame', function()
-        DrawCheckbox('Detach ' .. petLabel .. ' frame', detached, function(value)
-            if (value == true) then
-                if (settings[modeKey] == nil or tostring(settings[modeKey]) == 'Normal') then
-                    settings[modeKey] = 'Detach from pet';
-                end
-            else
-                settings[modeKey] = 'Normal';
-                settings[editKey] = false;
-            end
-            state.Save();
-        end);
-        uiTooltip.Info('Shows a second pet frame on screen. The name can stay on the pet or the full pet plate can also remain there.');
-
         if (detached == true) then
             if (imgui.RadioButton ~= nil) then
                 if (imgui.RadioButton('Detached only##' .. prefix .. 'PetDetachedOnly', mode == 'Detach from pet') == true) then
@@ -14268,16 +14658,51 @@ function settingsUi.DrawDetachedFrameSettings()
                 end, prefix .. 'PetDetachedMode');
             end
 
-            DrawCheckbox('Edit detached frame', settings[editKey] == true, function(value)
+            DrawCheckbox('Unlock detached frame', settings[editKey] == true, function(value)
                 settings[editKey] = value == true;
                 state.Save();
             end);
-            uiTooltip.Info('Shows a draggable setup frame. A preview is used when that pet is not summoned.');
+            uiTooltip.Info('Unlocks the detached frame so it can be dragged. Use Frame size below to resize it.');
         end
     end, true);
 
     if (detached ~= true) then
         return;
+    end
+
+    if (prefix == 'smn') then
+        local sourceSettingsPrefix = settingsPrefix == 'smnSpirit' and 'smnAvatar' or 'smnSpirit';
+        local sourceLabel = settingsPrefix == 'smnSpirit' and 'Avatar' or 'Spirit';
+        local function GetCopySourceValue(suffix)
+            local value = settings[sourceSettingsPrefix .. suffix];
+
+            if (value == nil) then
+                value = settings[prefix .. suffix] or defaults[prefix .. suffix];
+            end
+
+            return value;
+        end
+
+        LibraPlatesSettingsDrawBoxedPanel('Copy settings', function()
+            if (imgui.Button('Copy position from ' .. sourceLabel .. '##' .. settingsPrefix .. 'CopyDetachedPosition') == true) then
+                settings[xKey] = tonumber(GetCopySourceValue('PetStaticX')) or 170;
+                settings[yKey] = tonumber(GetCopySourceValue('PetStaticY')) or 690;
+                state.Save();
+            end
+
+            if (imgui.Button('Copy all settings from ' .. sourceLabel .. '##' .. settingsPrefix .. 'CopyDetachedAll') == true) then
+                settings[xKey] = tonumber(GetCopySourceValue('PetStaticX')) or 170;
+                settings[yKey] = tonumber(GetCopySourceValue('PetStaticY')) or 690;
+                settings[scaleKey] = tonumber(GetCopySourceValue('PetStaticScale')) or 35;
+
+                local sourceBackground = GetCopySourceValue('PetStaticBackgroundSettings');
+                if (type(sourceBackground) == 'table') then
+                    settings[backgroundSettingsKey] = LibraPlatesSettingsCopyTable(sourceBackground);
+                end
+
+                state.Save();
+            end
+        end, true);
     end
 
     settings[backgroundSettingsKey] = settings[backgroundSettingsKey] or LibraPlatesSettingsCopyTable(backgroundDefaults);
@@ -14301,69 +14726,266 @@ function settingsUi.DrawDetachedFrameSettings()
         -- the fill color. Migrate that value so the image matches the UI.
         bg.imageOpacity = math.floor((bg.color[4] * 100) + 0.5);
     end
+    if (prefix == 'smn' and bg.useAvatarArtwork == nil) then
+        -- Keep the regular pet background independent.  This option affects
+        -- only the detached Avatar frame and falls back to the image below
+        -- when an Avatar-specific artwork file is not available.
+        bg.useAvatarArtwork = true;
+    end
+    if (prefix == 'smn' and type(bg.avatarGemMeters) ~= 'table') then
+        bg.avatarGemMeters = {
+            rageColor = { 0.95, 0.12, 0.10, 1.0 },
+        };
+    end
+    if (prefix == 'smn') then
+        bg.useAvatarArtwork = true;
+        local meters = bg.avatarGemMeters;
+        meters.rageColor = meters.rageColor or { 0.95, 0.12, 0.10, 1.0 };
+        meters.rageBackgroundColor = meters.rageBackgroundColor or { 0.02, 0.02, 0.02, 0.70 };
+        meters.rageBorderColor = meters.rageBorderColor or { 0.0, 0.0, 0.0, 0.0 };
+        meters.rageBorderSize = meters.rageBorderSize or 0;
+        meters.wardColor = meters.wardColor or { 0.10, 0.55, 1.00, 1.0 };
+        meters.wardBackgroundColor = meters.wardBackgroundColor or { 0.02, 0.02, 0.02, 0.70 };
+        meters.wardBorderColor = meters.wardBorderColor or { 0.0, 0.0, 0.0, 0.0 };
+        meters.wardBorderSize = meters.wardBorderSize or 0;
+        meters.favorColor1 = meters.favorColor1 or meters.favorColor or { 1.00, 0.22, 0.08, 1.0 };
+        meters.favorColor2 = meters.favorColor2 or meters.favorColor or { 1.00, 0.62, 0.08, 1.0 };
+        meters.favorColor3 = meters.favorColor3 or meters.favorColor or { 1.00, 0.88, 0.18, 1.0 };
+        meters.favorBackgroundColor = meters.favorBackgroundColor or { 0.02, 0.02, 0.02, 0.70 };
+        meters.favorBorderColor = meters.favorBorderColor or { 0.0, 0.0, 0.0, 0.0 };
+        meters.favorBorderSize = meters.favorBorderSize or 0;
+        if (meters.favorShowText == nil) then meters.favorShowText = true; end
+        meters.favorFontSize = meters.favorFontSize or 7;
+        meters.favorFontColor = meters.favorFontColor or { 1.0, 1.0, 1.0, 1.0 };
+        meters.favorOutlineSize = meters.favorOutlineSize or 1;
+        meters.favorOutlineColor = meters.favorOutlineColor or { 0.0, 0.0, 0.0, 1.0 };
+        if (meters.favorUseSmallFont == nil) then meters.favorUseSmallFont = true; end
+        meters.favorOffsetX = meters.favorOffsetX or 0;
+        meters.favorOffsetY = meters.favorOffsetY or 0;
+        meters.favorSpacing = meters.favorSpacing or 4;
+        meters.favorPadding = meters.favorPadding or 0;
+        LibraPlatesSettingsEnsureDetachedAvatarMeterDefaults(meters);
+        LibraPlatesSettingsEnsureDetachedAvatarWidgetDefaults(bg);
+    end
     bg.borderColor = bg.borderColor or { 0.0, 0.0, 0.0, 0.80 };
     bg.borderSize = bg.borderSize or 0;
 
-    LibraPlatesSettingsDrawBoxedPanel('Detached background', function()
-        DrawCheckbox('Use background', bg.enabled == true, function(value)
-        bg.enabled = value == true;
-        state.Save();
-        end);
+    LibraPlatesSettingsDrawBoxedPanel(prefix == 'smn' and 'Avatar plate art' or 'Background', function()
+        if (prefix ~= 'smn') then
+            DrawCheckbox('Use background', bg.enabled == true, function(value)
+                bg.enabled = value == true;
+                state.Save();
+            end);
+        end
 
-    local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', bg.width, prefix .. 'DetachedBgWidth', 'Height', bg.height, prefix .. 'DetachedBgHeight', 8, 1000, 1);
-    if (widthChanged == true or heightChanged == true) then
-        bg.width = math.floor((tonumber(width) or 220) + 0.5);
-        bg.height = math.floor((tonumber(height) or 74) + 0.5);
-        state.Save();
-    end
+    local usingAvatarArtwork = prefix == 'smn' and bg.useAvatarArtwork ~= false;
 
-    local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawPlacementPair('Position X', bg.offsetX, prefix .. 'DetachedBgOffsetX', 'Position Y', bg.offsetY, prefix .. 'DetachedBgOffsetY', -400, 400, 1);
-    if (offsetXChanged == true or offsetYChanged == true) then
-        bg.offsetX = math.floor((tonumber(offsetX) or 0) + 0.5);
-        bg.offsetY = math.floor((tonumber(offsetY) or 0) + 0.5);
-        state.Save();
-    end
+    if (usingAvatarArtwork == true) then
+        local frameSize, frameSizeChanged = DrawPlacementSingle('Frame size', bg.width, prefix .. 'DetachedAvatarFrameSize', 8, 1200, 1, 125, 125, 58);
+        if (frameSizeChanged == true) then
+            bg.width = math.floor((tonumber(frameSize) or 220) + 0.5);
+            state.Save();
+        end
 
-    DrawInlineComboRow('Background image', require('core.background_textures').GetFiles(), bg.texture or 'None', function(value)
-        bg.texture = value;
-        state.Save();
-    end, prefix .. 'DetachedBgTexture', nil, nil, nil, nil, require('core.background_textures').GetFolderPath());
+        local artworkOpacity, artworkOpacityChanged = DrawPlacementSingle('Opacity', bg.avatarArtworkOpacity or 100, prefix .. 'AvatarArtworkOpacity', 0, 100, 1, 125, 125, 58);
+        if (artworkOpacityChanged == true) then
+            bg.avatarArtworkOpacity = math.floor((tonumber(artworkOpacity) or 100) + 0.5);
+            state.Save();
+        end
+    else
+        local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', bg.width, prefix .. 'DetachedBgWidth', 'Height', bg.height, prefix .. 'DetachedBgHeight', 8, 1000, 1);
+        if (widthChanged == true or heightChanged == true) then
+            bg.width = math.floor((tonumber(width) or 220) + 0.5);
+            bg.height = math.floor((tonumber(height) or 74) + 0.5);
+            state.Save();
+        end
 
-    local opacity = math.floor((bg.color[4] * 100) + 0.5);
-    local fillColor, fillChanged, nextOpacity, opacityChanged = DrawColorAndPlacementRow('Fill color', bg.color, prefix .. 'DetachedBgFillColor', 'Opacity', opacity, prefix .. 'DetachedBgOpacity', 0, 100, 1);
-    if (fillChanged == true or opacityChanged == true) then
-        bg.color = fillColor;
-        bg.color[4] = math.max(0.0, math.min(1.0, (tonumber(nextOpacity) or opacity) / 100));
-        bg.imageOpacity = math.floor((bg.color[4] * 100) + 0.5);
-        state.Save();
-    end
+        local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawPlacementPair('Position X', bg.offsetX, prefix .. 'DetachedBgOffsetX', 'Position Y', bg.offsetY, prefix .. 'DetachedBgOffsetY', -400, 400, 1);
+        if (offsetXChanged == true or offsetYChanged == true) then
+            bg.offsetX = math.floor((tonumber(offsetX) or 0) + 0.5);
+            bg.offsetY = math.floor((tonumber(offsetY) or 0) + 0.5);
+            state.Save();
+        end
 
-    local borderColor, borderChanged, borderSize, borderSizeChanged = DrawColorAndPlacementRow('Border color', bg.borderColor, prefix .. 'DetachedBgBorderColor', 'Border size', bg.borderSize, prefix .. 'DetachedBgBorderSize', 0, 40, 1);
-    if (borderChanged == true or borderSizeChanged == true) then
-        bg.borderColor = borderColor;
-        bg.borderSize = math.floor((tonumber(borderSize) or 0) + 0.5);
-        state.Save();
+        DrawInlineComboRow('Background image', require('core.background_textures').GetFiles(), bg.texture or 'None', function(value)
+            bg.texture = value;
+            state.Save();
+        end, prefix .. 'DetachedBgTexture', nil, nil, nil, nil, require('core.background_textures').GetFolderPath());
+
+        local opacity = math.floor((bg.color[4] * 100) + 0.5);
+        local fillColor, fillChanged, nextOpacity, opacityChanged = DrawColorAndPlacementRow('Fill color', bg.color, prefix .. 'DetachedBgFillColor', 'Opacity', opacity, prefix .. 'DetachedBgOpacity', 0, 100, 1);
+        if (fillChanged == true or opacityChanged == true) then
+            bg.color = fillColor;
+            bg.color[4] = math.max(0.0, math.min(1.0, (tonumber(nextOpacity) or opacity) / 100));
+            bg.imageOpacity = math.floor((bg.color[4] * 100) + 0.5);
+            state.Save();
+        end
+
+        local borderColor, borderChanged, borderSize, borderSizeChanged = DrawColorAndPlacementRow('Border color', bg.borderColor, prefix .. 'DetachedBgBorderColor', 'Border size', bg.borderSize, prefix .. 'DetachedBgBorderSize', 0, 40, 1);
+        if (borderChanged == true or borderSizeChanged == true) then
+            bg.borderColor = borderColor;
+            bg.borderSize = math.floor((tonumber(borderSize) or 0) + 0.5);
+            state.Save();
+        end
     end
     end, true);
 
-    if (DrawResetActionButton('Reset Detached frame position', prefix .. 'DetachedFramePosition') == true) then
-        local defaults = (globalDefaults.targeting or {});
-        settings[xKey] = defaults[xKey] or 170;
-        settings[yKey] = defaults[yKey] or 690;
-        settings[scaleKey] = defaults[scaleKey] or 35;
-        if (type(settings[backgroundSettingsKey]) == 'table') then
-            settings[backgroundSettingsKey].offsetX = 0;
-            settings[backgroundSettingsKey].offsetY = 0;
-        end
-        state.Save();
-    end
+    if (prefix == 'smn') then
+        local detachedDefaults = ((globalDefaults.targeting or {}).smnPetStaticBackgroundSettings or {});
 
-    if (DrawResetActionButton('Reset Detached frame settings', prefix .. 'DetachedFrameSettings') == true) then
-        local defaults = (globalDefaults.targeting or {});
-        settings[modeKey] = defaults[modeKey] or 'Normal';
-        settings[editKey] = defaults[editKey] == true;
-        settings[backgroundSettingsKey] = LibraPlatesSettingsCopyTable(defaults[backgroundSettingsKey] or backgroundDefaults);
-        state.Save();
+        widgets.text.DrawSettings(bg.avatarNameSettings, {
+            widget = 'Detached Name',
+            displayLabel = 'Name',
+            defaults = detachedDefaults.avatarNameSettings,
+            boxed = true,
+            skipPlacement = true,
+            hideActive = true,
+            hideResetControls = true,
+            settingsGridColumnWidth = 125,
+        });
+        LibraPlatesSettingsDrawBoxedPanel('HP Bar', function()
+            widgets.bar.DrawSettings(bg.avatarHpBarSettings, {
+                widget = 'Detached HP Bar',
+                resourceName = 'HP',
+                defaults = detachedDefaults.avatarHpBarSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                showValueControl = false,
+                hideShowAtPercent = true,
+                alignBarSettingsGrid = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel('MP Bar', function()
+            widgets.bar.DrawSettings(bg.avatarMpBarSettings, {
+                widget = 'Detached MP Bar',
+                resourceName = 'MP',
+                defaults = detachedDefaults.avatarMpBarSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                showValueControl = false,
+                alignBarSettingsGrid = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel('TP Bar', function()
+            widgets.bar.DrawSettings(bg.avatarTpBarSettings, {
+                widget = 'Detached TP Bar',
+                resourceName = 'TP',
+                defaults = detachedDefaults.avatarTpBarSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                alignBarSettingsGrid = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel('Cast Bar', function()
+            widgets.castBar.DrawSettings(bg.avatarCastBarSettings, {
+                widget = 'Detached Cast bar',
+                defaults = detachedDefaults.avatarCastBarSettings,
+                hideActive = true,
+                hideResetControls = true,
+                hideInterruptSettings = true,
+                showCornerRadius = true,
+                skipPlacement = true,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel('Ward', function()
+            widgets.bar.DrawSettings(bg.avatarWardSettings, {
+                widget = 'Detached Ward timer',
+                resourceName = 'Ward',
+                defaults = detachedDefaults.avatarWardSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                labelIconOptions = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel('Rage', function()
+            widgets.bar.DrawSettings(bg.avatarRageSettings, {
+                widget = 'Detached Rage timer',
+                resourceName = 'Rage',
+                defaults = detachedDefaults.avatarRageSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                labelIconOptions = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel("Avatar's Favor", function()
+            local favor = bg.avatarFavorSettings;
+            local iconSize, iconSizeChanged = DrawPlacementSingle(
+                'Icon size', favor.iconSize, 'DetachedFavorIconSize', 6, 256, 1, 125, 125, 58
+            );
+            if (iconSizeChanged == true) then
+                favor.iconSize = math.floor((tonumber(iconSize) or 20) + 0.5);
+                state.Save();
+            end
+
+            local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawPlacementPair(
+                'Position X', favor.offsetX, 'DetachedFavorIconX',
+                'Position Y', favor.offsetY, 'DetachedFavorIconY',
+                -800, 800, 1, 125, 58
+            );
+            if (offsetXChanged == true or offsetYChanged == true) then
+                favor.offsetX = math.floor((tonumber(offsetX) or 0) + 0.5);
+                favor.offsetY = math.floor((tonumber(offsetY) or 0) + 0.5);
+                state.Save();
+            end
+
+            DrawCheckbox('Show Ready / cooldown text', favor.showCooldown ~= false, function(value)
+                favor.showCooldown = value == true;
+                state.Save();
+            end);
+
+            if (favor.showCooldown ~= false) then
+                imgui.TextColored(settingsHeaderColor, 'Ready / Cooldown Text:');
+
+                DrawCheckbox('Use small font', favor.cooldownUseSmallFont == true, function(value)
+                    favor.cooldownUseSmallFont = value == true;
+                    state.Save();
+                end);
+                uiTooltip.Info('When enabled, this uses the Small text font style configured in Settings > Theme.');
+
+                local timerX, timerXChanged, timerY, timerYChanged = DrawPlacementPair(
+                    'Position X', favor.cooldownOffsetX, 'DetachedFavorCooldownX',
+                    'Position Y', favor.cooldownOffsetY, 'DetachedFavorCooldownY',
+                    -800, 800, 1, 125, 58
+                );
+                if (timerXChanged == true or timerYChanged == true) then
+                    favor.cooldownOffsetX = math.floor((tonumber(timerX) or 0) + 0.5);
+                    favor.cooldownOffsetY = math.floor((tonumber(timerY) or 1) + 0.5);
+                    state.Save();
+                end
+
+                local fontSize, fontSizeChanged, textColor, textColorChanged = DrawPlacementAndColorRow(
+                    'Font size', favor.cooldownFontSize, 'DetachedFavorCooldownFontSize', 8, 72, 1,
+                    'Font color', favor.cooldownTextColor, 'DetachedFavorCooldownTextColor',
+                    125, 58
+                );
+                if (fontSizeChanged == true or textColorChanged == true) then
+                    favor.cooldownFontSize = math.floor((tonumber(fontSize) or 8) + 0.5);
+                    favor.cooldownTextColor = textColor;
+                    state.Save();
+                end
+
+                local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawPlacementAndColorRow(
+                    'Outline size', favor.cooldownOutlineSize, 'DetachedFavorCooldownOutlineSize', 0, 12, 1,
+                    'Outline color', favor.cooldownOutlineColor, 'DetachedFavorCooldownOutlineColor',
+                    125, 58
+                );
+                if (outlineSizeChanged == true or outlineColorChanged == true) then
+                    favor.cooldownOutlineSize = math.floor((tonumber(outlineSize) or 0) + 0.5);
+                    favor.cooldownOutlineColor = outlineColor;
+                    state.Save();
+                end
+            end
+        end, true);
     end
 
     DrawResetFooterBottomPadding();
@@ -14831,14 +15453,18 @@ function settingsUi.QueueDetachedPetSetupPreview()
     end
 
     local prefix = settingsUi.GetDetachedFramePrefix();
-    if (prefix == nil) then
+    local settingsPrefix = settingsUi.GetDetachedFrameSettingsPrefix();
+    if (prefix == nil or settingsPrefix == nil) then
         return;
     end
 
     local targetingSettings = targeting.GetSettings();
     if (
         targetingSettings == nil or
-        targetingSettings[prefix .. 'PetStaticEditFrame'] ~= true or
+        (
+            targetingSettings[settingsPrefix .. 'PetStaticEditFrame'] ~= true and
+            targetingSettings[prefix .. 'PetStaticEditFrame'] ~= true
+        ) or
         tostring(targetingSettings[prefix .. 'PetPlateMode'] or 'Normal') == 'Normal'
     ) then
         return;

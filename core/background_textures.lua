@@ -3,6 +3,8 @@ local textureLoader = require('core.texture_loader');
 local backgroundTextures = {};
 local textureIds = {};
 local filesCache = nil;
+local avatarArtworkTextureIds = {};
+local avatarArtworkFilesCache = nil;
 
 local function GetAddonPath()
     local ok, path = pcall(function()
@@ -36,6 +38,12 @@ function backgroundTextures.GetFolderPath()
     return GetAddonPath() .. 'assets\\images\\backgrounds\\';
 end
 
+-- Avatar frame artwork is intentionally kept outside the generic backgrounds
+-- folder.  It must never appear in a normal plate Background image picker.
+function backgroundTextures.GetAvatarArtworkFolderPath()
+    return GetAddonPath() .. 'assets\\images\\pet\\smn\\detached\\';
+end
+
 function backgroundTextures.GetFiles()
     if (filesCache ~= nil) then
         return filesCache;
@@ -63,6 +71,31 @@ function backgroundTextures.GetFiles()
     return filesCache;
 end
 
+function backgroundTextures.GetAvatarArtworkFiles()
+    if (avatarArtworkFilesCache ~= nil) then
+        return avatarArtworkFilesCache;
+    end
+
+    local files = T{};
+    local folder = backgroundTextures.GetAvatarArtworkFolderPath();
+    local pipe = io.popen('dir /b "' .. folder .. '*.png" 2>nul');
+
+    if (pipe ~= nil) then
+        for line in pipe:lines() do
+            AddFile(files, line);
+        end
+
+        pipe:close();
+    end
+
+    table.sort(files, function(a, b)
+        return string.lower(tostring(a)) < string.lower(tostring(b));
+    end);
+
+    avatarArtworkFilesCache = files;
+    return avatarArtworkFilesCache;
+end
+
 function backgroundTextures.GetTextureId(fileName)
     fileName = tostring(fileName or 'None'):gsub('^.*[\\/]', '');
 
@@ -81,6 +114,25 @@ function backgroundTextures.GetTextureId(fileName)
     ));
 
     return textureIds[key];
+end
+
+function backgroundTextures.GetAvatarArtworkTextureId(fileName)
+    fileName = tostring(fileName or ''):gsub('^.*[\\/]', '');
+
+    if (fileName == '') then
+        return nil;
+    end
+
+    local key = 'pet/smn/detached/' .. fileName;
+    if (avatarArtworkTextureIds[key] ~= nil) then
+        return avatarArtworkTextureIds[key];
+    end
+
+    avatarArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.Load(
+        backgroundTextures.GetAvatarArtworkFolderPath() .. fileName
+    ));
+
+    return avatarArtworkTextureIds[key];
 end
 
 return backgroundTextures;

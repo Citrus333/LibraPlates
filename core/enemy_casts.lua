@@ -480,16 +480,34 @@ local function GetAoeRadiusByResource(spell, spellName, spellId)
 end
 
 local function GetAoeKindByResource(spell)
-    if (IsBlueMagicResource(spell) ~= true) then
+    local targets = GetSpellTargetsByResource(spell);
+
+    if (IsBlueMagicResource(spell) == true) then
+        if (targets == 4 or targets == 32 or HasTargetFlag(targets, 4) == true or HasTargetFlag(targets, 32) == true) then
+            return 'enemy';
+        end
+
+        if (targets == 1 or targets == 2 or targets == 3 or HasTargetFlag(targets, 1) == true or HasTargetFlag(targets, 2) == true) then
+            return 'friendly';
+        end
+
         return 'all';
     end
 
-    local targets = GetSpellTargetsByResource(spell);
-    if (targets == 4 or targets == 32 or HasTargetFlag(targets, 4) == true or HasTargetFlag(targets, 32) == true) then
+    if (HasTargetFlag(targets, 32) == true) then
         return 'enemy';
     end
 
-    return 'friendly';
+    if (
+        HasTargetFlag(targets, 1) == true or
+        HasTargetFlag(targets, 2) == true or
+        HasTargetFlag(targets, 4) == true or
+        HasTargetFlag(targets, 8) == true
+    ) then
+        return 'friendly';
+    end
+
+    return 'all';
 end
 
 local function GetBlueMagicAoeKind(spell, spellId, spellName)
@@ -688,7 +706,7 @@ local function HandleEnemyCastActionPacket(actionPacket)
             targetIndex = GetIndexFromServerId(targetServerId),
             aoeCenterIndex = aoeCenterIndex,
             aoeRadius = aoeRadius,
-            aoeKind = GetBlueMagicAoeKind(spell, spellId, spellName),
+            aoeKind = GetAoeKindByResource(spell),
             startTime = os.clock(),
             castTime = GetSpellCastTimeByResource(spell),
         };

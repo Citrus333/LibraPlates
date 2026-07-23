@@ -3725,6 +3725,11 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'aoeprobe') then
+        log.Info(aoeNameHighlight.GetProbeText());
+        return;
+    end
+
     if (subcommand == 'mogjobdebug' or subcommand == 'mogdebug') then
         local action = tostring(args[3] or 'status'):lower();
         local seconds = tonumber(args[4]);

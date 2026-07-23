@@ -19,5 +19,5 @@ return {
     iconOffsetX = -42,
     iconOffsetY = -54,
     iconAnchorTo = 'Name',
-    iconAnchorPoint = 'Left',
+    iconAnchorPoint = 'Center',
 };

@@ -194,16 +194,16 @@ local function DrawTableSlider(label, id, value, minValue, maxValue, showButtons
     return DrawSliderControl(id, value, minValue, maxValue, showButtons == false and 140 or 95, showButtons);
 end
 
-local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax)
+local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax, gridColumnWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         local leftResult = leftValue;
         local rightResult = rightValue;
 
         if (imgui.BeginTable('##text_' .. rowId, 4, tableFlags)) then
-            imgui.TableSetupColumn('##label_left', 0, 145);
-            imgui.TableSetupColumn('##control_left', 0, 170);
-            imgui.TableSetupColumn('##label_right', 0, 145);
-            imgui.TableSetupColumn('##control_right', 0, 170);
+            imgui.TableSetupColumn('##label_left', 0, tonumber(gridColumnWidth) or 145);
+            imgui.TableSetupColumn('##control_left', 0, tonumber(gridColumnWidth) or 170);
+            imgui.TableSetupColumn('##label_right', 0, tonumber(gridColumnWidth) or 145);
+            imgui.TableSetupColumn('##control_right', 0, tonumber(gridColumnWidth) or 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax);
@@ -287,14 +287,14 @@ local function DrawColorCell(label, color)
     return DrawColor(label:gsub('%s+', '_'), color);
 end
 
-local function DrawFontRow(settings, defaults, showSmallFontToggle)
+local function DrawFontRow(settings, defaults, showSmallFontToggle, gridColumnWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (showSmallFontToggle == true) then
             if (imgui.BeginTable('##text_font_row', 4, tableFlags)) then
-                imgui.TableSetupColumn('##font_size_label', 0, 145);
-                imgui.TableSetupColumn('##font_size_control', 0, 170);
-                imgui.TableSetupColumn('##font_color_label', 0, 145);
-                imgui.TableSetupColumn('##font_color_control', 0, 240);
+                imgui.TableSetupColumn('##font_size_label', 0, tonumber(gridColumnWidth) or 145);
+                imgui.TableSetupColumn('##font_size_control', 0, tonumber(gridColumnWidth) or 170);
+                imgui.TableSetupColumn('##font_color_label', 0, tonumber(gridColumnWidth) or 145);
+                imgui.TableSetupColumn('##font_color_control', 0, tonumber(gridColumnWidth) or 240);
                 imgui.TableNextRow();
 
                 imgui.TableNextColumn();
@@ -313,10 +313,10 @@ local function DrawFontRow(settings, defaults, showSmallFontToggle)
         end
 
         if (imgui.BeginTable('##text_font_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##font_size_label', 0, 145);
-            imgui.TableSetupColumn('##font_size_control', 0, 170);
-            imgui.TableSetupColumn('##font_color_label', 0, 145);
-            imgui.TableSetupColumn('##font_color_control', 0, 170);
+            imgui.TableSetupColumn('##font_size_label', 0, tonumber(gridColumnWidth) or 145);
+            imgui.TableSetupColumn('##font_size_control', 0, tonumber(gridColumnWidth) or 170);
+            imgui.TableSetupColumn('##font_color_label', 0, tonumber(gridColumnWidth) or 145);
+            imgui.TableSetupColumn('##font_color_control', 0, tonumber(gridColumnWidth) or 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.textSize = DrawTableSlider('Font size', 'font_size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
@@ -340,13 +340,13 @@ local function DrawFontRow(settings, defaults, showSmallFontToggle)
     end
 end
 
-local function DrawOutlineRow(settings)
+local function DrawOutlineRow(settings, gridColumnWidth)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##text_outline_row', 4, tableFlags)) then
-            imgui.TableSetupColumn('##outline_size_label', 0, 145);
-            imgui.TableSetupColumn('##outline_size_control', 0, 170);
-            imgui.TableSetupColumn('##outline_color_label', 0, 145);
-            imgui.TableSetupColumn('##outline_color_control', 0, 170);
+            imgui.TableSetupColumn('##outline_size_label', 0, tonumber(gridColumnWidth) or 145);
+            imgui.TableSetupColumn('##outline_size_control', 0, tonumber(gridColumnWidth) or 170);
+            imgui.TableSetupColumn('##outline_color_label', 0, tonumber(gridColumnWidth) or 145);
+            imgui.TableSetupColumn('##outline_color_control', 0, tonumber(gridColumnWidth) or 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
             settings.outlineSize = DrawTableSlider('Outline size', 'outline_size', settings.outlineSize, 0, 12, false);
@@ -515,8 +515,9 @@ function textWidget.DrawSettings(settings, context)
     end
 
     local function DrawBody()
+        local settingsGridColumnWidth = context ~= nil and tonumber(context.settingsGridColumnWidth) or nil;
         if (anchorControls.IsCollapsedChild(settings) == true) then
-            anchorControls.DrawSpacing(settings, tostring(label) .. '_position', 145, 170);
+            anchorControls.DrawSpacing(settings, tostring(label) .. '_position', settingsGridColumnWidth or 145, settingsGridColumnWidth or 170);
         else
             settings.offsetX, settings.offsetY = DrawSliderPair(
                 'position',
@@ -529,11 +530,12 @@ function textWidget.DrawSettings(settings, context)
                 'offset_y',
                 settings.offsetY,
                 -400,
-                400
+                400,
+                settingsGridColumnWidth
             );
         end
-        DrawFontRow(settings, defaults, showSmallFontToggle);
-        DrawOutlineRow(settings);
+        DrawFontRow(settings, defaults, showSmallFontToggle, settingsGridColumnWidth);
+        DrawOutlineRow(settings, settingsGridColumnWidth);
         settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
 
         if (context ~= nil and type(context.extraBeforeReset) == 'function') then
@@ -547,22 +549,24 @@ function textWidget.DrawSettings(settings, context)
         DrawBody();
     end
 
-    if (context ~= nil and context.boxed == true) then
-        imgui.Spacing();
-        imgui.Spacing();
-    else
-        imgui.Separator();
-    end
+    if (context == nil or context.hideResetControls ~= true) then
+        if (context ~= nil and context.boxed == true) then
+            imgui.Spacing();
+            imgui.Spacing();
+        else
+            imgui.Separator();
+        end
 
-    if (DrawActionButton('Reset ' .. label .. ' position') == true) then
-        RequestReset('position', label .. ' position');
-    end
+        if (DrawActionButton('Reset ' .. label .. ' position') == true) then
+            RequestReset('position', label .. ' position');
+        end
 
-    if (DrawActionButton('Reset ' .. label .. ' settings') == true) then
-        RequestReset('settings', label .. ' settings');
-    end
+        if (DrawActionButton('Reset ' .. label .. ' settings') == true) then
+            RequestReset('settings', label .. ' settings');
+        end
 
-    DrawResetConfirm(settings, defaults, label);
+        DrawResetConfirm(settings, defaults, label);
+    end
 end
 
 return textWidget;

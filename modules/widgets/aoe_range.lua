@@ -202,19 +202,6 @@ function aoeRange.DrawSettings(settings, options)
     if (settings.enabled == nil) then settings.enabled = defaults.enabled; end
     if (settings.fontSize == nil) then settings.fontSize = defaults.fontSize; end
     if (settings.fontColor == nil) then settings.fontColor = defaults.fontColor; end
-    if (settings.highlightFile == nil) then
-        settings.highlightFile = settings.highlightEnabled == true and 'Soft_Glow_Round.png' or defaults.highlightFile;
-    end
-    if (settings.highlightClickable == nil) then settings.highlightClickable = defaults.highlightClickable; end
-    if (settings.highlightAutoPlace == nil) then settings.highlightAutoPlace = defaults.highlightAutoPlace; end
-    if (settings.highlightAutoPlaceBy == nil) then settings.highlightAutoPlaceBy = defaults.highlightAutoPlaceBy; end
-    if (settings.highlightColor == nil) then settings.highlightColor = defaults.highlightColor; end
-    if (settings.highlightSpacing == nil) then settings.highlightSpacing = defaults.highlightSpacing; end
-    if (settings.highlightOffsetX == nil) then settings.highlightOffsetX = defaults.highlightOffsetX; end
-    if (settings.highlightOffsetY == nil) then settings.highlightOffsetY = defaults.highlightOffsetY; end
-    if (settings.highlightWidth == nil) then settings.highlightWidth = defaults.highlightWidth; end
-    if (settings.highlightHeight == nil) then settings.highlightHeight = defaults.highlightHeight; end
-    if (settings.highlightOpacity == nil) then settings.highlightOpacity = defaults.highlightOpacity; end
     if (settings.iconEnabled == nil) then settings.iconEnabled = defaults.iconEnabled; end
     if (settings.iconFile == nil) then settings.iconFile = defaults.iconFile; end
     if (settings.iconSize == nil) then settings.iconSize = defaults.iconSize; end
@@ -230,20 +217,6 @@ function aoeRange.DrawSettings(settings, options)
         fontColor2 = tonumber(settings.fontColor[2]),
         fontColor3 = tonumber(settings.fontColor[3]),
         fontColor4 = tonumber(settings.fontColor[4]),
-        highlightFile = settings.highlightFile,
-        highlightClickable = settings.highlightClickable,
-        highlightAutoPlace = settings.highlightAutoPlace,
-        highlightAutoPlaceBy = settings.highlightAutoPlaceBy,
-        highlightColor1 = tonumber(settings.highlightColor[1]),
-        highlightColor2 = tonumber(settings.highlightColor[2]),
-        highlightColor3 = tonumber(settings.highlightColor[3]),
-        highlightColor4 = tonumber(settings.highlightColor[4]),
-        highlightSpacing = settings.highlightSpacing,
-        highlightOffsetX = settings.highlightOffsetX,
-        highlightOffsetY = settings.highlightOffsetY,
-        highlightWidth = settings.highlightWidth,
-        highlightHeight = settings.highlightHeight,
-        highlightOpacity = settings.highlightOpacity,
         iconEnabled = settings.iconEnabled,
         iconFile = settings.iconFile,
         iconSize = settings.iconSize,
@@ -285,57 +258,6 @@ function aoeRange.DrawSettings(settings, options)
     end);
 
     if (settings.enabled == true) then
-        Panel('Highlight', function()
-            DrawWideRow('highlight_image', 'Highlight image', function()
-                settings.highlightFile = DrawCombo('highlight_image', targetTextures.GetFiles('backgrounds'), settings.highlightFile, 300, 'backgrounds', nil, targetTextures.GetFolderPath('backgrounds'));
-            end);
-
-            if (tostring(settings.highlightFile or 'None') ~= 'None') then
-                settings.highlightClickable = DrawCheckbox('Highlight is clickable', settings.highlightClickable);
-                settings.highlightAutoPlace = DrawCheckbox('Auto place highlight', settings.highlightAutoPlace);
-
-                if (settings.highlightAutoPlace == true) then
-                    DrawWideRow('highlight_anchor', 'Auto place by', function()
-                        settings.highlightAutoPlaceBy = DrawCombo('highlight_anchor', { 'Widest element', 'Background', 'Name', 'HP Bar' }, settings.highlightAutoPlaceBy, 300);
-                    end);
-                    DrawFourColumnTable('highlight_auto', function(usingTable)
-                        if (usingTable == true) then
-                            imgui.TableNextRow();
-                            DrawCellLabel('Size');
-                            settings.highlightSpacing = DrawNumberControl('highlight_size', settings.highlightSpacing, 0, 40);
-                            DrawCellLabel('Position Y');
-                            settings.highlightOffsetY = DrawNumberControl('highlight_y', settings.highlightOffsetY, -500, 500);
-                        end
-                    end);
-                else
-                    DrawFourColumnTable('highlight_manual', function(usingTable)
-                        if (usingTable == true) then
-                            imgui.TableNextRow();
-                            DrawCellLabel('Width');
-                            settings.highlightWidth = DrawNumberControl('highlight_width', settings.highlightWidth, 1, 1000);
-                            DrawCellLabel('Height');
-                            settings.highlightHeight = DrawNumberControl('highlight_height', settings.highlightHeight, 1, 450);
-                            imgui.TableNextRow();
-                            DrawCellLabel('Position X');
-                            settings.highlightOffsetX = DrawNumberControl('highlight_x', settings.highlightOffsetX, -500, 500);
-                            DrawCellLabel('Position Y');
-                            settings.highlightOffsetY = DrawNumberControl('highlight_y', settings.highlightOffsetY, -500, 500);
-                        end
-                    end);
-                end
-
-                DrawFourColumnTable('highlight_style', function(usingTable)
-                    if (usingTable == true) then
-                        imgui.TableNextRow();
-                        DrawCellLabel('Highlight tint');
-                        settings.highlightColor = DrawColorControl('highlight_color', settings.highlightColor);
-                        DrawCellLabel('Opacity');
-                        settings.highlightOpacity = DrawNumberControl('highlight_opacity', settings.highlightOpacity, 0, 100);
-                    end
-                end);
-            end
-        end);
-
         Panel('Icon', function()
             settings.iconEnabled = DrawCheckbox('Show icon', settings.iconEnabled);
             if (settings.iconEnabled == true) then
@@ -384,20 +306,6 @@ function aoeRange.DrawSettings(settings, options)
         before.fontColor2 ~= tonumber(settings.fontColor[2]) or
         before.fontColor3 ~= tonumber(settings.fontColor[3]) or
         before.fontColor4 ~= tonumber(settings.fontColor[4]) or
-        before.highlightFile ~= settings.highlightFile or
-        before.highlightClickable ~= settings.highlightClickable or
-        before.highlightAutoPlace ~= settings.highlightAutoPlace or
-        before.highlightAutoPlaceBy ~= settings.highlightAutoPlaceBy or
-        before.highlightColor1 ~= tonumber(settings.highlightColor[1]) or
-        before.highlightColor2 ~= tonumber(settings.highlightColor[2]) or
-        before.highlightColor3 ~= tonumber(settings.highlightColor[3]) or
-        before.highlightColor4 ~= tonumber(settings.highlightColor[4]) or
-        before.highlightSpacing ~= settings.highlightSpacing or
-        before.highlightOffsetX ~= settings.highlightOffsetX or
-        before.highlightOffsetY ~= settings.highlightOffsetY or
-        before.highlightWidth ~= settings.highlightWidth or
-        before.highlightHeight ~= settings.highlightHeight or
-        before.highlightOpacity ~= settings.highlightOpacity or
         before.iconEnabled ~= settings.iconEnabled or
         before.iconFile ~= settings.iconFile or
         before.iconSize ~= settings.iconSize or

@@ -1,5 +1,4 @@
 local textureLoader = require('core.texture_loader');
-local targetTextures = require('core.target_textures');
 local iconPack = require('core.icon_pack');
 
 local aoeRangeVisuals = {};
@@ -84,6 +83,17 @@ function aoeRangeVisuals.AddIcon(plateData, settings)
         return;
     end
 
+    local anchorTo = settings.iconAnchorTo or 'Name';
+    local anchorPoint = settings.iconAnchorPoint or 'Center';
+
+    -- The AOE settings expose Position X/Y but not anchor controls. Older
+    -- settings stored the hidden default as Name/Left, which made 0,0 place
+    -- the icon beside the name and consumed most of the allowed X range just
+    -- to reach the plate center. Treat that legacy hidden value as centered.
+    if (anchorTo == 'Name' and anchorPoint == 'Left') then
+        anchorPoint = 'Center';
+    end
+
     plateData.icons = plateData.icons or {};
     plateData.icons[#plateData.icons + 1] = {
         kind = 'aoeRangeIcon',
@@ -91,44 +101,15 @@ function aoeRangeVisuals.AddIcon(plateData, settings)
         size = ClampNumber(settings.iconSize, 22, 4, 256),
         offsetX = tonumber(settings.iconOffsetX) or -42,
         offsetY = tonumber(settings.iconOffsetY) or -54,
-        anchorTo = settings.iconAnchorTo or 'Name',
-        anchorPoint = settings.iconAnchorPoint or 'Left',
+        anchorTo = anchorTo,
+        anchorPoint = anchorPoint,
+        anchorCollapse = false,
     };
 end
 
 function aoeRangeVisuals.Apply(plateData, settings)
     if (plateData == nil or settings == nil or plateData.aoeNameActive ~= true) then
         return;
-    end
-
-    local highlightFile = tostring(settings.highlightFile or 'None');
-
-    if (highlightFile ~= 'None') then
-        local anchorKinds = { 'background', 'name', 'hp', 'mp', 'tp', 'cast' };
-        local autoPlaceBy = tostring(settings.highlightAutoPlaceBy or 'Widest element');
-
-        if (autoPlaceBy == 'Background') then
-            anchorKinds = { 'background' };
-        elseif (autoPlaceBy == 'Name') then
-            anchorKinds = { 'name' };
-        elseif (autoPlaceBy == 'HP Bar') then
-            anchorKinds = { 'hp' };
-        end
-
-        local tint = settings.highlightColor or { 0.00, 0.82, 0.88, 1.0 };
-        local opacity = ClampNumber(settings.highlightOpacity, 95, 0, 100) / 100;
-        plateData.aoeHighlight = {
-            textureId = targetTextures.GetTextureId('backgrounds', highlightFile),
-            color = { tonumber(tint[1]) or 1.0, tonumber(tint[2]) or 1.0, tonumber(tint[3]) or 1.0, opacity },
-            autoPlace = settings.highlightAutoPlace ~= false,
-            anchorKinds = anchorKinds,
-            spacing = ClampNumber(settings.highlightSpacing, 7, 0, 40),
-            offsetX = tonumber(settings.highlightOffsetX) or 0,
-            offsetY = tonumber(settings.highlightOffsetY) or 0,
-            width = ClampNumber(settings.highlightWidth, 220, 1, 1000),
-            height = ClampNumber(settings.highlightHeight, 74, 1, 450),
-            clickable = settings.highlightClickable ~= false,
-        };
     end
 
     aoeRangeVisuals.AddIcon(plateData, settings);

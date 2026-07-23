@@ -2281,7 +2281,7 @@ Involved in Missions:\
             ["note"] = "",
             ["type"] = "Buy & Sell",
 		    ["worldOffsetY"] = 0.10,	
-        },	
+        },
         ["Bag"] = {
             ["_source"] = "item",
             ["icon"] = "Bag.png",
@@ -2374,12 +2374,14 @@ Involved in Missions:\
             ["icon"] = "ExcavationPoint.png",
             ["note"] = "A shorthand localized geological excavation node. Digging into the loose debris uncovers ancient artifacts, raw ores, and logs exploration metrics for active regional tasks.",
             ["type"] = "Excavation Point",
+            ["worldOffsetY"] = 0.25,
         },
         ["Excavation Point"] = {
             ["_source"] = "item",
             ["icon"] = "ExcavationPoint.png",
             ["note"] = "A loose patch of gravelly soil or mineral outcropping. Striking the spot with an equipped bone pickaxe extracts ancient fossil remnants, bone matrices, and unique crafting components.",
             ["type"] = "Excavation Point",
+            ["worldOffsetY"] = 0.25,
         },
         ["Faded Footprint"] = {
             ["_source"] = "item",
@@ -2483,6 +2485,13 @@ Involved in Missions:\
 * Click to receive the Quadav Offering for the Summit unlock quest.\
 * Offering location changes every in-game hour.",
             ["type"] = "Summit Offering",
+            ["worldOffsetY"] = 0.25,
+        },
+        ["Rallying Point"] = {
+            ["_source"] = "item",
+            ["icon"] = "RunicPortal.png",
+            ["note"] = "A massive magical teleportation gateway sealing the imperial border thresholds. Satisfying the local checkpoint guards commands the runic field boundaries to open for rapid squad transport.",
+            ["type"] = "Runic Portal",
             ["worldOffsetY"] = 0.25,
         },
         ["Runic Portal"] = {

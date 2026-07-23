@@ -325,7 +325,10 @@ function enmity.IsEnemyTargetingSelf(enemy)
         return party:GetMemberTargetIndex(0);
     end) or 0;
 
-    if (liveTargetAvailable == true) then
+    -- A zero target is not authoritative; Ashita can briefly expose zero while
+    -- the entity target is unavailable.  Keep the packet-tracked target as the
+    -- fallback in that case.
+    if (liveTargetAvailable == true and liveTargetIndex ~= 0) then
         return liveTargetIndex ~= 0 and tonumber(liveTargetIndex) == tonumber(selfIndex);
     end
 
@@ -351,7 +354,7 @@ function enmity.IsServerIdTargeted(serverId, index)
     end
 
     local checkedEnemyIndexes = {};
-    local liveTargetApiAvailable = false;
+    local liveTargetKnownByServerId = {};
 
     local function CheckEnemyIndex(enemyIndex)
         enemyIndex = tonumber(enemyIndex) or 0;
@@ -363,8 +366,11 @@ function enmity.IsServerIdTargeted(serverId, index)
         checkedEnemyIndexes[enemyIndex] = true;
         local liveTargetIndex, available = GetLiveTargetIndex(enemyIndex);
 
-        if (available == true) then
-            liveTargetApiAvailable = true;
+        if (available == true and liveTargetIndex ~= 0) then
+            local enemyServerId = GetServerId(enemyIndex);
+            if (enemyServerId ~= nil and enemyServerId ~= 0) then
+                liveTargetKnownByServerId[enemyServerId] = true;
+            end
             return liveTargetIndex ~= 0 and tonumber(liveTargetIndex) == allyIndex;
         end
 
@@ -383,15 +389,11 @@ function enmity.IsServerIdTargeted(serverId, index)
         end
     end
 
-    if (liveTargetApiAvailable == true) then
-        return false;
-    end
-
     for enemyServerId, targetServerId in pairs(enemyTargetServerIds) do
         if (IsEnemyIndex(GetIndexFromServerId(enemyServerId)) ~= true) then
             enemyTargetServerIds[enemyServerId] = nil;
             enemyTargetClocks[enemyServerId] = nil;
-        elseif (targetServerId == serverId) then
+        elseif liveTargetKnownByServerId[enemyServerId] ~= true and targetServerId == serverId then
             return true;
         end
     end

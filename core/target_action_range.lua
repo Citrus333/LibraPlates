@@ -1,6 +1,7 @@
 local targetActionRange = {};
 local log = require('core.log');
 local petCommands = require('data.pet_commands');
+local petSkills = require('data.pet_skills');
 local perfMeter = require('core.perf_meter');
 local resourceCache = {};
 local lastAction = nil;
@@ -449,6 +450,16 @@ local function BuildActionCommandLookup(category)
             end
         end
 
+        for id, skill in pairs(petSkills) do
+            local normalized = NormalizeActionName(skill.name);
+            if (type(normalized) == 'string' and normalized ~= '') then
+                map[normalized] = {
+                    id = (tonumber(id) or 0) + 512,
+                    method = 'PetSkill',
+                };
+            end
+        end
+
         actionCommandNameCache[normalizedCategory] = map;
         return map;
     end
@@ -551,7 +562,7 @@ local function ResolveActionIdByName(category, actionName, allowFullScan)
         local candidateId = tonumber(entry.id);
         local candidateMethod = tostring(entry.method or '');
         if (resolvedCategory == petCommandCategory and candidateId ~= nil) then
-            return candidateId, 'PetCommand';
+            return candidateId, candidateMethod ~= '' and candidateMethod or 'PetCommand';
         end
         if (candidateId ~= nil and candidateMethod ~= '') then
             local idMethods = {
@@ -1251,7 +1262,14 @@ local function GetQueuedActionName(resource, category, actionId, resolvedId)
             return recordName;
         end
 
-        if (category == 2 or category == 7 or category == 9 or category == 16) then
+        -- Do not scan thousands of ability records on the packet thread just
+        -- to recover a display label. Direct ID and timer-ID lookups above are
+        -- sufficient for gameplay; retain the exhaustive fallback for explicit
+        -- cast debugging only.
+        if (
+            IsDebugEnabled() == true and
+            (category == 2 or category == 7 or category == 9 or category == 16)
+        ) then
             local timerRecord = ResolveRecordByTimerId(resourceManager, resolved);
             local timerName = ReadRecordDisplayName(timerRecord);
             if (type(timerName) == 'string' and timerName ~= '') then
@@ -1593,15 +1611,22 @@ local function ResolveActionResource(category, actionId, requireKnownMethods, sk
 
     if (category == petCommandCategory) then
         local resource = petCommands[actionId];
+        local method = 'PetCommand';
+
+        if (resource == nil) then
+            resource = petSkills[actionId - 512] or petSkills[actionId];
+            method = 'PetSkill';
+        end
+
         resourceCache[tostring(category) .. ':' .. tostring(actionId)] = {
             resource = resource,
-            method = 'PetCommand',
+            method = method,
             id = actionId,
             category = category,
             resolvedId = actionId,
         };
 
-        return resource, 'PetCommand', actionId;
+        return resource, method, actionId;
     end
 
     local key = tostring(category) .. ':' .. tostring(actionId);
@@ -2192,11 +2217,15 @@ local function ApplyQueuedAction(category, actionId, source, displayName, packet
         queuedType = 'mobskill';
     elseif (queuedMethod == 'GetItemById') then
         queuedType = 'item';
+    elseif (queuedMethod == 'PetSkill') then
+        queuedType = 'petskill';
     elseif (queuedMethod == 'PetCommand' or category == petCommandCategory) then
         queuedType = 'petcommand';
     elseif (category == 3) then
         queuedType = 'spell';
-    elseif (category == 2 or category == 7 or category == 9 or category == 16) then
+    elseif (category == 7) then
+        queuedType = 'weaponskill';
+    elseif (category == 2 or category == 9 or category == 16) then
         queuedType = 'ability';
     end
     local nameClock = os.clock();
@@ -2227,6 +2256,7 @@ local function ApplyQueuedAction(category, actionId, source, displayName, packet
         name = queuedName,
         resource = resolvedOk == true and queuedResource or nil,
         resourceMethod = queuedMethod,
+        actionType = queuedType,
         resolvedId = queuedResolvedId,
         updated = os.clock(),
     };

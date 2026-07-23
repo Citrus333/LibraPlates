@@ -38,9 +38,26 @@ local petPlate = {};
 local bstPetTimer = {};
 local jugIconTextureId = nil;
 local petStateIconTextureIds = {};
+local detachedFavorEffectTextureIds = {};
+local detachedFavorEffectStatusIds = {
+    carbuncle = 42,  -- Regen
+    diabolos = 43,   -- Refresh
+    fenrir = 611,    -- Magic Evasion Boost
+    garuda = 92,     -- Evasion Boost
+    ifrit = 410,     -- Saber Dance (Double Attack visual)
+    leviathan = 555, -- Magic Accuracy Boost
+    ramuh = 169,     -- Potency (critical-hit visual)
+    shiva = 190,     -- Magic Attack Boost
+    titan = 93,      -- Defense Boost
+    caitsith = 191,  -- Magic Defense Boost
+};
+local AVATAR_FAVOR_ABILITY_ID = 250;
+local AVATAR_FAVOR_RECAST_TIMER_ID = 176;
 local staticPanelEditDrag = nil;
 local DrawStaticPlateTexture = nil;
 local detachedSetupPreview = nil;
+local GetAvatarFavorStatusElapsed = nil;
+local GetAvatarFavorCooldownSeconds = nil;
 local petAnchorBone = 12;
 local petWorldOffsetY = 0.16;
 local wyvernRestingAnchorBone = 0;
@@ -135,7 +152,7 @@ local function GetPetStateIconTextureId(commandName)
         return petStateIconTextureIds[key];
     end
 
-    local jobFolder = (key == 'ward' or key == 'rage') and 'smn' or 'bst';
+    local jobFolder = (key == 'ward' or key == 'rage' or key == 'favor') and 'smn' or 'bst';
     petStateIconTextureIds[key] = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\pet\\' .. jobFolder .. '\\' .. key .. '.png'));
     return petStateIconTextureIds[key];
 end
@@ -164,6 +181,25 @@ local function CopySettingsWith(settings, overrides)
     return copy;
 end
 
+local function GetDetachedFavorEffectTextureId(avatarName)
+    local key = tostring(avatarName or ''):lower():gsub('[^%w]+', '');
+    local statusId = detachedFavorEffectStatusIds[key];
+
+    if (statusId ~= nil) then
+        local cacheKey = tostring(statusId);
+        if (detachedFavorEffectTextureIds[cacheKey] == nil) then
+            local path = addon.path .. '\\assets\\images\\pet\\smn\\detached\\' .. cacheKey .. '.png';
+            detachedFavorEffectTextureIds[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path)) or false;
+        end
+
+        if (detachedFavorEffectTextureIds[cacheKey] ~= false) then
+            return detachedFavorEffectTextureIds[cacheKey];
+        end
+    end
+
+    return nil;
+end
+
 local function ColorKey(color)
     if (type(color) ~= 'table') then
         return '';
@@ -177,31 +213,609 @@ local function ColorKey(color)
     }, ',');
 end
 
-local function BuildStaticPetBackground(targetingSettings, prefix, staticScale)
-    local settings = targetingSettings[prefix .. 'PetStaticBackgroundSettings'];
+local function TableSettingKey(settings, keys)
     if (type(settings) ~= 'table') then
-        local defaults = (globalDefaults.targeting or {})[prefix .. 'PetStaticBackgroundSettings'];
+        return '';
+    end
+
+    local parts = {};
+    for _, key in ipairs(keys or {}) do
+        local value = settings[key];
+        if (type(value) == 'table') then
+            parts[#parts + 1] = tostring(key) .. '=' .. ColorKey(value);
+        else
+            parts[#parts + 1] = tostring(key) .. '=' .. tostring(value);
+        end
+    end
+
+    return table.concat(parts, ',');
+end
+
+local function GetSmnPetArtworkFile(petName)
+    local normalizedName = tostring(petName or ''):gsub('[^%w]+', '');
+    if (normalizedName == '') then
+        return nil;
+    end
+
+    local spiritElement = normalizedName:match('^(.-)Spirit$');
+    local wanted = spiritElement ~= nil and spiritElement ~= ''
+        and ('Spirit_' .. spiritElement .. '.png')
+        or ('Avatar_' .. normalizedName .. '.png');
+    for _, fileName in ipairs(backgroundTextures.GetAvatarArtworkFiles() or {}) do
+        if (tostring(fileName):lower() == wanted:lower()) then
+            return tostring(fileName);
+        end
+    end
+
+    return nil;
+end
+
+local function GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, suffix)
+    local value = targetingSettings[settingsPrefix .. suffix];
+
+    if (value == nil and settingsPrefix ~= prefix) then
+        value = targetingSettings[prefix .. suffix];
+    end
+
+    return value;
+end
+
+local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefix, staticScale, petName)
+    local settings = GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticBackgroundSettings');
+    if (type(settings) ~= 'table') then
+        local defaults = (globalDefaults.targeting or {})[settingsPrefix .. 'PetStaticBackgroundSettings']
+            or (globalDefaults.targeting or {})[prefix .. 'PetStaticBackgroundSettings'];
         settings = type(defaults) == 'table' and defaults or backgroundDefaults;
     end
 
     local scaleInverse = 1 / math.max(0.10, tonumber(staticScale) or 1.0);
 
+    local textureName = settings.texture or backgroundDefaults.texture;
+    local usingAvatarArtwork = false;
+    if (prefix == 'smn' and settings.useAvatarArtwork ~= false) then
+        local avatarArtwork = GetSmnPetArtworkFile(petName);
+        if (avatarArtwork ~= nil) then
+            textureName = avatarArtwork;
+            usingAvatarArtwork = true;
+        end
+    end
+
+    local baseWidth = tonumber(settings.width) or backgroundDefaults.width;
+    local baseHeight = tonumber(settings.height) or backgroundDefaults.height;
+    local offsetX = tonumber(settings.offsetX) or backgroundDefaults.offsetX;
+    local offsetY = tonumber(settings.offsetY) or backgroundDefaults.offsetY;
+    local color = settings.color or backgroundDefaults.color;
+    local borderColor = settings.borderColor or backgroundDefaults.borderColor;
+    local borderSize = tonumber(settings.borderSize) or backgroundDefaults.borderSize;
+
+    if (usingAvatarArtwork == true) then
+        baseHeight = baseWidth * (256 / 600);
+        offsetX = 0;
+        offsetY = 0;
+        color = { 0.0, 0.0, 0.0, 0.0 };
+    end
+
     return {
         enabled = settings.enabled ~= false,
-        width = (tonumber(settings.width) or backgroundDefaults.width) * scaleInverse,
-        height = (tonumber(settings.height) or backgroundDefaults.height) * scaleInverse,
-        offsetX = (tonumber(settings.offsetX) or backgroundDefaults.offsetX) * scaleInverse,
-        offsetY = (tonumber(settings.offsetY) or backgroundDefaults.offsetY) * scaleInverse,
-        color = settings.color or backgroundDefaults.color,
-        borderColor = settings.borderColor or backgroundDefaults.borderColor,
-        borderSize = (tonumber(settings.borderSize) or backgroundDefaults.borderSize) * scaleInverse,
-        texture = settings.texture or backgroundDefaults.texture,
-        textureId = backgroundTextures.GetTextureId(settings.texture or backgroundDefaults.texture),
-        imageOpacity = settings.imageOpacity or backgroundDefaults.imageOpacity,
+        width = baseWidth * scaleInverse,
+        height = baseHeight * scaleInverse,
+        offsetX = offsetX * scaleInverse,
+        offsetY = offsetY * scaleInverse,
+        color = color,
+        borderColor = borderColor,
+        borderSize = borderSize * scaleInverse,
+        texture = textureName,
+        textureId = usingAvatarArtwork == true
+            and backgroundTextures.GetAvatarArtworkTextureId(textureName)
+            or backgroundTextures.GetTextureId(textureName),
+        imageOpacity = usingAvatarArtwork == true
+            and (tonumber(settings.avatarArtworkOpacity) or 100)
+            or (settings.imageOpacity or backgroundDefaults.imageOpacity),
+        avatarArtwork = usingAvatarArtwork,
+        avatarGemMeters = settings.avatarGemMeters,
+        avatarNameSettings = settings.avatarNameSettings,
+        avatarHpBarSettings = settings.avatarHpBarSettings,
+        avatarMpBarSettings = settings.avatarMpBarSettings,
+        avatarTpBarSettings = settings.avatarTpBarSettings,
+        avatarCastBarSettings = settings.avatarCastBarSettings,
+        avatarWardSettings = settings.avatarWardSettings,
+        avatarRageSettings = settings.avatarRageSettings,
+        avatarFavorSettings = settings.avatarFavorSettings,
+        scaleInverse = scaleInverse,
+        rawWidth = baseWidth,
+        rawHeight = baseHeight,
     };
 end
 
-local function BuildStaticPetTextureKey(prefix, petIndex, background)
+local function GetDetachedAvatarMeterNumber(settings, key, defaultValue)
+    local value = tonumber(settings[key]);
+    if (value == nil) then
+        return defaultValue;
+    end
+
+    return value;
+end
+
+local function BuildDetachedAvatarMeterBar(background, settings, defaults)
+    local scaleInverse = tonumber(background.scaleInverse) or 1;
+    local baseX = tonumber(background.offsetX) or 0;
+    local baseY = tonumber(background.offsetY) or 0;
+    local rawWidth = tonumber(background.rawWidth) or 220;
+    local rawHeight = tonumber(background.rawHeight) or 74;
+    local texture = settings.texture or defaults.texture or 'Solid';
+    local borderSize = math.floor((GetDetachedAvatarMeterNumber(settings, 'borderSize', defaults.borderSize) * scaleInverse) + 0.5);
+    local borderColor = settings.borderColor or defaults.borderColor;
+
+    -- Detached meter defaults historically stored a transparent border color.
+    -- The RGB picker preserves that alpha, so increasing Border size could
+    -- never produce a visible border. Keep size 0 disabled, but make a chosen
+    -- positive border visible without mutating the user's saved settings.
+    if (borderSize > 0 and type(borderColor) == 'table' and (tonumber(borderColor[4]) or 0) <= 0) then
+        borderColor = {
+            tonumber(borderColor[1]) or 0,
+            tonumber(borderColor[2]) or 0,
+            tonumber(borderColor[3]) or 0,
+            1.0,
+        };
+    end
+
+    return {
+        width = math.max(1, GetDetachedAvatarMeterNumber(settings, 'width', defaults.width) * scaleInverse),
+        height = math.max(1, GetDetachedAvatarMeterNumber(settings, 'height', defaults.height) * scaleInverse),
+        offsetX = baseX + (GetDetachedAvatarMeterNumber(settings, 'offsetX', defaults.offsetX) * scaleInverse),
+        offsetY = baseY + (GetDetachedAvatarMeterNumber(settings, 'offsetY', defaults.offsetY) * scaleInverse),
+        color = settings.color or defaults.color,
+        backgroundColor = settings.backgroundColor or defaults.backgroundColor,
+        borderColor = borderColor,
+        borderSize = borderSize,
+        cornerRadius = math.max(0, GetDetachedAvatarMeterNumber(settings, 'cornerRadius', defaults.cornerRadius) * scaleInverse),
+        texture = texture,
+        textureId = barTextures.GetTextureId(texture),
+        textureStrength = GetDetachedAvatarMeterNumber(settings, 'textureStrength', defaults.textureStrength),
+        rawWidth = rawWidth,
+        rawHeight = rawHeight,
+    };
+end
+
+local function BuildDetachedAvatarResourceText(settings, label, value, maxValue, percent)
+    local parts = {};
+
+    if (settings.showValue == true and value ~= nil) then
+        if (maxValue ~= nil and tonumber(maxValue) ~= nil and tonumber(maxValue) > 0) then
+            local prefix = label == 'TP' and '' or (label .. ' ');
+            parts[#parts + 1] = prefix .. tostring(value) .. '/' .. tostring(maxValue);
+        else
+            parts[#parts + 1] = tostring(value);
+        end
+    end
+
+    if (settings.showPercent == true) then
+        parts[#parts + 1] = tostring(math.floor(math.max(0, math.min(100, tonumber(percent) or 0)) + 0.5)) .. '%';
+    end
+
+    return table.concat(parts, ' ');
+end
+
+local function ApplyDetachedAvatarWidgets(plateData, background)
+    if (background == nil or background.avatarArtwork ~= true) then
+        return;
+    end
+
+    local detachedDefaults = ((globalDefaults.targeting or {}).smnPetStaticBackgroundSettings or {});
+    local nameSettings = background.avatarNameSettings or detachedDefaults.avatarNameSettings or {};
+    local hpSettings = background.avatarHpBarSettings or detachedDefaults.avatarHpBarSettings or {};
+    local mpSettings = background.avatarMpBarSettings or detachedDefaults.avatarMpBarSettings or {};
+    local tpSettings = background.avatarTpBarSettings or detachedDefaults.avatarTpBarSettings or {};
+    local castSettings = background.avatarCastBarSettings or detachedDefaults.avatarCastBarSettings or {};
+    local scaleInverse = tonumber(background.scaleInverse) or 1;
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+
+    if (nameSettings.enabled == false) then
+        plateData.name = '';
+    else
+        plateData.name = tostring(plateData.detachedAvatarName or plateData.name or '');
+        plateData.nameOffsetX = GetDetachedAvatarMeterNumber(nameSettings, 'offsetX', tonumber(nameSettings.positionX) or 45) * scaleInverse;
+        plateData.nameOffsetY = GetDetachedAvatarMeterNumber(nameSettings, 'offsetY', tonumber(nameSettings.positionY) or -25) * scaleInverse;
+        plateData.nameFontSize = math.max(1, GetDetachedAvatarMeterNumber(nameSettings, 'textSize', tonumber(nameSettings.fontSize) or 14) * scaleInverse);
+        plateData.nameColor = nameSettings.color or { 1.0, 1.0, 1.0, 1.0 };
+        plateData.nameOutlineColor = nameSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 };
+        plateData.nameOutlineSize = math.max(0, GetDetachedAvatarMeterNumber(nameSettings, 'outlineSize', 2) * scaleInverse);
+        plateData.nameOutlineEnabled = plateData.nameOutlineSize > 0;
+        plateData.nameAnchorTo = nameSettings.anchorTo or 'Plate';
+        plateData.nameAnchorPoint = nameSettings.anchorPoint or 'Center';
+        plateData.forceName = true;
+    end
+
+    local hpPercent = math.max(0, math.min(100, tonumber(plateData.hp) or 0));
+    local hpColor = hpSettings.color or { 0.20, 0.95, 0.34, 0.95 };
+    local hpLowActive = hpSettings.lowColorEnabled == true and hpPercent <= (tonumber(hpSettings.lowColorPercent) or 25);
+    if (hpLowActive == true) then
+        hpColor = hpSettings.lowColor or hpColor;
+    end
+
+    plateData.hpBar = CopySettingsWith(plateData.hpBar, {
+        enabled = hpSettings.enabled ~= false,
+        width = math.max(1, GetDetachedAvatarMeterNumber(hpSettings, 'width', 150) * scaleInverse),
+        height = math.max(1, GetDetachedAvatarMeterNumber(hpSettings, 'height', 12) * scaleInverse),
+        offsetX = GetDetachedAvatarMeterNumber(hpSettings, 'offsetX', tonumber(hpSettings.positionX) or 45) * scaleInverse,
+        offsetY = GetDetachedAvatarMeterNumber(hpSettings, 'offsetY', tonumber(hpSettings.positionY) or -2) * scaleInverse,
+        anchorTo = hpSettings.anchorTo or 'Plate',
+        anchorPoint = hpSettings.anchorPoint or 'Center',
+        color = hpColor,
+        backgroundColor = hpSettings.backgroundColor or { 0.02, 0.02, 0.02, 0.70 },
+        borderColor = hpSettings.borderColor or { 0.0, 0.0, 0.0, 0.0 },
+        borderSize = GetDetachedAvatarMeterNumber(hpSettings, 'borderSize', 0) * scaleInverse,
+        cornerRadius = GetDetachedAvatarMeterNumber(hpSettings, 'cornerRadius', 3) * scaleInverse,
+        texture = hpSettings.texture or 'Solid',
+        textureId = barTextures.GetTextureId(hpSettings.texture or 'Solid'),
+        textureStrength = GetDetachedAvatarMeterNumber(hpSettings, 'textureStrength', 100),
+        animationEnabled = hpLowActive == true and hpSettings.lowAnimationEnabled == true,
+        animationTextureId = barAnimations.GetTextureId(hpSettings.lowAnimation),
+        animationSpeed = tonumber(hpSettings.lowAnimationSpeed) or 40,
+        animationColor = hpSettings.lowAnimationColor,
+        showAtPercent = 100,
+        text = hpSettings.showPercent == true
+            and (tostring(math.floor(hpPercent + 0.5)) .. '%')
+            or '',
+        textOffsetX = GetDetachedAvatarMeterNumber(hpSettings, 'textOffsetX', 0) * scaleInverse,
+        textOffsetY = GetDetachedAvatarMeterNumber(hpSettings, 'textOffsetY', 0) * scaleInverse,
+        fontFamily = fonts.GetRole(globalSettings, hpSettings.useSmallFont == true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, hpSettings.useSmallFont == true),
+        fontSize = math.max(1, GetDetachedAvatarMeterNumber(hpSettings, 'fontSize', 7) * scaleInverse),
+        textColor = hpSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+        textOutlineEnabled = hpSettings.textOutlineEnabled == true,
+        textOutlineColor = hpSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        textOutlineSize = GetDetachedAvatarMeterNumber(hpSettings, 'textOutlineSize', 1) * scaleInverse,
+    });
+
+    local mpPercent = math.max(0, math.min(100, tonumber(plateData.mp) or 0));
+    local mpColor = mpSettings.color or { 0.70, 0.90, 0.45, 1.0 };
+    local mpLowActive = mpSettings.lowColorEnabled == true and mpPercent <= (tonumber(mpSettings.lowColorPercent) or 25);
+    if (mpLowActive == true) then
+        mpColor = mpSettings.lowColor or mpColor;
+    end
+
+    plateData.mpBar = CopySettingsWith(plateData.mpBar, {
+        enabled = mpSettings.enabled ~= false and (
+            plateData.detachedSmnPetType == 'Spirit' or
+            plateData.detachedAvatarSetupPreview == true
+        ),
+        width = math.max(1, GetDetachedAvatarMeterNumber(mpSettings, 'width', 150) * scaleInverse),
+        height = math.max(1, GetDetachedAvatarMeterNumber(mpSettings, 'height', 10) * scaleInverse),
+        offsetX = GetDetachedAvatarMeterNumber(mpSettings, 'offsetX', 45) * scaleInverse,
+        offsetY = GetDetachedAvatarMeterNumber(mpSettings, 'offsetY', 52) * scaleInverse,
+        anchorTo = mpSettings.anchorTo or 'Plate',
+        anchorPoint = mpSettings.anchorPoint or 'Center',
+        color = mpColor,
+        backgroundColor = mpSettings.backgroundColor or { 0.02, 0.02, 0.02, 0.70 },
+        borderColor = mpSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+        borderSize = GetDetachedAvatarMeterNumber(mpSettings, 'borderSize', 0) * scaleInverse,
+        cornerRadius = GetDetachedAvatarMeterNumber(mpSettings, 'cornerRadius', 3) * scaleInverse,
+        texture = mpSettings.texture or 'Solid',
+        textureId = barTextures.GetTextureId(mpSettings.texture or 'Solid'),
+        textureStrength = GetDetachedAvatarMeterNumber(mpSettings, 'textureStrength', 100),
+        animationEnabled = mpLowActive == true and mpSettings.lowAnimationEnabled == true,
+        animationTextureId = barAnimations.GetTextureId(mpSettings.lowAnimation),
+        animationSpeed = tonumber(mpSettings.lowAnimationSpeed) or 40,
+        animationColor = mpSettings.lowAnimationColor,
+        showAtPercent = GetDetachedAvatarMeterNumber(mpSettings, 'showAtPercent', 100),
+        text = mpSettings.showPercent == true
+            and (tostring(math.floor(mpPercent + 0.5)) .. '%')
+            or '',
+        textOffsetX = GetDetachedAvatarMeterNumber(mpSettings, 'textOffsetX', 0) * scaleInverse,
+        textOffsetY = GetDetachedAvatarMeterNumber(mpSettings, 'textOffsetY', 0) * scaleInverse,
+        fontFamily = fonts.GetRole(globalSettings, mpSettings.useSmallFont == true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, mpSettings.useSmallFont == true),
+        fontSize = math.max(1, GetDetachedAvatarMeterNumber(mpSettings, 'fontSize', 7) * scaleInverse),
+        textColor = mpSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+        textOutlineEnabled = mpSettings.textOutlineEnabled == true,
+        textOutlineColor = mpSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        textOutlineSize = GetDetachedAvatarMeterNumber(mpSettings, 'textOutlineSize', 1) * scaleInverse,
+    });
+
+    local tpPercent = math.max(0, math.min(300, tonumber(plateData.tp) or 0));
+    local tpColor = tpSettings.color or { 0.0, 0.55, 0.95, 1.0 };
+    if (tpPercent >= (tonumber(tpSettings.showAtPercent) or 300)) then
+        tpColor = tpSettings.fullColor or tpColor;
+    end
+
+    plateData.tpBar = CopySettingsWith(plateData.tpBar, {
+        enabled = tpSettings.enabled ~= false,
+        width = math.max(1, GetDetachedAvatarMeterNumber(tpSettings, 'width', 150) * scaleInverse),
+        height = math.max(1, GetDetachedAvatarMeterNumber(tpSettings, 'height', 10) * scaleInverse),
+        offsetX = GetDetachedAvatarMeterNumber(tpSettings, 'offsetX', tonumber(tpSettings.positionX) or 45) * scaleInverse,
+        offsetY = GetDetachedAvatarMeterNumber(tpSettings, 'offsetY', tonumber(tpSettings.positionY) or 16) * scaleInverse,
+        anchorTo = tpSettings.anchorTo or 'Plate',
+        anchorPoint = tpSettings.anchorPoint or 'Center',
+        color = tpColor,
+        color2 = tpSettings.color2,
+        color3 = tpSettings.color3,
+        backgroundColor = tpSettings.backgroundColor or { 0.02, 0.02, 0.02, 0.70 },
+        borderColor = tpSettings.borderColor or { 0.0, 0.0, 0.0, 0.0 },
+        borderSize = GetDetachedAvatarMeterNumber(tpSettings, 'borderSize', 0) * scaleInverse,
+        cornerRadius = GetDetachedAvatarMeterNumber(tpSettings, 'cornerRadius', 3) * scaleInverse,
+        texture = tpSettings.texture or 'Solid',
+        textureId = barTextures.GetTextureId(tpSettings.texture or 'Solid'),
+        textureStrength = GetDetachedAvatarMeterNumber(tpSettings, 'textureStrength', 100),
+        showAtPercent = GetDetachedAvatarMeterNumber(tpSettings, 'showAtPercent', 0),
+        segmented = tpSettings.segmented == true,
+        segmentGap = GetDetachedAvatarMeterNumber(tpSettings, 'segmentGap', 6) * scaleInverse,
+        text = BuildDetachedAvatarResourceText(tpSettings, 'TP', plateData.detachedAvatarTp, 3000, tpPercent),
+        textOffsetX = GetDetachedAvatarMeterNumber(tpSettings, 'textOffsetX', 0) * scaleInverse,
+        textOffsetY = GetDetachedAvatarMeterNumber(tpSettings, 'textOffsetY', 0) * scaleInverse,
+        fontFamily = fonts.GetRole(globalSettings, tpSettings.useSmallFont == true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, tpSettings.useSmallFont == true),
+        fontSize = math.max(1, GetDetachedAvatarMeterNumber(tpSettings, 'fontSize', 7) * scaleInverse),
+        textColor = tpSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+        textOutlineEnabled = tpSettings.textOutlineEnabled == true,
+        textOutlineColor = tpSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        textOutlineSize = GetDetachedAvatarMeterNumber(tpSettings, 'textOutlineSize', 1) * scaleInverse,
+    });
+
+    local detachedCastBar = plateData.detachedAvatarCastBar;
+    if (detachedCastBar == nil and plateData.detachedAvatarSetupPreview == true) then
+        detachedCastBar = {
+            enabled = true,
+            text = 'Stone',
+            -- Use Stone I's actual spell artwork for the detached setup preview.
+            iconTextureId = castSettings.showSpellIcon == true
+                and spellIconTextures.GetTextureId(159)
+                or nil,
+        };
+        plateData.detachedAvatarCast = 50;
+    end
+
+    if (detachedCastBar == nil) then
+        plateData.castBar = nil;
+    else
+        plateData.cast = tonumber(plateData.detachedAvatarCast) or tonumber(plateData.cast) or 0;
+        plateData.castBar = CopySettingsWith(detachedCastBar, {
+            enabled = castSettings.enabled ~= false,
+            width = math.max(1, GetDetachedAvatarMeterNumber(castSettings, 'width', 150) * scaleInverse),
+            height = math.max(1, GetDetachedAvatarMeterNumber(castSettings, 'height', 10) * scaleInverse),
+            offsetX = GetDetachedAvatarMeterNumber(castSettings, 'offsetX', 45) * scaleInverse,
+            offsetY = GetDetachedAvatarMeterNumber(castSettings, 'offsetY', 34) * scaleInverse,
+            anchorTo = castSettings.anchorTo or 'Plate',
+            anchorPoint = castSettings.anchorPoint or 'Center',
+            color = castSettings.color or { 0.95, 0.75, 0.20, 1.0 },
+            backgroundColor = castSettings.backgroundColor or { 0.02, 0.02, 0.02, 0.70 },
+            borderColor = castSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
+            borderSize = GetDetachedAvatarMeterNumber(castSettings, 'borderSize', 0) * scaleInverse,
+            cornerRadius = GetDetachedAvatarMeterNumber(castSettings, 'cornerRadius', 3) * scaleInverse,
+            texture = castSettings.texture or 'Solid',
+            textureId = barTextures.GetTextureId(castSettings.texture or 'Solid'),
+            text = castSettings.showSpellName ~= false and tostring(detachedCastBar.text or '') or '',
+            textOffsetX = GetDetachedAvatarMeterNumber(castSettings, 'textOffsetX', 0) * scaleInverse,
+            textOffsetY = GetDetachedAvatarMeterNumber(castSettings, 'textOffsetY', 0) * scaleInverse,
+            fontFamily = fonts.GetRole(globalSettings, castSettings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, castSettings.useSmallFont == true),
+            fontSize = math.max(1, GetDetachedAvatarMeterNumber(castSettings, 'fontSize', 8) * scaleInverse),
+            textColor = castSettings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = castSettings.textOutlineEnabled == true,
+            textOutlineColor = castSettings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = GetDetachedAvatarMeterNumber(castSettings, 'textOutlineSize', 1) * scaleInverse,
+            iconTextureId = castSettings.showSpellIcon == true and detachedCastBar.iconTextureId or nil,
+            iconSize = GetDetachedAvatarMeterNumber(castSettings, 'spellIconSize', 16) * scaleInverse,
+            iconOffsetX = GetDetachedAvatarMeterNumber(castSettings, 'spellIconOffsetX', -88) * scaleInverse,
+            iconOffsetY = GetDetachedAvatarMeterNumber(castSettings, 'spellIconOffsetY', 0) * scaleInverse,
+            separateLabelOffsets = castSettings.showSpellIcon == true and detachedCastBar.iconTextureId ~= nil,
+        });
+    end
+end
+
+local function AddDetachedAvatarGemMeters(plateData, background)
+    if (background == nil or background.avatarArtwork ~= true) then
+        return;
+    end
+
+    local originalBars = plateData.extraBars or {};
+    local sourceBars = {};
+    local retainedBars = {};
+
+    for _, bar in ipairs(originalBars) do
+        local kind = tostring(bar.kind or ''):lower();
+        if (kind == 'rage' or kind == 'ward' or kind == 'favor') then
+            sourceBars[kind] = bar;
+        else
+            retainedBars[#retainedBars + 1] = bar;
+        end
+    end
+
+    -- Detached Avatar meters have their own data source.  Do not make their
+    -- visibility or progress depend on whether the normal pet widgets happen
+    -- to be enabled or present in the source plate.
+    if (type(plateData.detachedAvatarBars) == 'table') then
+        sourceBars = {};
+        for _, bar in ipairs(plateData.detachedAvatarBars) do
+            local kind = tostring(bar.kind or ''):lower();
+            if (kind == 'rage' or kind == 'ward' or kind == 'favor') then
+                sourceBars[kind] = bar;
+            end
+        end
+    end
+
+    -- The setup preview must provide visible sample text independently of the
+    -- live Blood Pact recast state, which may be Ready and therefore textless.
+    if (plateData.detachedAvatarSetupPreview == true) then
+        sourceBars.rage = {
+            kind = 'rage',
+            progress = 50,
+            text = '30s',
+        };
+    end
+
+    local detachedDefaults = ((globalDefaults.targeting or {}).smnPetStaticBackgroundSettings or {});
+    local wardSettings = background.avatarWardSettings or detachedDefaults.avatarWardSettings or {};
+    local rageSettings = background.avatarRageSettings or detachedDefaults.avatarRageSettings or {};
+    local favorSettings = background.avatarFavorSettings or detachedDefaults.avatarFavorSettings or {};
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local scaleInverse = tonumber(background.scaleInverse) or 1;
+    local rawWidth = tonumber(background.rawWidth) or 220;
+    local rawHeight = tonumber(background.rawHeight) or 74;
+    local defaultMeterWidth = rawWidth * 0.088;
+    local defaultMeterHeight = rawHeight * 0.265;
+
+    local gemLayout = {
+        rage = BuildDetachedAvatarMeterBar(background, rageSettings, {
+            width = defaultMeterWidth,
+            height = defaultMeterHeight,
+            offsetX = (0.450 - 0.5) * rawWidth,
+            offsetY = (0.730 - 0.5) * rawHeight,
+            color = { 1.0, 0.12, 0.12, 0.92 },
+            backgroundColor = { 0.02, 0.02, 0.02, 0.70 },
+            borderColor = { 0.0, 0.0, 0.0, 0.0 },
+            borderSize = 0,
+            cornerRadius = defaultMeterWidth * 0.18,
+            texture = 'Solid',
+            textureStrength = 100,
+        }),
+        ward = BuildDetachedAvatarMeterBar(background, wardSettings, {
+            width = defaultMeterWidth,
+            height = defaultMeterHeight,
+            offsetX = (0.642 - 0.5) * rawWidth,
+            offsetY = (0.735 - 0.5) * rawHeight,
+            color = { 0.12, 0.55, 1.0, 0.92 },
+            backgroundColor = { 0.02, 0.02, 0.02, 0.70 },
+            borderColor = { 0.0, 0.0, 0.0, 0.0 },
+            borderSize = 0,
+            cornerRadius = defaultMeterWidth * 0.18,
+            texture = 'Solid',
+            textureStrength = 100,
+        }),
+    };
+
+    for _, kind in ipairs({ 'rage', 'ward' }) do
+        local source = sourceBars[kind];
+        local layout = gemLayout[kind];
+        local settings = kind == 'rage' and rageSettings or wardSettings;
+        local displayMode = tostring(settings.labelDisplayMode or 'None');
+
+        if (source ~= nil and layout ~= nil and settings.enabled ~= false) then
+            retainedBars[#retainedBars + 1] = {
+                kind = 'detached_avatar_' .. kind,
+                enabled = true,
+                progress = tonumber(source.progress) or 0,
+                width = layout.width,
+                height = layout.height,
+                offsetX = layout.offsetX,
+                offsetY = layout.offsetY,
+                color = layout.color,
+                backgroundColor = layout.backgroundColor,
+                borderColor = layout.borderColor,
+                borderSize = layout.borderSize,
+                cornerRadius = layout.cornerRadius,
+                textureId = layout.textureId,
+                textureStrength = layout.textureStrength,
+                fillDirection = settings.fillDirection or 'Bottom to top',
+                text = settings.showPercent ~= false and tostring(source.text or '') or '',
+                labelText = displayMode == 'Text' and (kind == 'rage' and 'Rage' or 'Ward') or '',
+                iconTextureId = displayMode == 'Icon' and GetPetStateIconTextureId(kind) or nil,
+                iconSize = GetDetachedAvatarMeterNumber(settings, 'labelIconSize', 14) * scaleInverse,
+                iconOffsetX = GetDetachedAvatarMeterNumber(settings, 'labelIconOffsetX', 0) * scaleInverse,
+                iconOffsetY = GetDetachedAvatarMeterNumber(settings, 'labelIconOffsetY', 0) * scaleInverse,
+                separateLabelOffsets = displayMode ~= 'None',
+                fontFamily = fonts.GetRole(globalSettings, settings.useSmallFont == true),
+                fontFlags = fonts.GetRoleFlags(globalSettings, settings.useSmallFont == true),
+                fontSize = math.max(1, GetDetachedAvatarMeterNumber(settings, 'fontSize', 7) * scaleInverse),
+                textColor = settings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+                textOutlineEnabled = settings.textOutlineEnabled == true,
+                textOutlineSize = GetDetachedAvatarMeterNumber(settings, 'textOutlineSize', 1) * scaleInverse,
+                textOutlineColor = settings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+                textOffsetX = GetDetachedAvatarMeterNumber(settings, 'textOffsetX', 0) * scaleInverse,
+                textOffsetY = GetDetachedAvatarMeterNumber(settings, 'textOffsetY', 0) * scaleInverse,
+            };
+        end
+    end
+
+    local favorActive = plateData.detachedAvatarFavorActive == true;
+    local favorCooldownSeconds = math.max(0, tonumber(plateData.detachedAvatarFavorCooldownSeconds) or 0);
+    if (favorSettings.enabled ~= false and favorActive == true) then
+        local avatarName = plateData.detachedAvatarFavorAvatarName;
+        local hasPet = plateData.detachedAvatarHasPet == true;
+        local favorTextureId = nil;
+
+        if (hasPet == true and tostring(avatarName or '') ~= '') then
+            favorTextureId = GetDetachedFavorEffectTextureId(avatarName);
+        elseif (hasPet ~= true) then
+            favorTextureId = GetPetStateIconTextureId('favor');
+        end
+
+        if (favorTextureId ~= nil) then
+            plateData.icons = plateData.icons or {};
+            plateData.icons[#plateData.icons + 1] = {
+                kind = 'detachedAvatarFavor',
+                textureId = favorTextureId,
+                size = math.max(1, GetDetachedAvatarMeterNumber(
+                    favorSettings,
+                    'iconSize',
+                    tonumber(favorSettings.labelIconSize) or 20
+                ) * scaleInverse),
+                offsetX = GetDetachedAvatarMeterNumber(favorSettings, 'offsetX', 72) * scaleInverse,
+                offsetY = GetDetachedAvatarMeterNumber(favorSettings, 'offsetY', 17) * scaleInverse,
+                anchorTo = favorSettings.anchorTo or 'Plate',
+                anchorPoint = favorSettings.anchorPoint or 'Center',
+            };
+        end
+    elseif (
+        favorSettings.enabled ~= false and
+        favorSettings.showCooldown ~= false and
+        plateData.detachedAvatarHasPet ~= true
+    ) then
+        local favorText = favorCooldownSeconds > 0
+            and statusTimerFormat.Format(favorCooldownSeconds)
+            or 'Ready';
+        local iconSize = GetDetachedAvatarMeterNumber(favorSettings, 'iconSize', 20);
+
+        plateData.texts = plateData.texts or {};
+        plateData.texts[#plateData.texts + 1] = {
+            kind = 'detachedAvatarFavorCooldown',
+            text = favorText,
+            align = 'center',
+            offsetX = (
+                GetDetachedAvatarMeterNumber(favorSettings, 'offsetX', 72) +
+                GetDetachedAvatarMeterNumber(favorSettings, 'cooldownOffsetX', 0)
+            ) * scaleInverse,
+            offsetY = (
+                GetDetachedAvatarMeterNumber(favorSettings, 'offsetY', 17) +
+                (iconSize * 0.5) + 1 +
+                GetDetachedAvatarMeterNumber(favorSettings, 'cooldownOffsetY', 1)
+            ) * scaleInverse,
+            anchorTo = favorSettings.anchorTo or 'Plate',
+            anchorPoint = favorSettings.anchorPoint or 'Center',
+            fontFamily = fonts.GetRole(globalSettings, favorSettings.cooldownUseSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, favorSettings.cooldownUseSmallFont == true),
+            fontSize = math.max(8, GetDetachedAvatarMeterNumber(favorSettings, 'cooldownFontSize', 8) * scaleInverse),
+            color = favorSettings.cooldownTextColor or { 1.0, 1.0, 1.0, 1.0 },
+            outlineEnabled = (tonumber(favorSettings.cooldownOutlineSize) or 0) > 0,
+            outlineColor = favorSettings.cooldownOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            outlineSize = GetDetachedAvatarMeterNumber(favorSettings, 'cooldownOutlineSize', 1) * scaleInverse,
+        };
+    end
+
+    plateData.extraBars = retainedBars;
+end
+
+local function BuildStaticPetBarsKey(plateData)
+    local parts = {};
+
+    for _, bar in ipairs((plateData or {}).extraBars or {}) do
+        local kind = tostring(bar.kind or '');
+        if (
+            kind == 'detached_avatar_rage' or
+            kind == 'detached_avatar_ward'
+        ) then
+            parts[#parts + 1] = table.concat({
+                kind,
+                tostring(math.floor(((tonumber(bar.progress) or 0) * 1000) + 0.5)),
+                tostring(bar.text or ''),
+            }, ':');
+        end
+    end
+
+    return table.concat(parts, ',');
+end
+
+local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
     return table.concat({
         tostring(prefix) .. '-pet-static',
         tostring(petIndex),
@@ -215,17 +829,106 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background)
         'color=' .. ColorKey(background.color),
         'border=' .. ColorKey(background.borderColor),
         'bs=' .. tostring(background.borderSize),
+        'avatarMeters=' .. TableSettingKey(background.avatarGemMeters or {}, {
+            'rageColor', 'rageBackgroundColor', 'rageBorderColor', 'rageBorderSize',
+            'rageWidth', 'rageHeight', 'ragePositionX', 'ragePositionY',
+            'rageTexture', 'rageTextureStrength', 'rageCornerRadius',
+            'rageShowText', 'rageFontSize', 'rageFontColor', 'rageOutlineSize',
+            'rageOutlineColor', 'rageOffsetX', 'rageOffsetY',
+            'wardColor', 'wardBackgroundColor', 'wardBorderColor', 'wardBorderSize',
+            'wardWidth', 'wardHeight', 'wardPositionX', 'wardPositionY',
+            'wardTexture', 'wardTextureStrength', 'wardCornerRadius',
+            'wardShowText', 'wardFontSize', 'wardFontColor', 'wardOutlineSize',
+            'wardOutlineColor', 'wardOffsetX', 'wardOffsetY',
+            'favorColor', 'favorColor1', 'favorColor2', 'favorColor3',
+            'favorBackgroundColor', 'favorBorderColor', 'favorBorderSize',
+            'favorWidth', 'favorHeight', 'favorPositionX', 'favorPositionY',
+            'favorTexture', 'favorTextureStrength', 'favorCornerRadius',
+            'favorShowText', 'favorFontSize', 'favorFontColor', 'favorOutlineSize',
+            'favorOutlineColor', 'favorUseSmallFont',
+            'favorSpacing', 'favorPadding',
+        }),
+        'avatarName=' .. TableSettingKey(background.avatarNameSettings or {}, {
+            'enabled', 'offsetX', 'offsetY', 'textSize', 'color',
+            'outlineEnabled', 'outlineColor', 'outlineSize', 'anchorTo', 'anchorPoint',
+        }),
+        'avatarHp=' .. TableSettingKey(background.avatarHpBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent',
+            'textOffsetX', 'textOffsetY', 'useSmallFont', 'fontSize', 'textColor',
+            'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+            'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled',
+            'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor', 'anchorTo', 'anchorPoint',
+        }),
+        'avatarMp=' .. TableSettingKey(background.avatarMpBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'showPercent', 'showAtPercent',
+            'textOffsetX', 'textOffsetY', 'useSmallFont', 'fontSize', 'textColor',
+            'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+            'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled',
+            'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor', 'anchorTo', 'anchorPoint',
+        }),
+        'avatarTp=' .. TableSettingKey(background.avatarTpBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'color2', 'color3', 'fullColor',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent',
+            'segmented', 'segmentGap', 'textOffsetX', 'textOffsetY', 'useSmallFont',
+            'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor',
+            'textOutlineSize', 'anchorTo', 'anchorPoint',
+        }),
+        'avatarCast=' .. TableSettingKey(background.avatarCastBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'texture',
+            'showSpellName', 'textOffsetX', 'textOffsetY', 'useSmallFont',
+            'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor',
+            'textOutlineSize', 'showSpellIcon', 'spellIconSize',
+            'spellIconOffsetX', 'spellIconOffsetY', 'anchorTo', 'anchorPoint',
+        }),
+        'avatarWard=' .. TableSettingKey(background.avatarWardSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'fillDirection', 'labelDisplayMode',
+            'labelIconSize', 'labelIconOffsetX', 'labelIconOffsetY', 'showPercent',
+            'textOffsetX', 'textOffsetY', 'useSmallFont', 'fontSize', 'textColor',
+            'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+        }),
+        'avatarRage=' .. TableSettingKey(background.avatarRageSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'fillDirection', 'labelDisplayMode',
+            'labelIconSize', 'labelIconOffsetX', 'labelIconOffsetY', 'showPercent',
+            'textOffsetX', 'textOffsetY', 'useSmallFont', 'fontSize', 'textColor',
+            'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+        }),
+        'avatarFavor=' .. TableSettingKey(background.avatarFavorSettings or {}, {
+            'enabled', 'iconSize', 'offsetX', 'offsetY', 'showCooldown',
+            'cooldownOffsetX', 'cooldownOffsetY', 'cooldownUseSmallFont',
+            'cooldownFontSize', 'cooldownTextColor', 'cooldownOutlineColor',
+            'cooldownOutlineSize', 'anchorTo', 'anchorPoint',
+        }),
+        'favorState=' .. tostring(plateData.detachedAvatarFavorActive == true),
+        'favorHasPet=' .. tostring(plateData.detachedAvatarHasPet == true),
+        'favorAvatar=' .. tostring(plateData.detachedAvatarFavorAvatarName or plateData.detachedAvatarName or ''),
+        'bars=' .. BuildStaticPetBarsKey(plateData),
     }, '|');
 end
 
-local function GetStaticPetContentCrop(plateData, textureWidth, textureHeight)
+local function GetStaticPetContentCrop(plateData, textureWidth, textureHeight, ignoredKinds, includedKinds)
     local sourceW = math.max(1, tonumber(textureWidth) or 1024);
     local sourceH = math.max(1, tonumber(textureHeight) or 512);
     local minX, minY, maxX, maxY = nil, nil, nil, nil;
     local rects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     for _, rect in ipairs(rects or {}) do
-        if (rect.anchorOnly ~= true) then
+        local rectKind = tostring(rect.kind or '');
+        local ignored = type(ignoredKinds) == 'table' and ignoredKinds[rectKind] == true;
+        if (type(includedKinds) == 'table' and includedKinds[rectKind] ~= true) then
+            ignored = true;
+        end
+        if (rect.anchorOnly ~= true and ignored ~= true) then
             local x1 = tonumber(rect.x1) or tonumber(rect.drawX1);
             local y1 = tonumber(rect.y1) or tonumber(rect.drawY1);
             local x2 = tonumber(rect.x2) or tonumber(rect.drawX2);
@@ -253,16 +956,19 @@ local function GetStaticPetContentCrop(plateData, textureWidth, textureHeight)
     return minX, minY, math.max(1, maxX - minX), math.max(1, maxY - minY);
 end
 
-local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targetingSettings, windowId)
-    local staticScale = math.max(0.10, math.min(2.00, (tonumber(targetingSettings[prefix .. 'PetStaticScale']) or 35) / 100));
-    local staticBackground = BuildStaticPetBackground(targetingSettings, prefix, staticScale);
+local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targetingSettings, windowId, petName, settingsPrefix)
+    settingsPrefix = tostring(settingsPrefix or prefix);
+    local staticScale = math.max(0.10, math.min(2.00, (tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticScale')) or 35) / 100));
+    local staticBackground = BuildStaticPetBackground(targetingSettings, prefix, settingsPrefix, staticScale, petName);
     local staticPlateData = CopySettingsWith(plateData, {
         background = staticBackground,
     });
+    ApplyDetachedAvatarWidgets(staticPlateData, staticBackground);
+    AddDetachedAvatarGemMeters(staticPlateData, staticBackground);
     -- The source plate may already contain layout bounds for its normal Background
     -- widget. Detached frames have their own background and must rebuild those bounds.
     staticPlateData._elementRects = nil;
-    local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, BuildStaticPetTextureKey(prefix, petIndex, staticBackground));
+    local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, BuildStaticPetTextureKey(prefix, petIndex, staticBackground, staticPlateData));
     local staticTextureId = canvasTexture.GetTextureId(staticTexture);
 
     if (staticTextureId == nil or staticTextureWidth == nil or staticTextureHeight == nil) then
@@ -270,21 +976,34 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
     end
 
     local cropX, cropY, cropWidth, cropHeight = GetStaticPetContentCrop(staticPlateData, staticTextureWidth, staticTextureHeight);
+    local referenceX, referenceY, referenceWidth, referenceHeight = GetStaticPetContentCrop(
+        staticPlateData,
+        staticTextureWidth,
+        staticTextureHeight,
+        nil,
+        { background = true }
+    );
+    local cropCenterX = cropX + (cropWidth * 0.5);
+    local cropCenterY = cropY + (cropHeight * 0.5);
+    local referenceCenterX = referenceX + (referenceWidth * 0.5);
+    local referenceCenterY = referenceY + (referenceHeight * 0.5);
+    local positionOffsetX = (cropCenterX - referenceCenterX) * staticScale;
+    local positionOffsetY = (cropCenterY - referenceCenterY) * staticScale;
     local uv1 = { cropX / staticTextureWidth, cropY / staticTextureHeight };
     local uv2 = { (cropX + cropWidth) / staticTextureWidth, (cropY + cropHeight) / staticTextureHeight };
 
     DrawStaticPlateTexture(
         staticTextureId,
-        tonumber(targetingSettings[prefix .. 'PetStaticX']) or 170,
-        tonumber(targetingSettings[prefix .. 'PetStaticY']) or 690,
+        (tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticX')) or 170) + positionOffsetX,
+        (tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticY')) or 690) + positionOffsetY,
         cropWidth * staticScale,
         cropHeight * staticScale,
         windowId,
-        targetingSettings[prefix .. 'PetStaticEditFrame'] == true,
+        GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticEditFrame') == true,
         function(nextX, nextY, nextW)
-            targetingSettings[prefix .. 'PetStaticX'] = nextX;
-            targetingSettings[prefix .. 'PetStaticY'] = nextY;
-            targetingSettings[prefix .. 'PetStaticScale'] = math.max(10, math.min(200, math.floor(((tonumber(nextW) or cropWidth) / math.max(1, cropWidth) * 100) + 0.5)));
+            targetingSettings[settingsPrefix .. 'PetStaticX'] = nextX - positionOffsetX;
+            targetingSettings[settingsPrefix .. 'PetStaticY'] = nextY - positionOffsetY;
+            targetingSettings[settingsPrefix .. 'PetStaticScale'] = math.max(10, math.min(200, math.floor(((tonumber(nextW) or cropWidth) / math.max(1, cropWidth) * 100) + 0.5)));
             state.Save();
         end,
         uv1,
@@ -304,6 +1023,76 @@ local function HasLivePetForPrefix(prefix)
     end
 
     return false;
+end
+
+local function IsPlayerOnSmn()
+    return entities.GetPlayerMainJobId() == 15;
+end
+
+local function BuildSmnDetachedPlaceholderPlate()
+    local layoutStateName = 'Avatar';
+    local nameSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Name', nameDefaults);
+    local backgroundSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Background', backgroundDefaults);
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+
+    return {
+        hp = 0,
+        mp = 0,
+        tp = 0,
+        cast = 0,
+        background = {
+            enabled = backgroundSettings.enabled == true,
+            width = tonumber(backgroundSettings.width) or backgroundDefaults.width,
+            height = tonumber(backgroundSettings.height) or backgroundDefaults.height,
+            offsetX = tonumber(backgroundSettings.offsetX) or backgroundDefaults.offsetX,
+            offsetY = tonumber(backgroundSettings.offsetY) or backgroundDefaults.offsetY,
+            color = backgroundSettings.color or backgroundDefaults.color,
+            borderColor = backgroundSettings.borderColor or backgroundDefaults.borderColor,
+            borderSize = tonumber(backgroundSettings.borderSize) or backgroundDefaults.borderSize,
+            texture = backgroundSettings.texture or backgroundDefaults.texture,
+            textureId = backgroundTextures.GetTextureId(backgroundSettings.texture or backgroundDefaults.texture),
+            imageOpacity = backgroundSettings.imageOpacity or backgroundDefaults.imageOpacity,
+            anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
+            anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+        },
+        name = '',
+        nameFontFamily = fonts.GetRole(globalSettings, false),
+        nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
+        nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
+        nameColor = nameSettings.color or nameDefaults.color,
+        nameOutlineEnabled = (tonumber(nameSettings.outlineSize) or 0) > 0,
+        nameOutlineColor = nameSettings.outlineColor or nameDefaults.outlineColor,
+        nameOutlineSize = tonumber(nameSettings.outlineSize) or 0,
+        nameOffsetX = tonumber(nameSettings.offsetX) or nameDefaults.offsetX,
+        nameOffsetY = tonumber(nameSettings.offsetY) or nameDefaults.offsetY,
+        nameAnchorTo = nameSettings.anchorTo or nameDefaults.anchorTo,
+        nameAnchorPoint = nameSettings.anchorPoint or nameDefaults.anchorPoint,
+        hpBar = { enabled = false },
+        mpBar = { enabled = false },
+        tpBar = { enabled = false },
+        castBar = nil,
+        extraBars = {},
+    };
+end
+
+local function DrawSmnDetachedPlaceholder(targetingSettings, plateData)
+    if (
+        IsPlayerOnSmn() ~= true or
+        targetingSettings == nil or
+        tostring(targetingSettings.smnPetPlateMode or 'Normal') == 'Normal'
+    ) then
+        return;
+    end
+
+    DrawDetachedStaticPetFrame(
+        'smn',
+        'placeholder',
+        plateData or BuildSmnDetachedPlaceholderPlate(),
+        targetingSettings,
+        'static_smn_pet_placeholder',
+        'None',
+        'smnAvatar'
+    );
 end
 
 function petPlate.QueueDetachedSetupPreview(prefix, stateName, plateData)
@@ -337,20 +1126,50 @@ local function DrawQueuedDetachedSetupPreview()
 
     if (
         targetingSettings == nil or
-        targetingSettings[request.prefix .. 'PetStaticEditFrame'] ~= true or
+        GetDetachedPetSetting(
+            targetingSettings,
+            request.prefix,
+            request.prefix == 'smn' and (request.stateName == 'Spirit' and 'smnSpirit' or 'smnAvatar') or request.prefix,
+            'PetStaticEditFrame'
+        ) ~= true or
         tostring(targetingSettings[request.prefix .. 'PetPlateMode'] or 'Normal') == 'Normal'
     ) then
         return;
     end
 
     local previewKey = 'setup-' .. request.prefix .. '-' .. request.stateName;
+    local favorActive = false;
+    local favorCooldownSeconds = 0;
+
+    if (request.prefix == 'smn') then
+        favorActive = GetAvatarFavorStatusElapsed ~= nil
+            and select(1, GetAvatarFavorStatusElapsed()) == true;
+        favorCooldownSeconds = GetAvatarFavorCooldownSeconds ~= nil
+            and GetAvatarFavorCooldownSeconds()
+            or 0;
+    end
+
+    local previewPlateData = CopySettingsWith(request.plateData, {
+        detachedAvatarSetupPreview = request.prefix == 'smn',
+        detachedAvatarFavorActive = favorActive,
+        detachedAvatarFavorCooldownSeconds = favorCooldownSeconds,
+        detachedAvatarHasPet = false,
+        detachedAvatarFavorAvatarName = nil,
+    });
     DrawDetachedStaticPetFrame(
         request.prefix,
         previewKey,
-        request.plateData,
+        previewPlateData,
         targetingSettings,
-        'static_' .. request.prefix .. '_pet_setup'
+        'static_' .. request.prefix .. '_pet_setup',
+        request.prefix == 'smn'
+            and (request.stateName == 'Spirit' and 'LightSpirit' or 'Carbuncle')
+            or nil,
+        request.prefix == 'smn'
+            and (request.stateName == 'Spirit' and 'smnSpirit' or 'smnAvatar')
+            or request.prefix
     );
+    return request.prefix;
 end
 
 local readyBarDefaults = {
@@ -813,6 +1632,20 @@ local function GetBloodPactBarData(timerId)
     return math.max(0, math.min(100, ((maxTicks - ticks) / maxTicks) * 100)), FormatTimerSeconds(ticks / 60);
 end
 
+GetAvatarFavorCooldownSeconds = function()
+    local ticks = tonumber(abilityRecast.GetAbilityTimerByTimerId(AVATAR_FAVOR_RECAST_TIMER_ID)) or 0;
+
+    if (ticks <= 0 and abilityRecast.GetAbilityTimerByAbilityId ~= nil) then
+        ticks = tonumber(abilityRecast.GetAbilityTimerByAbilityId(AVATAR_FAVOR_ABILITY_ID)) or 0;
+    end
+
+    if (ticks <= 0) then
+        return 0;
+    end
+
+    return ticks / 60;
+end
+
 local function HideReadyTimerText(text)
     local value = tostring(text or '');
 
@@ -835,10 +1668,13 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
     local spellIconTextureId = nil;
 
     if (castBarSettings.showSpellIcon == true) then
-        spellIconTextureId = statusIconTextures.GetTextureId(castData.spellStatusId)
-            or spellIconTextures.GetGeoTextureId(castData.spellId)
+        -- Spirit casts need the spell artwork first.  The resource Status field
+        -- can point at a shared effect icon (for example Protect), which made
+        -- unrelated live casts all display that same status icon.
+        spellIconTextureId = spellIconTextures.GetTextureId(castData.spellId)
             or spellIconTextures.GetTextureId(spellIconId)
-            or spellIconTextures.GetTextureId(castData.spellId);
+            or spellIconTextures.GetGeoTextureId(castData.spellId)
+            or statusIconTextures.GetTextureId(castData.spellStatusId);
     end
 
     return {
@@ -1236,7 +2072,7 @@ local function FormatFavorCharge(seconds)
     return string.format('%d:%02d / 1:15', math.floor(seconds / 60), seconds % 60);
 end
 
-local function GetAvatarFavorStatusElapsed()
+GetAvatarFavorStatusElapsed = function()
     local active = false;
     local remainingSeconds = nil;
 
@@ -1315,17 +2151,19 @@ local function GetAvatarFavorBarData(pet)
     -- QueueSmnPet can also be called by preview/rebuild paths outside the
     -- normal world render pass.  Refresh here as well so those paths never
     -- lose the Favor bar merely because the shared state was not sampled yet.
-    if (UpdateAvatarFavorCharge(pet) ~= true or pet == nil or pet.petType ~= 'avatar') then
+    if (UpdateAvatarFavorCharge(pet) ~= true) then
         return nil, nil;
     end
 
     -- Favor is kept while Avatars are exchanged.  Preserve its accumulated
     -- charge; only a completed Blood Pact or a new Favor stance starts over.
-    local petServerId = tonumber(pet.serverId);
-    local petName = tostring(pet.name or '');
-    if (petServerId ~= nil and petServerId > 0) then
-        avatarFavorState.avatarServerId = petServerId;
-        avatarFavorState.avatarName = petName;
+    if (pet ~= nil and pet.petType == 'avatar') then
+        local petServerId = tonumber(pet.serverId);
+        local petName = tostring(pet.name or '');
+        if (petServerId ~= nil and petServerId > 0) then
+            avatarFavorState.avatarServerId = petServerId;
+            avatarFavorState.avatarName = petName;
+        end
     end
 
     local clampedChargeSeconds = math.min(
@@ -1333,6 +2171,23 @@ local function GetAvatarFavorBarData(pet)
         math.max(0, tonumber(avatarFavorState.chargeSeconds) or 0)
     );
     return (clampedChargeSeconds / AVATAR_FAVOR_MAX_CHARGE_SECONDS) * 100, FormatFavorCharge(clampedChargeSeconds);
+end
+
+local function BuildDetachedSmnMeterSources(pet)
+    local wardProgress, wardText = GetBloodPactBarData(174);
+    local rageProgress, rageText = GetBloodPactBarData(173);
+    return {
+        {
+            kind = 'ward',
+            progress = wardProgress,
+            text = tostring(wardText or ''),
+        },
+        {
+            kind = 'rage',
+            progress = rageProgress,
+            text = tostring(rageText or ''),
+        },
+    };
 end
 
 local function ResetAvatarFavorCharge()
@@ -1435,6 +2290,31 @@ function petPlate.HandleTextIn(e)
     end
 end
 
+local function AddSmnAvatarExtraBars(plateData, wardSettings, rageSettings, globalSettings)
+    plateData.extraBars = plateData.extraBars or {};
+
+    if (wardSettings.enabled == true) then
+        local wardProgress, wardText = GetBloodPactBarData(174);
+        local wardTimerText = HideReadyTimerText(wardText);
+        local wardBar = BuildExtraBar(wardSettings, wardBarDefaults, wardProgress, (wardSettings.showPercent ~= false) and wardTimerText or '', 'ward', 'ward', globalSettings, (tostring(wardSettings.labelDisplayMode or 'Text') == 'Text') and 'Ward' or '');
+
+        if (wardBar ~= nil) then
+            plateData.extraBars[#plateData.extraBars + 1] = wardBar;
+        end
+    end
+
+    if (rageSettings.enabled == true) then
+        local rageProgress, rageText = GetBloodPactBarData(173);
+        local rageTimerText = HideReadyTimerText(rageText);
+        local rageBar = BuildExtraBar(rageSettings, rageBarDefaults, rageProgress, (rageSettings.showPercent ~= false) and rageTimerText or '', 'rage', 'rage', globalSettings, (tostring(rageSettings.labelDisplayMode or 'Text') == 'Text') and 'Rage' or '');
+
+        if (rageBar ~= nil) then
+            plateData.extraBars[#plateData.extraBars + 1] = rageBar;
+        end
+    end
+
+end
+
 local function GetMousePosition()
     if (imgui.GetIO == nil) then
         return nil, nil;
@@ -1472,7 +2352,6 @@ local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, on
     end
 
     local id = tostring(windowId or 'static_pet');
-    local handleSize = 18;
     local x = tonumber(left) or 0;
     local y = tonumber(top) or 0;
     local w = math.max(1, tonumber(width) or 1);
@@ -1483,13 +2362,9 @@ local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, on
         staticPanelEditDrag = nil;
 
         local inRect = mouseX >= x and mouseX <= x + w and mouseY >= y and mouseY <= y + h;
-        local inRightHandle = mouseX >= x + w - handleSize and mouseX <= x + w and mouseY >= y + h - handleSize and mouseY <= y + h;
-        local inLeftHandle = mouseX >= x and mouseX <= x + handleSize and mouseY >= y + h - handleSize and mouseY <= y + h;
-
-        if (inRightHandle == true or inLeftHandle == true or inRect == true) then
+        if (inRect == true) then
             staticPanelEditDrag = {
                 id = id,
-                mode = inRightHandle == true and 'resize-right' or (inLeftHandle == true and 'resize-left' or 'move'),
             };
 
             if (imgui.ResetMouseDragDelta ~= nil) then
@@ -1504,16 +2379,7 @@ local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, on
         local dx, dy = GetMouseDragDelta();
 
         if (math.abs(dx) >= 0.5 or math.abs(dy) >= 0.5) then
-            if (staticPanelEditDrag.mode == 'move') then
-                onEdited(math.floor(x + (w * 0.5) + dx + 0.5), math.floor(y + (h * 0.5) + dy + 0.5), w);
-            elseif (staticPanelEditDrag.mode == 'resize-left') then
-                local right = x + w;
-                local nextW = math.max(20, w - dx);
-                onEdited(math.floor(right - (nextW * 0.5) + 0.5), math.floor(y + (h * 0.5) + 0.5), nextW);
-            else
-                local nextW = math.max(20, w + dx);
-                onEdited(math.floor(x + (nextW * 0.5) + 0.5), math.floor(y + (h * 0.5) + 0.5), nextW);
-            end
+            onEdited(math.floor(x + (w * 0.5) + dx + 0.5), math.floor(y + (h * 0.5) + dy + 0.5), w);
 
             if (imgui.ResetMouseDragDelta ~= nil) then
                 imgui.ResetMouseDragDelta(0);
@@ -1531,7 +2397,6 @@ local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, on
     local borderShadowColor = imgui.GetColorU32({ 0.0, 0.0, 0.0, 0.92 });
     local labelBackgroundColor = imgui.GetColorU32({ 0.0, 0.0, 0.0, 0.78 });
     local textColor = imgui.GetColorU32({ 1.0, 1.0, 1.0, 1.0 });
-    local handleColor = imgui.GetColorU32({ 1.0, 1.0, 1.0, 0.82 });
 
     if (staticPanelEditDrag ~= nil and staticPanelEditDrag.id == id) then
         drawList:AddRectFilled({ x, y }, { x + w, y + h }, fillColor);
@@ -1539,28 +2404,6 @@ local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, on
 
     drawList:AddRect({ x, y }, { x + w, y + h }, borderShadowColor, 0, 0, 6);
     drawList:AddRect({ x, y }, { x + w, y + h }, borderColor, 0, 0, 3);
-
-    if (drawList.AddTriangleFilled ~= nil) then
-        drawList:AddTriangleFilled(
-            { x + w, y + h - handleSize },
-            { x + w, y + h },
-            { x + w - handleSize, y + h },
-            handleColor
-        );
-        drawList:AddTriangleFilled(
-            { x, y + h - handleSize },
-            { x, y + h },
-            { x + handleSize, y + h },
-            handleColor
-        );
-        drawList:AddTriangle({ x + w, y + h - handleSize }, { x + w, y + h }, { x + w - handleSize, y + h }, borderColor, 2);
-        drawList:AddTriangle({ x, y + h - handleSize }, { x, y + h }, { x + handleSize, y + h }, borderColor, 2);
-    else
-        drawList:AddRectFilled({ x + w - handleSize, y + h - handleSize }, { x + w, y + h }, handleColor);
-        drawList:AddRect({ x + w - handleSize, y + h - handleSize }, { x + w, y + h }, borderColor, 0, 0, 2);
-        drawList:AddRectFilled({ x, y + h - handleSize }, { x + handleSize, y + h }, handleColor);
-        drawList:AddRect({ x, y + h - handleSize }, { x + handleSize, y + h }, borderColor, 0, 0, 2);
-    end
 
     if (drawList.AddText ~= nil) then
         drawList:AddRectFilled({ x + 4, y - 24 }, { x + 112, y - 2 }, labelBackgroundColor, 3);
@@ -1828,7 +2671,7 @@ local function QueueBstPet(pet)
     local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (petPlateMode ~= 'Normal') then
-        DrawDetachedStaticPetFrame('bst', pet.index, plateData, targetingSettings, 'static_bst_pet_' .. tostring(pet.index));
+        DrawDetachedStaticPetFrame('bst', pet.index, plateData, targetingSettings, 'static_bst_pet_' .. tostring(pet.index), pet.name);
     end
 
     if (petPlateMode == 'Detach from pet') then
@@ -1887,7 +2730,6 @@ local function QueueSmnPet(pet)
     local castBarSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Cast bar', smnCastBarDefaults);
     local wardSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Ward timer', wardBarDefaults);
     local rageSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Rage timer', rageBarDefaults);
-    local favorSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, "Avatar's Favor", favorBarDefaults);
     local targetMarker = targetModuleMarker.Build('Pet (SMN)', layoutStateName, targetStateName, hpBarSettings, pet.distance);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
     local targetingSettings = targeting.GetSettings();
@@ -1926,9 +2768,22 @@ local function QueueSmnPet(pet)
 
     local castBar = nil;
     local castPercent = 0;
+    local detachedCastBar = nil;
+    local detachedCastPercent = 0;
 
     if (layoutStateName == 'Spirit') then
-        castBar, castPercent = BuildCastBar(enemyCasts.GetActiveCast(pet.serverId), castBarSettings, globalSettings);
+        local activeCast = enemyCasts.GetActiveCast(pet.serverId);
+        local detachedBackgroundSettings = GetDetachedPetSetting(
+            targetingSettings,
+            'smn',
+            'smnSpirit',
+            'PetStaticBackgroundSettings'
+        ) or {};
+        local detachedCastSettings = detachedBackgroundSettings.avatarCastBarSettings
+            or (((globalDefaults.targeting or {}).smnPetStaticBackgroundSettings or {}).avatarCastBarSettings)
+            or smnCastBarDefaults;
+        castBar, castPercent = BuildCastBar(activeCast, castBarSettings, globalSettings);
+        detachedCastBar, detachedCastPercent = BuildCastBar(activeCast, detachedCastSettings, globalSettings);
     end
 
     local plateData = {
@@ -2068,38 +2923,35 @@ local function QueueSmnPet(pet)
     };
 
     if (layoutStateName == 'Avatar') then
-        plateData.extraBars = plateData.extraBars or {};
+        AddSmnAvatarExtraBars(plateData, wardSettings, rageSettings, globalSettings);
+    end
 
-        if (wardSettings.enabled == true) then
-            local wardProgress, wardText = GetBloodPactBarData(174);
-            local wardTimerText = HideReadyTimerText(wardText);
-            local wardBar = BuildExtraBar(wardSettings, wardBarDefaults, wardProgress, (wardSettings.showPercent ~= false) and wardTimerText or '', 'ward', 'ward', globalSettings, (tostring(wardSettings.labelDisplayMode or 'Text') == 'Text') and 'Ward' or '');
+    local petPlateMode = tostring(targetingSettings.smnPetPlateMode or 'Normal');
+    if (petPlateMode ~= 'Normal') then
+        plateData.detachedSmnPetType = layoutStateName;
+        plateData.detachedAvatarName = tostring(pet.name or '');
+        plateData.detachedAvatarHp = pet.hp;
+        plateData.detachedAvatarMaxHp = pet.maxHp;
+        plateData.detachedAvatarTp = tpValue;
+        local detachedSettingsPrefix = layoutStateName == 'Spirit' and 'smnSpirit' or 'smnAvatar';
+        plateData.detachedAvatarSetupPreview = GetDetachedPetSetting(
+            targetingSettings,
+            'smn',
+            detachedSettingsPrefix,
+            'PetStaticEditFrame'
+        ) == true;
+        plateData.detachedAvatarFavorActive = select(1, GetAvatarFavorStatusElapsed());
+        plateData.detachedAvatarFavorCooldownSeconds = GetAvatarFavorCooldownSeconds();
+        plateData.detachedAvatarHasPet = true;
+        plateData.detachedAvatarFavorAvatarName = layoutStateName == 'Avatar'
+            and tostring(pet.name or '')
+            or nil;
 
-            if (wardBar ~= nil) then
-                plateData.extraBars[#plateData.extraBars + 1] = wardBar;
-            end
-        end
+        plateData.detachedAvatarBars = BuildDetachedSmnMeterSources(pet);
 
-        if (rageSettings.enabled == true) then
-            local rageProgress, rageText = GetBloodPactBarData(173);
-            local rageTimerText = HideReadyTimerText(rageText);
-            local rageBar = BuildExtraBar(rageSettings, rageBarDefaults, rageProgress, (rageSettings.showPercent ~= false) and rageTimerText or '', 'rage', 'rage', globalSettings, (tostring(rageSettings.labelDisplayMode or 'Text') == 'Text') and 'Rage' or '');
-
-            if (rageBar ~= nil) then
-                plateData.extraBars[#plateData.extraBars + 1] = rageBar;
-            end
-        end
-
-        if (favorSettings.enabled == true) then
-            local favorProgress, favorText = GetAvatarFavorBarData(pet);
-
-            if (favorProgress ~= nil) then
-                local favorBar = BuildExtraBar(favorSettings, favorBarDefaults, favorProgress, (favorSettings.showPercent ~= false) and favorText or '', 'favor', nil, globalSettings, (tostring(favorSettings.labelDisplayMode or 'Text') == 'Text') and "Favor" or '');
-
-                if (favorBar ~= nil) then
-                    plateData.extraBars[#plateData.extraBars + 1] = favorBar;
-                end
-            end
+        if (layoutStateName == 'Spirit') then
+            plateData.detachedAvatarCastBar = detachedCastBar;
+            plateData.detachedAvatarCast = detachedCastPercent;
         end
     end
 
@@ -2114,14 +2966,21 @@ local function QueueSmnPet(pet)
         return;
     end
 
-    local petPlateMode = tostring(targetingSettings.smnPetPlateMode or 'Normal');
     local worldPlateTextureId = plateTextureId;
     local worldTextureWidth = textureWidth;
     local worldTextureHeight = textureHeight;
     local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (petPlateMode ~= 'Normal') then
-        DrawDetachedStaticPetFrame('smn', pet.index, plateData, targetingSettings, 'static_smn_pet_' .. tostring(pet.index));
+        DrawDetachedStaticPetFrame(
+            'smn',
+            pet.index,
+            plateData,
+            targetingSettings,
+            'static_smn_pet_' .. tostring(pet.index),
+            pet.name,
+            layoutStateName == 'Spirit' and 'smnSpirit' or 'smnAvatar'
+        );
     end
 
     if (petPlateMode == 'Detach from pet') then
@@ -2340,7 +3199,7 @@ local function QueueWyvernPet(pet)
     local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (petPlateMode ~= 'Normal') then
-        DrawDetachedStaticPetFrame('drg', pet.index, plateData, targetingSettings, 'static_drg_pet_' .. tostring(pet.index));
+        DrawDetachedStaticPetFrame('drg', pet.index, plateData, targetingSettings, 'static_drg_pet_' .. tostring(pet.index), pet.name);
     end
 
     if (petPlateMode == 'Detach from pet') then
@@ -2593,7 +3452,7 @@ local function QueuePupPet(pet)
     local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (petPlateMode ~= 'Normal') then
-        DrawDetachedStaticPetFrame('pup', pet.index, plateData, targetingSettings, 'static_pup_pet_' .. tostring(pet.index));
+        DrawDetachedStaticPetFrame('pup', pet.index, plateData, targetingSettings, 'static_pup_pet_' .. tostring(pet.index), pet.name);
     end
 
     if (petPlateMode == 'Detach from pet') then
@@ -2812,7 +3671,7 @@ function petPlate.GetPositionDebugText()
 end
 
 function petPlate.Render()
-    DrawQueuedDetachedSetupPreview();
+    local detachedPreviewPrefix = DrawQueuedDetachedSetupPreview();
 
     if (state.GetWorldEnabled() ~= true) then
         return;
@@ -2842,6 +3701,20 @@ function petPlate.Render()
 
     if (smnPet ~= nil) then
         QueueSmnPet(smnPet);
+    elseif (detachedPreviewPrefix ~= 'smn') then
+        local targetingSettings = targeting.GetSettings();
+        if (
+            IsPlayerOnSmn() == true and
+            targetingSettings ~= nil and
+            tostring(targetingSettings.smnPetPlateMode or 'Normal') ~= 'Normal'
+        ) then
+            local placeholderPlate = BuildSmnDetachedPlaceholderPlate();
+            placeholderPlate.detachedAvatarBars = BuildDetachedSmnMeterSources(nil);
+            placeholderPlate.detachedAvatarFavorActive = select(1, GetAvatarFavorStatusElapsed());
+            placeholderPlate.detachedAvatarFavorCooldownSeconds = GetAvatarFavorCooldownSeconds();
+            placeholderPlate.detachedAvatarHasPet = false;
+            DrawSmnDetachedPlaceholder(targetingSettings, placeholderPlate);
+        end
     end
 
     local drgPet = entities.GetOwnDrgPet();

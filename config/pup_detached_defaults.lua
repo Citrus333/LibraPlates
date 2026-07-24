@@ -156,6 +156,14 @@ local defaults = {
         textOutlineColor = { 0.000001, 0.000001, 0.000001, 1.0 },
         textOutlineSize = 1,
     },
+    pupSteamSettings = {
+        enabled = true,
+        size = 160,
+        offsetX = -240,
+        offsetY = -155,
+        opacity = 75,
+        speed = 8,
+    },
     pupElementSettings = {
         enabled = true,
         size = 21,

@@ -8,6 +8,7 @@ local avatarArtworkFilesCache = nil;
 local pupArtworkTextureIds = {};
 local pupEquipmentArtworkTextureIds = {};
 local pupElementTextureIds = {};
+local drgArtworkTextureIds = {};
 
 local function GetAddonPath()
     local ok, path = pcall(function()
@@ -49,6 +50,10 @@ end
 
 function backgroundTextures.GetPupArtworkFolderPath()
     return GetAddonPath() .. 'assets\\images\\pet\\pup\\detached\\';
+end
+
+function backgroundTextures.GetDrgArtworkFolderPath()
+    return GetAddonPath() .. 'assets\\images\\pet\\drg\\';
 end
 
 function backgroundTextures.GetPupEquipmentArtworkFolderPath(layer)
@@ -172,6 +177,25 @@ function backgroundTextures.GetPupArtworkTextureId(fileName)
     ));
 
     return pupArtworkTextureIds[key];
+end
+
+function backgroundTextures.GetDrgArtworkTextureId(fileName)
+    fileName = tostring(fileName or ''):gsub('^.*[\\/]', '');
+
+    if (fileName == '') then
+        return nil;
+    end
+
+    local key = 'pet/drg/' .. fileName;
+    if (drgArtworkTextureIds[key] ~= nil) then
+        return drgArtworkTextureIds[key];
+    end
+
+    drgArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+        backgroundTextures.GetDrgArtworkFolderPath() .. fileName
+    ));
+
+    return drgArtworkTextureIds[key];
 end
 
 function backgroundTextures.GetPupEquipmentArtworkTextureId(layer, fileName)

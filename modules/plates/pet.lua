@@ -293,6 +293,7 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
     local textureName = settings.texture or backgroundDefaults.texture;
     local usingAvatarArtwork = false;
     local usingPupArtwork = false;
+    local usingDrgArtwork = false;
     if (prefix == 'smn' and settings.useAvatarArtwork ~= false) then
         local avatarArtwork = GetSmnPetArtworkFile(petName);
         if (avatarArtwork ~= nil) then
@@ -302,6 +303,9 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
     elseif (prefix == 'pup') then
         textureName = 'automaton.png';
         usingPupArtwork = true;
+    elseif (prefix == 'drg') then
+        textureName = 'Wyvern.png';
+        usingDrgArtwork = true;
     end
 
     local baseWidth = tonumber(settings.width) or backgroundDefaults.width;
@@ -322,6 +326,11 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
         offsetX = 0;
         offsetY = 0;
         color = { 0.0, 0.0, 0.0, 0.0 };
+    elseif (usingDrgArtwork == true) then
+        baseHeight = baseWidth * (849 / 1853);
+        offsetX = 0;
+        offsetY = 0;
+        color = { 0.0, 0.0, 0.0, 0.0 };
     end
 
     return {
@@ -339,17 +348,26 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
             or (
                 usingPupArtwork == true
                 and backgroundTextures.GetPupArtworkTextureId(textureName)
-                or backgroundTextures.GetTextureId(textureName)
+                or (
+                    usingDrgArtwork == true
+                    and backgroundTextures.GetDrgArtworkTextureId(textureName)
+                    or backgroundTextures.GetTextureId(textureName)
+                )
             ),
         imageOpacity = usingAvatarArtwork == true
             and (tonumber(settings.avatarArtworkOpacity) or 100)
             or (
                 usingPupArtwork == true
                 and (tonumber(settings.pupArtworkOpacity) or 100)
-                or (settings.imageOpacity or backgroundDefaults.imageOpacity)
+                or (
+                    usingDrgArtwork == true
+                    and (tonumber(settings.drgArtworkOpacity) or 100)
+                    or (settings.imageOpacity or backgroundDefaults.imageOpacity)
+                )
             ),
         avatarArtwork = usingAvatarArtwork,
         pupArtwork = usingPupArtwork,
+        drgArtwork = usingDrgArtwork,
         avatarGemMeters = settings.avatarGemMeters,
         avatarNameSettings = settings.avatarNameSettings,
         avatarHpBarSettings = settings.avatarHpBarSettings,
@@ -367,6 +385,7 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
         pupFrameArtworkSettings = settings.pupFrameArtworkSettings,
         pupHeadArtworkSettings = settings.pupHeadArtworkSettings,
         pupOverloadSettings = settings.pupOverloadSettings,
+        pupSteamSettings = settings.pupSteamSettings,
         pupElementSettings = settings.pupElementSettings,
         pupManeuverSettings = settings.pupManeuverSettings,
         scaleInverse = scaleInverse,
@@ -1487,6 +1506,17 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
             );
         end
 
+        local steamSettings = staticBackground.pupSteamSettings;
+        if (type(steamSettings) == 'table' and steamSettings.enabled ~= false) then
+            local steamSize = math.max(1, tonumber(steamSettings.size) or 160);
+            IncludeCenteredBounds(
+                staticCenterX + (tonumber(steamSettings.offsetX) or -240),
+                staticCenterY + (tonumber(steamSettings.offsetY) or -155),
+                steamSize,
+                steamSize
+            );
+        end
+
         local elementSettings = staticBackground.pupElementSettings;
         if (type(elementSettings) == 'table' and elementSettings.enabled ~= false) then
             local elementSize = math.max(1, tonumber(elementSettings.size) or 24);
@@ -1529,6 +1559,35 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
     end
 
     if (prefix == 'pup' and DrawStaticArtworkTexture ~= nil) then
+        local steamSettings = staticBackground.pupSteamSettings;
+        if (
+            type(steamSettings) == 'table' and
+            steamSettings.enabled ~= false and
+            (
+                pupOverloadGaugeTest.overloaded == true or
+                staticPlateData.detachedPupSetupPreview == true
+            )
+        ) then
+            local steamTextureId = backgroundTextures.GetPupArtworkTextureId('steam_overload.png');
+            if (steamTextureId ~= nil) then
+                local frame = math.floor(os.clock() * math.max(1, tonumber(steamSettings.speed) or 8)) % 8;
+                local column = frame % 4;
+                local row = math.floor(frame / 4);
+                local steamSize = math.max(1, tonumber(steamSettings.size) or 160);
+                DrawStaticArtworkTexture(
+                    steamTextureId,
+                    staticCenterX + (tonumber(steamSettings.offsetX) or -240),
+                    staticCenterY + (tonumber(steamSettings.offsetY) or -155),
+                    steamSize,
+                    steamSize,
+                    windowId .. '_pup_overload_steam',
+                    tonumber(steamSettings.opacity) or 75,
+                    { column * 0.25, row * 0.5 },
+                    { (column + 1) * 0.25, (row + 1) * 0.5 }
+                );
+            end
+        end
+
         local function DrawEquipmentLayer(layer, equipmentName, artworkSettings)
             if (
                 type(artworkSettings) ~= 'table' or
@@ -3144,7 +3203,7 @@ DrawStaticPlateTexture = function(textureId, centerX, centerY, width, height, wi
     return true;
 end
 
-DrawStaticArtworkTexture = function(textureId, centerX, centerY, width, height, windowId, opacity)
+DrawStaticArtworkTexture = function(textureId, centerX, centerY, width, height, windowId, opacity, uv1, uv2)
     if (
         imgui == nil or
         textureId == nil or
@@ -3194,8 +3253,8 @@ DrawStaticArtworkTexture = function(textureId, centerX, centerY, width, height, 
             textureId,
             { left, top },
             { left + drawW, top + drawH },
-            { 0, 0 },
-            { 1, 1 },
+            uv1 or { 0, 0 },
+            uv2 or { 1, 1 },
             tint
         );
     end

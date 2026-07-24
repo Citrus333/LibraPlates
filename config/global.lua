@@ -1,5 +1,6 @@
 local smnDetachedDefaults = require('config.smn_detached_defaults');
 local pupDetachedDefaults = require('config.pup_detached_defaults');
+local drgDetachedDefaults = require('config.drg_detached_defaults');
 
 return {
     font = {
@@ -417,18 +418,7 @@ return {
         drgPetPlateMode = 'Normal',
         drgPetStaticBackground = true,
         drgPetStaticEditFrame = false,
-        drgPetStaticBackgroundSettings = {
-            enabled = true,
-            width = 220,
-            height = 74,
-            offsetX = 0,
-            offsetY = 0,
-            texture = 'None',
-            imageOpacity = 45,
-            color = { 0.0, 0.0, 0.0, 0.45 },
-            borderColor = { 0.0, 0.0, 0.0, 0.80 },
-            borderSize = 0,
-        },
+        drgPetStaticBackgroundSettings = drgDetachedDefaults.Get(),
         drgPetStaticX = 170,
         drgPetStaticY = 690,
         drgPetStaticScale = 35,

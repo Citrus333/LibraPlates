@@ -14676,6 +14676,7 @@ function LibraPlatesSettingsEnsureDetachedPupWidgetDefaults(bg)
     bg.pupMpBarSettings = bg.pupMpBarSettings or {};
     bg.pupTpBarSettings = bg.pupTpBarSettings or {};
     bg.pupOverloadSettings = bg.pupOverloadSettings or {};
+    bg.pupSteamSettings = bg.pupSteamSettings or {};
     bg.pupElementSettings = bg.pupElementSettings or {};
     bg.pupManeuverSettings = bg.pupManeuverSettings or {};
 
@@ -14686,6 +14687,7 @@ function LibraPlatesSettingsEnsureDetachedPupWidgetDefaults(bg)
     LibraPlatesSettingsApplyDetachedDefaults(bg.pupMpBarSettings, defaults.pupMpBarSettings);
     LibraPlatesSettingsApplyDetachedDefaults(bg.pupTpBarSettings, defaults.pupTpBarSettings);
     LibraPlatesSettingsApplyDetachedDefaults(bg.pupOverloadSettings, defaults.pupOverloadSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.pupSteamSettings, defaults.pupSteamSettings);
     LibraPlatesSettingsApplyDetachedDefaults(bg.pupElementSettings, defaults.pupElementSettings);
     LibraPlatesSettingsApplyDetachedDefaults(bg.pupManeuverSettings, defaults.pupManeuverSettings);
 end
@@ -15127,9 +15129,13 @@ function settingsUi.DrawDetachedFrameSettings()
     LibraPlatesSettingsDrawBoxedPanel(
         prefix == 'smn'
             and (settingsPrefix == 'smnSpirit' and 'Spirit plate art' or 'Avatar plate art')
-            or (prefix == 'pup' and 'Automaton plate art' or 'Background'),
+            or (
+                prefix == 'pup'
+                and 'Automaton plate art'
+                or (prefix == 'drg' and 'Wyvern plate art' or 'Background')
+            ),
         function()
-        if (prefix == 'smn' or prefix == 'pup') then
+        if (prefix == 'smn' or prefix == 'pup' or prefix == 'drg') then
             DrawCheckbox('Use plate art', bg.enabled ~= false, function(value)
                 bg.enabled = value == true;
                 state.Save();
@@ -15138,7 +15144,11 @@ function settingsUi.DrawDetachedFrameSettings()
             LibraPlatesFileManager.Draw(
                 prefix == 'pup'
                     and require('core.background_textures').GetPupArtworkFolderPath()
-                    or require('core.background_textures').GetAvatarArtworkFolderPath(),
+                    or (
+                        prefix == 'drg'
+                        and require('core.background_textures').GetDrgArtworkFolderPath()
+                        or require('core.background_textures').GetAvatarArtworkFolderPath()
+                    ),
                 settingsPrefix .. 'DetachedPlateArtFolder'
             );
         else
@@ -15148,7 +15158,9 @@ function settingsUi.DrawDetachedFrameSettings()
             end);
         end
 
-    local usingPlateArtwork = (prefix == 'smn' and bg.useAvatarArtwork ~= false) or prefix == 'pup';
+    local usingPlateArtwork = (prefix == 'smn' and bg.useAvatarArtwork ~= false)
+        or prefix == 'pup'
+        or prefix == 'drg';
 
     if (usingPlateArtwork == true) then
         local frameSize, frameSizeChanged = DrawPlacementSingle('Frame size', bg.width, settingsPrefix .. 'DetachedFrameSize', 8, 1200, 1, 125, 125, 58);
@@ -15157,7 +15169,9 @@ function settingsUi.DrawDetachedFrameSettings()
             state.Save();
         end
 
-        local opacityKey = prefix == 'pup' and 'pupArtworkOpacity' or 'avatarArtworkOpacity';
+        local opacityKey = prefix == 'pup'
+            and 'pupArtworkOpacity'
+            or (prefix == 'drg' and 'drgArtworkOpacity' or 'avatarArtworkOpacity');
         local artworkOpacity, artworkOpacityChanged = DrawPlacementSingle('Opacity', bg[opacityKey] or 100, settingsPrefix .. 'ArtworkOpacity', 0, 100, 1, 125, 125, 58);
         if (artworkOpacityChanged == true) then
             bg[opacityKey] = math.floor((tonumber(artworkOpacity) or 100) + 0.5);
@@ -15604,6 +15618,52 @@ function settingsUi.DrawDetachedFrameSettings()
             end
         end, true);
 
+        LibraPlatesSettingsDrawBoxedPanel('Overload steam', function()
+            local steam = bg.pupSteamSettings;
+            DrawCheckbox('Show steam while overloaded', steam.enabled ~= false, function(value)
+                steam.enabled = value == true;
+                state.Save();
+            end);
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            LibraPlatesFileManager.Draw(
+                require('core.background_textures').GetPupArtworkFolderPath(),
+                'DetachedPupSteamArtworkFolder'
+            );
+
+            if (steam.enabled ~= false) then
+                local size, sizeChanged = DrawPlacementSingle(
+                    'Animation size', steam.size, 'DetachedPupSteamSize',
+                    8, 512, 1, 125, 125, 58
+                );
+                if (sizeChanged == true) then
+                    steam.size = math.max(8, math.floor((tonumber(size) or 160) + 0.5));
+                    state.Save();
+                end
+
+                local x, xChanged, y, yChanged = DrawPlacementPair(
+                    'Position X', steam.offsetX, 'DetachedPupSteamX',
+                    'Position Y', steam.offsetY, 'DetachedPupSteamY',
+                    -800, 800, 1, 125, 58
+                );
+                if (xChanged == true or yChanged == true) then
+                    steam.offsetX = math.floor((tonumber(x) or 0) + 0.5);
+                    steam.offsetY = math.floor((tonumber(y) or 0) + 0.5);
+                    state.Save();
+                end
+
+                local opacity, opacityChanged, speed, speedChanged = DrawPlacementPair(
+                    'Opacity', steam.opacity, 'DetachedPupSteamOpacity',
+                    'Frames / sec', steam.speed, 'DetachedPupSteamSpeed',
+                    1, 100, 1, 125, 58
+                );
+                if (opacityChanged == true or speedChanged == true) then
+                    steam.opacity = math.max(1, math.min(100, math.floor((tonumber(opacity) or 75) + 0.5)));
+                    steam.speed = math.max(1, math.min(100, math.floor((tonumber(speed) or 8) + 0.5)));
+                    state.Save();
+                end
+            end
+        end, true);
+
         LibraPlatesSettingsDrawBoxedPanel('Highest burden element', function()
             local elementSettings = bg.pupElementSettings;
             DrawCheckbox('Show element icon', elementSettings.enabled ~= false, function(value)
@@ -15644,7 +15704,7 @@ function settingsUi.DrawDetachedFrameSettings()
         end, true);
     end
 
-    if (prefix == 'smn') then
+    if (prefix == 'smn' or prefix == 'pup') then
         local function ApplyDetachedFrameReset(kind)
             if kind == 'position' then
                 settings[xKey] = tonumber(defaults[xKey] or defaults[prefix .. 'PetStaticX']) or 170;

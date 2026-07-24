@@ -6,6 +6,7 @@ local mpBarDefaults = require('config.widgets.mp_bar');
 local tpBarDefaults = require('config.widgets.tp_bar');
 local distanceDefaults = require('config.widgets.distance');
 local castBarDefaults = require('config.widgets.cast_bar');
+local maneuverDefaults = require('config.widgets.maneuvers');
 local buffsDefaults = require('config.widgets.buffs');
 local globalDefaults = require('config.global');
 local petDurations = require('data.pet_durations');
@@ -29,10 +30,12 @@ local petState = require('core.pet_state');
 local bstCharmTimer = require('core.bst_charm_timer');
 local luopanStatuses = require('core.luopan_statuses');
 local pupManeuvers = require('core.pup_maneuvers');
+local pupEquipment = require('core.pup_equipment');
 local targetModuleMarker = require('core.target_module_marker');
 local playerStatuses = require('core.player_statuses');
 local worldDepthPlate = require('core.world_depth_plate');
 local worldMarkerProbe = require('core.world_marker_probe');
+local gdiTextTexture = require('ui.gdi_text_texture');
 
 local petPlate = {};
 local bstPetTimer = {};
@@ -55,9 +58,26 @@ local AVATAR_FAVOR_ABILITY_ID = 250;
 local AVATAR_FAVOR_RECAST_TIMER_ID = 176;
 local staticPanelEditDrag = nil;
 local DrawStaticPlateTexture = nil;
+local DrawStaticArtworkTexture = nil;
 local detachedSetupPreview = nil;
+local pupOverloadGaugeTest = {
+    chance = nil,
+    element = nil,
+    burdens = {},
+    overloaded = false,
+    overloadEnded = false,
+    overloadSeconds = nil,
+    statusSeenActive = false,
+};
+local pupEquipmentTest = {
+    summonActive = false,
+    head = nil,
+    frame = nil,
+};
 local GetAvatarFavorStatusElapsed = nil;
 local GetAvatarFavorCooldownSeconds = nil;
+local BuildResourceText = nil;
+local BuildPercentFallbackResourceText = nil;
 local petAnchorBone = 12;
 local petWorldOffsetY = 0.16;
 local wyvernRestingAnchorBone = 0;
@@ -272,12 +292,16 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
 
     local textureName = settings.texture or backgroundDefaults.texture;
     local usingAvatarArtwork = false;
+    local usingPupArtwork = false;
     if (prefix == 'smn' and settings.useAvatarArtwork ~= false) then
         local avatarArtwork = GetSmnPetArtworkFile(petName);
         if (avatarArtwork ~= nil) then
             textureName = avatarArtwork;
             usingAvatarArtwork = true;
         end
+    elseif (prefix == 'pup') then
+        textureName = 'automaton.png';
+        usingPupArtwork = true;
     end
 
     local baseWidth = tonumber(settings.width) or backgroundDefaults.width;
@@ -290,6 +314,11 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
 
     if (usingAvatarArtwork == true) then
         baseHeight = baseWidth * (256 / 600);
+        offsetX = 0;
+        offsetY = 0;
+        color = { 0.0, 0.0, 0.0, 0.0 };
+    elseif (usingPupArtwork == true) then
+        baseHeight = baseWidth * (471 / 836);
         offsetX = 0;
         offsetY = 0;
         color = { 0.0, 0.0, 0.0, 0.0 };
@@ -307,20 +336,39 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
         texture = textureName,
         textureId = usingAvatarArtwork == true
             and backgroundTextures.GetAvatarArtworkTextureId(textureName)
-            or backgroundTextures.GetTextureId(textureName),
+            or (
+                usingPupArtwork == true
+                and backgroundTextures.GetPupArtworkTextureId(textureName)
+                or backgroundTextures.GetTextureId(textureName)
+            ),
         imageOpacity = usingAvatarArtwork == true
             and (tonumber(settings.avatarArtworkOpacity) or 100)
-            or (settings.imageOpacity or backgroundDefaults.imageOpacity),
+            or (
+                usingPupArtwork == true
+                and (tonumber(settings.pupArtworkOpacity) or 100)
+                or (settings.imageOpacity or backgroundDefaults.imageOpacity)
+            ),
         avatarArtwork = usingAvatarArtwork,
+        pupArtwork = usingPupArtwork,
         avatarGemMeters = settings.avatarGemMeters,
         avatarNameSettings = settings.avatarNameSettings,
         avatarHpBarSettings = settings.avatarHpBarSettings,
         avatarMpBarSettings = settings.avatarMpBarSettings,
         avatarTpBarSettings = settings.avatarTpBarSettings,
         avatarCastBarSettings = settings.avatarCastBarSettings,
+        avatarEnmitySettings = settings.avatarEnmitySettings,
         avatarWardSettings = settings.avatarWardSettings,
         avatarRageSettings = settings.avatarRageSettings,
         avatarFavorSettings = settings.avatarFavorSettings,
+        pupNameSettings = settings.pupNameSettings,
+        pupHpBarSettings = settings.pupHpBarSettings,
+        pupMpBarSettings = settings.pupMpBarSettings,
+        pupTpBarSettings = settings.pupTpBarSettings,
+        pupFrameArtworkSettings = settings.pupFrameArtworkSettings,
+        pupHeadArtworkSettings = settings.pupHeadArtworkSettings,
+        pupOverloadSettings = settings.pupOverloadSettings,
+        pupElementSettings = settings.pupElementSettings,
+        pupManeuverSettings = settings.pupManeuverSettings,
         scaleInverse = scaleInverse,
         rawWidth = baseWidth,
         rawHeight = baseHeight,
@@ -409,6 +457,7 @@ local function ApplyDetachedAvatarWidgets(plateData, background)
     local castSettings = background.avatarCastBarSettings or detachedDefaults.avatarCastBarSettings or {};
     local scaleInverse = tonumber(background.scaleInverse) or 1;
     local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local enmitySettings = background.avatarEnmitySettings or globalSettings.enmity or (globalDefaults.enmity or {});
 
     if (nameSettings.enabled == false) then
         plateData.name = '';
@@ -601,6 +650,176 @@ local function ApplyDetachedAvatarWidgets(plateData, background)
             separateLabelOffsets = castSettings.showSpellIcon == true and detachedCastBar.iconTextureId ~= nil,
         });
     end
+
+    local retainedIcons = {};
+    local hadLiveEnmityIcon = false;
+    for _, icon in ipairs(plateData.icons or {}) do
+        if (tostring(icon.kind or '') == 'enmity') then
+            hadLiveEnmityIcon = true;
+        else
+            retainedIcons[#retainedIcons + 1] = icon;
+        end
+    end
+    plateData.icons = retainedIcons;
+
+    if (hadLiveEnmityIcon == true or plateData.detachedAvatarSetupPreview == true) then
+        enmity.AddIcon(plateData, {
+            allyIconFile = enmitySettings.allyIconFile,
+            allyColor = enmitySettings.allyColor,
+            allyIconSize = GetDetachedAvatarMeterNumber(enmitySettings, 'allyIconSize', 31) * scaleInverse,
+            allyOffsetX = GetDetachedAvatarMeterNumber(enmitySettings, 'allyOffsetX', -108) * scaleInverse,
+            allyOffsetY = GetDetachedAvatarMeterNumber(enmitySettings, 'allyOffsetY', -17) * scaleInverse,
+        }, 'ally');
+    end
+end
+
+local function BuildDetachedPupResourceBar(source, settings, defaults, percent, text, scaleInverse, globalSettings)
+    local color = settings.color or defaults.color;
+    local lowActive = settings.lowColorEnabled == true
+        and percent <= (tonumber(settings.lowColorPercent) or 25);
+    if (lowActive == true) then
+        color = settings.lowColor or color;
+    end
+
+    return CopySettingsWith(source, {
+        enabled = settings.enabled ~= false,
+        width = math.max(1, GetDetachedAvatarMeterNumber(settings, 'width', defaults.width) * scaleInverse),
+        height = math.max(1, GetDetachedAvatarMeterNumber(settings, 'height', defaults.height) * scaleInverse),
+        offsetX = GetDetachedAvatarMeterNumber(settings, 'offsetX', defaults.offsetX) * scaleInverse,
+        offsetY = GetDetachedAvatarMeterNumber(settings, 'offsetY', defaults.offsetY) * scaleInverse,
+        anchorTo = settings.anchorTo or 'Plate',
+        anchorPoint = settings.anchorPoint or 'Center',
+        color = color,
+        color2 = settings.color2 or defaults.color2,
+        color3 = settings.color3 or defaults.color3,
+        backgroundColor = settings.backgroundColor or defaults.backgroundColor,
+        borderColor = settings.borderColor or defaults.borderColor,
+        borderSize = GetDetachedAvatarMeterNumber(settings, 'borderSize', defaults.borderSize) * scaleInverse,
+        cornerRadius = GetDetachedAvatarMeterNumber(settings, 'cornerRadius', defaults.cornerRadius or 0) * scaleInverse,
+        texture = settings.texture or defaults.texture or 'Solid',
+        textureId = barTextures.GetTextureId(settings.texture or defaults.texture or 'Solid'),
+        textureStrength = GetDetachedAvatarMeterNumber(settings, 'textureStrength', defaults.textureStrength or 100),
+        animationEnabled = lowActive == true and settings.lowAnimationEnabled == true,
+        animationTextureId = barAnimations.GetTextureId(settings.lowAnimation),
+        animationSpeed = tonumber(settings.lowAnimationSpeed) or defaults.lowAnimationSpeed,
+        animationColor = settings.lowAnimationColor,
+        showAtPercent = GetDetachedAvatarMeterNumber(settings, 'showAtPercent', defaults.showAtPercent or 100),
+        segmented = settings.segmented == true,
+        segmentGap = GetDetachedAvatarMeterNumber(settings, 'segmentGap', defaults.segmentGap or 0) * scaleInverse,
+        text = text,
+        textOffsetX = GetDetachedAvatarMeterNumber(settings, 'textOffsetX', defaults.textOffsetX or 0) * scaleInverse,
+        textOffsetY = GetDetachedAvatarMeterNumber(settings, 'textOffsetY', defaults.textOffsetY or 0) * scaleInverse,
+        fontFamily = fonts.GetRole(globalSettings, settings.useSmallFont == true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, settings.useSmallFont == true),
+        fontSize = math.max(1, GetDetachedAvatarMeterNumber(settings, 'fontSize', defaults.fontSize or 7) * scaleInverse),
+        textColor = settings.textColor or defaults.textColor,
+        textOutlineEnabled = settings.textOutlineEnabled == true,
+        textOutlineColor = settings.textOutlineColor or defaults.textOutlineColor,
+        textOutlineSize = GetDetachedAvatarMeterNumber(settings, 'textOutlineSize', defaults.textOutlineSize or 1) * scaleInverse,
+    });
+end
+
+local function ApplyDetachedPupWidgets(plateData, background)
+    if (background == nil or background.pupArtwork ~= true) then
+        return;
+    end
+
+    local defaults = ((globalDefaults.targeting or {}).pupPetStaticBackgroundSettings or {});
+    local nameSettings = background.pupNameSettings or defaults.pupNameSettings or nameDefaults;
+    local hpSettings = background.pupHpBarSettings or defaults.pupHpBarSettings or barDefaults;
+    local mpSettings = background.pupMpBarSettings or defaults.pupMpBarSettings or mpBarDefaults;
+    local tpSettings = background.pupTpBarSettings or defaults.pupTpBarSettings or tpBarDefaults;
+    local maneuverSettings = background.pupManeuverSettings or defaults.pupManeuverSettings or maneuverDefaults;
+    local scaleInverse = tonumber(background.scaleInverse) or 1;
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+
+    if (nameSettings.enabled == false) then
+        plateData.name = '';
+    else
+        plateData.name = tostring(plateData.detachedPupName or plateData.name or '');
+        plateData.nameOffsetX = GetDetachedAvatarMeterNumber(nameSettings, 'offsetX', 0) * scaleInverse;
+        plateData.nameOffsetY = GetDetachedAvatarMeterNumber(nameSettings, 'offsetY', -54) * scaleInverse;
+        plateData.nameFontSize = math.max(1, GetDetachedAvatarMeterNumber(nameSettings, 'textSize', 10) * scaleInverse);
+        plateData.nameColor = nameSettings.color or nameDefaults.color;
+        plateData.nameOutlineColor = nameSettings.outlineColor or nameDefaults.outlineColor;
+        plateData.nameOutlineSize = math.max(0, GetDetachedAvatarMeterNumber(nameSettings, 'outlineSize', 2) * scaleInverse);
+        plateData.nameOutlineEnabled = nameSettings.outlineEnabled ~= false and plateData.nameOutlineSize > 0;
+        plateData.nameAnchorTo = nameSettings.anchorTo or 'Plate';
+        plateData.nameAnchorPoint = nameSettings.anchorPoint or 'Center';
+        plateData.forceName = true;
+    end
+
+    local hpPercent = math.max(0, math.min(100, tonumber(plateData.hp) or 0));
+    local mpPercent = math.max(0, math.min(100, tonumber(plateData.mp) or 0));
+    local setupPreview = plateData.detachedPupSetupPreview == true;
+    local tpPercent = setupPreview
+        and 300
+        or math.max(0, math.min(300, tonumber(plateData.tp) or 0));
+    local tpValue = setupPreview and 3000 or plateData.detachedPupTp;
+    if (setupPreview == true) then
+        -- DrawTpBar reads the plate value directly, so the unlocked detached
+        -- settings preview must provide the sample used to fill all sections.
+        plateData.tp = tpPercent;
+    end
+
+    plateData.hpBar = BuildDetachedPupResourceBar(
+        plateData.hpBar,
+        hpSettings,
+        barDefaults,
+        hpPercent,
+        BuildPercentFallbackResourceText(hpSettings, 'HP', nil, nil, hpPercent),
+        scaleInverse,
+        globalSettings
+    );
+    plateData.mpBar = BuildDetachedPupResourceBar(
+        plateData.mpBar,
+        mpSettings,
+        mpBarDefaults,
+        mpPercent,
+        BuildPercentFallbackResourceText(mpSettings, 'MP', nil, nil, mpPercent),
+        scaleInverse,
+        globalSettings
+    );
+    plateData.tpBar = BuildDetachedPupResourceBar(
+        plateData.tpBar,
+        tpSettings,
+        tpBarDefaults,
+        tpPercent,
+        BuildResourceText(tpSettings, 'TP', tpValue, 3000, tpPercent),
+        scaleInverse,
+        globalSettings
+    );
+    if (setupPreview == true) then
+        plateData.tpBar.enabled = true;
+        plateData.tpBar.showAtPercent = 0;
+    end
+
+    plateData.icons = (function()
+        local retained = {};
+        for _, icon in ipairs(plateData.icons or {}) do
+            if (tostring(icon.kind or '') ~= 'maneuvers') then
+                retained[#retained + 1] = icon;
+            end
+        end
+        return retained;
+    end)();
+
+    local detachedManeuverSettings = CopySettingsWith(maneuverSettings, {
+        iconSize = GetDetachedAvatarMeterNumber(maneuverSettings, 'iconSize', maneuverDefaults.iconSize) * scaleInverse,
+        iconSpacing = GetDetachedAvatarMeterNumber(maneuverSettings, 'iconSpacing', maneuverDefaults.iconSpacing) * scaleInverse,
+        offsetX = GetDetachedAvatarMeterNumber(maneuverSettings, 'offsetX', maneuverDefaults.offsetX) * scaleInverse,
+        offsetY = GetDetachedAvatarMeterNumber(maneuverSettings, 'offsetY', maneuverDefaults.offsetY) * scaleInverse,
+        timerFontSize = GetDetachedAvatarMeterNumber(maneuverSettings, 'timerFontSize', maneuverDefaults.timerFontSize) * scaleInverse,
+        timerOffsetY = GetDetachedAvatarMeterNumber(maneuverSettings, 'timerOffsetY', maneuverDefaults.timerOffsetY) * scaleInverse,
+        timerTextOutlineSize = GetDetachedAvatarMeterNumber(maneuverSettings, 'timerTextOutlineSize', maneuverDefaults.timerTextOutlineSize) * scaleInverse,
+    });
+    pupManeuvers.AddIcons(
+        plateData,
+        detachedManeuverSettings,
+        globalSettings,
+        plateData.detachedPupManeuverState or pupManeuvers.GetPreviewState()
+    );
+
 end
 
 local function AddDetachedAvatarGemMeters(plateData, background)
@@ -909,6 +1128,42 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
             'cooldownFontSize', 'cooldownTextColor', 'cooldownOutlineColor',
             'cooldownOutlineSize', 'anchorTo', 'anchorPoint',
         }),
+        'pupName=' .. TableSettingKey(background.pupNameSettings or {}, {
+            'enabled', 'offsetX', 'offsetY', 'textSize', 'color',
+            'outlineEnabled', 'outlineColor', 'outlineSize', 'anchorTo', 'anchorPoint',
+        }),
+        'pupHp=' .. TableSettingKey(background.pupHpBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'showValue', 'showPercent',
+            'textOffsetX', 'textOffsetY', 'useSmallFont', 'fontSize', 'textColor',
+            'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+            'lowColorEnabled', 'lowColorPercent', 'lowColor',
+            'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor',
+        }),
+        'pupMp=' .. TableSettingKey(background.pupMpBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'showValue', 'showPercent',
+            'textOffsetX', 'textOffsetY', 'useSmallFont', 'fontSize', 'textColor',
+            'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+            'lowColorEnabled', 'lowColorPercent', 'lowColor',
+            'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor',
+        }),
+        'pupTp=' .. TableSettingKey(background.pupTpBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'color2', 'color3', 'fullColor', 'backgroundColor', 'borderColor',
+            'borderSize', 'cornerRadius', 'texture', 'textureStrength',
+            'showValue', 'showPercent', 'segmented', 'segmentGap',
+            'textOffsetX', 'textOffsetY', 'useSmallFont', 'fontSize', 'textColor',
+            'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+            'lowColorEnabled', 'lowColorPercent', 'lowColor',
+        }),
+        'pupManeuvers=' .. TableSettingKey(background.pupManeuverSettings or {}, {
+            'enabled', 'iconSet', 'iconSize', 'iconSpacing', 'offsetX', 'offsetY',
+            'showTimers', 'timerUseSmallFont', 'timerFontSize', 'timerOffsetY',
+            'timerTextColor', 'timerTextOutlineColor', 'timerTextOutlineSize',
+        }),
         'favorState=' .. tostring(plateData.detachedAvatarFavorActive == true),
         'favorHasPet=' .. tostring(plateData.detachedAvatarHasPet == true),
         'favorAvatar=' .. tostring(plateData.detachedAvatarFavorAvatarName or plateData.detachedAvatarName or ''),
@@ -956,14 +1211,207 @@ local function GetStaticPetContentCrop(plateData, textureWidth, textureHeight, i
     return minX, minY, math.max(1, maxX - minX), math.max(1, maxY - minY);
 end
 
+local pupElementArtworkFiles = {
+    fire = 'Fire.png',
+    ice = 'Ice.png',
+    wind = 'Wind.png',
+    earth = 'Earth.png',
+    thunder = 'Lightning.png',
+    lightning = 'Lightning.png',
+    water = 'Water.png',
+    light = 'Light.png',
+    dark = 'Dark.png',
+};
+
+local function NormalizePupBurdenElement(element)
+    local key = tostring(element or ''):lower():gsub('%s+', '');
+    if (key == 'lightning') then
+        key = 'thunder';
+    end
+    return pupElementArtworkFiles[key] ~= nil and key or nil;
+end
+
+local function GetHighestPupBurden()
+    local now = os.clock();
+    local bestElement = nil;
+    local bestChance = nil;
+    local bestUpdatedAt = nil;
+
+    for element, burden in pairs(pupOverloadGaugeTest.burdens or {}) do
+        local updatedAt = tonumber(burden.updatedAt) or now;
+        local age = math.max(0, now - updatedAt);
+        local chance = math.max(
+            0,
+            (tonumber(burden.chance) or 0) - math.floor(age / 3)
+        );
+
+        -- A reported 0% can still contain sub-threshold burden. Activation
+        -- burden fully dissipates in roughly two minutes, so do not retain a
+        -- zero-value element indefinitely.
+        if (chance <= 0 and age > 120) then
+            pupOverloadGaugeTest.burdens[element] = nil;
+        elseif (
+            bestChance == nil or
+            chance > bestChance or
+            (chance == bestChance and updatedAt > (bestUpdatedAt or 0))
+        ) then
+            bestElement = element;
+            bestChance = chance;
+            bestUpdatedAt = updatedAt;
+        end
+    end
+
+    return bestElement, bestChance;
+end
+
+local function DrawPupHighestBurdenElement(frameCenterX, frameCenterY, settings, preview, windowId)
+    if (DrawStaticArtworkTexture == nil) then
+        return;
+    end
+
+    settings = settings or {};
+    if (settings.enabled == false) then
+        return;
+    end
+
+    local element = select(1, GetHighestPupBurden());
+    if (element == nil and preview == true) then
+        element = 'fire';
+    end
+
+    local fileName = pupElementArtworkFiles[element];
+    local textureId = fileName ~= nil
+        and backgroundTextures.GetPupElementArtworkTextureId(fileName)
+        or nil;
+    if (textureId == nil) then
+        return;
+    end
+
+    local size = math.max(1, tonumber(settings.size) or 24);
+    local centerX = frameCenterX + (tonumber(settings.offsetX) or -112);
+    local centerY = frameCenterY + (tonumber(settings.offsetY) or -5);
+    DrawStaticArtworkTexture(
+        textureId,
+        centerX,
+        centerY,
+        size,
+        size,
+        tostring(windowId or 'static_pup') .. '_element',
+        100
+    );
+end
+
+local function DrawPupOverloadGaugeTest(drawList, frameCenterX, frameCenterY, settings, preview)
+    if (
+        drawList == nil or
+        imgui.GetColorU32 == nil or
+        drawList.AddCircle == nil or
+        drawList.AddLine == nil
+    ) then
+        return;
+    end
+
+    settings = settings or {};
+    if (settings.enabled == false) then
+        return;
+    end
+
+    local highestElement, highestChance = GetHighestPupBurden();
+    pupOverloadGaugeTest.element = highestElement;
+    pupOverloadGaugeTest.chance = highestChance;
+    local displayChance = highestChance;
+    if (displayChance == nil and preview == true) then
+        displayChance = 50;
+    end
+    local chance = math.max(0, math.min(100, tonumber(displayChance) or 0));
+    local size = math.max(8, tonumber(settings.size) or 58);
+    local centerX = frameCenterX + (tonumber(settings.offsetX) or -73);
+    local centerY = frameCenterY + (tonumber(settings.offsetY) or -5);
+    local radius = size * 0.5;
+    -- The artwork's printed scale spans the long 270-degree arc:
+    -- 0% at lower-left, 50% straight up, and 100% at lower-right.
+    local angle = math.rad(135 + (chance * 2.70));
+    local endX = centerX + (math.cos(angle) * (radius - 6));
+    local endY = centerY + (math.sin(angle) * (radius - 6));
+    local darkColor = imgui.GetColorU32(settings.backgroundColor or { 0.03, 0.03, 0.03, 0.95 });
+    local rimColor = imgui.GetColorU32(settings.ringColor or { 0.90, 0.72, 0.38, 1.00 });
+    local dialColor = settings.safeColor or { 0.25, 0.90, 0.35, 1.00 };
+    if (pupOverloadGaugeTest.overloaded == true) then
+        dialColor = settings.overloadedColor or { 1.00, 0.05, 0.02, 1.00 };
+    elseif chance > 0 then
+        dialColor = settings.warningColor or { 1.00, 0.60, 0.12, 1.00 };
+    end
+    local needleColor = imgui.GetColorU32(dialColor);
+    local centerDotColor = imgui.GetColorU32(settings.centerDotColor or settings.ringColor or { 0.90, 0.72, 0.38, 1.00 });
+    local ringSize = math.max(1, tonumber(settings.ringSize) or 3);
+    local dialSize = math.max(1, tonumber(settings.dialSize) or 3);
+
+    if (settings.showBackground ~= false and drawList.AddCircleFilled ~= nil) then
+        drawList:AddCircleFilled({ centerX, centerY }, radius, darkColor, 32);
+    end
+    if (settings.showRing ~= false) then
+        drawList:AddCircle({ centerX, centerY }, radius, rimColor, 32, ringSize);
+    end
+    drawList:AddLine({ centerX, centerY }, { endX, endY }, darkColor, dialSize + 3);
+    drawList:AddLine({ centerX, centerY }, { endX, endY }, needleColor, dialSize);
+    if (drawList.AddCircleFilled ~= nil) then
+        drawList:AddCircleFilled({ centerX, centerY }, 4, centerDotColor, 16);
+    end
+
+    local percentText = displayChance ~= nil
+        and string.format('%d%%', math.floor(chance + 0.5))
+        or '--%';
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local textTextureId, textWidth, textHeight = gdiTextTexture.GetTexture(percentText, {
+        fontFamily = fonts.GetRole(globalSettings, settings.useSmallFont == true),
+        fontFlags = fonts.GetRoleFlags(globalSettings, settings.useSmallFont == true),
+        fontSize = textScale.ToTextureFontSize(settings.fontSize, 10),
+        color = settings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+        outlineEnabled = (tonumber(settings.textOutlineSize) or 0) > 0,
+        outlineColor = settings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+        outlineSize = tonumber(settings.textOutlineSize) or 2,
+    });
+    if (textTextureId ~= nil and drawList.AddImage ~= nil) then
+        local textX = centerX - ((tonumber(textWidth) or 0) * 0.5)
+            + (tonumber(settings.textOffsetX) or 0);
+        local textY = centerY + radius + 5
+            + (tonumber(settings.textOffsetY) or 0);
+        drawList:AddImage(
+            textTextureId,
+            { textX, textY },
+            { textX + (tonumber(textWidth) or 0), textY + (tonumber(textHeight) or 0) },
+            { 0, 0 },
+            { 1, 1 },
+            0xFFFFFFFF
+        );
+    end
+end
+
 local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targetingSettings, windowId, petName, settingsPrefix)
     settingsPrefix = tostring(settingsPrefix or prefix);
     local staticScale = math.max(0.10, math.min(2.00, (tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticScale')) or 35) / 100));
+    if (prefix == 'pup') then
+        -- PUP uses a fixed internal scale so its wide artwork fits the
+        -- 1024x512 canvas without an adaptive calculation or second render.
+        staticScale = 0.60;
+    end
+
     local staticBackground = BuildStaticPetBackground(targetingSettings, prefix, settingsPrefix, staticScale, petName);
     local staticPlateData = CopySettingsWith(plateData, {
         background = staticBackground,
     });
+    local editEnabled = GetDetachedPetSetting(
+        targetingSettings,
+        prefix,
+        settingsPrefix,
+        'PetStaticEditFrame'
+    ) == true;
+    if (prefix == 'pup' and editEnabled == true) then
+        staticPlateData.detachedPupSetupPreview = true;
+        staticPlateData.detachedPupManeuverState = pupManeuvers.GetPreviewState();
+    end
     ApplyDetachedAvatarWidgets(staticPlateData, staticBackground);
+    ApplyDetachedPupWidgets(staticPlateData, staticBackground);
     AddDetachedAvatarGemMeters(staticPlateData, staticBackground);
     -- The source plate may already contain layout bounds for its normal Background
     -- widget. Detached frames have their own background and must rebuild those bounds.
@@ -992,14 +1440,146 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
     local uv1 = { cropX / staticTextureWidth, cropY / staticTextureHeight };
     local uv2 = { (cropX + cropWidth) / staticTextureWidth, (cropY + cropHeight) / staticTextureHeight };
 
+    local staticCenterX = tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticX')) or 170;
+    local staticCenterY = tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticY')) or 690;
+    local editBounds = nil;
+
+    if (prefix == 'pup' and editEnabled == true) then
+        local plateDrawWidth = cropWidth * staticScale;
+        local plateDrawHeight = cropHeight * staticScale;
+        local left = staticCenterX + positionOffsetX - (plateDrawWidth * 0.5);
+        local top = staticCenterY + positionOffsetY - (plateDrawHeight * 0.5);
+        local right = left + plateDrawWidth;
+        local bottom = top + plateDrawHeight;
+
+        local function IncludeCenteredBounds(centerX, centerY, width, height)
+            local halfWidth = math.max(1, tonumber(width) or 1) * 0.5;
+            local halfHeight = math.max(1, tonumber(height) or 1) * 0.5;
+            left = math.min(left, centerX - halfWidth);
+            top = math.min(top, centerY - halfHeight);
+            right = math.max(right, centerX + halfWidth);
+            bottom = math.max(bottom, centerY + halfHeight);
+        end
+
+        for _, artworkSettings in ipairs({
+            staticBackground.pupFrameArtworkSettings,
+            staticBackground.pupHeadArtworkSettings,
+        }) do
+            if (type(artworkSettings) == 'table' and artworkSettings.enabled ~= false) then
+                local artworkHeight = math.max(1, tonumber(artworkSettings.height) or 300);
+                IncludeCenteredBounds(
+                    staticCenterX + (tonumber(artworkSettings.offsetX) or 0),
+                    staticCenterY + (tonumber(artworkSettings.offsetY) or 0),
+                    artworkHeight * (1010 / 1385),
+                    artworkHeight
+                );
+            end
+        end
+
+        local overloadSettings = staticBackground.pupOverloadSettings;
+        if (type(overloadSettings) == 'table' and overloadSettings.enabled ~= false) then
+            local gaugeSize = math.max(1, tonumber(overloadSettings.size) or 58);
+            IncludeCenteredBounds(
+                staticCenterX + (tonumber(overloadSettings.offsetX) or 0),
+                staticCenterY + (tonumber(overloadSettings.offsetY) or 0),
+                gaugeSize,
+                gaugeSize
+            );
+        end
+
+        local elementSettings = staticBackground.pupElementSettings;
+        if (type(elementSettings) == 'table' and elementSettings.enabled ~= false) then
+            local elementSize = math.max(1, tonumber(elementSettings.size) or 24);
+            IncludeCenteredBounds(
+                staticCenterX + (tonumber(elementSettings.offsetX) or 0),
+                staticCenterY + (tonumber(elementSettings.offsetY) or 0),
+                elementSize,
+                elementSize
+            );
+        end
+
+        local maneuverSettings = staticBackground.pupManeuverSettings;
+        if (type(maneuverSettings) == 'table' and maneuverSettings.enabled ~= false) then
+            local iconSize = math.max(6, tonumber(maneuverSettings.iconSize) or 26);
+            local iconSpacing = math.max(0, tonumber(maneuverSettings.iconSpacing) or 10);
+            local timerHeight = 0;
+            if (maneuverSettings.showTimers == true) then
+                timerHeight = math.max(8, (tonumber(maneuverSettings.timerFontSize) or 7) * 1.8)
+                    + math.max(0, tonumber(maneuverSettings.timerOffsetY) or 0)
+                    + 2;
+            end
+            IncludeCenteredBounds(
+                staticCenterX + (tonumber(maneuverSettings.offsetX) or 0),
+                staticCenterY + (tonumber(maneuverSettings.offsetY) or 30) + (timerHeight * 0.5),
+                (iconSize * 3) + (iconSpacing * 2),
+                iconSize + timerHeight
+            );
+        end
+
+        left = left - 3;
+        top = top - 3;
+        right = right + 3;
+        bottom = bottom + 3;
+        editBounds = {
+            left = left,
+            top = top,
+            width = right - left,
+            height = bottom - top,
+        };
+    end
+
+    if (prefix == 'pup' and DrawStaticArtworkTexture ~= nil) then
+        local function DrawEquipmentLayer(layer, equipmentName, artworkSettings)
+            if (
+                type(artworkSettings) ~= 'table' or
+                artworkSettings.enabled == false or
+                tostring(equipmentName or '') == ''
+            ) then
+                return;
+            end
+
+            local textureId = backgroundTextures.GetPupEquipmentArtworkTextureId(
+                layer,
+                tostring(equipmentName) .. '.png'
+            );
+            if (textureId == nil) then
+                return;
+            end
+
+            local drawHeight = math.max(1, tonumber(artworkSettings.height) or 300);
+            local drawWidth = drawHeight * (1010 / 1385);
+            DrawStaticArtworkTexture(
+                textureId,
+                staticCenterX + (tonumber(artworkSettings.offsetX) or 0),
+                staticCenterY + (tonumber(artworkSettings.offsetY) or 0),
+                drawWidth,
+                drawHeight,
+                windowId .. '_pup_' .. layer,
+                tonumber(artworkSettings.opacity) or 100
+            );
+        end
+
+        -- Preserve the shared source-canvas alignment: frame, then head, then UI plate.
+        DrawEquipmentLayer(
+            'frames',
+            staticPlateData.detachedPupEquipmentFrame,
+            staticBackground.pupFrameArtworkSettings
+        );
+        DrawEquipmentLayer(
+            'heads',
+            staticPlateData.detachedPupEquipmentHead,
+            staticBackground.pupHeadArtworkSettings
+        );
+    end
+
     DrawStaticPlateTexture(
         staticTextureId,
-        (tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticX')) or 170) + positionOffsetX,
-        (tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticY')) or 690) + positionOffsetY,
+        staticCenterX + positionOffsetX,
+        staticCenterY + positionOffsetY,
         cropWidth * staticScale,
         cropHeight * staticScale,
         windowId,
-        GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticEditFrame') == true,
+        editEnabled,
         function(nextX, nextY, nextW)
             targetingSettings[settingsPrefix .. 'PetStaticX'] = nextX - positionOffsetX;
             targetingSettings[settingsPrefix .. 'PetStaticY'] = nextY - positionOffsetY;
@@ -1007,8 +1587,28 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
             state.Save();
         end,
         uv1,
-        uv2
+        uv2,
+        prefix == 'pup' and function(drawList)
+            DrawPupOverloadGaugeTest(
+                drawList,
+                staticCenterX,
+                staticCenterY,
+                staticBackground.pupOverloadSettings,
+                staticPlateData.detachedPupSetupPreview == true
+            );
+        end or nil,
+        editBounds
     );
+
+    if (prefix == 'pup') then
+        DrawPupHighestBurdenElement(
+            staticCenterX,
+            staticCenterY,
+            staticBackground.pupElementSettings,
+            staticPlateData.detachedPupSetupPreview == true,
+            windowId
+        );
+    end
 end
 
 local function HasLivePetForPrefix(prefix)
@@ -1079,7 +1679,7 @@ local function DrawSmnDetachedPlaceholder(targetingSettings, plateData)
     if (
         IsPlayerOnSmn() ~= true or
         targetingSettings == nil or
-        tostring(targetingSettings.smnPetPlateMode or 'Normal') == 'Normal'
+        tostring(GetDetachedPetSetting(targetingSettings, 'smn', 'smnAvatar', 'PetPlateMode') or 'Normal') == 'Normal'
     ) then
         return;
     end
@@ -1132,7 +1732,12 @@ local function DrawQueuedDetachedSetupPreview()
             request.prefix == 'smn' and (request.stateName == 'Spirit' and 'smnSpirit' or 'smnAvatar') or request.prefix,
             'PetStaticEditFrame'
         ) ~= true or
-        tostring(targetingSettings[request.prefix .. 'PetPlateMode'] or 'Normal') == 'Normal'
+        tostring(GetDetachedPetSetting(
+            targetingSettings,
+            request.prefix,
+            request.prefix == 'smn' and (request.stateName == 'Spirit' and 'smnSpirit' or 'smnAvatar') or request.prefix,
+            'PetPlateMode'
+        ) or 'Normal') == 'Normal'
     ) then
         return;
     end
@@ -1155,6 +1760,12 @@ local function DrawQueuedDetachedSetupPreview()
         detachedAvatarFavorCooldownSeconds = favorCooldownSeconds,
         detachedAvatarHasPet = false,
         detachedAvatarFavorAvatarName = nil,
+        detachedPupName = request.prefix == 'pup' and 'Automaton' or nil,
+        detachedPupSetupPreview = request.prefix == 'pup',
+        detachedPupTp = request.prefix == 'pup' and 1000 or nil,
+        detachedPupManeuverState = request.prefix == 'pup' and pupManeuvers.GetPreviewState() or nil,
+        detachedPupEquipmentHead = request.prefix == 'pup' and 'Harlequin Head' or nil,
+        detachedPupEquipmentFrame = request.prefix == 'pup' and 'Harlequin Frame' or nil,
     });
     DrawDetachedStaticPetFrame(
         request.prefix,
@@ -1353,8 +1964,6 @@ local smnCastBarDefaults = CopySettingsWith(castBarDefaults, {
     offsetY = 32,
     color = { 0.95, 0.75, 0.20, 1.0 },
 });
-local maneuverDefaults = require('config.widgets.maneuvers');
-
 local function ClampPercent(percent, fallback)
     percent = tonumber(percent) or fallback or 0;
 
@@ -1411,7 +2020,7 @@ local function ShortenName(name, maxLength)
     return text;
 end
 
-local function BuildResourceText(settings, label, value, maxValue, percent)
+BuildResourceText = function(settings, label, value, maxValue, percent)
     local parts = {};
 
     if (settings.showValue == true and value ~= nil) then
@@ -1430,7 +2039,7 @@ local function BuildResourceText(settings, label, value, maxValue, percent)
     return table.concat(parts, ' ');
 end
 
-local function BuildPercentFallbackResourceText(settings, label, value, maxValue, percent)
+BuildPercentFallbackResourceText = function(settings, label, value, maxValue, percent)
     local text = BuildResourceText(settings, label, value, maxValue, percent);
 
     if (text ~= '') then
@@ -2265,6 +2874,45 @@ local function CleanFavorActionMessage(value)
 end
 
 function petPlate.HandleTextIn(e)
+    if (entities.GetPlayerMainJobId() == 18) then
+        local overloadMessage = CleanFavorActionMessage(
+            e ~= nil and (e.message or e.text or e.original or e.message_modified or e.modified) or ''
+        );
+        local actor, element, chance = overloadMessage:match(
+            "([%a][%w_]*)'s%s+([%a]+)%s+[Mm]aneuver%s+overload%s+chance%s+is%s+(%d+)%%"
+        );
+        local overloadedActor = overloadMessage:match("([%a][%w_]*)%s+is%s+overloaded!");
+        local endedActor = overloadMessage:match(
+            "([%a][%w_]*)'s%s+[Oo]verload%s+effect%s+wears%s+off%."
+        );
+        local messageActor = actor or overloadedActor or endedActor;
+        local self = messageActor ~= nil and entities.GetSelf() or nil;
+        local compactActor = tostring(messageActor or ''):lower():gsub('%s+', '');
+        local compactSelf = tostring(self ~= nil and self.name or ''):lower():gsub('%s+', '');
+
+        if (compactActor ~= '' and compactActor == compactSelf) then
+            if (actor ~= nil) then
+                local burdenElement = NormalizePupBurdenElement(element);
+                if (burdenElement ~= nil) then
+                    pupOverloadGaugeTest.burdens[burdenElement] = {
+                        chance = math.max(0, math.min(100, tonumber(chance) or 0)),
+                        updatedAt = os.clock(),
+                    };
+                    pupOverloadGaugeTest.element, pupOverloadGaugeTest.chance = GetHighestPupBurden();
+                end
+                pupOverloadGaugeTest.overloadEnded = false;
+            elseif (overloadedActor ~= nil) then
+                pupOverloadGaugeTest.overloaded = true;
+                pupOverloadGaugeTest.overloadEnded = false;
+            elseif (endedActor ~= nil) then
+                pupOverloadGaugeTest.overloaded = false;
+                pupOverloadGaugeTest.overloadEnded = true;
+                pupOverloadGaugeTest.overloadSeconds = nil;
+                pupOverloadGaugeTest.statusSeenActive = false;
+            end
+        end
+    end
+
     if (avatarFavorState.active ~= true) then
         return;
     end
@@ -2341,7 +2989,7 @@ local function GetMouseDragDelta()
     return ReadImguiVec2(imgui.GetMouseDragDelta(0));
 end
 
-local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, onEdited)
+local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, onEdited, editCenterX, editCenterY, editWidth)
     if (
         imgui.GetForegroundDrawList == nil or
         imgui.GetColorU32 == nil or
@@ -2379,7 +3027,11 @@ local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, on
         local dx, dy = GetMouseDragDelta();
 
         if (math.abs(dx) >= 0.5 or math.abs(dy) >= 0.5) then
-            onEdited(math.floor(x + (w * 0.5) + dx + 0.5), math.floor(y + (h * 0.5) + dy + 0.5), w);
+            onEdited(
+                math.floor((tonumber(editCenterX) or (x + (w * 0.5))) + dx + 0.5),
+                math.floor((tonumber(editCenterY) or (y + (h * 0.5))) + dy + 0.5),
+                tonumber(editWidth) or w
+            );
 
             if (imgui.ResetMouseDragDelta ~= nil) then
                 imgui.ResetMouseDragDelta(0);
@@ -2411,7 +3063,7 @@ local function DrawStaticPanelEditOverlay(windowId, left, top, width, height, on
     end
 end
 
-DrawStaticPlateTexture = function(textureId, centerX, centerY, width, height, windowId, editEnabled, onEdited, uv1, uv2)
+DrawStaticPlateTexture = function(textureId, centerX, centerY, width, height, windowId, editEnabled, onEdited, uv1, uv2, overlayDraw, editBounds)
     if (imgui == nil or textureId == nil) then
         return false;
     end
@@ -2459,6 +3111,10 @@ DrawStaticPlateTexture = function(textureId, centerX, centerY, width, height, wi
 
         imgui.Image(textureId, { drawW, drawH }, uv1 or { 0, 0 }, uv2 or { 1, 1 });
 
+        if (type(overlayDraw) == 'function' and imgui.GetWindowDrawList ~= nil) then
+            overlayDraw(imgui.GetWindowDrawList(), left, top, drawW, drawH);
+        end
+
     end
 
     imgui.End();
@@ -2468,7 +3124,85 @@ DrawStaticPlateTexture = function(textureId, centerX, centerY, width, height, wi
     end
 
     if (editEnabled == true) then
-        DrawStaticPanelEditOverlay(windowId, left, top, drawW, drawH, onEdited);
+        local overlayLeft = type(editBounds) == 'table' and tonumber(editBounds.left) or left;
+        local overlayTop = type(editBounds) == 'table' and tonumber(editBounds.top) or top;
+        local overlayWidth = type(editBounds) == 'table' and tonumber(editBounds.width) or drawW;
+        local overlayHeight = type(editBounds) == 'table' and tonumber(editBounds.height) or drawH;
+        DrawStaticPanelEditOverlay(
+            windowId,
+            overlayLeft,
+            overlayTop,
+            overlayWidth,
+            overlayHeight,
+            onEdited,
+            centerX,
+            centerY,
+            drawW
+        );
+    end
+
+    return true;
+end
+
+DrawStaticArtworkTexture = function(textureId, centerX, centerY, width, height, windowId, opacity)
+    if (
+        imgui == nil or
+        textureId == nil or
+        imgui.Begin == nil or
+        imgui.GetWindowDrawList == nil
+    ) then
+        return false;
+    end
+
+    local drawW = math.max(1, tonumber(width) or 1);
+    local drawH = math.max(1, tonumber(height) or 1);
+    local left = (tonumber(centerX) or 0) - (drawW * 0.5);
+    local top = (tonumber(centerY) or 0) - (drawH * 0.5);
+    local alpha = math.max(0, math.min(255, math.floor(((tonumber(opacity) or 100) * 2.55) + 0.5)));
+    local tint = (alpha * 0x1000000) + 0xFFFFFF;
+    local flags =
+        (_G.ImGuiWindowFlags_NoTitleBar or 0) +
+        (_G.ImGuiWindowFlags_NoScrollbar or 0) +
+        (_G.ImGuiWindowFlags_NoScrollWithMouse or 0) +
+        (_G.ImGuiWindowFlags_NoSavedSettings or 0) +
+        (_G.ImGuiWindowFlags_NoBackground or 0) +
+        (_G.ImGuiWindowFlags_NoResize or 0) +
+        (_G.ImGuiWindowFlags_NoMove or 0) +
+        (_G.ImGuiWindowFlags_NoInputs or 0);
+
+    if (imgui.SetNextWindowPos ~= nil) then
+        imgui.SetNextWindowPos({ left, top }, _G.ImGuiCond_Always or 1);
+    end
+    if (imgui.SetNextWindowSize ~= nil) then
+        imgui.SetNextWindowSize({ drawW, drawH }, _G.ImGuiCond_Always or 1);
+    end
+
+    local pushedPadding = false;
+    if (imgui.PushStyleVar ~= nil and _G.ImGuiStyleVar_WindowPadding ~= nil) then
+        imgui.PushStyleVar(_G.ImGuiStyleVar_WindowPadding, { 0, 0 });
+        pushedPadding = true;
+    end
+
+    local visible = imgui.Begin(
+        'LibraPlates Pet Artwork##' .. tostring(windowId or 'static_artwork'),
+        true,
+        flags
+    );
+    if (visible == true) then
+        local drawList = imgui.GetWindowDrawList();
+        drawList:AddImage(
+            textureId,
+            { left, top },
+            { left + drawW, top + drawH },
+            { 0, 0 },
+            { 1, 1 },
+            tint
+        );
+    end
+    imgui.End();
+
+    if (pushedPadding == true and imgui.PopStyleVar ~= nil) then
+        imgui.PopStyleVar();
     end
 
     return true;
@@ -2926,14 +3660,17 @@ local function QueueSmnPet(pet)
         AddSmnAvatarExtraBars(plateData, wardSettings, rageSettings, globalSettings);
     end
 
-    local petPlateMode = tostring(targetingSettings.smnPetPlateMode or 'Normal');
+    local detachedSettingsPrefix = layoutStateName == 'Spirit' and 'smnSpirit' or 'smnAvatar';
+    local petPlateMode = tostring(
+        GetDetachedPetSetting(targetingSettings, 'smn', detachedSettingsPrefix, 'PetPlateMode')
+        or 'Normal'
+    );
     if (petPlateMode ~= 'Normal') then
         plateData.detachedSmnPetType = layoutStateName;
         plateData.detachedAvatarName = tostring(pet.name or '');
         plateData.detachedAvatarHp = pet.hp;
         plateData.detachedAvatarMaxHp = pet.maxHp;
         plateData.detachedAvatarTp = tpValue;
-        local detachedSettingsPrefix = layoutStateName == 'Spirit' and 'smnSpirit' or 'smnAvatar';
         plateData.detachedAvatarSetupPreview = GetDetachedPetSetting(
             targetingSettings,
             'smn',
@@ -3270,6 +4007,13 @@ local function QueuePupPet(pet)
     local mpColor = mpBarSettings.color or mpBarDefaults.color;
     local tpColor = tpBarSettings.color or tpBarDefaults.color;
 
+    if (pupEquipmentTest.summonActive ~= true) then
+        local equipment = pupEquipment.Read();
+        pupEquipmentTest.summonActive = true;
+        pupEquipmentTest.head = equipment.head;
+        pupEquipmentTest.frame = equipment.frame;
+    end
+
     local hpLowActive = (
         hpBarSettings.lowColorEnabled == true and
         hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
@@ -3432,7 +4176,25 @@ local function QueuePupPet(pet)
     if (IsTargetOrSubtarget(targetStateName) == true) then
         AddDistanceToPlate(plateData, pet, distanceSettings, globalSettings);
     end
-    pupManeuvers.AddIcons(plateData, maneuverSettings, globalSettings);
+    local maneuverState = pupManeuvers.GetState();
+    pupManeuvers.AddIcons(plateData, maneuverSettings, globalSettings, maneuverState);
+    plateData.detachedPupName = tostring(pet.name or '');
+    plateData.detachedPupTp = tpValue;
+    plateData.detachedPupManeuverState = maneuverState;
+    plateData.detachedPupEquipmentHead = pupEquipmentTest.head;
+    plateData.detachedPupEquipmentFrame = pupEquipmentTest.frame;
+
+    if (maneuverState.overload == true) then
+        pupOverloadGaugeTest.overloaded = true;
+        pupOverloadGaugeTest.overloadEnded = false;
+        pupOverloadGaugeTest.overloadSeconds = tonumber(maneuverState.overloadSeconds);
+        pupOverloadGaugeTest.statusSeenActive = true;
+    elseif (pupOverloadGaugeTest.statusSeenActive == true) then
+        pupOverloadGaugeTest.overloaded = false;
+        pupOverloadGaugeTest.overloadEnded = true;
+        pupOverloadGaugeTest.overloadSeconds = nil;
+        pupOverloadGaugeTest.statusSeenActive = false;
+    end
 
     if (enmity.ShouldDrawAlly(pet, globalSettings) == true) then
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
@@ -3706,7 +4468,7 @@ function petPlate.Render()
         if (
             IsPlayerOnSmn() == true and
             targetingSettings ~= nil and
-            tostring(targetingSettings.smnPetPlateMode or 'Normal') ~= 'Normal'
+            tostring(GetDetachedPetSetting(targetingSettings, 'smn', 'smnAvatar', 'PetPlateMode') or 'Normal') ~= 'Normal'
         ) then
             local placeholderPlate = BuildSmnDetachedPlaceholderPlate();
             placeholderPlate.detachedAvatarBars = BuildDetachedSmnMeterSources(nil);
@@ -3727,6 +4489,15 @@ function petPlate.Render()
 
     if (pupPet ~= nil) then
         QueuePupPet(pupPet);
+    else
+        if (pupEquipmentTest.summonActive == true) then
+            pupOverloadGaugeTest.chance = nil;
+            pupOverloadGaugeTest.element = nil;
+            pupOverloadGaugeTest.burdens = {};
+        end
+        pupEquipmentTest.summonActive = false;
+        pupEquipmentTest.head = nil;
+        pupEquipmentTest.frame = nil;
     end
 
     local luopan = entities.GetOwnLuopan();

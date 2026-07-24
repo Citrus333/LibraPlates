@@ -1,5 +1,6 @@
 return {
     enabled = true,
+    iconSet = 'default',
     iconSize = 26,
     iconSpacing = 10,
     offsetX = 0,

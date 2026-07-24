@@ -22,6 +22,7 @@ local cursorOverlay = require('core.cursor_overlay');
 local perfMeter = require('core.perf_meter');
 local adaptivePerformance = require('core.adaptive_performance');
 local canvasTexture = require('core.canvas_texture');
+LibraPlatesPupManeuvers = require('core.pup_maneuvers');
 LibraPlatesBarTextures = require('core.bar_textures');
 local gameFps = require('core.game_fps');
 local log = require('core.log');
@@ -698,6 +699,7 @@ local uiAccentActive = { 0.16, 0.55, 0.57, 1.0 };
 local heldButtonState = {};
 local targetModulePendingReset = nil;
 local maneuverPendingReset = nil;
+LibraPlatesSettingsDetachedFramePendingReset = LibraPlatesSettingsDetachedFramePendingReset or nil;
 LibraPlatesSettingsWidgetsBulkActionPending = LibraPlatesSettingsWidgetsBulkActionPending or nil;
 LibraPlatesSettingsWidgetsBulkActionApplyPending = LibraPlatesSettingsWidgetsBulkActionApplyPending or nil;
 local loadModeDrawn = false;
@@ -1431,12 +1433,13 @@ function LibraPlatesSettingsCopyNameSettingsFromSource(settings, source)
     LibraPlatesSettingsCopySettingsFromSource(settings, source, nameDefaults);
 end
 
-function LibraPlatesSettingsDrawBoxedModuleCopyHeaderRow(settings, entity, stateName, widgetName, defaults, headerRowX, labelWidth)
+function LibraPlatesSettingsDrawBoxedModuleCopyHeaderRow(settings, entity, stateName, widgetName, defaults, headerRowX, labelWidth, options)
     if (settings == nil) then
         return;
     end
 
-    local sources = LibraPlatesSettingsBuildWidgetCopySources(entity, stateName, widgetName);
+    options = options or {};
+    local sources = options.sources or LibraPlatesSettingsBuildWidgetCopySources(entity, stateName, widgetName);
     if (sources == nil or #sources == 0) then
         return;
     end
@@ -1507,13 +1510,21 @@ function LibraPlatesSettingsDrawBoxedModuleCopyHeaderRow(settings, entity, state
     imgui.SameLine();
     if (imgui.Button ~= nil) then
         if (imgui.Button('Copy##BoxedModuleCopy' .. contextKey) == true) then
-            LibraPlatesSettingsCopySettingsFromSource(settings, selectedSource, defaults or {});
+            if (options.onCopy ~= nil) then
+                options.onCopy(selectedSource);
+            else
+                LibraPlatesSettingsCopySettingsFromSource(settings, selectedSource, defaults or {});
+            end
         end
     elseif (ClickText('Copy', uiAccent) == true) then
-        LibraPlatesSettingsCopySettingsFromSource(settings, selectedSource, defaults or {});
+        if (options.onCopy ~= nil) then
+            options.onCopy(selectedSource);
+        else
+            LibraPlatesSettingsCopySettingsFromSource(settings, selectedSource, defaults or {});
+        end
     end
 
-    uiTooltip.Info('Copy the settings from the selected source.');
+    uiTooltip.Info(options.tooltip or 'Copy the settings from the selected source.');
 end
 
 function IsPetStorageEntity(entity)
@@ -1572,6 +1583,155 @@ function settingsUi.GetDetachedFrameSettingsPrefix()
     end
 
     return prefix;
+end
+
+function LibraPlatesSettingsCopyDetachedFrameFromOtherSmnState()
+    local destinationPrefix = settingsUi.GetDetachedFrameSettingsPrefix();
+
+    if (destinationPrefix ~= 'smnAvatar' and destinationPrefix ~= 'smnSpirit') then
+        return;
+    end
+
+    local sourcePrefix = destinationPrefix == 'smnSpirit' and 'smnAvatar' or 'smnSpirit';
+    local destinationState = destinationPrefix == 'smnSpirit' and 'Spirit' or 'Avatar';
+    local sourceState = destinationPrefix == 'smnSpirit' and 'Avatar' or 'Spirit';
+    local settings = targeting.GetSettings();
+    local defaults = globalDefaults.targeting or {};
+
+    if (settings == nil) then
+        return;
+    end
+
+    local function GetSourceValue(suffix)
+        return settings[sourcePrefix .. suffix]
+            or settings['smn' .. suffix]
+            or defaults[sourcePrefix .. suffix]
+            or defaults['smn' .. suffix];
+    end
+
+    settings[destinationPrefix .. 'PetPlateMode'] = tostring(GetSourceValue('PetPlateMode') or 'Normal');
+    settings[destinationPrefix .. 'PetStaticX'] = tonumber(GetSourceValue('PetStaticX')) or 170;
+    settings[destinationPrefix .. 'PetStaticY'] = tonumber(GetSourceValue('PetStaticY')) or 690;
+    settings[destinationPrefix .. 'PetStaticScale'] = tonumber(GetSourceValue('PetStaticScale')) or 35;
+
+    local sourceBackground = GetSourceValue('PetStaticBackgroundSettings');
+    if (type(sourceBackground) == 'table') then
+        settings[destinationPrefix .. 'PetStaticBackgroundSettings'] = LibraPlatesSettingsCopyTable(sourceBackground);
+    end
+
+    local destinationLoad = state.GetWidgetSettings('Pet (SMN)', destinationState, 'Detached frame', { enabled = true });
+    local sourceLoad = state.GetWidgetSettings('Pet (SMN)', sourceState, 'Detached frame', { enabled = true });
+    if (sourceLoad.loadMode ~= nil) then
+        destinationLoad.loadMode = sourceLoad.loadMode;
+    end
+
+    state.Save();
+end
+
+function LibraPlatesSettingsDrawDetachedFrameCopyHeaderRow(loadSettings, headerRowX, labelWidth)
+    local settingsPrefix = settingsUi.GetDetachedFrameSettingsPrefix();
+
+    if (
+        loadSettings == nil or
+        (settingsPrefix ~= 'smnAvatar' and settingsPrefix ~= 'smnSpirit')
+    ) then
+        return;
+    end
+
+    local sourceLabel = settingsPrefix == 'smnSpirit' and 'Pet (SMN) > Avatar' or 'Pet (SMN) > Spirit';
+    LibraPlatesSettingsDrawBoxedModuleCopyHeaderRow(
+        loadSettings,
+        'Pet (SMN)',
+        selectedState,
+        'Detached frame',
+        { enabled = true },
+        headerRowX,
+        labelWidth,
+        {
+            sources = {
+                {
+                    key = 'Detached|' .. settingsPrefix,
+                    label = sourceLabel,
+                },
+            },
+            onCopy = LibraPlatesSettingsCopyDetachedFrameFromOtherSmnState,
+            tooltip = 'Copies the detached frame position, size, mode, and all widget settings from the other SMN pet type.',
+        }
+    );
+end
+
+function LibraPlatesSettingsDrawDetachedFrameHeader(loadSettings, headerInnerWidth)
+    local headerRowX = nil;
+    local loadRowY = nil;
+
+    if (GetCursorScreenPos ~= nil) then
+        local posA, posB = GetCursorScreenPos();
+        if (type(posA) == 'table') then
+            headerRowX = tonumber(posA.x or posA[1]);
+            loadRowY = tonumber(posA.y or posA[2]);
+        else
+            headerRowX = tonumber(posA);
+            loadRowY = tonumber(posB);
+        end
+    end
+
+    local previousLoadMode = loadSettings.loadMode;
+    if (loadSettings.loadMode == nil) then
+        loadSettings.loadMode = LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget);
+    else
+        loadSettings.loadMode = LibraPlatesSettingsCoerceLoadModeForContext(
+            loadSettings.loadMode,
+            selectedEntity,
+            selectedState,
+            LibraPlatesSettingsDefaultLoadMode(selectedEntity, selectedState, selectedWidget)
+        );
+    end
+
+    if (previousLoadMode ~= nil and tostring(previousLoadMode) ~= tostring(loadSettings.loadMode)) then
+        state.Save();
+    end
+
+    local headerLabelWidth = 120;
+    local loadComboWidth = math.max(120, math.min(180, (tonumber(headerInnerWidth) or 330) - headerLabelWidth - 34));
+
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+    imgui.TextColored({ 1.0, 1.0, 1.0, 1.0 }, 'Load');
+    if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+        imgui.SetCursorScreenPos({ headerRowX + headerLabelWidth, loadRowY });
+    else
+        imgui.SameLine();
+    end
+
+    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(loadComboWidth); end
+    if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+        if (imgui.BeginCombo('##LoadMode' .. tostring(selectedEntity) .. tostring(selectedState) .. tostring(selectedWidget) .. 'Header', tostring(loadSettings.loadMode or 'Always')) == true) then
+            for _, loadChoice in ipairs(LibraPlatesSettingsGetLoadModeOptions(selectedEntity, selectedState)) do
+                local isSelected = tostring(loadChoice) == tostring(loadSettings.loadMode);
+                if (imgui.Selectable(tostring(loadChoice), isSelected) == true) then
+                    loadSettings.loadMode = LibraPlatesSettingsCoerceLoadModeForContext(loadChoice, selectedEntity, selectedState, 'Always');
+                    state.Save();
+                end
+                if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                    imgui.SetItemDefaultFocus();
+                end
+            end
+            imgui.EndCombo();
+        end
+    else
+        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, tostring(loadSettings.loadMode or 'Always'));
+    end
+    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+    loadModeDrawn = true;
+
+    if (settingsUi.GetDetachedFramePrefix() == 'smn') then
+        if (headerRowX ~= nil and loadRowY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+            imgui.SetCursorScreenPos({ headerRowX, loadRowY + 28 });
+        elseif (imgui.Dummy ~= nil) then
+            imgui.Dummy({ 1, 2 });
+        end
+
+        LibraPlatesSettingsDrawDetachedFrameCopyHeaderRow(loadSettings, headerRowX, headerLabelWidth);
+    end
 end
 
 function GetStates(entity)
@@ -2070,11 +2230,12 @@ function GetChecklistActiveSettings(widget)
     if (widget == 'Detached frame') then
         local settings = targeting.GetSettings();
         local prefix = settingsUi.GetDetachedFramePrefix ~= nil and settingsUi.GetDetachedFramePrefix() or nil;
-        if (prefix == nil) then
+        local settingsPrefix = settingsUi.GetDetachedFrameSettingsPrefix ~= nil and settingsUi.GetDetachedFrameSettingsPrefix() or prefix;
+        if (prefix == nil or settingsPrefix == nil) then
             return nil;
         end
         return {
-            enabled = tostring(settings[prefix .. 'PetPlateMode'] or 'Normal') ~= 'Normal',
+            enabled = tostring(settings[settingsPrefix .. 'PetPlateMode'] or settings[prefix .. 'PetPlateMode'] or 'Normal') ~= 'Normal',
             _detachedFrame = true,
         };
     end
@@ -4387,6 +4548,22 @@ end
 function DrawManeuverSettings(settings)
     DrawYellowHeader('Maneuver settings');
 
+    DrawInlineComboRow(
+        'Icon set',
+        LibraPlatesPupManeuvers.GetIconSets(),
+        settings.iconSet or maneuverDefaults.iconSet or 'default',
+        function(value)
+            settings.iconSet = value;
+            state.Save();
+        end,
+        'ManeuverIconSet',
+        nil,
+        nil,
+        nil,
+        nil,
+        LibraPlatesPupManeuvers.GetIconSetsFolderPath()
+    );
+
     local x, xChanged, y, yChanged = DrawPlacementPair('Position X', settings.offsetX, 'ManeuverX', 'Position Y', settings.offsetY, 'ManeuverY', -500, 500, 1);
     if (xChanged == true) then settings.offsetX = x; state.Save(); end
     if (yChanged == true) then settings.offsetY = y; state.Save(); end
@@ -5858,18 +6035,15 @@ function LibraPlatesSettingsSetPlateWidgetEnabled(widget, settings, enabled)
         local prefix = settingsUi.GetDetachedFramePrefix();
         local settingsPrefix = settingsUi.GetDetachedFrameSettingsPrefix();
         if (nextEnabled == true) then
-            if (prefix ~= nil and (targetingSettings[prefix .. 'PetPlateMode'] == nil or tostring(targetingSettings[prefix .. 'PetPlateMode']) == 'Normal')) then
-                targetingSettings[prefix .. 'PetPlateMode'] = 'Detach from pet';
+            if (settingsPrefix ~= nil and tostring(targetingSettings[settingsPrefix .. 'PetPlateMode'] or targetingSettings[prefix .. 'PetPlateMode'] or 'Normal') == 'Normal') then
+                targetingSettings[settingsPrefix .. 'PetPlateMode'] = 'Detach from pet';
             end
-        elseif (prefix ~= nil) then
-            targetingSettings[prefix .. 'PetPlateMode'] = 'Normal';
-            targetingSettings[prefix .. 'PetStaticEditFrame'] = false;
-            if (settingsPrefix ~= nil) then
-                targetingSettings[settingsPrefix .. 'PetStaticEditFrame'] = false;
-            end
-            if (prefix == 'smn') then
-                targetingSettings.smnAvatarPetStaticEditFrame = false;
-                targetingSettings.smnSpiritPetStaticEditFrame = false;
+        elseif (settingsPrefix ~= nil) then
+            targetingSettings[settingsPrefix .. 'PetPlateMode'] = 'Normal';
+            targetingSettings[settingsPrefix .. 'PetStaticEditFrame'] = false;
+            if (settingsPrefix == prefix) then
+                targetingSettings[prefix .. 'PetPlateMode'] = 'Normal';
+                targetingSettings[prefix .. 'PetStaticEditFrame'] = false;
             end
         end
     elseif (widget == 'Lock-on icon') then
@@ -7294,6 +7468,67 @@ function LibraPlatesSettingsDrawEnmityModuleSettings(settings, options)
     end
 
     DrawEnmityMarkerSettings(settings.enmity, role, options.hideMarkerHeader == true);
+end
+
+function LibraPlatesSettingsGetEnmityHeaderSettings(enmitySettings, role)
+    enmitySettings = enmitySettings or {};
+
+    local prefix = role == 'enemy' and 'enemy' or 'ally';
+    local keys = {
+        anchorTo = prefix .. 'AnchorTo',
+        anchorPoint = prefix .. 'AnchorPoint',
+        anchorCollapse = prefix .. 'AnchorCollapse',
+        anchorSpacing = prefix .. 'AnchorSpacing',
+        anchorOrder = prefix .. 'AnchorOrder',
+        offsetX = prefix .. 'OffsetX',
+        offsetY = prefix .. 'OffsetY',
+    };
+
+    return setmetatable({}, {
+        __index = function(_, key)
+            local mappedKey = keys[key];
+            if (mappedKey ~= nil) then
+                return enmitySettings[mappedKey];
+            end
+            return enmitySettings[key];
+        end,
+        __newindex = function(_, key, value)
+            local mappedKey = keys[key];
+            if (mappedKey ~= nil) then
+                enmitySettings[mappedKey] = value;
+            else
+                enmitySettings[key] = value;
+            end
+        end,
+    });
+end
+
+function LibraPlatesSettingsCopyEnmityRoleSettings(enmitySettings, destinationRole, sourceRole)
+    enmitySettings = enmitySettings or {};
+
+    local destinationPrefix = destinationRole == 'enemy' and 'enemy' or 'ally';
+    local sourcePrefix = sourceRole == 'enemy' and 'enemy' or 'ally';
+    local suffixes = T{
+        'IconFile',
+        'Color',
+        'IconSize',
+        'OffsetX',
+        'OffsetY',
+        'AnchorTo',
+        'AnchorPoint',
+        'AnchorCollapse',
+        'AnchorSpacing',
+        'AnchorOrder',
+    };
+
+    for _, suffix in ipairs(suffixes) do
+        local value = enmitySettings[sourcePrefix .. suffix];
+        if value ~= nil then
+            enmitySettings[destinationPrefix .. suffix] = LibraPlatesSettingsCopyTable(value);
+        end
+    end
+
+    state.Save();
 end
 
 function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
@@ -13714,7 +13949,7 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
 
     if (selectedWidget == 'Detached frame') then
         LibraPlatesSettingsDrawBoxedBreadcrumb(T{ selectedTab, GetEntityDisplayLabel(selectedEntity), selectedState, GetWidgetDisplayLabel(selectedWidget) });
-        LibraPlatesSettingsDrawPlatesHeaderBand(function()
+        LibraPlatesSettingsDrawPlatesHeaderBand(function(headerInnerWidth)
             local loadWidgetKey = widgetKeys[selectedWidget];
             local loadSettings = state.GetWidgetSettings(
                 GetStorageEntity(selectedEntity),
@@ -13722,8 +13957,8 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
                 loadWidgetKey,
                 GetWidgetDefaults(selectedWidget)
             );
-            LibraPlatesSettingsDrawWidgetLoadMode(loadSettings, selectedEntity, selectedState, selectedWidget);
-        end, 54);
+            LibraPlatesSettingsDrawDetachedFrameHeader(loadSettings, headerInnerWidth);
+        end, settingsUi.GetDetachedFramePrefix() == 'smn' and 82 or 54);
 
         if (imgui.Spacing ~= nil) then
             imgui.Spacing();
@@ -13769,8 +14004,9 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
         moduleDefaults = globalDefaults.quickMenu;
     elseif (selectedWidget == 'Enmity (module)') then
         globalSettings.enmity = globalSettings.enmity or {};
-        moduleSettings = globalSettings.enmity;
-        moduleDefaults = globalDefaults.enmity;
+        local enmityRole = storageEntity == 'Enemy' and 'enemy' or 'ally';
+        moduleSettings = LibraPlatesSettingsGetEnmityHeaderSettings(globalSettings.enmity, enmityRole);
+        moduleDefaults = LibraPlatesSettingsGetEnmityHeaderSettings(globalDefaults.enmity or {}, enmityRole);
     elseif (selectedWidget == 'AOE range (module)') then
         moduleDefaults = aoeRangeDefaults;
     end
@@ -13779,7 +14015,6 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
     if (
         selectedWidget ~= 'Quick Menu (module)' and
         selectedWidget ~= 'Peer (module)' and
-        selectedWidget ~= 'Enmity (module)' and
         selectedWidget ~= 'AOE range (module)'
     ) then
         LibraPlatesSettingsDrawPlatesHeaderBand(function(headerInnerWidth)
@@ -13818,7 +14053,6 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
             selectedWidget ~= 'Peer (module)' and
             selectedWidget ~= 'Target (module)' and
             selectedWidget ~= 'Subtarget (module)' and
-            selectedWidget ~= 'Enmity (module)' and
             selectedWidget ~= 'AOE range (module)' and
             selectedWidget ~= 'Alerts'
         );
@@ -13900,6 +14134,22 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
             local beforeAnchorPoint = moduleSettings.anchorPoint;
             local beforeOffsetX = moduleSettings.offsetX;
             local beforeOffsetY = moduleSettings.offsetY;
+            local copySources = nil;
+            local copySettings = nil;
+
+            if (selectedWidget == 'Enmity (module)') then
+                local destinationRole = storageEntity == 'Enemy' and 'enemy' or 'ally';
+                local sourceRole = destinationRole == 'enemy' and 'ally' or 'enemy';
+                copySources = {
+                    {
+                        key = 'EnmityRole|' .. sourceRole,
+                        label = sourceRole == 'enemy' and 'Enemy marker' or 'Ally marker',
+                    },
+                };
+                copySettings = function()
+                    LibraPlatesSettingsCopyEnmityRoleSettings(globalSettings.enmity, destinationRole, sourceRole);
+                end;
+            end
 
             anchorControls.Draw(moduleSettings, {
                 entity = storageEntity,
@@ -13912,6 +14162,8 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
                 suppressHeaderSeparators = true,
                 headerControlOffset = headerLabelWidth,
                 headerMaxControlWidth = headerMaxControlWidth,
+                copySources = copySources,
+                copySettings = copySettings,
             }, selectedWidget);
 
             if (
@@ -14330,6 +14582,7 @@ function LibraPlatesSettingsEnsureDetachedAvatarWidgetDefaults(bg)
     bg.avatarMpBarSettings = bg.avatarMpBarSettings or {};
     bg.avatarTpBarSettings = bg.avatarTpBarSettings or {};
     bg.avatarCastBarSettings = bg.avatarCastBarSettings or {};
+    bg.avatarEnmitySettings = bg.avatarEnmitySettings or {};
     bg.avatarWardSettings = bg.avatarWardSettings or {};
     bg.avatarRageSettings = bg.avatarRageSettings or {};
     bg.avatarFavorSettings = bg.avatarFavorSettings or {};
@@ -14342,6 +14595,23 @@ function LibraPlatesSettingsEnsureDetachedAvatarWidgetDefaults(bg)
     for _, resourceSettings in ipairs({ bg.avatarHpBarSettings, bg.avatarMpBarSettings, bg.avatarTpBarSettings }) do
         if (resourceSettings.offsetX == nil) then resourceSettings.offsetX = resourceSettings.positionX; end
         if (resourceSettings.offsetY == nil) then resourceSettings.offsetY = resourceSettings.positionY; end
+    end
+
+    local enmityDefaults = (state.GetGlobalSettings(globalDefaults) or {}).enmity or globalDefaults.enmity or {};
+    if (bg.avatarEnmitySettings.allyIconFile == nil) then
+        bg.avatarEnmitySettings.allyIconFile = enmityDefaults.allyIconFile or 'warning-dimond.png';
+    end
+    if (bg.avatarEnmitySettings.allyColor == nil) then
+        bg.avatarEnmitySettings.allyColor = LibraPlatesSettingsCopyTable(enmityDefaults.allyColor or { 1.0, 0.28, 0.20, 1.0 });
+    end
+    if (bg.avatarEnmitySettings.allyOffsetX == nil) then
+        bg.avatarEnmitySettings.allyOffsetX = tonumber(enmityDefaults.allyOffsetX) or -108;
+    end
+    if (bg.avatarEnmitySettings.allyOffsetY == nil) then
+        bg.avatarEnmitySettings.allyOffsetY = tonumber(enmityDefaults.allyOffsetY) or -17;
+    end
+    if (bg.avatarEnmitySettings.allyIconSize == nil) then
+        bg.avatarEnmitySettings.allyIconSize = tonumber(enmityDefaults.allyIconSize) or 31;
     end
 
     local function MigrateMeter(settings, key, defaultColor)
@@ -14395,6 +14665,120 @@ function LibraPlatesSettingsEnsureDetachedAvatarWidgetDefaults(bg)
     LibraPlatesSettingsApplyDetachedDefaults(bg.avatarWardSettings, defaults.avatarWardSettings);
     LibraPlatesSettingsApplyDetachedDefaults(bg.avatarRageSettings, defaults.avatarRageSettings);
     LibraPlatesSettingsApplyDetachedDefaults(bg.avatarFavorSettings, defaults.avatarFavorSettings);
+end
+
+function LibraPlatesSettingsEnsureDetachedPupWidgetDefaults(bg)
+    local defaults = ((globalDefaults.targeting or {}).pupPetStaticBackgroundSettings or {});
+    bg.pupFrameArtworkSettings = bg.pupFrameArtworkSettings or {};
+    bg.pupHeadArtworkSettings = bg.pupHeadArtworkSettings or {};
+    bg.pupNameSettings = bg.pupNameSettings or {};
+    bg.pupHpBarSettings = bg.pupHpBarSettings or {};
+    bg.pupMpBarSettings = bg.pupMpBarSettings or {};
+    bg.pupTpBarSettings = bg.pupTpBarSettings or {};
+    bg.pupOverloadSettings = bg.pupOverloadSettings or {};
+    bg.pupElementSettings = bg.pupElementSettings or {};
+    bg.pupManeuverSettings = bg.pupManeuverSettings or {};
+
+    LibraPlatesSettingsApplyDetachedDefaults(bg.pupFrameArtworkSettings, defaults.pupFrameArtworkSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.pupHeadArtworkSettings, defaults.pupHeadArtworkSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.pupNameSettings, defaults.pupNameSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.pupHpBarSettings, defaults.pupHpBarSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.pupMpBarSettings, defaults.pupMpBarSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.pupTpBarSettings, defaults.pupTpBarSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.pupOverloadSettings, defaults.pupOverloadSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.pupElementSettings, defaults.pupElementSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.pupManeuverSettings, defaults.pupManeuverSettings);
+end
+
+function LibraPlatesSettingsDrawDetachedPupManeuverSettings(settings)
+    DrawCheckbox('Show maneuvers', settings.enabled ~= false, function(value)
+        settings.enabled = value == true;
+        state.Save();
+    end);
+
+    DrawInlineComboRow(
+        'Icon set',
+        LibraPlatesPupManeuvers.GetIconSets(),
+        settings.iconSet or maneuverDefaults.iconSet or 'default',
+        function(value)
+            settings.iconSet = value;
+            state.Save();
+        end,
+        'DetachedPupManeuverIconSet',
+        nil,
+        125,
+        nil,
+        180,
+        LibraPlatesPupManeuvers.GetIconSetsFolderPath()
+    );
+
+    local x, xChanged, y, yChanged = DrawPlacementPair(
+        'Position X', settings.offsetX, 'DetachedPupManeuverX',
+        'Position Y', settings.offsetY, 'DetachedPupManeuverY',
+        -800, 800, 1, 125, 58
+    );
+    if (xChanged == true or yChanged == true) then
+        settings.offsetX = x;
+        settings.offsetY = y;
+        state.Save();
+    end
+
+    local iconSize, iconSizeChanged, spacing, spacingChanged = DrawPlacementPair(
+        'Icon size', settings.iconSize, 'DetachedPupManeuverIconSize',
+        'Icon spacer', settings.iconSpacing, 'DetachedPupManeuverIconSpacer',
+        0, 256, 1, 125, 58
+    );
+    if (iconSizeChanged == true or spacingChanged == true) then
+        settings.iconSize = math.max(1, iconSize);
+        settings.iconSpacing = math.max(0, spacing);
+        state.Save();
+    end
+
+    DrawCheckbox('Show timers', settings.showTimers == true, function(value)
+        settings.showTimers = value == true;
+        state.Save();
+    end);
+
+    if (settings.showTimers == true) then
+        DrawCheckbox('Use small font', settings.timerUseSmallFont == true, function(value)
+            settings.timerUseSmallFont = value == true;
+            state.Save();
+        end);
+        uiTooltip.Info('When enabled, this uses the Small text font style configured in Settings > Theme.');
+
+        local fontSize, fontSizeChanged, timerY, timerYChanged = DrawPlacementPair(
+            'Font size', textScale.NormalizeSetting(settings.timerFontSize, maneuverDefaults.timerFontSize),
+            'DetachedPupManeuverTimerFontSize',
+            'Timer Y', settings.timerOffsetY, 'DetachedPupManeuverTimerY',
+            -100, 100, 1, 125, 58
+        );
+        if (fontSizeChanged == true or timerYChanged == true) then
+            settings.timerFontSize = fontSize;
+            settings.timerOffsetY = timerY;
+            state.Save();
+        end
+
+        local textColor, textColorChanged, outlineSize, outlineSizeChanged = DrawColorAndPlacementRow(
+            'Font color', settings.timerTextColor, 'DetachedPupManeuverTimerTextColor',
+            'Outline size', settings.timerTextOutlineSize, 'DetachedPupManeuverTimerOutlineSize',
+            0, 12, 1, 125, 58
+        );
+        if (textColorChanged == true or outlineSizeChanged == true) then
+            settings.timerTextColor = textColor;
+            settings.timerTextOutlineSize = outlineSize;
+            state.Save();
+        end
+
+        local outlineColor, outlineColorChanged = DrawSettingsColor(
+            'Outline color',
+            settings.timerTextOutlineColor,
+            'DetachedPupManeuverTimerOutlineColor'
+        );
+        if (outlineColorChanged == true) then
+            settings.timerTextOutlineColor = outlineColor;
+            state.Save();
+        end
+    end
 end
 
 function LibraPlatesSettingsDrawDetachedAvatarBarSettings(title, meters, keyPrefix, labelPrefix, isFavor)
@@ -14603,7 +14987,7 @@ function settingsUi.DrawDetachedFrameSettings()
         return;
     end
 
-    local modeKey = prefix .. 'PetPlateMode';
+    local modeKey = settingsPrefix .. 'PetPlateMode';
     local editKey = settingsPrefix .. 'PetStaticEditFrame';
     local xKey = settingsPrefix .. 'PetStaticX';
     local yKey = settingsPrefix .. 'PetStaticY';
@@ -14612,17 +14996,20 @@ function settingsUi.DrawDetachedFrameSettings()
     local sharedBackgroundSettingsKey = prefix .. 'PetStaticBackgroundSettings';
     local legacyBackgroundKey = prefix .. 'PetStaticBackground';
     local defaults = (globalDefaults.targeting or {});
+    if (settings[modeKey] == nil) then
+        settings[modeKey] = tostring(defaults[modeKey] or settings[prefix .. 'PetPlateMode'] or defaults[prefix .. 'PetPlateMode'] or 'Normal');
+    end
     if (settings[editKey] == nil) then
         settings[editKey] = settings[prefix .. 'PetStaticEditFrame'] == true;
     end
     if (settings[xKey] == nil) then
-        settings[xKey] = tonumber(settings[prefix .. 'PetStaticX'] or defaults[prefix .. 'PetStaticX']) or 170;
+        settings[xKey] = tonumber(defaults[xKey] or settings[prefix .. 'PetStaticX'] or defaults[prefix .. 'PetStaticX']) or 170;
     end
     if (settings[yKey] == nil) then
-        settings[yKey] = tonumber(settings[prefix .. 'PetStaticY'] or defaults[prefix .. 'PetStaticY']) or 690;
+        settings[yKey] = tonumber(defaults[yKey] or settings[prefix .. 'PetStaticY'] or defaults[prefix .. 'PetStaticY']) or 690;
     end
     if (settings[scaleKey] == nil) then
-        settings[scaleKey] = tonumber(settings[prefix .. 'PetStaticScale'] or defaults[prefix .. 'PetStaticScale']) or 35;
+        settings[scaleKey] = tonumber(defaults[scaleKey] or settings[prefix .. 'PetStaticScale'] or defaults[prefix .. 'PetStaticScale']) or 35;
     end
     if (settings[backgroundSettingsKey] == nil) then
         local fallbackBackground = settings[sharedBackgroundSettingsKey]
@@ -14668,41 +15055,6 @@ function settingsUi.DrawDetachedFrameSettings()
 
     if (detached ~= true) then
         return;
-    end
-
-    if (prefix == 'smn') then
-        local sourceSettingsPrefix = settingsPrefix == 'smnSpirit' and 'smnAvatar' or 'smnSpirit';
-        local sourceLabel = settingsPrefix == 'smnSpirit' and 'Avatar' or 'Spirit';
-        local function GetCopySourceValue(suffix)
-            local value = settings[sourceSettingsPrefix .. suffix];
-
-            if (value == nil) then
-                value = settings[prefix .. suffix] or defaults[prefix .. suffix];
-            end
-
-            return value;
-        end
-
-        LibraPlatesSettingsDrawBoxedPanel('Copy settings', function()
-            if (imgui.Button('Copy position from ' .. sourceLabel .. '##' .. settingsPrefix .. 'CopyDetachedPosition') == true) then
-                settings[xKey] = tonumber(GetCopySourceValue('PetStaticX')) or 170;
-                settings[yKey] = tonumber(GetCopySourceValue('PetStaticY')) or 690;
-                state.Save();
-            end
-
-            if (imgui.Button('Copy all settings from ' .. sourceLabel .. '##' .. settingsPrefix .. 'CopyDetachedAll') == true) then
-                settings[xKey] = tonumber(GetCopySourceValue('PetStaticX')) or 170;
-                settings[yKey] = tonumber(GetCopySourceValue('PetStaticY')) or 690;
-                settings[scaleKey] = tonumber(GetCopySourceValue('PetStaticScale')) or 35;
-
-                local sourceBackground = GetCopySourceValue('PetStaticBackgroundSettings');
-                if (type(sourceBackground) == 'table') then
-                    settings[backgroundSettingsKey] = LibraPlatesSettingsCopyTable(sourceBackground);
-                end
-
-                state.Save();
-            end
-        end, true);
     end
 
     settings[backgroundSettingsKey] = settings[backgroundSettingsKey] or LibraPlatesSettingsCopyTable(backgroundDefaults);
@@ -14766,30 +15118,49 @@ function settingsUi.DrawDetachedFrameSettings()
         meters.favorPadding = meters.favorPadding or 0;
         LibraPlatesSettingsEnsureDetachedAvatarMeterDefaults(meters);
         LibraPlatesSettingsEnsureDetachedAvatarWidgetDefaults(bg);
+    elseif (prefix == 'pup') then
+        LibraPlatesSettingsEnsureDetachedPupWidgetDefaults(bg);
     end
     bg.borderColor = bg.borderColor or { 0.0, 0.0, 0.0, 0.80 };
     bg.borderSize = bg.borderSize or 0;
 
-    LibraPlatesSettingsDrawBoxedPanel(prefix == 'smn' and 'Avatar plate art' or 'Background', function()
-        if (prefix ~= 'smn') then
+    LibraPlatesSettingsDrawBoxedPanel(
+        prefix == 'smn'
+            and (settingsPrefix == 'smnSpirit' and 'Spirit plate art' or 'Avatar plate art')
+            or (prefix == 'pup' and 'Automaton plate art' or 'Background'),
+        function()
+        if (prefix == 'smn' or prefix == 'pup') then
+            DrawCheckbox('Use plate art', bg.enabled ~= false, function(value)
+                bg.enabled = value == true;
+                state.Save();
+            end);
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            LibraPlatesFileManager.Draw(
+                prefix == 'pup'
+                    and require('core.background_textures').GetPupArtworkFolderPath()
+                    or require('core.background_textures').GetAvatarArtworkFolderPath(),
+                settingsPrefix .. 'DetachedPlateArtFolder'
+            );
+        else
             DrawCheckbox('Use background', bg.enabled == true, function(value)
                 bg.enabled = value == true;
                 state.Save();
             end);
         end
 
-    local usingAvatarArtwork = prefix == 'smn' and bg.useAvatarArtwork ~= false;
+    local usingPlateArtwork = (prefix == 'smn' and bg.useAvatarArtwork ~= false) or prefix == 'pup';
 
-    if (usingAvatarArtwork == true) then
-        local frameSize, frameSizeChanged = DrawPlacementSingle('Frame size', bg.width, prefix .. 'DetachedAvatarFrameSize', 8, 1200, 1, 125, 125, 58);
+    if (usingPlateArtwork == true) then
+        local frameSize, frameSizeChanged = DrawPlacementSingle('Frame size', bg.width, settingsPrefix .. 'DetachedFrameSize', 8, 1200, 1, 125, 125, 58);
         if (frameSizeChanged == true) then
             bg.width = math.floor((tonumber(frameSize) or 220) + 0.5);
             state.Save();
         end
 
-        local artworkOpacity, artworkOpacityChanged = DrawPlacementSingle('Opacity', bg.avatarArtworkOpacity or 100, prefix .. 'AvatarArtworkOpacity', 0, 100, 1, 125, 125, 58);
+        local opacityKey = prefix == 'pup' and 'pupArtworkOpacity' or 'avatarArtworkOpacity';
+        local artworkOpacity, artworkOpacityChanged = DrawPlacementSingle('Opacity', bg[opacityKey] or 100, settingsPrefix .. 'ArtworkOpacity', 0, 100, 1, 125, 125, 58);
         if (artworkOpacityChanged == true) then
-            bg.avatarArtworkOpacity = math.floor((tonumber(artworkOpacity) or 100) + 0.5);
+            bg[opacityKey] = math.floor((tonumber(artworkOpacity) or 100) + 0.5);
             state.Save();
         end
     else
@@ -14893,6 +15264,9 @@ function settingsUi.DrawDetachedFrameSettings()
                 skipPlacement = true,
             });
         end, true);
+        LibraPlatesSettingsDrawBoxedPanel('Enmity', function()
+            DrawEnmityMarkerSettings(bg.avatarEnmitySettings, 'ally', true);
+        end, true);
         LibraPlatesSettingsDrawBoxedPanel('Ward', function()
             widgets.bar.DrawSettings(bg.avatarWardSettings, {
                 widget = 'Detached Ward timer',
@@ -14986,6 +15360,392 @@ function settingsUi.DrawDetachedFrameSettings()
                 end
             end
         end, true);
+    end
+
+    if (prefix == 'pup') then
+        local detachedDefaults = ((globalDefaults.targeting or {}).pupPetStaticBackgroundSettings or {});
+
+        local function DrawPupEquipmentArtworkSettings(label, layer, artworkSettings)
+            LibraPlatesSettingsDrawBoxedPanel(label, function()
+                DrawCheckbox('Show artwork', artworkSettings.enabled ~= false, function(value)
+                    artworkSettings.enabled = value == true;
+                    state.Save();
+                end);
+                if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+                LibraPlatesFileManager.Draw(
+                    require('core.background_textures').GetPupEquipmentArtworkFolderPath(layer),
+                    'DetachedPup' .. layer .. 'ArtworkFolder'
+                );
+
+                if (artworkSettings.enabled ~= false) then
+                    local x, xChanged, y, yChanged = DrawPlacementPair(
+                        'Position X', artworkSettings.offsetX, 'DetachedPup' .. layer .. 'ArtworkX',
+                        'Position Y', artworkSettings.offsetY, 'DetachedPup' .. layer .. 'ArtworkY',
+                        -1200, 1200, 1, 125, 58
+                    );
+                    if (xChanged == true or yChanged == true) then
+                        artworkSettings.offsetX = math.floor((tonumber(x) or 0) + 0.5);
+                        artworkSettings.offsetY = math.floor((tonumber(y) or 0) + 0.5);
+                        state.Save();
+                    end
+
+                    local height, heightChanged = DrawPlacementSingle(
+                        'Artwork height', artworkSettings.height,
+                        'DetachedPup' .. layer .. 'ArtworkHeight',
+                        8, 1600, 1, 125, 125, 58
+                    );
+                    if (heightChanged == true) then
+                        artworkSettings.height = math.max(8, math.floor((tonumber(height) or 300) + 0.5));
+                        state.Save();
+                    end
+
+                    local opacity, opacityChanged = DrawPlacementSingle(
+                        'Opacity', artworkSettings.opacity,
+                        'DetachedPup' .. layer .. 'ArtworkOpacity',
+                        0, 100, 1, 125, 125, 58
+                    );
+                    if (opacityChanged == true) then
+                        artworkSettings.opacity = math.max(0, math.min(100, math.floor((tonumber(opacity) or 100) + 0.5)));
+                        state.Save();
+                    end
+                end
+            end, true);
+        end
+
+        DrawPupEquipmentArtworkSettings('Frame artwork', 'frames', bg.pupFrameArtworkSettings);
+        DrawPupEquipmentArtworkSettings('Head artwork', 'heads', bg.pupHeadArtworkSettings);
+
+        widgets.text.DrawSettings(bg.pupNameSettings, {
+            widget = 'Detached PUP Name',
+            displayLabel = 'Name',
+            defaults = detachedDefaults.pupNameSettings,
+            boxed = true,
+            skipPlacement = true,
+            hideActive = true,
+            hideResetControls = true,
+            settingsGridColumnWidth = 125,
+        });
+        LibraPlatesSettingsDrawBoxedPanel('HP Bar', function()
+            widgets.bar.DrawSettings(bg.pupHpBarSettings, {
+                widget = 'Detached PUP HP Bar',
+                resourceName = 'HP',
+                defaults = detachedDefaults.pupHpBarSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                showValueControl = false,
+                hideShowAtPercent = true,
+                alignBarSettingsGrid = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel('MP Bar', function()
+            widgets.bar.DrawSettings(bg.pupMpBarSettings, {
+                widget = 'Detached PUP MP Bar',
+                resourceName = 'MP',
+                defaults = detachedDefaults.pupMpBarSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                showValueControl = false,
+                alignBarSettingsGrid = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel('TP Bar', function()
+            widgets.bar.DrawSettings(bg.pupTpBarSettings, {
+                widget = 'Detached PUP TP Bar',
+                resourceName = 'TP',
+                defaults = detachedDefaults.pupTpBarSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                alignBarSettingsGrid = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+
+        LibraPlatesSettingsDrawBoxedPanel('Overload', function()
+            local overload = bg.pupOverloadSettings;
+            DrawCheckbox('Show gauge', overload.enabled ~= false, function(value)
+                overload.enabled = value == true;
+                state.Save();
+            end);
+
+            local size, sizeChanged = DrawPlacementSingle(
+                'Gauge size', overload.size, 'DetachedPupOverloadSize',
+                8, 512, 1, 125, 125, 58
+            );
+            if (sizeChanged == true) then
+                overload.size = math.floor((tonumber(size) or 58) + 0.5);
+                state.Save();
+            end
+
+            local x, xChanged, y, yChanged = DrawPlacementPair(
+                'Position X', overload.offsetX, 'DetachedPupOverloadX',
+                'Position Y', overload.offsetY, 'DetachedPupOverloadY',
+                -800, 800, 1, 125, 58
+            );
+            if (xChanged == true or yChanged == true) then
+                overload.offsetX = math.floor((tonumber(x) or 0) + 0.5);
+                overload.offsetY = math.floor((tonumber(y) or 0) + 0.5);
+                state.Save();
+            end
+
+            imgui.TextColored(settingsHeaderColor, 'Background settings:');
+            DrawCheckbox('Show background', overload.showBackground ~= false, function(value)
+                overload.showBackground = value == true;
+                state.Save();
+            end);
+            if (overload.showBackground ~= false) then
+                local backgroundColor, backgroundChanged = DrawSettingsColor(
+                    'Background color', overload.backgroundColor, 'DetachedPupOverloadBackgroundColor'
+                );
+                if (backgroundChanged == true) then
+                    overload.backgroundColor = backgroundColor;
+                    state.Save();
+                end
+            end
+
+            imgui.TextColored(settingsHeaderColor, 'Ring settings:');
+            DrawCheckbox('Show ring', overload.showRing ~= false, function(value)
+                overload.showRing = value == true;
+                state.Save();
+            end);
+            if (overload.showRing ~= false) then
+                local ringColor, ringColorChanged, ringSize, ringSizeChanged = DrawColorAndPlacementRow(
+                    'Ring color', overload.ringColor, 'DetachedPupOverloadRingColor',
+                    'Ring size', overload.ringSize, 'DetachedPupOverloadRingSize',
+                    1, 40, 1, 125, 58
+                );
+                if (ringColorChanged == true or ringSizeChanged == true) then
+                    overload.ringColor = ringColor;
+                    overload.ringSize = math.floor((tonumber(ringSize) or 3) + 0.5);
+                    state.Save();
+                end
+            end
+
+            imgui.TextColored(settingsHeaderColor, 'Dial settings:');
+            local dialSize, dialSizeChanged = DrawPlacementSingle(
+                'Dial size', overload.dialSize, 'DetachedPupOverloadDialSize',
+                1, 40, 1, 125, 125, 58
+            );
+            if (dialSizeChanged == true) then
+                overload.dialSize = math.floor((tonumber(dialSize) or 3) + 0.5);
+                state.Save();
+            end
+
+            local centerDotColor, centerDotColorChanged = DrawSettingsColor(
+                'Center dot color',
+                overload.centerDotColor,
+                'DetachedPupOverloadCenterDotColor'
+            );
+            if (centerDotColorChanged == true) then
+                overload.centerDotColor = centerDotColor;
+                state.Save();
+            end
+
+            for _, colorRow in ipairs({
+                { 'Safe color', 'safeColor', 'SafeColor' },
+                { 'Warning color', 'warningColor', 'WarningColor' },
+                { 'Overloaded color', 'overloadedColor', 'OverloadedColor' },
+            }) do
+                local color, changed = DrawSettingsColor(
+                    colorRow[1],
+                    overload[colorRow[2]],
+                    'DetachedPupOverload' .. colorRow[3]
+                );
+                if (changed == true) then
+                    overload[colorRow[2]] = color;
+                    state.Save();
+                end
+            end
+
+            imgui.TextColored(settingsHeaderColor, 'Percentage text:');
+            DrawCheckbox('Use small font', overload.useSmallFont == true, function(value)
+                overload.useSmallFont = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('When enabled, this uses the Small text font style configured in Settings > Theme.');
+
+            local textX, textXChanged, textY, textYChanged = DrawPlacementPair(
+                'Position X', overload.textOffsetX, 'DetachedPupOverloadTextX',
+                'Position Y', overload.textOffsetY, 'DetachedPupOverloadTextY',
+                -800, 800, 1, 125, 58
+            );
+            if (textXChanged == true or textYChanged == true) then
+                overload.textOffsetX = math.floor((tonumber(textX) or 0) + 0.5);
+                overload.textOffsetY = math.floor((tonumber(textY) or 0) + 0.5);
+                state.Save();
+            end
+
+            local fontSize, fontSizeChanged, fontColor, fontColorChanged = DrawPlacementAndColorRow(
+                'Font size', overload.fontSize, 'DetachedPupOverloadFontSize',
+                1, 96, 1,
+                'Font color', overload.textColor, 'DetachedPupOverloadFontColor',
+                125, 58
+            );
+            if (fontSizeChanged == true or fontColorChanged == true) then
+                overload.fontSize = math.max(1, math.floor((tonumber(fontSize) or 10) + 0.5));
+                overload.textColor = fontColor;
+                state.Save();
+            end
+
+            local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawPlacementAndColorRow(
+                'Outline size', overload.textOutlineSize, 'DetachedPupOverloadOutlineSize',
+                0, 12, 1,
+                'Outline color', overload.textOutlineColor, 'DetachedPupOverloadOutlineColor',
+                125, 58
+            );
+            if (outlineSizeChanged == true or outlineColorChanged == true) then
+                overload.textOutlineSize = math.max(0, math.floor((tonumber(outlineSize) or 0) + 0.5));
+                overload.textOutlineColor = outlineColor;
+                state.Save();
+            end
+        end, true);
+
+        LibraPlatesSettingsDrawBoxedPanel('Highest burden element', function()
+            local elementSettings = bg.pupElementSettings;
+            DrawCheckbox('Show element icon', elementSettings.enabled ~= false, function(value)
+                elementSettings.enabled = value == true;
+                state.Save();
+            end);
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            LibraPlatesFileManager.Draw(
+                require('core.background_textures').GetPupElementArtworkFolderPath(),
+                'DetachedPupElementArtworkFolder'
+            );
+
+            if (elementSettings.enabled ~= false) then
+                local size, sizeChanged = DrawPlacementSingle(
+                    'Icon size', elementSettings.size, 'DetachedPupElementSize',
+                    1, 256, 1, 125, 125, 58
+                );
+                if (sizeChanged == true) then
+                    elementSettings.size = math.max(1, math.floor((tonumber(size) or 24) + 0.5));
+                    state.Save();
+                end
+
+                local x, xChanged, y, yChanged = DrawPlacementPair(
+                    'Position X', elementSettings.offsetX, 'DetachedPupElementX',
+                    'Position Y', elementSettings.offsetY, 'DetachedPupElementY',
+                    -800, 800, 1, 125, 58
+                );
+                if (xChanged == true or yChanged == true) then
+                    elementSettings.offsetX = math.floor((tonumber(x) or 0) + 0.5);
+                    elementSettings.offsetY = math.floor((tonumber(y) or 0) + 0.5);
+                    state.Save();
+                end
+            end
+        end, true);
+
+        LibraPlatesSettingsDrawBoxedPanel('Maneuvers', function()
+            LibraPlatesSettingsDrawDetachedPupManeuverSettings(bg.pupManeuverSettings);
+        end, true);
+    end
+
+    if (prefix == 'smn') then
+        local function ApplyDetachedFrameReset(kind)
+            if kind == 'position' then
+                settings[xKey] = tonumber(defaults[xKey] or defaults[prefix .. 'PetStaticX']) or 170;
+                settings[yKey] = tonumber(defaults[yKey] or defaults[prefix .. 'PetStaticY']) or 690;
+                settings[editKey] = false;
+                state.Save();
+                return;
+            end
+
+            settings[modeKey] = tostring(defaults[modeKey] or 'Detach from pet');
+            settings[editKey] = false;
+            settings[xKey] = tonumber(defaults[xKey] or defaults[prefix .. 'PetStaticX']) or 170;
+            settings[yKey] = tonumber(defaults[yKey] or defaults[prefix .. 'PetStaticY']) or 690;
+            settings[scaleKey] = tonumber(defaults[scaleKey] or defaults[prefix .. 'PetStaticScale']) or 35;
+            settings[backgroundSettingsKey] = LibraPlatesSettingsCopyTable(
+                defaults[backgroundSettingsKey]
+                    or defaults[sharedBackgroundSettingsKey]
+                    or {}
+            );
+            state.Save();
+        end
+
+        local resetPopupName = 'Reset detached frame##libraplates_' .. settingsPrefix .. '_detached_reset';
+
+        if (DrawResetActionButton('Reset Detached frame position', settingsPrefix .. '_detached_position') == true) then
+            LibraPlatesSettingsDetachedFramePendingReset = {
+                kind = 'position',
+                settingsPrefix = settingsPrefix,
+            };
+            if (imgui.OpenPopup ~= nil) then
+                imgui.OpenPopup(resetPopupName);
+            end
+        end
+
+        if (DrawResetActionButton('Reset Detached frame settings', settingsPrefix .. '_detached_settings') == true) then
+            LibraPlatesSettingsDetachedFramePendingReset = {
+                kind = 'settings',
+                settingsPrefix = settingsPrefix,
+            };
+            if (imgui.OpenPopup ~= nil) then
+                imgui.OpenPopup(resetPopupName);
+            end
+        end
+
+        if (
+            LibraPlatesSettingsDetachedFramePendingReset ~= nil and
+            LibraPlatesSettingsDetachedFramePendingReset.settingsPrefix == settingsPrefix
+        ) then
+            local resetPopupWidth = 400;
+            local resetPopupHeight = 115;
+
+            if (imgui.SetNextWindowSize ~= nil) then
+                imgui.SetNextWindowSize({ resetPopupWidth, resetPopupHeight }, _G.ImGuiCond_Always or 0);
+            end
+
+            if (imgui.SetNextWindowPos ~= nil and imgui.GetIO ~= nil) then
+                local ok, io = pcall(function()
+                    return imgui.GetIO();
+                end);
+
+                if (ok == true and io ~= nil and io.DisplaySize ~= nil) then
+                    local displayW = tonumber(io.DisplaySize.x or io.DisplaySize.X or io.DisplaySize[1]);
+                    local displayH = tonumber(io.DisplaySize.y or io.DisplaySize.Y or io.DisplaySize[2]);
+
+                    if (displayW ~= nil and displayH ~= nil) then
+                        imgui.SetNextWindowPos({
+                            math.max(0, (displayW - resetPopupWidth) * 0.5),
+                            math.max(0, (displayH - resetPopupHeight) * 0.5),
+                        }, _G.ImGuiCond_Always or 0);
+                    end
+                end
+            end
+
+            if (imgui.BeginPopupModal ~= nil and imgui.BeginPopupModal(resetPopupName) == true) then
+            local resettingPosition = LibraPlatesSettingsDetachedFramePendingReset.kind == 'position';
+            imgui.Text(resettingPosition and 'Reset Detached frame position?' or 'Reset Detached frame settings?');
+
+            if (resettingPosition == true) then
+                imgui.Text('This will reset Position X and Position Y.');
+            else
+                imgui.Text('This will reset all Detached frame settings.');
+            end
+
+            imgui.Separator();
+
+            if (imgui.Button('Cancel##detached_frame_reset_cancel_' .. settingsPrefix) == true) then
+                LibraPlatesSettingsDetachedFramePendingReset = nil;
+                imgui.CloseCurrentPopup();
+            end
+
+            imgui.SameLine();
+            if (imgui.Button('Reset##detached_frame_reset_confirm_' .. settingsPrefix) == true) then
+                local kind = LibraPlatesSettingsDetachedFramePendingReset.kind;
+                LibraPlatesSettingsDetachedFramePendingReset = nil;
+                ApplyDetachedFrameReset(kind);
+                imgui.CloseCurrentPopup();
+            end
+
+            imgui.EndPopup();
+            end
+        end
     end
 
     DrawResetFooterBottomPadding();
@@ -15465,7 +16225,7 @@ function settingsUi.QueueDetachedPetSetupPreview()
             targetingSettings[settingsPrefix .. 'PetStaticEditFrame'] ~= true and
             targetingSettings[prefix .. 'PetStaticEditFrame'] ~= true
         ) or
-        tostring(targetingSettings[prefix .. 'PetPlateMode'] or 'Normal') == 'Normal'
+        tostring(targetingSettings[settingsPrefix .. 'PetPlateMode'] or targetingSettings[prefix .. 'PetPlateMode'] or 'Normal') == 'Normal'
     ) then
         return;
     end
@@ -15486,8 +16246,36 @@ end
 -- Rendering
 -- ============================================================
 
+function settingsUi.LockDetachedFrameEditors()
+    local settings = targeting.GetSettings();
+
+    if (settings == nil) then
+        return;
+    end
+
+    local changed = false;
+    for _, key in ipairs({
+        'bstPetStaticEditFrame',
+        'smnPetStaticEditFrame',
+        'smnAvatarPetStaticEditFrame',
+        'smnSpiritPetStaticEditFrame',
+        'drgPetStaticEditFrame',
+        'pupPetStaticEditFrame',
+    }) do
+        if (settings[key] == true) then
+            settings[key] = false;
+            changed = true;
+        end
+    end
+
+    if (changed == true) then
+        state.Save();
+    end
+end
+
 function settingsUi.Render()
     if (state.GetConfigOpen() ~= true) then
+        settingsUi.LockDetachedFrameEditors();
         local enemyAlerts = require('core.enemy_alerts');
         if (enemyAlerts.GetPreviewEnabled() == true) then
             enemyAlerts.SetPreviewEnabled(false);

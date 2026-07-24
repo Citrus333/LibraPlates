@@ -4,6 +4,14 @@ local textureLoader = require('core.texture_loader');
 
 local pupManeuvers = {};
 local textureCache = {};
+local maneuverIconSets = {
+    'default',
+    'boarderless',
+};
+local maneuverIconSetLookup = {
+    default = true,
+    boarderless = true,
+};
 
 local maneuverIcons = {
     [300] = 'fire.png',
@@ -18,22 +26,40 @@ local maneuverIcons = {
     overload = 'overload.png',
 };
 
-local function GetIconTextureId(iconKey)
+local function NormalizeIconSet(value)
+    local iconSet = tostring(value or 'default'):lower():gsub('[\\/]', '');
+    return maneuverIconSetLookup[iconSet] == true and iconSet or 'default';
+end
+
+local function GetIconTextureId(iconKey, iconSet)
     local fileName = maneuverIcons[iconKey];
 
     if (fileName == nil) then
         return nil;
     end
 
-    local cacheKey = tostring(iconKey);
+    iconSet = NormalizeIconSet(iconSet);
+    local cacheKey = iconSet .. ':' .. tostring(iconKey);
 
     if (textureCache[cacheKey] ~= nil) then
         return textureCache[cacheKey];
     end
 
-    local path = addon.path .. '\\assets\\images\\maneuvers\\default\\' .. fileName;
+    local path = addon.path .. '\\assets\\images\\maneuvers\\' .. iconSet .. '\\' .. fileName;
     textureCache[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path));
     return textureCache[cacheKey];
+end
+
+function pupManeuvers.GetIconSets()
+    local result = {};
+    for _, iconSet in ipairs(maneuverIconSets) do
+        result[#result + 1] = iconSet;
+    end
+    return result;
+end
+
+function pupManeuvers.GetIconSetsFolderPath()
+    return addon.path .. '\\assets\\images\\maneuvers\\';
 end
 
 function pupManeuvers.GetState()
@@ -97,7 +123,7 @@ function pupManeuvers.AddIcons(plateData, settings, globalSettings, previewRows)
             seconds = tonumber(state.maneuvers[slot].seconds);
         end
 
-        local textureId = GetIconTextureId(iconKey);
+        local textureId = GetIconTextureId(iconKey, settings.iconSet);
 
         if (textureId ~= nil) then
             plateData.icons[#plateData.icons + 1] = {

@@ -1156,6 +1156,11 @@ local function AddEnmityPreviewIcon(plateData, globalSettings, context)
         markerSettings.offsetY = globalSettings.enmity.enemyOffsetY or globalSettings.enmity.offsetY or -17;
         markerSettings.color = globalSettings.enmity.enemyColor or globalSettings.enmity.color or { 0.25, 0.85, 1.0, 1.0 };
         markerSettings.iconFile = globalSettings.enmity.enemyIconFile or 'shield-alert.png';
+        markerSettings.anchorTo = globalSettings.enmity.enemyAnchorTo or globalSettings.enmity.anchorTo;
+        markerSettings.anchorPoint = globalSettings.enmity.enemyAnchorPoint or globalSettings.enmity.anchorPoint;
+        markerSettings.anchorCollapse = globalSettings.enmity.enemyAnchorCollapse;
+        markerSettings.anchorSpacing = globalSettings.enmity.enemyAnchorSpacing;
+        markerSettings.anchorOrder = globalSettings.enmity.enemyAnchorOrder;
     else
         markerSettings.enabled = true;
         markerSettings.iconSize = globalSettings.enmity.allyIconSize or globalSettings.enmity.iconSize or 31;
@@ -1163,6 +1168,11 @@ local function AddEnmityPreviewIcon(plateData, globalSettings, context)
         markerSettings.offsetY = globalSettings.enmity.allyOffsetY or globalSettings.enmity.offsetY or -17;
         markerSettings.color = globalSettings.enmity.allyColor or globalSettings.enmity.color or { 1.0, 0.28, 0.20, 1.0 };
         markerSettings.iconFile = globalSettings.enmity.allyIconFile or 'warning-dimond.png';
+        markerSettings.anchorTo = globalSettings.enmity.allyAnchorTo or globalSettings.enmity.anchorTo;
+        markerSettings.anchorPoint = globalSettings.enmity.allyAnchorPoint or globalSettings.enmity.anchorPoint;
+        markerSettings.anchorCollapse = globalSettings.enmity.allyAnchorCollapse;
+        markerSettings.anchorSpacing = globalSettings.enmity.allyAnchorSpacing;
+        markerSettings.anchorOrder = globalSettings.enmity.allyAnchorOrder;
     end
 
     local enmityIcons = require('core.enmity_icons');

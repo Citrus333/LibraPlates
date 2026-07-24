@@ -425,6 +425,11 @@ local function GetMarkerSettings(settings, role)
             iconSize = tonumber(settings.enemyIconSize) or tonumber(settings.iconSize) or 31,
             offsetX = tonumber(settings.enemyOffsetX) or tonumber(settings.offsetX) or -108,
             offsetY = tonumber(settings.enemyOffsetY) or tonumber(settings.offsetY) or -17,
+            anchorTo = settings.enemyAnchorTo or settings.anchorTo,
+            anchorPoint = settings.enemyAnchorPoint or settings.anchorPoint,
+            anchorCollapse = settings.enemyAnchorCollapse,
+            anchorSpacing = settings.enemyAnchorSpacing,
+            anchorOrder = settings.enemyAnchorOrder,
         };
     end
 
@@ -434,6 +439,11 @@ local function GetMarkerSettings(settings, role)
         iconSize = tonumber(settings.allyIconSize) or tonumber(settings.iconSize) or 31,
         offsetX = tonumber(settings.allyOffsetX) or tonumber(settings.offsetX) or -108,
         offsetY = tonumber(settings.allyOffsetY) or tonumber(settings.offsetY) or -17,
+        anchorTo = settings.allyAnchorTo or settings.anchorTo,
+        anchorPoint = settings.allyAnchorPoint or settings.anchorPoint,
+        anchorCollapse = settings.allyAnchorCollapse,
+        anchorSpacing = settings.allyAnchorSpacing,
+        anchorOrder = settings.allyAnchorOrder,
     };
 end
 
@@ -453,6 +463,11 @@ function enmity.AddIcon(plateData, settings, role)
         size = math.max(6, math.min(256, tonumber(marker.iconSize) or 31)),
         offsetX = tonumber(marker.offsetX) or -108,
         offsetY = tonumber(marker.offsetY) or -17,
+        anchorTo = marker.anchorTo,
+        anchorPoint = marker.anchorPoint,
+        anchorCollapse = marker.anchorCollapse,
+        anchorSpacing = marker.anchorSpacing,
+        anchorOrder = marker.anchorOrder,
     };
 end
 

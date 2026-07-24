@@ -188,10 +188,19 @@ local function DrawSliderControl(id, value, minValue, maxValue, width, showButto
     return current;
 end
 
-local function DrawTableSlider(label, id, value, minValue, maxValue, showButtons)
+local function DrawTableSlider(label, id, value, minValue, maxValue, showButtons, controlCellWidth)
     imgui.TextColored(labelColor, label);
     imgui.TableNextColumn();
-    return DrawSliderControl(id, value, minValue, maxValue, showButtons == false and 140 or 95, showButtons);
+    local controlWidth = showButtons == false and 140 or 95;
+    if (controlCellWidth ~= nil) then
+        if (showButtons == false) then
+            controlWidth = math.max(40, tonumber(controlCellWidth) or controlWidth);
+        else
+            -- Leave room in compact table cells for the minus/plus buttons and spacing.
+            controlWidth = math.max(40, (tonumber(controlCellWidth) or 125) - 67);
+        end
+    end
+    return DrawSliderControl(id, value, minValue, maxValue, controlWidth, showButtons);
 end
 
 local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, leftMax, rightLabel, rightId, rightValue, rightMin, rightMax, gridColumnWidth)
@@ -206,9 +215,9 @@ local function DrawSliderPair(rowId, leftLabel, leftId, leftValue, leftMin, left
             imgui.TableSetupColumn('##control_right', 0, tonumber(gridColumnWidth) or 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax);
+            leftResult = DrawTableSlider(leftLabel, leftId, leftValue, leftMin, leftMax, nil, gridColumnWidth);
             imgui.TableNextColumn();
-            rightResult = DrawTableSlider(rightLabel, rightId, rightValue, rightMin, rightMax);
+            rightResult = DrawTableSlider(rightLabel, rightId, rightValue, rightMin, rightMax, nil, gridColumnWidth);
             imgui.EndTable();
         end
 
@@ -298,7 +307,7 @@ local function DrawFontRow(settings, defaults, showSmallFontToggle, gridColumnWi
                 imgui.TableNextRow();
 
                 imgui.TableNextColumn();
-                settings.textSize = DrawTableSlider('Font size', 'font_size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
+                settings.textSize = DrawTableSlider('Font size', 'font_size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize(), nil, gridColumnWidth);
                 imgui.TableNextColumn();
                 imgui.TextColored(labelColor, 'Font color');
                 imgui.TableNextColumn();
@@ -319,7 +328,7 @@ local function DrawFontRow(settings, defaults, showSmallFontToggle, gridColumnWi
             imgui.TableSetupColumn('##font_color_control', 0, tonumber(gridColumnWidth) or 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            settings.textSize = DrawTableSlider('Font size', 'font_size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize());
+            settings.textSize = DrawTableSlider('Font size', 'font_size', textScale.NormalizeSetting(settings.textSize, defaults.textSize), textScale.GetMinVisualSize(), textScale.GetMaxVisualSize(), nil, gridColumnWidth);
             imgui.TableNextColumn();
             settings.color = DrawColorCell('Font color', settings.color);
             imgui.EndTable();
@@ -349,7 +358,7 @@ local function DrawOutlineRow(settings, gridColumnWidth)
             imgui.TableSetupColumn('##outline_color_control', 0, tonumber(gridColumnWidth) or 170);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            settings.outlineSize = DrawTableSlider('Outline size', 'outline_size', settings.outlineSize, 0, 12, false);
+            settings.outlineSize = DrawTableSlider('Outline size', 'outline_size', settings.outlineSize, 0, 12, false, gridColumnWidth);
             imgui.TableNextColumn();
             settings.outlineColor = DrawColorCell('Outline color', settings.outlineColor);
             imgui.EndTable();

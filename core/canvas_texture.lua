@@ -2448,17 +2448,40 @@ function canvasTexture.GetElementRects(plate)
         local iconSize = tonumber(icon.size) or 16;
         local iconW = tonumber(icon.width) or iconSize;
         local iconH = tonumber(icon.height) or iconSize;
+        local iconX = centerX - (iconW * 0.5) + (tonumber(icon.offsetX) or 0);
+        local iconY = centerY - (iconH * 0.5) + (tonumber(icon.offsetY) or 0);
+        local iconKind = icon.kind or 'icon';
 
         AddRect(
             rects,
-            centerX - (iconW * 0.5) + (tonumber(icon.offsetX) or 0),
-            centerY - (iconH * 0.5) + (tonumber(icon.offsetY) or 0),
+            iconX,
+            iconY,
             iconW,
             iconH,
             4,
-            icon.kind or 'icon',
+            iconKind,
             icon
         );
+
+        -- Maneuver timers are drawn below their icons. Include that separate
+        -- text area in content bounds without changing the icon's own layout rect.
+        if (tostring(iconKind) == 'maneuvers' and tostring(icon.timerText or '') ~= '') then
+            local timerOutline = math.max(0, tonumber(icon.timerTextOutlineSize) or 0);
+            local timerHeight = math.max(
+                8,
+                ((tonumber(icon.timerFontSize) or 8) * 2) + (timerOutline * 2)
+            );
+            AddRect(
+                rects,
+                iconX,
+                iconY + iconSize + 1 + (tonumber(icon.timerOffsetY) or 0),
+                iconW,
+                timerHeight,
+                2,
+                'maneuver_timer_bounds',
+                nil
+            );
+        end
     end
 
     local jobText = tostring(plate.jobText or '');

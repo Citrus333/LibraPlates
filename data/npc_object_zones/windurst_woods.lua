@@ -1,5 +1,9 @@
 return {
     ["npcs"] = {
+	
+	
+	Abu Dabudabu
+	
         ["A.M.A.N. Validator"] = {
             ["_source"] = "npc",
             ["icon"] = "CommissionAgent.png",

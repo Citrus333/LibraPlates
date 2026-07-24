@@ -5,6 +5,9 @@ local textureIds = {};
 local filesCache = nil;
 local avatarArtworkTextureIds = {};
 local avatarArtworkFilesCache = nil;
+local pupArtworkTextureIds = {};
+local pupEquipmentArtworkTextureIds = {};
+local pupElementTextureIds = {};
 
 local function GetAddonPath()
     local ok, path = pcall(function()
@@ -42,6 +45,23 @@ end
 -- folder.  It must never appear in a normal plate Background image picker.
 function backgroundTextures.GetAvatarArtworkFolderPath()
     return GetAddonPath() .. 'assets\\images\\pet\\smn\\detached\\';
+end
+
+function backgroundTextures.GetPupArtworkFolderPath()
+    return GetAddonPath() .. 'assets\\images\\pet\\pup\\detached\\';
+end
+
+function backgroundTextures.GetPupEquipmentArtworkFolderPath(layer)
+    layer = string.lower(tostring(layer or ''));
+    if (layer ~= 'heads' and layer ~= 'frames') then
+        return nil;
+    end
+
+    return backgroundTextures.GetPupArtworkFolderPath() .. layer .. '\\';
+end
+
+function backgroundTextures.GetPupElementArtworkFolderPath()
+    return backgroundTextures.GetPupArtworkFolderPath() .. 'elements\\';
 end
 
 function backgroundTextures.GetFiles()
@@ -128,11 +148,73 @@ function backgroundTextures.GetAvatarArtworkTextureId(fileName)
         return avatarArtworkTextureIds[key];
     end
 
-    avatarArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.Load(
+    avatarArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
         backgroundTextures.GetAvatarArtworkFolderPath() .. fileName
     ));
 
     return avatarArtworkTextureIds[key];
+end
+
+function backgroundTextures.GetPupArtworkTextureId(fileName)
+    fileName = tostring(fileName or ''):gsub('^.*[\\/]', '');
+
+    if (fileName == '') then
+        return nil;
+    end
+
+    local key = 'pet/pup/detached/' .. fileName;
+    if (pupArtworkTextureIds[key] ~= nil) then
+        return pupArtworkTextureIds[key];
+    end
+
+    pupArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+        backgroundTextures.GetPupArtworkFolderPath() .. fileName
+    ));
+
+    return pupArtworkTextureIds[key];
+end
+
+function backgroundTextures.GetPupEquipmentArtworkTextureId(layer, fileName)
+    layer = string.lower(tostring(layer or ''));
+    fileName = tostring(fileName or ''):gsub('^.*[\\/]', '');
+
+    local folder = backgroundTextures.GetPupEquipmentArtworkFolderPath(layer);
+    if (folder == nil or fileName == '') then
+        return nil;
+    end
+
+    local key = 'pet/pup/detached/' .. layer .. '/' .. fileName;
+    if (pupEquipmentArtworkTextureIds[key] ~= nil) then
+        return pupEquipmentArtworkTextureIds[key] ~= false
+            and pupEquipmentArtworkTextureIds[key]
+            or nil;
+    end
+
+    local textureId = textureLoader.ToTextureId(
+        textureLoader.LoadPreserveAlpha(folder .. fileName)
+    );
+    pupEquipmentArtworkTextureIds[key] = textureId or false;
+    return textureId;
+end
+
+function backgroundTextures.GetPupElementArtworkTextureId(fileName)
+    fileName = tostring(fileName or ''):gsub('^.*[\\/]', '');
+    if (fileName == '') then
+        return nil;
+    end
+
+    local key = 'pet/pup/detached/elements/' .. fileName;
+    if (pupElementTextureIds[key] ~= nil) then
+        return pupElementTextureIds[key] ~= false
+            and pupElementTextureIds[key]
+            or nil;
+    end
+
+    local textureId = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+        backgroundTextures.GetPupElementArtworkFolderPath() .. fileName
+    ));
+    pupElementTextureIds[key] = textureId or false;
+    return textureId;
 end
 
 return backgroundTextures;

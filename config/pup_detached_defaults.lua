@@ -7,6 +7,7 @@ local defaults = {
     texture = 'None',
     imageOpacity = 45,
     pupArtworkOpacity = 100,
+    pupOverallScale = 100,
     pupFrameArtworkSettings = {
         enabled = true,
         height = 250,

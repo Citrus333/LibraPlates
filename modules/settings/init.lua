@@ -14669,6 +14669,7 @@ end
 
 function LibraPlatesSettingsEnsureDetachedPupWidgetDefaults(bg)
     local defaults = ((globalDefaults.targeting or {}).pupPetStaticBackgroundSettings or {});
+    bg.pupOverallScale = tonumber(bg.pupOverallScale) or tonumber(defaults.pupOverallScale) or 100;
     bg.pupFrameArtworkSettings = bg.pupFrameArtworkSettings or {};
     bg.pupHeadArtworkSettings = bg.pupHeadArtworkSettings or {};
     bg.pupNameSettings = bg.pupNameSettings or {};
@@ -14690,6 +14691,25 @@ function LibraPlatesSettingsEnsureDetachedPupWidgetDefaults(bg)
     LibraPlatesSettingsApplyDetachedDefaults(bg.pupSteamSettings, defaults.pupSteamSettings);
     LibraPlatesSettingsApplyDetachedDefaults(bg.pupElementSettings, defaults.pupElementSettings);
     LibraPlatesSettingsApplyDetachedDefaults(bg.pupManeuverSettings, defaults.pupManeuverSettings);
+end
+
+function LibraPlatesSettingsEnsureDetachedDrgWidgetDefaults(bg)
+    local defaults = ((globalDefaults.targeting or {}).drgPetStaticBackgroundSettings or {});
+    bg.drgNameSettings = bg.drgNameSettings or {};
+    bg.drgHpBarSettings = bg.drgHpBarSettings or {};
+    bg.drgTpBarSettings = bg.drgTpBarSettings or {};
+    bg.drgEnmitySettings = bg.drgEnmitySettings or {};
+    bg.drgCallWyvernSettings = bg.drgCallWyvernSettings or {};
+    bg.drgSpiritLinkSettings = bg.drgSpiritLinkSettings or {};
+    bg.drgSpiritBondSettings = bg.drgSpiritBondSettings or {};
+
+    LibraPlatesSettingsApplyDetachedDefaults(bg.drgNameSettings, defaults.drgNameSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.drgHpBarSettings, defaults.drgHpBarSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.drgTpBarSettings, defaults.drgTpBarSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.drgEnmitySettings, defaults.drgEnmitySettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.drgCallWyvernSettings, defaults.drgCallWyvernSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.drgSpiritLinkSettings, defaults.drgSpiritLinkSettings);
+    LibraPlatesSettingsApplyDetachedDefaults(bg.drgSpiritBondSettings, defaults.drgSpiritBondSettings);
 end
 
 function LibraPlatesSettingsDrawDetachedPupManeuverSettings(settings)
@@ -15122,6 +15142,8 @@ function settingsUi.DrawDetachedFrameSettings()
         LibraPlatesSettingsEnsureDetachedAvatarWidgetDefaults(bg);
     elseif (prefix == 'pup') then
         LibraPlatesSettingsEnsureDetachedPupWidgetDefaults(bg);
+    elseif (prefix == 'drg') then
+        LibraPlatesSettingsEnsureDetachedDrgWidgetDefaults(bg);
     end
     bg.borderColor = bg.borderColor or { 0.0, 0.0, 0.0, 0.80 };
     bg.borderSize = bg.borderSize or 0;
@@ -15163,7 +15185,8 @@ function settingsUi.DrawDetachedFrameSettings()
         or prefix == 'drg';
 
     if (usingPlateArtwork == true) then
-        local frameSize, frameSizeChanged = DrawPlacementSingle('Frame size', bg.width, settingsPrefix .. 'DetachedFrameSize', 8, 1200, 1, 125, 125, 58);
+        local frameSizeLabel = prefix == 'pup' and 'Plate art size' or 'Frame size';
+        local frameSize, frameSizeChanged = DrawPlacementSingle(frameSizeLabel, bg.width, settingsPrefix .. 'DetachedFrameSize', 8, 1200, 1, 125, 125, 58);
         if (frameSizeChanged == true) then
             bg.width = math.floor((tonumber(frameSize) or 220) + 0.5);
             state.Save();
@@ -15378,6 +15401,27 @@ function settingsUi.DrawDetachedFrameSettings()
 
     if (prefix == 'pup') then
         local detachedDefaults = ((globalDefaults.targeting or {}).pupPetStaticBackgroundSettings or {});
+
+        LibraPlatesSettingsDrawBoxedPanel('Overall detached frame size', function()
+            local overallScale, overallScaleChanged = DrawPlacementSingle(
+                'Size percent',
+                bg.pupOverallScale,
+                'DetachedPupOverallScale',
+                25,
+                250,
+                1,
+                125,
+                125,
+                58
+            );
+            if (overallScaleChanged == true) then
+                bg.pupOverallScale = math.max(
+                    25,
+                    math.min(250, math.floor((tonumber(overallScale) or 100) + 0.5))
+                );
+                state.Save();
+            end
+        end, true);
 
         local function DrawPupEquipmentArtworkSettings(label, layer, artworkSettings)
             LibraPlatesSettingsDrawBoxedPanel(label, function()
@@ -15704,7 +15748,134 @@ function settingsUi.DrawDetachedFrameSettings()
         end, true);
     end
 
-    if (prefix == 'smn' or prefix == 'pup') then
+    if (prefix == 'drg') then
+        local detachedDefaults = ((globalDefaults.targeting or {}).drgPetStaticBackgroundSettings or {});
+
+        widgets.text.DrawSettings(bg.drgNameSettings, {
+            widget = 'Detached DRG Name',
+            displayLabel = 'Name',
+            defaults = detachedDefaults.drgNameSettings,
+            boxed = true,
+            skipPlacement = true,
+            hideActive = true,
+            hideResetControls = true,
+            settingsGridColumnWidth = 125,
+        });
+        LibraPlatesSettingsDrawBoxedPanel('HP Bar', function()
+            widgets.bar.DrawSettings(bg.drgHpBarSettings, {
+                widget = 'Detached DRG HP Bar',
+                resourceName = 'HP',
+                defaults = detachedDefaults.drgHpBarSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                showValueControl = false,
+                hideShowAtPercent = true,
+                alignBarSettingsGrid = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel('TP Bar', function()
+            widgets.bar.DrawSettings(bg.drgTpBarSettings, {
+                widget = 'Detached DRG TP Bar',
+                resourceName = 'TP',
+                defaults = detachedDefaults.drgTpBarSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                alignBarSettingsGrid = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel('Enmity', function()
+            DrawEnmityMarkerSettings(bg.drgEnmitySettings, 'ally', true);
+        end, true);
+
+        local function DrawDrgAbilityTimerSettings(label, timerSettings, idPrefix, showActiveColor)
+            LibraPlatesSettingsDrawBoxedPanel(label, function()
+                DrawCheckbox('Show timer', timerSettings.enabled ~= false, function(value)
+                    timerSettings.enabled = value == true;
+                    state.Save();
+                end);
+
+                if (timerSettings.enabled ~= false) then
+                    local x, xChanged, y, yChanged = DrawPlacementPair(
+                        'Position X', timerSettings.offsetX, idPrefix .. 'X',
+                        'Position Y', timerSettings.offsetY, idPrefix .. 'Y',
+                        -800, 800, 1, 125, 58
+                    );
+                    if (xChanged == true or yChanged == true) then
+                        timerSettings.offsetX = math.floor((tonumber(x) or 0) + 0.5);
+                        timerSettings.offsetY = math.floor((tonumber(y) or 0) + 0.5);
+                        state.Save();
+                    end
+
+                    DrawCheckbox('Use small font', timerSettings.useSmallFont == true, function(value)
+                        timerSettings.useSmallFont = value == true;
+                        state.Save();
+                    end);
+                    uiTooltip.Info('When enabled, this uses the Small text font style configured in Settings > Theme.');
+
+                    local fontSize, fontSizeChanged, textColor, textColorChanged = DrawPlacementAndColorRow(
+                        'Font size', timerSettings.fontSize, idPrefix .. 'FontSize',
+                        1, 96, 1,
+                        'Font color', timerSettings.textColor, idPrefix .. 'TextColor',
+                        125, 58
+                    );
+                    if (fontSizeChanged == true or textColorChanged == true) then
+                        timerSettings.fontSize = math.max(1, math.floor((tonumber(fontSize) or 10) + 0.5));
+                        timerSettings.textColor = textColor;
+                        state.Save();
+                    end
+
+                    if (showActiveColor == true) then
+                        local activeColor, activeColorChanged = DrawSettingsColor(
+                            'Active color',
+                            timerSettings.activeTextColor,
+                            idPrefix .. 'ActiveTextColor'
+                        );
+                        if (activeColorChanged == true) then
+                            timerSettings.activeTextColor = activeColor;
+                            state.Save();
+                        end
+                    end
+
+                    local outlineSize, outlineSizeChanged, outlineColor, outlineColorChanged = DrawPlacementAndColorRow(
+                        'Outline size', timerSettings.textOutlineSize, idPrefix .. 'OutlineSize',
+                        0, 12, 1,
+                        'Outline color', timerSettings.textOutlineColor, idPrefix .. 'OutlineColor',
+                        125, 58
+                    );
+                    if (outlineSizeChanged == true or outlineColorChanged == true) then
+                        timerSettings.textOutlineSize = math.max(0, math.floor((tonumber(outlineSize) or 0) + 0.5));
+                        timerSettings.textOutlineColor = outlineColor;
+                        state.Save();
+                    end
+                end
+            end, true);
+        end
+
+        DrawDrgAbilityTimerSettings(
+            'Call Wyvern',
+            bg.drgCallWyvernSettings,
+            'DetachedDrgCallWyvern',
+            false
+        );
+        DrawDrgAbilityTimerSettings(
+            'Spirit Link',
+            bg.drgSpiritLinkSettings,
+            'DetachedDrgSpiritLink',
+            false
+        );
+        DrawDrgAbilityTimerSettings(
+            'Spirit Bond',
+            bg.drgSpiritBondSettings,
+            'DetachedDrgSpiritBond',
+            true
+        );
+    end
+
+    if (prefix == 'smn' or prefix == 'pup' or prefix == 'drg') then
         local function ApplyDetachedFrameReset(kind)
             if kind == 'position' then
                 settings[xKey] = tonumber(defaults[xKey] or defaults[prefix .. 'PetStaticX']) or 170;

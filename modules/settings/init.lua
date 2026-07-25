@@ -15861,18 +15861,38 @@ function settingsUi.DrawDetachedFrameSettings()
             'DetachedDrgCallWyvern',
             false
         );
-        DrawDrgAbilityTimerSettings(
-            'Spirit Link',
-            bg.drgSpiritLinkSettings,
-            'DetachedDrgSpiritLink',
-            false
-        );
-        DrawDrgAbilityTimerSettings(
-            'Spirit Bond',
-            bg.drgSpiritBondSettings,
-            'DetachedDrgSpiritBond',
-            true
-        );
+        LibraPlatesSettingsDrawBoxedPanel('Spirit Link', function()
+            widgets.bar.DrawSettings(bg.drgSpiritLinkSettings, {
+                widget = 'Detached DRG Spirit Link',
+                resourceName = 'Spirit Link',
+                defaults = detachedDefaults.drgSpiritLinkSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                settingsGridColumnWidth = 125,
+            });
+        end, true);
+        LibraPlatesSettingsDrawBoxedPanel('Spirit Bond', function()
+            widgets.bar.DrawSettings(bg.drgSpiritBondSettings, {
+                widget = 'Detached DRG Spirit Bond',
+                resourceName = 'Spirit Bond',
+                defaults = detachedDefaults.drgSpiritBondSettings,
+                hideActive = true,
+                hideResetControls = true,
+                skipPlacement = true,
+                settingsGridColumnWidth = 125,
+            });
+
+            local activeColor, activeColorChanged = DrawSettingsColor(
+                'Active font color',
+                bg.drgSpiritBondSettings.activeTextColor,
+                'DetachedDrgSpiritBondActiveTextColor'
+            );
+            if (activeColorChanged == true) then
+                bg.drgSpiritBondSettings.activeTextColor = activeColor;
+                state.Save();
+            end
+        end, true);
     end
 
     if (prefix == 'smn' or prefix == 'pup' or prefix == 'drg') then

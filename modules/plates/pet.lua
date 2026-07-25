@@ -81,6 +81,7 @@ local detachedDrgTimerCache = {
     spiritBondTicks = 0,
     spiritBondActive = false,
     spiritBondSeconds = nil,
+    recastMaxTicks = {},
 };
 local GetAvatarFavorStatusElapsed = nil;
 local GetAvatarFavorCooldownSeconds = nil;
@@ -1142,7 +1143,9 @@ local function BuildStaticPetBarsKey(plateData)
         local kind = tostring(bar.kind or '');
         if (
             kind == 'detached_avatar_rage' or
-            kind == 'detached_avatar_ward'
+            kind == 'detached_avatar_ward' or
+            kind == 'detached_drg_spirit_link' or
+            kind == 'detached_drg_spirit_bond'
         ) then
             parts[#parts + 1] = table.concat({
                 kind,
@@ -1284,6 +1287,22 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
             'enabled', 'iconSet', 'iconSize', 'iconSpacing', 'offsetX', 'offsetY',
             'showTimers', 'timerUseSmallFont', 'timerFontSize', 'timerOffsetY',
             'timerTextColor', 'timerTextOutlineColor', 'timerTextOutlineSize',
+        }),
+        'drgSpiritLink=' .. TableSettingKey(background.drgSpiritLinkSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'fillDirection', 'labelDisplayMode',
+            'showPercent', 'textOffsetX', 'textOffsetY', 'useSmallFont',
+            'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor',
+            'textOutlineSize',
+        }),
+        'drgSpiritBond=' .. TableSettingKey(background.drgSpiritBondSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'fillDirection', 'labelDisplayMode',
+            'showPercent', 'textOffsetX', 'textOffsetY', 'useSmallFont',
+            'fontSize', 'textColor', 'activeTextColor', 'textOutlineEnabled',
+            'textOutlineColor', 'textOutlineSize',
         }),
         'favorState=' .. tostring(plateData.detachedAvatarFavorActive == true),
         'favorHasPet=' .. tostring(plateData.detachedAvatarHasPet == true),
@@ -1535,12 +1554,7 @@ local function GetDetachedDrgStatusSeconds(statusId)
     return false, nil;
 end
 
-local function DrawDetachedDrgAbilityTimers(drawList, frameCenterX, frameCenterY, background, preview)
-    if (drawList == nil or drawList.AddImage == nil or background == nil) then
-        return;
-    end
-
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+local function RefreshDetachedDrgTimerCache()
     local now = os.clock();
     if ((now - detachedDrgTimerCache.updatedAt) >= 0.10) then
         detachedDrgTimerCache.updatedAt = now;
@@ -1550,6 +1564,135 @@ local function DrawDetachedDrgAbilityTimers(drawList, frameCenterX, frameCenterY
         detachedDrgTimerCache.spiritBondActive, detachedDrgTimerCache.spiritBondSeconds =
             GetDetachedDrgStatusSeconds(619);
     end
+end
+
+local function GetDetachedDrgRecastBarData(key, ticks)
+    ticks = math.max(0, tonumber(ticks) or 0);
+    if (ticks <= 0) then
+        detachedDrgTimerCache.recastMaxTicks[key] = nil;
+        return 100, 'Ready';
+    end
+
+    local maxTicks = tonumber(detachedDrgTimerCache.recastMaxTicks[key]);
+    if (maxTicks == nil or ticks > maxTicks) then
+        maxTicks = ticks;
+        detachedDrgTimerCache.recastMaxTicks[key] = ticks;
+    end
+
+    -- Whole-second progress keeps the canvas cache stable between visible
+    -- timer changes instead of rebuilding these bars at sixty ticks/second.
+    local remainingSeconds = math.max(1, math.ceil(ticks / 60));
+    local maxSeconds = math.max(1, math.ceil(maxTicks / 60));
+    local progress = ((maxSeconds - remainingSeconds) / maxSeconds) * 100;
+    return math.max(0, math.min(100, progress)), FormatDetachedDrgTimer(remainingSeconds);
+end
+
+local function AddDetachedDrgAbilityBars(plateData, background, preview)
+    if (background == nil or background.drgArtwork ~= true) then
+        return;
+    end
+
+    RefreshDetachedDrgTimerCache();
+    plateData.extraBars = plateData.extraBars or {};
+
+    local defaults = ((globalDefaults.targeting or {}).drgPetStaticBackgroundSettings or {});
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local scaleInverse = tonumber(background.scaleInverse) or 1;
+
+    local function AddBar(kind, settings, fallback, progress, text, active)
+        settings = settings or fallback or {};
+        fallback = fallback or settings;
+        if (settings.enabled == false) then
+            return;
+        end
+
+        local layout = BuildDetachedAvatarMeterBar(background, settings, fallback);
+        local displayMode = tostring(settings.labelDisplayMode or 'None');
+        plateData.extraBars[#plateData.extraBars + 1] = {
+            kind = kind,
+            enabled = true,
+            progress = math.max(0, math.min(100, tonumber(progress) or 0)),
+            width = layout.width,
+            height = layout.height,
+            offsetX = layout.offsetX,
+            offsetY = layout.offsetY,
+            color = layout.color,
+            backgroundColor = layout.backgroundColor,
+            borderColor = layout.borderColor,
+            borderSize = layout.borderSize,
+            cornerRadius = layout.cornerRadius,
+            textureId = layout.textureId,
+            textureStrength = layout.textureStrength,
+            fillDirection = settings.fillDirection or 'Bottom to top',
+            showAtPercent = 100,
+            text = settings.showPercent ~= false and tostring(text or '') or '',
+            labelText = displayMode == 'Text'
+                and (kind == 'detached_drg_spirit_link' and 'Spirit Link' or 'Spirit Bond')
+                or '',
+            separateLabelOffsets = displayMode == 'Text',
+            fontFamily = fonts.GetRole(globalSettings, settings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, settings.useSmallFont == true),
+            fontSize = math.max(1, GetDetachedAvatarMeterNumber(settings, 'fontSize', 10) * scaleInverse),
+            textColor = active == true
+                and (settings.activeTextColor or settings.textColor or { 1.0, 1.0, 1.0, 1.0 })
+                or (settings.textColor or { 1.0, 1.0, 1.0, 1.0 }),
+            textOutlineEnabled = settings.textOutlineEnabled ~= false,
+            textOutlineSize = GetDetachedAvatarMeterNumber(settings, 'textOutlineSize', 2) * scaleInverse,
+            textOutlineColor = settings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOffsetX = GetDetachedAvatarMeterNumber(settings, 'textOffsetX', 0) * scaleInverse,
+            textOffsetY = GetDetachedAvatarMeterNumber(settings, 'textOffsetY', 0) * scaleInverse,
+        };
+    end
+
+    local linkProgress, linkText = GetDetachedDrgRecastBarData(
+        'spiritLink',
+        detachedDrgTimerCache.spiritLinkTicks
+    );
+    local bondProgress, bondText = GetDetachedDrgRecastBarData(
+        'spiritBond',
+        detachedDrgTimerCache.spiritBondTicks
+    );
+    local bondActive = detachedDrgTimerCache.spiritBondActive == true;
+
+    if (bondActive == true) then
+        local activeSeconds = math.max(0, math.ceil(tonumber(detachedDrgTimerCache.spiritBondSeconds) or 0));
+        bondProgress = math.max(0, math.min(100, (activeSeconds / 180) * 100));
+        bondText = FormatDetachedDrgTimer(activeSeconds);
+    end
+
+    if (preview == true) then
+        linkProgress = 50;
+        linkText = '1:15';
+        bondProgress = 75;
+        bondText = '2:30';
+        bondActive = true;
+    end
+
+    AddBar(
+        'detached_drg_spirit_link',
+        background.drgSpiritLinkSettings,
+        defaults.drgSpiritLinkSettings,
+        linkProgress,
+        linkText,
+        false
+    );
+    AddBar(
+        'detached_drg_spirit_bond',
+        background.drgSpiritBondSettings,
+        defaults.drgSpiritBondSettings,
+        bondProgress,
+        bondText,
+        bondActive
+    );
+end
+
+local function DrawDetachedDrgAbilityTimers(drawList, frameCenterX, frameCenterY, background, preview)
+    if (drawList == nil or drawList.AddImage == nil or background == nil) then
+        return;
+    end
+
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    RefreshDetachedDrgTimerCache();
 
     local function DrawTimer(settings, timerTicks, previewText, previewActive, forceActive, activeSeconds)
         settings = settings or {};
@@ -1606,30 +1749,16 @@ local function DrawDetachedDrgAbilityTimers(drawList, frameCenterX, frameCenterY
         false,
         nil
     );
-    DrawTimer(
-        background.drgSpiritLinkSettings,
-        detachedDrgTimerCache.spiritLinkTicks,
-        '1:15',
-        false,
-        false,
-        nil
-    );
-    DrawTimer(
-        background.drgSpiritBondSettings,
-        detachedDrgTimerCache.spiritBondTicks,
-        '2:30',
-        true,
-        detachedDrgTimerCache.spiritBondActive,
-        detachedDrgTimerCache.spiritBondSeconds
-    );
 end
 
 local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targetingSettings, windowId, petName, settingsPrefix)
     settingsPrefix = tostring(settingsPrefix or prefix);
     local staticScale = math.max(0.10, math.min(2.00, (tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticScale')) or 35) / 100));
-    if (prefix == 'pup') then
-        -- PUP uses a fixed internal scale so its wide artwork fits the
-        -- 1024x512 canvas without an adaptive calculation or second render.
+    if (prefix == 'pup' or prefix == 'drg') then
+        -- Wide detached artwork uses a fixed internal scale so it fits the
+        -- 1024x512 canvas without being clipped before the final draw.
+        -- Widget sizes are converted by the matching inverse scale below, so
+        -- this does not change the user's visible layout or saved settings.
         staticScale = 0.60;
     end
 
@@ -1657,6 +1786,11 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
     ApplyDetachedPupWidgets(staticPlateData, staticBackground);
     ApplyDetachedDrgWidgets(staticPlateData, staticBackground);
     AddDetachedAvatarGemMeters(staticPlateData, staticBackground);
+    AddDetachedDrgAbilityBars(
+        staticPlateData,
+        staticBackground,
+        staticPlateData.detachedDrgSetupPreview == true
+    );
     -- The source plate may already contain layout bounds for its normal Background
     -- widget. Detached frames have their own background and must rebuild those bounds.
     staticPlateData._elementRects = nil;

@@ -24,6 +24,7 @@ local pendingInviteUntil = 0;
 local partyInviteDuration = 300;
 local pendingPartyRequestUntil = 0;
 local pendingSelfToggles = {};
+local teleportWindowPositionDirty = false;
 local popupId = 'LibraPlates Quick Menu';
 local confirmPopupId = 'LibraPlates Quick Menu Confirm';
 local iconCache = {};
@@ -1684,6 +1685,30 @@ function quickMenu.HandleTextIn(e)
     end
 end
 
+local function IsTeleportWindowTarget(targetType, name, rawName, npcInfo)
+    if (targetType ~= 'npc' and targetType ~= 'object') then
+        return false;
+    end
+
+    local info = npcInfo or {};
+    return (
+        warpMenu.IsHomePointTarget(name, info) == true or
+        warpMenu.IsHomePointTarget(rawName, info) == true or
+        warpMenu.IsSurvivalGuideTarget(name, info) == true or
+        warpMenu.IsSurvivalGuideTarget(rawName, info) == true or
+        warpMenu.IsUnityTarget(name, info) == true or
+        warpMenu.IsUnityTarget(rawName, info) == true or
+        warpMenu.IsOutpostTeleporterTarget(name, info) == true or
+        warpMenu.IsOutpostTeleporterTarget(rawName, info) == true or
+        warpMenu.IsCampaignArbiterTarget(name, info) == true or
+        warpMenu.IsCampaignArbiterTarget(rawName, info) == true or
+        warpMenu.IsExpGuideTarget(name, info) == true or
+        warpMenu.IsExpGuideTarget(rawName, info) == true or
+        warpMenu.IsDomenicTarget(name, info) == true or
+        warpMenu.IsDomenicTarget(rawName, info) == true
+    );
+end
+
 function quickMenu.OpenForPlate(entry, x, y)
     local menu = EnsureSettings();
     local targetType = tostring(entry ~= nil and entry.targetType or '');
@@ -1751,6 +1776,7 @@ function quickMenu.OpenForPlate(entry, x, y)
         anchorEntry = entry,
         x = tonumber(x) or 0,
         y = tonumber(y) or 0,
+        teleportWindow = IsTeleportWindowTarget(targetType, name, rawName, npcInfo),
         open = true,
     };
 
@@ -1785,8 +1811,17 @@ function quickMenu.Render()
         if (imgui.SetNextWindowPos ~= nil) then
             local popupX = tonumber(pendingMenu.x) or 0;
             local popupY = tonumber(pendingMenu.y) or 0;
+            local savedTeleportX = tonumber(menu.warp ~= nil and menu.warp.windowX);
+            local savedTeleportY = tonumber(menu.warp ~= nil and menu.warp.windowY);
 
-            if (tostring(menu.anchorTo or 'Plate') ~= 'Plate') then
+            if (
+                pendingMenu.teleportWindow == true and
+                savedTeleportX ~= nil and
+                savedTeleportY ~= nil
+            ) then
+                popupX = savedTeleportX;
+                popupY = savedTeleportY;
+            elseif (tostring(menu.anchorTo or 'Plate') ~= 'Plate') then
                 popupX, popupY = ResolvePopupAnchorPosition(pendingMenu.anchorEntry, menu, popupX, popupY);
             elseif (pendingMenu.targetType == 'self') then
                 popupX = popupX + 24;
@@ -1843,6 +1878,23 @@ function quickMenu.Render()
         end
         local headerTextureId = nil;
         local windowX, windowY = GetWindowPos();
+        if (pendingMenu.teleportWindow == true) then
+            if (pendingMenu.teleportPositionInitialized ~= true) then
+                pendingMenu.teleportPositionInitialized = true;
+                pendingMenu.teleportLastX = windowX;
+                pendingMenu.teleportLastY = windowY;
+            elseif (
+                math.abs(windowX - (tonumber(pendingMenu.teleportLastX) or windowX)) >= 0.5 or
+                math.abs(windowY - (tonumber(pendingMenu.teleportLastY) or windowY)) >= 0.5
+            ) then
+                menu.warp = menu.warp or {};
+                menu.warp.windowX = math.floor(windowX + 0.5);
+                menu.warp.windowY = math.floor(windowY + 0.5);
+                pendingMenu.teleportLastX = windowX;
+                pendingMenu.teleportLastY = windowY;
+                teleportWindowPositionDirty = true;
+            end
+        end
         local cursorX, cursorY = GetCursorPos();
         local isHomePointMenuTarget = (pendingMenu.targetType == 'npc' or pendingMenu.targetType == 'object')
             and (
@@ -2435,6 +2487,10 @@ function quickMenu.Render()
 
         imgui.EndPopup();
     else
+        if (teleportWindowPositionDirty == true) then
+            teleportWindowPositionDirty = false;
+            state.Save();
+        end
         pendingMenu = nil;
     end
 

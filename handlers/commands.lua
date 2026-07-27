@@ -3625,6 +3625,23 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'charmdebug') then
+        local bstCharmTimer = require('core.bst_charm_timer');
+        local action = tostring(args[3] or 'status'):lower();
+
+        if (action == 'on') then
+            bstCharmTimer.SetDebugEnabled(true);
+        elseif (action == 'off') then
+            bstCharmTimer.SetDebugEnabled(false);
+        elseif (action ~= 'status') then
+            log.Info('Usage: /lp charmdebug on | off | status');
+            return;
+        end
+
+        log.Info(bstCharmTimer.GetDebugStatusText());
+        return;
+    end
+
     if (subcommand == 'recasts') then
         log.Info(abilityRecast.GetDebugText());
         return;

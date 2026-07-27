@@ -709,8 +709,8 @@ local function QueueTrust(trust)
         mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25);
     local targetMarker = targetModuleMarker.Build('Trust', layoutStateName, targetStateName, hpBarSettings, trust.distance);
     local enmityEnabled = enmity.ShouldDrawAlly(trust, globalSettings) == true;
-    local buffRows = suppressExpensiveWorldWidgets ~= true and trustStatusIcons.GetRows(trust.serverId, 'buff') or {};
-    local debuffRows = suppressExpensiveWorldWidgets ~= true and trustStatusIcons.GetRows(trust.serverId, 'debuff') or {};
+    local buffRows = buffsSettings.enabled == true and trustStatusIcons.GetRows(trust.serverId, 'buff') or {};
+    local debuffRows = debuffsSettings.enabled == true and trustStatusIcons.GetRows(trust.serverId, 'debuff') or {};
     local plateWorldOffsetY = ResolveTrustPlateWorldOffsetY(trust.name);
     local jobText = ResolveTrustJobText(trust.name);
     local jobLoads = layoutStateName == 'Combat' and suppressExpensiveWorldWidgets ~= true and jobSettings.enabled == true and jobText ~= '';
@@ -898,10 +898,8 @@ local function QueueTrust(trust)
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
-    if (suppressExpensiveWorldWidgets ~= true) then
-        AddStatusIconsToPlate(plateData, buffRows, buffsSettings, layoutStateName == 'Combat', globalSettings, 'buffs');
-        AddStatusIconsToPlate(plateData, debuffRows, debuffsSettings, layoutStateName == 'Combat', globalSettings, 'debuffs');
-    end
+    AddStatusIconsToPlate(plateData, buffRows, buffsSettings, layoutStateName == 'Combat', globalSettings, 'buffs');
+    AddStatusIconsToPlate(plateData, debuffRows, debuffsSettings, layoutStateName == 'Combat', globalSettings, 'debuffs');
     if (plateData.aoeNameActive == true) then
         aoeRangeVisuals.Apply(plateData, aoeRangeSettings, hpBarSettings);
     end

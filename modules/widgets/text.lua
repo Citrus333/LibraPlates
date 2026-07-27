@@ -371,6 +371,84 @@ local function DrawOutlineRow(settings, gridColumnWidth)
     settings.outlineColor = DrawColor('Outline color', settings.outlineColor);
 end
 
+local function DrawPetStateDisplayRow(settings, gridColumnWidth)
+    local current = tostring(settings.displayMode or 'Text');
+    if (current ~= 'Icon' and current ~= 'Text') then
+        current = 'Text';
+    end
+
+    local function DrawCombo()
+        if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+            if (imgui.BeginCombo('##text_pet_state_display', current) == true) then
+                for _, option in ipairs({ 'Icon', 'Text' }) do
+                    local selected = current == option;
+                    if (imgui.Selectable(option, selected) == true) then
+                        current = option;
+                    end
+                    if (selected == true and imgui.SetItemDefaultFocus ~= nil) then
+                        imgui.SetItemDefaultFocus();
+                    end
+                end
+                imgui.EndCombo();
+            end
+        else
+            imgui.TextColored(valueColor, current);
+        end
+    end
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##text_pet_state_display_row', 2, tableFlags)) then
+            imgui.TableSetupColumn('##display_label', 0, tonumber(gridColumnWidth) or 145);
+            imgui.TableSetupColumn('##display_control', 0, tonumber(gridColumnWidth) or 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            imgui.TextColored(labelColor, 'Display');
+            imgui.TableNextColumn();
+            DrawCombo();
+            imgui.EndTable();
+        end
+    else
+        imgui.TextColored(labelColor, 'Display');
+        imgui.SameLine();
+        DrawCombo();
+    end
+
+    settings.displayMode = current;
+end
+
+local function DrawPetStateSingleSlider(label, id, value, minValue, maxValue, gridColumnWidth)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        local result = value;
+        if (imgui.BeginTable('##text_pet_state_' .. id .. '_row', 2, tableFlags)) then
+            imgui.TableSetupColumn('##single_label', 0, tonumber(gridColumnWidth) or 145);
+            imgui.TableSetupColumn('##single_control', 0, tonumber(gridColumnWidth) or 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            result = DrawTableSlider(label, id, value, minValue, maxValue, nil, gridColumnWidth);
+            imgui.EndTable();
+        end
+        return result;
+    end
+
+    return DrawNumber(label, value, minValue, maxValue, 1);
+end
+
+local function DrawPetStateFontColor(settings, gridColumnWidth)
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##text_pet_state_font_color_row', 2, tableFlags)) then
+            imgui.TableSetupColumn('##font_color_label', 0, tonumber(gridColumnWidth) or 145);
+            imgui.TableSetupColumn('##font_color_control', 0, tonumber(gridColumnWidth) or 170);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            settings.color = DrawColorCell('Font color', settings.color);
+            imgui.EndTable();
+        end
+        return;
+    end
+
+    settings.color = DrawColor('Font color', settings.color);
+end
+
 local function ApplyDefaults(settings, defaults)
     for key, value in pairs(defaults or {}) do
         if (settings[key] == nil) then
@@ -502,10 +580,13 @@ function textWidget.DrawSettings(settings, context)
 
     local defaults = context ~= nil and context.defaults or {};
     local label = tostring(context ~= nil and (context.displayLabel or context.widget) or 'Text');
+    local activeInsidePanel = context ~= nil
+        and context.boxed == true
+        and context.activeInsidePanel == true;
 
     ApplyDefaults(settings, defaults);
 
-    if (context == nil or context.hideActive ~= true) then
+    if (activeInsidePanel ~= true and (context == nil or context.hideActive ~= true)) then
         settings.enabled = DrawCheckbox('Active', settings.enabled);
     end
 
@@ -525,17 +606,82 @@ function textWidget.DrawSettings(settings, context)
 
     local function DrawBody()
         local settingsGridColumnWidth = context ~= nil and tonumber(context.settingsGridColumnWidth) or nil;
+        local positionXLabel = context ~= nil and context.positionXLabel or 'Position X';
+        local positionYLabel = context ~= nil and context.positionYLabel or 'Position Y';
+
+        if (activeInsidePanel == true and (context == nil or context.hideActive ~= true)) then
+            settings.enabled = DrawCheckbox('Active', settings.enabled);
+        end
+
+        if (context ~= nil and context.petStateLayout == true) then
+            -- Older Pet state settings had a second additive Icon/Text offset.
+            -- Fold it into the main position once so the simplified editor
+            -- preserves the user's current placement.
+            local legacyX = tonumber(settings.labelOffsetX) or 0;
+            local legacyY = tonumber(settings.labelOffsetY) or 0;
+            if (legacyX ~= 0 or legacyY ~= 0) then
+                settings.offsetX = (tonumber(settings.offsetX) or 0) + legacyX;
+                settings.offsetY = (tonumber(settings.offsetY) or 0) + legacyY;
+                settings.labelOffsetX = 0;
+                settings.labelOffsetY = 0;
+            end
+
+            DrawPetStateDisplayRow(settings, settingsGridColumnWidth);
+
+            if (settings.displayMode == 'Icon') then
+                settings.iconSize = DrawPetStateSingleSlider(
+                    'Icon size',
+                    'icon_size',
+                    settings.iconSize,
+                    6,
+                    256,
+                    settingsGridColumnWidth
+                );
+            else
+                settings.textSize = DrawPetStateSingleSlider(
+                    'Font size',
+                    'font_size',
+                    textScale.NormalizeSetting(settings.textSize, defaults.textSize),
+                    textScale.GetMinVisualSize(),
+                    textScale.GetMaxVisualSize(),
+                    settingsGridColumnWidth
+                );
+            end
+
+            settings.offsetX, settings.offsetY = DrawSliderPair(
+                'position',
+                positionXLabel,
+                'offset_x',
+                settings.offsetX,
+                -400,
+                400,
+                positionYLabel,
+                'offset_y',
+                settings.offsetY,
+                -400,
+                400,
+                settingsGridColumnWidth
+            );
+
+            if (settings.displayMode == 'Text') then
+                DrawPetStateFontColor(settings, settingsGridColumnWidth);
+                DrawOutlineRow(settings, settingsGridColumnWidth);
+                settings.outlineEnabled = (tonumber(settings.outlineSize) or 0) > 0;
+            end
+            return;
+        end
+
         if (anchorControls.IsCollapsedChild(settings) == true) then
             anchorControls.DrawSpacing(settings, tostring(label) .. '_position', settingsGridColumnWidth or 145, settingsGridColumnWidth or 170);
         else
             settings.offsetX, settings.offsetY = DrawSliderPair(
                 'position',
-                'Position X',
+                positionXLabel,
                 'offset_x',
                 settings.offsetX,
                 -400,
                 400,
-                'Position Y',
+                positionYLabel,
                 'offset_y',
                 settings.offsetY,
                 -400,

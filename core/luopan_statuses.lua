@@ -12,11 +12,13 @@ local activeLuopanServerId = nil;
 local abilityStatuses = {
     [346] = { statusId = 515 }, -- Lasting Emanation
     [347] = { statusId = 516 }, -- Ecliptic Attrition
+    [350] = { statusId = 569 }, -- Blaze of Glory
     [351] = { statusId = 518, duration = 60 }, -- Dematerialize
 };
 local statusAbilityIds = {
     [515] = 346,
     [516] = 347,
+    [569] = 350,
     [518] = 351,
 };
 

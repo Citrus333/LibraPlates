@@ -339,7 +339,11 @@ local function GetNameFontSize(plate, plateName)
     end
 
     local manualOutlineRadius = GetManualNameOutlineRadius(plate.nameOutlineSize);
-    local safeWidth = width - 96;
+    local cropInfo = type(plate._canvasCrop) == 'table' and plate._canvasCrop or nil;
+    local sizingWidth = tonumber(cropInfo ~= nil and cropInfo.fullWidth)
+        or tonumber(plate.canvasWidth)
+        or width;
+    local safeWidth = sizingWidth - 96;
     local _, nameW = gdiTextTexture.GetTexture(text, {
         fontFamily = ResolveFontFamily(plate.nameFontFamily),
         fontFlags = tonumber(plate.nameFontFlags) or 0,
@@ -567,7 +571,10 @@ local function DrawRoundedRectWithBorder(device, x, y, w, h, backgroundColor, bo
 
     if (border > 0) then
         DrawRoundedRect(device, x, y, w, h, borderColor, radius);
-        DrawRoundedRect(device, x + border, y + border, w - (border * 2), h - (border * 2), backgroundColor, math.max(0, (tonumber(radius) or 0) - border));
+        -- Pre-transformed D3D8 rectangles cover their trailing raster row and
+        -- column. Reserve those pixels so the inner background does not paint
+        -- over the bottom and right sides of the border.
+        DrawRoundedRect(device, x + border, y + border, w - (border * 2) - 1, h - (border * 2) - 1, backgroundColor, math.max(0, (tonumber(radius) or 0) - border));
         return;
     end
 
@@ -900,7 +907,14 @@ local function DrawScrollingBarOverlay(device, barX, barY, barW, barH, progress,
     local speed = tonumber(bar.animationSpeed) or 40;
     local offset = (os.clock() * speed) % tileW;
     local x = barX - offset;
-    local color = ColorToD3D(bar.animationColor, { 1.0, 1.0, 1.0, 0.35 });
+    local sourceColor = bar.animationColor or { 1.0, 1.0, 1.0, 0.35 };
+    local overlayColor = {
+        tonumber(sourceColor[1]) or 1.0,
+        tonumber(sourceColor[2]) or 1.0,
+        tonumber(sourceColor[3]) or 1.0,
+        math.min(0.35, tonumber(sourceColor[4]) or 0.35),
+    };
+    local color = ColorToD3D(overlayColor, { 1.0, 1.0, 1.0, 0.35 });
 
     while (x < (barX + fillW)) do
         local drawX = math.max(x, barX);
@@ -961,9 +975,10 @@ end
 
 local function DrawBarLabel(device, barX, barY, barW, barH, bar)
     local barText = tostring(bar.text or '');
+    local secondaryText = tostring(bar.secondaryText or '');
     local labelText = tostring(bar.labelText or '');
 
-    if (barText == '' and labelText == '' and bar.iconTextureId == nil) then
+    if (barText == '' and secondaryText == '' and labelText == '' and bar.iconTextureId == nil) then
         return;
     end
 
@@ -977,6 +992,7 @@ local function DrawBarLabel(device, barX, barY, barW, barH, bar)
         outlineSize = tonumber(bar.textOutlineSize) or 1,
     };
     local textTextureId, textW, textH = gdiTextTexture.GetTexture(barText, textOptions);
+    local secondaryTextureId, secondaryW, secondaryH = gdiTextTexture.GetTexture(secondaryText, textOptions);
     local labelTextureId, labelW, labelH = gdiTextTexture.GetTexture(labelText, textOptions);
 
     if (barText == '') then
@@ -987,6 +1003,10 @@ local function DrawBarLabel(device, barX, barY, barW, barH, bar)
     if (labelText == '') then
         labelW = 0;
         labelH = 0;
+    end
+    if (secondaryText == '') then
+        secondaryW = 0;
+        secondaryH = 0;
     end
 
     local iconSize = (bar.iconTextureId ~= nil) and math.max(1, tonumber(bar.iconSize) or textH or barH) or 0;
@@ -1030,6 +1050,23 @@ local function DrawBarLabel(device, barX, barY, barW, barH, bar)
 
     if (barText ~= '' and textTextureId ~= nil and textW ~= nil and textH ~= nil and textW > 0 and textH > 0) then
         DrawTexture(device, textTextureId, textX, textY, textW, textH, 0xFFFFFFFF);
+    end
+
+    if (
+        secondaryText ~= '' and
+        secondaryTextureId ~= nil and
+        secondaryW ~= nil and secondaryH ~= nil and
+        secondaryW > 0 and secondaryH > 0
+    ) then
+        DrawTexture(
+            device,
+            secondaryTextureId,
+            barX + ((barW - secondaryW) * 0.5) + (tonumber(bar.secondaryTextOffsetX) or 0),
+            barY + ((barH - secondaryH) * 0.5) + (tonumber(bar.secondaryTextOffsetY) or 0),
+            secondaryW,
+            secondaryH,
+            0xFFFFFFFF
+        );
     end
 end
 
@@ -1078,21 +1115,23 @@ local function DrawBar(device, centerX, centerY, bar, progress, defaultColor, re
     local direction = tostring(bar.fillDirection or 'Left to right');
     local fillX = barX;
     local fillY = barY;
-    local fillW = barW * progress;
-    local fillH = barH;
+    local innerW = math.max(0, barW - ((borderSize > 0) and 1 or 0));
+    local innerH = math.max(0, barH - ((borderSize > 0) and 1 or 0));
+    local fillW = innerW * progress;
+    local fillH = innerH;
     local u1, v1, u2, v2 = 0, 0, progress, 1;
 
     if (direction == 'Right to left') then
-        fillX = barX + barW - fillW;
+        fillX = barX + innerW - fillW;
         u1, u2 = 1 - progress, 1;
     elseif (direction == 'Bottom to top') then
-        fillW = barW;
-        fillH = barH * progress;
-        fillY = barY + barH - fillH;
+        fillW = innerW;
+        fillH = innerH * progress;
+        fillY = barY + innerH - fillH;
         v1, v2 = 1 - progress, 1;
     elseif (direction == 'Top to bottom') then
-        fillW = barW;
-        fillH = barH * progress;
+        fillW = innerW;
+        fillH = innerH * progress;
         v1, v2 = 0, progress;
     end
 
@@ -1258,8 +1297,12 @@ local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, 
     local barY = centerY - (barH * 0.5) + (tonumber(bar.offsetY) or 0);
     local borderSize = math.max(0, tonumber(bar.borderSize) or 0);
     local cornerRadius = math.max(0, tonumber(bar.cornerRadius) or 0);
-    local gap = math.max(6, tonumber(bar.segmentGap) or 6);
-    local segmentW = math.max(1, (barW - (gap * 2)) / 3);
+    local rows = tostring(bar.segmentLayout or '') == 'Rows';
+    local gap = rows
+        and math.max(0, tonumber(bar.segmentGap) or 0)
+        or math.max(6, tonumber(bar.segmentGap) or 6);
+    local segmentW = rows and barW or math.max(1, (barW - (gap * 2)) / 3);
+    local segmentH = rows and math.max(1, (barH - (gap * 2)) / 3) or barH;
     local section2Color = bar.color2 or { 0.80, 0.45, 1.0, 0.95 };
     local section3Color = bar.color3 or { 0.35, 0.75, 1.0, 0.95 };
 
@@ -1274,13 +1317,17 @@ local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, 
             barY = y1 + borderSize;
             barW = math.max(1, (x2 - x1) - (borderSize * 2));
             barH = math.max(1, (y2 - y1) - (borderSize * 2));
-            segmentW = math.max(1, (barW - (gap * 2)) / 3);
+            segmentW = rows and barW or math.max(1, (barW - (gap * 2)) / 3);
+            segmentH = rows and math.max(1, (barH - (gap * 2)) / 3) or barH;
         end
     end
 
     for segment = 1, 3 do
         local segmentProgress = math.max(0, math.min(1, (progress / 100) - (segment - 1)));
-        local segmentX = barX + ((segment - 1) * (segmentW + gap));
+        local segmentX = rows and barX or (barX + ((segment - 1) * (segmentW + gap)));
+        -- Stacked charge rows fill from the bottom upward:
+        -- charge 1 = bottom, charge 2 = middle, charge 3 = top.
+        local segmentY = rows and (barY + ((3 - segment) * (segmentH + gap))) or barY;
         local segmentColor = bar.color;
 
         if (segment == 2) then
@@ -1292,9 +1339,9 @@ local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, 
         DrawRoundedRectWithBorder(
             device,
             segmentX - borderSize,
-            barY - borderSize,
+            segmentY - borderSize,
             segmentW + (borderSize * 2),
-            barH + (borderSize * 2),
+            segmentH + (borderSize * 2),
             ColorToD3D(bar.backgroundColor, { 0.05, 0.05, 0.05, 0.85 }),
             BarBorderColorToD3D(bar.borderColor, { 0.0, 0.0, 0.0, 1.0 }, borderSize),
             borderSize,
@@ -1303,15 +1350,18 @@ local function DrawTpBar(device, centerX, centerY, bar, progress, defaultColor, 
 
         if (segmentProgress > 0) then
             local textureStrength = NormalizeTextureStrength(bar.textureStrength);
+            local segmentInnerW = math.max(0, segmentW - ((borderSize > 0) and 1 or 0));
+            local segmentInnerH = math.max(0, segmentH - ((borderSize > 0) and 1 or 0));
+            local segmentFillW = segmentInnerW * segmentProgress;
 
             if (bar.textureId ~= nil and tonumber(bar.textureId) ~= nil and tonumber(bar.textureId) ~= 0 and textureStrength > 0) then
                 if (textureStrength < 1) then
-                    DrawRoundedRect(device, segmentX, barY, segmentW * segmentProgress, barH, ColorToD3D(segmentColor, defaultColor), cornerRadius);
+                    DrawRoundedRect(device, segmentX, segmentY, segmentFillW, segmentInnerH, ColorToD3D(segmentColor, defaultColor), cornerRadius);
                 end
 
-                DrawRoundedTexture(device, bar.textureId, segmentX, barY, segmentW * segmentProgress, barH, ColorWithAlphaMultiplier(segmentColor, defaultColor, textureStrength), cornerRadius, 0, 0, segmentProgress, 1);
+                DrawRoundedTexture(device, bar.textureId, segmentX, segmentY, segmentFillW, segmentInnerH, ColorWithAlphaMultiplier(segmentColor, defaultColor, textureStrength), cornerRadius, 0, 0, segmentProgress, 1);
             else
-                DrawRoundedRect(device, segmentX, barY, segmentW * segmentProgress, barH, ColorToD3D(segmentColor, defaultColor), cornerRadius);
+                DrawRoundedRect(device, segmentX, segmentY, segmentFillW, segmentInnerH, ColorToD3D(segmentColor, defaultColor), cornerRadius);
             end
         end
     end
@@ -2010,10 +2060,11 @@ end
 local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
     bar = bar or {};
     local isTp = tostring(kind or '') == 'tp';
-    local maxProgress = isTp == true and 300 or 100;
+    local usesSegmentedProgress = isTp == true or bar.segmented == true;
+    local maxProgress = usesSegmentedProgress == true and 300 or 100;
     progress = math.max(0, math.min(maxProgress, tonumber(progress) or maxProgress));
 
-    local showAtPercent = isTp == true
+    local showAtPercent = usesSegmentedProgress == true
         and math.max(0, math.min(300, tonumber(bar.showAtPercent) or 300))
         or math.max(1, math.min(100, tonumber(bar.showAtPercent) or 100));
 
@@ -2028,7 +2079,7 @@ local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
     local barY = centerY - (barH * 0.5) + (tonumber(bar.offsetY) or 0);
     local borderSize = math.max(0, tonumber(bar.borderSize) or 0);
     local hiddenByThreshold = progress > showAtPercent;
-    if (isTp == true) then
+    if (usesSegmentedProgress == true) then
         hiddenByThreshold = progress < showAtPercent;
     end
 
@@ -2039,9 +2090,10 @@ local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
     end
 
     local barText = tostring(bar.text or '');
+    local secondaryText = tostring(bar.secondaryText or '');
     local labelText = tostring(bar.labelText or '');
 
-    if (barText == '' and labelText == '' and bar.iconTextureId == nil) then
+    if (barText == '' and secondaryText == '' and labelText == '' and bar.iconTextureId == nil) then
         return;
     end
 
@@ -2055,6 +2107,7 @@ local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
         outlineSize = tonumber(bar.textOutlineSize) or 1,
     };
     local _, textW, textH = gdiTextTexture.GetTexture(barText, textOptions);
+    local _, secondaryW, secondaryH = gdiTextTexture.GetTexture(secondaryText, textOptions);
     local _, labelW, labelH = gdiTextTexture.GetTexture(labelText, textOptions);
 
     if (barText == '') then
@@ -2065,6 +2118,10 @@ local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
     if (labelText == '') then
         labelW = 0;
         labelH = 0;
+    end
+    if (secondaryText == '') then
+        secondaryW = 0;
+        secondaryH = 0;
     end
 
     local iconSize = (bar.iconTextureId ~= nil) and math.max(1, tonumber(bar.iconSize) or textH or barH) or 0;
@@ -2110,6 +2167,22 @@ local function AddBarRect(rects, centerX, centerY, bar, progress, kind)
 
     if (barText ~= '' and textW ~= nil and textH ~= nil and textW > 0 and textH > 0) then
         AddRect(rects, textX, textY, textW, textH, 4, bar.textKind or labelKind);
+    end
+
+    if (
+        secondaryText ~= '' and
+        secondaryW ~= nil and secondaryH ~= nil and
+        secondaryW > 0 and secondaryH > 0
+    ) then
+        AddRect(
+            rects,
+            barX + ((barW - secondaryW) * 0.5) + (tonumber(bar.secondaryTextOffsetX) or 0),
+            barY + ((barH - secondaryH) * 0.5) + (tonumber(bar.secondaryTextOffsetY) or 0),
+            secondaryW,
+            secondaryH,
+            4,
+            bar.secondaryTextKind or labelKind
+        );
     end
 end
 
@@ -2433,7 +2506,15 @@ function canvasTexture.GetElementRects(plate)
     AddBarRect(rects, centerX, centerY, plate.castBar, math.max(0, math.min(100, tonumber(plate.cast) or 0)), 'cast');
 
     for _, extraBar in ipairs(plate.extraBars or {}) do
-        AddBarRect(rects, centerX, centerY, extraBar, math.max(0, math.min(100, tonumber(extraBar.progress) or 0)), extraBar.kind or 'bar');
+        local extraMaxProgress = extraBar.segmented == true and 300 or 100;
+        AddBarRect(
+            rects,
+            centerX,
+            centerY,
+            extraBar,
+            math.max(0, math.min(extraMaxProgress, tonumber(extraBar.progress) or 0)),
+            extraBar.kind or 'bar'
+        );
     end
 
     for _, badge in ipairs(plate.badges or {}) do
@@ -2940,6 +3021,96 @@ function canvasTexture.Render(plate, key)
                 DrawTargetMarker(device, centerX, centerY, marker, pass);
             end
 
+            local function DrawExtraBars(behindBackground)
+                local extraBarOccurrences = {};
+
+                for _, extraBar in ipairs(plate.extraBars or {}) do
+                    local extraBarKind = tostring(extraBar.kind or 'bar');
+                    extraBarOccurrences[extraBarKind] = (extraBarOccurrences[extraBarKind] or 0) + 1;
+
+                    if ((extraBar.behindBackground == true) == behindBackground) then
+                        local extraBarRect = FindRect(
+                            elementRects,
+                            extraBarKind,
+                            extraBarOccurrences[extraBarKind]
+                        );
+                        local renderBar = extraBar;
+
+                        if (
+                            behindBackground == true and
+                            (
+                                extraBar.foregroundLabel == true or
+                                extraBarKind == 'ready' or
+                                extraBarKind == 'sic' or
+                                extraBarKind == 'reward'
+                            )
+                        ) then
+                            renderBar = {};
+                            for key, value in pairs(extraBar) do
+                                renderBar[key] = value;
+                            end
+                            renderBar.text = '';
+                            renderBar.secondaryText = '';
+                            renderBar.labelText = '';
+                            renderBar.iconTextureId = nil;
+                        end
+
+                        if (tostring(renderBar.displayMode or '') == 'Ring') then
+                            DrawRingProgress(device, centerX, centerY, renderBar, math.max(0, math.min(100, tonumber(renderBar.progress) or 0)), renderBar.color or { 0.90, 0.65, 0.25, 1.0 }, extraBarRect);
+                        elseif (renderBar.segmented == true) then
+                            DrawTpBar(device, centerX, centerY, renderBar, math.max(0, math.min(300, tonumber(renderBar.progress) or 0)), renderBar.color or { 0.90, 0.65, 0.25, 1.0 }, extraBarRect);
+                        else
+                            DrawBar(device, centerX, centerY, renderBar, math.max(0, math.min(100, tonumber(renderBar.progress) or 0)), renderBar.color or { 0.90, 0.65, 0.25, 1.0 }, extraBarRect);
+                        end
+                    end
+                end
+            end
+
+            local function DrawForegroundExtraBarLabels()
+                local extraBarOccurrences = {};
+
+                for _, extraBar in ipairs(plate.extraBars or {}) do
+                    local extraBarKind = tostring(extraBar.kind or 'bar');
+                    extraBarOccurrences[extraBarKind] = (extraBarOccurrences[extraBarKind] or 0) + 1;
+
+                    if (
+                        extraBar.behindBackground == true and
+                        (
+                            extraBar.foregroundLabel == true or
+                            extraBarKind == 'ready' or
+                            extraBarKind == 'sic' or
+                            extraBarKind == 'reward'
+                        )
+                    ) then
+                        local extraBarRect = FindRect(
+                            elementRects,
+                            extraBarKind,
+                            extraBarOccurrences[extraBarKind]
+                        );
+
+                        if (extraBarRect ~= nil and extraBarRect.anchorOnly ~= true) then
+                            local borderSize = math.max(0, tonumber(extraBar.borderSize) or 0);
+                            local barX = (tonumber(extraBarRect.drawX1) or tonumber(extraBarRect.x1) or 0) + borderSize;
+                            local barY = (tonumber(extraBarRect.drawY1) or tonumber(extraBarRect.y1) or 0) + borderSize;
+                            local barW = math.max(
+                                1,
+                                (tonumber(extraBarRect.drawX2) or tonumber(extraBarRect.x2) or barX)
+                                    - barX
+                                    - borderSize
+                            );
+                            local barH = math.max(
+                                1,
+                                (tonumber(extraBarRect.drawY2) or tonumber(extraBarRect.y2) or barY)
+                                    - barY
+                                    - borderSize
+                            );
+                            DrawBarLabel(device, barX, barY, barW, barH, extraBar);
+                        end
+                    end
+                end
+            end
+
+            DrawExtraBars(true);
             DrawPlateBackground(device, centerX, centerY, plate.background, FindRect(elementRects, 'background'));
             if (aoeHighlightRect ~= nil) then
                 DrawTexture(
@@ -2959,23 +3130,8 @@ function canvasTexture.Render(plate, key)
             DrawTpBar(device, centerX, centerY, plate.tpBar, tp, { 1.0, 0.70, 0.18, 0.95 }, FindRect(elementRects, 'tp'));
             DrawBar(device, centerX, centerY, plate.castBar, math.max(0, math.min(100, tonumber(plate.cast) or 0)), { 0.65, 0.35, 1.0, 0.95 }, FindRect(elementRects, 'cast'));
 
-            local extraBarOccurrences = {};
-
-            for _, extraBar in ipairs(plate.extraBars or {}) do
-                local extraBarKind = tostring(extraBar.kind or 'bar');
-
-                extraBarOccurrences[extraBarKind] = (extraBarOccurrences[extraBarKind] or 0) + 1;
-
-                local extraBarRect = FindRect(elementRects, extraBarKind, extraBarOccurrences[extraBarKind]);
-
-                if (tostring(extraBar.displayMode or '') == 'Ring') then
-                    DrawRingProgress(device, centerX, centerY, extraBar, math.max(0, math.min(100, tonumber(extraBar.progress) or 0)), extraBar.color or { 0.90, 0.65, 0.25, 1.0 }, extraBarRect);
-                elseif (extraBar.segmented == true) then
-                    DrawTpBar(device, centerX, centerY, extraBar, math.max(0, math.min(300, tonumber(extraBar.progress) or 0)), extraBar.color or { 0.90, 0.65, 0.25, 1.0 }, extraBarRect);
-                else
-                    DrawBar(device, centerX, centerY, extraBar, math.max(0, math.min(100, tonumber(extraBar.progress) or 0)), extraBar.color or { 0.90, 0.65, 0.25, 1.0 }, extraBarRect);
-                end
-            end
+            DrawExtraBars(false);
+            DrawForegroundExtraBarLabels();
 
             local hpTextRect = FindRect(elementRects, 'hp');
             if (plate.hpBar ~= nil and hpTextRect ~= nil and hpTextRect.anchorOnly ~= true and tostring(plate.hpBar.text or '') ~= '') then

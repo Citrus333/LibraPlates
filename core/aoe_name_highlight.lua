@@ -80,6 +80,15 @@ for _, data in pairs(weaponSkillAoeById) do
     weaponSkillAoeByName[data.name] = data;
 end
 
+-- These job abilities can expose friendly target flags alongside the target
+-- manager's generic AOE flag, but the action itself remains single-target.
+local singleTargetAbilityById = {
+    [78] = true, -- Reward
+};
+local singleTargetAbilityByName = {
+    ['reward'] = true,
+};
+
 local function GetWeaponSkillAoeData(spellInfo)
     if (spellInfo == nil) then
         return nil;
@@ -1087,6 +1096,18 @@ GetLiveActionAoe = function()
     local rawActionAoeRange = targetManager.GetActionAoeRange ~= nil and SafeNumber(function() return targetManager:GetActionAoeRange(); end) or nil;
 
     if (actionId == nil or spellInfo == nil) then
+        return nil;
+    end
+
+    if (
+        spellInfo.resourceKind == 'ability' and
+        (
+            singleTargetAbilityById[tonumber(spellInfo.resolvedId) or -1] == true or
+            singleTargetAbilityById[tonumber(spellInfo.id) or -1] == true or
+            singleTargetAbilityById[tonumber(actionId) or -1] == true or
+            singleTargetAbilityByName[tostring(spellInfo.name or ''):lower()] == true
+        )
+    ) then
         return nil;
     end
 

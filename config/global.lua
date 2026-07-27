@@ -1,6 +1,8 @@
 local smnDetachedDefaults = require('config.smn_detached_defaults');
 local pupDetachedDefaults = require('config.pup_detached_defaults');
 local drgDetachedDefaults = require('config.drg_detached_defaults');
+local bstDetachedDefaults = require('config.bst_detached_defaults');
+local geoDetachedDefaults = require('config.geo_detached_defaults');
 
 return {
     font = {
@@ -108,6 +110,18 @@ return {
         bstPetStaticX = 170,
         bstPetStaticY = 690,
         bstPetStaticScale = 35,
+        bstJugPetPlateMode = 'Normal',
+        bstJugPetStaticEditFrame = false,
+        bstJugPetStaticBackgroundSettings = bstDetachedDefaults.GetJug(),
+        bstJugPetStaticX = 534,
+        bstJugPetStaticY = 926,
+        bstJugPetStaticScale = 60,
+        bstCharmedPetPlateMode = 'Normal',
+        bstCharmedPetStaticEditFrame = false,
+        bstCharmedPetStaticBackgroundSettings = bstDetachedDefaults.GetCharmed(),
+        bstCharmedPetStaticX = 300,
+        bstCharmedPetStaticY = 690,
+        bstCharmedPetStaticScale = 60,
         smnPetPlateMode = 'Normal',
         smnPetStaticBackground = true,
         smnPetStaticEditFrame = false,
@@ -429,6 +443,12 @@ return {
         pupPetStaticX = 170,
         pupPetStaticY = 690,
         pupPetStaticScale = 60,
+        geoPetPlateMode = 'Normal',
+        geoPetStaticEditFrame = false,
+        geoPetStaticBackgroundSettings = geoDetachedDefaults.Get(),
+        geoPetStaticX = 170,
+        geoPetStaticY = 690,
+        geoPetStaticScale = 100,
         blockPlateClicksWhenImguiCapturesMouse = true,
         pcMouseSnapMode = 'Off',
         enemyMouseSnapMode = 'Off',

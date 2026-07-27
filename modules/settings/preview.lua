@@ -101,6 +101,7 @@ local petTimerDefaults = {
     textOffsetY = 0,
     textSize = 12,
     color = { 1.0, 1.0, 1.0, 1.0 },
+    overtimeColor = { 1.0, 0.18, 0.12, 1.0 },
     outlineEnabled = true,
     outlineColor = { 0.0, 0.0, 0.0, 1.0 },
     outlineSize = 2,
@@ -257,6 +258,8 @@ local petFavorBarDefaults = {
     showAtPercent = 100,
     textOffsetX = 0,
     textOffsetY = 0,
+    counterOffsetX = 0,
+    counterOffsetY = 12,
     useSmallFont = true,
     fontSize = 7,
     textColor = { 1.0, 1.0, 1.0, 1.0 },
@@ -1595,7 +1598,7 @@ local function AddPreviewPetStateBadge(plateData, commandName, settings, globalS
     };
 end
 
-local function BuildPreviewExtraBar(settings, defaults, progress, text, kind, iconName, globalSettings, labelText)
+local function BuildPreviewExtraBar(settings, defaults, progress, text, kind, iconName, globalSettings, labelText, secondaryText)
     if (settings == nil or settings.enabled ~= true) then
         return nil;
     end
@@ -1635,15 +1638,18 @@ local function BuildPreviewExtraBar(settings, defaults, progress, text, kind, ic
         cornerRadius = tonumber(settings.cornerRadius) or 0,
         textureId = barTextures.GetTextureId(settings.texture),
         fillDirection = settings.fillDirection or defaults.fillDirection or 'Left to right',
-        showAtPercent = segmented and 300 or (tonumber(settings.showAtPercent) or 100),
+        showAtPercent = segmented and (kind == 'ready' and 0 or 300) or (tonumber(settings.showAtPercent) or 100),
         segmented = segmented,
         segmentGap = tonumber(settings.segmentGap) or defaults.segmentGap,
         color2 = settings.color2 or defaults.color2,
         color3 = settings.color3 or defaults.color3,
         text = barText,
+        secondaryText = tostring(secondaryText or ''),
         labelText = tostring(labelText or ''),
         textOffsetX = tonumber(settings.textOffsetX) or 0,
         textOffsetY = tonumber(settings.textOffsetY) or 0,
+        secondaryTextOffsetX = tonumber(settings.counterOffsetX) or tonumber(defaults.counterOffsetX) or 0,
+        secondaryTextOffsetY = tonumber(settings.counterOffsetY) or tonumber(defaults.counterOffsetY) or 12,
         fontFamily = fonts.GetRole(globalSettings or globalDefaults, settings.useSmallFont == true),
         fontFlags = fonts.GetRoleFlags(globalSettings or globalDefaults, settings.useSmallFont == true),
         fontSize = textScale.ToTextureFontSize(settings.fontSize, defaults.fontSize),
@@ -1830,16 +1836,19 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
         AddPreviewPetTimerBadge(plateData, 'Jug 90m', petTimerSettings, globalSettings, 'Jug', 'jug');
         AddPreviewPetStateBadge(plateData, 'Fight', petStateSettings, globalSettings);
         plateData.extraBars = plateData.extraBars or {};
-        local readyCounterText = (readySettings.showPercent == true) and '3/3' or '';
+        local readyTimerText = readySettings.showReadyTimer ~= false and '24s' or '';
+        local readyCounterText = readySettings.showPercent == true and '3/3' or '';
         local readyLabelText = (tostring(readySettings.labelDisplayMode or 'Text') == 'Text') and 'Ready' or '';
+        local rewardTimerText = rewardSettings.showRewardTimer ~= false and '27s' or '';
 
-        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(readySettings, petReadyBarDefaults, 100, readyCounterText, 'ready', 'ready', globalSettings, readyLabelText);
-        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(rewardSettings, petRewardBarDefaults, 100, '', 'reward', 'reward', globalSettings, (tostring(rewardSettings.labelDisplayMode or 'Text') == 'Text') and 'Reward' or '');
+        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(readySettings, petReadyBarDefaults, 100, readyTimerText, 'ready', 'ready', globalSettings, readyLabelText, readyCounterText);
+        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(rewardSettings, petRewardBarDefaults, 70, rewardTimerText, 'reward', 'reward', globalSettings, (tostring(rewardSettings.labelDisplayMode or 'Text') == 'Text') and 'Reward' or '');
     else
         AddPreviewPetTimerBadge(plateData, 'Charmed 4m', petTimerSettings, globalSettings, 'Charmed', 'charmed');
         AddPreviewPetStateBadge(plateData, 'Stay', petStateSettings, globalSettings);
         local sicLabelText = (tostring(sicSettings.labelDisplayMode or 'Text') == 'Text') and 'Sic' or '';
-        local sicBar = BuildPreviewExtraBar(CopySettingsWith(sicSettings, { segmented = false, showPercent = false }), petReadyBarDefaults, 100, '', 'sic', 'sic', globalSettings, sicLabelText);
+        local sicTimerText = sicSettings.showSicTimer ~= false and '42s' or '';
+        local sicBar = BuildPreviewExtraBar(CopySettingsWith(sicSettings, { segmented = false, showPercent = false }), petReadyBarDefaults, 55, sicTimerText, 'sic', 'sic', globalSettings, sicLabelText);
 
         if (sicBar ~= nil) then
             plateData.extraBars = plateData.extraBars or {};
@@ -1847,7 +1856,7 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
         end
 
         plateData.extraBars = plateData.extraBars or {};
-        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(rewardSettings, petRewardBarDefaults, 100, '', 'reward', 'reward', globalSettings, (tostring(rewardSettings.labelDisplayMode or 'Text') == 'Text') and 'Reward' or '');
+        plateData.extraBars[#plateData.extraBars + 1] = BuildPreviewExtraBar(rewardSettings, petRewardBarDefaults, 70, rewardSettings.showRewardTimer ~= false and '27s' or '', 'reward', 'reward', globalSettings, (tostring(rewardSettings.labelDisplayMode or 'Text') == 'Text') and 'Reward' or '');
     end
 
     AddEnmityPreviewIcon(plateData, globalSettings, context);

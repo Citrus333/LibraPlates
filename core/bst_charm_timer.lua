@@ -3,6 +3,11 @@ require('common');
 local bit = require('bit');
 
 local bstCharmTimer = {};
+local log = require('core.log');
+local debugEnabled = false;
+local lastCharmActionAt = 0;
+local lastCharmActionTargetId = nil;
+local lastCharmActionTargetIndex = nil;
 
 local packetId = {
     outAction = 0x01A,
@@ -16,8 +21,7 @@ local familiarActionInfo = 0x618;
 
 local charmState = {
     none = 0,
-    sendingCheck = 1,
-    waitingCheck = 2,
+    waitingCheck = 1,
 };
 
 local charmGear = {
@@ -86,19 +90,129 @@ local levelModifiers = {
     [9] = 6.00,
 };
 
-local state = {
-    packetState = charmState.none,
-    targetId = nil,
-    targetIndex = nil,
-    petIndex = nil,
-    petServerId = nil,
-    petName = nil,
-    petType = nil,
-    startTime = nil,
-    expireTime = nil,
-    recoverRequestedAt = nil,
-    recoverPetServerId = nil,
-};
+local function GetCachePath()
+    local installPath = nil;
+
+    pcall(function()
+        installPath = AshitaCore:GetInstallPath();
+    end);
+
+    if (type(installPath) ~= 'string' or installPath == '') then
+        return nil;
+    end
+
+    return installPath .. '\\config\\addons\\LibraPlates\\bst_charm_timer.cache';
+end
+
+local function LoadCachedCharmState()
+    local path = GetCachePath();
+
+    if (path == nil) then
+        return nil;
+    end
+
+    local file = io.open(path, 'r');
+
+    if (file == nil) then
+        return nil;
+    end
+
+    local petServerId = tonumber(file:read('*l'));
+    local petIndex = tonumber(file:read('*l'));
+    local startTime = tonumber(file:read('*l'));
+    local expireTime = tonumber(file:read('*l'));
+    file:close();
+
+    if (
+        petServerId == nil or
+        petIndex == nil or
+        startTime == nil or
+        expireTime == nil or
+        expireTime <= os.time()
+    ) then
+        return nil;
+    end
+
+    return {
+        petIndex = petIndex,
+        petServerId = petServerId,
+        petName = nil,
+        petType = 'charm',
+        startTime = startTime,
+        expireTime = expireTime,
+        recoverRequestedAt = nil,
+        recoverPetServerId = nil,
+        loadedFromCache = true,
+    };
+end
+
+local function RemoveCachedCharmState()
+    local path = GetCachePath();
+
+    if (path ~= nil) then
+        pcall(os.remove, path);
+    end
+end
+
+local state = rawget(_G, 'LibraPlatesBstCharmTimerState');
+
+if (type(state) ~= 'table') then
+    state = LoadCachedCharmState() or {
+        petIndex = nil,
+        petServerId = nil,
+        petName = nil,
+        petType = nil,
+        startTime = nil,
+        expireTime = nil,
+        recoverRequestedAt = nil,
+        recoverPetServerId = nil,
+    };
+    _G.LibraPlatesBstCharmTimerState = state;
+end
+
+-- An addon reload can happen between sending and receiving a packet.  Keep
+-- the Charm expiry, but restart the short-lived packet interception state.
+state.packetState = charmState.none;
+state.targetId = nil;
+state.targetIndex = nil;
+state.checkRequestedAt = nil;
+state.pendingCharmTargetId = nil;
+state.pendingCharmTargetIndex = nil;
+state.pendingCharmUntil = nil;
+state.cacheLoadClock = state.loadedFromCache == true and os.clock() or nil;
+
+local function SaveCachedCharmState()
+    if (
+        state.petServerId == nil or
+        state.petIndex == nil or
+        state.startTime == nil or
+        state.expireTime == nil
+    ) then
+        return;
+    end
+
+    local path = GetCachePath();
+
+    if (path == nil) then
+        return;
+    end
+
+    local file = io.open(path, 'w');
+
+    if (file == nil) then
+        return;
+    end
+
+    file:write(
+        tostring(math.floor(tonumber(state.petServerId) or 0)), '\n',
+        tostring(math.floor(tonumber(state.petIndex) or 0)), '\n',
+        tostring(math.floor(tonumber(state.startTime) or 0)), '\n',
+        tostring(math.floor(tonumber(state.expireTime) or 0)), '\n'
+    );
+    file:close();
+    state.loadedFromCache = false;
+    state.cacheLoadClock = nil;
+end
 
 local function GetPacketData(e)
     return (e ~= nil and (e.data_modified or e.data)) or nil;
@@ -117,12 +231,23 @@ local function Read(data, format, offset)
 end
 
 local function ClearPet()
+    local hadTrackedCharm = state.petServerId ~= nil or state.expireTime ~= nil or state.loadedFromCache == true;
+
     state.petIndex = nil;
     state.petServerId = nil;
     state.petName = nil;
     state.petType = nil;
     state.startTime = nil;
     state.expireTime = nil;
+    state.loadedFromCache = false;
+    state.cacheLoadClock = nil;
+    state.pendingCharmTargetId = nil;
+    state.pendingCharmTargetIndex = nil;
+    state.pendingCharmUntil = nil;
+
+    if (hadTrackedCharm == true) then
+        RemoveCachedCharmState();
+    end
 end
 
 local function GetCharmEquipValue()
@@ -163,6 +288,12 @@ local function CalculateCharmExpireTime(mobLevel)
     local player = AshitaCore:GetMemoryManager():GetPlayer();
 
     if (player == nil or mobLevel == nil) then
+        if (debugEnabled == true) then
+            log.Info(
+                'Charm probe calculate player=' .. tostring(player ~= nil) ..
+                ' mobLevel=' .. tostring(mobLevel)
+            );
+        end
         return nil;
     end
 
@@ -179,6 +310,14 @@ local function CalculateCharmExpireTime(mobLevel)
 
     playerLevel = tonumber(playerLevel);
     charisma = tonumber(charisma);
+
+    if (debugEnabled == true) then
+        log.Info(
+            'Charm probe calculate mobLevel=' .. tostring(mobLevel) ..
+            ' playerLevel=' .. tostring(playerLevel) ..
+            ' charisma=' .. tostring(charisma)
+        );
+    end
 
     if (playerLevel == nil or charisma == nil) then
         return nil;
@@ -197,15 +336,71 @@ local function QueueHiddenCheck(targetId, targetIndex)
         return false;
     end
 
-    state.packetState = charmState.sendingCheck;
+    local packet = struct.pack(
+        'BBBBIIBBBB',
+        packetId.outCheck,
+        0x04,
+        0x00,
+        0x00,
+        tonumber(targetId) or 0,
+        tonumber(targetIndex) or 0,
+        0x00,
+        0x00,
+        0x00,
+        0x00
+    ):totable();
+    local sent = pcall(function()
+        AshitaCore:GetPacketManager():AddOutgoingPacket(packetId.outCheck, packet);
+    end);
+
+    if (debugEnabled == true) then
+        log.Info(
+            'Charm probe check-send targetId=' .. tostring(targetId) ..
+            ' targetIndex=' .. tostring(targetIndex) ..
+            ' sent=' .. tostring(sent)
+        );
+    end
+
+    if (sent ~= true) then
+        state.packetState = charmState.none;
+        return false;
+    end
+
     state.targetId = targetId;
     state.targetIndex = targetIndex;
-    AshitaCore:GetChatManager():QueueCommand(1, '/check');
+    state.checkRequestedAt = os.time();
+    state.packetState = charmState.waitingCheck;
     return true;
 end
 
 function bstCharmTimer.SyncPet(pet, isCharmedPet)
+    if (
+        state.packetState == charmState.waitingCheck and
+        state.checkRequestedAt ~= nil and
+        (os.time() - state.checkRequestedAt) >= 3
+    ) then
+        state.packetState = charmState.none;
+        state.targetId = nil;
+        state.targetIndex = nil;
+        state.checkRequestedAt = nil;
+    end
+
     if (pet == nil) then
+        if (
+            state.pendingCharmUntil ~= nil and
+            os.clock() < state.pendingCharmUntil
+        ) then
+            return;
+        end
+
+        if (
+            state.loadedFromCache == true and
+            state.cacheLoadClock ~= nil and
+            (os.clock() - state.cacheLoadClock) < 5
+        ) then
+            return;
+        end
+
         if (state.packetState == charmState.none) then
             ClearPet();
         end
@@ -222,27 +417,31 @@ function bstCharmTimer.SyncPet(pet, isCharmedPet)
         state.petServerId ~= pet.serverId or
         state.petName ~= pet.name
     ) then
+        if (state.petServerId ~= nil and state.petServerId ~= pet.serverId) then
+            state.startTime = nil;
+            state.expireTime = nil;
+            RemoveCachedCharmState();
+        end
+
         state.petIndex = pet.index;
         state.petServerId = pet.serverId;
         state.petName = pet.name;
         state.petType = 'charm';
         state.startTime = state.startTime or os.time();
-    end
+        state.loadedFromCache = false;
+        state.cacheLoadClock = nil;
 
-    if (state.expireTime == nil and state.packetState == charmState.none) then
-        local now = os.time();
+        if (state.expireTime ~= nil) then
+            SaveCachedCharmState();
+        end
 
         if (
-            state.recoverPetServerId ~= pet.serverId or
-            state.recoverRequestedAt == nil or
-            (now - state.recoverRequestedAt) >= 15
+            state.pendingCharmTargetId == nil or
+            tonumber(state.pendingCharmTargetId) == tonumber(pet.serverId)
         ) then
-            local targetId = tonumber(pet.serverId) ~= nil and bit.band(tonumber(pet.serverId), 0xFFFF) or nil;
-
-            if (QueueHiddenCheck(targetId, tonumber(pet.index)) == true) then
-                state.recoverRequestedAt = now;
-                state.recoverPetServerId = pet.serverId;
-            end
+            state.pendingCharmTargetId = nil;
+            state.pendingCharmTargetIndex = nil;
+            state.pendingCharmUntil = nil;
         end
     end
 end
@@ -252,40 +451,49 @@ function bstCharmTimer.HandlePacketOut(e)
         return;
     end
 
-    if (e.id == packetId.outCheck and state.packetState == charmState.sendingCheck) then
-        local sourceData = GetPacketData(e);
-        local packetData = nil;
-        local ok = pcall(function()
-            packetData = sourceData:totable();
-        end);
-
-        if (ok ~= true or packetData == nil or state.targetId == nil or state.targetIndex == nil) then
-            state.packetState = charmState.none;
-            return;
-        end
-
-        e.data_modified = struct.pack('BBBBHBBHBBBBBB',
-            packetData[1], packetData[2], packetData[3], packetData[4],
-            state.targetId, packetData[7], packetData[8], state.targetIndex,
-            packetData[11], packetData[12], packetData[13], packetData[14],
-            packetData[15], packetData[16]);
-        state.packetState = charmState.waitingCheck;
-        return;
-    end
-
     if (e.id ~= packetId.outAction) then
         return;
     end
 
     local data = GetPacketData(e);
     local category = Read(data, 'H', 0x0A);
-    local actionId = Read(data, 'H', 0x0C);
+    local actionId = Read(data, 'I', 0x0C);
+
+    if (debugEnabled == true and category == 0x09) then
+        log.Info(
+            'Charm probe action-out category=' .. tostring(category) ..
+            ' actionId=' .. tostring(actionId) ..
+            ' targetId=' .. tostring(Read(data, 'I', 0x04)) ..
+            ' targetIndex=' .. tostring(Read(data, 'H', 0x08))
+        );
+    end
 
     if (category ~= 0x09 or actionId ~= charmActionId) then
         return;
     end
 
-    QueueHiddenCheck(Read(data, 'H', 0x04), Read(data, 'H', 0x08));
+    local targetId = Read(data, 'I', 0x04);
+    local targetIndex = Read(data, 'H', 0x08);
+    local now = os.clock();
+
+    if (
+        targetId == lastCharmActionTargetId and
+        targetIndex == lastCharmActionTargetIndex and
+        (now - lastCharmActionAt) < 0.5
+    ) then
+        if (debugEnabled == true) then
+            log.Info('Charm probe duplicate action suppressed.');
+        end
+        return;
+    end
+
+    lastCharmActionAt = now;
+    lastCharmActionTargetId = targetId;
+    lastCharmActionTargetIndex = targetIndex;
+    state.pendingCharmTargetId = targetId;
+    state.pendingCharmTargetIndex = targetIndex;
+    state.pendingCharmUntil = now + 10;
+    QueueHiddenCheck(targetId, targetIndex);
 end
 
 function bstCharmTimer.HandlePacketIn(e)
@@ -302,6 +510,7 @@ function bstCharmTimer.HandlePacketIn(e)
 
             if (actorId == playerEntity.ServerId and rawActionInfo == familiarActionInfo and state.expireTime ~= nil) then
                 state.expireTime = state.expireTime + 1500;
+                SaveCachedCharmState();
             end
         end
 
@@ -312,8 +521,30 @@ function bstCharmTimer.HandlePacketIn(e)
         return;
     end
 
-    e.blocked = true;
     local data = GetPacketData(e);
+    local responseTargetId = Read(data, 'I', 0x08);
+    local responseTargetIndex = Read(data, 'H', 0x16);
+
+    if (debugEnabled == true) then
+        log.Info(
+            'Charm probe check-in targetId=' .. tostring(responseTargetId) ..
+            ' targetIndex=' .. tostring(responseTargetIndex) ..
+            ' expectedId=' .. tostring(state.targetId) ..
+            ' expectedIndex=' .. tostring(state.targetIndex) ..
+            ' param1=' .. tostring(Read(data, 'l', 0x0C)) ..
+            ' param2=' .. tostring(Read(data, 'L', 0x10)) ..
+            ' message=' .. tostring(Read(data, 'H', 0x18))
+        );
+    end
+
+    if (
+        responseTargetId ~= tonumber(state.targetId) or
+        responseTargetIndex ~= tonumber(state.targetIndex)
+    ) then
+        return;
+    end
+
+    e.blocked = true;
     local param1 = Read(data, 'l', 0x0C);
     local param2 = Read(data, 'L', 0x10);
     local message = Read(data, 'H', 0x18);
@@ -331,10 +562,14 @@ function bstCharmTimer.HandlePacketIn(e)
             state.startTime = os.time();
             state.expireTime = expireTime;
             state.petType = 'charm';
+            SaveCachedCharmState();
         end
     end
 
     state.packetState = charmState.none;
+    state.targetId = nil;
+    state.targetIndex = nil;
+    state.checkRequestedAt = nil;
 end
 
 function bstCharmTimer.GetRemainingSeconds()
@@ -342,7 +577,22 @@ function bstCharmTimer.GetRemainingSeconds()
         return nil;
     end
 
-    return math.max(0, state.expireTime - os.time());
+    -- Keep the signed estimate so the UI can show how long the same pet has
+    -- remained charmed beyond the calculated expiry.
+    return state.expireTime - os.time();
+end
+
+function bstCharmTimer.SetDebugEnabled(value)
+    debugEnabled = value == true;
+end
+
+function bstCharmTimer.GetDebugStatusText()
+    return 'Charm probe enabled=' .. tostring(debugEnabled) ..
+        ' packetState=' .. tostring(state.packetState) ..
+        ' petId=' .. tostring(state.petServerId) ..
+        ' petIndex=' .. tostring(state.petIndex) ..
+        ' start=' .. tostring(state.startTime) ..
+        ' expire=' .. tostring(state.expireTime);
 end
 
 return bstCharmTimer;

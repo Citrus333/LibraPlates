@@ -67,14 +67,32 @@ function petState.SyncPet(pet)
     state.serverId = pet.serverId;
     state.name = pet.name;
 
+    if (state.commandName == nil) then
+        if (tonumber(pet.status) == 1) then
+            state.commandId = 69;
+            state.commandName = 'Fight';
+            state.category = nil;
+            state.updatedAt = os.time();
+        else
+            state.commandId = 70;
+            state.commandName = 'Heel';
+            state.category = nil;
+            state.updatedAt = nil;
+            state.lastRestingCommandId = 70;
+            state.lastRestingCommandName = 'Heel';
+        end
+    end
+
     if (
         state.commandName == 'Fight' and
         tonumber(pet.status) ~= 1 and
         state.updatedAt ~= nil and
         (os.time() - state.updatedAt) > fightClearGraceSeconds
     ) then
-        state.commandId = state.lastRestingCommandId;
-        state.commandName = state.lastRestingCommandName;
+        state.commandId = 70;
+        state.commandName = 'Heel';
+        state.lastRestingCommandId = 70;
+        state.lastRestingCommandName = 'Heel';
         state.category = nil;
         state.updatedAt = nil;
     end

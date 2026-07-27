@@ -89,6 +89,7 @@ local defaults = {
         anchorPoint = 'Center',
     },
     drgEnmitySettings = {
+        enabled = true,
         allyIconFile = 'warning-dimond.png',
         allyColor = { 1.0, 0.25, 0.20, 1.0 },
         allyOffsetX = 205,

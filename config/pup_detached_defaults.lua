@@ -134,6 +134,14 @@ local defaults = {
         anchorTo = 'Plate',
         anchorPoint = 'Center',
     },
+    pupEnmitySettings = {
+        enabled = true,
+        allyIconFile = 'warning-dimond.png',
+        allyColor = { 1.0, 0.25, 0.20, 1.0 },
+        allyOffsetX = 170,
+        allyOffsetY = -70,
+        allyIconSize = 30,
+    },
     pupOverloadSettings = {
         enabled = true,
         size = 70,

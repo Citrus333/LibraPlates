@@ -45,6 +45,7 @@ local avatar = {
         width = 100,
     },
     avatarEnmitySettings = {
+        enabled = true,
         allyColor = { 1, 0.28000000119209, 0.20000000298023, 1 },
         allyIconFile = "warning-dimond.png",
         allyIconSize = 70,

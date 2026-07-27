@@ -4,7 +4,7 @@ local barAnimations = {};
 local options = T{
     'Important',
     'Pandemic',
-    'Blink',
+    'Pulse',
 };
 local files = {
     Important = 'important.png',
@@ -19,7 +19,8 @@ end
 function barAnimations.GetTextureId(style)
     style = tostring(style or 'Important');
 
-    if (style == 'Blink') then
+    -- "Blink" is the legacy saved name for the same pulse effect.
+    if (style == 'Pulse' or style == 'Blink') then
         return -1;
     end
 

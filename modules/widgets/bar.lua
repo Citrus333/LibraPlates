@@ -455,11 +455,14 @@ local function DrawAnimationPreviewTooltip(style, speed, animationColor, fillCol
     end
 
     local animationName = tostring(style or 'None');
+    if (animationName == 'Blink') then
+        animationName = 'Pulse';
+    end
     local textureId = barAnimations.GetTextureId(animationName);
 
     if (
         animationName ~= 'None' and
-        (textureId ~= nil or animationName == 'Blink') and
+        (textureId ~= nil or animationName == 'Pulse') and
         imgui.BeginTooltip ~= nil and
         imgui.EndTooltip ~= nil and
         imgui.GetWindowDrawList ~= nil and
@@ -478,7 +481,7 @@ local function DrawAnimationPreviewTooltip(style, speed, animationColor, fillCol
         drawList:AddRectFilled({ x, y }, { x + width, y + height }, ColorToU32(backgroundColor, { 0.10, 0.11, 0.13, 1.0 }), 0);
         drawList:AddRectFilled({ x, y }, { x + fillWidth, y + height }, ColorToU32(fillColor, { 1.0, 0.0, 0.0, 1.0 }), 0);
 
-        if (animationName == 'Blink') then
+        if (animationName == 'Pulse') then
             local previewSpeed = tonumber(speed) or 40;
             local rate = math.max(0.2, previewSpeed / 40);
             local pulse = 0.10 + (0.30 * ((math.sin(os.clock() * rate * math.pi * 2) + 1) * 0.5));
@@ -523,6 +526,9 @@ local GetAnimationOptions = nil;
 local function DrawAnimationChoice(value, id, speed, animationColor, fillColor, backgroundColor, width)
     local options = GetAnimationOptions();
     local current = tostring(value or 'None');
+    if (current == 'Blink') then
+        current = 'Pulse';
+    end
     local currentAllowed = false;
 
     for _, option in ipairs(options) do
@@ -1122,6 +1128,7 @@ function bar.DrawSettings(settings, context)
         (context ~= nil and context.segmentedResource == true)
     );
     local showLowState = (
+        (context == nil or context.hideLowState ~= true) and
         resourceName ~= 'TP' and
         resourceName ~= 'Ready' and
         resourceName ~= 'Sic' and
@@ -1509,7 +1516,10 @@ function bar.DrawSettings(settings, context)
             end
 
             showPercentIndex = #textToggles + 1;
-            textToggles[showPercentIndex] = { label = 'Show ' .. resourceLabel .. ' %%', value = settings.showPercent };
+            textToggles[showPercentIndex] = {
+                label = tostring(context ~= nil and context.showPercentLabel or ('Show ' .. resourceLabel .. ' %%')),
+                value = settings.showPercent,
+            };
 
             useSmallFontIndex = #textToggles + 1;
             textToggles[useSmallFontIndex] = { label = 'Use small font', value = settings.useSmallFont };
@@ -1790,7 +1800,10 @@ function bar.DrawSettings(settings, context)
         elseif (resourceName == 'Sic') then
             settings.showPercent = false;
         else
-            showPercentLabel = 'Show ' .. resourceName .. ' percent';
+            showPercentLabel = tostring(
+                context ~= nil and context.showPercentLabel
+                or ('Show ' .. resourceName .. ' percent')
+            );
         end
 
         local textToggles = {};
@@ -1856,7 +1869,25 @@ function bar.DrawSettings(settings, context)
             settings.showValue = false;
             settings.showPercent = DrawToggle('Show ' .. string.lower(resourceName) .. ' counter', settings.showPercent);
             if (settings.showPercent == true) then
-                settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'counter_position', 'Counter X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Counter Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
+                settings.counterOffsetX, settings.counterOffsetY = DrawSliderPair(
+                    idPrefix .. 'counter_position',
+                    'Counter X',
+                    idPrefix .. 'counter_offset_x',
+                    settings.counterOffsetX,
+                    -400,
+                    400,
+                    'Counter Y',
+                    idPrefix .. 'counter_offset_y',
+                    settings.counterOffsetY,
+                    -400,
+                    400
+                );
+            end
+            imgui.Separator();
+            DrawInnerHeader('Cooldown Timer:');
+            settings.showReadyTimer = DrawToggle('Show cooldown timer', settings.showReadyTimer ~= false);
+            if (settings.showPercent == true or settings.showReadyTimer == true) then
+                settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'timer_position', 'Timer X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Timer Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400);
             end
         elseif (resourceName == 'Ward' or resourceName == 'Rage' or resourceName == 'Favor') then
             imgui.Separator();
@@ -1866,12 +1897,56 @@ function bar.DrawSettings(settings, context)
             if (settings.showPercent == true) then
                 settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'timer_position', 'Timer X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Timer Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400, settingsGridColumnWidth, settingsGridColumnWidth, settingsGridNumericWidth);
             end
+        elseif (context ~= nil and context.cooldownTimerOptions == true) then
+            settings.showValue = false;
+            imgui.Separator();
+            DrawInnerHeader('Cooldown Timer:');
+            settings.showPercent = DrawToggle('Show cooldown timer', settings.showPercent ~= false);
+            if (settings.showPercent == true) then
+                settings.textOffsetX, settings.textOffsetY = DrawSliderPair(
+                    idPrefix .. 'timer_position',
+                    'Timer X',
+                    idPrefix .. 'text_offset_x',
+                    settings.textOffsetX,
+                    -400,
+                    400,
+                    'Timer Y',
+                    idPrefix .. 'text_offset_y',
+                    settings.textOffsetY,
+                    -400,
+                    400,
+                    settingsGridColumnWidth,
+                    settingsGridColumnWidth,
+                    settingsGridNumericWidth
+                );
+            end
         elseif (resourceName == 'Sic') then
             settings.showValue = false;
             settings.showPercent = false;
+            imgui.Separator();
+            DrawInnerHeader('Cooldown Timer:');
+            settings.showSicTimer = DrawToggle('Show cooldown timer', settings.showSicTimer ~= false);
+            if (settings.showSicTimer == true) then
+                settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'timer_position', 'Timer X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Timer Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400, settingsGridColumnWidth, settingsGridColumnWidth, settingsGridNumericWidth);
+            end
+        elseif (resourceName == 'Reward') then
+            settings.showValue = false;
+            settings.showPercent = false;
+            imgui.Separator();
+            DrawInnerHeader('Cooldown Timer:');
+            settings.showRewardTimer = DrawToggle('Show cooldown timer', settings.showRewardTimer ~= false);
+            if (settings.showRewardTimer == true) then
+                settings.textOffsetX, settings.textOffsetY = DrawSliderPair(idPrefix .. 'timer_position', 'Timer X', idPrefix .. 'text_offset_x', settings.textOffsetX, -400, 400, 'Timer Y', idPrefix .. 'text_offset_y', settings.textOffsetY, -400, 400, settingsGridColumnWidth, settingsGridColumnWidth, settingsGridNumericWidth);
+            end
         end
 
-        if (settings.labelDisplayMode == 'Text' or settings.showPercent == true) then
+        if (
+            settings.labelDisplayMode == 'Text' or
+            settings.showPercent == true or
+            (resourceName == 'Ready' and settings.showReadyTimer ~= false) or
+            (resourceName == 'Sic' and settings.showSicTimer == true) or
+            (resourceName == 'Reward' and settings.showRewardTimer == true)
+        ) then
             DrawLabelTextSettings();
         end
     end
@@ -1885,6 +1960,9 @@ function bar.DrawSettings(settings, context)
             settings.lowColorPercent, settings.lowColor = DrawLowWarningRow(idPrefix .. 'low_warning', settings.lowColorPercent, settings.lowColor);
 
             local animation = settings.lowAnimationEnabled == true and tostring(settings.lowAnimation or defaults.lowAnimation or 'Important') or 'None';
+            if (animation == 'Blink') then
+                animation = 'Pulse';
+            end
             animation = DrawComboRow('Warning animation', animation, GetAnimationOptions(), idPrefix .. 'low_animation', 170);
 
             if (animation == 'None') then
@@ -1898,7 +1976,12 @@ function bar.DrawSettings(settings, context)
     end
     end
 
-    DrawPanel(boxedResourceBar == true and '' or 'HP Bar', DrawBody, true);
+    local specialPanelLabels = {
+        Sic = 'Sic',
+        Reward = 'Reward',
+    };
+    local panelLabel = boxedResourceBar == true and '' or (specialPanelLabels[resourceName] or 'HP Bar');
+    DrawPanel(panelLabel, DrawBody, true);
 
     if (context == nil or context.hideResetControls ~= true) then
         if (context ~= nil and context.boxed == true) then

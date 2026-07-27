@@ -9,6 +9,8 @@ local pupArtworkTextureIds = {};
 local pupEquipmentArtworkTextureIds = {};
 local pupElementTextureIds = {};
 local drgArtworkTextureIds = {};
+local bstArtworkTextureIds = {};
+local geoArtworkTextureIds = {};
 
 local function GetAddonPath()
     local ok, path = pcall(function()
@@ -54,6 +56,14 @@ end
 
 function backgroundTextures.GetDrgArtworkFolderPath()
     return GetAddonPath() .. 'assets\\images\\pet\\drg\\';
+end
+
+function backgroundTextures.GetBstArtworkFolderPath()
+    return GetAddonPath() .. 'assets\\images\\pet\\bst\\';
+end
+
+function backgroundTextures.GetGeoArtworkFolderPath()
+    return GetAddonPath() .. 'assets\\images\\pet\\geo\\';
 end
 
 function backgroundTextures.GetPupEquipmentArtworkFolderPath(layer)
@@ -196,6 +206,44 @@ function backgroundTextures.GetDrgArtworkTextureId(fileName)
     ));
 
     return drgArtworkTextureIds[key];
+end
+
+function backgroundTextures.GetBstArtworkTextureId(fileName)
+    fileName = tostring(fileName or ''):gsub('^.*[\\/]', '');
+
+    if (fileName == '') then
+        return nil;
+    end
+
+    local key = 'pet/bst/' .. fileName;
+    if (bstArtworkTextureIds[key] ~= nil) then
+        return bstArtworkTextureIds[key];
+    end
+
+    bstArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+        backgroundTextures.GetBstArtworkFolderPath() .. fileName
+    ));
+
+    return bstArtworkTextureIds[key];
+end
+
+function backgroundTextures.GetGeoArtworkTextureId(fileName)
+    fileName = tostring(fileName or ''):gsub('^.*[\\/]', '');
+
+    if (fileName == '') then
+        return nil;
+    end
+
+    local key = 'pet/geo/' .. fileName;
+    if (geoArtworkTextureIds[key] ~= nil) then
+        return geoArtworkTextureIds[key];
+    end
+
+    geoArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+        backgroundTextures.GetGeoArtworkFolderPath() .. fileName
+    ));
+
+    return geoArtworkTextureIds[key];
 end
 
 function backgroundTextures.GetPupEquipmentArtworkTextureId(layer, fileName)

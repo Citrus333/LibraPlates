@@ -41,6 +41,8 @@ local petPlate = {};
 local bstPetTimer = {};
 local jugIconTextureId = nil;
 local petStateIconTextureIds = {};
+local detachedBstIconTextureIds = {};
+local detachedGeoIconTextureIds = {};
 local detachedFavorEffectTextureIds = {};
 local detachedFavorEffectStatusIds = {
     carbuncle = 42,  -- Regen
@@ -83,6 +85,10 @@ local detachedDrgTimerCache = {
     spiritBondSeconds = nil,
     recastMaxTicks = {},
 };
+local detachedGeoTimerCache = {
+    updatedAt = -1000,
+    ticks = {},
+};
 local GetAvatarFavorStatusElapsed = nil;
 local GetAvatarFavorCooldownSeconds = nil;
 local BuildResourceText = nil;
@@ -93,7 +99,7 @@ local wyvernRestingAnchorBone = 0;
 local wyvernRestingOverlayOffsetY = -170;
 local luopanWorldOffsetY = -1.60;
 local luopanCanvasHeight = 1024;
-local luopanPlateWorldHeight = 2.36;
+local luopanPlateWorldHeight = 1.18;
 local luopanBuffsDefaults = {};
 local petTimerDefaults = {
     enabled = true,
@@ -105,6 +111,7 @@ local petTimerDefaults = {
     textOffsetY = 0,
     textSize = 12,
     color = { 1.0, 1.0, 1.0, 1.0 },
+    overtimeColor = { 1.0, 0.18, 0.12, 1.0 },
     outlineEnabled = true,
     outlineColor = { 0.0, 0.0, 0.0, 1.0 },
     outlineSize = 2,
@@ -162,7 +169,9 @@ local function GetJugIconTextureId()
         return jugIconTextureId;
     end
 
-    jugIconTextureId = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\pet\\bst\\jug.png'));
+    jugIconTextureId = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+        addon.path .. '\\assets\\images\\pet\\bst\\jug.png'
+    ));
     return jugIconTextureId;
 end
 
@@ -182,7 +191,11 @@ local function GetPetStateIconTextureId(commandName)
     end
 
     local jobFolder = (key == 'ward' or key == 'rage' or key == 'favor') and 'smn' or 'bst';
-    petStateIconTextureIds[key] = textureLoader.ToTextureId(textureLoader.Load(addon.path .. '\\assets\\images\\pet\\' .. jobFolder .. '\\' .. key .. '.png'));
+    local path = addon.path .. '\\assets\\images\\pet\\' .. jobFolder .. '\\' .. key .. '.png';
+    local texture = jobFolder == 'bst'
+        and textureLoader.LoadPreserveAlpha(path)
+        or textureLoader.Load(path);
+    petStateIconTextureIds[key] = textureLoader.ToTextureId(texture);
     return petStateIconTextureIds[key];
 end
 
@@ -196,6 +209,47 @@ local function GetPetTimerIconTextureId(iconName)
     return GetPetStateIconTextureId(key);
 end
 
+local function GetDetachedBstIconTextureId(iconName)
+    local key = tostring(iconName or ''):lower();
+
+    if (key == 'sic') then
+        key = 'ready';
+    end
+
+    if (key == '') then
+        return nil;
+    end
+
+    if (detachedBstIconTextureIds[key] == nil) then
+        local path = addon.path .. '\\assets\\images\\pet\\bst\\detached\\' .. key .. '.png';
+        detachedBstIconTextureIds[key] = textureLoader.ToTextureId(
+            textureLoader.LoadPreserveAlpha(path)
+        ) or false;
+    end
+
+    return detachedBstIconTextureIds[key] ~= false
+        and detachedBstIconTextureIds[key]
+        or nil;
+end
+
+local function GetDetachedGeoIconTextureId(fileName)
+    fileName = tostring(fileName or ''):gsub('^.*[\\/]', '');
+    if (fileName == '') then
+        return nil;
+    end
+
+    if (detachedGeoIconTextureIds[fileName] == nil) then
+        local path = addon.path .. '\\assets\\images\\pet\\geo\\detached\\' .. fileName;
+        detachedGeoIconTextureIds[fileName] = textureLoader.ToTextureId(
+            textureLoader.LoadPreserveAlpha(path)
+        ) or false;
+    end
+
+    return detachedGeoIconTextureIds[fileName] ~= false
+        and detachedGeoIconTextureIds[fileName]
+        or nil;
+end
+
 local function CopySettingsWith(settings, overrides)
     local copy = {};
 
@@ -207,6 +261,15 @@ local function CopySettingsWith(settings, overrides)
         copy[key] = value;
     end
 
+    return copy;
+end
+
+local function CopyBarSettingsWith(settings, overrides)
+    local copy = CopySettingsWith(settings, overrides);
+
+    -- Solid intentionally has no texture asset. Assign after copying so nil
+    -- clears any texture inherited from the normal/world pet bar.
+    copy.textureId = barTextures.GetTextureId(copy.texture or 'Solid');
     return copy;
 end
 
@@ -304,6 +367,8 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
     local usingAvatarArtwork = false;
     local usingPupArtwork = false;
     local usingDrgArtwork = false;
+    local usingBstArtwork = false;
+    local usingGeoArtwork = false;
     if (prefix == 'smn' and settings.useAvatarArtwork ~= false) then
         local avatarArtwork = GetSmnPetArtworkFile(petName);
         if (avatarArtwork ~= nil) then
@@ -316,6 +381,14 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
     elseif (prefix == 'drg') then
         textureName = 'Wyvern.png';
         usingDrgArtwork = true;
+    elseif (prefix == 'bst') then
+        textureName = tostring(settings.bstArtworkFile or (
+            settingsPrefix == 'bstCharmed' and 'Charm-plate.png' or 'Jug-plate.png'
+        ));
+        usingBstArtwork = true;
+    elseif (prefix == 'geo') then
+        textureName = 'luopan.png';
+        usingGeoArtwork = true;
     end
 
     local baseWidth = tonumber(settings.width) or backgroundDefaults.width;
@@ -341,6 +414,16 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
         offsetX = 0;
         offsetY = 0;
         color = { 0.0, 0.0, 0.0, 0.0 };
+    elseif (usingBstArtwork == true) then
+        baseHeight = baseWidth * 0.5;
+        offsetX = 0;
+        offsetY = 0;
+        color = { 0.0, 0.0, 0.0, 0.0 };
+    elseif (usingGeoArtwork == true) then
+        baseHeight = baseWidth * (145 / 320);
+        offsetX = 0;
+        offsetY = 0;
+        color = { 0.0, 0.0, 0.0, 0.0 };
     end
 
     return {
@@ -361,7 +444,15 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
                 or (
                     usingDrgArtwork == true
                     and backgroundTextures.GetDrgArtworkTextureId(textureName)
-                    or backgroundTextures.GetTextureId(textureName)
+                    or (
+                        usingBstArtwork == true
+                        and backgroundTextures.GetBstArtworkTextureId(textureName)
+                        or (
+                            usingGeoArtwork == true
+                            and backgroundTextures.GetGeoArtworkTextureId(textureName)
+                            or backgroundTextures.GetTextureId(textureName)
+                        )
+                    )
                 )
             ),
         imageOpacity = usingAvatarArtwork == true
@@ -372,12 +463,22 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
                 or (
                     usingDrgArtwork == true
                     and (tonumber(settings.drgArtworkOpacity) or 100)
-                    or (settings.imageOpacity or backgroundDefaults.imageOpacity)
+                    or (
+                        usingBstArtwork == true
+                        and (tonumber(settings.bstArtworkOpacity) or 100)
+                        or (
+                            usingGeoArtwork == true
+                            and (tonumber(settings.geoArtworkOpacity) or 100)
+                            or (settings.imageOpacity or backgroundDefaults.imageOpacity)
+                        )
+                    )
                 )
             ),
         avatarArtwork = usingAvatarArtwork,
         pupArtwork = usingPupArtwork,
         drgArtwork = usingDrgArtwork,
+        bstArtwork = usingBstArtwork,
+        geoArtwork = usingGeoArtwork,
         avatarGemMeters = settings.avatarGemMeters,
         avatarNameSettings = settings.avatarNameSettings,
         avatarHpBarSettings = settings.avatarHpBarSettings,
@@ -393,6 +494,7 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
         pupHpBarSettings = settings.pupHpBarSettings,
         pupMpBarSettings = settings.pupMpBarSettings,
         pupTpBarSettings = settings.pupTpBarSettings,
+        pupEnmitySettings = settings.pupEnmitySettings,
         pupFrameArtworkSettings = settings.pupFrameArtworkSettings,
         pupHeadArtworkSettings = settings.pupHeadArtworkSettings,
         pupOverloadSettings = settings.pupOverloadSettings,
@@ -406,6 +508,25 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
         drgCallWyvernSettings = settings.drgCallWyvernSettings or drgDefaults.drgCallWyvernSettings,
         drgSpiritLinkSettings = settings.drgSpiritLinkSettings or drgDefaults.drgSpiritLinkSettings,
         drgSpiritBondSettings = settings.drgSpiritBondSettings or drgDefaults.drgSpiritBondSettings,
+        bstPetState = settings.bstPetState,
+        bstNameSettings = settings.bstNameSettings,
+        bstHpBarSettings = settings.bstHpBarSettings,
+        bstTpBarSettings = settings.bstTpBarSettings,
+        bstEnmitySettings = settings.bstEnmitySettings,
+        bstPetTimerSettings = settings.bstPetTimerSettings,
+        bstPetStateSettings = settings.bstPetStateSettings,
+        bstActionSettings = settings.bstActionSettings,
+        bstRewardSettings = settings.bstRewardSettings,
+        geoDetached = prefix == 'geo',
+        geoNameSettings = settings.geoNameSettings,
+        geoHpBarSettings = settings.geoHpBarSettings,
+        geoEnmitySettings = settings.geoEnmitySettings,
+        geoBlazeSettings = settings.geoBlazeSettings,
+        geoEmanationSettings = settings.geoEmanationSettings,
+        geoDematerializeSettings = settings.geoDematerializeSettings,
+        geoLifeCycleSettings = settings.geoLifeCycleSettings,
+        geoFullCircleSettings = settings.geoFullCircleSettings,
+        geoActiveEffectsSettings = settings.geoActiveEffectsSettings,
         scaleInverse = scaleInverse,
         rawWidth = baseWidth,
         rawHeight = baseHeight,
@@ -519,7 +640,7 @@ local function ApplyDetachedAvatarWidgets(plateData, background)
         hpColor = hpSettings.lowColor or hpColor;
     end
 
-    plateData.hpBar = CopySettingsWith(plateData.hpBar, {
+    plateData.hpBar = CopyBarSettingsWith(plateData.hpBar, {
         enabled = hpSettings.enabled ~= false,
         width = math.max(1, GetDetachedAvatarMeterNumber(hpSettings, 'width', 150) * scaleInverse),
         height = math.max(1, GetDetachedAvatarMeterNumber(hpSettings, 'height', 12) * scaleInverse),
@@ -561,7 +682,7 @@ local function ApplyDetachedAvatarWidgets(plateData, background)
         mpColor = mpSettings.lowColor or mpColor;
     end
 
-    plateData.mpBar = CopySettingsWith(plateData.mpBar, {
+    plateData.mpBar = CopyBarSettingsWith(plateData.mpBar, {
         enabled = mpSettings.enabled ~= false and (
             plateData.detachedSmnPetType == 'Spirit' or
             plateData.detachedAvatarSetupPreview == true
@@ -605,7 +726,7 @@ local function ApplyDetachedAvatarWidgets(plateData, background)
         tpColor = tpSettings.fullColor or tpColor;
     end
 
-    plateData.tpBar = CopySettingsWith(plateData.tpBar, {
+    plateData.tpBar = CopyBarSettingsWith(plateData.tpBar, {
         enabled = tpSettings.enabled ~= false,
         width = math.max(1, GetDetachedAvatarMeterNumber(tpSettings, 'width', 150) * scaleInverse),
         height = math.max(1, GetDetachedAvatarMeterNumber(tpSettings, 'height', 10) * scaleInverse),
@@ -655,7 +776,7 @@ local function ApplyDetachedAvatarWidgets(plateData, background)
         plateData.castBar = nil;
     else
         plateData.cast = tonumber(plateData.detachedAvatarCast) or tonumber(plateData.cast) or 0;
-        plateData.castBar = CopySettingsWith(detachedCastBar, {
+        plateData.castBar = CopyBarSettingsWith(detachedCastBar, {
             enabled = castSettings.enabled ~= false,
             width = math.max(1, GetDetachedAvatarMeterNumber(castSettings, 'width', 150) * scaleInverse),
             height = math.max(1, GetDetachedAvatarMeterNumber(castSettings, 'height', 10) * scaleInverse),
@@ -699,7 +820,10 @@ local function ApplyDetachedAvatarWidgets(plateData, background)
     end
     plateData.icons = retainedIcons;
 
-    if (hadLiveEnmityIcon == true or plateData.detachedAvatarSetupPreview == true) then
+    if (
+        enmitySettings.enabled ~= false and
+        (hadLiveEnmityIcon == true or plateData.detachedAvatarSetupPreview == true)
+    ) then
         enmity.AddIcon(plateData, {
             allyIconFile = enmitySettings.allyIconFile,
             allyColor = enmitySettings.allyColor,
@@ -718,7 +842,7 @@ local function BuildDetachedPupResourceBar(source, settings, defaults, percent, 
         color = settings.lowColor or color;
     end
 
-    return CopySettingsWith(source, {
+    return CopyBarSettingsWith(source, {
         enabled = settings.enabled ~= false,
         width = math.max(1, GetDetachedAvatarMeterNumber(settings, 'width', defaults.width) * scaleInverse),
         height = math.max(1, GetDetachedAvatarMeterNumber(settings, 'height', defaults.height) * scaleInverse),
@@ -766,6 +890,7 @@ local function ApplyDetachedPupWidgets(plateData, background)
     local hpSettings = background.pupHpBarSettings or defaults.pupHpBarSettings or barDefaults;
     local mpSettings = background.pupMpBarSettings or defaults.pupMpBarSettings or mpBarDefaults;
     local tpSettings = background.pupTpBarSettings or defaults.pupTpBarSettings or tpBarDefaults;
+    local enmitySettings = background.pupEnmitySettings or defaults.pupEnmitySettings or {};
     local maneuverSettings = background.pupManeuverSettings or defaults.pupManeuverSettings or maneuverDefaults;
     local scaleInverse = tonumber(background.scaleInverse) or 1;
     local globalSettings = state.GetGlobalSettings(globalDefaults);
@@ -831,15 +956,17 @@ local function ApplyDetachedPupWidgets(plateData, background)
         plateData.tpBar.showAtPercent = 0;
     end
 
-    plateData.icons = (function()
-        local retained = {};
-        for _, icon in ipairs(plateData.icons or {}) do
-            if (tostring(icon.kind or '') ~= 'maneuvers') then
-                retained[#retained + 1] = icon;
-            end
+    local retainedIcons = {};
+    local hadLiveEnmityIcon = false;
+    for _, icon in ipairs(plateData.icons or {}) do
+        local kind = tostring(icon.kind or '');
+        if (kind == 'enmity') then
+            hadLiveEnmityIcon = true;
+        elseif (kind ~= 'maneuvers') then
+            retainedIcons[#retainedIcons + 1] = icon;
         end
-        return retained;
-    end)();
+    end
+    plateData.icons = retainedIcons;
 
     local detachedManeuverSettings = CopySettingsWith(maneuverSettings, {
         iconSize = GetDetachedAvatarMeterNumber(maneuverSettings, 'iconSize', maneuverDefaults.iconSize) * scaleInverse,
@@ -857,6 +984,18 @@ local function ApplyDetachedPupWidgets(plateData, background)
         plateData.detachedPupManeuverState or pupManeuvers.GetPreviewState()
     );
 
+    if (
+        enmitySettings.enabled ~= false and
+        (hadLiveEnmityIcon == true or setupPreview == true)
+    ) then
+        enmity.AddIcon(plateData, {
+            allyIconFile = enmitySettings.allyIconFile,
+            allyColor = enmitySettings.allyColor,
+            allyIconSize = GetDetachedAvatarMeterNumber(enmitySettings, 'allyIconSize', 30) * scaleInverse,
+            allyOffsetX = GetDetachedAvatarMeterNumber(enmitySettings, 'allyOffsetX', 170) * scaleInverse,
+            allyOffsetY = GetDetachedAvatarMeterNumber(enmitySettings, 'allyOffsetY', -70) * scaleInverse,
+        }, 'ally');
+    end
 end
 
 local function ApplyDetachedDrgWidgets(plateData, background)
@@ -933,7 +1072,10 @@ local function ApplyDetachedDrgWidgets(plateData, background)
     end
     plateData.icons = retainedIcons;
 
-    if (hadLiveEnmityIcon == true or setupPreview == true) then
+    if (
+        enmitySettings.enabled ~= false and
+        (hadLiveEnmityIcon == true or setupPreview == true)
+    ) then
         enmity.AddIcon(plateData, {
             allyIconFile = enmitySettings.allyIconFile,
             allyColor = enmitySettings.allyColor,
@@ -941,6 +1083,472 @@ local function ApplyDetachedDrgWidgets(plateData, background)
             allyOffsetX = GetDetachedAvatarMeterNumber(enmitySettings, 'allyOffsetX', 205) * scaleInverse,
             allyOffsetY = GetDetachedAvatarMeterNumber(enmitySettings, 'allyOffsetY', -57) * scaleInverse,
         }, 'ally');
+    end
+end
+
+local function ApplyDetachedBstWidgets(plateData, background)
+    if (background == nil or background.bstArtwork ~= true) then
+        return;
+    end
+
+    local defaults = (
+        (globalDefaults.targeting or {})[
+            tostring(background.bstPetState) == 'Charmed Pet'
+                and 'bstCharmedPetStaticBackgroundSettings'
+                or 'bstJugPetStaticBackgroundSettings'
+        ] or {}
+    );
+    local nameSettings = background.bstNameSettings or defaults.bstNameSettings or nameDefaults;
+    local hpSettings = background.bstHpBarSettings or defaults.bstHpBarSettings or barDefaults;
+    local tpSettings = background.bstTpBarSettings or defaults.bstTpBarSettings or tpBarDefaults;
+    local enmitySettings = background.bstEnmitySettings or defaults.bstEnmitySettings or {};
+    local timerSettings = background.bstPetTimerSettings or defaults.bstPetTimerSettings or petTimerDefaults;
+    local stateSettings = background.bstPetStateSettings or defaults.bstPetStateSettings or petStateDefaults;
+    local actionSettings = background.bstActionSettings or defaults.bstActionSettings or {};
+    local rewardSettings = background.bstRewardSettings or defaults.bstRewardSettings or {};
+    local scaleInverse = tonumber(background.scaleInverse) or 1;
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local setupPreview = plateData.detachedBstSetupPreview == true;
+    if (type(plateData.detachedBstBadges) == 'table') then
+        plateData.badges = plateData.detachedBstBadges;
+    end
+    if (type(plateData.detachedBstExtraBars) == 'table') then
+        plateData.extraBars = plateData.detachedBstExtraBars;
+    end
+
+    if (nameSettings.enabled == false) then
+        plateData.name = '';
+    else
+        plateData.name = tostring(plateData.detachedBstName or plateData.name or '');
+        plateData.nameOffsetX = GetDetachedAvatarMeterNumber(nameSettings, 'offsetX', 85) * scaleInverse;
+        plateData.nameOffsetY = GetDetachedAvatarMeterNumber(nameSettings, 'offsetY', -72) * scaleInverse;
+        plateData.nameFontSize = math.max(1, GetDetachedAvatarMeterNumber(nameSettings, 'textSize', 22) * scaleInverse);
+        plateData.nameColor = nameSettings.color or nameDefaults.color;
+        plateData.nameOutlineColor = nameSettings.outlineColor or nameDefaults.outlineColor;
+        plateData.nameOutlineSize = math.max(0, GetDetachedAvatarMeterNumber(nameSettings, 'outlineSize', 2) * scaleInverse);
+        plateData.nameOutlineEnabled = nameSettings.outlineEnabled ~= false and plateData.nameOutlineSize > 0;
+        plateData.nameAnchorTo = nameSettings.anchorTo or 'Plate';
+        plateData.nameAnchorPoint = nameSettings.anchorPoint or 'Center';
+        plateData.forceName = true;
+    end
+
+    local hpPercent = setupPreview and 82 or math.max(0, math.min(100, tonumber(plateData.hp) or 0));
+    local tpPercent = setupPreview and 300 or math.max(0, math.min(300, tonumber(plateData.tp) or 0));
+    local tpValue = setupPreview and 3000 or plateData.detachedBstTp;
+    if (setupPreview == true) then
+        plateData.hp = hpPercent;
+        plateData.tp = tpPercent;
+        local timerDisplay = tostring(timerSettings.displayMode or 'Text');
+        local stateDisplay = tostring(stateSettings.displayMode or 'Icon');
+        plateData.badges = {};
+        if (timerSettings.enabled ~= false) then
+            plateData.badges[#plateData.badges + 1] = {
+                kind = 'petTimer',
+                text = tostring(background.bstPetState) == 'Charmed Pet' and '4m' or '15m',
+                labelText = timerDisplay == 'Text'
+                    and (tostring(background.bstPetState) == 'Charmed Pet' and 'Charmed' or 'Jug')
+                    or '',
+                iconTextureId = timerDisplay == 'Icon'
+                    and GetDetachedBstIconTextureId(
+                        tostring(background.bstPetState) == 'Charmed Pet' and 'charmed' or 'jug'
+                    )
+                    or nil,
+                backgroundEnabled = false,
+                separateLabelOffsets = true,
+            };
+        end
+        if (stateSettings.enabled ~= false) then
+            plateData.badges[#plateData.badges + 1] = {
+                kind = 'petState',
+                text = '',
+                labelText = stateDisplay == 'Text' and 'Fight' or '',
+                iconTextureId = stateDisplay == 'Icon' and GetDetachedBstIconTextureId('Fight') or nil,
+                backgroundEnabled = false,
+                separateLabelOffsets = true,
+            };
+        end
+        plateData.extraBars = {
+            {
+                kind = tostring(background.bstPetState) == 'Charmed Pet' and 'sic' or 'ready',
+                -- Ready uses the same 0-300 segmented scale as TP.  An 80%
+                -- setup sample therefore needs to be 240, not 80, or the
+                -- segmented bar is hidden by its 100-point display threshold.
+                progress = tostring(background.bstPetState) == 'Charmed Pet' and 55 or 240,
+                text = tostring(background.bstPetState) == 'Charmed Pet'
+                    and (actionSettings.showSicTimer ~= false and '42s' or '')
+                    or (actionSettings.showReadyTimer ~= false and '24s' or ''),
+                secondaryText = tostring(background.bstPetState) ~= 'Charmed Pet'
+                    and actionSettings.showPercent == true
+                    and '2/3'
+                    or '',
+                labelText = '',
+            },
+            {
+                kind = 'reward',
+                progress = 70,
+                text = rewardSettings.showRewardTimer ~= false and '27s' or '',
+                labelText = '',
+            },
+        };
+    end
+
+    plateData.hpBar = BuildDetachedPupResourceBar(
+        plateData.hpBar, hpSettings, barDefaults, hpPercent,
+        BuildPercentFallbackResourceText(hpSettings, 'HP', nil, nil, hpPercent),
+        scaleInverse, globalSettings
+    );
+    plateData.mpBar = { enabled = false };
+    plateData.tpBar = BuildDetachedPupResourceBar(
+        plateData.tpBar, tpSettings, tpBarDefaults, tpPercent,
+        BuildResourceText(tpSettings, 'TP', tpValue, 3000, tpPercent),
+        scaleInverse, globalSettings
+    );
+    if (setupPreview == true) then
+        plateData.tpBar.showAtPercent = 0;
+    end
+
+    local retainedBadges = {};
+    for _, badge in ipairs(plateData.badges or {}) do
+        local settings = nil;
+        if (tostring(badge.kind or '') == 'petTimer') then
+            settings = timerSettings;
+        elseif (tostring(badge.kind or '') == 'petState') then
+            settings = stateSettings;
+        end
+        if (settings ~= nil) then
+            badge.offsetX = GetDetachedAvatarMeterNumber(settings, 'offsetX', 0) * scaleInverse;
+            badge.offsetY = GetDetachedAvatarMeterNumber(settings, 'offsetY', 0) * scaleInverse;
+            badge.iconSize = GetDetachedAvatarMeterNumber(settings, 'iconSize', 24) * scaleInverse;
+            badge.labelOffsetX = GetDetachedAvatarMeterNumber(settings, 'labelOffsetX', 0) * scaleInverse;
+            badge.labelOffsetY = GetDetachedAvatarMeterNumber(settings, 'labelOffsetY', 0) * scaleInverse;
+            badge.textOffsetX = GetDetachedAvatarMeterNumber(settings, 'textOffsetX', 0) * scaleInverse;
+            badge.textOffsetY = GetDetachedAvatarMeterNumber(settings, 'textOffsetY', 0) * scaleInverse;
+            badge.fontSize = math.max(1, GetDetachedAvatarMeterNumber(settings, 'textSize', 12) * scaleInverse);
+            badge.fontFamily = fonts.GetRole(globalSettings, true);
+            badge.fontFlags = fonts.GetRoleFlags(globalSettings, true);
+            badge.textColor = settings.color or badge.textColor;
+            badge.textOutlineEnabled = settings.outlineEnabled == true;
+            badge.textOutlineColor = settings.outlineColor or badge.textOutlineColor;
+            badge.textOutlineSize = GetDetachedAvatarMeterNumber(settings, 'outlineSize', 1) * scaleInverse;
+
+            local displayMode = tostring(settings.displayMode or 'Text');
+            if (tostring(badge.kind or '') == 'petTimer') then
+                badge.iconTextureId = displayMode == 'Icon'
+                    and GetDetachedBstIconTextureId(
+                        tostring(background.bstPetState) == 'Charmed Pet' and 'charmed' or 'jug'
+                    )
+                    or nil;
+            elseif (tostring(badge.kind or '') == 'petState') then
+                local commandName = setupPreview == true and 'Fight' or petState.GetState();
+                badge.iconTextureId = displayMode == 'Icon'
+                    and GetDetachedBstIconTextureId(commandName)
+                    or nil;
+            end
+        end
+        if (settings == nil or settings.enabled ~= false) then
+            retainedBadges[#retainedBadges + 1] = badge;
+        end
+    end
+    plateData.badges = retainedBadges;
+
+    for _, bar in ipairs(plateData.extraBars or {}) do
+        local kind = tostring(bar.kind or '');
+        local settings = (kind == 'ready' or kind == 'sic') and actionSettings
+            or (kind == 'reward' and rewardSettings or nil);
+        if (settings ~= nil) then
+            bar.enabled = settings.enabled ~= false;
+            bar.width = GetDetachedAvatarMeterNumber(settings, 'width', 52) * scaleInverse;
+            bar.height = GetDetachedAvatarMeterNumber(settings, 'height', 65) * scaleInverse;
+            bar.offsetX = GetDetachedAvatarMeterNumber(settings, 'offsetX', 0) * scaleInverse;
+            bar.offsetY = GetDetachedAvatarMeterNumber(settings, 'offsetY', 78) * scaleInverse;
+            bar.color = settings.color or bar.color;
+            bar.color2 = settings.color2 or bar.color2;
+            bar.color3 = settings.color3 or bar.color3;
+            bar.backgroundColor = settings.backgroundColor or bar.backgroundColor;
+            bar.borderColor = settings.borderColor or bar.borderColor;
+            bar.borderSize = GetDetachedAvatarMeterNumber(settings, 'borderSize', 0) * scaleInverse;
+            bar.cornerRadius = GetDetachedAvatarMeterNumber(settings, 'cornerRadius', 0) * scaleInverse;
+            bar.textureId = barTextures.GetTextureId(settings.texture or 'Solid');
+            bar.textureStrength = GetDetachedAvatarMeterNumber(settings, 'textureStrength', 100);
+            bar.fillDirection = settings.fillDirection or bar.fillDirection;
+            bar.segmented = settings.segmented == true;
+            bar.segmentLayout = settings.segmentLayout;
+            bar.segmentGap = GetDetachedAvatarMeterNumber(settings, 'segmentGap', 0) * scaleInverse;
+            bar.behindBackground = settings.behindPlateArtwork == true;
+            bar.showAtPercent = kind == 'ready' and 0 or 100;
+            bar.textOffsetX = GetDetachedAvatarMeterNumber(settings, 'textOffsetX', 0) * scaleInverse;
+            bar.textOffsetY = GetDetachedAvatarMeterNumber(settings, 'textOffsetY', 0) * scaleInverse;
+            bar.secondaryTextOffsetX = GetDetachedAvatarMeterNumber(settings, 'counterOffsetX', 0) * scaleInverse;
+            bar.secondaryTextOffsetY = GetDetachedAvatarMeterNumber(settings, 'counterOffsetY', 12) * scaleInverse;
+            bar.fontSize = math.max(1, GetDetachedAvatarMeterNumber(settings, 'fontSize', 10) * scaleInverse);
+            bar.fontFamily = fonts.GetRole(globalSettings, settings.useSmallFont == true);
+            bar.fontFlags = fonts.GetRoleFlags(globalSettings, settings.useSmallFont == true);
+            bar.textColor = settings.textColor or bar.textColor;
+            bar.textOutlineEnabled = settings.textOutlineEnabled == true;
+            bar.textOutlineColor = settings.textOutlineColor or bar.textOutlineColor;
+            bar.textOutlineSize = GetDetachedAvatarMeterNumber(settings, 'textOutlineSize', 1) * scaleInverse;
+            local displayMode = tostring(settings.labelDisplayMode or 'None');
+            local labelName = kind == 'reward' and 'Reward' or (kind == 'sic' and 'Sic' or 'Ready');
+            bar.labelText = displayMode == 'Text' and labelName or '';
+            bar.iconTextureId = displayMode == 'Icon'
+                and GetDetachedBstIconTextureId(labelName)
+                or nil;
+            bar.iconSize = GetDetachedAvatarMeterNumber(settings, 'labelIconSize', 24) * scaleInverse;
+            bar.iconOffsetX = GetDetachedAvatarMeterNumber(settings, 'labelIconOffsetX', 0) * scaleInverse;
+            bar.iconOffsetY = GetDetachedAvatarMeterNumber(settings, 'labelIconOffsetY', 0) * scaleInverse;
+            bar.separateLabelOffsets = bar.iconTextureId ~= nil or bar.labelText ~= '';
+        end
+    end
+
+    local retainedIcons = {};
+    local hadLiveEnmityIcon = false;
+    for _, icon in ipairs(plateData.icons or {}) do
+        if (tostring(icon.kind or '') == 'enmity') then
+            hadLiveEnmityIcon = true;
+        else
+            retainedIcons[#retainedIcons + 1] = icon;
+        end
+    end
+    plateData.icons = retainedIcons;
+    if (enmitySettings.enabled ~= false and (hadLiveEnmityIcon == true or setupPreview == true)) then
+        enmity.AddIcon(plateData, {
+            allyIconFile = enmitySettings.allyIconFile,
+            allyColor = enmitySettings.allyColor,
+            allyIconSize = GetDetachedAvatarMeterNumber(enmitySettings, 'allyIconSize', 30) * scaleInverse,
+            allyOffsetX = GetDetachedAvatarMeterNumber(enmitySettings, 'allyOffsetX', 230) * scaleInverse,
+            allyOffsetY = GetDetachedAvatarMeterNumber(enmitySettings, 'allyOffsetY', -78) * scaleInverse,
+        }, 'ally');
+    end
+end
+
+local function ApplyDetachedGeoWidgets(plateData, background)
+    if (background == nil or background.geoDetached ~= true) then
+        return;
+    end
+
+    local defaults = ((globalDefaults.targeting or {}).geoPetStaticBackgroundSettings or {});
+    local nameSettings = background.geoNameSettings or defaults.geoNameSettings or nameDefaults;
+    local hpSettings = background.geoHpBarSettings or defaults.geoHpBarSettings or barDefaults;
+    local enmitySettings = background.geoEnmitySettings or defaults.geoEnmitySettings or {};
+    local effectsSettings = background.geoActiveEffectsSettings or defaults.geoActiveEffectsSettings or {};
+    local fullCircleSettings = background.geoFullCircleSettings or defaults.geoFullCircleSettings or {};
+    local scaleInverse = tonumber(background.scaleInverse) or 1;
+    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local setupPreview = plateData.detachedGeoSetupPreview == true;
+
+    if (nameSettings.enabled == false) then
+        plateData.name = '';
+    else
+        plateData.name = setupPreview and 'Luopan' or tostring(plateData.name or 'Luopan');
+        plateData.nameOffsetX = GetDetachedAvatarMeterNumber(nameSettings, 'offsetX', 0) * scaleInverse;
+        plateData.nameOffsetY = GetDetachedAvatarMeterNumber(nameSettings, 'offsetY', -48) * scaleInverse;
+        plateData.nameFontSize = math.max(1, GetDetachedAvatarMeterNumber(nameSettings, 'textSize', 20) * scaleInverse);
+        plateData.nameColor = nameSettings.color or nameDefaults.color;
+        plateData.nameOutlineColor = nameSettings.outlineColor or nameDefaults.outlineColor;
+        plateData.nameOutlineSize = math.max(0, GetDetachedAvatarMeterNumber(nameSettings, 'outlineSize', 2) * scaleInverse);
+        plateData.nameOutlineEnabled = nameSettings.outlineEnabled ~= false and plateData.nameOutlineSize > 0;
+        plateData.nameAnchorTo = nameSettings.anchorTo or 'Plate';
+        plateData.nameAnchorPoint = nameSettings.anchorPoint or 'Center';
+        plateData.forceName = true;
+    end
+
+    local hpPercent = setupPreview and 72 or math.max(0, math.min(100, tonumber(plateData.hp) or 0));
+    plateData.hp = hpPercent;
+    plateData.hpBar = BuildDetachedPupResourceBar(
+        plateData.hpBar,
+        hpSettings,
+        barDefaults,
+        hpPercent,
+        BuildPercentFallbackResourceText(hpSettings, 'HP', nil, nil, hpPercent),
+        scaleInverse,
+        globalSettings
+    );
+    plateData.mpBar = { enabled = false };
+    plateData.tpBar = { enabled = false };
+
+    local retainedIcons = {};
+    local effectIcons = {};
+    local hadLiveEnmityIcon = false;
+    for _, icon in ipairs(plateData.icons or {}) do
+        local kind = tostring(icon.kind or '');
+        if (kind == 'enmity') then
+            hadLiveEnmityIcon = true;
+        elseif (kind == 'buffs') then
+            effectIcons[#effectIcons + 1] = icon;
+        else
+            retainedIcons[#retainedIcons + 1] = icon;
+        end
+    end
+
+    if (setupPreview == true) then
+        effectIcons = {};
+        for _, statusId in ipairs({ 569, 515, 516, 518 }) do
+            local textureId = GetDetachedGeoIconTextureId(tostring(statusId) .. '.png');
+            if (textureId ~= nil) then
+                effectIcons[#effectIcons + 1] = {
+                    kind = 'buffs',
+                    statusId = statusId,
+                    textureId = textureId,
+                };
+            end
+        end
+    end
+
+    if (effectsSettings.enabled ~= false) then
+        local count = #effectIcons;
+        local size = GetDetachedAvatarMeterNumber(effectsSettings, 'iconSize', 24) * scaleInverse;
+        local gap = GetDetachedAvatarMeterNumber(effectsSettings, 'iconSpacing', 4) * scaleInverse;
+        local centerX = GetDetachedAvatarMeterNumber(effectsSettings, 'offsetX', 0) * scaleInverse;
+        local centerY = GetDetachedAvatarMeterNumber(effectsSettings, 'offsetY', 8) * scaleInverse;
+        local rowWidth = (count * size) + (math.max(0, count - 1) * gap);
+        for index, icon in ipairs(effectIcons) do
+            local statusId = tonumber(icon.statusId);
+            local localTextureId = statusId ~= nil
+                and GetDetachedGeoIconTextureId(tostring(statusId) .. '.png')
+                or nil;
+            if (localTextureId ~= nil) then
+                icon.textureId = localTextureId;
+            end
+            icon.kind = 'geoActiveEffect';
+            icon.size = size;
+            icon.offsetX = centerX - (rowWidth * 0.5) + (size * 0.5) + ((index - 1) * (size + gap));
+            icon.offsetY = centerY;
+            icon.timerText = nil;
+            retainedIcons[#retainedIcons + 1] = icon;
+        end
+    end
+    plateData.icons = retainedIcons;
+
+    if (enmitySettings.enabled ~= false and (hadLiveEnmityIcon == true or setupPreview == true)) then
+        enmity.AddIcon(plateData, {
+            allyIconFile = enmitySettings.allyIconFile,
+            allyColor = enmitySettings.allyColor,
+            allyIconSize = GetDetachedAvatarMeterNumber(enmitySettings, 'allyIconSize', 26) * scaleInverse,
+            allyOffsetX = GetDetachedAvatarMeterNumber(enmitySettings, 'allyOffsetX', 145) * scaleInverse,
+            allyOffsetY = GetDetachedAvatarMeterNumber(enmitySettings, 'allyOffsetY', -48) * scaleInverse,
+        }, 'ally');
+    end
+
+    local now = os.clock();
+    if ((now - detachedGeoTimerCache.updatedAt) >= 0.50) then
+        detachedGeoTimerCache.updatedAt = now;
+        detachedGeoTimerCache.ticks.blaze = tonumber(abilityRecast.GetAbilityTimerByTimerId(247)) or 0;
+        detachedGeoTimerCache.ticks.emanation = tonumber(abilityRecast.GetAbilityTimerByTimerId(244)) or 0;
+        detachedGeoTimerCache.ticks.dematerialize = tonumber(abilityRecast.GetAbilityTimerByTimerId(248)) or 0;
+        detachedGeoTimerCache.ticks.lifeCycle = tonumber(abilityRecast.GetAbilityTimerByTimerId(246)) or 0;
+        detachedGeoTimerCache.ticks.fullCircle = tonumber(abilityRecast.GetAbilityTimerByTimerId(243)) or 0;
+    end
+
+    local function FormatTimer(ticks)
+        local seconds = math.max(0, math.ceil((tonumber(ticks) or 0) / 60));
+        if (seconds >= 60) then
+            return string.format('%d:%02d', math.floor(seconds / 60), seconds % 60);
+        end
+        return tostring(seconds) .. 's';
+    end
+
+    local function AddCooldownBar(kind, label, iconFile, settings, fallback, ticks, maximumSeconds, previewTicks)
+        settings = settings or fallback or {};
+        fallback = fallback or settings;
+        if (settings.enabled == false) then
+            return;
+        end
+        if (setupPreview == true) then
+            ticks = previewTicks * 60;
+        end
+
+        ticks = math.max(0, tonumber(ticks) or 0);
+        local maximumTicks = math.max(1, maximumSeconds * 60, ticks);
+        local progress = ticks <= 0 and 100 or ((maximumTicks - ticks) / maximumTicks) * 100;
+        local timerText = ticks <= 0 and '' or FormatTimer(ticks);
+        local layout = BuildDetachedAvatarMeterBar(background, settings, fallback);
+        local displayMode = tostring(settings.labelDisplayMode or 'Text');
+        local behindPlateArtwork = settings.behindPlateArtwork;
+        if (behindPlateArtwork == nil) then
+            behindPlateArtwork = fallback.behindPlateArtwork == true;
+        end
+        local barOrientation = tostring(
+            settings.barOrientation
+                or fallback.barOrientation
+                or 'Vertical'
+        );
+        plateData.extraBars = plateData.extraBars or {};
+        plateData.extraBars[#plateData.extraBars + 1] = {
+            kind = kind,
+            enabled = true,
+            progress = math.max(0, math.min(100, progress)),
+            width = layout.width,
+            height = layout.height,
+            offsetX = layout.offsetX,
+            offsetY = layout.offsetY,
+            color = layout.color,
+            backgroundColor = layout.backgroundColor,
+            borderColor = layout.borderColor,
+            borderSize = layout.borderSize,
+            cornerRadius = layout.cornerRadius,
+            textureId = layout.textureId,
+            textureStrength = layout.textureStrength,
+            fillDirection = barOrientation == 'Horizontal'
+                and 'Left to right'
+                or 'Bottom to top',
+            behindBackground = behindPlateArtwork == true,
+            foregroundLabel = behindPlateArtwork == true,
+            showAtPercent = 100,
+            text = settings.showPercent ~= false and timerText or '',
+            labelText = displayMode == 'Text' and label or '',
+            iconTextureId = displayMode == 'Icon'
+                and GetDetachedGeoIconTextureId(iconFile)
+                or nil,
+            iconKey = iconFile,
+            iconSize = GetDetachedAvatarMeterNumber(settings, 'labelIconSize', 24) * scaleInverse,
+            separateLabelOffsets = displayMode ~= 'None',
+            fontFamily = fonts.GetRole(globalSettings, settings.useSmallFont == true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, settings.useSmallFont == true),
+            fontSize = math.max(1, GetDetachedAvatarMeterNumber(settings, 'fontSize', 9) * scaleInverse),
+            textColor = settings.textColor or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = settings.textOutlineEnabled ~= false,
+            textOutlineSize = GetDetachedAvatarMeterNumber(settings, 'textOutlineSize', 2) * scaleInverse,
+            textOutlineColor = settings.textOutlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOffsetX = GetDetachedAvatarMeterNumber(settings, 'textOffsetX', 0) * scaleInverse,
+            textOffsetY = GetDetachedAvatarMeterNumber(settings, 'textOffsetY', 0) * scaleInverse,
+            iconOffsetX = GetDetachedAvatarMeterNumber(settings, 'labelIconOffsetX', 0) * scaleInverse,
+            iconOffsetY = GetDetachedAvatarMeterNumber(settings, 'labelIconOffsetY', 31) * scaleInverse,
+        };
+    end
+
+    local emanationTicks = tonumber(detachedGeoTimerCache.ticks.emanation) or 0;
+    local emanationIconFile = 'EclipticAttrition.png';
+    for _, row in ipairs(luopanStatuses.GetRows('buff')) do
+        if (tonumber(row.id) == 515) then
+            emanationIconFile = 'LastingEmanation.png';
+            break;
+        elseif (tonumber(row.id) == 516) then
+            emanationIconFile = 'EclipticAttrition.png';
+            break;
+        end
+    end
+    AddCooldownBar('detached_geo_blaze', 'Blaze', 'BlazeOfGlory.png', background.geoBlazeSettings, defaults.geoBlazeSettings, detachedGeoTimerCache.ticks.blaze, 600, 420);
+    AddCooldownBar('detached_geo_emanation', 'Ecliptic / Lasting', emanationIconFile, background.geoEmanationSettings, defaults.geoEmanationSettings, emanationTicks, 300, 190);
+    AddCooldownBar('detached_geo_dematerialize', 'Dematerialize', 'Dematerialize.png', background.geoDematerializeSettings, defaults.geoDematerializeSettings, detachedGeoTimerCache.ticks.dematerialize, 600, 125);
+    AddCooldownBar('detached_geo_life_cycle', 'Life Cycle', 'LifeCycle.png', background.geoLifeCycleSettings, defaults.geoLifeCycleSettings, detachedGeoTimerCache.ticks.lifeCycle, 600, 65);
+
+    local fullCircleTicks = setupPreview == true and (7 * 60) or (tonumber(detachedGeoTimerCache.ticks.fullCircle) or 0);
+    if (fullCircleSettings.enabled ~= false and fullCircleTicks > 0) then
+        plateData.badges = plateData.badges or {};
+        plateData.badges[#plateData.badges + 1] = {
+            kind = 'detachedGeoFullCircle',
+            text = FormatTimer(fullCircleTicks),
+            offsetX = GetDetachedAvatarMeterNumber(fullCircleSettings, 'offsetX', 0) * scaleInverse,
+            offsetY = GetDetachedAvatarMeterNumber(fullCircleSettings, 'offsetY', 4) * scaleInverse,
+            fontFamily = fonts.GetRole(globalSettings, true),
+            fontFlags = fonts.GetRoleFlags(globalSettings, true),
+            fontSize = math.max(1, GetDetachedAvatarMeterNumber(fullCircleSettings, 'textSize', 11) * scaleInverse),
+            textColor = fullCircleSettings.color or { 1.0, 1.0, 1.0, 1.0 },
+            textOutlineEnabled = fullCircleSettings.outlineEnabled ~= false,
+            textOutlineColor = fullCircleSettings.outlineColor or { 0.0, 0.0, 0.0, 1.0 },
+            textOutlineSize = GetDetachedAvatarMeterNumber(fullCircleSettings, 'outlineSize', 2) * scaleInverse,
+            backgroundEnabled = false,
+        };
     end
 end
 
@@ -1145,16 +1753,46 @@ local function BuildStaticPetBarsKey(plateData)
             kind == 'detached_avatar_rage' or
             kind == 'detached_avatar_ward' or
             kind == 'detached_drg_spirit_link' or
-            kind == 'detached_drg_spirit_bond'
+            kind == 'detached_drg_spirit_bond' or
+            kind == 'detached_geo_blaze' or
+            kind == 'detached_geo_emanation' or
+            kind == 'detached_geo_dematerialize' or
+            kind == 'detached_geo_life_cycle' or
+            kind == 'ready' or
+            kind == 'sic' or
+            kind == 'reward'
         ) then
             parts[#parts + 1] = table.concat({
                 kind,
                 tostring(math.floor(((tonumber(bar.progress) or 0) * 1000) + 0.5)),
                 tostring(bar.text or ''),
+                tostring(bar.secondaryText or ''),
+                tostring(bar.iconKey or ''),
             }, ':');
         end
     end
 
+    return table.concat(parts, ',');
+end
+
+local function BuildStaticPetGeoEffectIconsKey(plateData)
+    local parts = {};
+    for _, icon in ipairs((plateData or {}).icons or {}) do
+        if (tostring(icon.kind or '') == 'geoActiveEffect') then
+            parts[#parts + 1] = tostring(icon.statusId or '');
+        end
+    end
+    return table.concat(parts, ',');
+end
+
+local function BuildStaticPetBadgesKey(plateData)
+    local parts = {};
+    for _, badge in ipairs((plateData or {}).badges or {}) do
+        local kind = tostring(badge.kind or '');
+        if (kind == 'detachedGeoFullCircle') then
+            parts[#parts + 1] = kind .. ':' .. tostring(badge.text or '');
+        end
+    end
     return table.concat(parts, ',');
 end
 
@@ -1230,6 +1868,10 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
             'textOutlineSize', 'showSpellIcon', 'spellIconSize',
             'spellIconOffsetX', 'spellIconOffsetY', 'anchorTo', 'anchorPoint',
         }),
+        'avatarEnmity=' .. TableSettingKey(background.avatarEnmitySettings or {}, {
+            'enabled', 'allyIconFile', 'allyColor', 'allyOffsetX', 'allyOffsetY',
+            'allyIconSize',
+        }),
         'avatarWard=' .. TableSettingKey(background.avatarWardSettings or {}, {
             'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
             'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
@@ -1283,6 +1925,10 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
             'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
             'lowColorEnabled', 'lowColorPercent', 'lowColor',
         }),
+        'pupEnmity=' .. TableSettingKey(background.pupEnmitySettings or {}, {
+            'enabled', 'allyIconFile', 'allyColor', 'allyOffsetX', 'allyOffsetY',
+            'allyIconSize',
+        }),
         'pupManeuvers=' .. TableSettingKey(background.pupManeuverSettings or {}, {
             'enabled', 'iconSet', 'iconSize', 'iconSpacing', 'offsetX', 'offsetY',
             'showTimers', 'timerUseSmallFont', 'timerFontSize', 'timerOffsetY',
@@ -1304,10 +1950,135 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
             'fontSize', 'textColor', 'activeTextColor', 'textOutlineEnabled',
             'textOutlineColor', 'textOutlineSize',
         }),
+        'drgEnmity=' .. TableSettingKey(background.drgEnmitySettings or {}, {
+            'enabled', 'allyIconFile', 'allyColor', 'allyOffsetX', 'allyOffsetY',
+            'allyIconSize',
+        }),
+        'bstName=' .. TableSettingKey(background.bstNameSettings or {}, {
+            'enabled', 'offsetX', 'offsetY', 'textSize', 'color',
+            'outlineEnabled', 'outlineColor', 'outlineSize',
+        }),
+        'bstHp=' .. TableSettingKey(background.bstHpBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'showPercent', 'textOffsetX', 'textOffsetY',
+            'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor',
+            'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor',
+        }),
+        'bstTp=' .. TableSettingKey(background.bstTpBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize',
+            'cornerRadius', 'texture', 'textureStrength', 'showPercent',
+            'segmented', 'segmentGap', 'textOffsetX', 'textOffsetY', 'fontSize',
+            'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+        }),
+        'bstEnmity=' .. TableSettingKey(background.bstEnmitySettings or {}, {
+            'enabled', 'allyIconFile', 'allyColor', 'allyOffsetX', 'allyOffsetY',
+            'allyIconSize',
+        }),
+        'bstTimer=' .. TableSettingKey(background.bstPetTimerSettings or {}, {
+            'enabled', 'displayMode', 'iconSize', 'offsetX', 'offsetY',
+            'labelOffsetX', 'labelOffsetY', 'textOffsetX', 'textOffsetY',
+            'textSize', 'color', 'overtimeColor', 'outlineEnabled',
+            'outlineColor', 'outlineSize',
+        }),
+        'bstState=' .. TableSettingKey(background.bstPetStateSettings or {}, {
+            'enabled', 'displayMode', 'iconSize', 'offsetX', 'offsetY',
+            'labelOffsetX', 'labelOffsetY', 'textSize', 'color',
+            'outlineEnabled', 'outlineColor', 'outlineSize',
+        }),
+        'bstAction=' .. TableSettingKey(background.bstActionSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize',
+            'cornerRadius', 'texture', 'textureStrength', 'fillDirection',
+            'segmented', 'segmentLayout', 'segmentGap', 'behindPlateArtwork',
+            'showPercent', 'showReadyTimer', 'showSicTimer', 'textOffsetX', 'textOffsetY',
+            'counterOffsetX', 'counterOffsetY',
+            'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor',
+            'textOutlineSize', 'useSmallFont', 'labelDisplayMode',
+            'labelIconSize', 'labelIconOffsetX', 'labelIconOffsetY',
+        }),
+        'bstReward=' .. TableSettingKey(background.bstRewardSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'fillDirection', 'behindPlateArtwork', 'showPercent',
+            'showRewardTimer', 'textOffsetX', 'textOffsetY', 'fontSize', 'textColor',
+            'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'useSmallFont',
+            'labelDisplayMode', 'labelIconSize', 'labelIconOffsetX', 'labelIconOffsetY',
+        }),
+        'geoName=' .. TableSettingKey(background.geoNameSettings or {}, {
+            'enabled', 'offsetX', 'offsetY', 'textSize', 'color',
+            'outlineEnabled', 'outlineColor', 'outlineSize', 'anchorTo', 'anchorPoint',
+        }),
+        'geoHp=' .. TableSettingKey(background.geoHpBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'showPercent', 'textOffsetX', 'textOffsetY',
+            'useSmallFont', 'fontSize', 'textColor', 'textOutlineEnabled',
+            'textOutlineColor', 'textOutlineSize',
+        }),
+        'geoBlaze=' .. TableSettingKey(background.geoBlazeSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'barOrientation', 'fillDirection',
+            'behindPlateArtwork', 'labelDisplayMode',
+            'showPercent', 'textOffsetX', 'textOffsetY', 'useSmallFont',
+            'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+            'labelIconSize', 'labelIconOffsetX', 'labelIconOffsetY',
+        }),
+        'geoEmanation=' .. TableSettingKey(background.geoEmanationSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'barOrientation', 'fillDirection',
+            'behindPlateArtwork', 'labelDisplayMode',
+            'showPercent', 'textOffsetX', 'textOffsetY', 'useSmallFont',
+            'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+            'labelIconSize', 'labelIconOffsetX', 'labelIconOffsetY',
+        }),
+        'geoDematerialize=' .. TableSettingKey(background.geoDematerializeSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'barOrientation', 'fillDirection',
+            'behindPlateArtwork', 'labelDisplayMode',
+            'showPercent', 'textOffsetX', 'textOffsetY', 'useSmallFont',
+            'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+            'labelIconSize', 'labelIconOffsetX', 'labelIconOffsetY',
+        }),
+        'geoLifeCycle=' .. TableSettingKey(background.geoLifeCycleSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'barOrientation', 'fillDirection',
+            'behindPlateArtwork', 'labelDisplayMode',
+            'showPercent', 'textOffsetX', 'textOffsetY', 'useSmallFont',
+            'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
+            'labelIconSize', 'labelIconOffsetX', 'labelIconOffsetY',
+        }),
+        'geoFullCircle=' .. TableSettingKey(background.geoFullCircleSettings or {}, {
+            'enabled', 'offsetX', 'offsetY', 'textSize', 'color',
+            'outlineEnabled', 'outlineColor', 'outlineSize',
+        }),
+        'geoEffects=' .. TableSettingKey(background.geoActiveEffectsSettings or {}, {
+            'enabled', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing',
+        }),
+        'geoEnmity=' .. TableSettingKey(background.geoEnmitySettings or {}, {
+            'enabled', 'allyIconFile', 'allyColor', 'allyOffsetX', 'allyOffsetY', 'allyIconSize',
+        }),
         'favorState=' .. tostring(plateData.detachedAvatarFavorActive == true),
         'favorHasPet=' .. tostring(plateData.detachedAvatarHasPet == true),
         'favorAvatar=' .. tostring(plateData.detachedAvatarFavorAvatarName or plateData.detachedAvatarName or ''),
         'bars=' .. BuildStaticPetBarsKey(plateData),
+        'geoEffectIcons=' .. BuildStaticPetGeoEffectIconsKey(plateData),
+        'badges=' .. BuildStaticPetBadgesKey(plateData),
+        'bstBadges=' .. table.concat((function()
+            local result = {};
+            for _, badge in ipairs((plateData or {}).badges or {}) do
+                local kind = tostring(badge.kind or '');
+                if (kind == 'petTimer' or kind == 'petState') then
+                    result[#result + 1] = kind .. ':' .. tostring(badge.text or '') .. ':' .. tostring(badge.labelText or '');
+                end
+            end
+            return result;
+        end)(), ','),
     }, '|');
 end
 
@@ -1663,7 +2434,7 @@ local function AddDetachedDrgAbilityBars(plateData, background, preview)
     if (preview == true) then
         linkProgress = 50;
         linkText = '1:15';
-        bondProgress = 75;
+        bondProgress = 100;
         bondText = '2:30';
         bondActive = true;
     end
@@ -1752,9 +2523,10 @@ local function DrawDetachedDrgAbilityTimers(drawList, frameCenterX, frameCenterY
 end
 
 local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targetingSettings, windowId, petName, settingsPrefix)
+    local detachedTotalStart = perfMeter.Start();
     settingsPrefix = tostring(settingsPrefix or prefix);
     local staticScale = math.max(0.10, math.min(2.00, (tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticScale')) or 35) / 100));
-    if (prefix == 'pup' or prefix == 'drg') then
+    if (prefix == 'pup' or prefix == 'drg' or prefix == 'bst') then
         -- Wide detached artwork uses a fixed internal scale so it fits the
         -- 1024x512 canvas without being clipped before the final draw.
         -- Widget sizes are converted by the matching inverse scale below, so
@@ -1769,6 +2541,9 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
     local drawScale = staticScale * pupOverallScale;
     local staticPlateData = CopySettingsWith(plateData, {
         background = staticBackground,
+        -- Target and Subtarget markers belong to the pet's normal world plate.
+        -- Do not duplicate the same marker on its detached frame.
+        targetMarker = { enabled = false },
     });
     local editEnabled = GetDetachedPetSetting(
         targetingSettings,
@@ -1781,10 +2556,19 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
         staticPlateData.detachedPupManeuverState = pupManeuvers.GetPreviewState();
     elseif (prefix == 'drg' and editEnabled == true) then
         staticPlateData.detachedDrgSetupPreview = true;
+    elseif (prefix == 'bst' and editEnabled == true) then
+        staticPlateData.detachedBstSetupPreview = true;
+        staticPlateData.detachedBstName = tostring(staticBackground.bstPetState) == 'Charmed Pet'
+            and 'Charmed Pet'
+            or 'CourierCarrie';
+    elseif (prefix == 'geo' and editEnabled == true) then
+        staticPlateData.detachedGeoSetupPreview = true;
     end
     ApplyDetachedAvatarWidgets(staticPlateData, staticBackground);
     ApplyDetachedPupWidgets(staticPlateData, staticBackground);
     ApplyDetachedDrgWidgets(staticPlateData, staticBackground);
+    ApplyDetachedBstWidgets(staticPlateData, staticBackground);
+    ApplyDetachedGeoWidgets(staticPlateData, staticBackground);
     AddDetachedAvatarGemMeters(staticPlateData, staticBackground);
     AddDetachedDrgAbilityBars(
         staticPlateData,
@@ -1794,10 +2578,13 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
     -- The source plate may already contain layout bounds for its normal Background
     -- widget. Detached frames have their own background and must rebuild those bounds.
     staticPlateData._elementRects = nil;
+    local detachedCanvasStart = perfMeter.Start();
     local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, BuildStaticPetTextureKey(prefix, petIndex, staticBackground, staticPlateData));
+    perfMeter.Stop('pet.detached.canvas', detachedCanvasStart);
     local staticTextureId = canvasTexture.GetTextureId(staticTexture);
 
     if (staticTextureId == nil or staticTextureWidth == nil or staticTextureHeight == nil) then
+        perfMeter.Stop('pet.detached.total', detachedTotalStart);
         return;
     end
 
@@ -1915,6 +2702,19 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
             top = top,
             width = right - left,
             height = bottom - top,
+        };
+    elseif (prefix == 'bst' and editEnabled == true) then
+        -- Keep the detached BST edit outline clear of the Ready/Sic and Reward
+        -- label/timer area below the artwork.  This changes only the unlocked
+        -- editor boundary; it does not move or resize the rendered plate.
+        local sidePadding = 6;
+        local topPadding = 6;
+        local bottomPadding = 38;
+        editBounds = {
+            left = staticCenterX + positionOffsetX - ((cropWidth * drawScale) * 0.5) - sidePadding,
+            top = staticCenterY + positionOffsetY - ((cropHeight * drawScale) * 0.5) - topPadding,
+            width = (cropWidth * drawScale) + (sidePadding * 2),
+            height = (cropHeight * drawScale) + topPadding + bottomPadding,
         };
     end
 
@@ -2047,6 +2847,7 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
             pupOverallScale
         );
     end
+    perfMeter.Stop('pet.detached.total', detachedTotalStart);
 end
 
 local function HasLivePetForPrefix(prefix)
@@ -2058,9 +2859,37 @@ local function HasLivePetForPrefix(prefix)
         return entities.GetOwnDrgPet() ~= nil;
     elseif (prefix == 'pup') then
         return entities.GetOwnPupPet() ~= nil;
+    elseif (prefix == 'geo') then
+        return entities.GetOwnLuopan() ~= nil;
     end
 
     return false;
+end
+
+local function HasMatchingLivePetForPreview(prefix, stateName)
+    stateName = tostring(stateName or '');
+
+    if (prefix == 'bst') then
+        local pet = entities.GetOwnBstPet();
+        if (pet == nil) then
+            return false;
+        end
+
+        local liveState = petDurations.GetBstJugDurationMinutes(pet.name) ~= nil
+            and 'Jug Pet'
+            or 'Charmed Pet';
+        return liveState == stateName;
+    elseif (prefix == 'smn') then
+        local pet = entities.GetOwnSmnPet();
+        if (pet == nil) then
+            return false;
+        end
+
+        local liveState = pet.petType == 'spirit' and 'Spirit' or 'Avatar';
+        return liveState == stateName;
+    end
+
+    return HasLivePetForPrefix(prefix);
 end
 
 local function IsPlayerOnSmn()
@@ -2154,26 +2983,32 @@ local function DrawQueuedDetachedSetupPreview()
 
     if (
         request == nil or
-        HasLivePetForPrefix(request.prefix) == true or
+        HasMatchingLivePetForPreview(request.prefix, request.stateName) == true or
         DrawStaticPlateTexture == nil
     ) then
         return;
     end
 
     local targetingSettings = targeting.GetSettings();
+    local previewSettingsPrefix = request.prefix;
+    if (request.prefix == 'smn') then
+        previewSettingsPrefix = request.stateName == 'Spirit' and 'smnSpirit' or 'smnAvatar';
+    elseif (request.prefix == 'bst') then
+        previewSettingsPrefix = request.stateName == 'Charmed Pet' and 'bstCharmed' or 'bstJug';
+    end
 
     if (
         targetingSettings == nil or
         GetDetachedPetSetting(
             targetingSettings,
             request.prefix,
-            request.prefix == 'smn' and (request.stateName == 'Spirit' and 'smnSpirit' or 'smnAvatar') or request.prefix,
+            previewSettingsPrefix,
             'PetStaticEditFrame'
         ) ~= true or
         tostring(GetDetachedPetSetting(
             targetingSettings,
             request.prefix,
-            request.prefix == 'smn' and (request.stateName == 'Spirit' and 'smnSpirit' or 'smnAvatar') or request.prefix,
+            previewSettingsPrefix,
             'PetPlateMode'
         ) or 'Normal') == 'Normal'
     ) then
@@ -2207,6 +3042,11 @@ local function DrawQueuedDetachedSetupPreview()
         detachedDrgName = request.prefix == 'drg' and 'Wyvern' or nil,
         detachedDrgSetupPreview = request.prefix == 'drg',
         detachedDrgTp = request.prefix == 'drg' and 3000 or nil,
+        detachedBstName = request.prefix == 'bst'
+            and (request.stateName == 'Charmed Pet' and 'Charmed Pet' or 'CourierCarrie')
+            or nil,
+        detachedBstSetupPreview = request.prefix == 'bst',
+        detachedBstTp = request.prefix == 'bst' and 3000 or nil,
     });
     DrawDetachedStaticPetFrame(
         request.prefix,
@@ -2217,9 +3057,7 @@ local function DrawQueuedDetachedSetupPreview()
         request.prefix == 'smn'
             and (request.stateName == 'Spirit' and 'LightSpirit' or 'Carbuncle')
             or nil,
-        request.prefix == 'smn'
-            and (request.stateName == 'Spirit' and 'smnSpirit' or 'smnAvatar')
-            or request.prefix
+        previewSettingsPrefix
     );
     return request.prefix;
 end
@@ -2360,6 +3198,8 @@ local favorBarDefaults = {
     showAtPercent = 100,
     textOffsetX = 0,
     textOffsetY = 0,
+    counterOffsetX = 0,
+    counterOffsetY = 12,
     useSmallFont = true,
     fontSize = 7,
     textColor = { 1.0, 1.0, 1.0, 1.0 },
@@ -2516,6 +3356,26 @@ local function FormatTimerSeconds(seconds)
     return tostring(seconds) .. 's';
 end
 
+local function FormatAbilityRecastSeconds(seconds)
+    seconds = math.max(0, math.floor(tonumber(seconds) or 0));
+
+    if (seconds >= 60) then
+        return string.format('%d:%02d', math.floor(seconds / 60), seconds % 60);
+    end
+
+    return tostring(seconds) .. 's';
+end
+
+local function FormatElapsedTimerSeconds(seconds)
+    seconds = math.max(0, math.floor(tonumber(seconds) or 0));
+
+    if (seconds >= 60) then
+        return tostring(math.floor(seconds / 60)) .. 'm';
+    end
+
+    return tostring(seconds) .. 's';
+end
+
 local function GetBstPetDurationText(pet, layoutStateName)
     if (pet == nil or pet.name == nil or pet.index == nil) then
         return nil;
@@ -2528,6 +3388,11 @@ local function GetBstPetDurationText(pet, layoutStateName)
 
         if (charmRemaining ~= nil and charmRemaining > 0) then
             return 'Charmed ' .. FormatTimerSeconds(charmRemaining);
+        end
+
+        if (charmRemaining ~= nil) then
+            local overtimeSeconds = math.max(1, math.abs(math.floor(charmRemaining)));
+            return 'Charmed -' .. FormatElapsedTimerSeconds(overtimeSeconds);
         end
 
         return 'Charmed ?';
@@ -2589,30 +3454,41 @@ local function GetBstReadyBarData(settings)
     local chargesRecharging = math.ceil(ticks / chargeTicks);
     local fullCharges = math.max(0, math.min(3, 3 - chargesRecharging));
     local nextTicks = ((ticks - 1) % chargeTicks) + 1;
-    local progress = fullCharges / 3;
+    -- The active Ready segment should begin filling as soon as a charge is
+    -- spent, rather than remaining empty until the charge is fully restored.
+    local progress = math.max(0, math.min(1, (baseTicks - ticks) / baseTicks));
+    local nextChargeText = FormatAbilityRecastSeconds(nextTicks / 60);
 
-    return progress * 100, FormatTimerSeconds(nextTicks / 60) .. ' ' .. tostring(fullCharges) .. '/3', fullCharges, FormatTimerSeconds(nextTicks / 60);
+    return progress * 100, nextChargeText .. ' ' .. tostring(fullCharges) .. '/3', fullCharges, nextChargeText;
 end
 
 local function GetBstSicBarData(settings)
     local timerData = abilityRecast.GetAbilityTimerDataByTimerId(102) or {};
     local ticks = tonumber(timerData.Recast or timerData.recast) or tonumber(abilityRecast.GetAbilityTimerByTimerId(102)) or 0;
-    local modifier = tonumber(timerData.Modifier or timerData.modifier) or 0;
-    local chargeSeconds = math.max(1, tonumber(settings ~= nil and settings.chargeSeconds) or readyBarDefaults.chargeSeconds or 30);
-    local maxTicks = math.max(1, (chargeSeconds + modifier) * 60);
-
-    if (maxTicks < ticks) then
-        maxTicks = ticks;
-    end
+    -- Sic uses timer 102 but is a single 90-second recast, not one 30-second
+    -- Ready charge. Keep the denominator stable so progress can actually fill.
+    local maxTicks = 90 * 60;
 
     if (ticks <= 0) then
         return 100, nil;
     end
 
-    return math.max(0, math.min(100, ((maxTicks - ticks) / maxTicks) * 100)), FormatTimerSeconds(ticks / 60);
+    if (ticks > maxTicks) then
+        maxTicks = ticks;
+    end
+
+    return math.max(0, math.min(100, ((maxTicks - ticks) / maxTicks) * 100)), FormatAbilityRecastSeconds(ticks / 60);
 end
 
-local function BuildReadyCounterText(settings, charges)
+local function BuildReadyTimerText(settings, timerText)
+    if (settings.showReadyTimer == false) then
+        return '';
+    end
+
+    return tostring(timerText or '');
+end
+
+local function BuildReadyChargeText(settings, charges)
     if (settings.showPercent ~= true) then
         return '';
     end
@@ -2642,10 +3518,10 @@ local function GetBstRewardBarData()
     end
 
     if (ticks <= 0) then
-        return 100, 'Reward';
+        return 100, nil;
     end
 
-    return math.max(0, math.min(100, ((maxTicks - ticks) / maxTicks) * 100)), FormatTimerSeconds(ticks / 60);
+    return math.max(0, math.min(100, ((maxTicks - ticks) / maxTicks) * 100)), FormatAbilityRecastSeconds(ticks / 60);
 end
 
 local bpRecastMaxTicks = {};
@@ -2827,6 +3703,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, global
 
             plateData.icons[#plateData.icons + 1] = {
                 kind = kind or 'status',
+                statusId = statusId,
                 textureId = textureId,
                 size = iconSize,
                 offsetX = iconOffsetX,
@@ -2943,6 +3820,7 @@ local function AddPetTimerBadge(plateData, text, settings, globalSettings, label
 
     badgeText = badgeText:gsub('^Jug%s+', '');
     badgeText = badgeText:gsub('^Charmed%s+', '');
+    local isOvertime = badgeText:match('^%-') ~= nil;
 
     if (displayMode == 'Text') then
         labelText = timerLabel;
@@ -2960,7 +3838,9 @@ local function AddPetTimerBadge(plateData, text, settings, globalSettings, label
         fontFamily = fonts.GetRole(globalSettings, true),
         fontFlags = fonts.GetRoleFlags(globalSettings, true),
         fontSize = textScale.ToTextureFontSize(settings.textSize, petTimerDefaults.textSize),
-        textColor = settings.color or petTimerDefaults.color,
+        textColor = isOvertime == true
+            and (settings.overtimeColor or petTimerDefaults.overtimeColor)
+            or (settings.color or petTimerDefaults.color),
         textOutlineEnabled = settings.outlineEnabled == true,
         textOutlineColor = settings.outlineColor or petTimerDefaults.outlineColor,
         textOutlineSize = tonumber(settings.outlineSize) or petTimerDefaults.outlineSize,
@@ -3014,7 +3894,7 @@ local function AddPetStateBadge(plateData, commandName, settings, globalSettings
     };
 end
 
-local function BuildExtraBar(settings, defaults, progress, text, kind, iconName, globalSettings, labelText)
+local function BuildExtraBar(settings, defaults, progress, text, kind, iconName, globalSettings, labelText, secondaryText)
     if (settings == nil or settings.enabled ~= true) then
         return nil;
     end
@@ -3055,15 +3935,18 @@ local function BuildExtraBar(settings, defaults, progress, text, kind, iconName,
         textureStrength = tonumber(settings.textureStrength) or 100,
         textureId = barTextures.GetTextureId(settings.texture),
         fillDirection = settings.fillDirection or defaults.fillDirection or 'Left to right',
-        showAtPercent = segmented and 300 or (tonumber(settings.showAtPercent) or 100),
+        showAtPercent = segmented and (kind == 'ready' and 0 or 300) or (tonumber(settings.showAtPercent) or 100),
         segmented = segmented,
         segmentGap = tonumber(settings.segmentGap) or defaults.segmentGap,
         color2 = settings.color2 or defaults.color2,
         color3 = settings.color3 or defaults.color3,
         text = barText,
+        secondaryText = tostring(secondaryText or ''),
         labelText = tostring(labelText or ''),
         textOffsetX = tonumber(settings.textOffsetX) or 0,
         textOffsetY = tonumber(settings.textOffsetY) or 0,
+        secondaryTextOffsetX = tonumber(settings.counterOffsetX) or tonumber(defaults.counterOffsetX) or 0,
+        secondaryTextOffsetY = tonumber(settings.counterOffsetY) or tonumber(defaults.counterOffsetY) or 12,
         fontFamily = fonts.GetRole(globalSettings or globalDefaults, settings.useSmallFont == true),
         fontFlags = fonts.GetRoleFlags(globalSettings or globalDefaults, settings.useSmallFont == true),
         fontSize = textScale.ToTextureFontSize(settings.fontSize, defaults.fontSize),
@@ -3095,6 +3978,13 @@ local function BuildNameOnlyPlateData(source, nameText)
         nameAnchorTo = source.nameAnchorTo,
         nameAnchorPoint = source.nameAnchorPoint,
     };
+end
+
+local function RenderMeasuredPetCanvas(plateData, key, metric)
+    local startedAt = perfMeter.Start();
+    local texture, textureWidth, textureHeight = canvasTexture.Render(plateData, key);
+    perfMeter.Stop(metric, startedAt);
+    return texture, textureWidth, textureHeight;
 end
 
 local function ReadImguiVec2(first, second)
@@ -3816,14 +4706,32 @@ local function QueueBstPet(pet)
 
     if (layoutStateName == 'Jug Pet') then
         if (readySettings.enabled == true) then
-            local readyProgress, _, readyCharges = GetBstReadyBarData(readySettings);
-            local readyText = BuildReadyCounterText(readySettings, readyCharges);
-            readyBar = BuildExtraBar(readySettings, readyBarDefaults, readyProgress, readyText, 'ready', 'ready', globalSettings, BuildReadyLabelText(readySettings, readyLabel));
+            local readyProgress, _, readyCharges, readyTimerText = GetBstReadyBarData(readySettings);
+            readyBar = BuildExtraBar(
+                readySettings,
+                readyBarDefaults,
+                readyProgress,
+                BuildReadyTimerText(readySettings, readyTimerText),
+                'ready',
+                'ready',
+                globalSettings,
+                BuildReadyLabelText(readySettings, readyLabel),
+                BuildReadyChargeText(readySettings, readyCharges)
+            );
         end
     elseif (sicSettings.enabled == true) then
-        local sicProgress = GetBstSicBarData(sicSettings);
+        local sicProgress, sicTimerText = GetBstSicBarData(sicSettings);
         local singleBarSicSettings = CopySettingsWith(sicSettings, { segmented = false, showPercent = false });
-        readyBar = BuildExtraBar(singleBarSicSettings, readyBarDefaults, sicProgress, '', 'sic', 'sic', globalSettings, BuildReadyLabelText(singleBarSicSettings, readyLabel));
+        readyBar = BuildExtraBar(
+            singleBarSicSettings,
+            readyBarDefaults,
+            sicProgress,
+            sicSettings.showSicTimer ~= false and sicTimerText or '',
+            'sic',
+            'sic',
+            globalSettings,
+            BuildReadyLabelText(singleBarSicSettings, readyLabel)
+        );
     end
 
     if (readyBar ~= nil) then
@@ -3834,11 +4742,17 @@ local function QueueBstPet(pet)
     local rewardBar = nil;
 
     if (rewardSettings.enabled == true) then
-        local rewardProgress, rewardText = GetBstRewardBarData();
-        if (tostring(rewardSettings.labelDisplayMode or 'Text') ~= 'Text') then
-            rewardText = '';
-        end
-        rewardBar = BuildExtraBar(rewardSettings, rewardBarDefaults, rewardProgress, '', 'reward', 'reward', globalSettings, rewardText);
+        local rewardProgress, rewardTimerText = GetBstRewardBarData();
+        rewardBar = BuildExtraBar(
+            rewardSettings,
+            rewardBarDefaults,
+            rewardProgress,
+            rewardSettings.showRewardTimer ~= false and rewardTimerText or '',
+            'reward',
+            'reward',
+            globalSettings,
+            BuildReadyLabelText(rewardSettings, 'Reward')
+        );
     end
 
     if (rewardBar ~= nil) then
@@ -3850,26 +4764,134 @@ local function QueueBstPet(pet)
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'bst-pet-' .. tostring(pet.index));
+    local settingsPrefix = layoutStateName == 'Jug Pet' and 'bstJug' or 'bstCharmed';
+    local detachedDefaults = (
+        (globalDefaults.targeting or {})[settingsPrefix .. 'PetStaticBackgroundSettings'] or {}
+    );
+    local detachedSettings = GetDetachedPetSetting(
+        targetingSettings,
+        'bst',
+        settingsPrefix,
+        'PetStaticBackgroundSettings'
+    ) or detachedDefaults;
+    local detachedTimerSettings = detachedSettings.bstPetTimerSettings
+        or detachedDefaults.bstPetTimerSettings
+        or petTimerDefaults;
+    local detachedStateSettings = detachedSettings.bstPetStateSettings
+        or detachedDefaults.bstPetStateSettings
+        or petStateDefaults;
+    local detachedActionSettings = detachedSettings.bstActionSettings
+        or detachedDefaults.bstActionSettings
+        or {};
+    local detachedRewardSettings = detachedSettings.bstRewardSettings
+        or detachedDefaults.bstRewardSettings
+        or {};
+    local detachedData = {
+        badges = {},
+        extraBars = {},
+    };
+    AddPetTimerBadge(
+        detachedData,
+        GetBstPetDurationText(pet, layoutStateName),
+        detachedTimerSettings,
+        globalSettings,
+        layoutStateName == 'Jug Pet' and 'Jug' or 'Charmed',
+        layoutStateName == 'Jug Pet' and 'jug' or 'charmed'
+    );
+    AddPetStateBadge(detachedData, petState.GetState(), detachedStateSettings, globalSettings);
+
+    local detachedActionBar = nil;
+    if (layoutStateName == 'Jug Pet') then
+        local progress, _, charges, readyTimerText = GetBstReadyBarData(detachedActionSettings);
+        detachedActionBar = BuildExtraBar(
+            detachedActionSettings,
+            readyBarDefaults,
+            progress,
+            BuildReadyTimerText(detachedActionSettings, readyTimerText),
+            'ready',
+            'ready',
+            globalSettings,
+            BuildReadyLabelText(detachedActionSettings, 'Ready'),
+            BuildReadyChargeText(detachedActionSettings, charges)
+        );
+    else
+        local progress, sicTimerText = GetBstSicBarData(detachedActionSettings);
+        local sicSettings = CopySettingsWith(detachedActionSettings, {
+            segmented = false,
+            showPercent = false,
+        });
+        detachedActionBar = BuildExtraBar(
+            sicSettings,
+            readyBarDefaults,
+            progress,
+            detachedActionSettings.showSicTimer ~= false and sicTimerText or '',
+            'sic',
+            'sic',
+            globalSettings,
+            BuildReadyLabelText(sicSettings, 'Sic')
+        );
+    end
+    if (detachedActionBar ~= nil) then
+        detachedData.extraBars[#detachedData.extraBars + 1] = detachedActionBar;
+    end
+
+    local detachedRewardProgress, detachedRewardTimerText = GetBstRewardBarData();
+    local detachedRewardBar = BuildExtraBar(
+        detachedRewardSettings,
+        rewardBarDefaults,
+        detachedRewardProgress,
+        detachedRewardSettings.showRewardTimer ~= false and detachedRewardTimerText or '',
+        'reward',
+        'reward',
+        globalSettings,
+        tostring(detachedRewardSettings.labelDisplayMode or 'Text') == 'Text' and 'Reward' or ''
+    );
+    if (detachedRewardBar ~= nil) then
+        detachedData.extraBars[#detachedData.extraBars + 1] = detachedRewardBar;
+    end
+    plateData.detachedBstBadges = detachedData.badges;
+    plateData.detachedBstExtraBars = detachedData.extraBars;
+
+    local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
+        plateData,
+        'bst-pet-' .. tostring(pet.index),
+        'pet.world.canvas'
+    );
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
 
     if (plateTextureId == nil) then
         return;
     end
 
-    local petPlateMode = tostring(targetingSettings.bstPetPlateMode or 'Normal');
+    local petPlateMode = tostring(
+        GetDetachedPetSetting(targetingSettings, 'bst', settingsPrefix, 'PetPlateMode')
+        or 'Normal'
+    );
     local worldPlateTextureId = plateTextureId;
     local worldTextureWidth = textureWidth;
     local worldTextureHeight = textureHeight;
     local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (petPlateMode ~= 'Normal') then
-        DrawDetachedStaticPetFrame('bst', pet.index, plateData, targetingSettings, 'static_bst_pet_' .. tostring(pet.index), pet.name);
+        plateData.detachedBstTp = tpValue;
+        DrawDetachedStaticPetFrame(
+            'bst',
+            pet.index,
+            plateData,
+            targetingSettings,
+            'static_' .. settingsPrefix .. '_pet_' .. tostring(pet.index),
+            pet.name,
+            settingsPrefix
+        );
     end
 
     if (petPlateMode == 'Detach from pet') then
         local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
-        local nameTexture, nameTextureWidth, nameTextureHeight = canvasTexture.Render(nameOnlyPlateData, 'bst-pet-name-' .. tostring(pet.index));
+        local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
+            nameOnlyPlateData,
+            'bst-pet-name-' .. tostring(pet.index),
+            'pet.name.canvas'
+        );
         local nameTextureId = canvasTexture.GetTextureId(nameTexture);
 
         if (nameTextureId == nil) then
@@ -4155,7 +5177,11 @@ local function QueueSmnPet(pet)
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'smn-pet-' .. tostring(pet.index));
+    local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
+        plateData,
+        'smn-pet-' .. tostring(pet.index),
+        'pet.world.canvas'
+    );
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
 
     if (plateTextureId == nil) then
@@ -4181,7 +5207,11 @@ local function QueueSmnPet(pet)
 
     if (petPlateMode == 'Detach from pet') then
         local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
-        local nameTexture, nameTextureWidth, nameTextureHeight = canvasTexture.Render(nameOnlyPlateData, 'smn-pet-name-' .. tostring(pet.index));
+        local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
+            nameOnlyPlateData,
+            'smn-pet-name-' .. tostring(pet.index),
+            'pet.name.canvas'
+        );
         local nameTextureId = canvasTexture.GetTextureId(nameTexture);
 
         if (nameTextureId == nil) then
@@ -4383,7 +5413,11 @@ local function QueueWyvernPet(pet)
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'wyvern-pet-' .. tostring(pet.index));
+    local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
+        plateData,
+        'wyvern-pet-' .. tostring(pet.index),
+        'pet.world.canvas'
+    );
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
 
     if (plateTextureId == nil) then
@@ -4402,7 +5436,11 @@ local function QueueWyvernPet(pet)
 
     if (petPlateMode == 'Detach from pet') then
         local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
-        local nameTexture, nameTextureWidth, nameTextureHeight = canvasTexture.Render(nameOnlyPlateData, 'drg-pet-name-' .. tostring(pet.index));
+        local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
+            nameOnlyPlateData,
+            'drg-pet-name-' .. tostring(pet.index),
+            'pet.name.canvas'
+        );
         local nameTextureId = canvasTexture.GetTextureId(nameTexture);
 
         if (nameTextureId == nil) then
@@ -4661,7 +5699,11 @@ local function QueuePupPet(pet)
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'pup-pet-' .. tostring(pet.index));
+    local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
+        plateData,
+        'pup-pet-' .. tostring(pet.index),
+        'pet.world.canvas'
+    );
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
 
     if (plateTextureId == nil) then
@@ -4680,7 +5722,11 @@ local function QueuePupPet(pet)
 
     if (petPlateMode == 'Detach from pet') then
         local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
-        local nameTexture, nameTextureWidth, nameTextureHeight = canvasTexture.Render(nameOnlyPlateData, 'pup-pet-name-' .. tostring(pet.index));
+        local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
+            nameOnlyPlateData,
+            'pup-pet-name-' .. tostring(pet.index),
+            'pet.name.canvas'
+        );
         local nameTextureId = canvasTexture.GetTextureId(nameTexture);
 
         if (nameTextureId == nil) then
@@ -4819,14 +5865,62 @@ local function QueueLuopan(pet)
     end
     AddStatusIconsToPlate(plateData, luopanStatuses.GetRows('buff'), buffsSettings, globalSettings, 'buffs');
 
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, 'luopan-' .. tostring(pet.index));
+    local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
+        plateData,
+        'luopan-' .. tostring(pet.index),
+        'pet.world.canvas'
+    );
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
 
     if (plateTextureId == nil) then
         return;
     end
 
-    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, luopanPlateWorldHeight, textureWidth, textureHeight);
+    local petPlateMode = tostring(targetingSettings.geoPetPlateMode or 'Normal');
+    local worldPlateTextureId = plateTextureId;
+    local worldTextureWidth = textureWidth;
+    local worldTextureHeight = textureHeight;
+    local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+
+    if (petPlateMode ~= 'Normal') then
+        DrawDetachedStaticPetFrame(
+            'geo',
+            pet.index,
+            plateData,
+            targetingSettings,
+            'static_geo_pet_' .. tostring(pet.index),
+            pet.name
+        );
+    end
+
+    if (petPlateMode == 'Detach from pet') then
+        local nameOnlyPlateData = BuildNameOnlyPlateData(
+            plateData,
+            ShortenName(pet.name, nameSettings.shortenName)
+        );
+        local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
+            nameOnlyPlateData,
+            'luopan-name-' .. tostring(pet.index),
+            'pet.name.canvas'
+        );
+        local nameTextureId = canvasTexture.GetTextureId(nameTexture);
+
+        if (nameTextureId == nil) then
+            return;
+        end
+
+        worldPlateTextureId = nameTextureId;
+        worldTextureWidth = nameTextureWidth;
+        worldTextureHeight = nameTextureHeight;
+        worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
+    end
+
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(
+        2.35,
+        luopanPlateWorldHeight,
+        worldTextureWidth,
+        worldTextureHeight
+    );
 
     worldMarkerProbe.QueuePlate({
         targetIndex = pet.index,
@@ -4839,16 +5933,16 @@ local function QueueLuopan(pet)
         clickTargetType = 'pet',
         worldMarker = targeting.ApplyPlateScalingSettings({
             hpBar = { enabled = false },
-            plateTextureId = plateTextureId,
+            plateTextureId = worldPlateTextureId,
             plateAlwaysOnTop = true,
             plateTacticalOverlayOnly = true,
             anchorBone = petAnchorBone,
             plateWorldWidth = plateWorldWidth,
             plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = luopanWorldOffsetY,
-            plateTextureWidth = textureWidth,
-            plateTextureHeight = textureHeight,
-            plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData),
+            plateTextureWidth = worldTextureWidth,
+            plateTextureHeight = worldTextureHeight,
+            plateClickRects = worldClickRects,
             plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
             clickTargetType = 'pet',
             layoutStateName = layoutStateName,

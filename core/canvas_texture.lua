@@ -154,7 +154,6 @@ local function RemoveTextureOrderKey(key)
     for i = #textureOrder, 1, -1 do
         if (textureOrder[i] == key) then
             table.remove(textureOrder, i);
-            return;
         end
     end
 end
@@ -273,9 +272,26 @@ local function ReleaseTextureKey(key, countEviction)
     return true;
 end
 
-local function TrimTextureCache()
+local function TrimTextureCache(protectedKey)
     while (textureCount > maxTextures and #textureOrder > 0) do
-        ReleaseTextureKey(textureOrder[1], true);
+        local evictionIndex = 1;
+
+        if (protectedKey ~= nil and textureOrder[evictionIndex] == protectedKey) then
+            evictionIndex = nil;
+
+            for i = 2, #textureOrder do
+                if (textureOrder[i] ~= protectedKey) then
+                    evictionIndex = i;
+                    break;
+                end
+            end
+        end
+
+        if (evictionIndex == nil) then
+            break;
+        end
+
+        ReleaseTextureKey(textureOrder[evictionIndex], true);
     end
 end
 
@@ -969,7 +985,10 @@ local function EnsureTexture(device, key, alias)
     end
 
     TouchTextureKey(key);
-    TrimTextureCache();
+    -- Never evict the render target being returned to this frame's caller.
+    -- A stale duplicate in the LRU list previously allowed a newly-created
+    -- canvas to be released here and then drawn as black or unrelated content.
+    TrimTextureCache(key);
     return textures[key];
 end
 
@@ -1605,6 +1624,14 @@ local function ResolveAnchorRects(rects, plate)
         ['Debuffs'] = 'debuffs',
         ['Type line'] = 'type',
         ['Distance'] = 'distance',
+        ['Pet timer'] = 'petTimer',
+        ['Pet state'] = 'petState',
+        ['Sic'] = 'sic',
+        ['Ready bar'] = 'ready',
+        ['Reward'] = 'reward',
+        ['Ward timer'] = 'ward',
+        ['Rage timer'] = 'rage',
+        ["Avatar's Favor"] = 'favor',
     };
     local hasFallbacks = plate ~= nil and type(plate.anchorFallbackRects) == 'table' and #plate.anchorFallbackRects > 0;
     local fallbackDefs = {};
@@ -2342,6 +2369,8 @@ end
 
 local function DrawBadge(device, centerX, centerY, badge, resolvedRect)
     local rect = GetBadgeRect(centerX, centerY, badge);
+    local resolvedOffsetX = 0;
+    local resolvedOffsetY = 0;
 
     if (rect == nil) then
         return;
@@ -2352,6 +2381,8 @@ local function DrawBadge(device, centerX, centerY, badge, resolvedRect)
         local y = tonumber(resolvedRect.drawY1);
 
         if (x ~= nil and y ~= nil) then
+            resolvedOffsetX = x - rect.x;
+            resolvedOffsetY = y - rect.y;
             rect.x = x;
             rect.y = y;
         end
@@ -2372,6 +2403,8 @@ local function DrawBadge(device, centerX, centerY, badge, resolvedRect)
     end
 
     if (badge.separateLabelOffsets == true) then
+        local resolvedCenterX = centerX + resolvedOffsetX;
+        local resolvedCenterY = centerY + resolvedOffsetY;
         local textOptions = {
             fontFamily = ResolveFontFamily(badge.fontFamily),
             fontFlags = tonumber(badge.fontFlags) or 0,
@@ -2386,8 +2419,8 @@ local function DrawBadge(device, centerX, centerY, badge, resolvedRect)
             DrawTexture(
                 device,
                 badge.iconTextureId,
-                centerX + (tonumber(badge.offsetX) or 0) + (tonumber(badge.labelOffsetX) or 0) - (rect.iconSize * 0.5),
-                centerY + (tonumber(badge.offsetY) or 0) + (tonumber(badge.labelOffsetY) or 0) - (rect.iconSize * 0.5),
+                resolvedCenterX + (tonumber(badge.offsetX) or 0) + (tonumber(badge.labelOffsetX) or 0) - (rect.iconSize * 0.5),
+                resolvedCenterY + (tonumber(badge.offsetY) or 0) + (tonumber(badge.labelOffsetY) or 0) - (rect.iconSize * 0.5),
                 rect.iconSize,
                 rect.iconSize,
                 0xFFFFFFFF
@@ -2399,8 +2432,8 @@ local function DrawBadge(device, centerX, centerY, badge, resolvedRect)
                 DrawTexture(
                     device,
                     labelTextureId,
-                    centerX + (tonumber(badge.offsetX) or 0) + (tonumber(badge.labelOffsetX) or 0) - (labelW * 0.5),
-                    centerY + (tonumber(badge.offsetY) or 0) + (tonumber(badge.labelOffsetY) or 0) - (labelH * 0.5),
+                    resolvedCenterX + (tonumber(badge.offsetX) or 0) + (tonumber(badge.labelOffsetX) or 0) - (labelW * 0.5),
+                    resolvedCenterY + (tonumber(badge.offsetY) or 0) + (tonumber(badge.labelOffsetY) or 0) - (labelH * 0.5),
                     labelW,
                     labelH,
                     0xFFFFFFFF
@@ -2415,8 +2448,8 @@ local function DrawBadge(device, centerX, centerY, badge, resolvedRect)
                 DrawTexture(
                     device,
                     textTextureId,
-                    centerX + (tonumber(badge.offsetX) or 0) + (tonumber(badge.textOffsetX) or 0) - (textW * 0.5),
-                    centerY + (tonumber(badge.offsetY) or 0) + (tonumber(badge.textOffsetY) or 0) - (textH * 0.5),
+                    resolvedCenterX + (tonumber(badge.offsetX) or 0) + (tonumber(badge.textOffsetX) or 0) - (textW * 0.5),
+                    resolvedCenterY + (tonumber(badge.offsetY) or 0) + (tonumber(badge.textOffsetY) or 0) - (textH * 0.5),
                     textW,
                     textH,
                     0xFFFFFFFF

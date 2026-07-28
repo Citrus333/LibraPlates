@@ -387,6 +387,8 @@ local petTimerDefaults = {
     outlineSize = 2,
     offsetX = -52,
     offsetY = -52,
+    anchorTo = 'Plate',
+    anchorPoint = 'Center',
 };
 local petStateDefaults = {
     enabled = true,
@@ -401,6 +403,8 @@ local petStateDefaults = {
     outlineSize = 2,
     offsetX = 52,
     offsetY = -52,
+    anchorTo = 'Plate',
+    anchorPoint = 'Center',
 };
 local petReadyBarDefaults = {
     enabled = true,

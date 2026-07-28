@@ -108,6 +108,8 @@ local petTimerDefaults = {
     outlineSize = 2,
     offsetX = -52,
     offsetY = -52,
+    anchorTo = 'Plate',
+    anchorPoint = 'Center',
 };
 local petStateDefaults = {
     enabled = true,
@@ -122,6 +124,8 @@ local petStateDefaults = {
     outlineSize = 2,
     offsetX = 52,
     offsetY = -52,
+    anchorTo = 'Plate',
+    anchorPoint = 'Center',
 };
 local petReadyBarDefaults = {
     enabled = true,
@@ -1560,6 +1564,11 @@ local function AddPreviewPetTimerBadge(plateData, text, settings, globalSettings
         textOffsetX = tonumber(settings.textOffsetX) or 0,
         textOffsetY = tonumber(settings.textOffsetY) or 0,
         separateLabelOffsets = true,
+        anchorTo = settings.anchorTo or petTimerDefaults.anchorTo,
+        anchorPoint = settings.anchorPoint or petTimerDefaults.anchorPoint,
+        anchorCollapse = settings.anchorCollapse,
+        anchorSpacing = settings.anchorSpacing,
+        anchorOrder = settings.anchorOrder,
     };
 end
 
@@ -1599,6 +1608,11 @@ local function AddPreviewPetStateBadge(plateData, commandName, settings, globalS
         labelOffsetX = tonumber(settings.labelOffsetX) or 0,
         labelOffsetY = tonumber(settings.labelOffsetY) or 0,
         separateLabelOffsets = true,
+        anchorTo = settings.anchorTo or petStateDefaults.anchorTo,
+        anchorPoint = settings.anchorPoint or petStateDefaults.anchorPoint,
+        anchorCollapse = settings.anchorCollapse,
+        anchorSpacing = settings.anchorSpacing,
+        anchorOrder = settings.anchorOrder,
     };
 end
 

@@ -119,6 +119,8 @@ local petTimerDefaults = {
     outlineSize = 2,
     offsetX = -52,
     offsetY = -52,
+    anchorTo = 'Plate',
+    anchorPoint = 'Center',
 };
 local petStateDefaults = {
     enabled = true,
@@ -133,6 +135,8 @@ local petStateDefaults = {
     outlineSize = 2,
     offsetX = 52,
     offsetY = -52,
+    anchorTo = 'Plate',
+    anchorPoint = 'Center',
 };
 
 for key, value in pairs(buffsDefaults) do
@@ -3874,6 +3878,11 @@ local function AddPetTimerBadge(plateData, text, settings, globalSettings, label
         textOffsetX = tonumber(settings.textOffsetX) or 0,
         textOffsetY = tonumber(settings.textOffsetY) or 0,
         separateLabelOffsets = true,
+        anchorTo = settings.anchorTo or petTimerDefaults.anchorTo,
+        anchorPoint = settings.anchorPoint or petTimerDefaults.anchorPoint,
+        anchorCollapse = settings.anchorCollapse,
+        anchorSpacing = settings.anchorSpacing,
+        anchorOrder = settings.anchorOrder,
     };
 end
 
@@ -3913,6 +3922,11 @@ local function AddPetStateBadge(plateData, commandName, settings, globalSettings
         labelOffsetX = tonumber(settings.labelOffsetX) or 0,
         labelOffsetY = tonumber(settings.labelOffsetY) or 0,
         separateLabelOffsets = true,
+        anchorTo = settings.anchorTo or petStateDefaults.anchorTo,
+        anchorPoint = settings.anchorPoint or petStateDefaults.anchorPoint,
+        anchorCollapse = settings.anchorCollapse,
+        anchorSpacing = settings.anchorSpacing,
+        anchorOrder = settings.anchorOrder,
     };
 end
 

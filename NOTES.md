@@ -119,7 +119,7 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 - Recheck plate stacking fixes/settings: target plate should not be hidden behind non-target plates, and settings should visibly affect enemy stacking.
 - Recheck tactical screen limits/stacking UI cleanup; settings felt confusing and may not be applying.
 - Recheck Enemy Alerts integration after restore: current files are restored, but live MA/JA, offensive/defensive split, font settings, sound dropdown, and preview all need testing.
-- Keep Enemy Alerts under `Plates > Enemy > Tactical`; do not bring back the old visible Modules tab.
+- Enemy Alerts configuration lives under `Settings > Screen Alerts`; do not duplicate it under Enemy Tactical plates.
 - Recheck logout/shutdown countdown fix separately from resting tick timer. Resting tick sync should keep working; logout/shutdown should be a flat countdown and not reset from chat/ticks.
 - Recheck/remove BST chat spam if that fix was actually done before reset; status is uncertain.
 - Recheck Catseye/player profile confusion from reset day before blaming runtime classification.
@@ -218,6 +218,24 @@ This section is the map for World/Tactical confusion. Player-facing settings are
 - Peer follow-up: consider whether Peer should also support Objects, not only Self / PC / Enemy.
 
 ## Done
+
+- 2026-07-27 - NPC/Object World type-line regression:
+  - Fixed `Disable expensive widgets` leaving NPC/Object World plates with the identity icon but no type classification.
+  - NPC/Object icons and type classifications now remain together as base plate identity; the Type line widget's own enabled setting still controls whether its text is drawn.
+  - Fixed CatsEye service NPCs such as Moyeyo being promoted to the compact Tactical NPC plate when targeted because their raw server status/HP flags resemble Campaign allies.
+  - Non-combat `catseye_npc` service records now keep the normal NPC World plate plus its Target/Subtarget module; genuine Campaign/Garrison combat allies still use NPC Tactical, including any CatsEye-sourced record explicitly classified as a tactical ally.
+  - Restored clickable quest/mission rows in the active standard NPC Quick Menu renderer. Regular NPC entries open direct BG-Wiki pages such as `Chocobilious` and `In_a_Stew`.
+  - Added CatsEye quest-row routing for both section lists and inline bullets such as `Starts quest: Give Me a Ring.`. Missing explicit links default to `CatsEyeXI_Systems/Quests#<quest>`; explicit non-quest CatsEye destinations remain authoritative.
+  - Made resolved door/security-gate Objects target-only based on `Door.png` or type `Security Gate`, so doors with continuously scannable raw entity flags no longer show an idle plate while other doors appear only when targeted.
+  - Cleaned the Windurst Woods Toppi-Meppi and historical Robino-Mobino records: shortened the role to `Chocobuck Vendor`, split the note into readable bullets, and removed raw forum-link/template markup. The merged generator source was corrected too.
+  - Completed a Windurst Woods NPC-note cleanup pass: condensed service instructions, conquest/guild/event information, CatsEye notes, and tutorials into useful bullets; removed dialogue-only transcripts and redundant type descriptions; repaired malformed wiki/template text; and preserved structured quest/mission lists. Only Apururu and Nanaa Mihgo remain above 300 characters because their entries contain legitimate quest/mission lists.
+  - Synchronized the Windurst quest/mission giver icon rules into the merged source so regeneration keeps `QuestGiver.png` for `Starts Quest(s)` and `MissionGiver.png` for `Starts Mission(s)`.
+  - Added the missing CatsEyeXI `Loi-Boi` record in Windurst Woods as a Crystal Warrior quest associate for the repeatable quest `Fowl Tales`, including its quest sequence and reward summary.
+  - Added the missing CatsEyeXI `Erbelie` record in Windurst Woods as the Crystal Warrior quest giver for `Neck and Neck` and `Neck and Neck II`. Disputed sequel item/reward numbers were intentionally omitted from the plate.
+  - Added the missing CatsEyeXI `Temimi` record in Windurst Woods as the repeatable `Slowing Down` spell quest giver for ACE, Crystal Warrior, and Wings-Era Warrior characters.
+  - Fixed uneven Quick Menu quest-row alignment. Longer bullet rows entered `WrapLine()` and lost their leading spaces during word tokenization, while shorter rows retained them. Wrapped bullets now preserve the same first-line indent and use a matching hanging indent for continuation lines. Every wrapped segment also retains the quest-link color and click action instead of continuation text turning white.
+  - Completed the Windurst Walls NPC-data pass: condensed CatsEye services, teleport/tutorial/location notes, and removed four dialogue-only transcripts plus malformed wiki/template text. Preserved the long structured quest histories for Shantotto, Koru-Moru, and Yoran-Oran.
+  - Applied the quest/mission giver icon rules to Windurst Walls and synchronized matching merged-source records. Added missing CatsEyeXI records for `Hoi-Boi` (`Fowl Tales`) and `Abu Dabudabu` (`Give Me a Ring`), and expanded Sharara to link all three `A Matter of Trust (Windurst)` quests.
 
 - 2026-06-24 - Home Point item/object handling:
   - Restored Home Point rows through `data/item_icons.lua` item/object data and set their world Y lift back to the normal object-style placement so the plate is above the crystal instead of down inside it.
@@ -367,7 +385,7 @@ This section is the map for World/Tactical confusion. Player-facing settings are
   - Added early runtime gates for Self, PC, NPC/Object, Enemy, and Trust plates so disabled plate groups/widgets skip scanning/build work sooner.
   - Added a PC per-plate no-content guard so disabled PC widgets/modules do not still build custom-font canvas plates.
   - Removed the permanent per-draw native-hide hook from `Use native party/target UI` off; native party/target hiding now relies on cheaper per-frame visibility writes unless target-arrow hiding specifically needs the hook.
-  - Wired Performance presets/settings: `World plate update rate` now throttles idle/background canvas rebuilds without skipping queued plates, avoiding flashing; `Disable expensive widgets` drops idle world-only extras such as PC social/status icons, Enemy status/aura rows, NPC/Object icon/type details, and Trust status rows while keeping target/subtarget/party/tactical/engaged/casting/hovered detail.
+  - Wired Performance presets/settings: `World plate update rate` now throttles idle/background canvas rebuilds without skipping queued plates, avoiding flashing; `Disable expensive widgets` drops idle world-only extras such as PC social/status icons, Enemy status/aura rows, and Trust status rows while keeping NPC/Object identity icons and type classifications plus target/subtarget/party/tactical/engaged/casting/hovered detail.
   - Reverted the risky world-marker click/stack projection throttle after crash testing; bridge/plate isolation is being used instead.
   - Optimized Peer hover lookup to scan plate hitboxes once per frame.
   - Changed settings backups to one refreshed `settings-backup.lua` file; `/lp backups prune` now warns and does nothing because pruning huge old folders in-game caused disconnects.

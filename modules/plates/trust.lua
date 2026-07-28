@@ -1,6 +1,7 @@
 local backgroundDefaults = require('config.widgets.background');
 local nameDefaults = require('config.widgets.name');
 local barDefaults = require('config.widgets.bar');
+local barWarning = require('core.bar_warning');
 local mpBarDefaults = require('config.widgets.mp_bar');
 local tpBarDefaults = require('config.widgets.tp_bar');
 local jobDefaults = require('config.widgets.job');
@@ -686,16 +687,8 @@ local function QueueTrust(trust)
     local hpColor = hpBarSettings.color or { 0.90, 0.20, 0.20, 1.0 };
     local mpColor = mpBarSettings.color or { 0.20, 0.45, 0.95, 1.0 };
 
-    if (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    ) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
-
-    local hpLowActive =
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25);
+    local hpCriticalActive = false;
+    hpColor, hpCriticalActive = barWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
 
     if (
         mpBarSettings.lowColorEnabled == true and
@@ -739,7 +732,7 @@ local function QueueTrust(trust)
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'job:' .. SettingKey(jobSettings, { 'enabled', 'displayModeIndex', 'iconTheme', 'iconSize', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
-            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
+            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'criticalColorEnabled', 'criticalColorPercent', 'criticalColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
             'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
             'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
             'buffs:' .. SettingKey(buffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'rowSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'hideCombatMode', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(buffRows),
@@ -812,7 +805,7 @@ local function QueueTrust(trust)
             texture = hpBarSettings.texture or 'Solid',
             textureStrength = tonumber(hpBarSettings.textureStrength) or 100,
             textureId = barTextures.GetTextureId(hpBarSettings.texture),
-            animationEnabled = hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
+            animationEnabled = hpCriticalActive == true and hpBarSettings.lowAnimationEnabled == true,
             animationTextureId = barAnimations.GetTextureId(hpBarSettings.lowAnimation),
             animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or 40,
             animationColor = hpBarSettings.lowAnimationColor,

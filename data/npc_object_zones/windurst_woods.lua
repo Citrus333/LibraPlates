@@ -1,9 +1,10 @@
 return {
     ["npcs"] = {
-	
-	
-	Abu Dabudabu
-	
+	    ["A.M.A.N. Liaison"] = {
+            ["_source"] = "npc",
+            ["icon"] = "RecordsOfEminence.png",
+            ["type"] = "Records of Eminence",
+        },
         ["A.M.A.N. Validator"] = {
             ["_source"] = "npc",
             ["icon"] = "CommissionAgent.png",
@@ -13,19 +14,17 @@ return {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Checking Abby_Jalunshi will start a conversation with her about Mog Houses. She give you 2 options to start- : *Nothing in General : *Ask for an explanation on Mog houses. If you choose the \"Nothing in General option, she will just say: \"Oh Well, Your Loss\" and turn away. If you choose the Other option she says: \"A mogHouse is your own personal apartment room provided for your convienience. Within your MogHouse you can store items, change jobs, and heal up any HP or MP",
+* Explains Mog Houses and their storage, job-changing, and recovery features.",
             ["type"] = "MogHouse Watcher",
         },
         ["Aja-Panja"] = {
             ["_source"] = "npc",
-            ["icon"] = "TutorialNPC.png",
-            ["note"] = "Notes:\
-Upon checking Aja Panja you will recieve the following diologue: :* If you want to learn how to craft bone into something useful, then you should study with us here at the Boneworker's Guild!",
-            ["type"] = "Tutorial",
+            ["icon"] = "Dialogue.png",
+            ["type"] = "Bone Crafter",
         },
         ["Amimi"] = {
             ["_source"] = "npc",
-            ["icon"] = "ChocoboRenter.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * A Chocobo Riding Game (Windurst)",
             ["type"] = "Chocobo Renter",
@@ -44,12 +43,13 @@ Upon checking Aja Panja you will recieve the following diologue: :* If you want 
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
             ["note"] = "Notes:\
-Anillah is one of two workers who provides free synthesis support for clothcrafting in Windurst. Speaking with her will raise your clothcrafting skill ever so slightly, and give you a better chance at successful synths. After speaking with her however, you may not ask any other NPC for synthesis support until the one she has given you has worn away. Anillah is also in charge of the low-level recipe list; if you ask her about recipes, she will tell you any recipe that is below your current skill level.",
+* Provides free clothcraft synthesis support.\
+* Lists low-level clothcraft recipes.",
             ["type"] = "Synthesis Support",
         },
         ["Apururu"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Can Cardians Cry?\
 * Trust: Ajido-Marujido\
@@ -70,11 +70,16 @@ Involved in Missions:\
 ",
             ["type"] = "Manustery Minister",
         },
+        ["Artisan Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Inventory.png",
+            ["type"] = "Inventory Expansion",
+        },
         ["Atagei-Portagei"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Notes:\
-This NPC was a Smilebringer for Starlight Celebration 2004, Starlight Celebration 2005, Starlight Celebration 2006, Starlight Celebration 2007, Starlight Celebration 2008 event.",
+* Smilebringer for Starlight Celebration events from 2004 through 2008.",
             ["type"] = "Special Event Coordinator",
         },
         ["Baha Mannohl"] = {
@@ -118,14 +123,13 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ChocoboRenter.png",
             ["note"] = "Notes:\
-This NPC will: :*Explain the basics and rules for The Chocobo Hot and Cold Game. :*Hand-out Tandjana Wildgrass for the The Chocobo Hot and Cold Game once per day.",
+* Explains the Chocobo Hot and Cold Game rules.\
+* Provides Tandjana Wildgrass once per day.",
             ["type"] = "Chocobo Guide",
         },
         ["Catalia"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Friend to Professor Emanritan.",
             ["type"] = "Scholar",
         },
         ["Cayu Pensharhumi"] = {
@@ -152,7 +156,8 @@ Involved in Missions:\
         ["Chabobo"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Host seasonal mini-games and reward distributions during Valentione's Day festivals.",
+            ["note"] = "Notes:\
+* Hosts seasonal mini-games and rewards during Valentione's Day.",
             ["type"] = "Special Event Coordinator",
         },
         ["Chihpi Kapirapehro"] = {
@@ -168,7 +173,8 @@ Involved in Missions:\
         ["Claiborne"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
-            ["note"] = "Vana'diel Chocobo Society official. Manages registration schedules, official racing cards, and handles entry validation data loops for local chocobo stables.",
+            ["note"] = "Notes:\
+* Provides Chocobo Circuit registration and racing information.",
             ["type"] = "Chocobo Circuit",
         },
         ["Cocchi Ryojhbon"] = {
@@ -179,31 +185,24 @@ Involved in Missions:\
         ["Congee-Toyangee"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-A male Tarutaru festival dancer.",
             ["type"] = "Festival Dancer",
         },
         ["Copuwawa"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-A female Tarutaru festival dancer.",
             ["type"] = "Festival Dancer",
         },
         ["Crystal Crunch"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "CrystalCrunch.png",
             ["note"] = "CatsEyeXI:\
-* Located near guilds.\
-* Exchanges crystals and clusters\
-at a 3-to-1 rate.",
+* Located near the crafting guilds.\
+* Exchanges crystals and clusters at a 3-to-1 rate.",
             ["type"] = "Crystal Exchange",
         },
         ["Dayaka-Botanyuka"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-* A male Tarutaru festival dancer from Windurst.",
             ["type"] = "Festival Dancer",
         },
         ["Dazi Nosuk"] = {
@@ -214,25 +213,21 @@ at a 3-to-1 rate.",
         ["Dhahah"] = {
             ["_source"] = "npc",
             ["icon"] = "Pet.png",
-            ["note"] = "One of the four captive Dhalmels. Named as part of local Windurst riddle events.",
             ["type"] = "Pet",
         },
         ["Dhahih"] = {
             ["_source"] = "npc",
             ["icon"] = "Pet.png",
-            ["note"] = "One of the four captive Dhalmels. Named as part of local Windurst riddle events.",
             ["type"] = "Pet",
         },
         ["Dhakih"] = {
             ["_source"] = "npc",
             ["icon"] = "Pet.png",
-            ["note"] = "One of the four captive Dhalmels. Named as part of local Windurst riddle events.",
             ["type"] = "Pet",
         },
         ["Dhakoh"] = {
             ["_source"] = "npc",
             ["icon"] = "Pet.png",
-            ["note"] = "One of the four captive Dhalmels. Named as part of local Windurst riddle events.",
             ["type"] = "Pet",
         },
         ["Dhiz Tomehrih"] = {
@@ -245,6 +240,15 @@ at a 3-to-1 rate.",
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
+		["Eggbert"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Easter Event:\
+* Crystal Warrior egg exchange NPC.\
+* Trades eggs 3-to-1 outside nation Mog Houses.",
+            ["type"] = "Easter Event",
+            ["worldOffsetY"] = 0.4,
+        },
         ["Eight of Spades"] = {
             ["_source"] = "npc",
             ["icon"] = "Defender.png",
@@ -253,8 +257,18 @@ at a 3-to-1 rate.",
         ["Ensemble Maven"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Seasonal costume contest judge.",
+            ["note"] = "Notes:\
+* Judges seasonal costume contests.",
             ["type"] = "Special Event Coordinator",
+        },
+        ["Erbelie"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Crystal Warrior:\
+* Starts quest: Neck and Neck.\
+* Starts quest: Neck and Neck II.\
+* Crystal Warrior quest chain about dhalmels.",
+            ["type"] = "CW Quest Giver",
         },
         ["Erpolant"] = {
             ["_source"] = "npc",
@@ -273,10 +287,21 @@ at a 3-to-1 rate.",
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
+        ["Ephemeral Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Dialogue.png",
+            ["note"] = "Notes:\
+* Trade crystals or clusters to store them.\
+* One cluster counts as 12 crystals.\
+* Stores up to 5,000 crystals per element.\
+* View stored totals under Status > Currencies and speak to the moogle to withdraw them.",
+            ["type"] = "Crystal Storage",
+        },
         ["Fashionista"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Seasonal fashion contest representative.",
+            ["note"] = "Notes:\
+* Coordinates seasonal fashion contests.",
             ["type"] = "Special Event Coordinator",
         },
         ["Femardaque"] = {
@@ -286,7 +311,7 @@ at a 3-to-1 rate.",
         },
         ["Fhelm Jobeizat"] = {
             ["_source"] = "npc",
-            ["icon"] = "RecordsOfEminence.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Records of Eminence\
 \
@@ -310,7 +335,11 @@ Involved in Quests:\
         ["Funtrox"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "GobbieMysteryBox.png",
-            ["note"] = "CatsEyeXI:\\n* Opens random rewards using daily\\nGobbie Box points.\\n* New players must wait 14\\nreal-life days before using the\\nbox.\\n* Special Gobbie Keys can be\\nobtained by exchanging merit\\npoints.\\n* Crystal Warriors and Wings Era\\nWarriors cannot use this box.",
+            ["note"] = "CatsEyeXI:\
+* Opens random rewards using daily Gobbie Box points.\
+* New players must wait 14 real-life days.\
+* Special Gobbie Keys can be purchased with merit points.\
+* Unavailable to Crystal Warriors and Wings Era Warriors.",
             ["type"] = "Gobbie Mystery Box Vendor",
         },
         ["Gioh Ajihri"] = {
@@ -341,22 +370,24 @@ Involved in Quests:\
         ["Hakaru-Marikaru"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Dialog: Elvaan are all so high and haughty. It almost seems like they look down at us Tarutaru at times. Huh...? How dare you say that's because we are so short that everyone can't help but look down at us! Beat it before I bite your kneecaps!",
             ["type"] = "Dialogue NPC",
         },
         ["Harara, W.W."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Main Conquest related NPC for Windurst citizens ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the Windurst Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for Windurst) at certain conditions. It will be also possible to get some items of other Nations (Items for Bastok / Items for San d'Oria) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without Windurst as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer.",
+* Provides Signet and recharges EXP rings.\
+* Accepts crystals for mission rank and sells Conquest Point items.\
+* Offers Supply Runs and Expeditionary Forces.\
+* Services require Windurst allegiance.",
             ["type"] = "Conquest Overseer",
         },
         ["Hauh Colphioh"] = {
             ["_source"] = "npc",
             ["icon"] = "GuildworkersUnionRepresentative.png",
             ["note"] = "Notes:\
-Hauh Colphioh is in charge of the Guildworker's Union for clothcrafting in Windurst. Once you have attained at least level 28 Cloftcraft you may speak with her, and begin accumulating Guild Points for items you turn in. The item requested changes daily, so its important to check back with her to keep track of current time limits, and to find out what new items the guild is accepting.",
+* Manages Clothcraft Guild Points for skill 28 or higher.\
+* Accepts a different requested item each day.",
             ["type"] = "Guild Points",
         },
         ["Hayah Dahbalesahma"] = {
@@ -376,7 +407,7 @@ Hauh Colphioh is in charge of the Guildworker's Union for clothcrafting in Windu
         },
         ["Ibwam"] = {
             ["_source"] = "npc",
-            ["icon"] = "WarpNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Lure of the Wildcat (Windurst)\
 ",
@@ -400,21 +431,20 @@ Hauh Colphioh is in charge of the Guildworker's Union for clothcrafting in Windu
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["note"] = "Notes:\
-Counts a a child for Starlight Celebration 2008 Dialog: Those automation guards called Cardians are said to grrrow smarter and smarter by the day as they learrrn more and more. It's only a matter of time until they all start developing their own perrrsonalities and then begin to fight among themselves. Won't that be fun?",
+* Counts as a child during the 2008 Starlight Celebration.",
             ["type"] = "Starlight Event",
         },
         ["Jack of Spades"] = {
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Can be traded Adventurer Coupon for those starting in Windurst Woods. Offers General Information and a Map of Windurst: :Allow me to assist you if you are lost. What can Jack do for you? :*\"To show you a map of Windurst.\": [Displays an overview map of Windurst] :*\"How to give items to townsfolk.\": Interchange of items and money between people and things is called \"Trading.\" First target entity to interact with. Nothing happens unless reciever is properly targeted. Open main menu. Press \"Trade\" button. Next choose items to hand over! Press \"Confirm\" button! Targeted entity should receive items. :*\"How to go outside and battle.\": Before setting out to battle: Confirm equipment is properly equipped! Magic-users \"Use\" spell scrolls on themselves to learn magic! Before commencing battle wiht monster: \"Check\" monster to confirm its strength! After battle is won: Look for \"Spoils\" dropped by monsters. If in party, \"Cast Lots\" for spoils! :*\"About quests and missions.\": Quests are requests for help from ordinary townsfolk. It pays to help people in need. Missions are official requests for assistance made by the Windurst authorities. You can receive missions from the guards at the town's gatehouse. :*\"Nothing in particular.\": Feel free to ask next time you need Jack's help. Over and out!",
+* Accepts the Windurst Woods Adventurer Coupon.\
+* Provides Windurst maps and beginner tutorials for trading, combat, quests, and missions.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Jayleilei"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-A female Tarutaru festival dancer.",
             ["type"] = "Festival Dancer",
         },
         ["Ju Kamja"] = {
@@ -466,7 +496,8 @@ A female Tarutaru festival dancer.",
         ["Kopua-Mobua A.M.A.N."] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGuide.png",
-            ["note"] = "Processes veteran qualification logs, registers eligible players into the help network, and dispenses mentor license privileges.",
+            ["note"] = "Notes:\
+* Registers eligible adventurers for the Mentor system.",
             ["type"] = "Mentor Recruiter",
         },
         ["Kopuro-Popuro"] = {
@@ -526,12 +557,20 @@ Involved in Quests:\
             ["icon"] = "GuildMerchant.png",
             ["type"] = "Guild Craftsman",
         },
+        ["Loi-Boi"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Crystal Warrior:\
+* Involved in quest: Fowl Tales.\
+* Speak to him after Hoi-Boi and Doi-Boi.\
+* Repeatable; rewards a Sapara and 600 gil.",
+            ["type"] = "CW Quest Associate",
+        },
         ["Magilox"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "CatsEyeXI Ventures:\
-* Registers players for the Goblin\
-Venture Guild.\
+* Registers players for the Goblin Venture Guild.\
 * Registration costs 5000 gil.",
             ["type"] = "Venture Registration",
         },
@@ -593,8 +632,7 @@ Venture Guild.\
             ["note"] = "Crystal Warrior:\
 * Starts quest: Give Me a Ring.\
 * Rewards Windurstian Ring.\
-* Can be completed regardless of\
-allegiance.",
+* Can be completed regardless of allegiance.",
             ["type"] = "CW Starting Ring",
         },
         ["Muhk Johldy"] = {
@@ -610,13 +648,17 @@ allegiance.",
         ["Mushuhi-Metahi"] = {
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
-            ["note"] = "Notes:\
-Checks weather for the following locations: :* East Sarutabaruta :* West Sarutabaruta :* Tahrongi Canyon :* Buburimu Peninsula :* Meriphataud Mountains",
+["note"] = "Checks weather for the following locations:\
+* East Sarutabaruta\
+* West Sarutabaruta\
+* Tahrongi Canyon\
+* Buburimu Peninsula\
+* Meriphataud Mountains",
             ["type"] = "Weather Reporter",
         },
         ["Nanaa Mihgo"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Mihgo's Amigo\
 * Rock Racketeer\
@@ -633,7 +675,7 @@ Involved in Missions:\
 * Windurst Mission 2-1: Lost for Words\
 * Roar! A Cat Burglar Bares Her Fangs\
 ",
-            ["type"] = "Dialogue NPC",
+            ["type"] = "Cat Burglar",
         },
         ["Nhobi Zalkia"] = {
             ["_source"] = "npc",
@@ -644,7 +686,7 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
             ["note"] = "Notes:\
-* Nikkoko is one of two workers who provides free synthesis support for clothcrafting in Windurst. Speaking with her will raise your clothcrafting skill ever so slightly, and give you a better chance at successful synths. After speaking with her however, you may not ask any other NPC for synthesis support until the one she has given you has worn away.",
+* Provides free clothcraft synthesis support.",
             ["type"] = "Synthesis Support",
         },
         ["Nine of Spades"] = {
@@ -664,7 +706,7 @@ Involved in Missions:\
         },
         ["Orlaine"] = {
             ["_source"] = "npc",
-            ["icon"] = "ChocoboRenter.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * A Chocobo Riding Game (Windurst)",
             ["type"] = "Chocobo Renter",
@@ -685,7 +727,9 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the San d'Oria Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for San d'Oria) at certain conditions. It will be also possible to get some items of other Nations (Items for Bastok / Items for Windurst) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without San d'Oria as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer.",
+* Provides Signet and recharges EXP rings.\
+* Accepts crystals for mission rank and sells Conquest Point items.\
+* Services require San d'Oria allegiance.",
             ["type"] = "Conquest Overseer",
         },
         ["Patsaa Maehoc"] = {
@@ -697,7 +741,8 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
-A teleport NPC. He is located at the lower-left of K-12 on your map, otherwise to the right of the Chocobo Circuit (slightly hidden behind a tree). He will teleport you for free to Tonana (Windurst Waters, G-8).",
+* Teleports players to Tonana in Windurst Waters (G-8) for free.\
+* Located at K-12 near the Chocobo Circuit.",
             ["type"] = "Teleport Service",
         },
         ["Pehki Machumaht"] = {
@@ -723,13 +768,13 @@ A teleport NPC. He is located at the lower-left of K-12 on your map, otherwise t
         },
         ["Perih Vashai"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* The Fanged One Ability to become Ranger\
-* Sin Hunting AF weapon\
-* Fire and Brimstone Hunter's beret\
-* Unbridled Passion Hunter's socks\
-* From Saplings Grow Archery Weapon skill\
+* The Fanged One\
+* Sin Hunting\
+* Fire and Brimstone\
+* Unbridled Passion\
+* From Saplings Grow\
 \
 Involved in Missions:\
 * Promathia Mission 5-3: Three Paths\
@@ -754,8 +799,6 @@ Involved in Missions:\
         ["Phub Bayzarahn"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Dialog: It is trrrue that the Mithra of Windurst obey the Star Sibyl... ....But that's only true because our chieftainess, Perih Vashai, is doing so herrrself.",
             ["type"] = "Dialogue NPC",
         },
         ["Phuz Mannohl"] = {
@@ -777,7 +820,7 @@ Dialog: It is trrrue that the Mithra of Windurst obey the Star Sibyl... ....But 
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-A member of the Vana'diel Chocobo Society. She will help you raise your own Chocobo if you trade an egg to her.",
+* Raises chocobos when given a chocobo egg.",
             ["type"] = "VCS Chocobo Trainer",
         },
         ["Quesse"] = {
@@ -787,7 +830,7 @@ A member of the Vana'diel Chocobo Society. She will help you raise your own Choc
         },
         ["Rakoh Buuma"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * Windurst Missions\
 ",
@@ -796,7 +839,7 @@ A member of the Vana'diel Chocobo Society. She will help you raise your own Choc
         ["Retto-Marutto"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
-            ["type"] = "Bonecraft | Guild Merchant",
+            ["type"] = "Bonecraft Guild Merchant",
         },
         ["Roberta"] = {
             ["_source"] = "npc",
@@ -807,16 +850,16 @@ A member of the Vana'diel Chocobo Society. She will help you raise your own Choc
         },
         ["Robino-Mobino (Windurst Woods)"] = {
             ["_source"] = "npc",
-            ["info"] = "*Used to sell items in exchange for Chocobucks (see Chocobuck items). *Renamed Toppi-Meppi as of the [https://forum.square-enix.com/ffxi/threads/54790?p=611716#post611716 December 11, 2018] update. }}",
             ["note"] = "Notes:\
-* Used to sell items in exchange for Chocobucks (see Chocobuck items). *Renamed Toppi-Meppi as of the [https://forum.square-enix.com/ffxi/threads/54790?p=611716#post611716 December 11, 2018] update.",
-            ["type"] = "VCS Chocobuck Exchange Depot Vendor",
+* Chocobuck exchange vendor.",
+            ["type"] = "Chocobuck Vendor",
         },
         ["Rokor-Makor"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["note"] = "Notes:\
-* Durning Sunbreeze, allows you play a chocobo catch game. You must have earned the HQ gear from the main event to participate in hard mode (for chance to earn a Green Prize Balloon). *During Starlight, allows you to play a job guessing game, basically a version of the board game Mastermind.",
+* Hosts Chocobo Catch during Sunbreeze; hard mode requires HQ event gear and can reward Green Prize Balloons.\
+* Hosts a job-guessing game during Starlight.",
             ["type"] = "Event Host",
         },
         ["Ronana"] = {
@@ -831,7 +874,7 @@ A member of the Vana'diel Chocobo Society. She will help you raise your own Choc
         },
         ["Sariale"] = {
             ["_source"] = "npc",
-            ["icon"] = "ChocoboRenter.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * A Chocobo Riding Game (Windurst)",
             ["type"] = "Chocobo Renter",
@@ -840,7 +883,8 @@ A member of the Vana'diel Chocobo Society. She will help you raise your own Choc
             ["_source"] = "npc",
             ["icon"] = "TutorialNPC.png",
             ["note"] = "Notes:\
-* Provides tutorial information for newly created characters. *See Tutorial NPC for more information about the 7 mini quests.",
+* Provides tutorial information for new adventurers.\
+* Offers seven tutorial mini-quests.",
             ["type"] = "Tutorial",
         },
         ["Selh'teus"] = {
@@ -855,8 +899,6 @@ A member of the Vana'diel Chocobo Society. She will help you raise your own Choc
         ["Seno Zarhin"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Dialog: Whenever you look around Windurst Woods you see Mithra, rrright? But just until a few decades ago, this whole arrrea was full of Tarutaru. That was until the warrr years when the Mithra chieftainess, Perih Vashai, came across the seas from the Mithran homeland with her army of fighters.",
             ["type"] = "Dialogue NPC",
         },
         ["Sevah Kummekihn"] = {
@@ -882,8 +924,8 @@ Dialog: Whenever you look around Windurst Woods you see Mithra, rrright? But jus
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Open: 8:00 - 23:00.No longer closed Windsday.",
-            ["type"] = "Bonecraft | Guild Merchant",
+* Open daily from 8:00 to 23:00.",
+            ["type"] = "Bonecraft Guild Merchant",
         },
         ["Six of Spades"] = {
             ["_source"] = "npc",
@@ -947,7 +989,7 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["note"] = "Notes:\
-During Adventurer Appreciation Campaign 2012, 3 Spring Treants and a Twinkling Treant invaded the Dhalmel Farm in Windurst Woods.",
+* Appeared at the Dhalmel Farm during Adventurer Appreciation Campaign 2012.",
             ["type"] = "Event NPC",
         },
         ["Sunakku-Matakku"] = {
@@ -977,10 +1019,19 @@ Involved in Quests:\
         },
         ["Teldro-Kesdrodo"] = {
             ["_source"] = "npc",
-            ["icon"] = "MentorRecruiter.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Unity Concord (Quest)",
             ["type"] = "Unity Concord",
+        },
+        ["Temimi"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "CatsEyeXI:\
+* Starts quest: Slowing Down.\
+* Trade 4 Skull Locusts.\
+* Repeatable; rewards Slow.",
+            ["type"] = "Spell Quest Giver",
         },
         ["Ten of Spades"] = {
             ["_source"] = "npc",
@@ -1017,7 +1068,7 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-thumb|100px|MonstersOffers Information on Monster Relationships: :Hey! What do you want? Don't tell me... You heard that I have a monster correlation chart and came to beg me to show it to you, rrright? :*\"Yes.\": I knew it! I don't mind showing it to you. Besides, I'm a topnotch hunter, so I don't need it anyway. I was given this parchment a few years ago by a scrrruffy old Elvaan man. I helped him out when I found him lost in the woods, and this was his way of paying me back. To tell you the truth, I wasn't that interested in it, so I didn't pay much attention to his explanation and have forrrgotten most of what he said. It was something about how the different types of monsters eat each other in order to surrrvive, so I guess he was trying to tell me to referrr to this pattern when I go hunting. But whenever I spot a monster, I become totally obsessed by the thought of the hunt and forrrget all about his advice and this chart. Maybe it's enough to just keep this knowledge locked away in the back of your mind somewhere, in case you ever need it. But if you want to know more, then you'll just have to go and track down that old guy. You're welcome to have another gander at this chart whenever you want to. It's a pain to explain it to everyone who asks, but maybe it is some kind of fate... Actually, I've found that I enjoy helping people out. :*\"No.\": Oh, so you're just trying to flirt with me, huh? Well, sorry there, but I'm not interrrested in men or women. The only thing that makes my heart leap are the tracks and droppings of my next hunting game, thank you.",
+* Shows a monster correlation chart explaining monster-family strengths and weaknesses.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Tih Pikeh"] = {
@@ -1029,8 +1080,8 @@ thumb|100px|MonstersOffers Information on Monster Relationships: :Hey! What do y
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Used to sell items in exchange for Chocobucks (see Chocobuck items). *Replaced Robino-Mobino as of the [https://forum.square-enix.com/ffxi/threads/54790?p=611716#post611716 December 11, 2018] update.",
-            ["type"] = "VCS Chocobuck Exchange Depot Vendor",
+* Chocobuck exchange vendor.",
+            ["type"] = "Chocobuck Vendor",
         },
         ["Tosh Hohnay"] = {
             ["_source"] = "npc",
@@ -1041,7 +1092,7 @@ thumb|100px|MonstersOffers Information on Monster Relationships: :Hey! What do y
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["note"] = "Notes:\
-During Adventurer Appreciation Campaign 2012, 3 Spring Treants and a Twinkling Treant invaded the Dhalmel Farm in Windurst Woods.",
+* Appeared at the Dhalmel Farm during Adventurer Appreciation Campaign 2012.",
             ["type"] = "Event NPC",
         },
         ["Two of Spades"] = {
@@ -1051,7 +1102,7 @@ During Adventurer Appreciation Campaign 2012, 3 Spring Treants and a Twinkling T
         },
         ["Ultra Slime"] = {
             ["_source"] = "npc",
-            ["icon"] = "SpecialEventCoordinator.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * DRAGON QUEST X ONLINE Crossover",
             ["type"] = "Special Event",
@@ -1064,23 +1115,18 @@ During Adventurer Appreciation Campaign 2012, 3 Spring Treants and a Twinkling T
 * Making Headlines",
             ["type"] = "Quest Associate",
         },
-        ["Una Mhiga R.C."] = {
+        ["Una Mhiga R.C"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "star.png",
             ["note"] = "Refer a Friend:\
-* Claims rewards for the CatsEyeXI\
-Refer a Friend program.\
-* Referred friends receive leveling\
-rewards.\
-* Referrers earn Referral Points\
-for milestone rewards.",
+* Claims rewards for the CatsEyeXI Refer a Friend program.\
+* Referred friends receive leveling rewards.\
+* Referrers earn Referral Points for milestone rewards.",
             ["type"] = "Referral Concierge",
         },
         ["Uuroro"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Dialog: One more time... \"The rain in La Theine falls mainly on the plains.\"",
             ["type"] = "Dialogue NPC",
         },
         ["Valeriano"] = {
@@ -1106,7 +1152,7 @@ Dialog: One more time... \"The rain in La Theine falls mainly on the plains.\"",
         },
         ["Wetata"] = {
             ["_source"] = "npc",
-            ["icon"] = "Trust.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Trust: Windurst",
             ["type"] = "Trust Coordinator",
@@ -1120,17 +1166,14 @@ Dialog: One more time... \"The rain in La Theine falls mainly on the plains.\"",
             ["_source"] = "catseye_npc",
             ["icon"] = "Wizardoll.png",
             ["note"] = "CatsEyeXI:\
-* Teaches spells directly in\
-exchange for Sparks of Eminence.\
-* Does not require LB1 or Rank 5\
-Sparks store unlock.\
-* ACE can also buy low-level\
-Eminence armor after Rank 4.",
+* Teaches spells in exchange for Sparks of Eminence.\
+* Does not require LB1 or the Rank 5 Sparks store unlock.\
+* ACE characters can buy low-level Eminence armor after Rank 4.",
             ["type"] = "Sparks Spell Training",
         },
         ["Yonolala"] = {
             ["_source"] = "npc",
-            ["icon"] = "MentorRecruiter.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Unity Concord (Quest)",
             ["type"] = "Unity Concord",
@@ -1139,7 +1182,7 @@ Eminence armor after Rank 4.",
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Dialogue: I am Zahsa Syalmhaia, captain of the mercenaries in charge of defending East Sarutabaruta. And now, a question for you, adventurer--might you know the reason why Windurst's Mithran population is concentrated in the Woods district? Hmph! Then I shall enlighten you. The area was given to us as a reward for our exceptional performance during the Great War! Or, if you have not yet been through a Cavernous Maw: I am Zahsa Syalmhaia, captain of the mercenaries in charge of defending East Sarutabaruta. And now, a question for you, adventurer--do you know of the stone maws being found across the land? Some might describe them as \"cavernous.\" Hmph! Then I shall enlighten you. They are large statues of hideous visage, and have been around for some time. These maws are more than they appear, I guarantee you.",
+* Explains Windurst Woods' Mithran history and provides information about Cavernous Maws.",
             ["type"] = "Great War Veteran",
         },
     },

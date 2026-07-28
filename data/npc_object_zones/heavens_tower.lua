@@ -9,9 +9,9 @@ return {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Recollections (Black Mage AF Armor)\
-Also appears as a combat magian in past Windurst battlefield zones.",
-            ["type"] = "Quest Associate",
+* Recollections\
+* The Root of the Problem",
+            ["type"] = "Cutscene NPC",
         },
         ["Aeshushu"] = {
             ["_source"] = "npc",
@@ -26,18 +26,15 @@ Also appears as a combat magian in past Windurst battlefield zones.",
 * Wonder Wands\
 \
 Involved in Missions:\
-* Windurst Mission 1-1: The Horutoto Ruins Experiment\
-* Windurst Mission 2-1: Lost for Words\
-* Windurst Mission 3-1: To Each His Own Right\
-* Windurst Mission 3-2: Written in the Stars\
-* San d'Oria Mission 4-1: Magicite\
-* Bastok Mission 4-1: Magicite\
-* Windurst Mission 4-1: Magicite\
-* Windurst Mission 6-1: Full Moon Fountain\
-* Windurst Mission 8-2: The Jester Who'd Be King\
-* Windurst Mission 9-1: Doll of the Dead\
-* Windurst Mission 9-2: Moon Reading\
-",
+* The Horutoto Ruins Experiment\
+* Lost for Words\
+* To Each His Own Right\
+* Written in the Stars\
+* Magicite\
+* Full Moon Fountain\
+* The Jester Who'd Be King\
+* Doll of the Dead\
+* Moon Reading",
             ["type"] = "Cutscene NPC",
         },
         ["Bebibi"] = {
@@ -53,7 +50,18 @@ Involved in Missions:\
         ["Celebratory Chest"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialMerchant.png",
-            ["type"] = "Standard Merchant",
+            ["note"] = "Notes:\
+* Sells fireworks, high-quality crystals, and other celebratory goods.",
+            ["type"] = "Celebratory Goods Vendor",
+        },
+        ["Chumimi"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Starts Quests:\
+* The Three Magi\
+* Recollections\
+* The Root of the Problem",
+            ["type"] = "Black Mage Artifact Quest Giver",
         },
         ["Chuqui-Chanqui"] = {
             ["_source"] = "npc",
@@ -68,7 +76,9 @@ Involved in Missions:\
         ["Curator Moogle"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
-            ["type"] = "Special Event",
+            ["note"] = "Notes:\
+* Trades requested materials for a rotating selection of former limited-event rewards.",
+            ["type"] = "Legacy Event Reward Crafter",
         },
         ["Damama"] = {
             ["_source"] = "npc",
@@ -90,12 +100,19 @@ Involved in Missions:\
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
+        ["Gamimi"] = {
+            ["_source"] = "npc",
+            ["icon"] = "WorldPassDealer.png",
+            ["note"] = "Notes:\
+* Sells Gold World Passes and distributes recruitment-program rewards.",
+            ["type"] = "Gold World Pass Dealer",
+        },
         ["Habida-Jubida"] = {
             ["_source"] = "npc",
             ["icon"] = "MissionNPC.png",
             ["note"] = "Involved in Missions:\
-* The Voracious Resurgence 2-1: Kupipi's Dilemma\
-* The Voracious Resurgence 2-1: The Cardians' Duty",
+* Kupipi's Dilemma\
+* The Cardians' Duty",
             ["type"] = "Mission Associate",
         },
         ["Heruru"] = {
@@ -127,17 +144,8 @@ Involved in Missions:\
         },
         ["Karababa"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Toraimarai Turmoil\
-* Passing Glory\
-",
-            ["type"] = "Mission Associate",
-        },
-        ["Keo-Koruo"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Citizen",
+            ["icon"] = "Cutscene.png",
+            ["type"] = "Cutscene NPC",
         },
         ["Kierron"] = {
             ["_source"] = "npc",
@@ -161,10 +169,26 @@ Involved in Missions:\
         ["Kodada"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Cultivating Catastrophe\
-",
-            ["type"] = "Quest Associate",
+            ["note"] = "Involved in Quests:\
+* The Root of the Problem",
+            ["type"] = "Cutscene NPC",
+        },
+        ["Kupipi"] = {
+            ["_source"] = "npc",
+            ["icon"] = "MissionNPC.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Kupipi",
+            ["note"] = "Involved in Quests:\
+* Waking the Colossus\
+* The Root of the Problem\
+\
+Involved in Missions:\
+* The Emissary\
+* Journey Abroad\
+* The Three Kingdoms\
+* To Each His Own Right\
+* Written in the Stars\
+* The Jester Who'd Be King",
+            ["type"] = "Government Official",
         },
         ["Lin Megomifu"] = {
             ["_source"] = "npc",
@@ -181,7 +205,9 @@ Involved in Missions:\
         ["Matrimonial Coffer"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialMerchant.png",
-            ["type"] = "Standard Merchant",
+            ["note"] = "Notes:\
+* Sells ceremonial clothing and rings for brides and grooms.",
+            ["type"] = "Wedding Attire Vendor",
         },
         ["Mhabi Molkot"] = {
             ["_source"] = "npc",
@@ -211,18 +237,39 @@ Involved in Missions:\
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
+        ["Pompi-Rompi"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Notes:\
+* Coordinates Windurstian wedding ceremonies.",
+            ["type"] = "Wedding Coordinator",
+        },
         ["Rakocha-Mukocha"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Cultivating Catastrophe\
-",
-            ["type"] = "Quest Associate",
+            ["note"] = "Involved in Quests:\
+* The Root of the Problem",
+            ["type"] = "Cutscene NPC",
+        },
+        ["Rakano-Marukano"] = {
+            ["_source"] = "npc",
+            ["icon"] = "ImmigrationNPC.png",
+            ["note"] = "Notes:\
+* Changes a character's allegiance to Windurst for a conquest-dependent fee.",
+            ["type"] = "Allegiance Changer",
         },
         ["Rayjin-Ojin"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
+        },
+        ["Rhy Epocan"] = {
+            ["_source"] = "npc",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
+* To Each His Own Right\
+* Written in the Stars",
+            ["type"] = "Mission Associate",
         },
         ["Ritoto"] = {
             ["_source"] = "npc",
@@ -233,17 +280,18 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "MissionNPC.png",
             ["note"] = "Involved in Missions:\
-* The Voracious Resurgence 2-1: Kupipi's Dilemma\
-* The Voracious Resurgence 2-2: The Cardians' Duty",
+* Kupipi's Dilemma\
+* The Cardians' Duty",
             ["type"] = "Mission Associate",
         },
         ["Seer Soromai"] = {
-            ["_source"] = "npc",
+            ["_source"] = "catseye_npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Summit of the Stars:\
-* Starts the Summit of the Stars unlock quest on a level 75 job.\
-* Talk twice to begin.",
-            ["type"] = "Summit Quest Starter",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Content/Summit_of_the_Stars",
+            ["note"] = "CatsEyeXI:\
+* Starts quest: Summit of the Stars.\
+* Requires a level 75 job; speak twice to begin.",
+            ["type"] = "Summit Quest Giver",
         },
         ["Shaz Norem"] = {
             ["_source"] = "npc",
@@ -254,9 +302,23 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "MissionNPC.png",
             ["note"] = "Involved in Missions:\
-* The Voracious Resurgence 2-1: Kupipi's Dilemma\
-* The Voracious Resurgence 2-1: The Cardians' Duty",
+* Kupipi's Dilemma\
+* The Cardians' Duty",
             ["type"] = "Mission Associate",
+        },
+        ["Star Sibyl"] = {
+            ["_source"] = "npc",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
+* A New Journey\
+* Magicite\
+* The Final Seal\
+* The Shadow Awaits\
+* Saintly Invitation\
+* The Sixth Ministry\
+* Doll of the Dead\
+* Moon Reading",
+            ["type"] = "Federation Leader",
         },
         ["Tamil-Hamel"] = {
             ["_source"] = "npc",
@@ -303,14 +365,12 @@ Involved in Missions:\
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
-        ["Zubaba (S)"] = {
+        ["Zubaba"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Knot Quite There\
-* Howl from the Heavens\
-* The Forbidden Path",
-            ["type"] = "Cutscene NPC",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
+* Written in the Stars",
+            ["type"] = "Head Lady-in-Waiting",
         },
         ["Zubu-Abibu"] = {
             ["_source"] = "npc",
@@ -321,69 +381,64 @@ Involved in Missions:\
     ["objects"] = {
         ["Celebratory Chest"] = {
             ["_source"] = "item",
-            ["icon"] = "TreasureCasket.png",
-            ["note"] = "A stylized national festive coffer manifest within prominent sovereign audience chambers. Opening this repository distributes unique holiday cosmetics or registers custom server event milestones.",
-            ["type"] = "Loot Container",
+            ["icon"] = "SpecialMerchant.png",
+            ["note"] = "Notes:\
+* Sells fireworks, high-quality crystals, and other celebratory goods.",
+            ["type"] = "Celebratory Goods Vendor",
         },
         ["Door:Clerical Chamber"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An ornate, stone security barrier separating administrative chambers and temple corridors. Verifying national mission clearance commands the framework to part.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Starway Stairway"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An elegant wooden security partition guarding the spiral ascent of the temple tower. Passing past the framework coordinates your vertical movement through the executive administrative layers.",
             ["type"] = "Security Gate",
         },
         ["Door:Vestal Chamber"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An ornate stone security barrier sealing off the high sanctuary of the Star Sybil. Verifying your current national mission clearance commands the intricate frame to part.",
             ["type"] = "Security Gate",
         },
         ["Door_3"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A specific structural door barrier protecting restricted interior rooms. Passing past the framework manages municipal layout navigation scripts or updates active storyline progression phases.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Iron Bar Gate"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy iron-barred defensive partition blockading the inner dark fortresses. Presenting specialized key items or country mission clearance commands the framework to lift.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Marble Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An elegant, polished stone barrier sealing executive chambers and canal networks. Verifying your current national mission clearance commands the ornate framework to part.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Matrimonial Coffer"] = {
             ["_source"] = "item",
-            ["icon"] = "TreasureCasket.png",
-            ["note"] = "An ornate, locked ceremonial chest placed within prominent national audience chambers. Opening the coffer uncovers long-lost historical logs or reviews festive holiday scenarios.",
-            ["type"] = "Loot Container",
+            ["icon"] = "SpecialMerchant.png",
+            ["note"] = "Notes:\
+* Sells ceremonial clothing and rings for brides and grooms.",
+            ["type"] = "Wedding Attire Vendor",
         },
         ["Ore Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A massive dark iron barricade blocking off the inner sanctums of power. Presenting the proper key item tokens or satisfying baseline clearance protocols commands the heavy iron framing to open.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Transporter"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A high-fidelity spatial transport gateway floating inside elite municipal hubs. Stepping onto the active node triggers a rapid energy lift, teleporting your party up and down structural map layers.",
-            ["type"] = "Transit Portal",
+            ["note"] = "Notes:\
+* Transports visitors between levels of Heavens Tower.",
+            ["type"] = "Tower Transporter",
         },
         ["Water in Space"] = {
             ["_source"] = "item",
-            ["icon"] = "WaterSpace.png",
-            ["note"] = "A localized fluid distortion floating unnaturally in space. Touching the shimmering anomaly aligns your active scenario logs and initiates profound storyline visions.",
-            ["type"] = "Quest Node",
+            ["icon"] = "Cutscene.png",
+            ["type"] = "Cutscene Object",
         },
     },
 }

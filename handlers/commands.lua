@@ -3126,6 +3126,7 @@ function commands.Handle(e)
             ' settled=' .. tostring(debug.settled) ..
             ' inRange=' .. tostring(debug.inRange) ..
             ' statusAllowed=' .. tostring(debug.statusAllowed) ..
+            ' targetedNpcFallback=' .. tostring(debug.targetedNpcObjectFallback) ..
             ' npcScanAllowed=' .. tostring(debug.npcScanAllowed) ..
             ' tacticalNpcAllowed=' .. tostring(debug.tacticalNpcAllowed) ..
             ' alliedTacticalInfo=' .. tostring(debug.alliedTacticalInfo) ..

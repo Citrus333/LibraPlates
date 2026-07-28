@@ -1,5 +1,19 @@
 return {
     ["npcs"] = {
+        ["Abu Dabudabu"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Crystal Warrior:\
+* Involved in quest: Give Me a Ring.\
+* Speak to him after returning to Moyeyo.\
+* Located near the Home Point at H-9.",
+            ["type"] = "CW Quest Associate",
+        },
+        ["A.M.A.N. Liaison"] = {
+            ["_source"] = "npc",
+            ["icon"] = "RecordsOfEminence.png",
+            ["type"] = "Records of Eminence",
+        },
         ["Ambrosius"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
@@ -11,11 +25,8 @@ return {
             ["_source"] = "catseye_npc",
             ["icon"] = "AncestryMoogle.png",
             ["note"] = "CatsEyeXI:\
-* Race, gender, face, hair, and\
-size change service.\
-* After changing race or gender,\
-can swap certain armor pieces you\
-can no longer use.",
+* Changes race, gender, face, hair, and size.\
+* Exchanges race- or gender-restricted armor after a change.",
             ["type"] = "Race Change",
         },
         ["Anini"] = {
@@ -24,9 +35,13 @@ can no longer use.",
             ["type"] = "Citizen",
         },
         ["Arbitrix"] = {
-            ["_source"] = "catseye_npc",
+            ["_source"] = "npc",
             ["icon"] = "GobbieMysteryBox.png",
-            ["note"] = "CatsEyeXI:\\n* Opens random rewards using daily\\nGobbie Box points.\\n* New players must wait 14\\nreal-life days before using the\\nbox.\\n* Special Gobbie Keys can be\\nobtained by exchanging merit\\npoints.\\n* Crystal Warriors and Wings Era\\nWarriors cannot use this box.",
+            ["note"] = "Notes:\
+* Opens random rewards using daily Gobbie Box points.\
+* New players must wait 14 real-life days.\
+* Special Gobbie Keys can be purchased with merit points.\
+* Unavailable to Crystal Warriors and Wings Era Warriors.",
             ["type"] = "Gobbie Mystery Box Vendor",
         },
         ["Aromu-Oromu"] = {
@@ -47,8 +62,6 @@ can no longer use.",
         ["Bonchacha"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Dialog: Professor Koru-Moru, the old minister who lives in that manor there, is more famous for being the local ding-a-ling than for serving as the School of Magic's principal! I just know he's up to something in there! I came over to call in and have a little chitchat, but it seems as if he is, how shall we say...otherwise occupied...?",
             ["type"] = "Dialogue NPC",
         },
         ["Burute-Sorute"] = {
@@ -92,6 +105,14 @@ Dialog: Professor Koru-Moru, the old minister who lives in that manor there, is 
             ["icon"] = "Event.png",
             ["type"] = "Event Host",
         },
+        ["Festive Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "FestiveMoogle.png",
+            ["note"] = "Notes:\
+- Redeems Mog Pells for selectable rewards.\
+- Distributes eligible rewards registered with campaign or event codes.",
+            ["type"] = "Event Reward",
+        },
         ["Finene"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -117,6 +138,12 @@ Dialog: Professor Koru-Moru, the old minister who lives in that manor there, is 
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
+			["Greeter Moogle"] = {
+            ["icon"] = "Event.png",
+            ["_source"] = "npc",
+            ["type"] = "Login Campaign",
+			["worldOffsetY"] = 0.35,
+        },
         ["Haah Chakaila"] = {
             ["_source"] = "npc",
             ["icon"] = "Defender.png",
@@ -129,6 +156,15 @@ Dialog: Professor Koru-Moru, the old minister who lives in that manor there, is 
 * Curses, Foiled...Again!?\
 * Making Headlines",
             ["type"] = "Quest Associate",
+        },
+        ["Hoi-Boi"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Crystal Warrior:\
+* Starts quest: Fowl Tales.\
+* Speak to Doi-Boi and Loi-Boi, then search Giddeus.\
+* Repeatable; rewards a Sapara and 600 gil.",
+            ["type"] = "CW Quest Giver",
         },
         ["Horuni-Mawoni"] = {
             ["_source"] = "npc",
@@ -144,14 +180,14 @@ Dialog: Professor Koru-Moru, the old minister who lives in that manor there, is 
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers General Information and a Map of Windurst: :Allow me to assist you if you are lost. What can Jack do for you? :*\"To show you a map of Windurst.\": [Displays an overview map of Windurst] :*\"How to give items to townsfolk.\": Interchange of items and money between people and things is called \"Trading.\" First target entity to interact with. Nothing happens unless reciever is properly targeted. Open main menu. Press \"Trade\" button. Next choose items to hand over! Press \"Confirm\" button! Targeted entity should receive items. :*\"How to go outside and battle.\": Before setting out to battle: Confirm equipment is properly equipped! Magic-users \"Use\" spell scrolls on themselves to learn magic! Before commencing battle wiht monster: \"Check\" monster to confirm its strength! After battle is won: Look for \"Spoils\" dropped by monsters. If in party, \"Cast Lots\" for spoils! :*\"About quests and missions.\": Quests are requests for help from ordinary townsfolk. It pays to help people in need. Missions are official requests for assistance made by the Windurst authorities. You can receive missions from the guards at the town's gatehouse. :*\"Nothing in particular.\": Feel free to ask next time you need Jack's help. Over and out!",
+* Provides Windurst maps and beginner tutorials for trading, combat, quests, and missions.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Juna Moshal"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Notes:\
-*  Member of the Star Onion Brigade",
+* Member of the Star Onion Brigade.",
             ["type"] = "Star Onion Brigade",
         },
         ["Juvillie"] = {
@@ -191,10 +227,16 @@ Offers General Information and a Map of Windurst: :Allow me to assist you if you
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
-        ["Keo-Horuo"] = {
+        ["Keo-Koruo"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Citizen",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
+* The Horutoto Ruins Experiment\
+* The Heart of the Matter\
+* The Price of Peace\
+* Lost for Words\
+* A Testing Time",
+            ["type"] = "Mission Associate",
         },
         ["Kimumu"] = {
             ["_source"] = "npc",
@@ -222,12 +264,12 @@ Offers General Information and a Map of Windurst: :Allow me to assist you if you
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
-A warp NPC. She will warp you for free to Machu-Kuchu (Port Windurst, E-7).",
+* Teleports players to Machu-Kuchu in Port Windurst (E-7) for free.",
             ["type"] = "Teleport Service",
         },
         ["Koru-Moru"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Blast from the Past\
 * Nothing Matters\
@@ -255,11 +297,18 @@ Involved in Missions:\
             ["icon"] = "Defender.png",
             ["type"] = "Defender",
         },
+        ["Linkshell Concierge"] = {
+            ["_source"] = "npc",
+            ["icon"] = "linkshell.png",
+            ["note"] = "Notes:\
+- Lists linkshells currently recruiting members.\
+- Distributes registered linkpearls to interested players.\
+- Accepts linkpearls from recruiting linkshells.",
+            ["type"] = "Linkshell Recruitment",
+        },
         ["Luuh Koplehn"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Dialog: Come on, Professorrr Koru-Moru. I'm not moving until you cough up the gil forrr yourrr overdue accounts at the Bonework's Guild. As both a ministerrr and the principal of our local school, shouldn't you be setting a betterrr example?",
             ["type"] = "Dialogue NPC",
         },
         ["Maan-Pokuun"] = {
@@ -270,8 +319,6 @@ Dialog: Come on, Professorrr Koru-Moru. I'm not moving until you cough up the gi
         ["Malmi-Monmi"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Dialog: Windurst Walls is the coolest-woolest place. Not only do we have Heavens Tower and a consulate, but all the ex-ministers have manors here! When the ministers of the five magic ministries of Windurst retire, they gain the title of doctor or professor, and are allowed to live in special-wecial houses so they can continue their studies without worries.",
             ["type"] = "Dialogue NPC",
         },
         ["Mehruru"] = {
@@ -315,7 +362,7 @@ Dialog: Windurst Walls is the coolest-woolest place. Not only do we have Heavens
         },
         ["Ojha Rhawash"] = {
             ["_source"] = "npc",
-            ["icon"] = "AdventurersAssistant.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Flower Child\
 ",
@@ -329,8 +376,6 @@ Dialog: Windurst Walls is the coolest-woolest place. Not only do we have Heavens
         ["Pakeke"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Dialog: Welcome to the magical town of Windurst. Home of fun-loving Tarutaru and free-willed Mithra. You are now in Windurst Walls. It's a holy site revered by us Tarutaru since ancientaru times. I hope you enjoy your visitaru here.",
             ["type"] = "Dialogue NPC",
         },
         ["Pakke-Pokke"] = {
@@ -394,7 +439,7 @@ Dialog: Welcome to the magical town of Windurst. Home of fun-loving Tarutaru and
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Need to go down a ramp at H-4 in order to find him under the bridge",
+* Located under the bridge, down the ramp at H-4.",
             ["type"] = "Standard Merchant",
         },
         ["Selh'teus"] = {
@@ -465,12 +510,11 @@ Involved in Missions:\
         },
         ["Sharara"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "Trust.png",
-            ["note"] = "Matter of Trust I:\
-* Windurst level 10 Trust quest\
-giver.\
-* Sends you to inspect the Crystal\
-Anomaly in Tahrongi Canyon (I-5).",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Crystal Warrior:\
+* Starts quest: A Matter of Trust (Windurst).\
+* Starts quest: A Matter of Trust II (Windurst).\
+* Starts quest: A Matter of Trust III (Windurst).",
             ["type"] = "CW Trust Quest",
         },
         ["Shinchai-Tocchai"] = {
@@ -487,6 +531,13 @@ Anomaly in Tahrongi Canyon (I-5).",
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
+        },
+		    ["Synergy Furnace"] = {
+            ["_source"] = "item",
+            ["icon"] = "SynergyFurnace.png",
+            ["note"] = "Crafting furnace used for synergy recipes.",
+            ["type"] = "Synergy Furnace",
+			["worldOffsetY"] = 0.45,
         },
         ["Takoda"] = {
             ["_source"] = "npc",
@@ -520,7 +571,7 @@ Anomaly in Tahrongi Canyon (I-5).",
         },
         ["Yoran-Oran"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Mandragora-Mad\
 \
@@ -557,7 +608,7 @@ Involved in Missions:\
         },
         ["Zokima-Rokima"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * Windurst Missions\
 ",
@@ -565,35 +616,58 @@ Involved in Missions:\
         },
     },
     ["objects"] = {
+        ["Chat Manual"] = {
+            ["_source"] = "item",
+            ["icon"] = "LocalGuide.png",
+            ["note"] = "Notes:\
+- Explains chat etiquette and considerate interaction with other players.",
+            ["type"] = "Chat Etiquette Guide",
+        },
+        ["Dim Sparkle"] = {
+            ["_source"] = "catseye_item",
+            ["icon"] = "QuestNPC.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Give_Me_a_Ring",
+            ["note"] = "Crystal Warrior:\
+* Involved in quest: Give Me a Ring.\
+* Examine it to recover Moyeyo's missing ring.",
+            ["type"] = "CW Quest Objective",
+            ["worldOffsetY"] = 0.25,
+        },
         ["Door:House of the Hero"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
             ["note"] = "A secure stone portal archway sealing off the legendary historical landmark dwelling. Passing through the threshold tracks advanced national rank missions and handles localized storyline developments.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
+        },
+		    ["Door:Jeunoan Consul"] = {
+            ["_source"] = "item",
+            ["icon"] = "Door.png",
+            ["note"] = "Consulate of Jeuno.",
+            ["type"] = "Consulate of Jeuno",
         },
         ["Door:Koru-Moru's Manor"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
             ["note"] = "An ornate wooden barrier door partitioning the private estate of the Ministry of Oral History. Activating the threshold latch manages your town navigation and uncovers advanced expansion side quests.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Shantotto's Manor"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
             ["note"] = "A heavily reinforced wooden portal guarding the notorious manor chambers of the Ministry of Magic. Verifying your high-ranking mission credentials triggers the frame to open.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Yoran-Oran's Manor"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
             ["note"] = "A secure private wooden door set into the plaster residential walls. Unlatching the frame allows you to enter research quarters to fulfill academy delivery checks or urban side tasks.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Zonpa-Zippa's Manor"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
             ["note"] = "A standard wooden partition protecting artisan magical engineering halls. Activating the handle opens up advanced synthetic craft yards and checks active guild progression parameters.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door_5"] = {
             ["_source"] = "item",
@@ -648,6 +722,11 @@ Involved in Missions:\
             ["icon"] = "QuestNode.png",
             ["note"] = "Faint, hurried layout markings scratched into the overworld rock faces and city streets. Studying these tracking anchors details regional lore and coordinates active investigative trials.",
             ["type"] = "Quest Node",
+        },
+		    ["Treasure Coffer"] = {
+            ["_source"] = "item",
+            ["icon"] = "TreasureCoffer.png",
+            ["type"] = "Gobbie Mystery Treasure ",
         },
     },
 }

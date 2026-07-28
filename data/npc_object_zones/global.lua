@@ -841,25 +841,20 @@ Involved in Missions:\
         },
         ["Kupipi"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "MissionNPC.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Kupipi",
             ["note"] = "Involved in Quests:\
-* Riding on the Clouds\
-* BLM AF3 quest: The Root of the Problem\
-* Trust: Windurst\
-* Obtaining a Ballista License (as an envoy to the Star Sybil)\
-\
-Starts Missions:\
-* Kupipi's Dilemma (The Voracious Resurgence 2-1)\
+* Waking the Colossus\
+* The Root of the Problem\
 \
 Involved in Missions:\
-* Bastok Mission 2-3: The Emissary\
-* San d'Oria Mission 2-3: Journey Abroad\
-* Windurst Mission 2-3: The Three Kingdoms\
-* Windurst Mission 3-1: To Each His Own Right\
-* Windurst Mission 3-2: Written in the Stars\
-* Windurst Mission 8-2: The Jester Who'd Be King\
-",
-            ["type"] = "Riding the Clouds",
+* The Emissary\
+* Journey Abroad\
+* The Three Kingdoms\
+* To Each His Own Right\
+* Written in the Stars\
+* The Jester Who'd Be King",
+            ["type"] = "Government Official",
         },
         ["Kupold"] = {
             ["_source"] = "npc",

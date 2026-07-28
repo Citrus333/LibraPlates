@@ -45,7 +45,8 @@ Roses.\
             ["_source"] = "npc",
             ["icon"] = "TutorialNPC.png",
             ["note"] = "Notes:\
-* Provides tutorial information for newly created characters. *See Tutorial NPC for more information about the 7 mini quests.",
+* Provides guidance for new\
+adventurers.",
             ["type"] = "Tutorial",
         },
         ["Alfene"] = {
@@ -85,10 +86,10 @@ Involved in Missions:\
         },
         ["Ambrotien"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * San d'Oria Missions",
-            ["type"] = "Gate Guard",
+            ["type"] = "Mission Giver",
         },
         ["Amutiyaal"] = {
             ["_source"] = "npc",
@@ -101,7 +102,7 @@ Involved in Missions:\
         ["Ancolain"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * Knight Stalker\
 * Faith In One's Sweetheart\
 ",
@@ -128,7 +129,10 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the San d'Oria Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for San d'Oria) at certain conditions. It will be also possible to get some items of other Nations (Items for Bastok / Items for Windurst) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without San d'Oria as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer.",
+* Casts Signet and handles Conquest\
+Point rewards for San d'Orians.\
+* Handles Supply Runs and\
+Expeditionary Forces.",
             ["type"] = "Conquest Overseer",
         },
         ["Arpetion"] = {
@@ -140,7 +144,10 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the San d'Oria Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for San d'Oria) at certain conditions. It will be also possible to get some items of other Nations (Items for Bastok / Items for Windurst) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without San d'Oria as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer.",
+* Casts Signet and handles Conquest\
+Point rewards for San d'Orians.\
+* Handles Supply Runs and\
+Expeditionary Forces.",
             ["type"] = "Conquest Overseer",
         },
         ["Artisan Moogle"] = {
@@ -152,7 +159,9 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ChocoboRenter.png",
             ["note"] = "Notes:\
-This NPC will answer all question about \"Raising a Chocobo\" below. Game Script: :What would you like to ask about? :The Vana'diel Chocobo Society ::Arvilauge: The Vana'diel Chocobo Society, or VCS for short, is an international organization designed to train and dispatch chocogirls and chocoguys for stable across Vana'diel. They provide courses on practical chocobo riding and the proper to care for a chocobo, as well as working to improve the treatment of chocobos from Aht Urhgan. You can join as long as they love chocobos. The VCS will help you with anything you need. :Time required. ::Arvilauge: Chicks hatch from eggs, grow into young Chocobos, and finally mature. They grow much faster than people do. Usually it takes 1 months (Earth time) before you can ride your Chocobo. The chocobo's traits are determinated by the way in which you care for your animal. Without proper planning, you won't be able to raise the type of chocobo that you want. But don't worry., because you have us to help! We're all in this together! :Chocobos attributes. ::Strength. ::Arvilauge: \"Strength\" is a term used to describe the chocobo's leg power. The more strength a chocobo has, the faster it will be able to run. Rental chocobos have been raised with an emphasis on this attribute. Both strength and endurance are collectively referred to as \"Physical attributes\". ::Endurance. ::Arvilauge: \"Endurance\" is a term used to describe the chocobo's stamina. If your chocobo has high endurance, you will be able to ride it for a long time. Both strength and endurance are collectively referred to as \"Physical attributes\". ::Discernment. ::Arvilauge: \"Discernment\" is a must for anyone who wants their chocobo to learn new abilities. You may want to consider raising attribute if you are interested in digging and treasure. Both discernment and receptivity are collectively referred to as \"Mental attributes\". ::Receptivity. ::Arvilauge: \"Receptivity\" is a term used to describe the chocobo's sensitivity when dealing with others. You can foster receptivity in your chocobo by giving it lots of opportunity to communicate with other chocobo's. Both discernment and receptivity are collectively referred to as \"Mental attributes\". ::Energy. ::Arvilauge: \"Energy\" is a term used to describe the amount of power the chocobo needs to stay active for the day. If your chocobo has a lot of energy, care plans are more likely to be successful and you can provide more direct care of your chocobo. You can restore your chocobo's energy by feeding it, so remember not to skip out on feeding time after a demanding schedule! ::Affection. ::Arvilauge: \"Affection\" is the most important attribute of all. Your care schedule will fail if you don't show your chocobo proper affection! You can raise your chocobo's affection by feeding it greens and caring for it on a regular basis. If you really want to raise your chocobo's affection quickly, you can give it a Cupid Worm, but I can't recommend doing so unless absolutely necessary. ::Satisfaction. ::Arvilauge: \"Satisfaction\" is a term used to describe how full or hungry your chocobo is. If your chocobo is full, it will gain a lot of energy before the next day. However, when the chocobo is very hungry, its energy will hardly recover at all and its affection will rapidly decrease. :Care schedule. ::What is a care schedule? ::Arvilauge: A care schedule is a series of plans that you set up for your chocobo so that we can take care of it while you are away. How you want us to care for your chocobo each day is completely up to you. You can register up to four plans at once, each for up to 7 days (Earth time). When you come to check on your chocobo, we will give you a report on the results. You should listen closely to the report and use it as reference when deciding on a new schedule. ::Basic care. ::Arvilauge: With the basic care plan, we will provide the minimum level to care for your chocobo. This plan is the most stable, and your chocobo will probably not experience any sudden changes. The basic care plan is good for those who don't want their chocobo's traits to change much or are still unsure of what kind of schedule to choose. You can select the basic care plan the moment you start raising your chocobo. ::Resting. ::Arvilauge: The rest plan's name speaks for itself. We will give your chocobo a rest in order to restore it's energy and cure any status abnormalities. However, your chocobo will not be able to eat any food you give it during the plan, because it will be in a deep sleep. ::Taking a walk. ::Arvilauge: We can take your chocobo for a walk in town to improve its physical attributes of strength and endurance. However, it will have a negative effect on it's mental attributes of discernment and receptivity. ::Listening to music. ::Arvilauge: Listening to music will improve your chocobo's mental attributes of discernment and receptivity. However, it will have a negative effect on it's physical attributes of strength and endurance. ::Exercising alone. ::Arvilauge: Excercising alone will significantly improve your chocobo's strength. On the other hand, it's mental attributes will markedly decrease. If the chocobo is strong, this plan is quite effective, but if the chocobo is weak, then you shouldn't push it too hard. ::Exercising in a group. ::Arvilauge: Excercising with chocobo's will built your animal's endurance. On the other hand, it's mental attributes will decrease. If the chocobo has high endurance, this plan is quite effective, but if the chocobo's endurance is low, then you shouldn't pish it too hard. ::Playing with children. ::Arvilauge: Playing with children helps your chocobo become a more discerning creature by interacting with people. However, this plan will have a negative effect on the chocobo's physical attributes, as no strenuous excerise is involved. If the chocobo has good discernment, this plan is quite effective, but if the chocobo does not have good discernment, then you shouldn't push it too hard. ::Playing with chocobos. ::Arvilauge: Playing with other chocobos in the field will improve your chocobo's receptivity by fostering it's communication skills. But because the focus is on communication and not exercise, this plan will have a negative effect on the chocobo's physical attributes. If the chocobo has good receptivity , this plan is quite effective, but if the chocobo does not have good receptivity, then you shouldn't push too hard. ::Carrying packages. ::Arvilauge: You can choose to have your chocobo help deliver packages. Not only will this improve it's physical attributes, but you will even receive payment for your services! The downside is that your chocobo's mental attributes, energy and affection will decrease. You must care well for your chocobo, or you might find yourself getting cold treatment. ::Exhibiting to the public. ::Arvilauge: You can choose to exhibit your chocobo to the public, which will allow anyone visiting the Chocobo Stables to take a look at your animal. Being the center of attention will help improve your chocobo's mental attributes. The downside is that your chocobo's mental attributes, energy and affection will decrease. You must care well for your chocobo afterwards. Also, you will receive payment for this service. ::Delivering messages. ::Arvilauge: You can choose to have your chocobo deliver official messages for the nation. Not only will this improve its strength, but you will even receive payment for your service! However, this plan consumes quite a bit of your chocobo's energy, so you should it well to make up for it. ::Digging for treasures. ::Arvilauge: You can have your chocobo help out VCS finances by digging for treasures. This will also improve the chocobo's discernment. The VCS will sell the item and use the money for the organisation's benefit, but will improve you with payment for your service. However, this plan consumes quite a bit of your chocobo's energy, so you should feed it well to make it up for it. ::Acting in a play. ::Arvilauge: You can choose to have your chocobo act as an extra in a play to improve its receptivity. You will receive payment in accordance with the chocobo's performance. However, this plan consumes quite a bit of your chocobo's energy, but you should feed it well to make it up for it. :Caring for your chocobo. ::A general explanation. ::Arvilauge: In addiction to setting the chocobo's schedule, you can also care for your chocobo whenever you like. Caring for your chocobo will increase it's affection for you. On the other hand, a chocobo that receives too much care will lose energy more rapidly when engaging in acitivities. If you do nothing but care for your chocobo, it will become fatigued. However, not caring for your chocobo will have a negative effect on your relationship, so it is important to find a balance. ::Watching over your chocobo. ::Arvilauge: You can watch over your chocobo whenever you like. Your fond gaze can communicate even more than a touch and will not have a very tiring effect on the animal. ::Telling a story. ::Arvilauge: You can tell the chocobo a story you know. This will foster the animal's sensibilities. I've heard that by listening to the story, the chocobo might even realize it has powers it never noticed before. (I've never seen it happen before, though...) ::Scolding. ::Arvilauge: Sometimes your chocobo might start acting spoiled. In such times, you will need to firmly scold it. This will shame the animal and habe an affect on its receptivity. ::Competing. ::Arvilauge: Competing against other chocobos will cultivate your animal's ambitious and is highly effective for bored chocobos. ::Taking a walk. ::Arvilauge: You can take your chocobo out for a walk in the field. You will be able to choose more destinations as your chocobo grows. I like to take the chocobo often out, too, but I'm sure it prefers going out with you. Leaving the stables every once in a while allows your chocobo to experience new sights and sounds. Maybe you'll even discover something new together! :Feed. ::Why feeding is important ::Arvilauge: Chocobos digest feed quickly, so they are often hungry. However, they also restore energy at a rapid pace. If you do not feed your chocobo properly, it will be unable to restore enough energy. The Chocobo Stables will provide your chocobo with the minimum amount of feed required for the animal to survive, but you need to provide more in order to ensure its healthy growth. At the same time, feeding your chocobo too much can result in a stomachache. Remember to strike a balance with both the variety and quantity of feed you give to your animal! Some types of feed have special effects, so it is important not to neglet your chocobo's diet if you want to raise a good chocobo. There are different methods of acquiring these special types of feed, so be on the lookout for them! ::Vegetables ::Arvilauge: This is the standard variety of chocobo feed, among with bunches of Gysahl Greens are most popular. Chocobos also seems to enjoy bunches of Sharug Greens and bunches of Azouph Greens. These greens are the most effective in satisfying a chocobo's hunger. Chocobo can also enjoy the taste, which raises affection for their owner. ::Wildgrasses ::Arvilauge: Wildgrasses are a type of medicinal herb. They do not taste very good, but are highly effective at curing status abnormalities. A clump of Gausebit Grass, for example, works well on wounds. So although they look similar to a bunch of Gysahl Greens, the effects are different. In addiction, a clump of Tokopekko Wildgrass is effective for illness, and a clump of Garidav Wildgrass for a stomachache. It's a good idea to remember which herb is used in each situation. ::Carrots ::Arvilauge: Carrots are high in nutrition, and will have an effect on the Chocobo's strength and discernment. Vomp Carrots, for example, affect the chocobo's physical attributes, and Zegham Carrots are good for mental attributes. San d'Orian Carrots are in a category of their own. Remember, though, that the results are very slight, and keeping a good care schedule is a far more efficent way to alter your chocobo's attributes. ::Worms ::Arvilauge: Using worms as feed can have a variety of effects. They might look disgusting, but their effectiveness is not to be ignored! For example, a Cupid Worm will dramatically increase your chocobo's affection, and a Gregarious Worm will restore its energy. But watch out for the side effects... Give the chocobo a worm at the wrong time, and all your effort could come to nothing... The most curious of all the worms is the Parasite Worm. At first it may not seem to have any effect, but looks are deceiving. ::Potions ::Arvilauge: Like their names imply, potions are a variety of medicine. A Chocolixir will restore your chocobo's energy in full, making it easier to care for and ensuring that the care schedule goes smootthly. Celerity Salads are effective for most status abnormalities, restoring instant health to your chocobo. Of course, you still need to continue caring for your chocobo so it can fully recover. A potion can also help fill a chocobo's stomach, so they can be useful when you are short on feed. ::Pastes ::Arvilauge: Feed can be good into paste for chicks to eat. You can make paste yourself with some cooking skills. If you don't have enough skill yourself, then you might want to ask a friend to make some for you. Chicks can also eat regular feed, though. :Abilities and personality. ::Abilities. ::Arvilauge: Your chocobo may learn useful abilities during the course of its life at the stables. For example, Auto Regen will increase the rate at which your chocobo restores energy. Such an ability is sure to come in handy in a variety of situations. Your chocobo might learn abilities by listening to your words, so if you know of any story that you think might interests your animal, you should tell it often. But remember, your chocobo can't learn all of the abilities there are. It can only learn two... or at leasts, that's what I read. ::Temperament. ::Arvilauge: The chocobo's temperament is determined when it is just a chick. Its temperament and attributes are somehow related, but I'm not really sure how. ::Weather preferences. ::Arvilauge: Chocobos generally like sunny days, but they could grow to like other kinds of weather depending on how they are raised. Chocobos pay attention to the air outside when they go on walks, and grow to prefer that type of weather because of the memories. Make the animal's schedule around its preferred weather days, and plans are more likely to succeed. However, if the chocobo has a favored type of weather , it also dislikes certain conditions, creating a weak point to watch for. :Retirement. ::Arvilauge: You can choose to retire your chocobo at any time it has fully matured. After retirement, the VCS will take up caring for the chocobo where you left it off, so you need not worry about its welfare. When your chocobo retires, you will receive a VCS Registration Card. Be sure not to lose it. You can use the VCS Registration Card to register your chocobo to call in the field or for matchmaking purposes after retirement. All you need to do is trade it to a VCS member. The empty stall created after your animal retires can be used for raising another chocobos, so if you happen to come across another egg, you can bring it here to start all over again! :Matchmaking. ::Arvilauge: When your chocobo is mature enough, you can breed it with another chocobo. If the chocobo lays an egg, the chick will inherit the traits of its parents. You will need a Chococard (M) and a Chococard (F) if you want to breed your chocobo. Apparently, you also need some kind of ticket that they sell at the stables in Upper Jeuno. You can ask one of the VCS members to issue you a chococard, or if your chocobo is already retired, just trade them a VCS Registration Card. I don't really know that much about it, but you should probably try matching your chocobo up with several different animals and seeing what results are. :Calling your chocobo in the field. ::Arvilauge: When your chocobo is mature enough, you can call it in the field using a Chocobo Whistle. You need to let a member of the VCS know which you want to respond to your call, because they must choose a saddle that fits your chocobo's attributes. That also means that when your chocobo's attributes change or it learns a new ability, you should probably let the VCS member know, too. When you want to register a retired chocobo to respond to your call in the field, trade a VCS Registration Card to a VCS member. Also, the Chocobo Whistle's power will grew weak after you've used it several times. If this happens, just trade it to a VCS member and they will give you a new one for a fee. :Items. ::VCS Registration Card. ::Arvilauge: A VCS Registration Card proves that you are your chocobo's caretaker. With this card, you can register a retired chocobo to respond to your call in the field or get a chococard for matchmaking. If you lose it, you won't be able to get another one, so keep it in a safe place! ::chococards. ::Arvilauge: Chococards are documents that contain all the details about a chocobo's attributes and condition. They are devided into two types -- one for each gender. If you trade one to the person who's in charge of matchmaking, he'll introduce your animal to another chocobo. Chococards contain information on the chocobo's attributes and condition at the time the card is issued, so be sure to get a new card before using this service or the match will be arranged based on out-of-date information. If you want a chococards for a retired chocobo, then you must trade a VCS Registration Card to a VCS member. ::Chocobo Whistle. ::Arvilauge: You can use a Chocobo Whistle to call your chocobo in the field to use as a mount. The more you use it, the weaker it will get, so eventually you will need to exchange it to a VCS member for a new one. Only people who have been approved by the VCS President can get a Chocobo Whistle, so good luck with that...",
+* Explains Chocobo Raising, care\
+schedules, feeding, breeding,\
+retirement, and field calling.",
             ["type"] = "Chocobo Raising",
         },
         ["Ashene"] = {
@@ -228,6 +237,7 @@ Involved in Missions:\
         },
         ["Balasiel"] = {
             ["_source"] = "npc",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * A Squire's Test\
 * A Squire's Test II\
@@ -238,7 +248,7 @@ Involved in Quests:\
 * Knight Stalker\
 * Starlight Celebration 2008\
 * Starlight Celebration 2010",
-            ["type"] = "Quest Giver NPC",
+            ["type"] = "Quest Giver",
         },
         ["Bashraf"] = {
             ["_source"] = "npc",
@@ -312,7 +322,9 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers General Information: :Perhaps I could be of service. Is there anything in particular you'd like to know? :*\"Nothing Actually.\" :*\"I'd like to get out of the city.\": Just got here and you're aching to leave, eh? Listen, the lands are wild beyond our gates, filled with fiends and their ilk. Right behind you is the Westgate. Beyond that, the wilds of West Ronfaure. Should you need directions, ask those around you. Our citizens are friendly, for the most part. :*\"I'd like to do some shopping.\": Should you seek weapons, armor, or supplies, there are several shops in this area. Why not go have a look? :*\"Tell me more about adventuring.\": Ahhh, recruits... Don't know which way to hold a sword and you think you're ready for adventures. Well, what would you like to know? :*\"Helping people.\": Ah, a commendable choice! Come to think of it, there was a lady in front of a house on Pikeman's Way. She may be in need of assistance. Should you need directions, ask those around you. Our citizens are friendly, for the most part. :*\"Hunting monsters.\": Novices... Don't know your own limits until a fiend beats it into your head for you. Very well. How about gathering some hides for the Tanners' Guild on Pikeman's Way? Should you need directions, ask those around you. Our citizens are friendly, for the most part. :*\"Making easy money.\": Easy money, eh? Typical of a new recruit. I cannot promise ease, but the lumberyard in Northern San d'Oria should have work for you there. To get to the lumberyard, go through Victory Arch, head northwest across the Parade Grounds, and keep going till you reach Laborman's Way. The lumberyard lies at the far end. Should you need directions, ask those around you. Our citizens are friendly, for the most part. :*\"Working for my country.\": Ah, a commendable choice. Head to any city gate and inquire at the gatehouse. They'll be doing work for the glory of the kingdom! Should you need directions, ask those around you. Our citizens are friendly, for the most part.",
+* Gives directions around the city.\
+* Explains shopping, adventuring,\
+quests, combat, and missions.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Chanpau"] = {
@@ -328,7 +340,8 @@ Offers General Information: :Perhaps I could be of service. Is there anything in
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["note"] = "Notes:\
-Appears in the capital city of the nation ranked first in conquest (does not show up when there is a tie for first)",
+* Appears in the highest-ranked\
+Conquest nation when there is no tie.",
             ["type"] = "Conquest Troupe",
         },
         ["Chocobo"] = {
@@ -339,7 +352,9 @@ Appears in the capital city of the nation ranked first in conquest (does not sho
         ["Claiborne"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
-            ["note"] = "Vana'diel Chocobo Society official. Manages registration schedules, official racing cards, and handles entry validation data loops for local chocobo stables.",
+            ["note"] = "Notes:\
+* Provides access to the Chocobo\
+Circuit.",
             ["type"] = "Chocobo Circuit",
         },
         ["Clainomille"] = {
@@ -407,7 +422,8 @@ at a 3-to-1 rate.",
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["note"] = "Notes:\
-Appears in the capital city of the nation ranked first in conquest (does not show up when there is a tie for first)",
+* Appears in the highest-ranked\
+Conquest nation when there is no tie.",
             ["type"] = "Conquest Troupe",
         },
         ["Delivery Helper"] = {
@@ -433,7 +449,7 @@ Involved in Quests:\
         ["Destin"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * The Weight of Evidence\
 * The Heir to the Light\
 ",
@@ -451,7 +467,7 @@ Involved in Quests:\
         ["Elmemague"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * The Broken Lance\
 * Shadows of the Past\
 ",
@@ -487,7 +503,10 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Storing Crystals :1. The first time you visit an Ephemeral Moogle, speak to him and hear what he has to say. :2. Trade crystals or clusters to the Ephemeral Moogle. :*Crystals count as one crystal, while clusters count as 12. :*The trade will be cancelled if it would put total crystals of a given element at more than 5,000. :*More than one type of crystal can be traded at once. :*Quantity of crystals currently stored can be viewed from the Currencies list on the Status menu. Withdrawing Crystals :1. Speak with the Ephemeral Moogle and ask to have crystals returned to you. :2. The moogle will inquire as to which element you would like. Select the appropriate one. :3. Designate the number you would like to receive or instruct the moogle to return as many as you can hold. :* Clusters will be given instead of 12 crystals whenever possible. :* You will not receive crystals if the number you designate would put you over the limit of free space in your inventory. :* Selecting as many as you can carry will provide the player with stacks of clusters to fill their inventory, with the remaining slot being filled with any remaining crystals (11 or fewer).",
+* Trade crystals or clusters to store them.\
+* One cluster counts as 12 crystals.\
+* Stores up to 5,000 crystals per element.\
+* View stored totals under Status > Currencies and speak to the moogle to withdraw them.",
             ["type"] = "Crystal Storage",
         },
         ["Erudite Moogle"] = {
@@ -501,14 +520,18 @@ Storing Crystals :1. The first time you visit an Ephemeral Moogle, speak to him 
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Offers Information on San d'Oria's Military: Greetings, adventurer. San d'Oria is grateful for your services. I am Royal Squire Esmallegue. Grand Knight Depardal has left his post as sentry in the Outlands. For now he has been enlisted as a member of the city's defense force. As I'm sure you are already aware, San d'Oria's military is divided into two branches, the Royal Knights and the Temple Knights. In times of peace, we Royal Knights are charged with the defense of the nation, while the Temple Knights are responsible for maintaining the public order. However, in times of war the Temple Knights are given the role of supervising our ranks. Unfortunately, this is a source of some conflict. Despite being united under one kingdom, there is a strong sense of rivalry between the two armies. It has been said that during the Great War there were many areas of contention between us. If you have not yet entered a Cavernous Maw you will first get the following dialogue: You there, adventurer! I wonder have you heard of the so-called \"Cavernous Maws\"? I don't know if it's true or not, but some say that it was the wicked rituals of Orcish mesmerizers on the stones that caused them to assume that wretched form.",
+* Explains San d'Oria's military,\
+the Royal Knights, Temple Knights,\
+and Cavernous Maws.",
             ["type"] = "Military Information",
         },
         ["Estiliphire"] = {
             ["_source"] = "npc",
             ["icon"] = "MiniGame.png",
             ["note"] = "Notes:\
-Allows you play a spot the difference mini-game. You must have the blue swimsuits from the main event to participate in hard mode (for chance to earn a Red Prize Balloon.",
+* Runs a spot-the-difference\
+mini-game.\
+* A blue swimsuit unlocks hard mode.",
             ["type"] = "Mini Game",
         },
         ["Excelliard"] = {
@@ -625,7 +648,8 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-thumb|100px|MonstersOffers Information on Monster Relationships: :Hrmm... Good eyes, friend. I thought my presence unknown, but you found me. You are fortunate... For my knowledge of the enemy, culled from many years on the battlefield, can be yours. Look at the tattered diagram? :*\"Yes.\": Good. Curiosity is a virtue! Look at my diagram, and listen well, for I shall say this but once. This is the law of relations: Beasts bare their fangs at dim-witted lizards, while the lizards must turn to the vapid vermin for their sup. The multitude of vermin crop plantoids close to the ground, while the long-lived plantoids draw nourishment from the corpses of beasts with their roots. Birds that wing the skies carry aquans to their graves, while water-wise aquans suck the shapeless form of amorphs dry. The silent, shapless amorphs slip into the nests of birds and feed on their feathery brood. And this is the law of oppositions: The cursed undead shun the pseudo-life of the arcana, while the arcana avoid the undead. The immortal dragons shun the death-bringing demons, while the demon spellweavers avoid dragons, against whom their magic is useless. All of this is different from the regular divisions of life, based upon my own experience and observation. Sharpen your senses, and watch your enemies closely. Soon a world of understanding will open before you. :*\"No.\": \"Know they enemy, know thyself. A hundred battles, a hundred victories.\" A great general of antiquity spoke these words.",
+* Explains monster-family strengths\
+and weaknesses.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Hae Jakhya"] = {
@@ -662,8 +686,8 @@ thumb|100px|MonstersOffers Information on Monster Relationships: :Hrmm... Good e
         },
         ["Hinaree"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "Involved in Missions:\
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
 * The Road Forks: The Road Forks\
 * Promathia Mission 5-3: Three Paths\
 * Where Messengers Gather (Ulmia's Path)\
@@ -760,15 +784,33 @@ thumb|100px|MonstersOffers Information on Monster Relationships: :Hrmm... Good e
         ["Maleme"] = {
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
-            ["note"] = "Notes:\
-Gives Forecasts for *Ronfaure *La Theine Plateau *Valkurm Dunes *Jugner Forest *Beaucedine Glacier *Xarcabard *Uleguerand Range",
+            ["note"] = "Checks weather for:\
+* Ronfaure\
+* La Theine Plateau\
+* Valkurm Dunes\
+* Jugner Forest\
+* Beaucedine Glacier\
+* Xarcabard\
+* Uleguerand Range",
             ["type"] = "Weather Reporter",
+        },
+        ["Mandragora Assistant"] = {
+            ["_source"] = "npc",
+            ["icon"] = "MiniGame.png",
+            ["note"] = "Notes:\
+* Starts the permanent Mandragora\
+Mania mini-game.\
+* Exchanges monthly Jingly rewards.",
+            ["type"] = "Mandragora Mania",
         },
         ["Maruna-Kurina"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* Recruited by talking to him as a scholar. *Has extensive information concerning various Campaign details, and can also track freelancer alliances. *Will provide a list of Freelancers and how to influence them. Also tells who the freelancer is allied with. With Freelancers not currently allied, he will tell what nation has the most influence with them currently. *Appears in towns even when not currently affiliated with anyone. *Does not take part in battles, and will vanish during them.",
+* Explains Campaign and tracks\
+freelancer alliances and influence.\
+* Appears in towns but does not\
+participate in battles.",
             ["type"] = "Freelance",
         },
         ["Maugie"] = {
@@ -806,7 +848,7 @@ Involved in Quests:\
         ["Millechairale"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * A Timely Visit\
 ",
             ["type"] = "Quest Associate",
@@ -842,9 +884,13 @@ Involved in Quests:\
             ["type"] = "Traveling Bard",
         },
         ["Mystrix"] = {
-            ["_source"] = "catseye_npc",
+            ["_source"] = "npc",
             ["icon"] = "GobbieMysteryBox.png",
-            ["note"] = "CatsEyeXI:\\n* Opens random rewards using daily\\nGobbie Box points.\\n* New players must wait 14\\nreal-life days before using the\\nbox.\\n* Special Gobbie Keys can be\\nobtained by exchanging merit\\npoints.\\n* Crystal Warriors and Wings Era\\nWarriors cannot use this box.",
+            ["note"] = "Notes:\
+* Opens random rewards using daily Gobbie Box points.\
+* New players must wait 14 real-life days.\
+* Special Gobbie Keys can be purchased with merit points.\
+* Unavailable to Crystal Warriors and Wings Era Warriors.",
             ["type"] = "Gobbie Mystery Box Vendor",
         },
         ["Najjar"] = {
@@ -889,6 +935,15 @@ Involved in Quests:\
 * Eco-Warrior (San d'Oria)",
             ["type"] = "Quest Giver",
         },
+        ["Ominous Cloud"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Merchant.png",
+            ["note"] = "Involved in Quests:\
+* The Road to Divadom\
+* Comeback Queen\
+",
+            ["type"] = "Traveling Merchant",
+        },
         ["Ondieumais"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -905,7 +960,8 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Gives recipes, and Advanced Synthesis Image Support for Leathercraft.",
+* Provides leathercraft recipes and\
+advanced synthesis support.",
             ["type"] = "Leathercraft Support",
         },
         ["Ostalie"] = {
@@ -1007,6 +1063,13 @@ Involved in Quests:\
 * Delivery Helper target NPC for Kiddie Presents.",
             ["type"] = "Holiday Event",
         },
+        ["Raminel"] = {
+            ["_source"] = "npc",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
+* Riding on the Clouds",
+            ["type"] = "Mission Associate",
+        },
         ["Riko Kupenreich"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
@@ -1052,13 +1115,14 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "MapMarker.png",
             ["note"] = "Notes:\
-Marks one's town map with the locations of various NPCs important to adventures: *Home Points *Item Depository *Melody Minstrels *Weather Reporters *Traveling Bards *Reputation *Immigration *Armor Depository *Teleportation *Pursuivant *Gold World Pass Vendor",
+* Marks useful NPC and service\
+locations on the town map.",
             ["type"] = "Map Marker",
         },
         ["Selh'teus"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Chains of Promathia\
 * Rhapsodies of Vana'diel\
 ",
@@ -1137,14 +1201,20 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Notes:\
-After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossover, trade the Spriggan Crier one crystal of each of the 8 elements to obtain a Red Spriggan Spirit. Trade the Red Spriggan Spirit to Suibhne in the Feretory after completing Monstrosity (Quest) to unlock the playable Spriggan.C (MON) monster.",
+* Exchanges all eight elemental\
+crystals for a Red Spriggan Spirit\
+after a crossover booby prize is\
+unlocked.",
             ["type"] = "Special Event",
         },
         ["Spriggan Graverobber (NPC)"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Notes:\
-After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossover, trade the Spriggan Graverobber one crystal of each of the 8 elements to obtain a Purple Spriggan Spirit. Trade the Purple Spriggan Spirit to Suibhne in the Feretory after completing Monstrosity (Quest) to unlock the playable Spriggan.G (MON) monster.",
+* Exchanges all eight elemental\
+crystals for a Purple Spriggan\
+Spirit after a crossover booby prize\
+is unlocked.",
             ["type"] = "Special Event",
         },
         ["Spriggan Sifter (NPC)"] = {
@@ -1233,7 +1303,8 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ItemDeliverer.png",
             ["note"] = "Notes:\
-This NPC will deliver items to other players through the Delivery system.",
+* Sends items to other players\
+through the Delivery system.",
             ["type"] = "Item Deliverer",
         },
         ["Varchet"] = {
@@ -1286,7 +1357,9 @@ Eminence armor after Rank 4.",
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
             ["note"] = "Notes:\
-Administrates Crafter Points for items used to upgrade Escutcheons. Also sells Crafting Kits.",
+* Manages Crafter Points used for\
+Escutcheon upgrades.\
+* Sells crafting kits.",
             ["type"] = "Crafter Points",
         },
         ["Woodnix"] = {
@@ -1322,88 +1395,104 @@ for credit.",
         ["???"] = {
             ["_source"] = "item",
             ["icon"] = "QuestionMark.png",
-            ["note"] = "An anonymous, hidden overworld waypoint node hidden among the city alleys. Examining it checks dynamic progress flags or validates secret quest retrieval tasks.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
             ["worldOffsetY"] = 0.2,
         },
         ["Crystal Crunch"] = {
             ["_source"] = "item",
             ["icon"] = "CrystalCrunch.png",
-            ["note"] = "A localized municipal crystal exchange mechanism pedestal. Interfacing with its matrix ledger reviews server trade balances and processes elemental clusters.",
-            ["type"] = "Quest Node",
+            ["note"] = "CatsEyeXI:\
+* Exchanges crystals and clusters\
+at a 3-to-1 rate.",
+            ["type"] = "Crystal Exchange",
             ["worldOffsetY"] = 0.6,
         },
         ["Diary"] = {
             ["_source"] = "item",
             ["icon"] = "ExplorerMoogle.png",
-            ["note"] = "A personal, leather-bound journal left open in a quiet residential bedroom. Reading through the dusty handwritten pages uncovers historical lore or advances localized kingdom storylines.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Door:\"Lion Springs\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber entrance portal leading into the local tavern. Unlatching the frame advances city tracking investigations or triggers past-timeline cutscenes.",
+            ["note"] = "Notes:\
+* Entrance to Lion Springs.",
             ["type"] = "Security Gate",
         },
         ["Door:Chocobo Stables"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic timber sliding barrier sealing off regional mount stables. Unlatching the frame allows you to access transport paths, check vouchers, or purchase racing gear.",
+            ["note"] = "Notes:\
+* Entrance to the Chocobo Stables.",
             ["type"] = "Security Gate",
         },
         ["Door:Count's Manor"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An elegant, massive portal archway guarding the high-ranking noble estate chambers. Presenting proper aristocratic credentials or mission clearances commands the intricate framework to part.",
+            ["note"] = "Notes:\
+* Entrance to Count Caffaule's\
+Manor.",
             ["type"] = "Security Gate",
         },
         ["Door:Helbort's Blades"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A simple merchant door framework leading straight into the weapon retail shop. Shifting the latch gives you access to browse armament sets or progress commercial delivery checks.",
+            ["note"] = "Notes:\
+* Entrance to Helbort's Blades.",
             ["type"] = "Security Gate",
         },
         ["Door:House"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic residential wooden door set into the city stonework layouts. Unlatching the frame allows you to enter citizen quarters to fulfill delivery parameters or urban side tasks.",
+            ["note"] = "Notes:\
+* Entrance to a residence.",
             ["type"] = "Security Gate",
         },
         ["Door:Raimbroy's Grocery"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standard shopfront portal dividing the civic street layouts from the food retail room. Shifting the latch moves you off public paths to browse raw cooking synthesis ingredients.",
+            ["note"] = "Notes:\
+* Entrance to Raimbroy's Grocery.",
             ["type"] = "Security Gate",
         },
         ["Door:Rosel's Armour"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic wooden barrier door partitioning the defensive apparel retail shop. Shifting the latch gives you access to check active armor trade manifests or advance urban side tasks.",
+            ["note"] = "Notes:\
+* Entrance to Rosel's Armour.",
             ["type"] = "Security Gate",
         },
         ["Door:Tanners' Guild"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy iron-banded door sealing off leathercraft processing yards. Operating the handle opens up advanced crafting synthesis areas and checks active guild progression parameters.",
+            ["note"] = "Notes:\
+* Entrance to the Tanners' Guild.",
             ["type"] = "Security Gate",
         },
         ["Door:Taumila's Sundries"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic wooden door frame set into the general mercantile trade layout blocks. Unlatching the door frame provides entry to check active trade manifests or advance urban side tasks.",
+            ["note"] = "Notes:\
+* Entrance to Taumila's Sundries.",
             ["type"] = "Security Gate",
         },
         ["Enigmatic Footprints #1"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A distinct trace indentation pressed cleanly into the city pavement stonework. Interfacing with the footprint reviews historical campaign logs or replays localized story cutscenes.",
+            ["note"] = "Notes:\
+* Replays cutscenes for this area.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Enigmatic Footprints #2"] = {
             ["_source"] = "item",
             ["icon"] = "Pawprint.png",
-            ["note"] = "A set of faint, mysterious tracking indentations pressed into the municipal floor paths. Studying the unusual prints uncovers hidden investigative records to advance active side quests.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Ephemeral Box"] = {
@@ -1418,44 +1507,67 @@ for credit.",
         ["Gate: Chocobo Circuit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standard track boundary gate partitioning off the grand racing lanes. Interfacing with the terminal matches registration tokens to grant your character lane access.",
+            ["note"] = "Notes:\
+* Entrance to the Chocobo Circuit.",
             ["type"] = "Security Gate",
         },
         ["Mystic Retriever"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A runic mechanism podium console managing campaign operations metrics. Interfacing with the terminal processes high-tier reward alignments or purges unwanted operation logs.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
             ["worldOffsetY"] = 0.5,
         },
         ["Shard of Sunlight"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A brilliant elemental orb manifest temporarily inside the city squares. Touching the glowing sphere processes specialized seasonal parameters or checks localized holiday event goals.",
+            ["note"] = "Notes:\
+* Special-event interaction point.",
             ["type"] = "Quest Node",
         },
         ["Symphonic Curator"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
-            ["type"] = "Quest Node",
+            ["note"] = "Notes:\
+* Appears near the Mog House exit\
+when a compatible instrument is\
+placed.\
+* Selects Mog House background music.",
+            ["type"] = "Mog House Music",
         },
         ["Tales' Beginning"] = {
             ["_source"] = "item",
             ["icon"] = "History.png",
-            ["note"] = "A distinct magical marker manifest near prominent municipal gathering hubs. Interfacing with its surface reviews historical records and initiates localized storyline expansions.",
-            ["type"] = "Quest Node",
+            ["note"] = "Notes:\
+* Resumes a postponed Rhapsodies of\
+Vana'diel opening cutscene.",
+            ["type"] = "Story Resume Point",
         },
         ["Trail Markings"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "Faint, hurried layout markings scratched into the overworld rock faces and city streets. Studying these tracking anchors details regional lore and coordinates active investigative trials.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
+        },
+		    ["Treasure Coffer"] = {
+            ["_source"] = "item",
+            ["icon"] = "TreasureCoffer.png",
+            ["type"] = "Gobbie Mystery Treasure ",
+        },
+		    ["Synergy Furnace"] = {
+            ["_source"] = "item",
+            ["icon"] = "SynergyFurnace.png",
+            ["note"] = "Crafting furnace used for synergy recipes.",
+            ["type"] = "Synergy Furnace",
+			["worldOffsetY"] = 0.45,
         },
         ["Well"] = {
             ["_source"] = "item",
             ["icon"] = "Well.png",
-            ["note"] = "A historic stone water well mechanism integrated into the municipal plaza. Searching down the dark masonry shaft uncovers tracking clues or fulfills milestone requirements for side tasks.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
             ["worldOffsetY"] = 0,
         },

@@ -80,8 +80,12 @@ Involved in Quests:\
         ["Sewer Lid"] = {
             ["_source"] = "item",
             ["icon"] = "SewerLid.png",
-            ["note"] = "A heavy, circular iron floor plate sealing off the lower aqueduct drainage shafts. Sliding the metallic lid open reveals drop-down tunnels leading into the dangerous underbelly of the dungeon layouts.",
-            ["type"] = "Security Gate",
+            ["note"] = "Notes:\
+* Drops to the lower level of\
+Bostaunieux Oubliette.\
+* Used during San d'Oria mission 7-1:\
+Prestige of the Papsque.",
+            ["type"] = "Drop Point",
         },
         ["Wooden Door"] = {
             ["_source"] = "item",

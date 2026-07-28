@@ -23,6 +23,19 @@ return {
 ",
             ["type"] = "Orc Warmachine",
         },
+        ["Achtelle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Defender.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Achtelle",
+            ["note"] = "Notes:\
+* Freelance Dragoon from Adoulin,\
+accompanied by her wyvern Bravo.\
+* Appears here while allied with\
+San d'Oria.\
+* Speak to her as Dragoon to influence\
+her allegiance.",
+            ["type"] = "Freelance Dragoon",
+        },
         ["Aaveleon"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
@@ -54,7 +67,7 @@ return {
         ["Akadaemon"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * Darkness Descends\
 * When Wills Collide\
 ",
@@ -63,7 +76,7 @@ return {
         ["Aldebrand"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * Darkness Descends\
 * When Wills Collide\
 ",
@@ -73,8 +86,21 @@ return {
             ["_source"] = "npc",
             ["icon"] = "TacticalAssessment.png",
             ["note"] = "Notes:\
-Until you have your Red Recommendation Letter and complete quest Steamed Rams you won't be able to get evaluations from Alfred.",
+* Evaluates Campaign performance after\
+Steamed Rams and receipt of a Red\
+Recommendation Letter.",
             ["type"] = "Campaign Evaluator",
+        },
+        ["Allied Enhancer"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "Augmenter.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Content/Campaign#Allied_Enhancers",
+            ["note"] = "CatsEyeXI Campaign:\
+* Upgrades level 68 Iron Ram, Fourth\
+Division, and Cobra armor sets.\
+* Requires Allied Notes and the\
+appropriate Campaign medal.",
+            ["type"] = "Campaign Armor Augmenter",
         },
         ["Allaipre"] = {
             ["_source"] = "npc",
@@ -105,8 +131,11 @@ Until you have your Red Recommendation Letter and complete quest Steamed Rams yo
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Sauromugue Champaign (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Sauromugue Champaign (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Altennia"] = {
             ["_source"] = "npc",
@@ -140,8 +169,25 @@ Until you have your Red Recommendation Letter and complete quest Steamed Rams yo
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria has control of East Ronfaure (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+East Ronfaure (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
+        },
+        ["Areuhat"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Defender.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Areuhat",
+            ["note"] = "Involved in Quests:\
+* Beast from the East\
+\
+Notes:\
+* Campaign freelance who appears here\
+while allied with San d'Oria.\
+* Influence her with medicine, or with\
+Shell Bugs after completing the quest.",
+            ["type"] = "Campaign Freelance",
         },
         ["Ashmea B Greinner"] = {
             ["_source"] = "npc",
@@ -168,21 +214,30 @@ Until you have your Red Recommendation Letter and complete quest Steamed Rams yo
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria has control of Castle Zvahl Baileys (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation. *Campaign Sword in front of name during Campaign.",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Castle Zvahl Baileys (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Ballie, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Ronfaure is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Ronfaure Supplies for finishing Supply Quest ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Ronfaure.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Banege, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Sarutabaruta is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Sarutabaruta Supplies for finishing Supply Quest ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Sarutabaruta.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Berengein"] = {
@@ -215,8 +270,11 @@ Appears, when Sarutabaruta is under weekly conquest-control by San d'Oria ;Notes
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Fort Karugo-Narugo (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Fort Karugo-Narugo (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Cerane I Virgaut"] = {
             ["_source"] = "npc",
@@ -240,12 +298,28 @@ Appears, when Sarutabaruta is under weekly conquest-control by San d'Oria ;Notes
 ",
             ["type"] = "Chocobo Renter",
         },
+        ["Choh Moui"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Defender.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Choh_Moui",
+            ["note"] = "Notes:\
+* Legendary Beastmaster and Campaign\
+freelance.\
+* Appears here while allied with\
+San d'Oria.\
+* Influence her with Rye Flour or by\
+finding her crimson chigoe.",
+            ["type"] = "Freelance Beastmaster",
+        },
         ["Chefroucauld, T.K."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Crawlers' Nest (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Crawlers' Nest (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Chocobo"] = {
             ["_source"] = "npc",
@@ -305,14 +379,18 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Li'Telor is under weekly conquest-control by San d'Oria. ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Li'Telor Supplies for finishing Supply Quest :*Accepts Garrison starting item Hound Fang Sack ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Li'Telor.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Crimson Wolf Esquire"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* Elvaan Warriors lead by Mieuseloir B Enchelles in Campaign Battles in Batallia Downs (S) as well as Southern San d'Oria (S). **use Polearm Weapon Skills and have Double Attack",
+* Campaign unit led by Mieuseloir B\
+Enchelles.",
             ["type"] = "Campaign Warrior",
         },
         ["Crochepallade"] = {
@@ -361,7 +439,7 @@ Involved in Quests:\
         ["Destin"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * The Weight of Evidence\
 * The Heir to the Light\
 ",
@@ -390,21 +468,28 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Beaucedine Glacier (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Beaucedine Glacier (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Doladepaiton, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Ronfaure is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Ronfaure Supplies for finishing Supply Quest :*Accepts Garrison starting item Red Cryptex ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Ronfaure.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Duchille"] = {
             ["_source"] = "npc",
             ["icon"] = "Defender.png",
             ["note"] = "Notes:\
-:\"If you pass through this gate and continue north, you will come upon the Firesand Storeroom. :But be warned. There are monsters about. :You would be wise to take great caution, for your own sake.\"",
+* Gives directions to the Firesand\
+Storeroom.",
             ["type"] = "Defender",
         },
         ["Eauvague, T.K."] = {
@@ -418,7 +503,8 @@ Appears, when Ronfaure is under weekly conquest-control by San d'Oria ;Notes for
             ["_source"] = "npc",
             ["icon"] = "MissionNPC.png",
             ["note"] = "Notes:\
-An Adventurer encountered during various San d'Oria Missions. {{Spoiler3",
+* Appears in San d'Oria mission\
+scenes.",
             ["type"] = "Mission NPC",
         },
         ["Elnonde"] = {
@@ -432,20 +518,26 @@ An Adventurer encountered during various San d'Oria Missions. {{Spoiler3",
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Elshimo Uplands is under weekly conquest-control by San d'Oria. ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Elshimo Uplands Supplies for finishing Supply Quest ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Elshimo Uplands.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Estaud, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Xarcabard (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Xarcabard (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Estavoille"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * Her Memories\
 * Operation Cupid\
 ",
@@ -455,8 +547,11 @@ Appears, when Elshimo Uplands is under weekly conquest-control by San d'Oria. ;N
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of North Gustaberg (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+North Gustaberg (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Eumielle"] = {
             ["_source"] = "npc",
@@ -468,7 +563,7 @@ Appears, when Elshimo Uplands is under weekly conquest-control by San d'Oria. ;N
         ["Eusebius"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * Her Memories\
 * Operation Cupid\
 ",
@@ -490,11 +585,16 @@ Appears, when Elshimo Uplands is under weekly conquest-control by San d'Oria. ;N
 ",
             ["type"] = "Young Griffons",
         },
-        ["Exoroche (S)"] = {
+        ["Exoroche"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Exoroche_(S)",
             ["note"] = "Starts Quests:\
-* Son and Father",
+* Son and Father\
+\
+Notes:\
+* Appears at (K-9) while Campaign is\
+not active.",
             ["type"] = "Quest Giver",
         },
         ["Farouel"] = {
@@ -517,7 +617,7 @@ Appears, when Elshimo Uplands is under weekly conquest-control by San d'Oria. ;N
         ["Festauve"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * Gifts of the Griffon\
 * Claws of the Griffon\
 ",
@@ -539,8 +639,11 @@ Appears, when Elshimo Uplands is under weekly conquest-control by San d'Oria. ;N
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria has control of La Vaule (S) *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+La Vaule (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Francmage"] = {
             ["_source"] = "npc",
@@ -559,7 +662,7 @@ Involved in Missions:\
         ["Gallauciond"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * While the Cat's Away\
 * Purple, Cleaving\
 * A Timeswept Butterfly\
@@ -599,14 +702,18 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the San d'Oria Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for San d'Oria) at certain conditions. It will be also possible to get some items of other Nations (Items for Bastok / Items for Windurst) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without San d'Oria as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer.",
+* Casts Signet and handles Conquest\
+Point rewards for San d'Orians.\
+* Explains the Conquest system.",
             ["type"] = "Conquest Overseer",
         },
         ["Gold Badger Esquire"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-:*Appears during Campaign Battles as part of the Gold Badger Esquire unit. :*In areas under allied control, they will deliver supplies to the fortifications and warp out. :*In areas under beastman control, they will attempt to bomb the fortifications. :*They will attempt to construct an Allied Belfry in offensive Campaign battles when San d'Oria's technological level allows. :*The Gold Badgers will not engage the enemy unless they are intercepted.",
+* Campaign support unit that delivers\
+supplies or attacks fortifications.\
+* May construct an Allied Belfry.",
             ["type"] = "Campaign Battle",
         },
         ["Gomi-Hiroi"] = {
@@ -619,8 +726,11 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* Bastok affiliated Campaign Arbiter. Present when Bastok has control of Beaucedine Glacier (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when Bastok controls\
+Beaucedine Glacier (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Halver M Borel"] = {
             ["_source"] = "npc",
@@ -653,13 +763,16 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Rolanberry Fields (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Rolanberry Fields (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Hegouard"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Mayakov Dance Troupe\
 ",
             ["type"] = "Mission Associate",
@@ -667,7 +780,7 @@ Involved in Missions:\
         ["Hersaume"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * Darkness Descends\
 * When Wills Collide\
 ",
@@ -675,8 +788,8 @@ Involved in Missions:\
         },
         ["Hestrefalcat"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Steamed Rams\
 ",
             ["type"] = "Mission Associate",
@@ -685,14 +798,19 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "AllegianceChanger.png",
             ["note"] = "Notes:\
-Will allow those who originally aligned to San d'Oria's campaign and later switched to other nations' campaign to return to San d'Oria for a price of 300 AN and the two highest campaign medals. Recompleting Steamed Rams is not required, or even possible.",
+* Restores a former San d'Oria\
+Campaign allegiance for 300 Allied\
+Notes and two top Campaign medals.",
             ["type"] = "Campaign Allegiance",
         },
         ["Ilieumort, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Elshimo Uplands is under weekly conquest-control by San d'Oria. ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Elshimo Uplands Supplies for finishing Supply Quest :*Accepts Garrison starting item Coeurl Leather Missive ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Elshimo Uplands.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Illeuse"] = {
@@ -716,7 +834,10 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Valdeaunia is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Valdeaunia Supplies for finishing Supply Quest :*Accepts Garrison starting item Behemoth Leather Missive ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Valdeaunia.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Jeronne"] = {
@@ -752,8 +873,8 @@ Appears, when Valdeaunia is under weekly conquest-control by San d'Oria ;Notes f
         },
         ["Klythios"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Boy and the Beast\
 ",
             ["type"] = "Mission Associate",
@@ -762,7 +883,8 @@ Appears, when Valdeaunia is under weekly conquest-control by San d'Oria ;Notes f
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Discusses various events in Vana'diel with Kupulele and Kupold.",
+* Discusses Vana'diel history with\
+Kupulele and Kupold.",
             ["type"] = "Lore NPC",
         },
         ["Laisavie X Berlends"] = {
@@ -796,8 +918,8 @@ Involved in Missions:\
         },
         ["Lena"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Mayakov Dance Troupe\
 ",
             ["type"] = "Mission Associate",
@@ -811,8 +933,8 @@ Involved in Missions:\
         },
         ["Leuonard"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Gilded Claws\
 * The Voracious Resurgence\
 ",
@@ -830,8 +952,11 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Garlaige Citadel (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Garlaige Citadel (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Lilisette"] = {
             ["_source"] = "npc",
@@ -864,14 +989,18 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Li'Telor is under weekly conquest-control by San d'Oria. ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Li'Telor Supplies for finishing Supply Quest ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Li'Telor.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Linkshell Concierge"] = {
             ["_source"] = "npc",
             ["icon"] = "MentorRecruiter.png",
             ["note"] = "Notes:\
-Linkshell Concierges serve to distribute Linkpearls to players wishing to join recruiting Linkshells.",
+* Distributes registered linkshell\
+Linkpearls to players.",
             ["type"] = "Linkshell Distributor",
         },
         ["Loillie"] = {
@@ -888,7 +1017,7 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-Lord Fainevlure Ordelle was the first captain of the Royal Knights. His face adorns the Ordelle Bronzepiece, which was issued in commemoration of him and his knights.",
+* First captain of the Royal Knights.",
             ["type"] = "Royal Knight",
         },
         ["Lord Torresapet B Ordelle"] = {
@@ -903,7 +1032,8 @@ Lord Fainevlure Ordelle was the first captain of the Royal Knights. His face ado
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-:\"Have you heard tell of the Gigas invasion of Vunkerl Inlet? :Stories tell of their monstrous strength, effortlessly tossing about boulders even larger than themselves. :...That reminds me, I haven't acquried a map of Vunkerl Inlet myself. :I must go and retrieve one from the Munitions Storeroom.\"",
+* Shares information about Vunkerl\
+Inlet.",
             ["type"] = "Dialogue NPC",
         },
         ["Louvairausse"] = {
@@ -943,8 +1073,11 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* Windurst affiliated Campaign Arbiter. Present when Windurst (S) has control of Beaucedine Glacier (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when Windurst controls\
+Beaucedine Glacier (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Lurouillat"] = {
             ["_source"] = "npc",
@@ -972,17 +1105,17 @@ Involved in Missions:\
         ["Machionage"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Notes:\
-Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * Proof of Valor\
-Involved in Quest:\
+\
+Involved in Quests:\
 * Gifts of the Griffon",
             ["type"] = "Quest Associate",
         },
         ["Machudiaux"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Mayakov Dance Troupe\
 ",
             ["type"] = "Mission Associate",
@@ -991,8 +1124,11 @@ Involved in Quest:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of West Sarutabaruta (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+West Sarutabaruta (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Mailleronce"] = {
             ["_source"] = "npc",
@@ -1037,7 +1173,7 @@ Involved in Missions:\
         ["Merfanont"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * While the Cat's Away\
 * Purple, Cleaving\
 * A Timeswept Butterfly\
@@ -1048,7 +1184,9 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-* Item Delivery services is not available if Garlaige Citadel (S) is under beastman control or a campaign battle is occurring.",
+* Provides item delivery while\
+Garlaige Citadel (S) is under Allied\
+control.",
             ["type"] = "Delivery Box",
         },
         ["Mieuseloir B Enchelles"] = {
@@ -1060,13 +1198,15 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-:*Casts Sigil :*Sells items for Allied Notes (San d'Oria Campaign Items) at certain conditions. :*Explains the Campaign system by choosing some available questions. :*Tells you the remaining time on your current Sigil effect. For further information see Campaign Arbiter.",
-            ["type"] = "Sigil",
+* Casts Sigil and sells Campaign\
+rewards for Allied Notes.\
+* Explains the Campaign system.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Minautte"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Steamed Rams\
 ",
             ["type"] = "Mission Associate",
@@ -1085,11 +1225,13 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-Provided information about Chocobo Racing and recruited adventurers for the CRA San d'Oria team. He was removed from the game on 9/9/2010, along with Salvador, Galienne, and Turumi-Byrumi.",
+* Former Chocobo Racing Association\
+representative.",
             ["type"] = "VCS Chocobo Racing Associate",
         },
         ["Moogle (Mog House)"] = {
             ["_source"] = "npc",
+            ["icon"] = "MogHouse.png",
             ["note"] = "Starts Quests:\
 * Give a Moogle a Break\
 * Moogles in the Wild\
@@ -1131,20 +1273,26 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Elshimo Lowlands is under weekly conquest-control by San d'Oria. ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Elshimo Lowlands Supplies for finishing Supply Quest ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Elshimo Lowlands.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Myllue, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria (S) affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Batallia Downs (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Batallia Downs (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Nag'molada"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Chains of Promathia\
 ",
             ["type"] = "Mission Associate",
@@ -1153,13 +1301,16 @@ Appears, when Elshimo Lowlands is under weekly conquest-control by San d'Oria. ;
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Sarutabaruta is under weekly conquest-control by San d'Oria. ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Sarutabaruta Supplies for finishing Supply Quest :*Accepts Garrison starting item Seven-Knot Quipu ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Sarutabaruta.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Nalkuku"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Mayakov Dance Troupe\
 ",
             ["type"] = "Mission Associate",
@@ -1228,19 +1379,23 @@ Appears, when Sarutabaruta is under weekly conquest-control by San d'Oria. ;Note
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Appears in the capital city of the nation ranked first in Conquest. Does not show up when there is a tie for first.",
+* Appears in the highest-ranked\
+Conquest nation when there is no tie.",
             ["type"] = "Traveling Merchant",
         },
         ["Orcish Captive"] = {
             ["_source"] = "npc",
-            ["icon"] = "Defender.png",
-            ["type"] = "Defender",
+            ["icon"] = "Prisoner.png",
+            ["type"] = "Prisoner of War",
         },
         ["Palardaifault V Draffles"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Army Curate for San d'Oria records opinions of adventurers on matters regarding internal policies, battle strategies and the army's generals. The opinions are tallied weekly and influence the available Campaign Ops. The weight of an adventurer's opinions is based on their medals.",
+* Records weekly opinions on San\
+d'Oria's Campaign policies.\
+* Results affect available Campaign\
+Ops.",
             ["type"] = "Survey",
         },
         ["Palcomondau"] = {
@@ -1250,8 +1405,8 @@ Army Curate for San d'Oria records opinions of adventurers on matters regarding 
         },
         ["Paulyvan"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Steamed Rams\
 ",
             ["type"] = "Mission Associate",
@@ -1306,7 +1461,10 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Valdeaunia is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Valdeaunia Supplies for finishing Supply Quest ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Valdeaunia.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Piscariaux"] = {
@@ -1316,8 +1474,8 @@ Appears, when Valdeaunia is under weekly conquest-control by San d'Oria ;Notes f
         },
         ["Portentous Woman"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * The Scent of Danger\
 ",
             ["type"] = "Mission Associate",
@@ -1326,7 +1484,9 @@ Appears, when Valdeaunia is under weekly conquest-control by San d'Oria ;Notes f
             ["_source"] = "npc",
             ["icon"] = "ItemStorage.png",
             ["note"] = "Notes:\
-Find a nearby Porter Moogle and talk to him and select the option to buy a Slip. Once you find the slip you want you select it and confirm your selection. Each slip will cost you 1000 gil to buy. After purchasing any storage slip, you may trade 1-7 corresponding items per trade along with the slip. NOTE: This does NOT mean you can only store up to 7 items on a single slip, it simply means you can only transfer up to 7 at a time to the Porter for storage. At any time after you have the slip you can continue to make trades of 1-7 items along with the corresponding slip, thereby storing all your like items with the Moogle instead of in your MH. This feature is handy when you later get another armor drop, like in Dynamis, and want to store it somewhere until you need it. To withdraw an item simply trade him the corresponding slip and he will give you an option to retrieve your armor. You only pay an initial fee of 1,000 gil when purchasing a storage slip, you will not pay every time you store or withdraw gear. Storage slips cannot be discarded unless all stored items are retrieved first. As of Feb. 14, 2011, items with a Magian Trial insignia can no longer be stored with a Porter Moogle. Any items with an active trial stored before that date have had all trial progress erased.",
+* Stores eligible equipment using\
+porter storage slips.\
+* Storage slips cost 1,000 gil.",
             ["type"] = "Item Storage",
         },
         ["Portia"] = {
@@ -1354,14 +1514,20 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Zulkheim is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Zulkheim Supplies for finishing Supply Quest ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Zulkheim.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Quanteilleron, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Zulkheim is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Zulkheim Supplies for finishing Supply Quest :*Accepts Garrison starting item Galka Fang Sack ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Zulkheim.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
         ["Quartermaster"] = {
@@ -1379,7 +1545,7 @@ Appears, when Zulkheim is under weekly conquest-control by San d'Oria ;Notes for
         ["Rachemace"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * While the Cat's Away\
 * Purple, Cleaving\
 * A Timeswept Butterfly\
@@ -1419,7 +1585,7 @@ Appears, when Zulkheim is under weekly conquest-control by San d'Oria ;Notes for
         ["Raiclace"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * While the Cat's Away\
 * Purple, Cleaving\
 * A Timeswept Butterfly\
@@ -1439,12 +1605,14 @@ Appears, when Zulkheim is under weekly conquest-control by San d'Oria ;Notes for
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-Provides information about Chocobo Racing, and recruits adventurers for the CRA San d'Oria team.* Removed from Game on 9/9/2010",
+* Provides Chocobo Racing information\
+and recruits for the CRA San d'Oria\
+team.",
             ["type"] = "VCS Chocobo Racing Associate",
         },
         ["Raminel"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "MissionNPC.png",
             ["note"] = "Involved in Missions:\
 * Riding on the Clouds\
 ",
@@ -1464,7 +1632,7 @@ Involved in Missions:\
         ["Raphaillance"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * Darkness Descends\
 * When Wills Collide\
 ",
@@ -1488,8 +1656,11 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Meriphataud Mountains (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Meriphataud Mountains (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Raustigne"] = {
             ["_source"] = "npc",
@@ -1526,15 +1697,18 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ArmorStorer.png",
             ["note"] = "Notes:\
-Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
+* Stores eligible armor and gear sets.",
             ["type"] = "Armor Depository",
         },
         ["Renvriche, T.K."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria has control of The Eldieme Necropolis (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+The Eldieme Necropolis (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Rholont"] = {
             ["_source"] = "npc",
@@ -1562,7 +1736,8 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "AirshipTravelAgent.png",
             ["note"] = "Notes:\
-Will report how long until the Airship arrives at its destination.",
+* Reports the remaining airship travel\
+time.",
             ["type"] = "Airship Schedule",
         },
         ["Rochefogne"] = {
@@ -1601,13 +1776,16 @@ Will report how long until the Airship arrives at its destination.",
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria has control of Jugner Forest (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Jugner Forest (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Rongelouts N Distaud"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * Wings of the Goddess\
 ",
             ["type"] = "Shadowreign",
@@ -1695,7 +1873,11 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-*  Under the command of the elvaan general Leonoyne. * Interestingly they are clad in several Dark Knight only armor pieces but have not been observed to cast any form of magic. *They are among the few that may be dispatched to Beaucedine Glacier (S) and Xarcabard (S) once San d'Oria regains most territory in their cordon. *Although they appear on screen as Savage Hound Condottie they are actually Savage Hound Condottiere, however with insufficient room in the name space their names are displayed incorrectly in game on sight unless targeted.",
+* Campaign unit under Leonoyne's\
+command.\
+* May deploy to northern Campaign\
+fronts when San d'Oria holds enough\
+territory.",
             ["type"] = "Campaign Warrior",
         },
         ["Scarlet Boar Esquire"] = {
@@ -1706,7 +1888,7 @@ Involved in Missions:\
         ["Scarlette, C.A."] = {
 			["_source"] = "npc",
 			["icon"] = "WarpNPC.png",
-			["note"] = "Involved in Mission:\
+			["note"] = "Involved in Missions:\
 		* Allied Campaign\
 		",
 			["type"] = "Teleport Service",
@@ -1734,15 +1916,18 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "Trust.png",
             ["note"] = "Notes:\
-* Shixo only appears at ({{Location Tooltip|area=Southern San d'Oria (S)|pos=F-9",
+* Appears at (F-9).",
             ["type"] = "Trust Coordinator",
         },
         ["Sidoine, T.K."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria has control of Castle Zvahl Keep (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Castle Zvahl Keep (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Silver Fox Archer"] = {
             ["_source"] = "npc",
@@ -1772,11 +1957,16 @@ Involved in Missions:\
             ["icon"] = "CampaignArbiter.png",
             ["type"] = "Campaign Knight",
         },
-        ["Thierride (S)"] = {
+        ["Thierride"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Thierride",
             ["note"] = "Starts Quests:\
-* Beans Ahoy!",
+* Beans Ahoy!\
+\
+Notes:\
+* Royal Army cook and former\
+fisherman.",
             ["type"] = "Quest Giver",
         },
         ["Thirkell"] = {
@@ -1790,8 +1980,11 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria has control of Vunkerl Inlet (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Vunkerl Inlet (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Touttaures"] = {
             ["_source"] = "npc",
@@ -1825,8 +2018,11 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Grauberg (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Grauberg (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Vailanice"] = {
             ["_source"] = "npc",
@@ -1851,7 +2047,9 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Notes:\
-They appear when the special event Valentione's Day is active. ;Notes: :*There are 8 Valentione Singles in each town - One for each race and gender. :*Each gender have 4 different personalities: Honest, cheerful, modest/cool-headed and shy. :*They all feel more or less lonely and it's your task to help them out by trading chocolate hearts and finding a partner. :*The success of your work determines whether you get a Charm Wand or a Charm Wand +1. For detailed information, see Valentione's Day.",
+* Appears during Valentione's Day.\
+* Exchanges chocolate hearts while\
+helping find compatible partners.",
             ["type"] = "Special Event",
         },
         ["Vauderame"] = {
@@ -1905,7 +2103,7 @@ Involved in Missions:\
         ["Viridiana"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * Steamed Rams\
 ",
             ["type"] = "Shadowreign",
@@ -1914,7 +2112,8 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-Presents information on San d'Oria's current Campaign strategies and intel on the other 6 forces.",
+* Reports San d'Oria's current\
+Campaign strategies and tactics.",
             ["type"] = "Campaign Information",
         },
         ["Wyatt"] = {
@@ -1947,8 +2146,11 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* San d'Oria affiliated Campaign Arbiter. Present when San d'Oria (S) has control of Pashhow Marshlands (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+* Appears when San d'Oria controls\
+Pashhow Marshlands (S).\
+* Provides Campaign tags,\
+information, and teleportation.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Zidalf"] = {
             ["_source"] = "npc",
@@ -1959,7 +2161,10 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Appears, when Elshimo Lowlands is under weekly conquest-control by San d'Oria. ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Elshimo Lowlands Supplies for finishing Supply Quest :*Accepts Garrison starting item Sheep Leather Missive :*Looks silly wearing a shield and Great Sword ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+* Appears when San d'Oria controls\
+Elshimo Lowlands.\
+* Casts Signet and handles regional\
+Conquest services.",
             ["type"] = "Conquest Overseer",
         },
     },
@@ -1968,135 +2173,168 @@ Appears, when Elshimo Lowlands is under weekly conquest-control by San d'Oria. ;
         ["Adder Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A grand military campaign reward chest materializing across frontlines in the past timeline. Opening the lock distributes battlefield experience, regional items, or elite wartime currencies to your squad.",
+            ["note"] = "Notes:\
+* Campaign loot container.",
             ["type"] = "Loot Container",
         },
         ["Atomos"] = {
             ["_source"] = "item",
             ["icon"] = "CavernousMaw.png",
-            ["note"] = "A massive spatial distortion and timeline gateway. Stepping into this gaping anomaly rips you through the fabric of time, depositing you into past eras or deep within the Halls of Transference.",
+            ["note"] = "Notes:\
+* Time-travel portal.",
             ["type"] = "Cavernous Maw",
         },
         ["Bison Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A companion campaign treasure chest dropped onto tactical overworld battlefields. Opening this repository distributes elite armor supplies, munitions, and defensive tactical enhancements.",
+            ["note"] = "Notes:\
+* Campaign loot container.",
             ["type"] = "Loot Container",
         },
         ["Charred Firewood"] = {
             ["_source"] = "item",
             ["icon"] = "Firewood.png",
-            ["note"] = "The soot-stained remains of an abandoned tactical campfire buried in the snowdrift. Searching the ash pile uncovers military dispatch remnants and updates your past-timeline campaign journal.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Colossal Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Footprint.png",
-            ["note"] = "A massive tracking indentation pressed deeply into the past-timeline permafrost. Studying the gargantuan imprint reveals the movement of ancient beastman military forces or updates active campaign logs.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Compressed Snow"] = {
             ["_source"] = "item",
             ["icon"] = "Snow.png",
-            ["note"] = "A dense, tightly packed drift blocking the freezing glacial valleys. Digging into the icy mass uncovers abandoned military supplies and unearths lost artifacts from the Crystal War era.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Coyote Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A campaign battle chest materializing across frontlines in the past timeline. Opening the lock code rewards your squad with combat supplies, weapons components, or temporal campaign currencies.",
+            ["note"] = "Notes:\
+* Campaign loot container.",
             ["type"] = "Loot Container",
         },
         ["Dhole Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A tactical campaign prize repository manifest across past-timeline conflict fields. Breaking its seal rewards your participating alliance with specialized armor provisions and items components.",
+            ["note"] = "Notes:\
+* Campaign loot container.",
             ["type"] = "Loot Container",
+        },
+        ["Door:House"] = {
+            ["_source"] = "item",
+            ["icon"] = "Door.png",
+            ["note"] = "Notes:\
+* Entrance to a residence.",
+            ["type"] = "Security Gate",
         },
         ["Door Lion\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber entrance portal leading into the local past-timeline tavern. Turning the door handle coordinates your frontline city navigation and uncovers warfront logs.",
+            ["note"] = "Notes:\
+* Entrance to Lion Springs.",
             ["type"] = "Security Gate",
         },
         ["Door:\"Lion Springs\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber entrance portal leading into the local tavern. Unlatching the frame advances city tracking investigations or triggers past-timeline cutscenes.",
+            ["note"] = "Notes:\
+* Entrance to Lion Springs.",
             ["type"] = "Security Gate",
         },
         ["Eland Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A grand campaign battle coffer materializing across frontlines in the past timeline. Opening the lock code rewards your squad with elite armor supplies, munitions, and temporal combat rewards.",
+            ["note"] = "Notes:\
+* Campaign loot container.",
             ["type"] = "Loot Container",
         },
         ["Gate Sentry"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavily armored defensive barrier guarding tactical checkpoints in the past timeline. Clearing military verification protocols commands the framework to unlatch across frontline borders.",
+            ["note"] = "Notes:\
+* Security checkpoint.",
             ["type"] = "Security Gate",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Notes:\
+* Replays previously viewed event\
+scenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Hanging Cage"] = {
             ["_source"] = "item",
             ["icon"] = "Cage.png",
-            ["note"] = "An iron cage suspended high above the public squares in the past timeline. Inspecting the rattling framework uncovers regional lore or coordinates festive holiday scripts.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Hoarfang"] = {
             ["_source"] = "item",
             ["icon"] = "Column.png",
-            ["note"] = "A striking landmark ice column rising out of the past timeline tundra. Studying its frozen structure processes critical military campaign milestones to advance your active Bastok storyline.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["New-turned Earth"] = {
             ["_source"] = "item",
             ["icon"] = "BackfilledPit.png",
-            ["note"] = "A fresh patch of loose, shoveled soil breaking the wilderness sod in the past timeline. Excavating the mound uncovers hidden tactical items and fulfills dynamic gathering goals across the frontlines.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Portcullis"] = {
             ["_source"] = "item",
             ["icon"] = "Portcullis.png",
-            ["note"] = "A heavy drop-down iron security gate blockading the stone corridors. Tripping the regional winches or meeting instance requirements raises the iron teeth to open the path ahead.",
+            ["note"] = "Notes:\
+* Security gate.",
             ["type"] = "Security Gate",
         },
         ["Regal Pawprints"] = {
             ["_source"] = "item",
             ["icon"] = "VoidwatchRift.png",
-            ["note"] = "A faint, glowing mystical tracking imprint pulsing with dimensional static. Tracking these extraplanar prints aligns your campaign parameters to coordinate high-tier Voidwatch operations.",
+            ["note"] = "Notes:\
+* Interaction point.",
             ["type"] = "Transit Portal",
         },
         ["Rocky Perch"] = {
             ["_source"] = "item",
             ["icon"] = "Boulder.png",
-            ["note"] = "A frozen high cliff ledge overlooking the valley fields in the past timeline. Scaling the rock allows you to harvest specialized frontline campaign resources or recover lost side quest artifacts.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Suspicious Object"] = {
             ["_source"] = "item",
             ["icon"] = "QuestionMark.png",
-            ["note"] = "An anomalous structural artifact concealed within the municipal squares of the past timeline. Investigating its placement uncovers hidden counter-intelligence notes to advance active campaign storylines.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Symphonic Curator"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
-            ["type"] = "Quest Node",
+            ["note"] = "Notes:\
+* Appears near the Mog House exit\
+when a compatible instrument is\
+placed.\
+* Selects Mog House background music.",
+            ["type"] = "Mog House Music",
         },
         ["Tree Hollow"] = {
             ["_source"] = "item",
             ["icon"] = "Box.png",
-            ["note"] = "A weathered aperture inside an ancient tree trunk in the past timeline. Searching the hollow reveals hidden military tracking resources and advances active frontline campaigns.",
-            ["type"] = "Stump Node",
+            ["note"] = "Notes:\
+* Quest interaction point.",
+            ["type"] = "Quest Node",
         },
         ["Well"] = {
             ["_source"] = "item",

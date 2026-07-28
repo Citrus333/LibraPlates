@@ -1,5 +1,10 @@
 return {
     ["npcs"] = {
+	        ["A.M.A.N. Liaison"] = {
+            ["_source"] = "npc",
+            ["icon"] = "RecordsOfEminence.png",
+            ["type"] = "Records of Eminence",
+        },
         ["Ada"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -19,7 +24,8 @@ return {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-A young Tarutaru girl who sells black magic scrolls at Kususu's Hoodoos.",
+* Sells black magic scrolls at\
+Kususu's Hoodoos.",
             ["type"] = "Standard Merchant",
         },
         ["Babubu"] = {
@@ -36,14 +42,15 @@ A young Tarutaru girl who sells black magic scrolls at Kususu's Hoodoos.",
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-There are multiples of this NPC, in various locations.",
+* Appears in multiple locations.",
             ["type"] = "Test NPC",
         },
         ["Boronene"] = {
             ["_source"] = "npc",
             ["icon"] = "RoomRenters.png",
             ["note"] = "Notes:\
-\"This is the gateway to Windurst's residential ares. Inside, there are Mog Houses available for use by Windurst.\" *Ask for an explanation of Mog Houses. \"A Mog House is you own personal apartment room, provided for you convenience. In you Mog House, you can carry out such activities as storing items, changing jobs, and healing HP and MP. Why don'taru head up to your Mog House and rest your little body-wody?\" *Nothing in particular. \"Well then, bye-bye and ta-taru!\"",
+* Provides access to the residential\
+area and explains Mog Houses.",
             ["type"] = "Residence Renter",
         },
         ["Breanainn"] = {
@@ -65,12 +72,13 @@ There are multiples of this NPC, in various locations.",
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-\"Beyond this gateway is the Windurst residential area, where you can stay in a Mog House or Rent-a-Room. If you need to hear an explanation, that's Boronene job. So pluck up the courage, and ask Boroene over there for all you need to knowy-wowy.\"",
+* Guards the entrance to Windurst's\
+residential area.",
             ["type"] = "Residential Guard",
         },
         ["Chipmy-Popmy"] = {
             ["_source"] = "npc",
-            ["icon"] = "MapMarker.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * One Good Deed?\
 \
@@ -106,6 +114,13 @@ trusts, and other utility items.\
 items from Momiji.",
             ["type"] = "Curio Shop",
         },
+        ["Curio Vendor Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Merchant.png",
+            ["note"] = "Notes:\
+Acquisition of permanent Rhapsody key items from Rhapsodies of Vana'diel Missions increases the Curio Vendor Moogle's inventory.",
+            ["type"] = "Curio Vendor",
+        },
         ["Deeto-Yaato"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -122,6 +137,17 @@ items from Momiji.",
             ["note"] = "Starts Quests:\
 * Escort for Hire (Windurst)",
             ["type"] = "Quest Giver",
+        },
+        ["Dealer Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Notes:\
+* Appears during Mog Bonanza and\
+Repeat Login Campaigns.\
+* Exchanges Kupons for rewards.\
+* A-DBcd and A-DXar Kupons award\
+Dynamis relic equipment.",
+            ["type"] = "Kupon Exchange",
         },
         ["Diegai"] = {
             ["_source"] = "npc",
@@ -158,9 +184,10 @@ items from Momiji.",
         ["Erbelie"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "QuestNPC.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Neck_and_Neck",
             ["note"] = "Crystal Warrior:\
-* Starts quests: Neck and Neck,\
-Neck and Neck II.\
+* Starts quest: Neck and Neck.\
+* Starts quest: Neck and Neck II.\
 * Level 10 Windurst starting\
 quests.",
             ["type"] = "CW Starting Quest",
@@ -173,9 +200,18 @@ quests.",
         ["Eya Bhithroh"] = {
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
-            ["note"] = "Notes:\
-Checks weather for the following locations: :* East Sarutabaruta :* West Sarutabaruta :* Tahrongi Canyon :* Buburimu Peninsula :* Meriphataud Mountains",
+            ["note"] = "Weather Forecasts:\
+* East Sarutabaruta\
+* West Sarutabaruta\
+* Tahrongi Canyon\
+* Buburimu Peninsula\
+* Meriphataud Mountains",
             ["type"] = "Weather Reporter",
+        },
+        ["Explorer Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "ExplorerMoogle.png",
+            ["type"] = "Mog Tablet Guide",
         },
         ["Fabricius"] = {
             ["_source"] = "npc",
@@ -217,7 +253,7 @@ Checks weather for the following locations: :* East Sarutabaruta :* West Sarutab
             ["_source"] = "npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Notes:\
-*  Member of the Star Onion Brigade",
+* Member of the Star Onion Brigade.",
             ["type"] = "Star Onion Brigade",
         },
         ["Griffyth"] = {
@@ -262,12 +298,14 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers General Information and a Map of Windurst: :Allow me to assist you if you are lost. What can Jack do for you? :*\"To show you a map of Windurst.\": [Displays an overview map of Windurst] :*\"How to give items to townsfolk.\": Interchange of items and money between people and things is called \"Trading.\" First target entity to interact with. Nothing happens unless receiver is properly targeted. Open main menu. Press \"Trade\" button. Next choose items to hand over! Press \"Confirm\" button! Targeted entity should receive items. :*\"How to go outside and battle.\": Before setting out to battle: Confirm equipment is properly equipped! Magic-users \"Use\" spell scrolls on themselves to learn magic! Before commencing battle with monster: \"Check\" monster to confirm its strength! After battle is won: Look for \"Spoils\" dropped by monsters. If in party, \"Cast Lots\" for spoils! :*\"About quests and missions.\": Quests are requests for help from ordinary townsfolk. It pays to help people in need. Missions are official requests for assistance made by the Windurst authorities. You can receive missions from the guards at the town's gatehouse. :*\"Nothing in particular.\": Feel free to ask next time you need Jack's help. Over and out!",
+* Provides a map of Windurst.\
+* Explains trading, combat, quests,\
+and missions.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Janshura-Rashura"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * Windurst Missions\
 ",
@@ -292,7 +330,8 @@ Offers General Information and a Map of Windurst: :Allow me to assist you if you
             ["_source"] = "npc",
             ["icon"] = "AirshipTravelAgent.png",
             ["note"] = "Notes:\
-Reports airship arrival and departure time.",
+* Reports airship arrival and\
+departure times.",
             ["type"] = "Airship Travel",
         },
         ["Khel Pahlhama"] = {
@@ -302,7 +341,7 @@ Reports airship arrival and departure time.",
         },
         ["Kohlo-Lakolo"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Truth, Justice, and the Onion Way!\
 * Know One's Onions\
@@ -314,7 +353,7 @@ Reports airship arrival and departure time.",
 Involved in Quests:\
 * Wild Card (Quest)\
 ",
-            ["type"] = "Scroll Quest",
+            ["type"] = "Quest Giver",
         },
         ["Kucha Malkobhi"] = {
             ["_source"] = "npc",
@@ -354,9 +393,10 @@ Involved in Missions:\
         },
         ["Laughing Lizard"] = {
             ["_source"] = "npc",
-            ["icon"] = "AdventurersAssistant.png",
+            ["icon"] = "fishing.png",
             ["note"] = "Notes:\
-Offers an Explanation of the Fishing System: Eh? You say somethin'? Hmph! You dang kids these days ain't go no respect for your elders. Can't you see I'm tryin' to learn this new fandagled fishin' method? In my day, all we had to do was cast a line and wait for the baby to tug. Why, back then it was so easy, I could catch fish while I was slieepin'! But now you gotta work for your meal! Let me tell you how it's done... First, you fix a little bait on your line, toss it into the water, and wait for somethin' to bite. Eh? What's changed? Well, nothing yet! Would you just hold your horses and let me get to the good part? Now, once you feel the pull is where the real battle begins--and I say battle because that fish is not going to let you get him without a fight! If he starts tuggin' to the left, you've gotta pull to the right. If he starts tuggin' to the right, you've gotta pull to the left. Keepin' centered--that's the key to tirin' out that old puppy! And once you think you've softened him up enough, that's when you reel him in. If you confirm a little too early, the fish may still have enough pep to run off with your bait. But if you spend too much time playin' with him, he maight just get bored and be on his way. Of course, if you ever get a bad feeling that whatever's on the end of your line's fixin' to snap your rod in two, you could always cancel your way out of things......sissy! Alright did you get all that? Well, keep listenin', 'cause I'm not done yet. This new type o' fishin' works differently with different types of rods. Those fancy carbon and glass rods may have what it takes to keep a fish on your line for a long time, but the flexibility of good old-fashioned wooden rods packs enough punch to tire out any fish in the blink of an eye. But enough of this chitchat. If I don't catch somthing' for tonight's dinner, my wife'll clean me, gut me, and have me in a fryin' pan faster than you can say Galka mauniere.",
+* Explains fishing controls, rods,\
+and how to reel in catches.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Lebondur"] = {
@@ -368,7 +408,9 @@ Offers an Explanation of the Fishing System: Eh? You say somethin'? Hmph! You da
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Provides information about Chocobo Racing, and recruits adventurers for the CRA Windurst team.* Removed from Game on 9/9/2010.",
+* Provided Chocobo Racing information\
+and recruited for CRA Windurst.\
+* Removed from the game in 2010.",
             ["type"] = "VCS Chocobo Racing Associate",
         },
         ["Maabu-Sonbu"] = {
@@ -387,7 +429,8 @@ Offers an Explanation of the Fishing System: Eh? You say somethin'? Hmph! You da
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
-He will warp you for free to Komulili in (Windurst Walls, (J-11). \"Have you, traveler, also come to Windurst to take a looky at the Great Star Tree? If so, then the star tree, also known as Heavens Tower, is far to the northeasty of here, in Windurst Walls. If you wanty, I can use my magic to sendy you to Windurst Walls in an instant. Would you likey that?\"",
+* Teleports players to Komulili in\
+Windurst Walls (J-11) for free.",
             ["type"] = "Teleport Service",
         },
         ["Martin"] = {
@@ -423,14 +466,18 @@ He will warp you for free to Komulili in (Windurst Walls, (J-11). \"Have you, tr
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the Windurst Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for Windurst) at certain conditions. It will be also possible to get some items of other Nations (Items for Bastok / Items for San d'Oria) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without Windurst as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer.",
+* Casts Signet and handles Conquest\
+Point rewards for Windurst citizens.\
+* Handles Supply Runs and\
+Expeditionary Forces.",
             ["type"] = "Conquest Overseer",
         },
         ["Mimble-Pimble"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Sells key items required for High-Tier Mission Battlefields. See the Phantom Gems page for individual requirements",
+* Sells key items required for\
+High-Tier Mission Battlefields.",
             ["type"] = "HTMB Vendor",
         },
         ["Mog Dinghy"] = {
@@ -473,7 +520,8 @@ Sells key items required for High-Tier Mission Battlefields. See the Phantom Gem
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers Information on Elemental Resistances: \"Do the words \"elemental resistance\" mean anything to you? As in, the stronger your resistance to fire is, the less damage you will receive from fire magic, and so on...? Well, don't go getting it wrong, now. Just 'cause your fire resistance is strong doesn'taru mean the fire magic you cast is strong as well. You get whataru I mean?\"",
+* Explains elemental resistance and\
+how it reduces incoming damage.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Ochacha"] = {
@@ -520,7 +568,7 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Notes:\
-*  Member of the Star Onion Brigade",
+* Member of the Star Onion Brigade.",
             ["type"] = "Star Onion Brigade",
         },
         ["Paruru"] = {
@@ -537,7 +585,8 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-:* Explain Fishing fatigue : \"Whew! Been fishing up a storm all day, and my eyes are spinning-winning. : Why, I couldn't tell a Bluetail from a Bibikibo in the state I'm in! : Still, I caughtaru twenty fish today. : Not bad for a rookie like me, wouldn't you say? : Some of the bigwigs around here say they've caughtaru more than ten times that, but that sounds awful fishy-wishy to me. : Anyway, I'm going to take a breather. Another day (Earth time) or so and I should be fresh as a Forest Carp. : If you ever find yourself pooped after a long day of fishing, I suggestaru you do the same!\"",
+* Explains fishing fatigue and the\
+daily recovery period.",
             ["type"] = "Fishing Guide",
         },
         ["Paytah"] = {
@@ -556,21 +605,25 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-* Form a party of two and speak with him to have your fortune told for 120 gil. *Rewards can be received for good fortune (see talk page)",
+* Tells fortunes for parties of two\
+for 120 gil.\
+* Good fortunes may grant rewards.",
             ["type"] = "Fortune Teller",
         },
         ["Pichichi"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Notes:\
-*  Member of the Star Onion Brigade",
+* Member of the Star Onion Brigade.",
             ["type"] = "Star Onion Brigade",
         },
         ["Porter Moogle"] = {
             ["_source"] = "npc",
             ["icon"] = "ItemStorage.png",
             ["note"] = "Notes:\
-Find a nearby Porter Moogle and talk to him and select the option to buy a Slip. Once you find the slip you want you select it and confirm your selection. Each slip will cost you 1000 gil to buy. After purchasing any storage slip, you may trade 1-7 corresponding items per trade along with the slip. NOTE: This does NOT mean you can only store up to 7 items on a single slip, it simply means you can only transfer up to 7 at a time to the Porter for storage. At any time after you have the slip you can continue to make trades of 1-7 items along with the corresponding slip, thereby storing all your like items with the Moogle instead of in your MH. This feature is handy when you later get another armor drop, like in Dynamis, and want to store it somewhere until you need it. To withdraw an item simply trade him the corresponding slip and he will give you an option to retrieve your armor. You only pay an initial fee of 1,000 gil when purchasing a storage slip, you will not pay every time you store or withdraw gear. Storage slips cannot be discarded unless all stored items are retrieved first. As of Feb. 14, 2011, items with a Magian Trial insignia can no longer be stored with a Porter Moogle. Any items with an active trial stored before that date have had all trial progress erased.",
+* Sells storage slips for 1,000 gil.\
+* Stores and retrieves supported gear\
+using its corresponding slip.",
             ["type"] = "Item Storage",
         },
         ["Posso Ruhbini"] = {
@@ -581,6 +634,7 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
         ["Puluki-Culuki"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "QuestNPC.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Rustling_Feathers",
             ["note"] = "Crystal Warrior:\
 * Starts quest: Rustling Feathers.\
 * Level 5 Windurst starting quest.",
@@ -605,7 +659,7 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
             ["_source"] = "npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Notes:\
-*  Member of the Star Onion Brigade",
+* Member of the Star Onion Brigade.",
             ["type"] = "Star Onion Brigade",
         },
         ["Pyru-Copyru"] = {
@@ -638,6 +692,10 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
         },
         ["Rottata"] = {
             ["_source"] = "npc",
+            ["icon"] = "OutpostTeleporter.png",
+            ["note"] = "Notes:\
+* Teleports players to unlocked\
+regional outposts.",
             ["type"] = "Outpost Teleporter",
         },
         ["Ryan"] = {
@@ -649,7 +707,8 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the Bastok Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for Bastok) at certain conditions. It will be also possible to get some items of other Nations (Items for San d'Oria / Items for Windurst) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without Bastok as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer.",
+* Casts Signet and provides Conquest\
+Point services for Bastok citizens.",
             ["type"] = "Conquest Overseer",
         },
         ["Sadoc"] = {
@@ -682,7 +741,7 @@ job.",
         ["Selh'teus"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * Chains of Promathia\
 * Rhapsodies of Vana'diel\
 ",
@@ -692,6 +751,16 @@ job.",
             ["_source"] = "npc",
             ["icon"] = "Defender.png",
             ["type"] = "Defender",
+        },
+        ["Shady Dealer"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestNPC.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Out_of_Stock",
+            ["note"] = "CatsEyeXI:\
+* Starts quest: Out of Stock.\
+* Unlocks Curio Vendor Moogle\
+wares without a Rhapsody key item.",
+            ["type"] = "Curio Vendor Quest",
         },
         ["Shanruru"] = {
             ["_source"] = "npc",
@@ -815,7 +884,8 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-* Lusts after the magic skills of the Orastery Tarus",
+* Interested in the Orastery's\
+magical research.",
             ["type"] = "Magic Enthusiast",
         },
         ["Wanju-Daruja"] = {
@@ -845,7 +915,7 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Notes:\
-*  Member of the Star Onion Brigade",
+* Member of the Star Onion Brigade.",
             ["type"] = "Star Onion Brigade",
         },
         ["Yaman-Hachuman"] = {
@@ -865,7 +935,9 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-thumb|100px|ElementsOffers Information on the Elemental Relationships: :W-what? You don't want to see my chart of elemental correlations, do you? 'Cause if you do, well, I'm sorry, I don't know anything about such a thing. Eeew... Well, if you're going to be so pushy about it... Here, but only because you're begging me to show it to you... View the Chart of Elemental Correlations? :*\"Yes.\": [Displays a chart of elemental relationships] Okay, okay...hold your horses. This is strictly between you and me, all rightaru? Of course, you know about the prime elementals, rightaru? They are the eight elements or energies that control the universe. This chart shows their interrelationships. The six elements on the perimeter are in cyclical ascendancy over one another. Or, putting it simply-wimply: Water dominates fire, fire dominates ice, ice dominates wind...while wind dominates over earth, earth dominates lightning, and lightning dominates water. The two elements in the center, light and darkness, are in direct opposition to each other. Oh, and one other thing: these elements are also closely connected to your health condition! I can explain more about this if you're interested. :*\"Yes.\": Then listen up... Disease is to fire as paralysis is to ice, silence is to wind as petrification is to earth, and stun is to lightning as poison is to water. Finally there is charm, which is related to light, while blind, curse, and sleep are infused with the power of darkness. What all this means is this: if your armor resists certain elements, then it will also help prevent the status ailments tied to those elements. And there you have it... But remember, this is our little secret, rightaru? Come back and ask to see it again whenever you need to jog your memory. :*\"No.\": And there you have it... But remember, this is our little secret, rightaru? Come back and ask to see it again whenever you need to jog your memory. :*\"No.\": Well, that's your own choice. Just don't come crying to me when you try to put out a fire with powerful wind magic and end up creating a sea of flames instead!",
+* Displays elemental relationships.\
+* Explains element-linked status\
+effects and resistances.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Yujuju"] = {
@@ -889,56 +961,78 @@ Involved in Missions:\
         ["Door:Arrivals Entrance"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The structural port checkpoint door separating international traffic. Passing past the framework manages airship terminal transit scripts or processes tracking goals.",
+            ["note"] = "Entrance to the Port Windurst\
+airship arrivals area.",
             ["type"] = "Security Gate",
         },
         ["Door:Arrivals Exit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy terminal gateway threshold exiting the arrivals deck. Shifting the latch moves you out into the public city port districts from travel layers.",
+            ["note"] = "Exit from the Port Windurst\
+airship arrivals area.",
             ["type"] = "Security Gate",
         },
         ["Door:Departures Entrance"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The localized security check portal blockading the departure docks. Passing through checks active boarding passes to grant access to transit lines.",
+            ["note"] = "Entrance to the Port Windurst\
+airship departure area.",
             ["type"] = "Security Gate",
         },
         ["Door:Departures Exit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber framework exiting the airship platform. Shifting the latch moves you off travel vessels to return securely into the terminal.",
+            ["note"] = "Exit from the Port Windurst\
+airship departure area.",
             ["type"] = "Security Gate",
         },
         ["Door:Doctor's Residence"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic residential wooden door set into the city stonework layouts. Unlatching the frame allows you to enter medical quarters to fulfill clinic delivery checks or urban side tasks.",
+            ["note"] = "Entrance to the doctor's\
+residence.",
             ["type"] = "Security Gate",
         },
         ["Door:Orastery"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy wooden entry barrier leading to the magical astronomical research towers. Pulling the handle uncovers rare library records or validates active Federation quest milestones.",
+            ["note"] = "Entrance to the Orastery.",
             ["type"] = "Security Gate",
+        },
+        ["Odyssean Passage"] = {
+            ["_source"] = "item",
+            ["icon"] = "VeridicalConflux.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Monstrosity_(Quest)",
+            ["note"] = "Monstrosity:\
+* Entrance to the Feretory.\
+* Requires a Ring of supernal\
+disjunction.",
+            ["type"] = "Feretory Portal",
         },
         ["Symphonic Curator"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
-            ["type"] = "Quest Node",
+            ["note"] = "Notes:\
+* Appears near the Mog House exit\
+when a compatible instrument is\
+placed.\
+* Selects Mog House background music.",
+            ["type"] = "Mog House Music",
         },
         ["Synergy Furnace"] = {
             ["_source"] = "item",
             ["icon"] = "SynergyFurnace.png",
             ["note"] = "Crafting furnace used for synergy recipes.",
             ["type"] = "Synergy Furnace",
+			["worldOffsetY"] = 0.45,
         },
         ["Tales' Beginning"] = {
             ["_source"] = "item",
             ["icon"] = "History.png",
-            ["note"] = "A distinct magical marker manifest near prominent municipal gathering hubs. Interfacing with its surface reviews historical records and initiates localized storyline expansions.",
-            ["type"] = "Quest Node",
+            ["note"] = "Notes:\
+* Resumes a postponed Rhapsodies of\
+Vana'diel opening cutscene.",
+            ["type"] = "Story Resume Point",
         },
     },
 }

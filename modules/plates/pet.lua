@@ -14,8 +14,10 @@ local abilityRecast = require('libs.abilityrecast');
 local enemyCasts = require('core.enemy_casts');
 local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
+local perfMeter = require('core.perf_meter');
 local canvasTexture = require('core.canvas_texture');
 local barTextures = require('core.bar_textures');
+local barWarning = require('core.bar_warning');
 local barAnimations = require('core.bar_animations');
 local backgroundTextures = require('core.background_textures');
 local statusIconTextures = require('core.status_icon_textures');
@@ -634,11 +636,12 @@ local function ApplyDetachedAvatarWidgets(plateData, background)
     end
 
     local hpPercent = math.max(0, math.min(100, tonumber(plateData.hp) or 0));
-    local hpColor = hpSettings.color or { 0.20, 0.95, 0.34, 0.95 };
-    local hpLowActive = hpSettings.lowColorEnabled == true and hpPercent <= (tonumber(hpSettings.lowColorPercent) or 25);
-    if (hpLowActive == true) then
-        hpColor = hpSettings.lowColor or hpColor;
-    end
+    local hpColor, hpCriticalActive = barWarning.ResolveHp(
+        hpSettings,
+        barDefaults,
+        hpPercent,
+        hpSettings.color or { 0.20, 0.95, 0.34, 0.95 }
+    );
 
     plateData.hpBar = CopyBarSettingsWith(plateData.hpBar, {
         enabled = hpSettings.enabled ~= false,
@@ -656,7 +659,7 @@ local function ApplyDetachedAvatarWidgets(plateData, background)
         texture = hpSettings.texture or 'Solid',
         textureId = barTextures.GetTextureId(hpSettings.texture or 'Solid'),
         textureStrength = GetDetachedAvatarMeterNumber(hpSettings, 'textureStrength', 100),
-        animationEnabled = hpLowActive == true and hpSettings.lowAnimationEnabled == true,
+        animationEnabled = hpCriticalActive == true and hpSettings.lowAnimationEnabled == true,
         animationTextureId = barAnimations.GetTextureId(hpSettings.lowAnimation),
         animationSpeed = tonumber(hpSettings.lowAnimationSpeed) or 40,
         animationColor = hpSettings.lowAnimationColor,
@@ -838,7 +841,9 @@ local function BuildDetachedPupResourceBar(source, settings, defaults, percent, 
     local color = settings.color or defaults.color;
     local lowActive = settings.lowColorEnabled == true
         and percent <= (tonumber(settings.lowColorPercent) or 25);
-    if (lowActive == true) then
+    if (defaults == barDefaults) then
+        color, lowActive = barWarning.ResolveHp(settings, defaults, percent, color);
+    elseif (lowActive == true) then
         color = settings.lowColor or color;
     end
 
@@ -1839,7 +1844,8 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
             'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent',
             'textOffsetX', 'textOffsetY', 'useSmallFont', 'fontSize', 'textColor',
             'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
-            'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled',
+            'lowColorEnabled', 'lowColorPercent', 'lowColor',
+            'criticalColorEnabled', 'criticalColorPercent', 'criticalColor', 'lowAnimationEnabled',
             'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor', 'anchorTo', 'anchorPoint',
         }),
         'avatarMp=' .. TableSettingKey(background.avatarMpBarSettings or {}, {
@@ -1905,6 +1911,7 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
             'textOffsetX', 'textOffsetY', 'useSmallFont', 'fontSize', 'textColor',
             'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize',
             'lowColorEnabled', 'lowColorPercent', 'lowColor',
+            'criticalColorEnabled', 'criticalColorPercent', 'criticalColor',
             'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor',
         }),
         'pupMp=' .. TableSettingKey(background.pupMpBarSettings or {}, {
@@ -1942,6 +1949,15 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
             'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor',
             'textOutlineSize',
         }),
+        'drgHp=' .. TableSettingKey(background.drgHpBarSettings or {}, {
+            'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
+            'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
+            'texture', 'textureStrength', 'showPercent', 'textOffsetX', 'textOffsetY',
+            'useSmallFont', 'fontSize', 'textColor', 'textOutlineEnabled',
+            'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent',
+            'lowColor', 'criticalColorEnabled', 'criticalColorPercent', 'criticalColor',
+            'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor',
+        }),
         'drgSpiritBond=' .. TableSettingKey(background.drgSpiritBondSettings or {}, {
             'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
             'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
@@ -1964,6 +1980,8 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
             'texture', 'textureStrength', 'showPercent', 'textOffsetX', 'textOffsetY',
             'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor',
             'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor',
+            'criticalColorEnabled', 'criticalColorPercent', 'criticalColor',
+            'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor',
         }),
         'bstTp=' .. TableSettingKey(background.bstTpBarSettings or {}, {
             'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
@@ -2015,7 +2033,9 @@ local function BuildStaticPetTextureKey(prefix, petIndex, background, plateData)
             'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius',
             'texture', 'textureStrength', 'showPercent', 'textOffsetX', 'textOffsetY',
             'useSmallFont', 'fontSize', 'textColor', 'textOutlineEnabled',
-            'textOutlineColor', 'textOutlineSize',
+            'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent',
+            'lowColor', 'criticalColorEnabled', 'criticalColorPercent', 'criticalColor',
+            'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor',
         }),
         'geoBlaze=' .. TableSettingKey(background.geoBlazeSettings or {}, {
             'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color',
@@ -3213,6 +3233,8 @@ local smnHpBarDefaults = CopySettingsWith(barDefaults, {
     offsetX = 0,
     offsetY = 0,
     color = { 0.95, 0.45, 0.45, 1.0 },
+    lowColorEnabled = false,
+    criticalColorEnabled = false,
     showValue = false,
     showPercent = true,
     textColor = { 1.0, 1.0, 1.0, 1.0 },
@@ -4577,14 +4599,8 @@ local function QueueBstPet(pet)
     local tpPercent = tpValue / 10;
     local hpColor = hpBarSettings.color or { 0.95, 0.45, 0.45, 1.0 };
 
-    local hpLowActive = (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    );
-
-    if (hpLowActive == true) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
+    local hpLowActive = false;
+    hpColor, hpLowActive = barWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
 
     local plateData = {
         hp = hpPercent,
@@ -4956,10 +4972,8 @@ local function QueueSmnPet(pet)
     local mpColor = mpBarSettings.color or mpBarDefaults.color;
     local tpColor = tpBarSettings.color or tpBarDefaults.color;
 
-    local hpLowActive = (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    );
+    local hpLowActive = false;
+    hpColor, hpLowActive = barWarning.ResolveHp(hpBarSettings, smnHpBarDefaults, hpPercent, hpColor);
     local mpLowActive = (
         mpBarSettings.lowColorEnabled == true and
         mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25)
@@ -4968,10 +4982,6 @@ local function QueueSmnPet(pet)
         tpBarSettings.lowColorEnabled == true and
         tpPercent <= (tonumber(tpBarSettings.lowColorPercent) or 25)
     );
-
-    if (hpLowActive == true) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
 
     if (mpLowActive == true) then
         mpColor = mpBarSettings.lowColor or mpColor;
@@ -5276,18 +5286,12 @@ local function QueueWyvernPet(pet)
     local tpColor2 = tpBarSettings.color2 or tpBarDefaults.color2;
     local tpColor3 = tpBarSettings.color3 or tpBarDefaults.color3;
 
-    local hpLowActive = (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    );
+    local hpLowActive = false;
+    hpColor, hpLowActive = barWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
     local tpLowActive = (
         tpBarSettings.lowColorEnabled == true and
         tpPercent <= (tonumber(tpBarSettings.lowColorPercent) or 25)
     );
-
-    if (hpLowActive == true) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
 
     if (tpLowActive == true) then
         tpColor = tpBarSettings.lowColor or tpColor;
@@ -5513,10 +5517,8 @@ local function QueuePupPet(pet)
         pupEquipmentTest.frame = equipment.frame;
     end
 
-    local hpLowActive = (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    );
+    local hpLowActive = false;
+    hpColor, hpLowActive = barWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
     local mpLowActive = (
         mpBarSettings.lowColorEnabled == true and
         mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25)
@@ -5525,10 +5527,6 @@ local function QueuePupPet(pet)
         tpBarSettings.lowColorEnabled == true and
         tpPercent <= (tonumber(tpBarSettings.lowColorPercent) or 25)
     );
-
-    if (hpLowActive == true) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
 
     if (mpLowActive == true) then
         mpColor = mpBarSettings.lowColor or mpColor;
@@ -5784,14 +5782,8 @@ local function QueueLuopan(pet)
     local targetingSettings = targeting.GetSettings();
     local hpPercent = ClampPercent(pet.hpPercent, 100);
     local hpColor = hpBarSettings.color or barDefaults.color;
-    local hpLowActive = (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    );
-
-    if (hpLowActive == true) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
+    local hpLowActive = false;
+    hpColor, hpLowActive = barWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
 
     local plateData = {
         hp = hpPercent,

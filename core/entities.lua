@@ -1867,7 +1867,7 @@ function entities.IsMogHouseObjectSuppressionArea()
     return false;
 end
 
-function entities.GetNearbyNpcObjects(maxDistance)
+function entities.GetNearbyNpcObjects(maxDistance, isKnownNpcObject)
     local results = {};
     local maxDistanceSq = (tonumber(maxDistance) or 50) * (tonumber(maxDistance) or 50);
     local entityManager = AshitaCore:GetMemoryManager():GetEntity();
@@ -1884,21 +1884,29 @@ function entities.GetNearbyNpcObjects(maxDistance)
         local ent = GetEntity(index);
         local inPlayerIndexRange = index >= 1024 and index <= 1791;
         local isCurrentTargetContext = tonumber(index) == tonumber(targetIndex) or tonumber(index) == tonumber(subTargetIndex);
+        local isMob = ent ~= nil and IsMobIndex(entityManager, index) == true;
+        local allowTargetedNpcObject = isCurrentTargetContext == true and isMob ~= true;
+        local cleanName = tostring(ent ~= nil and ent.Name or ''):gsub('\170', '');
+        local rawEntityType = ent ~= nil and ((ent.Type == 2 or ent.Type == 3) and 'Object' or 'NPC') or 'NPC';
+        local allowKnownNpcObject = isMob ~= true and SafeCall(false, function()
+            return ent ~= nil and cleanName ~= '' and
+                type(isKnownNpcObject) == 'function' and
+                isKnownNpcObject(cleanName, rawEntityType, index) == true;
+        end);
+        local allowNonstandardNpcObject = allowTargetedNpcObject == true or allowKnownNpcObject == true;
         local allowPlayerRangeNpcObject = false;
 
         if (ent ~= nil and inPlayerIndexRange == true) then
             allowPlayerRangeNpcObject =
                 (ent.HPPercent == nil or isCurrentTargetContext == true) and
-                IsNpcObjectStatusAllowed(ent.Status) == true;
+                (IsNpcObjectStatusAllowed(ent.Status) == true or allowNonstandardNpcObject == true);
         end
 
         if (ent ~= nil and inPlayerIndexRange ~= true or allowPlayerRangeNpcObject == true) then
             local entityStatus = tonumber(ent.Status) or 0;
             local isObject = (ent.Type == 2 or ent.Type == 3);
             local allowUnsettledCharacter = entityStatus == 40 or entityStatus == 47 or entityStatus == 50;
-            local cleanName = tostring(ent.Name or ''):gsub('\170', '');
             local isMogHouseMoogle = mogHouseObjectSuppressionArea == true and cleanName == 'Moogle';
-            local isMob = IsMobIndex(entityManager, index) == true;
             -- Campaign allies use status 1 (engaged), which ordinary NPC
             -- World plates reject.  They are distinguished from campaign
             -- enemies by not being mob-class entities.
@@ -1913,7 +1921,7 @@ function entities.GetNearbyNpcObjects(maxDistance)
                 ent.Name ~= '' and
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
-                (IsNpcObjectStatusAllowed(entityStatus) == true or campaignAlly == true) and
+                (IsNpcObjectStatusAllowed(entityStatus) == true or campaignAlly == true or allowNonstandardNpcObject == true) and
                 entities.ShouldHideOtherPlayerPet(index, ent.Name) ~= true and
                 IsMogHouseFurniturePlaceholder(entityManager, index, ent) ~= true and
                 (trustNames.IsKnownTrustName(ent.Name) ~= true or isMogHouseMoogle == true)
@@ -1932,7 +1940,7 @@ function entities.GetNearbyNpcObjects(maxDistance)
                     -- generic character-settle check reports ready.  They use
                     -- the regular NPC World plate while idle, so do not drop
                     -- them solely for that transient flag.
-                    (isObject == true or allowUnsettledCharacter == true or campaignAlly == true or HasSettledCharacterModel(entityManager, index) == true)
+                    (isObject == true or allowUnsettledCharacter == true or campaignAlly == true or allowNonstandardNpcObject == true or HasSettledCharacterModel(entityManager, index) == true)
                 ) then
                     results[#results + 1] = {
                         index = index,
@@ -2043,6 +2051,12 @@ function entities.GetEntityDebugInfo(index, maxDistance)
     local entityType = ent ~= nil and ent.Type or nil;
     local isObject = (entityType == 2 or entityType == 3);
     local isMob = IsMobIndex(entityManager, targetIndex);
+    local currentTargetIndex = targeting.GetCurrentTargetIndex();
+    local currentSubTargetIndex = targeting.GetCurrentSubTargetIndex();
+    local isCurrentTargetContext =
+        targetIndex == tonumber(currentTargetIndex) or
+        targetIndex == tonumber(currentSubTargetIndex);
+    local allowTargetedNpcObject = isCurrentTargetContext == true and isMob ~= true;
     local isParty = entities.IsPartyMemberIndex(targetIndex);
     local actorPointer = SafeCall(nil, function() return entityManager:GetActorPointer(targetIndex); end);
     local invisibleActor = IsInvisiblePlayerActor(entityManager, targetIndex, actorPointer);
@@ -2081,8 +2095,8 @@ function entities.GetEntityDebugInfo(index, maxDistance)
         and ent.Name ~= ''
         and mogHouseFurniturePlaceholder ~= true
         and inRange == true
-        and statusAllowed == true
-        and settled == true;
+        and (statusAllowed == true or allowTargetedNpcObject == true)
+        and (settled == true or allowTargetedNpcObject == true);
 
     return {
         index = targetIndex,
@@ -2112,6 +2126,7 @@ function entities.GetEntityDebugInfo(index, maxDistance)
         settled = settled,
         inRange = inRange,
         statusAllowed = statusAllowed,
+        targetedNpcObjectFallback = allowTargetedNpcObject,
         npcScanAllowed = npcScanAllowed,
         tacticalNpcAllowed = tacticalNpcAllowed,
         alliedTacticalInfo = alliedTacticalInfo,

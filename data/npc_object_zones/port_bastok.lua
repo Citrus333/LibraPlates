@@ -875,6 +875,7 @@ After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossov
             ["icon"] = "SynergyFurnace.png",
             ["note"] = "Crafting furnace used for synergy recipes.",
             ["type"] = "Synergy Furnace",
+			["worldOffsetY"] = 0.45,
         },
         ["Tales' Beginning"] = {
             ["_source"] = "item",

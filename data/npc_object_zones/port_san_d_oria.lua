@@ -7,6 +7,11 @@ return {
 * The Pickpocket",
             ["type"] = "Quest Giver",
         },
+        ["A.M.A.N. Liaison"] = {
+            ["_source"] = "npc",
+            ["icon"] = "RecordsOfEminence.png",
+            ["type"] = "Records of Eminence",
+        },
         ["Ambleon"] = {
             ["_source"] = "npc",
             ["icon"] = "WorldPassDealer.png",
@@ -68,7 +73,7 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Dialogue: Hey! I may be a child, but I am the captain of the Royal Knights Youth Division! My troops...well, it's just me and my brother, but Orcs shiver at our name! It's true!",
+* Shares local dialogue.",
             ["type"] = "Dialogue NPC",
         },
         ["Auvare"] = {
@@ -82,7 +87,9 @@ Dialogue: Hey! I may be a child, but I am the captain of the Royal Knights Youth
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers General Information: :Perhaps I could be of service. Is there anything in particular you'd like to know? :*\"Nothing Actually.\" :*\"I'd like to get out of the city.\": Just got here and you're aching to leave, eh? Listen, the lands are wild beyond our gates, filled with fiends and their ilk. But if you must go, take those stairs, head for Northern San d'Oria, then go out Ranperre Gate. You'll need to go down Laborman's Way, then take a right to get to the gate. If you need any help with directions, ask those around you. Our citizens are friendly, for the most part. :*\"I'd like to do some shopping.\": If you want to buy weapons or other supplies, just ask one of the merchants in town. :*\"Tell me more about adventuring.\": Ahhh, recruits... Don't know which way to hold a sword and you think you're ready for adventures. Well, what would you like to know? :*\"Helping people.\": Ah, a commendable choice! Come to think of it, there was a lady in front of a house on Pikeman's Way. She may be in need of assistance. If you need any help with directions, ask those around you. Our citizens are friendly, for the most part. :*\"Hunting monsters.\": Ahhh, recruits... Don't know your own limits until a fiend beats it into your head for you. Very well. How about gathering some hides? From Northern San d'Oria, pass through Victory Arch to enter Sounthern San d'Oria. There you'll find the Tanners' Guild. They need hides every now and then. If you have trouble finding the Tanners' Guild, just ask around. :*\"Making easy money.\": Easy money, eh? Typical of a new recruit. I canot promise ease, but try the lumberyard in Northern San d'Oria. Should be enough work for you there. Go up those stairs there to get to Northern San d'Oria. You'll find the lumberyard near the top. If you need any help with directions, ask those around you. Our citizens are friendly, for the most part. :*\"Working for my country.\": Ah, a commendable choice. Head to any city gate and inquire at the gatehouse. They'll give you work befitting your rank. If you need any help with directions, ask those around you. Our citizens are friendly, for the most part.",
+* Gives directions around the city.\
+* Explains shopping, adventuring,\
+quests, combat, and missions.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Bellue"] = {
@@ -119,7 +126,8 @@ Offers General Information: :Perhaps I could be of service. Is there anything in
             ["_source"] = "npc",
             ["icon"] = "AirshipTravelAgent.png",
             ["note"] = "Notes:\
-Dialogue: Airships fly between our kingdom and the Grand Duchy of Jeuno to the east. I'll never forget the first day I saw one of those ships fly... Jeuno's history is short, but quickly did that village of Hume fishermen grow into what it is today. When their archduke came to power, he excavated the ruins nearby. The knowledge they found there made them as mighty as San d'Oria, by any reckoning. But once a fisherman, always a fisherman, I say. 'Tis the Elvaan of San d'Oria that will rule Vana'diel, mark my words!",
+* Provides information about airship\
+travel between San d'Oria and Jeuno.",
             ["type"] = "Airship Travel",
         },
         ["Ceraulian"] = {
@@ -192,7 +200,9 @@ items from Momiji.",
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Acquisition of permanent Rhapsody key items from Rhapsodies of Vana'diel Missions increases the Curio Vendor Moogle's inventory.",
+* Sells special goods.\
+* Stock expands with progress through\
+Rhapsodies of Vana'diel.",
             ["type"] = "Curio Vendor",
         },
         ["Dabbio"] = {
@@ -204,10 +214,14 @@ Acquisition of permanent Rhapsody key items from Rhapsodies of Vana'diel Mission
         },
         ["Dealer Moogle"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "Event.png",
             ["note"] = "Notes:\
-A Moogle with a red ball on the end of its \"antenna\" that appears during the Mog Bonanza Festival next to the Bonanza Moogle, and during the Repeat Login Campaigns. As of the July 2023 Version Update, there is now a Dealer Moogle with a yellow pom and sunglasses who accepts newer Kupons such as the Kupon A-Rub and any Kupon introduced since that update. Trading a Kupon A-DBcd or Kupon A-DXar allows you to exchange the kupon for a piece of relic equipment normally obtainable from the respective Dynamis area. If you trade the kupon and then say you need more time to think, you receive a key item version of the kupon titled Key Item",
-            ["type"] = "Bonanza Moogle",
+* Appears during Mog Bonanza and\
+Repeat Login Campaigns.\
+* Exchanges Kupons for rewards.\
+* A-DBcd and A-DXar Kupons award\
+Dynamis relic equipment.",
+            ["type"] = "Kupon Exchange",
         },
         ["Deguerendars"] = {
             ["_source"] = "npc",
@@ -235,13 +249,22 @@ A Moogle with a red ball on the end of its \"antenna\" that appears during the M
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Notes:\
-Appeared during the 2004 Starlight Celebration event.",
+* Appeared during the 2004 Starlight\
+Celebration.",
             ["type"] = "Special Event Coordinator",
         },
         ["Felippe"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
+        },
+        ["Festive Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "FestiveMoogle.png",
+            ["note"] = "Notes:\
+- Redeems Mog Pells for selectable rewards.\
+- Distributes eligible rewards registered with campaign or event codes.",
+            ["type"] = "Event Reward",
         },
         ["Fiva"] = {
             ["_source"] = "npc",
@@ -280,7 +303,8 @@ Involved in Quests:\
 * Explains how the Auction House works.",
             ["type"] = "Adventurer's Assistant",
         },
-        ["Greeter Moogle"] = {
+			["Greeter Moogle"] = {
+            ["icon"] = "GreeterMoogle.png",
             ["_source"] = "npc",
             ["type"] = "Login Campaign",
         },
@@ -293,9 +317,13 @@ Involved in Quests:\
             ["type"] = "Quest Giver",
         },
         ["Habitox"] = {
-            ["_source"] = "catseye_npc",
+            ["_source"] = "npc",
             ["icon"] = "GobbieMysteryBox.png",
-            ["note"] = "CatsEyeXI:\\n* Opens random rewards using daily\\nGobbie Box points.\\n* New players must wait 14\\nreal-life days before using the\\nbox.\\n* Special Gobbie Keys can be\\nobtained by exchanging merit\\npoints.\\n* Crystal Warriors and Wings Era\\nWarriors cannot use this box.",
+            ["note"] = "Notes:\
+* Opens random rewards using daily Gobbie Box points.\
+* New players must wait 14 real-life days.\
+* Special Gobbie Keys can be purchased with merit points.\
+* Unavailable to Crystal Warriors and Wings Era Warriors.",
             ["type"] = "Gobbie Mystery Box Vendor",
         },
         ["Huebald"] = {
@@ -310,7 +338,8 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-Aye, 'tis true that San d'Oria joined Windurst, Bastok, and Jeuno in war twenty years ago. We slew the Shadow Lord, and drove back his hordes! I say \"we,\" but what did the absent-minded Windurstians and granite-licking Bastokers do? Nothing! And don't get me started on those upstart fisherman from Jeuno! Our knights triumphed against darkness that day. San d'Oria saved this world from the clutches of the Shadow Lord! Soon, our great kingdom will bring peace to this land! Fight with me, my brothers, until that glorious day has come!",
+* Discusses San d'Oria's role in the\
+Crystal War.",
             ["type"] = "Campaign NPC",
         },
         ["Ivan"] = {
@@ -337,9 +366,12 @@ Aye, 'tis true that San d'Oria joined Windurst, Bastok, and Jeuno in war twenty 
         ["Keenajaques"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "Trust.png",
-            ["note"] = "Matter of Trust I:\
-* San d'Oria level 10 Trust quest giver.\
-* Sends you to inspect the Crystal Anomaly in La Theine Plateau (L-8).",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests",
+            ["note"] = "Crystal Warrior:\
+Starts Quests:\
+* A Matter of Trust (San d'Oria)\
+* A Matter of Trust II (San d'Oria)\
+* A Matter of Trust III (San d'Oria)",
             ["type"] = "CW Trust Quest",
         },
         ["Laucimercen"] = {
@@ -420,7 +452,8 @@ Stands outside the Air Travel Agency and gives the departure times for Airships.
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Tells adventurers when the next San d'Oria Airship will be arriving and departing.",
+* Reports the next San d'Oria airship\
+arrival time.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Nimia"] = {
@@ -530,8 +563,8 @@ Involved in Quests:\
         },
         ["Selh'teus"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * Chains of Promathia\
 * Rhapsodies of Vana'diel\
 ",
@@ -549,15 +582,26 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-* Explains Mog Gardens and the requirements to access them. *Sells books (in the form of permanent key items) that increase the ranks of specific Mog Garden features. **The same books can be purchased from Zenicca in Western Adoulin at ({{Location Tooltip|area=Western Adoulin|pos=E-9",
+* Explains Mog Gardens and their\
+access requirements.\
+* Sells key-item manuals that improve\
+Mog Garden features.",
             ["type"] = "MHMU worker",
         },
         ["Solgierte"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Dialogue: Orcs have been harassing us ever since they took West Ronfaure. Confound those beastmen! But where are the knights? They should have stomped their camps flat months ago, just like in the Great War.",
+* Shares information about the Orcish\
+occupation of West Ronfaure.",
             ["type"] = "Dialogue NPC",
+        },
+        ["Synergy Furnace"] = {
+            ["_source"] = "item",
+            ["icon"] = "SynergyFurnace.png",
+            ["note"] = "Crafting furnace used for synergy recipes.",
+            ["type"] = "Synergy Furnace",
+			["worldOffsetY"] = 0.45,
         },
         ["Teilsa"] = {
             ["_source"] = "npc",
@@ -600,62 +644,77 @@ Involved in Quests:\
         ["Door:\"Rusty Anchor\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber entrance portal leading into the bustling harbor tavern. Turning the iron door handle coordinates your city navigation and uncovers neighborhood background records.",
+            ["note"] = "Notes:\
+* Entrance to the Rusty Anchor.",
             ["type"] = "Security Gate",
         },
         ["Door:Arrivals Entrance"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The structural port checkpoint door separating international traffic. Passing past the framework manages airship terminal transit scripts or processes tracking goals.",
+            ["note"] = "Notes:\
+* Entrance to the arrivals terminal.",
             ["type"] = "Security Gate",
         },
         ["Door:Arrivals Exit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy terminal gateway threshold exiting the arrivals deck. Shifting the latch moves you out into the public city port districts from travel layers.",
+            ["note"] = "Notes:\
+* Exit from the arrivals terminal.",
             ["type"] = "Security Gate",
         },
         ["Door:Cargo Room A"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A fortified wooden door framework partitioning off secure harbor warehouses. Presenting commercial shipping manifests commands the frame to swing open for trade checks.",
+            ["note"] = "Notes:\
+* Entrance to Cargo Room A.",
             ["type"] = "Security Gate",
         },
         ["Door:Cargo Room B"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The companion storage room gateway threshold exiting the harbor lanes. Shifting the latch lets you enter supply vaults to check delivery parameters or retrieve quest items.",
+            ["note"] = "Notes:\
+* Entrance to Cargo Room B.",
             ["type"] = "Security Gate",
         },
         ["Door:Departures Entrance"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The localized security check portal blockading the departure docks. Passing through checks active boarding passes to grant access to transit lines.",
+            ["note"] = "Notes:\
+* Entrance to the departures\
+terminal.",
             ["type"] = "Security Gate",
         },
         ["Door:Departures Exit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber framework exiting the airship platform. Shifting the latch moves you off travel vessels to return securely into the terminal.",
+            ["note"] = "Notes:\
+* Exit from the departures terminal.",
             ["type"] = "Security Gate",
         },
         ["Door:Regine's Magicmart"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A dusty academic door frame set into the arcane retail shop. Pulling the handle uncovers rare research logs or validates active magical quest milestones.",
+            ["note"] = "Notes:\
+* Entrance to Regine's Magicmart.",
             ["type"] = "Security Gate",
         },
         ["Symphonic Curator"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
-            ["type"] = "Quest Node",
+            ["note"] = "Notes:\
+* Appears near the Mog House exit\
+when a compatible instrument is\
+placed.\
+* Selects Mog House background music.",
+            ["type"] = "Mog House Music",
         },
         ["Tales' Beginning"] = {
             ["_source"] = "item",
             ["icon"] = "History.png",
-            ["note"] = "A distinct magical marker manifest near prominent municipal gathering hubs. Interfacing with its surface reviews historical records and initiates localized storyline expansions.",
-            ["type"] = "Quest Node",
+            ["note"] = "Notes:\
+* Resumes a postponed Rhapsodies of\
+Vana'diel opening cutscene.",
+            ["type"] = "Story Resume Point",
         },
     },
 }

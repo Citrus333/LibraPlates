@@ -434,13 +434,6 @@ local function UpdateUnlockStatus(data, anchorWarpIndex)
 
     SaveUnlockCache();
 
-    log.Info(
-        'Home Point unlock cache updated: ' ..
-        tostring(unlockStatusUnlockedCount) .. '/' .. tostring(unlockStatusTotalCount) ..
-        ' parser=' .. tostring(unlockStatusParser) ..
-        ' reliable=' .. tostring(unlockStatusReliable == true)
-    );
-
     if (debugEnabled == true) then
         log.Info(
             'Home Point unlock cache parser=' .. tostring(unlockStatusParser) ..

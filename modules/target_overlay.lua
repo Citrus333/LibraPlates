@@ -545,6 +545,34 @@ local function IsDataBackedObjectTarget(index)
     return resolvedEntityName == 'Object' and info ~= nil;
 end
 
+local objectFallbackTransitions = {};
+
+local function CanDrawDataBackedObjectFallback(slotName, index)
+    local slot = tostring(slotName or 'Target');
+
+    if (IsDataBackedObjectTarget(index) ~= true) then
+        objectFallbackTransitions[slot] = nil;
+        return true;
+    end
+
+    local now = os.clock();
+    local transition = objectFallbackTransitions[slot];
+
+    if (transition == nil or tonumber(transition.index) ~= tonumber(index)) then
+        objectFallbackTransitions[slot] = {
+            index = index,
+            firstSeen = now,
+        };
+        return false;
+    end
+
+    -- The regular object plate and its click rectangle are produced in
+    -- different render phases.  Give that plate time to publish its bounds
+    -- before enabling the emergency overlay, otherwise the first target
+    -- frame draws a duplicate arrow and enlarged fallback name.
+    return (now - (tonumber(transition.firstSeen) or now)) >= 0.10;
+end
+
 DrawImage = function(drawList, textureId, x, y, w, h, tint)
     if (drawList == nil or textureId == nil or tonumber(textureId) == nil or tonumber(textureId) == 0) then
         return false;
@@ -1248,7 +1276,9 @@ function targetOverlay.Render()
 
     if (mainIndex ~= nil) then
         local context = ResolveEntityContext(mainIndex);
+        local canDrawFallback = CanDrawDataBackedObjectFallback('Target', mainIndex);
         local needsFallback =
+            canDrawFallback == true and
             context.valid == true and
             (context.targetType == 'npc' or context.targetType == 'object' or IsUnknownRawObjectNpcContext(context) == true) and
             HasNpcObjectWorldPlateRect(mainIndex) ~= true;
@@ -1257,12 +1287,18 @@ function targetOverlay.Render()
             DrawOne(drawList, mainIndex, 'Target', 0, true);
         end
 
-        DrawObjectTargetInfo(drawList, mainIndex);
+        if (canDrawFallback == true) then
+            DrawObjectTargetInfo(drawList, mainIndex);
+        end
+    else
+        objectFallbackTransitions.Target = nil;
     end
 
     if (mainIndex ~= nil and subIndex ~= nil and subIndex ~= mainIndex) then
         local context = ResolveEntityContext(subIndex);
+        local canDrawFallback = CanDrawDataBackedObjectFallback('Subtarget', subIndex);
         local needsFallback =
+            canDrawFallback == true and
             context.valid == true and
             (context.targetType == 'npc' or context.targetType == 'object' or IsUnknownRawObjectNpcContext(context) == true) and
             HasNpcObjectWorldPlateRect(subIndex) ~= true;
@@ -1271,7 +1307,11 @@ function targetOverlay.Render()
             DrawOne(drawList, subIndex, 'Subtarget', -18, true);
         end
 
-        DrawObjectTargetInfo(drawList, subIndex);
+        if (canDrawFallback == true) then
+            DrawObjectTargetInfo(drawList, subIndex);
+        end
+    else
+        objectFallbackTransitions.Subtarget = nil;
     end
 end
 

@@ -856,9 +856,11 @@ function targetModule.DrawSettings(settings, context)
 
     local function DrawLockOnIconPanel()
         DrawBoxedPanel('Lock-on icon', function()
-            settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
+            if (lockOnly ~= true) then
+                settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
+            end
 
-            if (settings.lockEnabled ~= false) then
+            if (lockOnly == true or settings.lockEnabled ~= false) then
                 local lockTypeOptions = T{ 'Still image', 'Animation' };
                 local lockType = settings.lockSprite == true and 'Animation' or 'Still image';
                 lockType = DrawOption('Lock-on type', lockTypeOptions, lockType, 'TargetModuleLockType');
@@ -918,6 +920,31 @@ function targetModule.DrawSettings(settings, context)
 
     if (lockOnly == true) then
         DrawLockOnIconPanel();
+
+        if (imgui.Spacing ~= nil) then
+            imgui.Spacing();
+        end
+
+        if (DrawActionButton('Reset Lock-on icon position') == true) then
+            settings.lockOffsetX = defaults.lockOffsetX;
+            settings.lockOffsetY = defaults.lockOffsetY;
+            state.Save();
+        end
+
+        if (DrawActionButton('Reset Lock-on icon settings') == true) then
+            settings.lockEnabled = defaults.lockEnabled;
+            settings.lockFile = defaults.lockFile;
+            settings.lockSprite = defaults.lockSprite;
+            settings.lockAnimationSpeed = defaults.lockAnimationSpeed;
+            settings.lockWidth = defaults.lockWidth;
+            settings.lockHeight = defaults.lockHeight;
+            settings.lockOffsetX = defaults.lockOffsetX;
+            settings.lockOffsetY = defaults.lockOffsetY;
+            settings.lockColor = type(defaults.lockColor) == 'table'
+                and { unpackTable(defaults.lockColor) }
+                or defaults.lockColor;
+            state.Save();
+        end
 
         return;
     end

@@ -1,5 +1,10 @@
 return {
     ["npcs"] = {
+        ["A.M.A.N. Liaison"] = {
+            ["_source"] = "npc",
+            ["icon"] = "RecordsOfEminence.png",
+            ["type"] = "Records of Eminence",
+        },
         ["Agent Moogle"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
@@ -48,7 +53,7 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers Directions Around Town: :Hiya! Are you lost or something? If you're in trouble, Anja-Enja's here to helpy-welpy! :*\"Nothing right now.\": Well, if you ever need help, feel free to ask one of us guards. Helping out people in need is the calling of us guards in Windurst Waters's \"North Winds\" troupey-woupey. :*\"Where are we?\": This is the Windurst Waters district. Just north of here are the Opistery, the Aurastery, and a general goods store. South of here are the Rhinostery and the hatter's. :*\"How to leave town.\": The quickest way to leave town from here is Odin's Gate, which takes you out to West Sarutabaruta. Head north and pass through the archway of the Opistery's Library of Magic. Then go over the bridge until you get to the northern gatehouse. (That's where we guards of Windurst Waters meet, you know?) Head through the gate and you'll find yourself outside in West Sarutabaruta. :*\"Where's the residential area?\": Windurst's residential area is northeast of here. To get there, first head north and cross the bridge to the east that leads to the Aurastery and Windurst Walls. On the way, you'll come across a Cardian automaton guard. Turn right when you see him and you'll easily find your way there.",
+* Gives directions and explains basic city services.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Aora-Uora"] = {
@@ -66,11 +71,26 @@ Offers Directions Around Town: :Hiya! Are you lost or something? If you're in tr
             ["icon"] = "Dialogue.png",
             ["type"] = "Child",
         },
+        ["Atagei-Portagei"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["note"] = "Notes:\
+* Smilebringer for Starlight Celebration events.",
+            ["type"] = "Special Event Coordinator",
+        },
+        ["Atmacite Refiner"] = {
+            ["_source"] = "npc",
+            ["icon"] = "VoidwatchRift.png",
+            ["note"] = "Notes:\
+* Enhances atmacite and stratum abyssites.\
+* Provides Voidwatch staging-area teleports.",
+            ["type"] = "Voidwatch Service",
+        },
         ["Baehu-Faehu"] = {
             ["_source"] = "npc",
             ["icon"] = "RegionalVendor.png",
             ["note"] = "Notes:\
-*  When Windurst does not have control of Sarutabaruta, says: Sorry-dorry, but I'm taking a breaky-wakey! (Or, as you'll be knowing, since control of Sarutabaruta was lost, I'm out of stock, so go on, get going!)?",
+* Sells Sarutabaruta regional goods while Windurst controls the region.",
             ["type"] = "Regional Merchant",
         },
         ["Baren-Moren"] = {
@@ -88,7 +108,7 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Notes:\
-One of The Dark Lilies of the Harvest Festival event held each October since 2004. Bikho's Story: This...was a secret place... A place...that nobody knew... The purrrfect spot... An enchanted spot... So many fish... They would just jump.... onto the hook... To fill...my empty belly... To help..my strrruggling mother... I would fish...and fish...and fish... We were poor...I had no other choice... Even so...those days were fun... But I hated being poor... I delved...into forbidden magic... I'm sorry...Mother... The day...I left home... I wanted...wanted to tell you...",
+* Appears for the Dark Lilies Harvest Festival event.",
             ["type"] = "Special Event",
         },
         ["Bondada"] = {
@@ -111,6 +131,7 @@ One of The Dark Lilies of the Harvest Festival event held each October since 200
         ["Caliburn"] = {
             ["_source"] = "npc",
             ["icon"] = "Traveler.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Caliburn_(NPC)",
             ["type"] = "Traveler",
         },
         ["Chamama"] = {
@@ -121,10 +142,15 @@ One of The Dark Lilies of the Harvest Festival event held each October since 200
 \
 Involved in Quests:\
 * Inspector's Gadget!\
-* Chameleon Capers (FQ 4)\
+* Chameleon Capers\
 * Dormant Powers Dislodged\
 ",
             ["type"] = "Quest Giver",
+        },
+        ["Chomo Jinjahl"] = {
+            ["_source"] = "npc",
+            ["icon"] = "GuildMerchant.png",
+            ["type"] = "Cooking Guild Merchant",
         },
         ["Chomoro-Kyotoro"] = {
             ["_source"] = "npc",
@@ -144,6 +170,13 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
+        },
+        ["Clais"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
+* Hat in Hand",
+            ["type"] = "Quest Associate",
         },
         ["Cochal-Monchal"] = {
             ["_source"] = "npc",
@@ -182,8 +215,8 @@ at a 3-to-1 rate.",
         },
         ["Dagoza-Beruza"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
-            ["type"] = "City Gate Guard",
+            ["icon"] = "MissionNPC.png",
+            ["type"] = "Mission NPC",
         },
         ["Damami-Karumi"] = {
             ["_source"] = "npc",
@@ -218,8 +251,17 @@ for credit.",
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Starts a basic explanation of magic from a WHM perspective, with his fellow students Pakesse-Myukesse & Majiji explaining from a BLM & RDM perspective, respectively.",
+* Explains the basics of white magic.",
             ["type"] = "Magic Instructor",
+        },
+        ["Doi-Boi"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestAssociate.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Fowl_Tales",
+            ["note"] = "Crystal Warrior:\
+* Involved in quest: Fowl Tales.\
+* Speak to him after Hoi-Boi and before Loi-Boi.",
+            ["type"] = "CW Quest Associate",
         },
         ["Domimi"] = {
             ["_source"] = "npc",
@@ -246,11 +288,24 @@ Starts a basic explanation of magic from a WHM perspective, with his fellow stud
             ["icon"] = "Defender.png",
             ["type"] = "Defender",
         },
+        ["Ensasa"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Merchant.png",
+            ["type"] = "General Goods Merchant",
+        },
         ["Ensemble Maven"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Seasonal costume contest judge.",
             ["type"] = "Special Event Coordinator",
+        },
+        ["Ephemeral Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "ItemStorage.png",
+            ["note"] = "Notes:\
+* Stores and withdraws crystals and clusters.\
+* Holds up to 5,000 crystals of each element.",
+            ["type"] = "Crystal Storage",
         },
         ["Fashionista"] = {
             ["_source"] = "npc",
@@ -285,7 +340,7 @@ Starts a basic explanation of magic from a WHM perspective, with his fellow stud
 * Making the Grade\
 \
 Involved in Quests:\
-* SMN AF2: Class Reunion\
+* Class Reunion\
 * Nothing Matters",
             ["type"] = "Quest Giver",
         },
@@ -302,23 +357,28 @@ Involved in Quests:\
             ["note"] = "Involved in Quests:\
 * Chasing Tales\
 * Early Bird Catches the Bookworm\
-* SMN AF2: Class Reunion",
+* Class Reunion",
             ["type"] = "Quest Associate",
         },
         ["Furan-Furin"] = {
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
             ["note"] = "Notes:\
-Checks weather for the following locations: :* East Sarutabaruta :* West Sarutabaruta :* Tahrongi Canyon :* Buburimu Peninsula :* Meriphataud Mountains",
+Checks weather for:\
+* East Sarutabaruta\
+* West Sarutabaruta\
+* Tahrongi Canyon\
+* Buburimu Peninsula\
+* Meriphataud Mountains",
             ["type"] = "Weather Reporter",
         },
         ["Gantineux"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Acting in Good Faith\
 ",
-            ["type"] = "Quest NPC",
+            ["type"] = "Quest Giver",
         },
         ["Gevirun-Gabirun"] = {
             ["_source"] = "npc",
@@ -336,14 +396,19 @@ Checks weather for the following locations: :* East Sarutabaruta :* West Sarutab
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Dialog: \"Ahhh, I'm sooo full! I just ate ten servings! Hahaha... Are you impressed? Well, that there resturant sells only Tarutaru-sized servings. Ten servings is quite an easy amount to stomach.\"",
+* Patron of the Rarab Tail Hostelry restaurant.",
             ["type"] = "Flavor NPC",
+        },
+        ["Goblin Merrymaker"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Special Event",
         },
         ["Guwanana"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["note"] = "Notes:\
-One of The Dark Lilies of the Harvest Festival event, held each October since 2004. Guwanana's Story: Glimmer...shimmer... Shimmer...glimmer... Little fishies... Shimmering fishy-wishes... Where have you all gone...? Little fishies... Glimmering fishy-wishies... Are you here...? You mustaru be hiding... Here and there... The fishy-wishies I let free... Shimmering... glimmering...fish... But...I don'taru see you...? Where have you gone...? The same as before... Nowhere to be found... But wait... That shimmer-glimmering... The Flash spell fused into your scaly-wales... Glimmer...shimmer... So many little fishy-wishies... You survived...",
+* Appears for the Dark Lilies Harvest Festival event.",
             ["type"] = "Harvest Festival",
         },
         ["Hakeem"] = {
@@ -368,11 +433,12 @@ One of The Dark Lilies of the Harvest Festival event, held each October since 20
         },
         ["Hermin-Harmon"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Down_to_Earth",
             ["note"] = "Crystal Warrior:\
 * Starts quest: Down to Earth.\
 * Level 1 Windurst starting quest.",
-            ["type"] = "CW Starting Quest",
+            ["type"] = "CW Quest Giver",
         },
         ["Hilkomu-Makimu"] = {
             ["_source"] = "npc",
@@ -397,8 +463,8 @@ Involved in Quests:\
 * Starlight Celebration 2010\
 \
 Involved in Missions:\
-* The Road Forks: The Road Forks\
-* Promathia Mission 5-3: Three Paths\
+* The Road Forks\
+* Three Paths\
 * Past Sins (Louverance Path)",
             ["type"] = "Quest Giver",
         },
@@ -418,7 +484,8 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers General Information and a Map of Windurst: :Allow me to assist you if you are lost. What can Jack do for you? :*\"To show you a map of Windurst.\": [Displays an overview map of Windurst] :*\"How to give items to townsfolk.\": Interchange of items and money between people and things is called \"Trading.\" First target entity to interact with. Nothing happens unless reciever is properly targeted. Open main menu. Press \"Trade\" button. Next choose items to hand over! Press \"Confirm\" button! Targeted entity should receive items. :*\"How to go outside and battle.\": Before setting out to battle: Confirm equipment is properly equipped! Magic-users \"Use\" spell scrolls on themselves to learn magic! Before commencing battle wiht monster: \"Check\" monster to confirm its strength! After battle is won: Look for \"Spoils\" dropped by monsters. If in party, \"Cast Lots\" for spoils! :*\"About quests and missions.\": Quests are requests for help from ordinary townsfolk. It pays to help people in need. Missions are official requests for assistance made by the Windurst authorities. You can receive missions from the guards at the town's gatehouse. :*\"Nothing in particular.\": Feel free to ask next time you need Jack's help. Over and out!",
+* Shows important NPCs and available quests on the town map.\
+* Explains trading, combat, quests, and missions.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Jacodaut"] = {
@@ -465,11 +532,11 @@ Occasionally drops below the decking and walks in the water.",
         },
         ["Kayeel-Payeel"] = {
             ["_source"] = "npc",
-            ["icon"] = "Trust.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Starlight Celebration\
 ",
-            ["type"] = "Trust Coordinator",
+            ["type"] = "Master Caster",
         },
         ["Kenapa-Keppa"] = {
             ["_source"] = "npc",
@@ -486,7 +553,7 @@ Involved in Quests:\
         },
         ["Kerutoto"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Food for Thought\
 * Blue Ribbon Blues\
@@ -496,11 +563,11 @@ Involved in Quests:\
 * Riding on the Clouds\
 \
 Involved in Missions:\
-* Windurst Mission 7-2: Awakening of the Gods\
-* Promathia Mission 5-3: Three Paths\
+* Awakening of the Gods\
+* Three Paths\
 * Where Messengers Gather (Ulmia's Path)\
 ",
-            ["type"] = "Riding the Clouds",
+            ["type"] = "Quest Giver",
         },
         ["Khoto Rokkorah"] = {
             ["_source"] = "npc",
@@ -508,6 +575,11 @@ Involved in Missions:\
             ["note"] = "Starts Quests:\
 * Babban Ny Mheillea (Quest)",
             ["type"] = "Quest Giver",
+        },
+        ["Khuta Colaara"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Dialogue.png",
+            ["type"] = "Citizen",
         },
         ["Kipo-Opo"] = {
             ["_source"] = "npc",
@@ -581,7 +653,7 @@ Open: 5:00 - 20:00.No longer closed Darksday.",
 * Hat in Hand\
 \
 Involved in Missions:\
-* The Road Forks: The Road Forks",
+* The Road Forks",
             ["type"] = "Quest Associate",
         },
         ["Lago-Charago"] = {
@@ -606,8 +678,8 @@ Involved in Missions:\
 * Tuning Out\
 \
 Involved in Missions:\
-* Windurst Mission 1-3: The Price of Peace\
-* Windurst Mission 7-2: Awakening of the Gods",
+* The Price of Peace\
+* Awakening of the Gods",
             ["type"] = "Quest Giver",
         },
         ["Lumomo"] = {
@@ -654,16 +726,29 @@ Involved in Missions:\
 * Reap What You Sow",
             ["type"] = "Quest Giver",
         },
+        ["Master Lao"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#The_Unamed_Way",
+            ["note"] = "Starts Quests:\
+* The Unamed Way\
+* The Earth Holds Its Breath\
+\
+Notes:\
+* Unlocks Geomancer and handles its\
+level 40 artifact quest.",
+            ["type"] = "Geomancer Quest Giver",
+        },
         ["Maysoon"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Hoist the Jelly, Roger\
 \
 Involved in Quests:\
 * Cook's Pride\
 ",
-            ["type"] = "Dialogue NPC",
+            ["type"] = "Quest Giver",
         },
         ["Mejina-Monjina"] = {
             ["_source"] = "npc",
@@ -706,11 +791,11 @@ Involved in Quests:\
         },
         ["Mokyokyo"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * Windurst Missions\
 ",
-            ["type"] = "Gate Guard",
+            ["type"] = "Mission Giver",
         },
         ["Moreno-Toeno"] = {
             ["_source"] = "npc",
@@ -719,8 +804,8 @@ Involved in Quests:\
 * Teacher's Pet\
 \
 Involved in Missions:\
-* Windurst Mission 2-2: A Testing Time\
-* Windurst Mission 8-1: Vain\
+* A Testing Time\
+* Vain\
 ",
             ["type"] = "Quest Giver",
         },
@@ -743,7 +828,6 @@ Involved in Missions:\
             ["note"] = "Starts Quests:\
 * Making Headlines\
 * Scooped!\
-* The Weekly Adventurer &mdash; see Naiko-Paneiko (S)\
 \
 Involved in Quests:\
 * Riding on the Clouds\
@@ -782,9 +866,9 @@ Involved in Quests:\
         },
         ["Ohbiru-Dohbiru"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Water Way to Go\
+* Water Way to Go!\
 * Toraimarai Turmoil\
 \
 Involved in Quests:\
@@ -792,8 +876,8 @@ Involved in Quests:\
 * Say It with Flowers\
 \
 Involved in Missions:\
-* The Road Forks: The Road Forks",
-            ["type"] = "Fast Travel Quest",
+* The Road Forks",
+            ["type"] = "Quest Giver",
         },
         ["Okaka"] = {
             ["_source"] = "npc",
@@ -844,6 +928,8 @@ Now sells the Windshear Hat to players even if they have not completed or flagge
         ["Panna-Donna"] = {
             ["_source"] = "npc",
             ["icon"] = "MissionGiver.png",
+            ["note"] = "Starts Missions:\
+* Windurst Missions",
             ["type"] = "Mission Giver",
         },
         ["Pechiru-Mashiru"] = {
@@ -856,12 +942,13 @@ Now sells the Windshear Hat to players even if they have not completed or flagge
         },
         ["Perara"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Say_Peas",
             ["note"] = "Crystal Warrior:\
-* Starts quests: Say Peas, Get\
-Cracking.\
+* Starts quest: Say Peas.\
+* Starts quest: Get Cracking.\
 * Windurst starting gear quests.",
-            ["type"] = "CW Starting Quest",
+            ["type"] = "CW Quest Giver",
         },
         ["Pia"] = {
             ["_source"] = "npc",
@@ -872,7 +959,8 @@ Cracking.\
             ["_source"] = "npc",
             ["icon"] = "GuildMaster.png",
             ["note"] = "Notes:\
-This NPC will: :*Sign you up for the Culinarians' Guild :*Accept the items you need to turn in, to go up in rank for the Cooking Guild. :*You must have Cooking skill level 28 (Novice) or higher to sign up for Guild Points.",
+* Cooking Guild master.\
+* Handles guild enrollment and rank tests.",
             ["type"] = "Guild Master",
         },
         ["Pojimo-Rojimo"] = {
@@ -909,8 +997,18 @@ This NPC will: :*Sign you up for the Culinarians' Guild :*Accept the items you n
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the Windurst Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for Windurst) at certain conditions. It will be also possible to get some items of other Nations (Items for Bastok / Items for San d'Oria) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without Windurst as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer.",
+* Casts Signet and sells conquest rewards.\
+* Accepts crystals for Windurst rank points.\
+* Handles supply quests and Expeditionary Forces.",
             ["type"] = "Conquest Overseer",
+        },
+        ["Pursuivant"] = {
+            ["_source"] = "npc",
+            ["icon"] = "BallistaPursuivant.png",
+            ["note"] = "Notes:\
+* Gives Ballista information and match schedules.\
+* Provides travel to official matches.",
+            ["type"] = "Ballista Information",
         },
         ["Qhum Knaidjn"] = {
             ["_source"] = "npc",
@@ -948,8 +1046,10 @@ This NPC will: :*Sign you up for the Culinarians' Guild :*Accept the items you n
         ["Ranpi-Monpi"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Starts Quests:\
 * A Crisis in the Making\
+\
+Involved in Quests:\
 * For Want of a Pot\
 * In a Stew\
 * The Dawn of Delectability\
@@ -1023,7 +1123,7 @@ This NPC will: :*Sign you up for the Culinarians' Guild :*Accept the items you n
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Once in several hundred years, a great wizard is born out of the Tarutaru in Windurst. This wizard is so powerful, he is called the Mastermind of the Millen[n]ium. Decades ago, a child formidable enough to carry that title graduated at the top of his class from the School of Magic. I'm sure you'll hear his name mentioned as the hero who saved Windurst.",
+* Shares local history about Windurst's legendary Mastermind of the Millennium.",
             ["type"] = "Dialogue NPC",
         },
         ["Shante-Fante"] = {
@@ -1064,24 +1164,22 @@ Once in several hundred years, a great wizard is born out of the Tarutaru in Win
         ["Spriggan Crier"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Seasonal holiday event creature coordinator.",
-            ["type"] = "Special Event Coordinator",
+            ["note"] = "Notes:\
+* FINAL FANTASY XIV crossover event NPC.\
+* Exchanges elemental crystals for a Red Spriggan Spirit.",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Spriggan_Crier_(NPC)",
+            ["type"] = "Special Event",
         },
-        ["Spriggan Crier (NPC)"] = {
+        ["Spriggan Graverobber"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Notes:\
-After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossover, trade the Spriggan Crier one crystal of each of the 8 elements to obtain a Red Spriggan Spirit. Trade the Red Spriggan Spirit to Suibhne in the Feretory after completing Monstrosity (Quest) to unlock the playable Spriggan.C (MON) monster.",
+* FINAL FANTASY XIV crossover event NPC.\
+* Exchanges elemental crystals for a Purple Spriggan Spirit.",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Spriggan_Graverobber_(NPC)",
             ["type"] = "Special Event",
         },
-        ["Spriggan Graverobber (NPC)"] = {
-            ["_source"] = "npc",
-            ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Notes:\
-After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossover, trade the Spriggan Graverobber one crystal of each of the 8 elements to obtain a Purple Spriggan Spirit. Trade the Purple Spriggan Spirit to Suibhne in the Feretory after completing Monstrosity (Quest) to unlock the playable Spriggan.G (MON) monster.",
-            ["type"] = "Special Event",
-        },
-        ["Spriggan Sifter (NPC)"] = {
+        ["Spriggan Sifter"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Involved in Quests:\
@@ -1089,6 +1187,7 @@ After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossov
 * FINAL FANTASY XIV: A Realm Reborn Crossover II\
 * Anniversary MMO Collaboration\
 ",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Spriggan_Sifter_(NPC)",
             ["type"] = "Special Event",
         },
         ["Squire Warlock"] = {
@@ -1120,13 +1219,13 @@ and returned unchanged.",
 * Nothing Matters\
 \
 Involved in Missions:\
-* Mission: 7-2 Vain",
+* Vain",
             ["type"] = "Quest Associate",
         },
         ["Tauwawa"] = {
             ["_source"] = "npc",
-            ["icon"] = "Service-Clerk.png",
-            ["type"] = "Service Clerk",
+            ["icon"] = "Student.png",
+            ["type"] = "Aurastery Worker",
         },
         ["Temoe-Amoe"] = {
             ["_source"] = "npc",
@@ -1146,12 +1245,86 @@ Involved in Missions:\
 ",
             ["type"] = "Quest Associate",
         },
+        ["Trick Bones"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
+        ["Trick Flan"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
+        ["Trick Ghast"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
+        ["Trick Ghost"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
+        ["Trick Phantom"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
+        ["Trick Shade"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
+        ["Trick Shadow"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
+        ["Trick Skeleton"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
+        ["Trick Specter"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
+        ["Trick Spirit"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
+        ["Trick Wight"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["type"] = "Harvest Festival",
+        },
         ["Tonana"] = {
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
 A Warp NPC. She will warp you for free to Pattsu-Yabittsu (Windurst Woods, K-12).",
             ["type"] = "Teleport Service",
+        },
+        ["Tosuka-Porika"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Starts Quests:\
+* Chasing Tales\
+* Early Bird Catches the Bookworm\
+\
+Involved in Quests:\
+* Hat in Hand\
+* Past Reflections\
+* Blessed Radiance\
+\
+Involved in Missions:\
+* Lost for Words\
+* The Sixth Ministry\
+* The Jester Who'd Be King\
+* The Road Forks",
+            ["type"] = "Quest Giver",
         },
         ["Torikoko"] = {
             ["_source"] = "npc",
@@ -1167,6 +1340,22 @@ A Warp NPC. She will warp you for free to Pattsu-Yabittsu (Windurst Woods, K-12)
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["type"] = "Standard Merchant",
+        },
+        ["Voidwatch Officer"] = {
+            ["_source"] = "npc",
+            ["icon"] = "VoidwatchRift.png",
+            ["note"] = "Notes:\
+* Issues jade stratum abyssites, voidstones, and Voidwatch operations.",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Voidwatch_Officer_(Windurst)",
+            ["type"] = "Voidwatch Service",
+        },
+        ["Voidwatch Purveyor"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Merchant.png",
+            ["note"] = "Notes:\
+* Sells Voiddust for Conquest Points.",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Voidwatch_Purveyor_(Windurst_Waters)",
+            ["type"] = "Voidwatch Vendor",
         },
         ["Wassert"] = {
             ["_source"] = "npc",
@@ -1215,7 +1404,7 @@ for credit.",
             ["_source"] = "npc",
             ["icon"] = "MapMarker.png",
             ["note"] = "Notes:\
-Marks one's town map with the locations of various NPCs important to adventures: *Home Points *Item Depository *Melody Minstrels *Weather Reporters *Traveling Bards *Reputation *Immigration *Armor Depository *Teleportation *Pursuivant *Gold World Pass Vendor *Zelala even marks the location of three NPCs located inside Heavens Tower.",
+* Marks useful services and important NPCs on the Windurst map.",
             ["type"] = "Map Marker",
         },
     },
@@ -1223,128 +1412,124 @@ Marks one's town map with the locations of various NPCs important to adventures:
         ["Door:\"Rarab Tail\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber entrance portal leading into the local port tavern. Turning the iron door handle coordinates your city navigation and uncovers neighborhood background records.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:\"Timbre Timbers\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standard shopfront portal dividing the civic street layouts from the timber retail room. Shifting the latch moves you off public paths to browse raw woodworking synthesis ingredients.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
-        ["Door:Acolyte hostel"] = {
+        ["Door:Acolyte Hostel"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic wooden barrier partitioning the religious residential layout blocks. Interfacing with the latch uncovers regional side quest details or updates local lore lines.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Aurastery"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy wooden entry barrier leading to the magical astronomical research towers. Pulling the handle uncovers rare library records or validates active Federation quest milestones.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Baren-Moren Hatter"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic wooden barrier door partitioning the apparel retail shop layout blocks. Unlatching the door frame provides entry to check active trade manifests or advance urban side tasks.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Culinarians' Guild"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy iron-banded door sealing off professional kitchen processing yards. Operating the handle opens up advanced crafting synthesis areas and checks active guild progression parameters.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Ensasa's Catalysts"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A simple merchant door framework leading straight into the alchemy retail shop. Shifting the latch gives you access to browse chemical sets or progress commercial delivery checks.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Federal Magic Res."] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A secure portal archway partitioning off the industrial magical processing chambers. Verifying your industrial clearance commands the heavy stone framework to part.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Hostelry Room #1"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A specific structural door barrier protecting a residential lodging room. Passing past the framework manages your movement between corporate agency hubs or checks your travel layers.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Hostelry Room #2"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The companion lodging room gateway threshold exiting the public inn lanes. Shifting the latch lets you enter supply vaults to check delivery parameters or retrieve quest items.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
+        },
+        ["Door:House"] = {
+            ["_source"] = "item",
+            ["icon"] = "Door.png",
+            ["type"] = "Door",
         },
         ["Door:Optistery"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A dusty academic door hinged to the magical research academy. Pulling the handle uncovers rare library records or validates active Federation quests.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Rhinostery"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy wooden entry barrier leading to the magical biological research laboratories. Pulling the handle uncovers rare library records or validates active Federation quest milestones.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Tarutaru Times"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A simple merchant door framework leading straight into the printing office. Shifting the latch gives you access to browse regional publication logs or progress commercial delivery checks.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Door:Trader's Home"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic residential wooden door set into the city stonework layouts. Unlatching the frame allows you to enter merchant quarters to fulfill commercial delivery checks or urban side tasks.",
-            ["type"] = "Security Gate",
+            ["type"] = "Door",
         },
         ["Library book"] = {
             ["_source"] = "item",
             ["icon"] = "History.png",
-            ["note"] = "A dusty academic tome filed away inside the magical laboratories. Pulling the text from the shelf uncovers rare research records to validate active Federation side quests.",
-            ["type"] = "Quest Node",
+            ["note"] = "Involved in Quests:\
+* Her Memories: Of Malign Maladies",
+            ["type"] = "Quest Object",
         },
         ["Marble Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An elegant, polished stone barrier sealing executive chambers and canal networks. Verifying your current national mission clearance commands the ornate framework to part.",
             ["type"] = "Security Gate",
         },
         ["Memorian"] = {
             ["_source"] = "item",
             ["icon"] = "Automaton.png",
-            ["note"] = "A strange, magically animated doll standing as a hidden sentinel across various cities. Examining this eerie automaton tracks mysterious energy reactions to advance late-tier missions.",
-            ["type"] = "Quest Node",
+            ["note"] = "Involved in Missions:\
+* The Voracious Resurgence",
+            ["type"] = "Mission Object",
         },
         ["Rendezvous Point"] = {
             ["_source"] = "item",
             ["icon"] = "RendezvousPoint.png",
-            ["note"] = "A designated strategic staging waypoint manifest within city districts or deep inside the void loops. Resting at this point handles mission registration checks or uncovers regional lore archives.",
-            ["type"] = "Quest Node",
+            ["note"] = "Notes:\
+* Calls or dismisses your Adventuring Fellow.",
+            ["type"] = "Adventuring Fellow",
         },
         ["Symphonic Curator"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
-            ["type"] = "Quest Node",
+            ["note"] = "Notes:\
+* Selects Mog House background music unlocked through sheet music and furnishings.",
+            ["type"] = "Mog House Music",
         },
         ["Synergy Furnace"] = {
             ["_source"] = "item",
             ["icon"] = "SynergyFurnace.png",
             ["note"] = "Crafting furnace used for synergy recipes.",
             ["type"] = "Synergy Furnace",
+			["worldOffsetY"] = 0.45,
         },
         ["Tales' Beginning"] = {
             ["_source"] = "item",
             ["icon"] = "History.png",
-            ["note"] = "A distinct magical marker manifest near prominent municipal gathering hubs. Interfacing with its surface reviews historical records and initiates localized storyline expansions.",
-            ["type"] = "Quest Node",
+            ["note"] = "Notes:\
+* Resumes a postponed Rhapsodies of Vana'diel opening scenario.",
+            ["type"] = "Scenario Resume Point",
         },
     },
 }

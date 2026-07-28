@@ -186,8 +186,13 @@ local function GetTargetingSettings()
         global.targeting.enemyMouseSnapMode = 'Off';
     end
 
-    if (global.targeting.mouseSnapStrength == nil) then
-        global.targeting.mouseSnapStrength = 5;
+    local legacyMouseSnapStrength = math.max(1, math.min(5, math.floor((tonumber(global.targeting.mouseSnapStrength) or 5) + 0.5)));
+    if (global.targeting.pcMouseSnapStrength == nil) then
+        global.targeting.pcMouseSnapStrength = legacyMouseSnapStrength;
+    end
+
+    if (global.targeting.enemyMouseSnapStrength == nil) then
+        global.targeting.enemyMouseSnapStrength = legacyMouseSnapStrength;
     end
 
     if (global.targeting.plateClickNoGoZonesEnabled == nil) then
@@ -495,7 +500,8 @@ local function GetTargetingSettings()
     ) then
         global.targeting.enemyMouseSnapMode = 'Off';
     end
-    global.targeting.mouseSnapStrength = math.max(1, math.min(10, math.floor((tonumber(global.targeting.mouseSnapStrength) or 5) + 0.5)));
+    global.targeting.pcMouseSnapStrength = math.max(1, math.min(5, math.floor((tonumber(global.targeting.pcMouseSnapStrength) or 5) + 0.5)));
+    global.targeting.enemyMouseSnapStrength = math.max(1, math.min(5, math.floor((tonumber(global.targeting.enemyMouseSnapStrength) or 5) + 0.5)));
     global.targeting.hideOtherPlayerPetPlates = global.targeting.hideOtherPlayerPetPlates ~= false;
     global.targeting.plateClickNoGoZonesEnabled = global.targeting.plateClickNoGoZonesEnabled == true;
     global.targeting.plateClickNoGoZonesVisible = global.targeting.plateClickNoGoZonesVisible == true;

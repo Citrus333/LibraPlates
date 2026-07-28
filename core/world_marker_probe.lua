@@ -2696,6 +2696,78 @@ local function GetAnchor(actorPointer, getBone, style)
     return getBone(actorPointer, bone);
 end
 
+function worldMarkerProbe._IsObjectWorldPointInFrontOfCamera(device, plate, wx, wy, wz)
+    if (tostring(plate ~= nil and plate.clickTargetType or ''):lower() ~= 'object') then
+        return true;
+    end
+
+    local _, view = device:GetTransform(2);
+    local _, proj = device:GetTransform(3);
+    local _, viewport = device:GetViewport();
+
+    if (view == nil or proj == nil or viewport == nil or viewport.Width == nil or viewport.Height == nil) then
+        -- Failure to inspect the camera is not evidence that the object is
+        -- behind it.  Keep the plate rather than hiding it for a transient
+        -- D3D transform read failure.
+        return true;
+    end
+
+    local screenX, screenY = ProjectWithZ(
+        view,
+        proj,
+        viewport.Width,
+        viewport.Height,
+        wx,
+        wy,
+        wz
+    );
+
+    return screenX ~= nil and screenY ~= nil;
+end
+
+local function GetObjectEntityAnchor(entityManager, targetIndex)
+    if (entityManager == nil or targetIndex == nil or targetIndex == 0) then
+        return nil;
+    end
+
+    local x = SafeNumber(function() return entityManager:GetLocalPositionX(targetIndex); end);
+    local y = SafeNumber(function() return entityManager:GetLocalPositionY(targetIndex); end);
+    local z = SafeNumber(function() return entityManager:GetLocalPositionZ(targetIndex); end);
+
+    if (x == nil or y == nil or z == nil) then
+        x = SafeNumber(function() return entityManager:GetLastPositionX(targetIndex); end);
+        y = SafeNumber(function() return entityManager:GetLastPositionY(targetIndex); end);
+        z = SafeNumber(function() return entityManager:GetLastPositionZ(targetIndex); end);
+    end
+
+    return x, y, z;
+end
+
+function worldMarkerProbe._IsPlausibleObjectAnchor(plate, x, y, z, entityX, entityY, entityZ)
+    if (
+        x == nil or y == nil or z == nil or
+        entityX == nil or entityY == nil or entityZ == nil or
+        x ~= x or y ~= y or z ~= z
+    ) then
+        return false;
+    end
+
+    local rawName = tostring(
+        (plate ~= nil and plate.rawName) or
+        (plate ~= nil and plate.worldMarker ~= nil and plate.worldMarker.rawName) or
+        ''
+    );
+    local isDoor = rawName:match('^Door:') ~= nil;
+    local horizontalLimit = isDoor and 3.0 or 8.0;
+    local verticalLimit = isDoor and 6.0 or 16.0;
+    local dx = x - entityX;
+    local dy = y - entityY;
+
+    return
+        ((dx * dx) + (dy * dy)) <= (horizontalLimit * horizontalLimit) and
+        math.abs(z - entityZ) <= verticalLimit;
+end
+
 local function GetBoneBounds(actorPointer)
     if (actorPointer == nil or actorPointer == 0) then
         return nil;
@@ -4179,10 +4251,14 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
     end
 
     -- BeginScene performs a bounds/stacking pass followed by the actual draw
-    -- pass.  Both describe the same actor in the same render frame.  Reuse
-    -- the exact native nameplate anchor found during the first pass instead
-    -- of calling the FFI anchor helper twice per visible plate.
-    local resolvedAnchor = updateClickOnly ~= true and plate._resolvedAnchor or nil;
+    -- pass.  Reuse the first anchor for ordinary actors.  Static objects are
+    -- deliberately resolved again: FFXI can return a stale object offset on
+    -- the first read until its render state has been refreshed.
+    local isObjectPlate = tostring(plate.clickTargetType or ''):lower() == 'object';
+    local resolvedAnchor =
+        updateClickOnly ~= true and
+        isObjectPlate ~= true and
+        plate._resolvedAnchor or nil;
     local wx = nil;
     local wy = nil;
     local wz = nil;
@@ -4197,7 +4273,11 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
     else
         wx, wy, wz = GetAnchor(actorPointer, getBone, style);
 
-        if (updateClickOnly == true and wx ~= nil and wy ~= nil and wz ~= nil) then
+        if (
+            updateClickOnly == true and
+            isObjectPlate ~= true and
+            wx ~= nil and wy ~= nil and wz ~= nil
+        ) then
             plate._resolvedAnchor = {
                 actorPointer = actorPointer,
                 x = wx,
@@ -4213,6 +4293,34 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
 
     if (wx == nil or wy == nil or wz == nil) then
         return;
+    end
+
+    if (isObjectPlate == true) then
+        local entityX, entityY, entityZ = GetObjectEntityAnchor(entityManager, targetIndex);
+
+        if (
+            entityX ~= nil and entityY ~= nil and entityZ ~= nil and
+            worldMarkerProbe._IsPlausibleObjectAnchor(plate, wx, wy, wz, entityX, entityY, entityZ) ~= true
+        ) then
+            -- The exact helper can briefly return an offset belonging to a
+            -- different static object.  Prefer a plausible raw bone anchor;
+            -- otherwise use the object's own stable entity position.
+            local boneX, boneY, boneZ = getBone(actorPointer, plateAnchorBone);
+
+            if (worldMarkerProbe._IsPlausibleObjectAnchor(plate, boneX, boneY, boneZ, entityX, entityY, entityZ) == true) then
+                wx = boneX;
+                wy = boneY;
+                wz = boneZ;
+            else
+                wx = entityX;
+                wy = entityY;
+                wz = entityZ;
+            end
+
+            if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+                perfMeter.Count('world.anchor.objectImplausibleFallback', 1);
+            end
+        end
     end
 
     -- FFXI actor memory uses x/y/z; D3D world uses x/z/y.
@@ -4231,6 +4339,47 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         local plateWorldWidth = (tonumber(style.plateWorldWidth) or 0.84) * plateScale;
         local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
         plateX, plateY, plateZ = worldMarkerProbe._ApplyCanvasCropWorldOffset(device, style.plateTextureId, plateX, plateY, plateZ, plateWorldWidth, plateWorldHeight);
+
+        if (worldMarkerProbe._IsObjectWorldPointInFrontOfCamera(device, plate, plateX, plateY, plateZ) ~= true) then
+            -- Some static door actors return a valid exact nameplate anchor
+            -- for one frame and then a behind-camera offset while remaining
+            -- targeted.  Fall back to the entity's stable world position.
+            local fallbackX, fallbackY, fallbackZ = GetObjectEntityAnchor(entityManager, targetIndex);
+            local fallbackApplied = false;
+
+            if (fallbackX ~= nil and fallbackY ~= nil and fallbackZ ~= nil) then
+                local nextPlateX = fallbackX + plateWorldOffsetX;
+                local nextPlateY = fallbackZ + verticalOffset + plateWorldOffsetY - nameVerticalOffset;
+                local nextPlateZ = fallbackY + plateWorldOffsetZ;
+                nextPlateX, nextPlateY, nextPlateZ = worldMarkerProbe._ApplyCanvasCropWorldOffset(
+                    device,
+                    style.plateTextureId,
+                    nextPlateX,
+                    nextPlateY,
+                    nextPlateZ,
+                    plateWorldWidth,
+                    plateWorldHeight
+                );
+
+                if (worldMarkerProbe._IsObjectWorldPointInFrontOfCamera(device, plate, nextPlateX, nextPlateY, nextPlateZ) == true) then
+                    plateX = nextPlateX;
+                    plateY = nextPlateY;
+                    plateZ = nextPlateZ;
+                    fallbackApplied = true;
+
+                    if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+                        perfMeter.Count('world.anchor.objectEntityFallback', 1);
+                    end
+                end
+            end
+
+            if (fallbackApplied ~= true) then
+                if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+                    perfMeter.Count('world.anchor.objectBehindCamera', 1);
+                end
+                return;
+            end
+        end
 
         do
             local marker = style.targetMarker;
@@ -5196,6 +5345,7 @@ function worldMarkerProbe.ApplyMouseSnap()
                             x = (x1 + x2) * 0.5,
                             y = (y1 + y2) * 0.5,
                             distance = edgeDistance,
+                            targetType = targetType,
                         };
                     end
                 end
@@ -5207,7 +5357,10 @@ function worldMarkerProbe.ApplyMouseSnap()
         return;
     end
 
-    local strength = math.max(1, math.min(10, tonumber(settings.mouseSnapStrength) or 5));
+    local strengthSetting = best.targetType == 'pc'
+        and settings.pcMouseSnapStrength
+        or settings.enemyMouseSnapStrength;
+    local strength = math.max(1, math.min(5, tonumber(strengthSetting) or 5));
     local pull = 0.04 + (strength * 0.041);
     local nextX = mouseX + ((best.x - mouseX) * pull);
     local nextY = mouseY + ((best.y - mouseY) * pull);

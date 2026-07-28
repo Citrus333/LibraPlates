@@ -1,6 +1,7 @@
 local imgui = require('imgui');
 local barTextures = require('core.bar_textures');
 local barAnimations = require('core.bar_animations');
+_G.LibraPlatesBarWarning = _G.LibraPlatesBarWarning or require('core.bar_warning');
 local canvasTexture = require('core.canvas_texture');
 local entities = require('core.entities');
 local gameMode = require('core.game_mode');
@@ -282,8 +283,11 @@ local smnHpBarDefaults = {
     showPercent = true,
     showAtPercent = 100,
     lowColorEnabled = false,
-    lowColorPercent = 25,
-    lowColor = { 1.0, 0.15, 0.10, 1.0 },
+    lowColorPercent = 50,
+    lowColor = { 1.0, 0.55, 0.05, 1.0 },
+    criticalColorEnabled = false,
+    criticalColorPercent = 25,
+    criticalColor = { 1.0, 0.15, 0.10, 1.0 },
     lowAnimationEnabled = false,
     lowAnimation = 'Important',
     lowAnimationSpeed = 40,
@@ -1715,17 +1719,8 @@ local function BuildPetPreviewPlate(stateName, nameSettings, backgroundSettings,
     local tpPercent = tpValue / 10;
     local hpColor = hpBarSettings.color or { 0.95, 0.45, 0.45, 1.0 };
 
-    if (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    ) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
-
-    local hpLowActive = (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    );
+    local hpLowActive = false;
+    hpColor, hpLowActive = _G.LibraPlatesBarWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
 
     local plateData = {
         hp = hpPercent,
@@ -1874,18 +1869,12 @@ local function BuildWyvernPreviewPlate(name, nameSettings, backgroundSettings, h
     local playerIconSettings = GetPlayerPreviewIconSettings('Wyvern', previewStateName);
     local enemyMobInfoIconSettings = GetEnemyMobInfoPreviewIconSettings('Wyvern', previewStateName);
 
-    local hpLowActive = (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    );
+    local hpLowActive = false;
+    hpColor, hpLowActive = _G.LibraPlatesBarWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
     local tpLowActive = (
         tpBarSettings.lowColorEnabled == true and
         tpPercent <= (tonumber(tpBarSettings.lowColorPercent) or 25)
     );
-
-    if (hpLowActive == true) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
 
     if (tpLowActive == true) then
         tpColor = tpBarSettings.lowColor or tpColor;
@@ -2062,10 +2051,8 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
     local hpColor = hpBarSettings.color or { 0.95, 0.45, 0.45, 1.0 };
     local mpColor = mpBarSettings.color or { 0.70, 0.90, 0.45, 1.0 };
     local tpColor = tpBarSettings.color or { 0.0, 0.55, 0.95, 1.0 };
-    local hpLowActive = (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    );
+    local hpLowActive = false;
+    hpColor, hpLowActive = _G.LibraPlatesBarWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
     local mpLowActive = (
         mpBarSettings.lowColorEnabled == true and
         mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25)
@@ -2075,7 +2062,6 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
         tpPercent <= (tonumber(tpBarSettings.lowColorPercent) or 25)
     );
 
-    if (hpLowActive == true) then hpColor = hpBarSettings.lowColor or hpColor; end
     if (mpLowActive == true) then mpColor = mpBarSettings.lowColor or mpColor; end
     if (tpLowActive == true) then tpColor = tpBarSettings.lowColor or tpColor; end
 
@@ -2377,12 +2363,8 @@ local function BuildPlate(entityName, stateName, context)
         previewNameColor = aoeRangeSettings.fontColor or aoeRangeDefaults.fontColor;
     end
 
-    if (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    ) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
+    local hpCriticalActive = false;
+    hpColor, hpCriticalActive = _G.LibraPlatesBarWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
 
     if (
         mpBarSettings.lowColorEnabled == true and
@@ -2568,11 +2550,7 @@ local function BuildPlate(entityName, stateName, context)
             anchorSpacing = hpBarSettings.anchorSpacing,
             anchorOrder = hpBarSettings.anchorOrder,
             textureId = barTextures.GetTextureId(hpBarSettings.texture),
-            animationEnabled = (
-                hpBarSettings.lowColorEnabled == true and
-                hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25) and
-                hpBarSettings.lowAnimationEnabled == true
-            ),
+            animationEnabled = hpCriticalActive == true and hpBarSettings.lowAnimationEnabled == true,
             animationTextureId = barAnimations.GetTextureId(hpBarSettings.lowAnimation),
             animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or 40,
             animationColor = hpBarSettings.lowAnimationColor,
@@ -2826,6 +2804,7 @@ local function BuildPlate(entityName, stateName, context)
     if (
         ShouldShowDistancePreview(context, distanceSettings) == true and
         (entityName == 'Enemy' or entityName == 'PC' or entityName == 'NPC' or entityName == 'Object' or entityName == 'NPC/Object') and
+        not (entityName == 'NPC' and stateName == 'Combat') and
         distanceSettings ~= nil
     ) then
         plateData.badges = plateData.badges or {};

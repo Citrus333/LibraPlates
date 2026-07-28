@@ -892,9 +892,9 @@ local function DrawLowWarningRow(rowId, percentValue, warningColor)
             imgui.TableNextColumn();
             nextPercent = DrawSliderControl(key .. '_percent', percentValue, 1, 100, 68, true);
             imgui.TableNextColumn();
-            imgui.TextColored(labelColor, 'percent');
+            imgui.TextColored(labelColor, '%');
             imgui.TableNextColumn();
-            imgui.TextColored(labelColor, 'Warning color');
+            imgui.TextColored(labelColor, 'Bar color');
             imgui.TableNextColumn();
             nextColor = DrawColor(key .. '_color', warningColor);
             imgui.EndTable();
@@ -907,9 +907,9 @@ local function DrawLowWarningRow(rowId, percentValue, warningColor)
     imgui.SameLine();
     nextPercent = DrawSliderControl(key .. '_percent', percentValue, 1, 100, 95, true);
     imgui.SameLine();
-    imgui.TextColored(labelColor, 'percent');
+    imgui.TextColored(labelColor, '%');
     imgui.SameLine();
-    imgui.TextColored(labelColor, 'Warning color');
+    imgui.TextColored(labelColor, 'Bar color');
     imgui.SameLine();
     nextColor = DrawColor(key .. '_color', warningColor);
 
@@ -1143,6 +1143,18 @@ function bar.DrawSettings(settings, context)
 
     ApplyDefaults(settings, defaults);
 
+    if (resourceName == 'HP') then
+        if (settings.criticalColorEnabled == nil) then
+            settings.criticalColorEnabled = defaults.criticalColorEnabled ~= false;
+        end
+        if (settings.criticalColorPercent == nil) then
+            settings.criticalColorPercent = tonumber(defaults.criticalColorPercent) or 25;
+        end
+        if (settings.criticalColor == nil) then
+            settings.criticalColor = defaults.criticalColor or { 1.0, 0.15, 0.10, 1.0 };
+        end
+    end
+
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawToggle('Active', settings.enabled);
     end
@@ -1238,11 +1250,13 @@ function bar.DrawSettings(settings, context)
                     imgui.TableSetupColumn('##control_right', 0, barControlWidth);
                     imgui.TableNextRow();
                     imgui.TableNextColumn();
-                    imgui.TextColored(labelColor, 'Warn at %%');
+                    imgui.TextColored(labelColor, 'Warn at');
                     imgui.TableNextColumn();
                     percentValue = DrawSliderControl(rowId .. '_percent', percentValue, 1, 100, barNumericWidth, true);
+                    imgui.SameLine();
+                    imgui.TextColored(labelColor, '%');
                     imgui.TableNextColumn();
-                    imgui.TextColored(labelColor, 'Warning color');
+                    imgui.TextColored(labelColor, 'Bar color');
                     imgui.TableNextColumn();
                     warningColor = DrawColor(rowId .. '_color', warningColor);
                     imgui.EndTable();
@@ -1538,12 +1552,29 @@ function bar.DrawSettings(settings, context)
         end);
 
         if (showLowState == true) then
-            DrawPanel('Low ' .. resourceLabel .. ' warning', function()
-                settings.lowColorEnabled = DrawHpLabeledToggle(idPrefix .. 'low_state_toggle', 'Low ' .. resourceLabel .. ' state', settings.lowColorEnabled);
+            DrawPanel(resourceName == 'HP' and 'Low HP warnings' or ('Low ' .. resourceLabel .. ' warning'), function()
+                settings.lowColorEnabled = DrawHpLabeledToggle(idPrefix .. 'low_state_toggle', 'Low ' .. resourceLabel, settings.lowColorEnabled);
 
                 if (settings.lowColorEnabled == true) then
                     settings.lowColorPercent, settings.lowColor = DrawHpLowWarningRow(idPrefix .. 'low_warning', settings.lowColorPercent, settings.lowColor);
+                end
 
+                if (resourceName == 'HP') then
+                    settings.criticalColorEnabled = DrawHpLabeledToggle(idPrefix .. 'critical_state_toggle', 'Critical HP', settings.criticalColorEnabled);
+                    if (settings.criticalColorEnabled == true) then
+                        settings.criticalColorPercent, settings.criticalColor = DrawHpLowWarningRow(
+                            idPrefix .. 'critical_warning',
+                            settings.criticalColorPercent,
+                            settings.criticalColor
+                        );
+                    end
+                end
+
+                local animationStateEnabled = settings.lowColorEnabled == true;
+                if (resourceName == 'HP') then
+                    animationStateEnabled = settings.criticalColorEnabled == true;
+                end
+                if (animationStateEnabled == true) then
                     local animation = settings.lowAnimationEnabled == true and tostring(settings.lowAnimation or defaults.lowAnimation or 'Important') or 'None';
                     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
                         if (imgui.BeginTable('##bar_hp_low_animation', 4, tableFlags)) then
@@ -1560,13 +1591,13 @@ function bar.DrawSettings(settings, context)
                                 idPrefix .. 'low_animation',
                                 settings.lowAnimationSpeed,
                                 { 1.0, 1.0, 1.0, 0.35 },
-                                settings.lowColor,
+                                resourceName == 'HP' and settings.criticalColor or settings.lowColor,
                                 settings.backgroundColor,
                                 barComboWidth
                             );
                             if (animation ~= 'None') then
                                 imgui.TableNextColumn();
-                                imgui.TextColored(labelColor, 'Speed');
+                                imgui.TextColored(labelColor, 'Animation speed');
                                 imgui.TableNextColumn();
                                 settings.lowAnimationSpeed = DrawSliderControl(idPrefix .. 'low_animation_speed', settings.lowAnimationSpeed, 0, 240, barComboWidth, false);
                             end
@@ -1578,13 +1609,13 @@ function bar.DrawSettings(settings, context)
                             idPrefix .. 'low_animation',
                             settings.lowAnimationSpeed,
                             { 1.0, 1.0, 1.0, 0.35 },
-                            settings.lowColor,
+                            resourceName == 'HP' and settings.criticalColor or settings.lowColor,
                             settings.backgroundColor,
                             170
                         );
                         if (animation ~= 'None') then
                             imgui.SameLine();
-                            imgui.TextColored(labelColor, 'Speed');
+                            imgui.TextColored(labelColor, 'Animation speed');
                             imgui.SameLine();
                             settings.lowAnimationSpeed = DrawSliderControl(idPrefix .. 'low_animation_speed', settings.lowAnimationSpeed, 0, 240, barComboWidth, false);
                         end
@@ -1953,17 +1984,34 @@ function bar.DrawSettings(settings, context)
 
     if (showLowState == true) then
         DrawInnerBreak();
-        DrawInnerHeader('Low ' .. resourceName .. ' warning:');
-        settings.lowColorEnabled = DrawToggle('Enable low ' .. resourceName .. ' state', settings.lowColorEnabled);
+        DrawInnerHeader(resourceName == 'HP' and 'Low HP warnings:' or ('Low ' .. resourceName .. ' warning:'));
+        settings.lowColorEnabled = DrawToggle('Low ' .. resourceName, settings.lowColorEnabled);
 
         if (settings.lowColorEnabled == true) then
             settings.lowColorPercent, settings.lowColor = DrawLowWarningRow(idPrefix .. 'low_warning', settings.lowColorPercent, settings.lowColor);
+        end
 
+        if (resourceName == 'HP') then
+            settings.criticalColorEnabled = DrawToggle('Critical HP', settings.criticalColorEnabled);
+            if (settings.criticalColorEnabled == true) then
+                settings.criticalColorPercent, settings.criticalColor = DrawLowWarningRow(
+                    idPrefix .. 'critical_warning',
+                    settings.criticalColorPercent,
+                    settings.criticalColor
+                );
+            end
+        end
+
+        local animationStateEnabled = settings.lowColorEnabled == true;
+        if (resourceName == 'HP') then
+            animationStateEnabled = settings.criticalColorEnabled == true;
+        end
+        if (animationStateEnabled == true) then
             local animation = settings.lowAnimationEnabled == true and tostring(settings.lowAnimation or defaults.lowAnimation or 'Important') or 'None';
             if (animation == 'Blink') then
                 animation = 'Pulse';
             end
-            animation = DrawComboRow('Warning animation', animation, GetAnimationOptions(), idPrefix .. 'low_animation', 170);
+            animation = DrawComboRow('Animation', animation, GetAnimationOptions(), idPrefix .. 'low_animation', 170);
 
             if (animation == 'None') then
                 settings.lowAnimationEnabled = false;

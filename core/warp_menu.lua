@@ -916,47 +916,25 @@ local function DrawDestination(settings, destination, favoriteRow, context, unlo
     local rowStartX, rowStartY = GetCursorPos();
     local rowHeight = 22;
     local rowWidth = math.max(220, (#label * 8) + 46);
+    local clicked = imgui.Selectable(
+        '##warp_dest_' .. FavoriteKey(destination.zone, destination.id),
+        false,
+        0,
+        { rowWidth, rowHeight }
+    ) == true;
+    SetCursorPos(rowStartX, rowStartY + 2);
+    local favoriteClicked = false;
 
     if (icon ~= nil and imgui.Image ~= nil) then
         imgui.Image(icon, { 16, 16 }, { 0, 0 }, { 1, 1 });
-
-        if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
-            ToggleFavorite(settings, destination);
-            return;
-        end
+        favoriteClicked = imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true;
 
         imgui.SameLine();
     else
         imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, favorite and '[*]' or '[ ]');
-
-        if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
-            ToggleFavorite(settings, destination);
-            return;
-        end
+        favoriteClicked = imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true;
 
         imgui.SameLine();
-    end
-
-    if (imgui.InvisibleButton ~= nil) then
-        local textX, textY = GetCursorPos();
-        local clicked = imgui.InvisibleButton('##warp_dest_' .. FavoriteKey(destination.zone, destination.id), { rowWidth, rowHeight }) == true;
-        SetCursorPos(textX, textY + 2);
-        if (labelColor ~= nil) then
-            imgui.TextColored(labelColor, label);
-        else
-            imgui.Text(label);
-        end
-        SetCursorPos(rowStartX, rowStartY + rowHeight);
-
-        if (clicked == true) then
-            RequestHomePointWarp(destination, context);
-
-            if (imgui.CloseCurrentPopup ~= nil) then
-                imgui.CloseCurrentPopup();
-            end
-        end
-
-        return;
     end
 
     if (labelColor ~= nil) then
@@ -964,8 +942,14 @@ local function DrawDestination(settings, destination, favoriteRow, context, unlo
     else
         imgui.Text(label);
     end
+    SetCursorPos(rowStartX, rowStartY + rowHeight);
 
-    if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+    if (favoriteClicked == true) then
+        ToggleFavorite(settings, destination);
+        return true;
+    end
+
+    if (clicked == true) then
         RequestHomePointWarp(destination, context);
 
         if (imgui.CloseCurrentPopup ~= nil) then

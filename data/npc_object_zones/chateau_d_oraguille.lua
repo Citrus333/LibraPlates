@@ -8,7 +8,7 @@ return {
         ["Alberic"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * The Broken Lance\
 * Shadows of the Past\
 ",
@@ -33,8 +33,11 @@ return {
         },
         ["Celebratory Chest"] = {
             ["_source"] = "npc",
+            ["note"] = "Notes:\
+* Sells fireworks, high-quality\
+crystals, and celebratory goods.",
             ["icon"] = "SpecialMerchant.png",
-            ["type"] = "Standard Merchant",
+            ["type"] = "Celebratory Goods Vendor",
         },
         ["Chaloutte"] = {
             ["_source"] = "npc",
@@ -99,7 +102,7 @@ Involved in Missions:\
         ["Destin"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * The Weight of Evidence\
 * The Heir to the Light\
 ",
@@ -113,7 +116,7 @@ Involved in Missions:\
         ["Elmemague"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * The Broken Lance\
 * Shadows of the Past\
 ",
@@ -122,7 +125,7 @@ Involved in Missions:\
         ["Erpalacion"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * Knight Stalker\
 ",
             ["type"] = "Quest Associate",
@@ -135,7 +138,7 @@ Involved in Missions:\
         ["Ferdechiond"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * The Broken Lance\
 * Shadows of the Past\
 ",
@@ -180,7 +183,7 @@ Involved in Missions:\
         ["Josephart"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * The Broken Lance\
 * Shadows of the Past\
 ",
@@ -245,8 +248,8 @@ Involved in Missions:\
         },
         ["Ranperre"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * The Voracious Resurgence\
 ",
             ["type"] = "Mission Associate",
@@ -255,13 +258,13 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["note"] = "Notes:\
-See also *2009 - (10/13/2009) Produce your own wedding! Presenting the new wedding support service! *Celebratory Chest *Matrimonial Coffer",
-            ["type"] = "Wedding event NPC.",
+* Provides wedding support services.",
+            ["type"] = "Wedding Event NPC",
         },
         ["Talos"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
 * The Voracious Resurgence\
 ",
             ["type"] = "Mission Associate",
@@ -269,7 +272,7 @@ See also *2009 - (10/13/2009) Produce your own wedding! Presenting the new weddi
         ["Vilbert"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * The Star Oncie\
 ",
             ["type"] = "Quest Associate",
@@ -279,61 +282,77 @@ See also *2009 - (10/13/2009) Produce your own wedding! Presenting the new weddi
         ["Celebratory Chest"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A stylized national festive coffer manifest within prominent sovereign audience chambers. Opening this repository distributes unique holiday cosmetics or registers custom server event milestones.",
-            ["type"] = "Loot Container",
+            ["note"] = "Notes:\
+* Sells fireworks, high-quality\
+crystals, and celebratory goods.",
+            ["type"] = "Celebratory Goods Vendor",
         },
         ["Coteaulepoint"] = {
             ["_source"] = "item",
             ["icon"] = "LocalGuide.png",
-            ["note"] = "A localized spatial landmark structural point. Examining it checks dynamic progress flags or validates regional side tasks within the Kingdom's borders.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Door:Great Hall"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The massive ornate portal archway partitioning off the main state hall. Turning the heavy latch manages your royal audience navigation and uncovers Kingdom background records.",
+            ["note"] = "Notes:\
+* Entrance to the Great Hall.",
             ["type"] = "Security Gate",
         },
         ["Door:Prince Regent's Rm"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A secure wooden barrier portal protecting the executive chambers of the Prince Regent. Passing through the threshold tracks advanced national rank missions and handles localized storyline developments.",
+            ["note"] = "Notes:\
+* Entrance to the Prince Regent's\
+room.",
             ["type"] = "Security Gate",
         },
         ["Door:Prince Royal's Rm"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A secure, iron-reinforced wooden door partitioning off the Prince Royal's chambers. Verifying your royal clearance commands the ornate framework to open.",
+            ["note"] = "Notes:\
+* Entrance to the Prince Royal's\
+room.",
             ["type"] = "Security Gate",
         },
         ["Door:Royal Knight Qtrs"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy timber door sealing off the private barracks of the Royal Knights. Operating the handle opens up the military compound area to fulfill active side quest delivery checks.",
+            ["note"] = "Notes:\
+* Entrance to the Royal Knight\
+quarters.",
             ["type"] = "Security Gate",
         },
         ["Door:Temple Knight Qtrs"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A fortified wooden partition protecting the Temple Knights' quarters. Activating the handle opens up advanced tactical yards and checks active national storyline progression.",
+            ["note"] = "Notes:\
+* Entrance to the Temple Knight\
+quarters.",
             ["type"] = "Security Gate",
         },
         ["Matrimonial Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "An ornate, locked ceremonial chest placed within prominent national audience chambers. Opening the coffer uncovers long-lost historical logs or reviews festive holiday scenarios.",
+            ["note"] = "Notes:\
+* Ceremonial coffer used during\
+weddings.",
             ["type"] = "Loot Container",
         },
         ["Memorian"] = {
             ["_source"] = "item",
             ["icon"] = "Automaton.png",
-            ["note"] = "A strange, magically animated doll standing as a hidden sentinel across various cities. Examining this eerie automaton tracks mysterious energy reactions to advance late-tier missions.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
         ["Tombstone"] = {
             ["_source"] = "item",
             ["icon"] = "Gravestone.png",
-            ["note"] = "A weathered stone cemetery monument embedded with ancient noble crests. Brushing off the dust triggers historical cutscenes or verifies critical milestone items for the San d'Orian royal family lines.",
+            ["note"] = "Notes:\
+* Quest interaction point.",
             ["type"] = "Quest Node",
         },
     },

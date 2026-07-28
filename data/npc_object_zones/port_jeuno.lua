@@ -681,6 +681,7 @@ previous augment.",
             ["icon"] = "SynergyFurnace.png",
             ["note"] = "Crafting furnace used for synergy recipes.",
             ["type"] = "Synergy Furnace",
+			["worldOffsetY"] = 0.45,
         },
         ["Synthesis Focuser II"] = {
             ["_source"] = "item",

@@ -279,16 +279,24 @@ local function WrapLine(line, maxWidth)
         return wrapped;
     end
 
+    -- Preserve visual indentation when a line enters the wrapping path.
+    -- Quest rows are prefixed with "  * "; tokenizing with %S+ used to strip
+    -- that prefix from longer rows, so only short quest names stayed aligned.
+    local firstPrefix = line:match('^(%s*[%*%-]%s+)') or line:match('^(%s*)') or '';
+    local continuationPrefix = string.rep(' ', #firstPrefix);
+    local content = line:sub(#firstPrefix + 1);
     local current = '';
+    local firstWord = true;
 
-    for word in line:gmatch('%S+') do
+    for word in content:gmatch('%S+') do
         if (current == '') then
-            current = word;
+            current = (firstWord and firstPrefix or continuationPrefix) .. word;
+            firstWord = false;
         elseif (GetTextWidth(current .. ' ' .. word) <= maxWidth) then
             current = current .. ' ' .. word;
         else
             wrapped[#wrapped + 1] = current;
-            current = word;
+            current = continuationPrefix .. word;
         end
     end
 
@@ -308,6 +316,7 @@ local function QueueForegroundTextBlock(text, color, maxWidth, linkResolver, sec
         local lineHeight = 15;
         local usedHeight = 0;
         local wrapWidth = math.max(80, tonumber(maxWidth) or 220);
+        local linkRow = 0;
 
         for _, line in ipairs(SplitLines(text)) do
             if (line == '') then
@@ -319,10 +328,78 @@ local function QueueForegroundTextBlock(text, color, maxWidth, linkResolver, sec
                 local isBullet = line:match('^%*%s+') ~= nil;
                 local isSectionHeader = isBullet ~= true and line:match(':%s*$') ~= nil;
                 local displayLine = isBullet and ('  ' .. npcInfoBullet .. ' ' .. line:gsub('^%*%s+', '')) or line;
+                local link = linkResolver ~= nil and linkResolver(line) or nil;
                 local lineColor = isSectionHeader and (sectionColor or npcSectionTextColor) or color;
 
-                for _, wrapped in ipairs(WrapLine(displayLine, wrapWidth)) do
-                    imgui.TextColored(lineColor, wrapped);
+                for index, wrapped in ipairs(WrapLine(displayLine, wrapWidth)) do
+                    local clickable = link ~= nil and tostring(link.url or '') ~= '';
+                    local clicked = false;
+                    local rowColor = link ~= nil and (link.color or linkColor or npcLinkTextColor) or lineColor;
+                    local rendered = false;
+
+                    if (
+                        clickable == true and
+                        imgui.Selectable ~= nil
+                    ) then
+                        linkRow = linkRow + 1;
+                        local textColorId = _G.ImGuiCol_Text;
+                        local pushedTextColor = false;
+
+                        if (textColorId ~= nil and imgui.PushStyleColor ~= nil) then
+                            imgui.PushStyleColor(textColorId, rowColor);
+                            pushedTextColor = true;
+                        end
+
+                        clicked = imgui.Selectable(
+                            wrapped .. '##npc_info_popup_link_' .. tostring(linkRow),
+                            false
+                        ) == true;
+                        rendered = true;
+
+                        if (pushedTextColor == true and imgui.PopStyleColor ~= nil) then
+                            imgui.PopStyleColor(1);
+                        end
+                    elseif (
+                        clickable == true and
+                        imgui.InvisibleButton ~= nil and
+                        imgui.GetCursorPosX ~= nil and
+                        imgui.GetCursorPosY ~= nil and
+                        imgui.SetCursorPosX ~= nil and
+                        imgui.SetCursorPosY ~= nil
+                    ) then
+                        local rowX = imgui.GetCursorPosX();
+                        local rowY = imgui.GetCursorPosY();
+                        linkRow = linkRow + 1;
+                        clicked = imgui.InvisibleButton(
+                            '##npc_info_popup_link_' .. tostring(linkRow),
+                            { math.max(20, math.min(wrapWidth, GetTextWidth(wrapped) + 8)), lineHeight }
+                        ) == true;
+                        imgui.SetCursorPosX(rowX);
+                        imgui.SetCursorPosY(rowY);
+                    end
+
+                    if (rendered ~= true) then
+                        imgui.TextColored(rowColor, wrapped);
+                    end
+
+                    if (
+                        clickable == true and
+                        clicked ~= true and
+                        rendered ~= true and
+                        imgui.InvisibleButton == nil and
+                        imgui.IsItemClicked ~= nil
+                    ) then
+                        clicked = imgui.IsItemClicked(0) == true;
+                    end
+
+                    if (clicked == true) then
+                        OpenUrl(link.url);
+
+                        if (imgui.CloseCurrentPopup ~= nil) then
+                            imgui.CloseCurrentPopup();
+                        end
+                    end
+
                     usedHeight = usedHeight + lineHeight;
                 end
             end
@@ -357,7 +434,7 @@ local function QueueForegroundTextBlock(text, color, maxWidth, linkResolver, sec
             local lineColor = isSectionHeader and (sectionColor or npcSectionTextColor) or color;
 
             for index, wrapped in ipairs(WrapLine(displayLine, wrapWidth - (isBullet and 12 or 0))) do
-                if (canPlaceLinks == true and index == 1 and link ~= nil and link.url ~= nil and link.url ~= '') then
+                if (canPlaceLinks == true and link ~= nil and link.url ~= nil and link.url ~= '') then
                     local buttonWidth = math.min(math.max(80, #wrapped * 7 + 16), math.max(80, (tonumber(maxWidth) or 270) - (isBullet and 12 or 0)));
                     imgui.SetCursorPosX(textX - windowX);
                     imgui.SetCursorPosY(y - windowY);
@@ -375,7 +452,7 @@ local function QueueForegroundTextBlock(text, color, maxWidth, linkResolver, sec
                     x = textX,
                     y = y,
                     text = wrapped,
-                    color = (link ~= nil and index == 1) and (link.color or linkColor or npcLinkTextColor) or lineColor,
+                    color = link ~= nil and (link.color or linkColor or npcLinkTextColor) or lineColor,
                     bullet = isBullet == true and index == 1,
                     bulletX = windowX + cursorX + 3,
                 };
@@ -417,7 +494,10 @@ local function NormalizeNpcInfoText(text)
     text = tostring(text or ''):gsub('\r\n', '\n'):gsub('\r', '\n');
 
     text = text:gsub('◆', npcInfoBullet);
-    text = text:gsub('%s*:%s*%*%s*', '\n' .. npcInfoBullet .. ' ');
+    -- Split an inline/next-line bullet away from its section header without
+    -- deleting the colon. Quest/mission link parsing and section styling use
+    -- that delimiter to recognize headings such as "Starts Quests:".
+    text = text:gsub('%s*:%s*%*%s*', ':\n' .. npcInfoBullet .. ' ');
     text = text:gsub('(^)%s*[%-%*]%s+', '%1' .. npcInfoBullet .. ' ');
     text = text:gsub('(\n)%s*[%-%*]%s+', '%1' .. npcInfoBullet .. ' ');
     text = text:gsub('\n%s*\n%s*\n+', '\n\n');
@@ -426,30 +506,8 @@ local function NormalizeNpcInfoText(text)
     return text;
 end
 
-local function StripNpcNotesSection(text)
-    local output = {};
-    local skippingNotes = false;
-
-    for _, line in ipairs(SplitLines(text)) do
-        local clean = tostring(line or ''):gsub('^%s+', ''):gsub('%s+$', '');
-        local isBullet = clean:match('^%*%s+') ~= nil;
-        local isHeader = isBullet ~= true and clean:match(':%s*$') ~= nil;
-
-        if (isHeader == true and clean:match('^Notes:%s*$') ~= nil) then
-            skippingNotes = true;
-        elseif (skippingNotes == true and isHeader == true) then
-            skippingNotes = false;
-            output[#output + 1] = line;
-        elseif (skippingNotes ~= true) then
-            output[#output + 1] = line;
-        end
-    end
-
-    return table.concat(output, '\n'):gsub('\n+$', '');
-end
-
 local function LimitNpcInfoText(text, maxChars, maxLines)
-    text = StripNpcNotesSection(NormalizeNpcInfoText(text));
+    text = NormalizeNpcInfoText(text);
     maxChars = math.max(120, tonumber(maxChars) or 420);
     maxLines = math.max(4, tonumber(maxLines) or 10);
 
@@ -875,16 +933,25 @@ local function BuildWikiLink(title)
 end
 
 local function BuildQuestLink(title, info)
-    local wikiTitle = tostring(title or ''):gsub('^%s+', ''):gsub('%s+$', '');
-    local source = tostring(info ~= nil and info.source or '');
+    local wikiTitle = tostring(title or '')
+        :gsub('^%s+', '')
+        :gsub('%s+$', '')
+        :gsub('[%.;]+$', '')
+        :gsub('%s+$', '');
     local link = tostring(info ~= nil and info.link or '');
 
     if (wikiTitle == '') then
         return '';
     end
 
-    if (source == 'catseye_npc' and link ~= '' and link:match('CatsEyeXI_Systems/Quests') ~= nil) then
-        local base = link:gsub('#.*$', '');
+    if (IsCatseyeInfo(info) == true) then
+        if (link ~= '' and link:match('CatsEyeXI_Systems/Quests') == nil) then
+            return link;
+        end
+
+        local base = link ~= ''
+            and link:gsub('#.*$', '')
+            or 'https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests';
 
         if (base ~= '') then
             return base .. '#' .. UrlEncodePathPart(wikiTitle);
@@ -971,11 +1038,34 @@ local function CreateQuestLineLinkResolver(maxLinks, linkColor, info)
             return nil;
         end
 
-        if (inQuestSection ~= true or clean:match('^%*%s+') == nil) then
+        if (clean:match('^%*%s+') == nil) then
             return nil;
         end
 
-        local title = clean:gsub('^%*%s+', ''):gsub('%s+$', '');
+        local bulletText = clean:gsub('^%*%s+', ''):gsub('%s+$', '');
+        local title = nil;
+
+        if (inQuestSection == true) then
+            title = bulletText;
+        elseif (IsCatseyeInfo(info) == true) then
+            local action, inlineTitle = bulletText:match('^([^:]+):%s*(.+)$');
+            action = tostring(action or ''):lower():gsub('^%s+', ''):gsub('%s+$', '');
+
+            if (
+                action == 'starts quest' or
+                action == 'starts quests' or
+                action == 'involved in quest' or
+                action == 'involved in quests'
+            ) then
+                title = inlineTitle;
+            end
+        end
+
+        title = tostring(title or '')
+            :gsub('^%s+', '')
+            :gsub('%s+$', '')
+            :gsub('[%.;]+$', '')
+            :gsub('%s+$', '');
 
         if (title == '' or seen[title] == true or count >= maxLinks) then
             return nil;
@@ -2025,7 +2115,9 @@ function quickMenu.Render()
             local bodyTextColor = GetReadableTextColor(menu);
             local sectionTextColor = menu.headerColor or npcSectionTextColor;
             local linkTextColor = menu.linkColor or npcLinkTextColor;
-            local questLineLinkResolver = (menu.npc.openLink == true) and CreateQuestLineLinkResolver(menu.npc.maxQuestLinks, linkTextColor, info) or nil;
+            local questLineLinkResolver = (menu.npc.openLink == true)
+                and CreateQuestLineLinkResolver(menu.npc.maxQuestLinks, linkTextColor, info)
+                or nil;
             local bodyWidth = math.max(160, (tonumber(menu.width) or 270) - 24);
 
 

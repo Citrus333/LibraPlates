@@ -9,6 +9,8 @@ local fonts = require('core.fonts');
 local textScale = require('core.text_scale');
 local canvasTexture = require('core.canvas_texture');
 local barTextures = require('core.bar_textures');
+local barAnimations = require('core.bar_animations');
+local barWarning = require('core.bar_warning');
 local backgroundTextures = require('core.background_textures');
 local entities = require('core.entities');
 local clientVisibility = require('core.client_visibility');
@@ -260,17 +262,14 @@ local function IsAlliedTacticalNpc(entity)
     return HasText(displayName, 'Ascetic') == true;
 end
 
-local function IsResolvedNpc(entity)
-    if (entity == nil) then
+local function IsCatseyeServiceNpcInfo(info)
+    if (type(info) ~= 'table') then
         return false;
     end
 
-    local displayName = CleanDisplayName(entity.name);
-    local resolvedEntityName = npcObjectInfo.ResolveKind(displayName, tostring(entity.entityType or 'NPC'), {
-        targetIndex = entity.index,
-    });
-
-    return resolvedEntityName == 'NPC';
+    return
+        tostring(info.source or info._source or '') == 'catseye_npc' and
+        IsAlliedTacticalNpcInfo(info) ~= true;
 end
 
 local function HasReadableDisplayName(name)
@@ -367,6 +366,17 @@ local function IsAlwaysReadableGatheringPoint(clickTargetType, displayName)
         displayName == 'Excav. Point';
 end
 
+local function IsTargetOnlyDoor(resolvedEntityName, info)
+    if (resolvedEntityName ~= 'Object' or type(info) ~= 'table') then
+        return false;
+    end
+
+    local icon = tostring(info.icon or ''):lower():gsub('/', '\\');
+    local typeText = tostring(info.type or ''):lower():gsub('^%s+', ''):gsub('%s+$', '');
+
+    return icon:match('door%.png$') ~= nil or typeText == 'security gate';
+end
+
 local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType, displayName)
     if (cached == nil or cached.texture == nil) then
         return false;
@@ -426,18 +436,6 @@ local function QueueNpcObject(entity)
     local entityName = tostring(entity.entityType or 'NPC');
     local displayName = CleanDisplayName(entity.name);
 
-    -- Idle allied forces are ordinary NPC World plates.  Campaign enemies
-    -- share their low-level entity flags, so only let a campaign actor through
-    -- when its current-zone record identifies it as an allied force.
-    if (
-        entity.campaignBattleActor == true and
-        entity.campaignAlly ~= true and
-        IsAlliedTacticalNpc(entity) ~= true
-    ) then
-        perfMeter.EndDetail(resolveTimer);
-        return;
-    end
-
     if (npcObjectInfo.ShouldHidePlate(displayName) == true) then
         perfMeter.EndDetail(resolveTimer);
         return;
@@ -459,7 +457,21 @@ local function QueueNpcObject(entity)
     end
 
     local resolvedEntityName, npcInfo = npcObjectInfo.ResolveKind(displayName, entityName, { targetIndex = entity.index });
+    local isCatseyeServiceNpc = resolvedEntityName == 'NPC' and IsCatseyeServiceNpcInfo(npcInfo) == true;
     local renderedDisplayName = tostring(npcInfo ~= nil and npcInfo.displayName or '');
+
+    -- CatsEye service NPCs can carry the same raw status/HP flags as Campaign
+    -- combat actors.  Their resolved data source is authoritative: keep them
+    -- on the ordinary NPC World path instead of rejecting or promoting them.
+    if (
+        isCatseyeServiceNpc ~= true and
+        entity.campaignBattleActor == true and
+        entity.campaignAlly ~= true and
+        IsAlliedTacticalNpc(entity) ~= true
+    ) then
+        perfMeter.EndDetail(resolveTimer);
+        return;
+    end
 
     if (renderedDisplayName == '') then
         renderedDisplayName = displayName;
@@ -472,7 +484,7 @@ local function QueueNpcObject(entity)
     -- A normal town/service NPC keeps its World widgets while targeted.
     -- Campaign allies are the exception: they are genuine combat actors and
     -- use the Tactical NPC plate while fighting.
-    local useNpcCombatWidgets = settingsEntityName == 'NPC' and (
+    local useNpcCombatWidgets = isCatseyeServiceNpc ~= true and settingsEntityName == 'NPC' and (
         entity.campaignAlly == true or
         IsAlliedTacticalNpc(entity) == true
     );
@@ -483,6 +495,24 @@ local function QueueNpcObject(entity)
     -- Objects still use tactical overlay behavior, but their regular widgets
     -- keep the same World settings as untargeted Objects.
     local widgetLayoutStateName = settingsEntityName == 'Object' and 'Idle' or layoutStateName;
+
+    -- Unknown objects may enter the scan through the targeted-object fallback.
+    -- If that candidate remains in the short world-scan cache after the
+    -- player deselects it, do not let it become an idle plate. Known objects
+    -- still follow their normal data-driven visibility rules below.
+    if targetStateName == 'Idle' and resolvedEntityName == 'Object' and npcInfo == nil then
+        perfMeter.EndDetail(resolveTimer);
+        return;
+    end
+
+    -- Door-like Objects should reveal their plate only in target/subtarget
+    -- context. Raw client status differs between doors, so relying on the
+    -- background object scanner alone makes visually identical doors behave
+    -- inconsistently (for example, the Chocobo Circuit gate stayed visible).
+    if (targetStateName == 'Idle' and IsTargetOnlyDoor(resolvedEntityName, npcInfo) == true) then
+        perfMeter.EndDetail(resolveTimer);
+        return;
+    end
 
     if (targetStateName == 'Idle' and npcInfo ~= nil and npcInfo.hidden == true) then
         perfMeter.EndDetail(resolveTimer);
@@ -544,7 +574,6 @@ local function QueueNpcObject(entity)
     local settingsTimer = perfMeter.BeginDetail('npc.settings');
     local showDistanceBadge = settingsEntityName == 'Object';
 
-    local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isTacticalTarget == true);
     local backgroundSettings = state.GetWidgetSettings(settingsEntityName, widgetLayoutStateName, 'Background', backgroundDefaults);
     local nameSettings = state.GetWidgetSettings(settingsEntityName, widgetLayoutStateName, 'Name', nameDefaults);
     local distanceSettings = state.GetWidgetSettings(settingsEntityName, widgetLayoutStateName, 'Distance', distanceDefaults);
@@ -559,12 +588,13 @@ local function QueueNpcObject(entity)
 
     local globalSettings = state.GetGlobalSettings(globalDefaults);
     local lookupOptions = { targetIndex = entity.index };
-    -- NPC/object identity icons are part of the base World plate.  Do not
-    -- remove them merely because the optional expensive-widget policy is on.
+    -- NPC/object icons and type classifications are part of the base World
+    -- plate identity.  The optional expensive-widget policy must not leave
+    -- either half of that identity missing.
     local iconTextureId = iconSettings.enabled == true and (
         npcObjectInfo.GetTextureIdForInfo(npcInfo) or npcObjectInfo.GetTextureId(displayName, resolvedEntityName, lookupOptions)
     ) or nil;
-    local typeText = suppressExpensiveWorldWidgets ~= true and typeLineSettings.enabled == true and (
+    local typeText = typeLineSettings.enabled == true and (
         (npcInfo ~= nil and npcInfo.type ~= nil and tostring(npcInfo.type) ~= '' and tostring(npcInfo.type)) or
         npcObjectInfo.GetType(displayName, resolvedEntityName, lookupOptions)
     ) or nil;
@@ -587,7 +617,7 @@ local function QueueNpcObject(entity)
         background = backgroundSettings,
         name = nameSettings,
         distance = distanceSettings,
-        typeLine = suppressExpensiveWorldWidgets == true and { enabled = false } or typeLineSettings,
+        typeLine = typeLineSettings,
         icon = iconSettings,
     }, {
         iconTextureId = iconTextureId,
@@ -808,7 +838,6 @@ local function QueueTacticalNpc(entity)
     local backgroundSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Background', backgroundDefaults);
     local nameSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Name', nameDefaults);
     local hpBarSettings = state.GetWidgetSettings('NPC', layoutStateName, 'HP Bar', barDefaults);
-    local distanceSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Distance', distanceDefaults);
     local typeLineSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Type line', typeLineDefaults);
     local iconSettings = state.GetWidgetSettings('NPC', layoutStateName, 'Icon', npcObjectIconDefaults);
     ApplyNpcAnchorDefaults(iconSettings, npcObjectIconDefaults, -28, -30);
@@ -816,9 +845,12 @@ local function QueueTacticalNpc(entity)
     local iconTextureId = iconSettings.enabled == true and npcObjectInfo.GetTextureIdForInfo(npcInfo) or nil;
     local typeText = typeLineSettings.enabled == true and npcInfo ~= nil and tostring(npcInfo.type or '') or nil;
     local hpPercent = math.max(0, math.min(100, tonumber(entity.hpPercent) or 100));
-    local distanceText = distanceSettings.enabled == true and entity.distance ~= nil
-        and FormatDistanceText(distanceSettings, entity.distance)
-        or nil;
+    local hpColor, hpCriticalActive = barWarning.ResolveHp(
+        hpBarSettings,
+        barDefaults,
+        hpPercent,
+        hpBarSettings.color or { 0.15, 0.85, 0.25, 1.0 }
+    );
     local targetMarker = targetStateName ~= 'Idle'
         and targetModuleMarker.Build('NPC', layoutStateName, targetStateName, hpBarSettings, entity.distance)
         or { enabled = false };
@@ -857,7 +889,6 @@ local function QueueTacticalNpc(entity)
             ['Background'] = 'background',
             ['Name'] = 'name',
             ['HP Bar'] = 'hp',
-            ['Distance'] = 'distance',
             ['Icon'] = 'npc_object_icon',
             ['Type line'] = 'type',
         },
@@ -867,7 +898,7 @@ local function QueueTacticalNpc(entity)
             height = tonumber(hpBarSettings.height) or 12,
             offsetX = tonumber(hpBarSettings.offsetX) or 0,
             offsetY = tonumber(hpBarSettings.offsetY) or 0,
-            color = hpBarSettings.color or { 0.15, 0.85, 0.25, 1.0 },
+            color = hpColor,
             backgroundColor = hpBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = hpBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(hpBarSettings.borderSize) or 0,
@@ -877,6 +908,12 @@ local function QueueTacticalNpc(entity)
             texture = hpBarSettings.texture or 'Solid',
             textureStrength = tonumber(hpBarSettings.textureStrength) or 100,
             textureId = barTextures.GetTextureId(hpBarSettings.texture),
+            animationEnabled = hpCriticalActive == true and hpBarSettings.lowAnimationEnabled == true,
+            animationTextureId = hpCriticalActive == true and hpBarSettings.lowAnimationEnabled == true
+                and barAnimations.GetTextureId(hpBarSettings.lowAnimation)
+                or nil,
+            animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or 40,
+            animationColor = hpBarSettings.lowAnimationColor,
             showAtPercent = tonumber(hpBarSettings.showAtPercent) or 100,
             text = hpBarSettings.showPercent == true and (tostring(math.floor(hpPercent + 0.5)) .. '%') or '',
             fontFamily = fonts.GetRole(globalSettings, hpBarSettings.useSmallFont == true),
@@ -888,29 +925,6 @@ local function QueueTacticalNpc(entity)
             textOutlineSize = tonumber(hpBarSettings.textOutlineSize) or 1,
         },
     };
-
-    if (distanceText ~= nil) then
-        plateData.badges = plateData.badges or {};
-        plateData.badges[#plateData.badges + 1] = {
-            kind = 'distance',
-            text = distanceText,
-            offsetX = tonumber(distanceSettings.offsetX) or distanceDefaults.offsetX,
-            offsetY = tonumber(distanceSettings.offsetY) or distanceDefaults.offsetY,
-            fontFamily = fonts.GetRole(globalSettings, distanceSettings.useSmallFont == true),
-            fontFlags = fonts.GetRoleFlags(globalSettings, distanceSettings.useSmallFont == true),
-            fontSize = textScale.ToTextureFontSize(distanceSettings.textSize, distanceDefaults.textSize),
-            textColor = distanceSettings.color or distanceDefaults.color,
-            textOutlineEnabled = (tonumber(distanceSettings.outlineSize) or 0) > 0,
-            textOutlineColor = distanceSettings.outlineColor or distanceDefaults.outlineColor,
-            textOutlineSize = tonumber(distanceSettings.outlineSize) or distanceDefaults.outlineSize,
-            anchorTo = distanceSettings.anchorTo or distanceDefaults.anchorTo,
-            anchorPoint = distanceSettings.anchorPoint or distanceDefaults.anchorPoint,
-            anchorCollapse = distanceSettings.anchorCollapse,
-            anchorSpacing = distanceSettings.anchorSpacing,
-            anchorOrder = distanceSettings.anchorOrder,
-            backgroundEnabled = false,
-        };
-    end
 
     if (iconTextureId ~= nil) then
         plateData.icons = plateData.icons or {};
@@ -958,7 +972,7 @@ local function QueueTacticalNpc(entity)
         'target=' .. BuildTargetMarkerKey(targetMarker),
         'bg=' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
         'nameSettings=' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
-        'hpSettings=' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
+        'hpSettings=' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'criticalColorEnabled', 'criticalColorPercent', 'criticalColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
         'distanceSettings=' .. SettingKey(distanceSettings, { 'enabled', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder' }),
         'typeSettings=' .. SettingKey(typeLineSettings, { 'enabled', 'useSmallFont', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
         'iconSettings=' .. SettingKey(iconSettings, { 'enabled', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
@@ -1065,14 +1079,12 @@ local function AnyTacticalNpcWidgetCanLoad()
     local hpBarSettings = state.GetWidgetSettings('NPC', 'Combat', 'HP Bar', barDefaults);
     local nameSettings = state.GetWidgetSettings('NPC', 'Combat', 'Name', nameDefaults);
     local backgroundSettings = state.GetWidgetSettings('NPC', 'Combat', 'Background', backgroundDefaults);
-    local distanceSettings = state.GetWidgetSettings('NPC', 'Combat', 'Distance', distanceDefaults);
     local typeLineSettings = state.GetWidgetSettings('NPC', 'Combat', 'Type line', typeLineDefaults);
     local iconSettings = state.GetWidgetSettings('NPC', 'Combat', 'Icon', npcObjectIconDefaults);
 
     return hpBarSettings.enabled == true or
         nameSettings.enabled == true or
         backgroundSettings.enabled == true or
-        distanceSettings.enabled == true or
         typeLineSettings.enabled == true or
         iconSettings.enabled == true;
 end
@@ -1167,9 +1179,21 @@ function npcPlate.Render()
                 queuedTargets[index] = true;
 
                 local tacticalEntity = entities.GetTacticalNpcByIndex(index, range);
-                if (tacticalEntity ~= nil and IsResolvedNpc(tacticalEntity) == true) then
-                    tacticalNpcIndexes[tonumber(tacticalEntity.index) or 0] = true;
-                    QueueTacticalNpc(tacticalEntity);
+                if (tacticalEntity ~= nil) then
+                    local resolvedKind, resolvedInfo = npcObjectInfo.ResolveKind(
+                        CleanDisplayName(tacticalEntity.name),
+                        tostring(tacticalEntity.entityType or 'NPC'),
+                        { targetIndex = tacticalEntity.index }
+                    );
+
+                    if (resolvedKind == 'NPC') then
+                        tacticalNpcIndexes[tonumber(tacticalEntity.index) or 0] = true;
+                        if (IsCatseyeServiceNpcInfo(resolvedInfo) == true) then
+                            QueueNpcObject(tacticalEntity);
+                        else
+                            QueueTacticalNpc(tacticalEntity);
+                        end
+                    end
                 end
             end
         end
@@ -1192,7 +1216,15 @@ function npcPlate.Render()
         entitiesList = scanCache.entities;
     else
         local scanTimer = perfMeter.BeginDetail('npc.scan');
-        entitiesList = entities.GetNearbyNpcObjects(range);
+        entitiesList = entities.GetNearbyNpcObjects(range, function(name, entityType, index)
+            local _, info = npcObjectInfo.ResolveKind(
+                CleanDisplayName(name),
+                tostring(entityType or 'NPC'),
+                { targetIndex = index }
+            );
+
+            return info ~= nil;
+        end);
         perfMeter.EndDetail(scanTimer);
         perfMeter.SetCounter('npcScanned', #(entitiesList or {}));
 
@@ -1241,8 +1273,16 @@ function npcPlate.Render()
     for _, entity in ipairs(tacticalEntities) do
         if (entity.campaignAlly == true or IsAlliedTacticalNpc(entity) == true) then
             local tacticalIndex = tonumber(entity.index) or 0;
+            local _, tacticalInfo = npcObjectInfo.ResolveKind(
+                CleanDisplayName(entity.name),
+                tostring(entity.entityType or 'NPC'),
+                { targetIndex = entity.index }
+            );
 
-            if (tacticalNpcIndexes[tacticalIndex] ~= true) then
+            if (
+                IsCatseyeServiceNpcInfo(tacticalInfo) ~= true and
+                tacticalNpcIndexes[tacticalIndex] ~= true
+            ) then
                 tacticalNpcIndexes[tacticalIndex] = true;
                 QueueTacticalNpc(entity);
             end

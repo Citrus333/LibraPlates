@@ -708,9 +708,13 @@ Sells: *Apple Juice 300 *Frontier Soda 125 *Melon Pie 1,560 *Orange Juice 200",
             ["type"] = "Citizen",
         },
         ["Rewardox"] = {
-            ["_source"] = "catseye_npc",
+            ["_source"] = "npc",
             ["icon"] = "GobbieMysteryBox.png",
-            ["note"] = "CatsEyeXI:\\n* Opens random rewards using daily\\nGobbie Box points.\\n* New players must wait 14\\nreal-life days before using the\\nbox.\\n* Special Gobbie Keys can be\\nobtained by exchanging merit\\npoints.\\n* Crystal Warriors and Wings Era\\nWarriors cannot use this box.",
+            ["note"] = "Notes:\
+* Opens random rewards using daily Gobbie Box points.\
+* New players must wait 14 real-life days.\
+* Special Gobbie Keys can be purchased with merit points.\
+* Unavailable to Crystal Warriors and Wings Era Warriors.",
             ["type"] = "Gobbie Mystery Box Vendor",
         },
         ["Ribbolian"] = {

@@ -1,6 +1,7 @@
 local nameDefaults = require('config.widgets.name');
 local backgroundDefaults = require('config.widgets.background');
 local barDefaults = require('config.widgets.bar');
+local barWarning = require('core.bar_warning');
 local mpBarDefaults = require('config.widgets.mp_bar');
 local tpBarDefaults = require('config.widgets.tp_bar');
 local jobDefaults = require('config.widgets.job');
@@ -1089,7 +1090,10 @@ local function QueuePlayer(player)
     local isTacticalPlayer = isPartyPlayer == true;
     local isProtectedPlate = isPartyPlayer == true or isTargetContext == true;
 
-    local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isProtectedPlate);
+    -- PC World widget selections are authoritative.  A global performance
+    -- option must not silently collapse configured idle player plates to
+    -- name-only while the same widgets remain enabled in settings.
+    local suppressExpensiveWorldWidgets = false;
     perfMeter.SetCounter('pc.expensiveSetting', suppressExpensiveWorldWidgets == true and 1 or 0);
     if (isProtectedPlate == true) then
         perfMeter.Count('pc.expensiveProtected', 1);
@@ -1189,7 +1193,8 @@ local function QueuePlayer(player)
     local tpBarLoads = hasTp == true and WidgetLoads(tpBarSettings, 'TP Bar');
     local jobLoads = suppressExpensiveWorldWidgets ~= true and WidgetLoads(jobSettings, 'Job');
     local levelLoads = suppressExpensiveWorldWidgets ~= true and WidgetLoads(levelSettings, 'Level');
-    local hpAnimationEnabled = hpBarLoads == true and hpBarSettings.lowColorEnabled == true and hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25) and hpBarSettings.lowAnimationEnabled == true;
+    local resolvedHpColor, hpCriticalActive = barWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
+    local hpAnimationEnabled = hpBarLoads == true and hpCriticalActive == true and hpBarSettings.lowAnimationEnabled == true;
     local mpAnimationEnabled = mpBarLoads == true and mpBarSettings.lowColorEnabled == true and mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25) and mpBarSettings.lowAnimationEnabled == true;
     local canEvaluateHpBarRange = isPartyPlayer == true or isTargetContext == true;
     local queuedActionRange = (canEvaluateHpBarRange == true and hpBarSettings.outOfRangeOpacityEnabled == true)
@@ -1203,9 +1208,7 @@ local function QueuePlayer(player)
         and tonumber(player.distance) > hpBarOutOfRangeDistance;
     perfMeter.EndDetail(settingsTimer);
 
-    if (hpBarSettings.lowColorEnabled == true and hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
+    hpColor = resolvedHpColor;
 
     if (mpBarSettings.lowColorEnabled == true and mpPercent <= (tonumber(mpBarSettings.lowColorPercent) or 25)) then
         mpColor = mpBarSettings.lowColor or mpColor;
@@ -1466,7 +1469,7 @@ local function QueuePlayer(player)
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'loadMode', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
             'dist:' .. SettingKey(distanceSettings, { 'enabled', 'loadMode', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
+            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'criticalColorEnabled', 'criticalColorPercent', 'criticalColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
             'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
             'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
             suppressExpensiveWorldWidgets == true and 'gameModeIcon:suppressed' or ('gameModeIcon:' .. SettingKey(gameModeIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder' })),

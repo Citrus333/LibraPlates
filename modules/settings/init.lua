@@ -64,6 +64,7 @@ settingsUi.homePointRefreshMessage = settingsUi.homePointRefreshMessage or '';
 local settingsHeaderColor = { 1.0, 0.84, 0.0, 1.0 };
 LibraPlatesSettingsUiIconCache = LibraPlatesSettingsUiIconCache or {};
 LibraPlatesEnemyIconPreviewCache = LibraPlatesEnemyIconPreviewCache or {};
+LibraPlatesAssetIconPreviewCache = LibraPlatesAssetIconPreviewCache or {};
 LibraPlatesSettingsPalette = {
     shellBg = { 0.094, 0.094, 0.094, 1.0 },
     panelBg = { 0.145, 0.145, 0.145, 1.0 },
@@ -566,8 +567,11 @@ local smnHpBarDefaults = {
     showPercent = true,
     showAtPercent = 100,
     lowColorEnabled = false,
-    lowColorPercent = 25,
-    lowColor = { 1.0, 0.15, 0.10, 1.0 },
+    lowColorPercent = 50,
+    lowColor = { 1.0, 0.55, 0.05, 1.0 },
+    criticalColorEnabled = false,
+    criticalColorPercent = 25,
+    criticalColor = { 1.0, 0.15, 0.10, 1.0 },
     lowAnimationEnabled = false,
     lowAnimation = 'Important',
     lowAnimationSpeed = 40,
@@ -897,7 +901,6 @@ local enemyCombatWidgets = T{
     'Enmity (module)',
     'Target (module)',
     'Subtarget (module)',
-    'Enemy Alerts (module)',
     'Cast bar',
     'Special icon',
 };
@@ -2024,7 +2027,6 @@ GetEditWidgetsFor = function(entity, stateName)
                 'Name',
                 'Type line',
                 'Icon',
-                'Distance',
                 'HP Bar',
                 'Target (module)',
                 'Subtarget (module)',
@@ -4662,17 +4664,24 @@ function DrawManeuverResetConfirm(settings)
 end
 
 function DrawSpecialTargetExtraSettings(settings)
-    DrawYellowHeader('Target types');
+    local function DrawTargetTypes()
+        DrawCheckbox('T3 Incursion mobs', settings.showTier3Incursion ~= false, function(value)
+            settings.showTier3Incursion = value == true;
+            state.Save();
+        end);
 
-    DrawCheckbox('T3 Incursion mobs', settings.showTier3Incursion ~= false, function(value)
-        settings.showTier3Incursion = value == true;
-        state.Save();
-    end);
+        DrawCheckbox('AP mobs', settings.showActivityPoints ~= false, function(value)
+            settings.showActivityPoints = value == true;
+            state.Save();
+        end);
+    end
 
-    DrawCheckbox('AP mobs', settings.showActivityPoints ~= false, function(value)
-        settings.showActivityPoints = value == true;
-        state.Save();
-    end);
+    if (_G.LibraPlatesSettingsDrawBoxedPanel ~= nil) then
+        _G.LibraPlatesSettingsDrawBoxedPanel('Target types', DrawTargetTypes);
+    else
+        DrawYellowHeader('Target types');
+        DrawTargetTypes();
+    end
 
     imgui.Spacing();
 end
@@ -5205,6 +5214,31 @@ function DrawFontStatus(label, selected)
     end
 
     imgui.TextColored({ 1.0, 0.40, 0.32, 1.0 }, selectedText .. ' is missing or not installed.');
+end
+
+function DrawFontPreview(selected, fontSize)
+    local gdiTextTexture = require('ui.gdi_text_texture');
+    local _, previewFamily = fonts.IsAvailable(selected);
+    local previewSettings = {
+        font = {
+            largeFamily = selected,
+        },
+    };
+    local textureId, textureWidth, textureHeight = gdiTextTexture.GetTexture('aA bB cC dD', {
+        fontFamily = previewFamily or tostring(selected or 'Arial'),
+        fontFlags = fonts.GetRoleFlags(previewSettings, false),
+        fontSize = tonumber(fontSize) or 20,
+        color = { 1.0, 1.0, 1.0, 1.0 },
+        outlineEnabled = false,
+        disableFallback = true,
+    });
+
+    imgui.TextColored(settingsLabelColor, 'Preview');
+    if (textureId ~= nil and (tonumber(textureWidth) or 0) > 0 and (tonumber(textureHeight) or 0) > 0) then
+        imgui.Image(textureId, { textureWidth, textureHeight }, { 0, 0 }, { 1, 1 });
+    else
+        imgui.TextColored({ 0.60, 0.62, 0.66, 1.0 }, 'Preview unavailable.');
+    end
 end
 
 LibraPlatesSettingsPendingLargeFont = LibraPlatesSettingsPendingLargeFont or nil;
@@ -6211,6 +6245,56 @@ function DrawEnemyIconPackPreview(iconPack)
         local textureId = GetEnemyIconPackPreviewTextureId(iconPack, sample.icon);
         if (textureId ~= nil) then
             imgui.Image(textureId, { 24, 24 }, { 0, 0 }, { 1, 1 });
+            if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and imgui.SetTooltip ~= nil) then
+                imgui.SetTooltip(sample.label);
+            end
+        else
+            imgui.TextColored({ 0.60, 0.62, 0.66, 1.0 }, '--');
+        end
+    end
+end
+
+function GetAssetIconPackPreviewTextureId(assetIconPack, category, iconName)
+    local packName = tostring(assetIconPack.GetName() or 'Built-in');
+    local key = packName .. ':' .. tostring(category) .. ':' .. tostring(iconName);
+
+    if (LibraPlatesAssetIconPreviewCache[key] == nil) then
+        LibraPlatesAssetIconPreviewCache[key] = textureLoader.ToTextureId(textureLoader.Load(
+            assetIconPack.GetAssetPath(category, iconName)
+        ));
+    end
+
+    return LibraPlatesAssetIconPreviewCache[key];
+end
+
+function DrawAssetIconPackPreview(assetIconPack)
+    local samples = {
+        { category = 'npc_icons', icon = 'ItemDeliverer.png', label = 'Item deliverer' },
+        { category = 'npc_icons', icon = 'QuestGiver.png', label = 'Sidequest' },
+        { category = 'widget-icons', icon = 'new_adventurer.png', label = 'New adventurer' },
+        { category = 'widget-icons', icon = 'party_leader.png', label = 'Party leader' },
+        { category = 'widget-icons', icon = 'dc.png', label = 'Disconnected' },
+    };
+
+    if (tostring(assetIconPack.GetName() or ''):lower() == 'ffxiv') then
+        samples = {
+            { category = 'npc_icons', icon = 'ItemDeliverer.png', label = 'Item deliverer' },
+            { category = 'npc_icons', icon = 'Sidequest2_Icon.png', label = 'Sidequest' },
+            { category = 'widget-icons', icon = 'new_adventurer.png', label = 'New adventurer' },
+            { category = 'widget-icons', icon = 'party_leader.png', label = 'Party leader' },
+            { category = 'widget-icons', icon = 'dc.png', label = 'Disconnected' },
+        };
+    end
+
+    imgui.Spacing();
+    imgui.TextColored(settingsLabelColor, 'Examples');
+
+    for index, sample in ipairs(samples) do
+        if (index > 1) then imgui.SameLine(); end
+
+        local textureId = GetAssetIconPackPreviewTextureId(assetIconPack, sample.category, sample.icon);
+        if (textureId ~= nil) then
+            imgui.Image(textureId, { 32, 32 }, { 0, 0 }, { 1, 1 });
             if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and imgui.SetTooltip ~= nil) then
                 imgui.SetTooltip(sample.label);
             end
@@ -9178,7 +9262,9 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
 
         DrawHomePointWarpsPanel();
 
-        DrawJobChangePresetsPanel();
+        if (scopedEntity ~= 'Object') then
+            DrawJobChangePresetsPanel();
+        end
 
     end
 
@@ -9315,6 +9401,7 @@ local function DrawGeneralFontSection(global)
             DrawInlineCombo('##LargeTextFontCombo', largeFontChoices, pendingLargeFont, function(fontFamily)
                 LibraPlatesSettingsPendingLargeFont = fontFamily;
             end);
+            DrawFontPreview(pendingLargeFont, 22);
             LibraPlatesSettingsDrawFontApplyRow('large', pendingLargeFont, global.font.largeFamily, function()
                 global.font.largeFamily = LibraPlatesSettingsPendingLargeFont or global.font.largeFamily;
                 LibraPlatesSettingsPendingLargeFont = nil;
@@ -9335,6 +9422,7 @@ local function DrawGeneralFontSection(global)
             DrawInlineCombo('##SmallTextFontCombo', smallFontChoices, pendingSmallFont, function(fontFamily)
                 LibraPlatesSettingsPendingSmallFont = fontFamily;
             end);
+            DrawFontPreview(pendingSmallFont, 16);
             LibraPlatesSettingsDrawFontApplyRow('small', pendingSmallFont, global.font.smallFamily, function()
                 global.font.smallFamily = LibraPlatesSettingsPendingSmallFont or global.font.smallFamily;
                 LibraPlatesSettingsPendingSmallFont = nil;
@@ -9357,15 +9445,18 @@ local function DrawGeneralFontSection(global)
         end);
 
         LibraPlatesSettingsDrawBoxedPanel('Icon pack', function()
-            imgui.TextWrapped('Changes the selected visual pack for supported LibraPlates icon categories. Missing pack files use the built-in icon automatically.');
+            imgui.TextWrapped('Changes the selected visual pack for supported LibraPlates icon categories. Missing pack files use the Gold icon automatically.');
             imgui.Spacing();
             DrawInlineCombo('', assetIconPack.GetPackNames(), global.assetIconPack or globalDefaults.assetIconPack, function(packName)
                 global.assetIconPack = tostring(packName or 'Built-in');
                 assetIconPack.Invalidate();
                 canvasTexture.Invalidate();
                 state.Save();
+            end, function(packName)
+                return packName == 'Built-in' and 'Gold' or packName;
             end);
             LibraPlatesFileManager.Draw(assetIconPack.GetBuiltInRoot() .. 'packs\\', 'AssetIconPackFolder');
+            DrawAssetIconPackPreview(assetIconPack);
         end);
 
         LibraPlatesSettingsDrawBoxedPanel('Enemy icon pack', function()
@@ -9647,35 +9738,58 @@ local function DrawGeneralMouseSection()
     end);
 
     DrawMousePanel('Mouse Snap', function()
-        DrawInlineComboRow('PC mouse snap', T{ 'Off', 'Name', 'HP bar', 'Name + HP bar' }, settings.pcMouseSnapMode or 'Off', function(value)
-            settings.pcMouseSnapMode = value;
-            state.Save();
-        end, 'PcMouseSnapMode', settingsLabelColor, 148, settingsTableFlagsNoBorders, 180);
-        DrawInlineComboRow('Enemy mouse snap', T{ 'Off', 'Name', 'HP bar', 'Name + HP bar' }, settings.enemyMouseSnapMode or 'Off', function(value)
-            settings.enemyMouseSnapMode = value;
-            state.Save();
-        end, 'EnemyMouseSnapMode', settingsLabelColor, 148, settingsTableFlagsNoBorders, 180);
+        local snapModeOptions = T{ 'Off', 'Name', 'HP bar', 'Name + HP bar' };
 
-        local strength = { math.max(1, math.min(10, math.floor((tonumber(settings.mouseSnapStrength) or 5) + 0.5))) };
-        if (imgui.BeginTable('##MouseSnapStrengthRow', 3, settingsTableFlagsNoBorders)) then
-            imgui.TableSetupColumn('##label', 0, 148);
-            imgui.TableSetupColumn('##control', 0, 180);
-            imgui.TableSetupColumn('##info', 0, 34);
-            imgui.TableNextRow();
-            imgui.TableNextColumn();
-            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
-            imgui.TextColored(settingsLabelColor, 'Strength');
-            imgui.TableNextColumn();
-            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(180); end
-            if (imgui.SliderInt('##MouseSnapStrength', strength, 1, 10) == true) then
-                settings.mouseSnapStrength = math.max(1, math.min(10, tonumber(strength[1]) or 5));
-                state.Save();
+        local function DrawMouseSnapRow(label, modeKey, strengthKey, controlId)
+            local currentMode = tostring(settings[modeKey] or 'Off');
+            local strength = { math.max(1, math.min(5, math.floor((tonumber(settings[strengthKey]) or 5) + 0.5))) };
+
+            if (imgui.BeginTable('##' .. controlId .. 'Row', 4, settingsTableFlagsNoBorders)) then
+                imgui.TableSetupColumn('##label', 0, 148);
+                imgui.TableSetupColumn('##mode', 0, 180);
+                imgui.TableSetupColumn('##strength_label', 0, 72);
+                imgui.TableSetupColumn('##strength_control', 0, 110);
+                imgui.TableNextRow();
+                imgui.TableNextColumn();
+                if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+                imgui.TextColored(settingsLabelColor, label);
+                imgui.TableNextColumn();
+
+                if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(180); end
+                if (imgui.BeginCombo('##' .. controlId .. 'Mode', currentMode) == true) then
+                    for _, mode in ipairs(snapModeOptions) do
+                        local selected = tostring(mode) == currentMode;
+                        if (imgui.Selectable(tostring(mode), selected) == true) then
+                            settings[modeKey] = mode;
+                            state.Save();
+                        end
+                        if (selected == true and imgui.SetItemDefaultFocus ~= nil) then
+                            imgui.SetItemDefaultFocus();
+                        end
+                    end
+                    imgui.EndCombo();
+                end
+                if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+                if (currentMode ~= 'Off') then
+                    imgui.TableNextColumn();
+                    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+                    imgui.TextColored(settingsLabelColor, 'Strength');
+                    imgui.TableNextColumn();
+                    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(100); end
+                    if (imgui.SliderInt('##' .. controlId .. 'Strength', strength, 1, 5) == true) then
+                        settings[strengthKey] = math.max(1, math.min(5, tonumber(strength[1]) or 5));
+                        state.Save();
+                    end
+                    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+                end
+
+                imgui.EndTable();
             end
-            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
-            imgui.TableNextColumn();
-            uiTooltip.Info('Pulls the cursor toward enabled PC or enemy plate elements when it comes close. Strength controls how aggressively the cursor is pulled.');
-            imgui.EndTable();
         end
+
+        DrawMouseSnapRow('PC mouse snap', 'pcMouseSnapMode', 'pcMouseSnapStrength', 'PcMouseSnap');
+        DrawMouseSnapRow('Enemy mouse snap', 'enemyMouseSnapMode', 'enemyMouseSnapStrength', 'EnemyMouseSnap');
     end);
 
     DrawMousePanel('Click Targeting', function()
@@ -10064,7 +10178,7 @@ local function DrawGeneralPerformanceSection(settings)
                 DrawPerformanceCheckbox('Disable expensive widgets', settings.disableExpensiveWorldWidgets == true, function(value)
                     settings.performancePreset = 'Custom';
                     settings.disableExpensiveWorldWidgets = value == true;
-                end, 'Drops expensive idle world-only extras such as status/social icons and detail text while keeping target, subtarget, party/tactical, engaged, casting, and hovered plates detailed.', 'DisableExpensiveWorldWidgets');
+                end, 'Drops expensive idle world-only extras from supported non-PC plates. PC World widget selections remain authoritative.', 'DisableExpensiveWorldWidgets');
             end);
 
             LibraPlatesSettingsDrawBoxedPanel('Texture cache', function()
@@ -12221,7 +12335,7 @@ local helpGuideSections = {
             '- Global distance scaling controls when distant world plates begin growing and their maximum scale.',
             '- Custom entity distance scaling gives PC, Enemy, Trust, Pet, NPC, and Object plates separate values.',
             '- PC and Enemy mouse snap can pull the pointer toward a configured plate target.',
-            '- Mouse snap Strength controls how aggressively the pointer is pulled.',
+            '- Separate PC and Enemy strength settings control how aggressively the pointer is pulled.',
             '- Mouse adornment offers several cursor shapes with independently colored outer, inner, and center elements.',
         },
     },
@@ -14118,6 +14232,7 @@ function LibraPlatesSettingsIsBoxedSpecialPlateModule(widgetName)
         widget == 'Peer (module)' or
         widget == 'Target (module)' or
         widget == 'Subtarget (module)' or
+        widget == 'Lock-on icon' or
         widget == 'Resting (module)' or
         widget == 'Crafting (module)' or
         widget == 'Fishing (module)' or
@@ -14191,7 +14306,11 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
     if (selectedWidget == 'Peer (module)') then
         moduleSettings = loadSettings;
         moduleDefaults = { enabled = true };
-    elseif (selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)') then
+    elseif (
+        selectedWidget == 'Target (module)' or
+        selectedWidget == 'Subtarget (module)' or
+        selectedWidget == 'Lock-on icon'
+    ) then
         moduleSettings = loadSettings;
         moduleDefaults = (selectedWidget == 'Subtarget (module)') and subtargetModuleDefaults or targetModuleDefaults;
     elseif (selectedWidget == 'Resting (module)') then
@@ -14265,6 +14384,7 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
             selectedWidget ~= 'Peer (module)' and
             selectedWidget ~= 'Target (module)' and
             selectedWidget ~= 'Subtarget (module)' and
+            selectedWidget ~= 'Lock-on icon' and
             selectedWidget ~= 'AOE range (module)' and
             selectedWidget ~= 'Alerts'
         );
@@ -14394,7 +14514,8 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
             selectedWidget == 'Resting (module)' or
             selectedWidget == 'Crafting (module)' or
             selectedWidget == 'Fishing (module)' or
-            selectedWidget == 'Gathering (module)'
+            selectedWidget == 'Gathering (module)' or
+            selectedWidget == 'Lock-on icon'
         ), (
             selectedWidget == 'Target (module)' or
             selectedWidget == 'Subtarget (module)' or
@@ -14414,7 +14535,11 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
             forceTextDisplay = storageEntity == 'Object' or storageEntity == 'NPC',
             hideSections = storageEntity == 'Self' or storageEntity == 'PC' or storageEntity == 'Object' or storageEntity == 'NPC',
         });
-    elseif (selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)') then
+    elseif (
+        selectedWidget == 'Target (module)' or
+        selectedWidget == 'Subtarget (module)' or
+        selectedWidget == 'Lock-on icon'
+    ) then
         widgets.targetModule.DrawSettings(moduleSettings, {
             tab = selectedTab,
             entity = storageEntity,
@@ -14423,6 +14548,7 @@ function LibraPlatesSettingsDrawSelectedEditorPlatesSpecialModuleBoxed()
             widget = selectedWidget,
             defaults = moduleDefaults,
             boxed = true,
+            lockOnly = selectedWidget == 'Lock-on icon',
         });
     elseif (selectedWidget == 'Resting (module)') then
         LibraPlatesSettingsDrawRestingModuleSettings(state.GetGlobalSettings(globalDefaults), true);
@@ -17020,7 +17146,7 @@ local function DrawSelectedEditorPlates()
         return;
     end
 
-    if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Behavior icon' or selectedWidget == 'Detects icon' or selectedWidget == 'Links icon' or selectedWidget == 'Special icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == "Avatar's Favor" or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Gathering (module)' or selectedWidget == 'Quick Menu (module)' or selectedWidget == 'AOE range (module)') then
+    if (selectedWidget == 'Name' or selectedWidget == 'Background' or selectedWidget == 'Job' or selectedWidget == 'Level' or selectedWidget == 'ID' or selectedWidget == 'Distance' or selectedWidget == 'Type line' or selectedWidget == 'Buffs' or selectedWidget == 'Debuffs' or selectedWidget == 'Game mode icon' or selectedWidget == 'Bazaar icon' or selectedWidget == 'Linkshell icon' or selectedWidget == 'Behavior icon' or selectedWidget == 'Detects icon' or selectedWidget == 'Links icon' or selectedWidget == 'Special icon' or selectedWidget == 'Away icon' or selectedWidget == 'Disconnect icon' or selectedWidget == 'Anon icon' or selectedWidget == 'Follow icon' or selectedWidget == 'Party leader icon' or selectedWidget == 'Alliance leader icon' or selectedWidget == 'Stars icon' or selectedWidget == 'Level sync icon' or selectedWidget == 'New adventurer icon' or selectedWidget == 'Icon' or selectedWidget == 'NPC icon' or selectedWidget == 'Object icon' or selectedWidget == 'HP Bar' or selectedWidget == 'MP Bar' or selectedWidget == 'TP Bar' or selectedWidget == 'Cast bar' or selectedWidget == 'Pet timer' or selectedWidget == 'Pet state' or selectedWidget == 'Ward timer' or selectedWidget == 'Rage timer' or selectedWidget == "Avatar's Favor" or selectedWidget == 'Sic' or selectedWidget == 'Ready bar' or selectedWidget == 'Reward' or selectedWidget == 'Maneuvers' or selectedWidget == 'Target' or selectedWidget == 'Subtarget' or selectedWidget == 'Target (module)' or selectedWidget == 'Subtarget (module)' or selectedWidget == 'Lock-on icon' or selectedWidget == 'Peer (module)' or selectedWidget == 'Enmity (module)' or selectedWidget == 'Resting (module)' or selectedWidget == 'Crafting (module)' or selectedWidget == 'Fishing (module)' or selectedWidget == 'Gathering (module)' or selectedWidget == 'Quick Menu (module)' or selectedWidget == 'AOE range (module)') then
         if (loadModeDrawn ~= true) then
             LibraPlatesSettingsDrawCurrentWidgetLoadMode();
         end

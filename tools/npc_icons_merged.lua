@@ -3,17 +3,17 @@ local npcIcons = T{
 -- All Nations
 -------------------------------------------------------------------------------
 
-    ['Trick Bones']                      = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235 } },
-    ['Trick Ghast']                      = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235 } },
-    ['Trick Ghost']                      = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235 } },
-    ['Trick Phantom']                    = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235 } },
-    ['Trick Shade']                      = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235 } },
-    ['Trick Shadow']                     = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235 } },
-    ['Trick Skeleton']                   = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235 } },
-    ['Trick Specter']                    = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235 } },
-    ['Trick Spirit']                     = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235 } },
-    ['Trick Wight']                      = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235 } },
-    ['Linkshell Concierge']              = { type = "Linkshell Distributor", icon = "MentorRecruiter.png", zones = { "Northern San d'Oria", "Bastok Mines", "Windurst Walls" }, zoneIds = { 136 }, note = "Notes:\nLinkshell Concierges serve to distribute Linkpearls to players wishing to join recruiting Linkshells." },
+    ['Trick Bones']                      = { type = "Harvest Festival", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
+    ['Trick Ghast']                      = { type = "Harvest Festival", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
+    ['Trick Ghost']                      = { type = "Harvest Festival", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
+    ['Trick Phantom']                    = { type = "Harvest Festival", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
+    ['Trick Shade']                      = { type = "Harvest Festival", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
+    ['Trick Shadow']                     = { type = "Harvest Festival", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
+    ['Trick Skeleton']                   = { type = "Harvest Festival", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
+    ['Trick Specter']                    = { type = "Harvest Festival", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
+    ['Trick Spirit']                     = { type = "Harvest Festival", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
+    ['Trick Wight']                      = { type = "Harvest Festival", icon = "SpecialEventCoordinator.png", zones = { "Bastok Markets", "Northern San d'Oria", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
+    ['Linkshell Concierge']              = { type = "Linkshell Recruitment", icon = "MentorRecruiter.png", zones = { "Northern San d'Oria", "Bastok Mines", "Windurst Walls" }, zoneIds = { 231, 234, 239 }, note = "Notes:\n- Lists linkshells currently recruiting members.\n- Distributes registered linkpearls to interested players.\n- Accepts linkpearls from recruiting linkshells." },
     ['Eggbert']                          = { type = "Easter Event", icon = "Event.png", zones = { "Southern San d'Oria", "Windurst Woods", "Bastok Mines" }, zoneIds = { 230 }, note = "Easter Event:\n* Crystal Warrior egg exchange NPC.\n* Trades eggs 3-to-1 outside nation Mog Houses.", worldOffsetY = 0.4 },
     ['Greeter Moogle']                   = { type = "Login Campaign", zones = { "Windurst Walls", "Port San d'Oria", "Port Bastok" }, zoneIds = { 232 } },
     ['Cheh Raihah']                      = { type = "Conquest Troupe", icon = "Event.png", zones = { "Southern San d'Oria", "Windurst Woods", "Port Bastok" }, zoneIds = { 230 }, note = "Notes:\nAppears in the capital city of the nation ranked first in conquest (does not show up when there is a tie for first)" },
@@ -311,7 +311,7 @@ local npcIcons = T{
     ['Evi']                              = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Port Bastok" }, zoneIds = { 236 }, note = "Starts Quests:\n* Past Perfect" },
     ['Evrain']                           = { type = "Quest Associate", zones = { "Port Bastok" }, zoneIds = { 236 }, note = "Involved in Quests:\n* Welcome to Bastok" },
     ['Ferrol']                           = { type = "Avatar Quest", icon = "QuestNPC.png", zones = { "Port Bastok" }, zoneIds = { 236 }, note = "Starts Quests:\n* Trial Size Trial by Earth\n" },
-    ['Festive Moogle']                   = { type = "Event Reward", icon = "Event.png", zones = { "Port Bastok"}, zoneIds = { 236 }, note = "Notes:\nExchanges mog pells for a variety of items specific to each. Dispenses an event item for those that attended the Final Fantasy XI Fan Festival 2007 (Nomad Cap), Final Fantasy XI 5th Anniversary Fan Event in 2007 (Moogle Cap), the Final Fantasy XI Fan Festival 2006 (Moogle Rod), Harpsichord, and the Stuffed Chocobo. This NPC will now also dispense the Tidal Talisman. As of May 16th, also distributes Destrier Beret. As of the release of Seekers of Adoulin, also dispenses Chocobo Shirt. Those attending will get a registration code that must be associated with the account before starting the game, then you will be able to pick up your item from one of the listed Festive Moogles. The URL to log in to your square enix account is: https://secure.square-enix.com/account Log in to your account. At the bottom left is a button Select Services. Afterwards click FFXI. There will now appear a FFXI logo with 2 buttons to the right, 1 blue the other white. Click the blue button, it says Add a service account. Put in the registration code. Then hit the orange button. Click the character to give the item to. Click the orange button again. Keep on clicking till you can notice your done. Repeat for beret. Then if you were logged in on a second comp throughout this process log completely off. Log on, talk to the festive moogle and enjoy your items! * The Harpsichord item is available to those who purchased a [http://www.square-enix.co.jp/music/sem/page/ff11_piano/ Piano Collections FINAL FANTASY XI CD]. * The Stuffed Chocobo is only available to those who purchased a Chirping Chocobo Chick from the Square Enix online store. * The Tidal Talisman is only available to those who purchased the pendant of the same name from the Square Enix online store during the limited time it was on sale. * The Destrier Beret is obtainable for those who have bought and registered the Final Fantasy XI Ultimate Collection: Abyssea Edition, or the Final Fantasy XI Ultimate Collection: Seekers Edition. * The Chocobo Shirt is obtainable for those who purchased the Final Fantasy XI Ultimate Collection: Seekers Edition." },
+    ['Festive Moogle']                   = { type = "Event Reward", icon = "Event.png", zones = { "Port San d'Oria", "Port Bastok", "Windurst Walls" }, zoneIds = { 231, 236, 239 }, note = "Notes:\n- Redeems Mog Pells for selectable rewards.\n- Distributes eligible rewards registered with campaign or event codes." },
     ['Flaco']                            = { type = "Reputation", icon = "ReputationNPC.png", zones = { "Port Bastok" }, zoneIds = { 236 } },
     ['Flying Axe, I.M.']                 = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Port Bastok" }, zoneIds = { 236 }, note = "Notes:\n;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the Bastok Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for Bastok) at certain conditions. It will be also possible to get some items of other Nations (Items for San d'Oria / Items for Windurst) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without Bastok as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer." },
     ['Fo Mocorho']                       = { type = "Weather Reporter", icon = "WeatherChecker.png", zones = { "Port Bastok" }, zoneIds = { 236 }, note = "Notes:\nChecks weather for the following locations: :*Valkurm Dunes :*Gustaberg :*Konschtat Highlands :*Pashhow Marshlands :*Rabao :*Eastern and Western Altepa Desert" },
@@ -395,7 +395,7 @@ local npcIcons = T{
     ['Chaphoire']                        = { zones = { "Chateau d'Oraguille", "San d'Oria" }, zoneIds = { 233 } },
     ['Chupaile']                         = { zones = { "Chateau d'Oraguille", "San d'Oria" }, zoneIds = { 233 } },
     ['Cotelle']                          = { zones = { "Chateau d'Oraguille", "San d'Oria" }, zoneIds = { 233 } },
-    ['Curator Moogle']                   = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Chateau d'Oraguille" }, zoneIds = { 233, 237, 242 } },
+    ['Curator Moogle']                   = { type = "Legacy Event Reward Crafter", icon = "SpecialEventCoordinator.png", zones = { "Chateau d'Oraguille", "Metalworks", "Heavens Tower" }, zoneIds = { 233, 237, 242 }, note = "Notes:\n* Trades requested materials for a rotating selection of former limited-event rewards." },
     ['Curilla']                          = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Chateau d'Oraguille", "San d'Oria" }, zoneIds = { 233 }, note = "Starts Quests:\n* The General's Secret\n* Enveloped in Darkness\n* Peace for the Spirit\n* Old Wounds\n\nInvolved in Quests:\n* Lure of the Wildcat (San d'Oria)\n* Trust: San d'Oria\n\nInvolved in Missions:\n* Aht Urhgan Mission 5: Confessions of Royalty\n* The Heir to the Light\n" },
     ['Doumina']                          = { zones = { "Chateau d'Oraguille", "San d'Oria" }, zoneIds = { 233 } },
     ['Faurie']                           = { zones = { "Chateau d'Oraguille", "San d'Oria" }, zoneIds = { 233 } },
@@ -684,7 +684,7 @@ local npcIcons = T{
     ['Emoussine']                        = { type = "Chocobo Renter", icon = "ChocoboRenter.png", zones = { "Southern San d'Oria" }, zoneIds = { 230 }, note = "Starts Quests:\n* A Chocobo Riding Game (San d'Oria)\n" },
     ['Endracion']                        = { type = "Mission Giver", icon = "MissionGiver.png", zones = { "Southern San d'Oria" }, zoneIds = { 230 }, note = "Starts Missions:\n* San d'Oria Missions" },
     ['Ephauge']                          = { type = "Quest Associate", icon = "QuestNPC.png", zones = { "Southern San d'Oria" }, zoneIds = { 230 } },
-    ['Ephemeral Moogle']                 = { type = "Crystal Storage", icon = "Dialogue.png", zones = { "Southern San d'Oria" }, zoneIds = { 230 }, note = "Notes:\nStoring Crystals :1. The first time you visit an Ephemeral Moogle, speak to him and hear what he has to say. :2. Trade crystals or clusters to the Ephemeral Moogle. :*Crystals count as one crystal, while clusters count as 12. :*The trade will be cancelled if it would put total crystals of a given element at more than 5,000. :*More than one type of crystal can be traded at once. :*Quantity of crystals currently stored can be viewed from the Currencies list on the Status menu. Withdrawing Crystals :1. Speak with the Ephemeral Moogle and ask to have crystals returned to you. :2. The moogle will inquire as to which element you would like. Select the appropriate one. :3. Designate the number you would like to receive or instruct the moogle to return as many as you can hold. :* Clusters will be given instead of 12 crystals whenever possible. :* You will not receive crystals if the number you designate would put you over the limit of free space in your inventory. :* Selecting as many as you can carry will provide the player with stacks of clusters to fill their inventory, with the remaining slot being filled with any remaining crystals (11 or fewer)." },
+    ['Ephemeral Moogle']                 = { type = "Crystal Storage", icon = "ItemStorage.png", zones = { "Southern San d'Oria", "Windurst Waters", "Windurst Woods" }, zoneIds = { 230, 238, 241 }, note = "Notes:\n* Stores and withdraws crystals and clusters.\n* Holds up to 5,000 crystals of each element." },
     ['Esmallegue']                       = { type = "Military Information", icon = "Dialogue.png", zones = { "Southern San d'Oria" }, zoneIds = { 230 }, note = "Notes:\nOffers Information on San d'Oria's Military: Greetings, adventurer. San d'Oria is grateful for your services. I am Royal Squire Esmallegue. Grand Knight Depardal has left his post as sentry in the Outlands. For now he has been enlisted as a member of the city's defense force. As I'm sure you are already aware, San d'Oria's military is divided into two branches, the Royal Knights and the Temple Knights. In times of peace, we Royal Knights are charged with the defense of the nation, while the Temple Knights are responsible for maintaining the public order. However, in times of war the Temple Knights are given the role of supervising our ranks. Unfortunately, this is a source of some conflict. Despite being united under one kingdom, there is a strong sense of rivalry between the two armies. It has been said that during the Great War there were many areas of contention between us. If you have not yet entered a Cavernous Maw you will first get the following dialogue: You there, adventurer! I wonder have you heard of the so-called \"Cavernous Maws\"? I don't know if it's true or not, but some say that it was the wicked rituals of Orcish mesmerizers on the stones that caused them to assume that wretched form." },
     ['Estiliphire']                      = { type = "Event Host", icon = "Event.png", zones = { "Southern San d'Oria", "Special Event" }, zoneIds = { 230 }, note = "Notes:\nAllows you play a spot the difference mini-game. You must have the blue swimsuits from the main event to participate in hard mode (for chance to earn a Red Prize Balloon." },
     ['Excelliard']                       = { type = "Holiday Event", icon = "Event.png", zones = { "Southern San d'Oria" }, zoneIds = { 230 }, note = "Holiday Event:\n* Delivery Helper target NPC for Kiddie Presents." },
@@ -777,7 +777,7 @@ local npcIcons = T{
 
     ['Abobo']                            = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Aeshushu']                         = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
-    ['Ajido-Marujido']                   = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Quests:\n* I Can Hear a Rainbow\n* Wonder Wands\n\nInvolved in Missions:\n* Windurst Mission 1-1: The Horutoto Ruins Experiment\n* Windurst Mission 2-1: Lost for Words\n* Windurst Mission 3-1: To Each His Own Right\n* Windurst Mission 3-2: Written in the Stars\n* San d'Oria Mission 4-1: Magicite\n* Bastok Mission 4-1: Magicite\n* Windurst Mission 4-1: Magicite\n* Windurst Mission 6-1: Full Moon Fountain\n* Windurst Mission 8-2: The Jester Who'd Be King\n* Windurst Mission 9-1: Doll of the Dead\n* Windurst Mission 9-2: Moon Reading\n" },
+    ['Ajido-Marujido']                   = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Quests:\n* I Can Hear a Rainbow\n* Wonder Wands\n\nInvolved in Missions:\n* The Horutoto Ruins Experiment\n* Lost for Words\n* To Each His Own Right\n* Written in the Stars\n* Magicite\n* Full Moon Fountain\n* The Jester Who'd Be King\n* Doll of the Dead\n* Moon Reading" },
     ['Bebibi']                           = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Boycoco']                          = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Chuqui-Chanqui']                   = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
@@ -786,12 +786,12 @@ local npcIcons = T{
     ['Dattata']                          = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Ewchichi']                         = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Foo Beibo']                        = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
-    ['Habida-Jubida']                    = { type = "Mission Associate", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Missions:\n* The Voracious Resurgence 2-1: Kupipi's Dilemma\n* The Voracious Resurgence 2-1: The Cardians' Duty" },
+    ['Habida-Jubida']                    = { type = "Mission Associate", icon = "MissionNPC.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Missions:\n* Kupipi's Dilemma\n* The Cardians' Duty" },
     ['Heruru']                           = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Hikkuku']                          = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Ikucheechee']                      = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Jatata']                           = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
-    ['Keo-Koruo']                        = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
+    ['Keo-Koruo']                        = { type = "Mission Associate", icon = "MissionNPC.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Involved in Missions:\n* The Horutoto Ruins Experiment\n* The Heart of the Matter\n* The Price of Peace\n* Lost for Words\n* A Testing Time" },
     ['Kinono']                           = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Kiwawa']                           = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Lin Megomifu']                     = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
@@ -803,10 +803,10 @@ local npcIcons = T{
     ['Parara']                           = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Rayjin-Ojin']                      = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Ritoto']                           = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
-    ['Sassa-Kotassa']                    = { type = "Mission Associate", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Missions:\n* The Voracious Resurgence 2-1: Kupipi's Dilemma\n* The Voracious Resurgence 2-2: The Cardians' Duty" },
-    ['Seer Soromai']                     = { type = "Summit Quest Starter", icon = "QuestGiver.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, location = "Heavens Tower, Clerical Chamber", note = "Summit of the Stars:\n* Starts the Summit of the Stars unlock quest on a level 75 job.\n* Talk twice to begin." },
+    ['Sassa-Kotassa']                    = { type = "Mission Associate", icon = "MissionNPC.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Missions:\n* Kupipi's Dilemma\n* The Cardians' Duty" },
+    ['Seer Soromai']                     = { type = "Summit Quest Giver", icon = "QuestGiver.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, location = "Heavens Tower, Clerical Chamber", link = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Content/Summit_of_the_Stars", note = "CatsEyeXI:\n* Starts quest: Summit of the Stars.\n* Requires a level 75 job; speak twice to begin." },
     ['Shaz Norem']                       = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
-    ['Sheelala']                         = { type = "Mission Associate", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Missions:\n* The Voracious Resurgence 2-1: Kupipi's Dilemma\n* The Voracious Resurgence 2-1: The Cardians' Duty" },
+    ['Sheelala']                         = { type = "Mission Associate", icon = "MissionNPC.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Missions:\n* Kupipi's Dilemma\n* The Cardians' Duty" },
     ['Tamil-Hamel']                      = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Tayaya']                           = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Tsuryarya']                        = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
@@ -816,8 +816,11 @@ local npcIcons = T{
     ['Vahn Paineesha']                   = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Wabble-Mopple']                    = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
     ['Yakuku']                           = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
-    ['Zubaba (S)']                       = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Quests:\n* Knot Quite There\n* Howl from the Heavens" },
     ['Zubu-Abibu']                       = { zones = { "Heavens Tower" }, zoneIds = { 242 } },
+    ['Door:Clerical Chamber']            = { type = "Door", icon = "Door.png", zones = { "Heavens Tower" }, zoneIds = { 242 } },
+    ['Door:Starway Stairway']            = { type = "Security Gate", icon = "Door.png", zones = { "Heavens Tower" }, zoneIds = { 242 } },
+    ['Door:Vestal Chamber']              = { type = "Security Gate", icon = "Door.png", zones = { "Heavens Tower" }, zoneIds = { 242 } },
+    ['Door_3']                           = { type = "Door", icon = "Door.png", zones = { "Heavens Tower" }, zoneIds = { 242 } },
 
 -- Port Windurst
 
@@ -956,12 +959,12 @@ local npcIcons = T{
 -- Windurst Walls
 
 
-    ['Ambrosius']                        = { type = "Quest Giver", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Starts Quests:\n* The Postman Always K.O.s Twice" },
+    ['Ambrosius']                        = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Starts Quests:\n* The Postman Always K.O.s Twice" },
     ['Anini']                            = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
-    ['Arbitrix']                         = { type = "Gobbie Mystery Box Vendor", icon = "Merchant.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\n{{GobbieBox" },
+    ['Arbitrix']                         = { type = "Gobbie Mystery Box Vendor", icon = "GobbieMysteryBox.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "CatsEyeXI:\n* Opens random rewards using daily Gobbie Box points.\n* New players must wait 14 real-life days.\n* Special Gobbie Keys can be purchased with merit points.\n* Unavailable to Crystal Warriors and Wings Era Warriors." },
     ['Aromu-Oromu']                      = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Augu-Maugu']                       = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
-    ['Bonchacha']                        = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\nDialog: Professor Koru-Moru, the old minister who lives in that manor there, is more famous for being the local ding-a-ling than for serving as the School of Magic's principal! I just know he's up to something in there! I came over to call in and have a little chitchat, but it seems as if he is, how shall we say...otherwise occupied...?" },
+    ['Bonchacha']                        = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Burute-Sorute']                    = { type = "Traveling Bard", icon = "PastEventWatcher.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\n* Will change your Title for a fee or can give you a random title for free. *For a full list of titles, which you can get with this NPC, see Titles. *This npc has moved, slightly. He is now on top of rock across from his old location." },
     ['Chawo Shipeynyo']                  = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Chomomo']                          = { type = "Star Onion Brigade", icon = "QuestNPC.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)\n" },
@@ -978,8 +981,8 @@ local npcIcons = T{
     ['Hiwon-Biwon']                      = { type = "Quest Associate", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Involved in Quests:\n* Curses, Foiled...Again!?\n* Making Headlines" },
     ['Horuni-Mawoni']                    = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Ignaz']                            = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
-    ['Jack of Diamonds']                 = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\nOffers General Information and a Map of Windurst: :Allow me to assist you if you are lost. What can Jack do for you? :*\"To show you a map of Windurst.\": [Displays an overview map of Windurst] :*\"How to give items to townsfolk.\": Interchange of items and money between people and things is called \"Trading.\" First target entity to interact with. Nothing happens unless reciever is properly targeted. Open main menu. Press \"Trade\" button. Next choose items to hand over! Press \"Confirm\" button! Targeted entity should receive items. :*\"How to go outside and battle.\": Before setting out to battle: Confirm equipment is properly equipped! Magic-users \"Use\" spell scrolls on themselves to learn magic! Before commencing battle wiht monster: \"Check\" monster to confirm its strength! After battle is won: Look for \"Spoils\" dropped by monsters. If in party, \"Cast Lots\" for spoils! :*\"About quests and missions.\": Quests are requests for help from ordinary townsfolk. It pays to help people in need. Missions are official requests for assistance made by the Windurst authorities. You can receive missions from the guards at the town's gatehouse. :*\"Nothing in particular.\": Feel free to ask next time you need Jack's help. Over and out!" },
-    ['Juna Moshal']                      = { type = "Star Onion Brigade", icon = "QuestNPC.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\n*  Member of the Star Onion Brigade" },
+    ['Jack of Diamonds']                 = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\n* Provides Windurst maps and beginner tutorials for trading, combat, quests, and missions." },
+    ['Juna Moshal']                      = { type = "Star Onion Brigade", icon = "QuestNPC.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\n* Member of the Star Onion Brigade." },
     ['Juvillie']                         = { type = "Past Event Watcher", icon = "PastEventWatcher.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\nThis NPC will let you watch cut-scenes that you have seen in Windurst Walls in the past, for a small fee." },
     ['Kaaya Majiad']                     = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Kalupa-Tawalupa']                  = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
@@ -987,17 +990,16 @@ local npcIcons = T{
     ['Karola']                           = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Keir']                             = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Kenono']                           = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
-    ['Keo-Horuo']                        = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Kimumu']                           = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Kobunono']                         = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\nOffers Information on the Auction House: :Welcome to the Auction House. Do you have any questions about our establishment? :*\"What is the Auction House?\": Auctions houses can be found in all of Vana'diel's major cities. Here adventurers gather to bid on battle spoils, unwanted items, old armor...almost anything. Currently, the auction houses in Bastok, San d'Oria, Windurst, and Jeuno all work independently. Therefore, prices differ from city to city. Adventurers may use any auction house regardless of nationality. Is there anything else you would like to know? :*\"How are auctions run?\": The first adventurer to bid at or above the asking price will automatically purchase the product. Once put up for auction, merchandise will remain there for a maximum of nine weeks Vana'diel time (three days earth time). If merchandise does not sell within this time limit, it will be returned to the seller's current residence. Is there anything else you would like to know? :*\"Are there any fees?\": Transaction fees are proportional to the amount for which an item is put up on auction. The method of calculating this fee is different for single items and stackable items. A transaction fee is collected when any merchandise is put up for auction. This fee is nonrefundable. Is there anything else you would like to know? :*\"Are there any limits?\": The International Auction House Committee, or IAHC, has declared that a maximum of seven items may be put up for auction at one time. However the IAHC has recently removed the limit to how many items one may purchase. Is there anything else you would like to know? :*\"How do you check up on merchandise?\": A small amount of time is required before new merchandise appears on our bid list. Once an item appears on your \"Sales Status\" list, it may not immediately appear on the bid list. If you do no see your item on the bid list, try looking again at a later time. Is there anything else you would like to know? :*\"How do remove an item?\": If you would like to withdraw an item from an auction, you must travel to an auction house in the country where you initially put the item up for sale, and select \"Stop Sale\" from the \"Sales Status\" menu. Is there anything else you would like to know? :*\"My \"Sales Status\" list is full!\": To remove an item from your \"Sales Status\" list, you must visit an auction counter to acknowledge the sale or return of your merchandise. Otherwise previously sold or returned items will fill up your list and prevent you from selling any more merchandise. At any auction counter, open the \"Sales Status\" menu and acknowledge the transaction to clear it from the list. Press the confirm button to remove any transaction colored yellow (sold) or red (returned). Is there anything else you would like to know? :*\"Nothing right now.\": In the past, many have amassed great wealth through the auction house. I hope you find fortune, too!" },
     ['Kohpo-Akuupo']                     = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Komomo']                           = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
-    ['Komulili']                         = { type = "Teleport Service", icon = "WarpNPC.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\nA warp NPC. She will warp you for free to Machu-Kuchu (Port Windurst, E-7)." },
-    ['Koru-Moru']                        = { type = "Riding the Clouds", icon = "QuestNPC.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Starts Quests:\n* Blast from the Past\n* Nothing Matters\n* Star Struck\n\nInvolved in Quests:\n* BLM AF1: The Three Magi\n* BLM AF2: Recollections\n* BLM AF3: The Root of the Problem\n* SMN AF1: The Puppet Master\n* SMN AF2: Class Reunion\n* SMN AF3: Carbuncle Debacle\n* Making the Grade\n* Riding on the Clouds\n\nInvolved in Missions:\n* Promathia Mission 3-3: The Road Forks\n* A Shantotto Ascension\n* The Voracious Resurgence: Koru-Moru's Hypothesis\n" },
+    ['Komulili']                         = { type = "Teleport Service", icon = "WarpNPC.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\n* Teleports players to Machu-Kuchu in Port Windurst (E-7) for free." },
+    ['Koru-Moru']                        = { type = "Riding the Clouds", icon = "QuestGiver.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Starts Quests:\n* Blast from the Past\n* Nothing Matters\n* Star Struck\n\nInvolved in Quests:\n* BLM AF1: The Three Magi\n* BLM AF2: Recollections\n* BLM AF3: The Root of the Problem\n* SMN AF1: The Puppet Master\n* SMN AF2: Class Reunion\n* SMN AF3: Carbuncle Debacle\n* Making the Grade\n* Riding on the Clouds\n\nInvolved in Missions:\n* Promathia Mission 3-3: The Road Forks\n* A Shantotto Ascension\n* The Voracious Resurgence: Koru-Moru's Hypothesis\n" },
     ['Lala Gohma']                       = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
-    ['Luuh Koplehn']                     = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\nDialog: Come on, Professorrr Koru-Moru. I'm not moving until you cough up the gil forrr yourrr overdue accounts at the Bonework's Guild. As both a ministerrr and the principal of our local school, shouldn't you be setting a betterrr example?" },
+    ['Luuh Koplehn']                     = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Maan-Pokuun']                      = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
-    ['Malmi-Monmi']                      = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\nDialog: Windurst Walls is the coolest-woolest place. Not only do we have Heavens Tower and a consulate, but all the ex-ministers have manors here! When the ministers of the five magic ministries of Windurst retire, they gain the title of doctor or professor, and are allowed to live in special-wecial houses so they can continue their studies without worries." },
+    ['Malmi-Monmi']                      = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Mehruru']                          = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Migi Centa']                       = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Moan-Maon']                        = { type = "Quest Associate", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)" },
@@ -1005,9 +1007,9 @@ local npcIcons = T{
     ['Naih Arihmepp']                    = { type = "Quest Associate", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)" },
     ['Nine of Diamonds']                 = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Nozaza']                           = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
-    ['Ojha Rhawash']                     = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Starts Quests:\n* Flower Child\n" },
+    ['Ojha Rhawash']                     = { type = "Adventurer's Assistant", icon = "QuestGiver.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Starts Quests:\n* Flower Child\n" },
     ['Orudoba-Sondeba']                  = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
-    ['Pakeke']                           = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\nDialog: Welcome to the magical town of Windurst. Home of fun-loving Tarutaru and free-willed Mithra. You are now in Windurst Walls. It's a holy site revered by us Tarutaru since ancientaru times. I hope you enjoy your visitaru here." },
+    ['Pakeke']                           = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Pakke-Pokke']                      = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Pakora-Makora']                    = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Pantsa-Karutsa']                   = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
@@ -1031,15 +1033,16 @@ local npcIcons = T{
     ['Tsuaora-Tsuora']                   = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Uwaine']                           = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
     ['Yanakiki']                         = { zones = { "Windurst Walls" }, zoneIds = { 239 } },
-    ['Yoran-Oran']                       = { type = "Rhinostery Minister", icon = "Dialogue.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Starts Quests:\n* Mandragora-Mad\n\nInvolved in Quests:\n* Blast from the Past\n* The Lost Book\n* BLM AF1: The Three Magi\n* BLM AF2: Recollections\n* BLM AF3: The Root of the Problem\n\nInvolved in Missions:\n* Promathia Mission 3-3: The Road Forks\n* Promathia Mission 5-3: Three Paths\n* Past Sins (Louverance Path)\n* Where Messengers Gather (Ulmia Path)\n* A Shantotto Ascension\n* The Voracious Resurgence: Koru-Moru's Hypothesis\n" },
+    ['Yoran-Oran']                       = { type = "Rhinostery Minister", icon = "QuestGiver.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Starts Quests:\n* Mandragora-Mad\n\nInvolved in Quests:\n* Blast from the Past\n* The Lost Book\n* BLM AF1: The Three Magi\n* BLM AF2: Recollections\n* BLM AF3: The Root of the Problem\n\nInvolved in Missions:\n* Promathia Mission 3-3: The Road Forks\n* Promathia Mission 5-3: Three Paths\n* Past Sins (Louverance Path)\n* Where Messengers Gather (Ulmia Path)\n* A Shantotto Ascension\n* The Voracious Resurgence: Koru-Moru's Hypothesis\n" },
     ['Yoriri']                           = { type = "Quest Associate", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)" },
     ['Zayhi-Bauhi']                      = { type = "Quest Associate", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Involved in Quests:\n* To Bee or Not to Bee?" },
-    ['Zokima-Rokima']                    = { type = "Gate Guard", icon = "Guard.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Starts Missions:\n* Windurst Missions\n" },
+    ['Zokima-Rokima']                    = { type = "Gate Guard", icon = "MissionGiver.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Starts Missions:\n* Windurst Missions\n" },
 
 -- Windurst Waters
 
 
-    ['Anja-Enja']                        = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\nOffers Directions Around Town: :Hiya! Are you lost or something? If you're in trouble, Anja-Enja's here to helpy-welpy! :*\"Nothing right now.\": Well, if you ever need help, feel free to ask one of us guards. Helping out people in need is the calling of us guards in Windurst Waters's \"North Winds\" troupey-woupey. :*\"Where are we?\": This is the Windurst Waters district. Just north of here are the Opistery, the Aurastery, and a general goods store. South of here are the Rhinostery and the hatter's. :*\"How to leave town.\": The quickest way to leave town from here is Odin's Gate, which takes you out to West Sarutabaruta. Head north and pass through the archway of the Opistery's Library of Magic. Then go over the bridge until you get to the northern gatehouse. (That's where we guards of Windurst Waters meet, you know?) Head through the gate and you'll find yourself outside in West Sarutabaruta. :*\"Where's the residential area?\": Windurst's residential area is northeast of here. To get there, first head north and cross the bridge to the east that leads to the Aurastery and Windurst Walls. On the way, you'll come across a Cardian automaton guard. Turn right when you see him and you'll easily find your way there." },
+    ['Anja-Enja']                        = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Gives directions and explains basic city services." },
+    ['Doi-Boi']                          = { type = "CW Quest Associate", icon = "QuestAssociate.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, link = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Fowl_Tales", note = "Crystal Warrior:\n* Involved in quest: Fowl Tales.\n* Speak to him after Hoi-Boi and before Loi-Boi." },
     ['Elulu']                            = { type = "Holiday Event", icon = "Event.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Holiday Event:\n* Delivery Helper target NPC for Kiddie Presents." },
     ['Gifu-Geru']                        = { type = "Holiday Event", icon = "Event.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Holiday Event:\n* Delivery Helper target NPC for Kiddie Presents." },
     ['Hapi-Chapea']                      = { type = "Holiday Event", icon = "Event.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Holiday Event:\n* Delivery Helper target NPC for Kiddie Presents." },
@@ -1054,28 +1057,28 @@ local npcIcons = T{
 -- Windurst Woods
 
 
-    ['Abby Jalunshi']                    = { type = "MogHouse Watcher", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nChecking Abby_Jalunshi will start a conversation with her about Mog Houses. She give you 2 options to start- : *Nothing in General : *Ask for an explanation on Mog houses. If you choose the \"Nothing in General option, she will just say: \"Oh Well, Your Loss\" and turn away. If you choose the Other option she says: \"A mogHouse is your own personal apartment room provided for your convienience. Within your MogHouse you can store items, change jobs, and heal up any HP or MP" },
+    ['Abby Jalunshi']                    = { type = "MogHouse Watcher", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Explains Mog Houses and their storage, job-changing, and recovery features." },
     ['Aja-Panja']                        = { type = "Tutorial", icon = "TutorialNPC.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nUpon checking Aja Panja you will recieve the following diologue: :* If you want to learn how to craft bone into something useful, then you should study with us here at the Boneworker's Guild!" },
-    ['Amimi']                            = { type = "Chocobo Renter", icon = "ChocoboRenter.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* A Chocobo Riding Game (Windurst)" },
+    ['Amimi']                            = { type = "Chocobo Renter", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* A Chocobo Riding Game (Windurst)" },
     ['An Polaali']                       = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['An Shanaa']                        = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Anillah']                          = { type = "Synthesis Support", icon = "GuildMerchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nAnillah is one of two workers who provides free synthesis support for clothcrafting in Windurst. Speaking with her will raise your clothcrafting skill ever so slightly, and give you a better chance at successful synths. After speaking with her however, you may not ask any other NPC for synthesis support until the one she has given you has worn away. Anillah is also in charge of the low-level recipe list; if you ask her about recipes, she will tell you any recipe that is below your current skill level." },
-    ['Apururu']                          = { type = "Manustery Minister", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Can Cardians Cry?\n* Trust: Ajido-Marujido\n\nInvolved in Quests:\n* Making Amens!\n* Legendary Plan B\n* The Kind Cardian\n\nInvolved in Missions:\n* Windurst Mission 1-1: The Horutoto Ruins Experiment\n* Windurst Mission 1-2: The Heart of the Matter\n* Windurst Mission 6-2: Saintly Invitation\n* Windurst Mission 8-2: The Jester Who'd Be King\n* Windurst Mission 9-1: Doll of the Dead\n* Windurst Mission 9-2: Moon Reading\n* A Crystalline Prophecy (Mission)\n" },
-    ['Atagei-Portagei']                  = { type = "Special Event Coordinator", icon = "SpecialEventCoordinator.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nThis NPC was a Smilebringer for Starlight Celebration 2004, Starlight Celebration 2005, Starlight Celebration 2006, Starlight Celebration 2007, Starlight Celebration 2008 event." },
+    ['Anillah']                          = { type = "Synthesis Support", icon = "GuildMerchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Provides free clothcraft synthesis support.\n* Lists low-level clothcraft recipes." },
+    ['Apururu']                          = { type = "Manustery Minister", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Can Cardians Cry?\n* Trust: Ajido-Marujido\n\nInvolved in Quests:\n* Making Amens!\n* Legendary Plan B\n* The Kind Cardian\n\nInvolved in Missions:\n* Windurst Mission 1-1: The Horutoto Ruins Experiment\n* Windurst Mission 1-2: The Heart of the Matter\n* Windurst Mission 6-2: Saintly Invitation\n* Windurst Mission 8-2: The Jester Who'd Be King\n* Windurst Mission 9-1: Doll of the Dead\n* Windurst Mission 9-2: Moon Reading\n* A Crystalline Prophecy (Mission)\n" },
+    ['Atagei-Portagei']                  = { type = "Special Event Coordinator", icon = "SpecialEventCoordinator.png", zones = { "Windurst Waters", "Windurst Woods" }, zoneIds = { 238, 241 }, note = "Notes:\n* Smilebringer for Starlight Celebration events." },
     ['Baha Mannohl']                     = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Bin Stejihna']                     = { type = "Regional Vendor", icon = "RegionalVendor.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Boizo-Naizo']                      = { type = "Riding the Clouds", icon = "QuestNPC.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Riding on the Clouds\n" },
     ['Bopa Greso']                       = { type = "Nanaa Mihgo Gang", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* THF AF2: As Thick as Thieves\n\nInvolved in Missions:\n* Windurst Mission 2-1: Lost for Words\n* Roar! A Cat Burglar Bares Her Fangs\n" },
     ['Bozack']                           = { type = "Past Event Watcher", icon = "PastEventWatcher.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nThis NPC will let you watch cut-scenes that you have seen in Windurst Woods in the past, for a small fee." },
-    ['Bwi Kaghonsa']                     = { type = "Chocobo Guide", icon = "ChocoboRenter.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nThis NPC will: :*Explain the basics and rules for The Chocobo Hot and Cold Game. :*Hand-out Tandjana Wildgrass for the The Chocobo Hot and Cold Game once per day." },
-    ['Catalia']                          = { type = "Scholar", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nFriend to Professor Emanritan." },
+    ['Bwi Kaghonsa']                     = { type = "Chocobo Guide", icon = "ChocoboRenter.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Explains the Chocobo Hot and Cold Game rules.\n* Provides Tandjana Wildgrass once per day." },
+    ['Catalia']                          = { type = "Scholar", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Cayu Pensharhumi']                 = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)\n" },
     ['Cha Lebagta']                      = { type = "Nanaa Mihgo Gang", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* THF AF2: As Thick as Thieves\n* Mihgo's Amigo\n\nInvolved in Missions:\n* Windurst Mission 2-1: Lost for Words\n* Roar! A Cat Burglar Bares Her Fangs\n" },
     ['Chihpi Kapirapehro']               = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Cocchi Ryojhbon']                  = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Congee-Toyangee']                  = { type = "Festival Dancer", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nA male Tarutaru festival dancer." },
-    ['Copuwawa']                         = { type = "Festival Dancer", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nA female Tarutaru festival dancer." },
-    ['Dayaka-Botanyuka']                 = { type = "Festival Dancer", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* A male Tarutaru festival dancer from Windurst." },
+    ['Congee-Toyangee']                  = { type = "Festival Dancer", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
+    ['Copuwawa']                         = { type = "Festival Dancer", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
+    ['Dayaka-Botanyuka']                 = { type = "Festival Dancer", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Dazi Nosuk']                       = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Dhiz Tomehrih']                    = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Edmondo']                          = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
@@ -1084,25 +1087,25 @@ local npcIcons = T{
     ['Etsa Rhuyuli']                     = { type = "Quest Associate", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)" },
     ['Etsatsa']                          = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Femardaque']                       = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Fhelm Jobeizat']                   = { type = "Records of Eminence", icon = "RecordsOfEminence.png", zones = { "Jeuno", "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Records of Eminence\n\nInvolved in Quests:\n* Records of Eminence: Tutorial\n* Teleports by Twilight\n* Shifty Shades of Prey\n" },
+    ['Fhelm Jobeizat']                   = { type = "Records of Eminence", icon = "QuestGiver.png", zones = { "Jeuno", "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Records of Eminence\n\nInvolved in Quests:\n* Records of Eminence: Tutorial\n* Teleports by Twilight\n* Shifty Shades of Prey\n" },
     ['Forine']                           = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Four of Spades']                   = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Funtrox']                          = { type = "Gobbie Mystery Box Vendor", icon = "Merchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n{{GobbieBox" },
-    ['Gioh Ajihri']                      = { type = "Quest Giver", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Twinstone Bonding\n\nInvolved in Quests:\n* Lost Chick\n* Fire and Brimstone (optional)" },
+    ['Funtrox']                          = { type = "Gobbie Mystery Box Vendor", icon = "Merchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "CatsEyeXI:\n* Opens random rewards using daily Gobbie Box points.\n* New players must wait 14 real-life days.\n* Special Gobbie Keys can be purchased with merit points.\n* Unavailable to Crystal Warriors and Wings Era Warriors." },
+    ['Gioh Ajihri']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Twinstone Bonding\n\nInvolved in Quests:\n* Lost Chick\n* Fire and Brimstone (optional)" },
     ['Gottah Maporushanoh']              = { type = "Quest Associate", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Lost Chick" },
     ['Hae Jakkya']                       = { type = "Quest Associate", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Chasing Tales" },
-    ['Hakaru-Marikaru']                  = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nDialog: Elvaan are all so high and haughty. It almost seems like they look down at us Tarutaru at times. Huh...? How dare you say that's because we are so short that everyone can't help but look down at us! Beat it before I bite your kneecaps!" },
-    ['Harara, W.W.']                     = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nMain Conquest related NPC for Windurst citizens ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the Windurst Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for Windurst) at certain conditions. It will be also possible to get some items of other Nations (Items for Bastok / Items for San d'Oria) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without Windurst as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer." },
-    ['Hauh Colphioh']                    = { type = "Guild Points", icon = "GuildworkersUnionRepresentative.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nHauh Colphioh is in charge of the Guildworker's Union for clothcrafting in Windurst. Once you have attained at least level 28 Cloftcraft you may speak with her, and begin accumulating Guild Points for items you turn in. The item requested changes daily, so its important to check back with her to keep track of current time limits, and to find out what new items the guild is accepting." },
+    ['Hakaru-Marikaru']                  = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
+    ['Harara, W.W.']                     = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Provides Signet and recharges EXP rings.\n* Accepts crystals for mission rank and sells Conquest Point items.\n* Offers Supply Runs and Expeditionary Forces.\n* Services require Windurst allegiance." },
+    ['Hauh Colphioh']                    = { type = "Guild Points", icon = "GuildworkersUnionRepresentative.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Manages Clothcraft Guild Points for skill 28 or higher.\n* Accepts a different requested item each day." },
     ['Hayah Dahbalesahma']               = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Hlif']                             = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Hohl Nhaesin']                     = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Ibwam']                            = { type = "Teleport Service", icon = "WarpNPC.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Lure of the Wildcat (Windurst)\n" },
-    ['Illu Bohjaa']                      = { type = "Quest Giver", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Creepy Crawlies" },
+    ['Ibwam']                            = { type = "Teleport Service", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Lure of the Wildcat (Windurst)\n" },
+    ['Illu Bohjaa']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Creepy Crawlies" },
     ['Istvan']                           = { type = "ENM Timer", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Provides information on ENM battlefield lockout." },
-    ['Iya Rihyo']                        = { type = "Starlight Event", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nCounts a a child for Starlight Celebration 2008 Dialog: Those automation guards called Cardians are said to grrrow smarter and smarter by the day as they learrrn more and more. It's only a matter of time until they all start developing their own perrrsonalities and then begin to fight among themselves. Won't that be fun?" },
-    ['Jack of Spades']                   = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nCan be traded Adventurer Coupon for those starting in Windurst Woods. Offers General Information and a Map of Windurst: :Allow me to assist you if you are lost. What can Jack do for you? :*\"To show you a map of Windurst.\": [Displays an overview map of Windurst] :*\"How to give items to townsfolk.\": Interchange of items and money between people and things is called \"Trading.\" First target entity to interact with. Nothing happens unless reciever is properly targeted. Open main menu. Press \"Trade\" button. Next choose items to hand over! Press \"Confirm\" button! Targeted entity should receive items. :*\"How to go outside and battle.\": Before setting out to battle: Confirm equipment is properly equipped! Magic-users \"Use\" spell scrolls on themselves to learn magic! Before commencing battle wiht monster: \"Check\" monster to confirm its strength! After battle is won: Look for \"Spoils\" dropped by monsters. If in party, \"Cast Lots\" for spoils! :*\"About quests and missions.\": Quests are requests for help from ordinary townsfolk. It pays to help people in need. Missions are official requests for assistance made by the Windurst authorities. You can receive missions from the guards at the town's gatehouse. :*\"Nothing in particular.\": Feel free to ask next time you need Jack's help. Over and out!" },
-    ['Jayleilei']                        = { type = "Festival Dancer", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nA female Tarutaru festival dancer." },
+    ['Iya Rihyo']                        = { type = "Starlight Event", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Counts as a child during the 2008 Starlight Celebration." },
+    ['Jack of Spades']                   = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Accepts the Windurst Woods Adventurer Coupon.\n* Provides Windurst maps and beginner tutorials for trading, combat, quests, and missions." },
+    ['Jayleilei']                        = { type = "Festival Dancer", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Ju Kamja']                         = { type = "Item Deliverer", icon = "ItemDeliverer.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Julissois']                        = { type = "Quest Associate", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Escutcheons" },
     ['Kapeh Myohrye']                    = { type = "Quest Associate", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Lost Chick" },
@@ -1111,7 +1114,7 @@ local npcIcons = T{
     ['Kiria-Romaria']                    = { type = "Chocobo Raising", icon = "ChocoboRenter.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nThis NPC will answer all question about \"Raising a Chocobo\" below. Game Script: :What would you like to ask about? :The Vana'diel Chocobo Society ::Kiria-Romaria: The Vana'diel Chocobo Society, or VCS for short, is an international organization designed to train and dispatch chocogirls and chocoguys for stable across Vana'diel. They provide courses on practical chocobo riding and the proper to care for a chocobo, as well as working to improve the treatment of chocobos from Aht Urhgan. You can join as long as they love chocobos. The VCS will help you with anything you need. :Time required. ::Kiria-Romaria: Chicks hatch from eggs, grow into young Chocobos, and finally mature. They grow much faster than people do. Usually it takes 1 months (Earth time) before you can ride your Chocobo. The chocobo's traits are determinated by the way in which you care for your animal. Without proper planning, you won't be able to raise the type of chocobo that you want. But don't worry., because you have us to help! We're all in this together! :Chocobos attributes. ::Strength. ::Kiria-Romaria: \"Strength\" is a term used to describe the chocobo's leg power. The more strength a chocobo has, the faster it will be able to run. Rental chocobos have been raised with an emphasis on this attribute. Both strength and endurance are collectively referred to as \"Physical attributes\". ::Endurance. ::Kiria-Romaria: \"Endurance\" is a term used to describe the chocobo's stamina. If your chocobo has high endurance, you will be able to ride it for a long time. Both strength and endurance are collectively referred to as \"Physical attributes\". ::Discernment. ::Kiria-Romaria: \"Discernment\" is a must for anyone who wants their chocobo to learn new abilities. You may want to consider raising attribute if you are interested in digging and treasure. Both discernment and receptivity are collectively referred to as \"Mental attributes\". ::Receptivity. ::Kiria-Romaria: \"Receptivity\" is a term used to describe the chocobo's sensitivity when dealing with others. You can foster receptivity in your chocobo by giving it lots of opportunity to communicate with other chocobo's. Both discernment and receptivity are collectively referred to as \"Mental attributes\". ::Energy. ::Kiria-Romaria: \"Energy\" is a term used to describe the amount of power the chocobo needs to stay active for the day. If your chocobo has a lot of energy, care plans are more likely to be successful and you can provide more direct care of your chocobo. You can restore your chocobo's energy by feeding it, so remember not to skip out on feeding time after a demanding schedule! ::Affection. ::Kiria-Romaria: \"Affection\" is the most important attribute of all. You care schedule will flat if you don't show your chocobo proper affection! You can raise your chocobo's affection by feeding it greens and caring for it on a regular basis. If you really want to raise your chocobo's affection quickly, you can give it a Cupid Worm, but I can't recommend doing so unless absolutely necessary. ::Satisfaction. ::Kiria-Romaria: \"Satisfaction\" is a term used to describe how full or hungry your chocobo is. If your chocobo is full, it will gain a lot of energy before the next day. However, when the chocobo is very hungry, its energy will hardly recover at all and its affection will rapidly decrease. :Care schedule. ::What is a care schedule? ::Kiria-Romaria: A care schedule is a series of plans that you set up for your chocobo so that we can take care of it while you are away. How you want us to care for your chocobo each day is completely up to you. You can register up to four plans at once, each for up to 7 days (Earth time). When you come to check on your chocobo, we will give you a report on the results. You should listen closely to the report and use it as reference when deciding on a new schedule. ::Basic care. ::Kiria-Romaria: With the basic care plan, we will provide the minimum level to care for your chocobo. This plan is the most stable, and your chocobo will probably not experience any sudden changes. The basic care plan is good for those who don't want their chocobo's traits to change much or are still unsure of what kind of schedule to choose. You can select the basic care plan the moment you start raising your chocobo. ::Resting. ::Kiria-Romaria: The rest plan's name speaks for itself. We will give your chocobo a rest in order to restore it's energy and cure any status abnormalities. However, your chocobo will not be able to eat any food you give it during the plan, because it will be in a deep sleep. ::Taking a walk. ::Kiria-Romaria: We can take your chocobo for a walk in town to improve its physical attributes of strength and endurance. However, it will have a negative effect on it's mental attributes of discernment and receptivity. ::Listening to music. ::Kiria-Romaria: Listening to music will improve your chocobo's mental attributes of discernment and receptivity. However, it will have a negative effect on it's physical attributes of strength and endurance. ::Exercising alone. ::Kiria-Romaria: Excercising alone will significantly improve your chocobo's strength. On the other hand, it's mental attributes will markedly decrease. If the chocobo is strong, this plan is quite effective, but if the chocobo is weak, then you shouldn't push it too hard. ::Exercising in a group. ::Kiria-Romaria: Excercising with chocobo's will built your animal's endurance. On the other hand, it's mental attributes will decrease. If the chocobo has high endurance, this plan is quite effective, but if the chocobo's endurance is low, then you shouldn't pish it too hard. ::Playing with children. ::Kiria-Romaria: Playing with children helps your chocobo become a more discerning creature by interacting with people. However, this plan will have a negative effect on the chocobo's physical attributes, as no strenuous excerise is involved. If the chocobo has good discernment, this plan is quite effective, but if the chocobo does not have good discernment, then you shouldn't push it too hard. ::Playing with chocobos. ::Kiria-Romaria: Playing with other chocobos in the field will improve your chocobo's receptivity by fostering it's communication skills. But because the focus is on communication and not exercise, this plan will have a negative effect on the chocobo's physical attributes. If the chocobo has good receptivity , this plan is quite effective, but if the chocobo does not have good receptivity, then you shouldn't push too hard. ::Carrying packages. ::Kiria-Romaria: You can choose to have your chocobo help deliver packages. Not only will this improve it's physical attributes, but you will even receive payment for your services! The downside is that your chocobo's mental attributes, energy and affection will decrease. You must care well for your chocobo, or you might find yourself getting cold treatment. ::Exhibiting to the public. ::Kiria-Romaria: You can choose to exhibit your chocobo to the public, which will allow anyone visiting the Chocobo Stables to take a look at your animal. Being the center of attention will help improve your chocobo's mental attributes. The downside is that your chocobo's mental attributes, energy and affection will decrease. You must care well for your chocobo afterwards. Also, you will receive payment for this service. ::Delivering messages. ::Kiria-Romaria: You can choose to have your chocobo deliver official messages for the nation. Not only will this improve its strength, but you will even receive payment for your service! However, this plan consumes quite a bit of your chocobo's energy, so you should it well to make up for it. ::Digging for treasures. ::Kiria-Romaria: You can have your chocobo help out VCS finances by digging for treasures. This will also improve the chocobo's discernment. The VCS will sell the item and use the money for the organisation's benefit, but will improve you with payment for your service. However, this plan consumes quite a bit of your chocobo's energy, so you should feed it well to make it up for it. ::Acting in a play. ::Kiria-Romaria: You can choose to have your chocobo act as an extra in a play to improve its receptivity. You will receive payment in accordance with the chocobo's performance. However, this plan consumes quite a bit of your chocobo's energy, but you should feed it well to make it up for it. :Caring for your chocobo. ::A general explanation. ::Kiria-Romaria: In addiction to setting the chocobo's schedule, you can also care for your chocobo whenever you like. Caring for your chocobo will increase it's affection for you. On the other hand, a chocobo that receives too much care will lose energy more rapidly when engaging in acitivities. If you do nothing but care for your chocobo, it will become fatigued. However, not caring for your chocobo will have a negative effect on your relationship, so it is important to find a balance. ::Watching over your chocobo. ::Kiria-Romaria: You can watch over your chocobo whenever you like. Your fond gaze can communicate even more than a touch and will not have a very tiring effect on the animal. ::Telling a story. ::Kiria-Romaria: You can tell the chocobo a story you know. This will foster the animal's sensibilities. I've heard that by listening to the story, the chocobo might even realize it has powers it never noticed before. (I've never seen it happen before, though...) ::Scolding. ::Kiria-Romaria: Sometimes your chocobo might start acting spoiled. In such times, you will need to firmly scold it. This will shame the animal and have an affect on its receptivity. ::Competing. ::Kiria-Romaria: Competing against other chocobos will cultivate your animal's ambitious and is highly effective for bored chocobos. ::Taking a walk. ::Kiria-Romaria: You can take your chocobo out for a walk in the field. You will be able to choose more destinations as your chocobo grows. I like to take the chocobo often out, too, but I'm sure it prefers going out with you. Leaving the stables every once in a while allows your chocobo to experience new sights and sounds. Maybe you'll even discover something new together! :Feed. ::Why feeding is important ::Kiria-Romaria: Chocobos digest feed quickly, so they are often hungry. However, they also restore energy at a rapid pace. If you do not feed your chocobo properly, it will be unable to restore enough energy. The Chocobo Stables will provide your chocobo with the minimum amount of feed required for the animal to survive, but you need to provide more in order to ensure its healthy growth. At the same time, feeding your chocobo too much can result in a stomachache. Remember to strike a balance with both the variety and quantity of feed you give to your animal! Some types of feed have special effects, so it is important not to neglet your chocobo's diet if you want to raise a good chocobo. There are different methods of acquiring these special types of feed, so be on the lookout for them! ::Vegetables ::Kiria-Romaria: This is the standard variety of chocobo feed, among with bunches of Gysahl Greens are most popular. Chocobos also seems to enjoy bunches of Sharug Greens and bunches of Azouph Greens. These greens are the most effective in satisfying a chocobo's hunger. Chocobo can also enjoy the taste, which raises affection for their owner. ::Wildgrasses ::Kiria-Romaria: Wildgrasses are a type of medicinal herb. They do not taste very good, but are highly effective at curing status abnormalities. A clump of Gausebit Grass, for example, works well on wounds. So although they look similar to a bunch of Gysahl Greens, the effects are different. In addiction, a clump of Tokopekko Wildgrass is effective for illness, and a clump of Garidav Wildgrass for a stomachache. It's a good idea to remember which herb is used in each situation. ::Carrots ::Kiria-Romaria: Carrots are high in nutrition, and will have an effect on the Chocobo's strength and discernment. Vomp Carrots, for example, affect the chocobo's physical attributes, and Zegham Carrots are good for mental attributes. San d'Orian Carrots are in a category of their own. Remember, though, that the results are very slight, and keeping a good care schedule is a far more efficent way to alter your chocobo's attributes. ::Worms ::Kiria-Romaria: Using worms as feed can have a variety of effects. They might look disgusting, but their effectiveness is not to be ignored! For example, a Cupid Worm will dramatically increase your chocobo's affection, and a Gregarious Worm will restore its energy. But watch out for the side effects... Give the chocobo a worm at the wrong time, and all your effort could come to nothing... The most curious of all the worms is the Parasite Worm. At first it may not seem to have any effect, but looks are deceiving. ::Potions ::Kiria-Romaria: Like their names imply, potions are a variety of medicine. A Chocolixir will restore your chocobo's energy in full, making it easier to care for and ensuring that the care schedule goes smootthly. Celerity Salads are effective for most status abnormalities, restoring instant health to your chocobo. Of course, you still need to continue caring for your chocobo so it can fully recover. A potion can also help fill a chocobo's stomach, so they can be useful when you are short on feed. ::Pastes ::Kiria-Romaria: Feed can be good into paste for chicks to eat. You can make paste yourself with some cooking skills. If you don't have enough skill yourself, then you might want to ask a friend to make some for you. Chicks can also eat regular feed, though. :Abilities and personality. ::Abilities. ::Kiria-Romaria: Your chocobo may learn useful abilities during the course of its life at the stables. For example, Auto Regen will increase the rate at which your chocobo restores energy. Such an ability is sure to come in handy in a variety of situations. Your chocobo might learn abilities by listening to your words, so if you know of any story that you think might interests your animal, you should tell it often. But remember, your chocobo can't learn all of the abilities there are. It can only learn two... or at leasts, that's what I read. ::Temperament. ::Kiria-Romaria: The chocobo's temperament is determined when it is just a chick. Its temperament and attributes are somehow related, but I'm not really sure how. ::Weather preferences. ::Kiria-Romaria: Chocobos generally like sunny days, but they could grow to like other kinds of weather depending on how they are raised. Chocobos pay attention to the air outside when they go on walks, and grow to prefer that type of weather because of the memories. Make the animal's schedule around its preferred weather days, and plans are more likely to succeed. However, if the chocobo has a favored type of weather , it also dislikes certain conditions, creating a weak point to watch for. :Retirement. ::Kiria-Romaria: You can choose to retire your chocobo at any time it has fully matured. After retirement, the VCS will take up caring for the chocobo where you left it off, so you need not worry about its welfare. When your chocobo retires, you will receive a VCS Registration Card. Be sure not to lose it. You can use the VCS Registration Card to register your chocobo to call in the field or for matchmaking purposes after retirement. All you need to do is trade it to a VCS member. The empty stall created after your animal retires can be used for raising another chocobos, so if you happen to come across another egg, you can bring it here to start all over again! :Matchmaking. ::Kiria-Romaria: When your chocobo is mature enough, you can breed it with another chocobo. If the chocobo lays an egg, the chick will inherit the traits of its parents. You will need a Chococard (M) and a Chococard (F) if you want to breed your chocobo. Apparently, you also need some kind of ticket that they sell at the stables in Upper Jeuno. You can ask one of the VCS members to issue you a chococard, or if your chocobo is already retired, just trade them a VCS Registration Card. I don't really know that much about it, but you should probably try matching your chocobo up with several different animals and seeing what results are. :Calling your chocobo in the field. ::Kiria-Romaria: When your chocobo is mature enough, you can call it in the field using a Chocobo Whistle. You need to let a member of the VCS know which you want to respond to your call, because they must choose a saddle that fits your chocobo's attributes. That also means that when your chocobo's attributes change or it learns a new ability, you should probably let the VCS member know, too. When you want to register a retired chocobo to respond to your call in the field, trade a VCS Registration Card to a VCS member. Also, the Chocobo Whistle's power will grew weak after you've used it several times. If this happens, just trade it to a VCS member and they will give you a new one for a fee. :Items. ::VCS Registration Card. ::Kiria-Romaria: A VCS Registration Card proves that you are your chocobo's caretaker. With this card, you can register a retired chocobo to respond to your call in the field or get a chococard for matchmaking. If you lose it, you won't be able to get another one, so keep it in a safe place! ::chococards. ::Kiria-Romaria: Chococards are documents that contain all the details about a chocobo's attributes and condition. They are devided into two types -- one for each gender. If you trade one to the person who's in charge of matchmaking, he'll introduce your animal to another chocobo. Chococards contain information on the chocobo's attributes and condition at the time the card is issued, so be sure to get a new card before using this service or the match will be arranged based on out-of-date information. If you want a chococards for a retired chocobo, then you must trade a VCS Registration Card to a VCS member. ::Chocobo Whistle. ::Kiria-Romaria: You can use a Chocobo Whistle to call your chocobo in the field to use as a mount. The more you use it, the weaker it will get, so eventually you will need to exchange it to a VCS member for a new one. Only people who have been approved by the VCS President can get a Chocobo Whistle, so good luck with that..." },
     ['Kohpe Takhabio']                   = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Kopua-Mobua']                      = { type = "Mentor Recruiter", icon = "MentorRecruiter.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Kopuro-Popuro']                    = { type = "Quest Giver", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* The All-New C-2000\n* Legendary Plan B\n* The All-New C-3000\n\nInvolved in Quests:\n* Lost Chick" },
+    ['Kopuro-Popuro']                    = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* The All-New C-2000\n* Legendary Plan B\n* The All-New C-3000\n\nInvolved in Quests:\n* Lost Chick" },
     ['Kototo']                           = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Kuoh Rhel']                        = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Chocobilious\n* In a Stew" },
     ['Kuu Lohro']                        = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
@@ -1131,40 +1134,40 @@ local npcIcons = T{
     ['Muhk Johldy']                      = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Mul Betreh']                       = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Mushuhi-Metahi']                   = { type = "Weather Reporter", icon = "WeatherChecker.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nChecks weather for the following locations: :* East Sarutabaruta :* West Sarutabaruta :* Tahrongi Canyon :* Buburimu Peninsula :* Meriphataud Mountains" },
-    ['Nanaa Mihgo']                      = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Mihgo's Amigo\n* Rock Racketeer\n* THF AF1: The Tenshodo Showdown\n* THF AF2: As Thick as Thieves\n* THF AF3: Hitting the Marquisate\n\nInvolved in Quests:\n* Lure of the Wildcat (Windurst)\n* Trust: Windurst\n* Crying Over Onions\n\nInvolved in Missions:\n* Windurst Mission 2-1: Lost for Words\n* Roar! A Cat Burglar Bares Her Fangs\n" },
+    ['Nanaa Mihgo']                      = { type = "Dialogue NPC", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Mihgo's Amigo\n* Rock Racketeer\n* THF AF1: The Tenshodo Showdown\n* THF AF2: As Thick as Thieves\n* THF AF3: Hitting the Marquisate\n\nInvolved in Quests:\n* Lure of the Wildcat (Windurst)\n* Trust: Windurst\n* Crying Over Onions\n\nInvolved in Missions:\n* Windurst Mission 2-1: Lost for Words\n* Roar! A Cat Burglar Bares Her Fangs\n" },
     ['Nhobi Zalkia']                     = { type = "Regional Vendor", icon = "RegionalVendor.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Nikkoko']                          = { type = "Synthesis Support", icon = "GuildMerchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Nikkoko is one of two workers who provides free synthesis support for clothcrafting in Windurst. Speaking with her will raise your clothcrafting skill ever so slightly, and give you a better chance at successful synths. After speaking with her however, you may not ask any other NPC for synthesis support until the one she has given you has worn away." },
+    ['Nikkoko']                          = { type = "Synthesis Support", icon = "GuildMerchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Provides free clothcraft synthesis support." },
     ['Nine of Spades']                   = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Nya Labiccio']                     = { type = "Regional Vendor", icon = "RegionalVendor.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Orahi-Karapahi']                   = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Orlaine']                          = { type = "Chocobo Renter", icon = "ChocoboRenter.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* A Chocobo Riding Game (Windurst)" },
+    ['Orlaine']                          = { type = "Chocobo Renter", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* A Chocobo Riding Game (Windurst)" },
     ['Otte Burhiyu']                     = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Palyalya']                         = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nOffers Information on the Auction House: :Welcome to the Auction House. Do you have any questions about our establishment? :*\"What is the Auction House?\": Auctions houses can be found in all of Vana'diel's major cities. Here adventurers gather to bid on battle spoils, unwanted items, old armor...almost anything. Currently, the auction houses in Bastok, San d'Oria, Windurst, and Jeuno all work independently. Therefore, prices differ from city to city. Adventurers may use any auction house regardless of nationality. Is there anything else you would like to know? :*\"How are auctions run?\": The first adventurer to bid at or above the asking price will automatically purchase the product. Once put up for auction, merchandise will remain there for a maximum of nine weeks Vana'diel time (three days earth time). If merchandise does not sell within this time limit, it will be returned to the seller's current residence. Is there anything else you would like to know? :*\"Are there any fees?\": Transaction fees are proportional to the amount for which an item is put up on auction. The method of calculating this fee is different for single items and stackable items. A transaction fee is collected when any merchandise is put up for auction. This fee is nonrefundable. Is there anything else you would like to know? :*\"Are there any limits?\": The International Auction House Committee, or IAHC, has declared that a maximum of seven items may be put up for auction at one time. However the IAHC has recently removed the limit to how many items one may purchase. Is there anything else you would like to know? :*\"How do you check up on merchandise?\": A small amount of time is required before new merchandise appears on our bid list. Once an item appears on your \"Sales Status\" list, it may not immediately appear on the bid list. If you do no see your item on the bid list, try looking again at a later time. Is there anything else you would like to know? :*\"How do remove an item?\": If you would like to withdraw an item from an auction, you must travel to an auction house in the country where you initially put the item up for sale, and select \"Stop Sale\" from the \"Sales Status\" menu. Is there anything else you would like to know? :*\"My \"Sales Status\" list is full!\": To remove an item from your \"Sales Status\" list, you must visit an auction counter to acknowledge the sale or return of your merchandise. Otherwise previously sold or returned items will fill up your list and prevent you from selling any more merchandise. At any auction counter, open the \"Sales Status\" menu and acknowledge the transaction to clear it from the list. Press the confirm button to remove any transaction colored yellow (sold) or red (returned). Is there anything else you would like to know? :*\"Nothing right now.\": In the past, many have amassed great wealth through the auction house. I hope you find fortune, too!" },
-    ['Panoquieur, T.K.']                 = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the San d'Oria Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for San d'Oria) at certain conditions. It will be also possible to get some items of other Nations (Items for Bastok / Items for Windurst) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without San d'Oria as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer." },
+    ['Panoquieur, T.K.']                 = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Provides Signet and recharges EXP rings.\n* Accepts crystals for mission rank and sells Conquest Point items.\n* Services require San d'Oria allegiance." },
     ['Patsaa Maehoc']                    = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Pattsu-Yabittsu']                  = { type = "Teleport Service", icon = "WarpNPC.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nA teleport NPC. He is located at the lower-left of K-12 on your map, otherwise to the right of the Chocobo Circuit (slightly hidden behind a tree). He will teleport you for free to Tonana (Windurst Waters, G-8)." },
+    ['Pattsu-Yabittsu']                  = { type = "Teleport Service", icon = "WarpNPC.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Teleports players to Tonana in Windurst Waters (G-8) for free.\n* Located at K-12 near the Chocobo Circuit." },
     ['Pehki Machumaht']                  = { type = "Map Vendor", icon = "MapDealer.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Perih Vashai']                     = { type = "Mercenary Major", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* The Fanged One Ability to become Ranger\n* Sin Hunting AF weapon\n* Fire and Brimstone Hunter's beret\n* Unbridled Passion Hunter's socks\n* From Saplings Grow Archery Weapon skill\n\nInvolved in Missions:\n* Promathia Mission 5-3: Three Paths\n* Past Sins (Louverance Path)\n" },
+    ['Perih Vashai']                     = { type = "Mercenary Major", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* The Fanged One\n* Sin Hunting\n* Fire and Brimstone\n* Unbridled Passion\n* From Saplings Grow\n\nInvolved in Missions:\n* Promathia Mission 5-3: Three Paths\n* Past Sins (Louverance Path)\n" },
     ['Peshi Yohnts']                     = { type = "Guild Master", icon = "GuildMaster.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Lost Chick\n* An Affable Adamantking?\n" },
     ['Pew Sahbaraef']                    = { type = "Item Deliverer", icon = "ItemDeliverer.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Phub Bayzarahn']                   = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nDialog: It is trrrue that the Mithra of Windurst obey the Star Sibyl... ....But that's only true because our chieftainess, Perih Vashai, is doing so herrrself." },
+    ['Phub Bayzarahn']                   = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Phuz Mannohl']                     = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Ponono']                           = { type = "Guild Master", icon = "GuildMaster.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* A Moral Manifest?\n* Lost Chick\n* The Young and the Threadless\n" },
-    ['Pulonono']                         = { type = "VCS Chocobo Trainer", icon = "VCSChocoboRacingAssociate.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nA member of the Vana'diel Chocobo Society. She will help you raise your own Chocobo if you trade an egg to her." },
-    ['Rakoh Buuma']                      = { type = "Gate Guard", icon = "Guard.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Missions:\n* Windurst Missions\n" },
+    ['Pulonono']                         = { type = "VCS Chocobo Trainer", icon = "VCSChocoboRacingAssociate.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Raises chocobos when given a chocobo egg." },
+    ['Rakoh Buuma']                      = { type = "Gate Guard", icon = "MissionGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Missions:\n* Windurst Missions\n" },
     ['Retto-Marutto']                    = { type = "Bonecraft | Guild Merchant", icon = "Merchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Roberta']                          = { type = "Quest Associate", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Blue Ribbon Blues" },
-    ['Robino-Mobino (Windurst Woods)']   = { type = "VCS Chocobuck Exchange Depot Vendor", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Used to sell items in exchange for Chocobucks (see Chocobuck items). *Renamed Toppi-Meppi as of the [https://forum.square-enix.com/ffxi/threads/54790?p=611716#post611716 December 11, 2018] update.", info = "*Used to sell items in exchange for Chocobucks (see Chocobuck items). *Renamed Toppi-Meppi as of the [https://forum.square-enix.com/ffxi/threads/54790?p=611716#post611716 December 11, 2018] update. }}" },
-    ['Rokor-Makor']                      = { type = "Event Host", icon = "Event.png", zones = { "Special Event", "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Durning Sunbreeze, allows you play a chocobo catch game. You must have earned the HQ gear from the main event to participate in hard mode (for chance to earn a Green Prize Balloon). *During Starlight, allows you to play a job guessing game, basically a version of the board game Mastermind." },
+    ['Robino-Mobino (Windurst Woods)']   = { type = "Chocobuck Vendor", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Chocobuck exchange vendor.\n* Renamed Toppi-Meppi in the December 11, 2018 update." },
+    ['Rokor-Makor']                      = { type = "Event Host", icon = "Event.png", zones = { "Special Event", "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Hosts Chocobo Catch during Sunbreeze; hard mode requires HQ event gear and can reward Green Prize Balloons.\n* Hosts a job-guessing game during Starlight." },
     ['Ronana']                           = { type = "Guild Craftsman", icon = "GuildMerchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Samigo-Pormigo']                   = { type = "Guild Points", icon = "GuildworkersUnionRepresentative.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Sariale']                          = { type = "Chocobo Renter", icon = "ChocoboRenter.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* A Chocobo Riding Game (Windurst)" },
-    ['Selele']                           = { type = "Tutorial", icon = "TutorialNPC.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Provides tutorial information for newly created characters. *See Tutorial NPC for more information about the 7 mini quests." },
-    ['Seno Zarhin']                      = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nDialog: Whenever you look around Windurst Woods you see Mithra, rrright? But just until a few decades ago, this whole arrrea was full of Tarutaru. That was until the warrr years when the Mithra chieftainess, Perih Vashai, came across the seas from the Mithran homeland with her army of fighters." },
+    ['Sariale']                          = { type = "Chocobo Renter", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* A Chocobo Riding Game (Windurst)" },
+    ['Selele']                           = { type = "Tutorial", icon = "TutorialNPC.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Provides tutorial information for new adventurers.\n* Offers seven tutorial mini-quests." },
+    ['Seno Zarhin']                      = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Sevah Kummekihn']                  = { type = "Past Event Watcher", icon = "PastEventWatcher.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nThis NPC will let you watch cut-scenes that you have seen in Heavens Tower in the past, for a small fee." },
     ['Seven of Spades']                  = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Shaty-Monty']                      = { type = "Quest Giver", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Kamp Kweh" },
-    ['Shih Tayuun']                      = { type = "Bonecraft | Guild Merchant", icon = "Merchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nOpen: 8:00 - 23:00.No longer closed Windsday." },
+    ['Shaty-Monty']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Kamp Kweh" },
+    ['Shih Tayuun']                      = { type = "Bonecraft | Guild Merchant", icon = "Merchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Open daily from 8:00 to 23:00." },
     ['Six of Spades']                    = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Sola Jaab']                        = { type = "Riding the Clouds", icon = "QuestNPC.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Riding on the Clouds\n" },
     ['Soni-Muni']                        = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* The Amazin' Scorpio\n\nInvolved in Quests:\n* Lure of the Wildcat (Windurst)" },
@@ -1175,32 +1178,32 @@ local npcIcons = T{
     ['Spare Three']                      = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Spare Two']                        = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Spare Zero']                       = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Spring Treant']                    = { type = "Event NPC", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nDuring Adventurer Appreciation Campaign 2012, 3 Spring Treants and a Twinkling Treant invaded the Dhalmel Farm in Windurst Woods." },
+    ['Spring Treant']                    = { type = "Event NPC", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Appeared at the Dhalmel Farm during Adventurer Appreciation Campaign 2012." },
     ['Sunakku-Matakku']                  = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Sunana']                           = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Tapoh Lihzeh']                     = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Paying Lip Service\n\nInvolved in Quests:\n* Chocobilious" },
     ['Taraihi-Perunhi']                  = { type = "Regional Vendor", icon = "RegionalVendor.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Teldro-Kesdrodo']                  = { type = "Unity Concord", icon = "MentorRecruiter.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Unity Concord (Quest)" },
+    ['Teldro-Kesdrodo']                  = { type = "Unity Concord", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Unity Concord (Quest)" },
     ['Ten of Spades']                    = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Tergil']                           = { type = "Crafter Points", icon = "GuildMerchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Escutcheons" },
     ['Terude-Harude']                    = { type = "Advanced Synthesis Support", icon = "GuildMaster.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nTerude-Harude is an exceptional clothcrafter, who will provide you with advanced synthesis support for a small fee. Accepting his offer will raise your clothcrafting skill slightly, and will increase your chances of a successful synth more so than the free services provided by the other NPCs from the guild. However, you may only have one synthesis support image active at a time, and may not ask other Synthesis Support NPCs for assistance until the one you are currently using has worn off." },
     ['Tesch Garanjy']                    = { type = "Armor Depository", icon = "ArmorStorer.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nStores lvl 24-60 AF, Relic, RSE and other gearsets." },
     ['Three of Spades']                  = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Tico Karimakiba']                  = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nthumb|100px|MonstersOffers Information on Monster Relationships: :Hey! What do you want? Don't tell me... You heard that I have a monster correlation chart and came to beg me to show it to you, rrright? :*\"Yes.\": I knew it! I don't mind showing it to you. Besides, I'm a topnotch hunter, so I don't need it anyway. I was given this parchment a few years ago by a scrrruffy old Elvaan man. I helped him out when I found him lost in the woods, and this was his way of paying me back. To tell you the truth, I wasn't that interested in it, so I didn't pay much attention to his explanation and have forrrgotten most of what he said. It was something about how the different types of monsters eat each other in order to surrrvive, so I guess he was trying to tell me to referrr to this pattern when I go hunting. But whenever I spot a monster, I become totally obsessed by the thought of the hunt and forrrget all about his advice and this chart. Maybe it's enough to just keep this knowledge locked away in the back of your mind somewhere, in case you ever need it. But if you want to know more, then you'll just have to go and track down that old guy. You're welcome to have another gander at this chart whenever you want to. It's a pain to explain it to everyone who asks, but maybe it is some kind of fate... Actually, I've found that I enjoy helping people out. :*\"No.\": Oh, so you're just trying to flirt with me, huh? Well, sorry there, but I'm not interrrested in men or women. The only thing that makes my heart leap are the tracks and droppings of my next hunting game, thank you." },
+    ['Tico Karimakiba']                  = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Shows a monster correlation chart explaining monster-family strengths and weaknesses." },
     ['Tih Pikeh']                        = { type = "Mission Giver", icon = "MissionGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Toppi-Meppi']                      = { type = "VCS Chocobuck Exchange Depot Vendor", icon = "VCSChocoboRacingAssociate.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Used to sell items in exchange for Chocobucks (see Chocobuck items). *Replaced Robino-Mobino as of the [https://forum.square-enix.com/ffxi/threads/54790?p=611716#post611716 December 11, 2018] update." },
+    ['Toppi-Meppi']                      = { type = "Chocobuck Vendor", icon = "VCSChocoboRacingAssociate.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Chocobuck exchange vendor.\n* Renamed from Robino-Mobino in the December 11, 2018 update." },
     ['Tosh Hohnay']                      = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Twinkling Treant']                 = { type = "Event NPC", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nDuring Adventurer Appreciation Campaign 2012, 3 Spring Treants and a Twinkling Treant invaded the Dhalmel Farm in Windurst Woods." },
+    ['Twinkling Treant']                 = { type = "Event NPC", icon = "Event.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Appeared at the Dhalmel Farm during Adventurer Appreciation Campaign 2012." },
     ['Two of Spades']                    = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Ultra Slime']                      = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Windurst Woods", "Outland", "Special Event" }, zoneIds = { 241 }, note = "Starts Quests:\n* DRAGON QUEST X ONLINE Crossover" },
+    ['Ultra Slime']                      = { type = "Special Event", icon = "QuestGiver.png", zones = { "Windurst Woods", "Outland", "Special Event" }, zoneIds = { 241 }, note = "Starts Quests:\n* DRAGON QUEST X ONLINE Crossover" },
     ['Umumu']                            = { type = "Quest Associate", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)\n* Making Headlines" },
-    ['Uuroro']                           = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nDialog: One more time... \"The rain in La Theine falls mainly on the plains.\"" },
+    ['Uuroro']                           = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
     ['Varun']                            = { type = "Quest Associate", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Involved in Quests:\n* Rock Racketeer" },
     ['Wani Casdohry']                    = { zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Wetata']                           = { type = "Trust Coordinator", icon = "Trust.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Trust: Windurst" },
+    ['Wetata']                           = { type = "Trust Coordinator", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Trust: Windurst" },
     ['Wije Tiren']                       = { type = "Standard Merchant", icon = "Merchant.png", zones = { "Windurst Woods" }, zoneIds = { 241 } },
-    ['Yonolala']                         = { type = "Unity Concord", icon = "MentorRecruiter.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Unity Concord (Quest)" },
-    ['Zahsa Syalmhaia']                  = { type = "Great War Veteran", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\nDialogue: I am Zahsa Syalmhaia, captain of the mercenaries in charge of defending East Sarutabaruta. And now, a question for you, adventurer--might you know the reason why Windurst's Mithran population is concentrated in the Woods district? Hmph! Then I shall enlighten you. The area was given to us as a reward for our exceptional performance during the Great War! Or, if you have not yet been through a Cavernous Maw: I am Zahsa Syalmhaia, captain of the mercenaries in charge of defending East Sarutabaruta. And now, a question for you, adventurer--do you know of the stone maws being found across the land? Some might describe them as \"cavernous.\" Hmph! Then I shall enlighten you. They are large statues of hideous visage, and have been around for some time. These maws are more than they appear, I guarantee you." },
+    ['Yonolala']                         = { type = "Unity Concord", icon = "QuestGiver.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Starts Quests:\n* Unity Concord (Quest)" },
+    ['Zahsa Syalmhaia']                  = { type = "Great War Veteran", icon = "Dialogue.png", zones = { "Windurst Woods" }, zoneIds = { 241 }, note = "Notes:\n* Explains Windurst Woods' Mithran history and provides information about Cavernous Maws." },
 
 -------------------------------------------------------------------------------
 -- The Grand Duchy of Jeuno
@@ -1508,7 +1511,7 @@ local npcIcons = T{
     ['Pherimociel']                      = { type = "Mission Associate", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 }, note = "Involved in Missions:\n* Promathia Mission 1-2: Below the Arks\n* Promathia Mission 5-3: Three Paths\n* The Pursuit of Paradise (Tenzen's Path)\n* Promathia Mission 6-1: For Whom the Verse is Sung\n* Promathia Mission 6-2: A Place to Return\n* Promathia Mission 6-3: More Questions than Answers\n* Aht Urhgan Mission 40: Unraveling Reason" },
 ['Pitenorelieu']       = { type = "Citizen", icon = "Dialogue.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 } },
 
-    ['Pursuivant']                       = { type = "Ballista Information", icon = "BallistaPursuivant.png", zones = { "Ru'Lude Gardens", "Al Zahbi", "Jeuno", "Outland" }, zoneIds = { 243 }, note = "Notes:\nPursuivants offer information about the game Ballista and can give the upcoming match schedules; they are also able to warp characters to the specific Ballista or Brenner battle areas. When a player chooses to warp back at camp after a death, a specific Pursuivant of your current allegiance (San'dorian, Bastokan, or Windurstian Pursuivant) will offer a Ballista Earring or a Ballista Band, when you talk to him. The Pursuivant in Abdhaljs Isle-Purgonorgo will warp players back to Upper Jeuno. The Pursuivants in Diorama Abdhaljs-Ghelsba will warp players back to Ru'Lude Gardens." },
+    ['Pursuivant']                       = { type = "Ballista Information", icon = "BallistaPursuivant.png", zones = { "Ru'Lude Gardens", "Al Zahbi", "Jeuno", "Outland", "Windurst Waters" }, zoneIds = { 238, 243 }, note = "Notes:\n* Gives Ballista information and match schedules.\n* Provides travel to official matches." },
     ['Radeivepart']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 }, note = "Starts Quests:\n* Northward\n\nInvolved in Quests:\n* Save the Clock Tower\n" },
     ['Rainhard']                         = { type = "Ducal Guard", icon = "Guard.png", zones = { "Ru'Lude Gardens" }, zoneIds = { 243 }, note = "Notes:\nA Ducal Guard who along with High Wind guards the Archduke's Audience Chamber within the Grand Duke Palace." },
     ['Sitting Ram']                      = { zones = { "Ru'Lude Gardens" }, zoneIds = { 243 } },
@@ -2749,13 +2752,13 @@ local npcIcons = T{
 -- . *Chateau d'Oraguille
 
 
-    ['Celebratory Chest']                = { type = "Standard Merchant", icon = "SpecialMerchant.png", zones = { ". *Chateau d'Oraguille" }, zoneIds = { 233, 237, 242 }, note = "Notes:\nSee also *Rembard *Pompi-Rompi *Cloud Walker *Matrimonial Coffer" },
-    ['Matrimonial Coffer']               = { type = "Standard Merchant", icon = "SpecialMerchant.png", zones = { ". *Chateau d'Oraguille" }, zoneIds = { 233, 237, 242 }, note = "Notes:\nSee also *Rembard *Cloud Walker *Pompi-Rompi *Celebratory Chest" },
+    ['Celebratory Chest']                = { type = "Celebratory Goods Vendor", icon = "SpecialMerchant.png", zones = { "Chateau d'Oraguille", "Metalworks", "Heavens Tower" }, zoneIds = { 233, 237, 242 }, note = "Notes:\n* Sells fireworks, high-quality crystals, and other celebratory goods." },
+    ['Matrimonial Coffer']               = { type = "Wedding Attire Vendor", icon = "SpecialMerchant.png", zones = { "Chateau d'Oraguille", "Metalworks", "Heavens Tower" }, zoneIds = { 233, 237, 242 }, note = "Notes:\n* Sells ceremonial clothing and rings for brides and grooms." },
 
 -- {{location|Bastok Markets|D-11
 
 
-    ['Voidwatch Officer']                = { type = "Voidwatch", icon = "Dialogue.png", zones = { "{{location|Bastok Markets|D-11", "Jeuno" }, zoneIds = { 235 }, note = "Involved in Quests:\n* Drafted by the Duchy\n* Battle on a New Front\n* VW Op. #126: Qufim Incursion\n* The Truth Is Out There\n* A New Menace\n* No Rest for the Weary\n" },
+    ['Voidwatch Officer']                = { type = "Voidwatch Service", icon = "VoidwatchRift.png", zones = { "Bastok Markets", "Windurst Waters", "Jeuno" }, zoneIds = { 235, 238 }, link = "https://www.bg-wiki.com/ffxi/Voidwatch_Officer_(Windurst)", note = "Notes:\n* Issues stratum abyssites, voidstones, and Voidwatch operations." },
 
 -- {{location|Eastern Adoulin|H-6
 
@@ -2864,13 +2867,13 @@ local npcIcons = T{
     ['Izabele (A)']                      = { type = "Reputation", icon = "ReputationNPC.png", zones = { "Abyssea", "Abyssea - Misareaux" }, zoneIds = { 216 } },
     ['Jakaka (A)']                       = { type = "Fishing Guide", icon = "Dialogue.png", zones = { "Abyssea", "Abyssea - Attohwa" }, zoneIds = { 215 }, note = "Involved in Quests:\n* An Acrididaen Anodyne\n" },
     ['Janshura-Rashura (A)']             = { type = "Survivor", zones = { "Abyssea", "Abyssea - Tahrongi" }, zoneIds = { 45 } },
-    ['Jerrett']                          = { type = "Abyssea Support", icon = "Dialogue.png", zones = { "Abyssea", "Heavens Tower - Near fountain" }, zoneIds = { 242 }, note = "Notes:\n* Supplies players with additional Traverser Stones. His stock is shared with Joachim. |" },
+    ['Jerrett']                          = { type = "Abyssea Support", icon = "Dialogue.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Notes:\n* Supplies additional Traverser Stones." },
     ['Jonette (A)']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Abyssea", "Abyssea - Misareaux" }, zoneIds = { 216 }, note = "Starts Quests:\n* Cookbook of Hope Restoring" },
     ['Joulet (A)']                       = { type = "Brother to Gallijaux (A).", icon = "Dialogue.png", zones = { "Abyssea", "Abyssea - La Theine" }, zoneIds = { 132 }, note = "Starts Quests:\n* Unbreak His Heart\n" },
     ['Julio (A)']                        = { type = "Survivor", zones = { "Abyssea", "Abyssea - Konschtat" }, zoneIds = { 15 } },
     ['Justinius (A)']                    = { type = "Survivor", zones = { "Abyssea", "Abyssea - Altepa" }, zoneIds = { 218 } },
     ['Ken (A)']                          = { type = "Quest Giver", zones = { "Abyssea", "Abyssea - Altepa" }, zoneIds = { 218 }, note = "Starts Quests:\n* Help Not Wanted" },
-    ['Kierron']                          = { type = "Abyssea Support", icon = "Dialogue.png", zones = { "Abyssea", "Heavens Tower - Near fountain" }, zoneIds = { 242 }, note = "Notes:\n* Allows you to view your cruor balance. *Informs you the status of the resistance in Scars of Abyssea areas. *Can teleport you to any Abyssean Cavernous Maw for 200 Cruor. **He only gives you the option to teleport to a maw if you have watched the cutscene and flagged the associated quest after examining it for the first time. Note that you must talk to Joachim after receiving the cutscene at your first Scars of Abyssea maw to receive cutscenes from examining the other maws; you will simply be allowed into the other zones without a cutscene nor teleport access from Horst. You must also be in possession of at least one Traverser Stone to receive a cutscene at its corresponding Cavernous Maw. |" },
+    ['Kierron']                          = { type = "Abyssea Support", icon = "Dialogue.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Notes:\n* Shows your cruor balance.\n* Shows resistance status.\n* Teleports you to eligible Abyssean Cavernous Maws for 200 cruor." },
     ['Kocchi-Arocchi']                   = { type = "Quest Giver", zones = { "Abyssea", "Tahrongi Canyon" }, zoneIds = { 117 }, note = "Starts Quests:\n* Megadrile Menace" },
     ['Kopuro-Popuro (A)']                = { type = "Quest Associate", zones = { "Abyssea", "Abyssea - Tahrongi" }, zoneIds = { 45 }, note = "Involved in Quests:\n* His Box, His Beloved" },
     ['Kororo (A)']                       = { type = "Survivor", zones = { "Abyssea", "Abyssea - Grauberg" }, zoneIds = { 254 } },
@@ -3154,7 +3157,7 @@ local npcIcons = T{
 -- Al Zahbi Aht Urhgan Whitegate (I-8, North Wall) Nashmau Southern San d'Oria (S) Bastok Markets (S) (H-4, North Wall by Rye Bridge) Windurst Waters (S)
 
 
-    ['Voidwatch Purveyor']               = { type = "Voidwatch Vendor", icon = "Merchant.png", zones = { "Al Zahbi Aht Urhgan Whitegate (I-8, North Wall) Nashmau Southern San d'Oria (S) Bastok Markets (S) (H-4, North Wall by Rye Bridge) Windurst Waters (S)", "Jeuno" }, zoneIds = { 48 }, note = "Notes:\nUsed to puchase Ascent Items for Voidwatch. Item will cost the player their regional credits and not cruor. Those wishing to use Cruor can purchase the cells at a Voidwatch Officer except for Jade Cells." },
+    ['Voidwatch Purveyor']               = { type = "Voidwatch Vendor", icon = "Merchant.png", zones = { "Al Zahbi", "Aht Urhgan Whitegate", "Windurst Waters", "Jeuno" }, zoneIds = { 48, 238 }, note = "Notes:\n* Sells Voiddust and Voidwatch ascent items for regional currency." },
 
 -- All over Al'Taieu, Grand Palace of Hu'Xzoi, and The Garden of Ru'Hmet
 
@@ -4187,7 +4190,7 @@ local npcIcons = T{
 -- Ensasa's Catalyst Shop, Windurst Waters
 
 
-    ['Ensasa']                           = { type = "Standard Merchant", icon = "Merchant.png", zones = { "Ensasa's Catalyst Shop, Windurst Waters", "Windurst" } },
+    ['Ensasa']                           = { type = "General Goods Merchant", icon = "Merchant.png", zones = { "Windurst Waters" }, zoneIds = { 238 } },
 
 -- Escha - Ru'Aun
 
@@ -4471,43 +4474,43 @@ local npcIcons = T{
 -- Heavens Tower (In the Clerical Chamber)
 
 
-    ['Pompi-Rompi']                      = { type = "Wedding event NPC.", icon = "Event.png", zones = { "Heavens Tower (In the Clerical Chamber)", "Windurst" }, note = "Notes:\nSee also *2009 - (10/13/2009) Produce your own wedding! Presenting the new wedding support service! *Celebratory Chest *Matrimonial Coffer" },
+    ['Pompi-Rompi']                      = { type = "Wedding Coordinator", icon = "Event.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Notes:\n* Coordinates Windurstian wedding ceremonies." },
 
 -- Heavens Tower (North end of ground floor, in the Clerical Chamber) *Also appears as a guest during Chocobo Races - Rakapopo Cup, with her own chocobo, Starlight on the track ridden by Koru-Moru.
 
 
-    ['Kupipi']                           = { type = "Riding the Clouds", icon = "QuestNPC.png", zones = { "Heavens Tower (North end of ground floor, in the Clerical Chamber) *Also appears as a guest during Chocobo Races - Rakapopo Cup, with her own chocobo, Starlight on the track ridden by Koru-Moru.", "Windurst" }, note = "Involved in Quests:\n* Riding on the Clouds\n* BLM AF3 quest: The Root of the Problem\n* Trust: Windurst\n* Obtaining a Ballista License (as an envoy to the Star Sybil)\n\nStarts Missions:\n* Kupipi's Dilemma (The Voracious Resurgence 2-1)\n\nInvolved in Missions:\n* Bastok Mission 2-3: The Emissary\n* San d'Oria Mission 2-3: Journey Abroad\n* Windurst Mission 2-3: The Three Kingdoms\n* Windurst Mission 3-1: To Each His Own Right\n* Windurst Mission 3-2: Written in the Stars\n* Windurst Mission 8-2: The Jester Who'd Be King\n" },
+    ['Kupipi']                           = { type = "Government Official", icon = "MissionNPC.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, link = "https://www.bg-wiki.com/ffxi/Kupipi", note = "Involved in Quests:\n* Waking the Colossus\n* The Root of the Problem\n\nInvolved in Missions:\n* The Emissary\n* Journey Abroad\n* The Three Kingdoms\n* To Each His Own Right\n* Written in the Stars\n* The Jester Who'd Be King" },
 
 -- Heavens Tower, Administration Room
 
 
-    ['Rakano-Marukano']                  = { type = "Immigration", icon = "ImmigrationNPC.png", zones = { "Heavens Tower, Administration Room", "Windurst" }, note = "Notes:\nCost to Change Allegiance when Windurst is in: :1st Place in Conquest - 40,000g :2nd Place in Conquest - 12,000g :3rd Place in Conquest - 4,000g *The taru is right inside the room with the door that says Clerical Chamber, across the fountain when you zone in. *When changing allegiance, you retain all conquest points. *If this is the first time you've switched to this nation, you are reset to Rank 1. *If you decide later to return to your previous Nation, you will get your previous Rank back. *Any rewards for missions done in other nations are retained when you switch (i.e. you will keep your Airship Pass, etc.) * You will keep all Outposts from your old nations. :*This only applies to outpost data that was saved to the game on and after the 6/9/2008 patch. Any outpost data saved prior will have to be quested again. GMs have clarified that the reason for this inconvenience is due to previous \"thematic\" deletions of outpost data from completed supply missions at the time of the allegiance change. Example: A player was allied with San d'Oria with all outposts complete and changed to Bastok on 5/1/08 and then obtained all outposts again. That player then changes allegiance to Windurst on 6/20/08. All outpost data for San d'Oria is lost but all outpost data for Bastok is saved." },
+    ['Rakano-Marukano']                  = { type = "Allegiance Changer", icon = "ImmigrationNPC.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Notes:\n* Changes a character's allegiance to Windurst for a conquest-dependent fee." },
 
 -- Heavens Tower, Basement
 
 
-    ['Chumimi']                          = { type = "Black Mage Artifact", icon = "afstorage.png", zones = { "Heavens Tower, Basement", "Windurst" }, note = "Involved in Quests:\n* The Three Magi\n* Recollections\n* The Root of the Problem\n" },
+    ['Chumimi']                          = { type = "Black Mage Artifact Quest Giver", icon = "QuestGiver.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Starts Quests:\n* The Three Magi\n* Recollections\n* The Root of the Problem" },
 
 -- Heavens Tower, Clerical Chamber, North side of the main room.
 
 
-    ['Gamimi']                           = { type = "World Pass", icon = "WorldPassDealer.png", zones = { "Heavens Tower, Clerical Chamber, North side of the main room.", "Windurst" } },
+    ['Gamimi']                           = { type = "Gold World Pass Dealer", icon = "WorldPassDealer.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Notes:\n* Sells Gold World Passes and distributes recruitment-program rewards." },
 
 -- Heavens Tower, Cutscene only
 
 
-    ['Star Sibyl']                       = { type = "Star Sibyl", icon = "Dialogue.png", zones = { "Heavens Tower, Cutscene only", "Windurst" }, note = "Involved in Missions:\n* Windurst Mission 3-3: A New Journey\n* San d'Oria Mission 4-1: Magicite\n* Bastok Mission 4-1: Magicite\n* Windurst Mission 4-1: Magicite\n* Windurst Mission 5-1: The Final Seal\n* Windurst Mission 5-2: The Shadow Awaits\n* Windurst Mission 6-2: Saintly Invitation\n* Windurst Mission 7-1: The Sixth Ministry\n* Windurst Mission 9-1: Doll of the Dead\n* Windurst Mission 9-2: Moon Reading\n* A Crystalline Prophecy (Mission)\n" },
+    ['Star Sibyl']                       = { type = "Federation Leader", icon = "MissionNPC.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Missions:\n* A New Journey\n* Magicite\n* The Final Seal\n* The Shadow Awaits\n* Saintly Invitation\n* The Sixth Ministry\n* Doll of the Dead\n* Moon Reading" },
     ['Star Sibyl (S)']                   = { type = "Star Sibyl", icon = "Dialogue.png", zones = { "Heavens Tower, Cutscene only", "Windurst (S)" }, note = "Involved in Quests:\n* The Tigress Strikes\n* The Forbidden Path\n* Howl from the Heavens\n* At Journey's End\n" },
 
 -- Heavens Tower, Second Floor
 
 
-    ['Zubaba']                           = { type = "Lady-in-Waiting", icon = "Dialogue.png", zones = { "Heavens Tower, Second Floor", "Windurst" }, note = "Involved in Missions:\n* Windurst Mission 3-2: Written in the Stars\n" },
+    ['Zubaba']                           = { type = "Head Lady-in-Waiting", icon = "MissionNPC.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Missions:\n* Written in the Stars" },
 
 -- Heavens Tower, Top Floor
 
 
-    ['Rhy Epocan']                       = { type = "Mission Associate", zones = { "Heavens Tower, Top Floor", "Windurst" }, note = "Involved in Missions:\n* Windurst Mission 3-1: To Each His Own Right\n* Windurst Mission 3-2: Written in the Stars" },
+    ['Rhy Epocan']                       = { type = "Mission Associate", icon = "MissionNPC.png", zones = { "Heavens Tower" }, zoneIds = { 242 }, note = "Involved in Missions:\n* To Each His Own Right\n* Written in the Stars" },
 
 -- House of the Hero
 
@@ -4560,7 +4563,7 @@ local npcIcons = T{
     ['Alista']                           = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "None" }, note = "Involved in Quests:\n* Save My Sister\n" },
     ['Antonia']                          = { type = "Standard Merchant", icon = "Merchant.png", zones = { "Viette's Finest Weapons in Upper Jeuno at" }, note = "Notes:\nTo equip 100 job points are needed." },
     ['Areebah']                          = { type = "Standard Merchant", icon = "Merchant.png", zones = { "M & P's Market in Upper Jeuno" }, zoneIds = { 244 } },
-    ['Atmacite Refiner']                 = { type = "Atmacite Refiner", icon = "Dialogue.png", zones = { "Present: *Bastok Markets" }, zoneIds = { 235 }, note = "Notes:\nA category of NPCs whose purpose is to enrich Atmacite, upgrade stratum abyssite, and teleport players to Voidwatch Ops staging locations in exchange for Cruor." },
+    ['Atmacite Refiner']                 = { type = "Voidwatch Service", icon = "VoidwatchRift.png", zones = { "Bastok Markets", "Windurst Waters" }, zoneIds = { 235, 238 }, note = "Notes:\n* Enhances atmacite and stratum abyssites.\n* Provides Voidwatch staging-area teleports." },
     ['Audia']                            = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "None" }, note = "Involved in Quests:\n* Save My Sister" },
     ['Borghertz']                        = { type = "Artifact Quest", icon = "afstorage.png", zones = { "Jeuno" }, note = "Involved in Quests:\n* Borghertz's Calling Hands (Summoner)\n* Borghertz's Chasing Hands (Ranger)\n* Borghertz's Dragon Hands (Dragoon)\n* Borghertz's Harmonious Hands (Bard)\n* Borghertz's Healing Hands (White Mage)\n* Borghertz's Loyal Hands (Samurai)\n* Borghertz's Lurking Hands (Ninja)\n* Borghertz's Shadowy Hands (Dark Knight)\n* Borghertz's Sneaky Hands (Thief)\n* Borghertz's Sorcerous Hands (Black Mage)\n* Borghertz's Stalwart Hands (Paladin)\n* Borghertz's Striking Hands (Monk)\n* Borghertz's Vermillion Hands (Red Mage)\n* Borghertz's Warring Hands (Warrior)\n* Borghertz's Wild Hands (Beastmaster)" },
     ['Brutus']                           = { type = "Beastmaster Unlock", icon = "JobUnlock.png", zones = { "Upper Jeuno Chocobo Stables" }, zoneIds = { 244 }, note = "Starts Quests:\n* Chocobo on the Loose!\n* Chocobo's Wounds\n* Save My Son\n* Wings of Gold\n* Scattered into Shadow\n* Axe the Competition\n\nInvolved in Quests:\n* A Chocobo's Tale\n* The Flying Machine of Eld" },
@@ -4965,12 +4968,12 @@ local npcIcons = T{
 -- Northern San d'Oria Bastok Markets Windurst Waters
 
 
-    ['Goblin Merrymaker']                = { type = "Starlight Event", icon = "Event.png", zones = { "Northern San d'Oria Bastok Markets Windurst Waters" }, zoneIds = { 231 }, note = "Notes:\nSee also:Starlight Celebration 2011/Guide" },
+    ['Goblin Merrymaker']                = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Northern San d'Oria", "Bastok Markets", "Windurst Waters" }, zoneIds = { 231, 235, 238 } },
 
 -- Northern Windurst Waters
 
 
-    ['Chomo Jinjahl']                    = { type = "Cooking Merchant", icon = "GuildMerchant.png", zones = { "Northern Windurst Waters", "Windurst" }, note = "Notes:\nAlways open.No longer closed Darksday." },
+    ['Chomo Jinjahl']                    = { type = "Cooking Guild Merchant", icon = "GuildMerchant.png", zones = { "Windurst Waters" }, zoneIds = { 238 } },
 
 -- Nyzul Isle
 
@@ -5305,7 +5308,7 @@ local npcIcons = T{
     ['Bostillette']                      = { type = "Quest Giver", zones = { "San d'Oria" }, zoneIds = { 136 }, note = "Starts Quests:\n* Face of the Future" },
     ['Cerite']                           = { type = "Defender", icon = "Defender.png", zones = { "West Ronfaure" }, zoneIds = { 100 } },
     ['Chatarre']                         = { type = "Defender", icon = "Defender.png", zones = { "West Ronfaure" }, zoneIds = { 100 } },
-    ['Clais']                            = { type = "Quest Associate", zones = { "Windurst Waters map = North|G-10" }, zoneIds = { 136 }, note = "Involved in Quests:\n* Hat in Hand" },
+    ['Clais']                            = { type = "Quest Associate", icon = "QuestAssociate.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Hat in Hand" },
     ['Colmaie']                          = { type = "Defender", icon = "Defender.png", zones = { "West Ronfaure" }, zoneIds = { 100 } },
     ['Credaurion, R.K.']                 = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "The Sanctuary of Zi'Tah" }, zoneIds = { 136 }, note = "Notes:\nAppears, when Li'Telor is under weekly conquest-control by San d'Oria. ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Li'Telor Supplies for finishing Supply Quest :*Accepts Garrison starting item Hound Fang Sack ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer." },
     ['Diadonour']                        = { type = "Defender", icon = "Defender.png", zones = { "West Ronfaure" }, zoneIds = { 100 } },
@@ -5494,7 +5497,7 @@ local npcIcons = T{
 -- Under the bridge in Windurst Walls at
 
 
-    ['Scavnix']                          = { type = "Standard Merchant", icon = "Merchant.png", zones = { "Under the bridge in Windurst Walls at" }, zoneIds = { 239 }, note = "Notes:\nNeed to go down a ramp at H-4 in order to find him under the bridge" },
+    ['Scavnix']                          = { type = "Standard Merchant", icon = "Merchant.png", zones = { "Windurst Walls" }, zoneIds = { 239 }, note = "Notes:\n* Located under the bridge, down the ramp at H-4." },
 
 -- Valley of Sorrows cutscene
 
@@ -5607,14 +5610,14 @@ local npcIcons = T{
     ['Aora-Uora']                        = { zones = { "Windurst Waters map = North|G-7" }, zoneIds = { 238 } },
     ['Aramu-Paramu']                     = { zones = { "Windurst Waters map = North|F-10" }, zoneIds = { 238 } },
     ['Arukoko']                          = { zones = { "Windurst Waters map = South|D-6" }, zoneIds = { 238 } },
-    ['Baehu-Faehu']                      = { type = "Regional Merchant", icon = "RegionalVendor.png", zones = { "Windurst Waters map = North|G-5" }, zoneIds = { 238 }, note = "Notes:\n*  When Windurst does not have control of Sarutabaruta, says: Sorry-dorry, but I'm taking a breaky-wakey! (Or, as you'll be knowing, since control of Sarutabaruta was lost, I'm out of stock, so go on, get going!)?" },
-    ['Bikho Ronpotteh']                  = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Windurst Waters (North)" }, zoneIds = { 238 }, note = "Notes:\nOne of The Dark Lilies of the Harvest Festival event held each October since 2004. Bikho's Story: This...was a secret place... A place...that nobody knew... The purrrfect spot... An enchanted spot... So many fish... They would just jump.... onto the hook... To fill...my empty belly... To help..my strrruggling mother... I would fish...and fish...and fish... We were poor...I had no other choice... Even so...those days were fun... But I hated being poor... I delved...into forbidden magic... I'm sorry...Mother... The day...I left home... I wanted...wanted to tell you..." },
+    ['Baehu-Faehu']                      = { type = "Regional Merchant", icon = "RegionalVendor.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Sells Sarutabaruta regional goods while Windurst controls the region." },
+    ['Bikho Ronpotteh']                  = { type = "Special Event", icon = "SpecialEventCoordinator.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Appears for the Dark Lilies Harvest Festival event." },
     ['Bondada']                          = { type = "Quest Associate", zones = { "Windurst Waters map = South|H-7" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Hat in Hand" },
     ['Buchi Kohmrijah']                  = { zones = { "Windurst Waters map = North|F-10" }, zoneIds = { 238 } },
     ['Bulolo']                           = { zones = { "Windurst Waters map = North|E-8" }, zoneIds = { 238 } },
     ['Caliburn (NPC)']                   = { zones = { "Windurst Waters map = North|F-7" }, zoneIds = { 238 } },
     ['Cattah Pamjah']                    = { type = "Traveling Bard", icon = "PastEventWatcher.png", zones = { "Windurst Waters (S) map = North|G-10" }, zoneIds = { 94 }, note = "Notes:\nWill change your Title for a fee or can give you a random title for free. For a full list of titles which you can get with this NPC, see Titles." },
-    ['Chamama']                          = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = North|F-10" }, zoneIds = { 238 }, note = "Starts Quests:\n* In a Pickle\n\nInvolved in Quests:\n* Inspector's Gadget!\n* Chameleon Capers (FQ 4)\n* Dormant Powers Dislodged\n" },
+    ['Chamama']                          = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* In a Pickle\n\nInvolved in Quests:\n* Inspector's Gadget!\n* Chameleon Capers\n* Dormant Powers Dislodged" },
     ['Chioh Remhrll']                    = { type = "Quest Associate", zones = { "Windurst Waters (S) map = North|F-9" }, zoneIds = { 94 }, note = "Involved in Quests:\n* When One Man Is Not Enough" },
     ['Chomoro-Kyotoro']                  = { type = "Quest Associate", zones = { "Windurst Waters map = North|K-6" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Making the Grade" },
     ['Churano-Shurano']                  = { type = "Astrolabe Vendor", icon = "Merchant.png", zones = { "Windurst Waters map = North|F-8" }, zoneIds = { 238 }, note = "Notes:\n* Sells a {{KeyItem" },
@@ -5622,11 +5625,11 @@ local npcIcons = T{
     ['Cochal-Monchal']                   = { type = "Quest Associate", zones = { "Windurst Waters map = North|F-8" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Dark Legacy" },
     ['D. Shantotto']                     = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst" }, note = "Involved in Missions:\n* A Shantotto Ascension\n* Burgeoning Dread\n* That Which Curdles Blood\n* Sugar-coated Directive\n* Project: Shantottofication" },
     ['Dabido-Sorobido']                  = { zones = { "Windurst Waters map = North|E-10" }, zoneIds = { 238 } },
-    ['Dagoza-Beruza']                    = { zones = { "Windurst Waters map = North|F-5" }, zoneIds = { 238 } },
+    ['Dagoza-Beruza']                    = { type = "Mission NPC", icon = "MissionNPC.png", zones = { "Windurst Waters" }, zoneIds = { 238 } },
     ['Damami-Karumi']                    = { zones = { "Windurst Waters map = North|G-10" }, zoneIds = { 238 } },
     ['Dantie-Corantie']                  = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "Windurst Waters South at the Rhinostery" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Healing Herbs" },
     ['Dienger']                          = { type = "Past Event Watcher", icon = "PastEventWatcher.png", zones = { "Windurst Waters map = North|F-5" }, zoneIds = { 238 }, note = "Notes:\nThis NPC will let you watch cut-scenes that you have seen in Windurst Waters in the past, for a small fee." },
-    ['Diroku-Oroku']                     = { type = "Magic Instructor", icon = "Dialogue.png", zones = { "Windurst Waters map = North|K-6" }, zoneIds = { 238 }, note = "Notes:\nStarts a basic explanation of magic from a WHM perspective, with his fellow students Pakesse-Myukesse & Majiji explaining from a BLM & RDM perspective, respectively." },
+    ['Diroku-Oroku']                     = { type = "Magic Instructor", icon = "Dialogue.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Explains the basics of white magic." },
     ['Eight of Hearts']                  = { zones = { "Windurst Waters map = South|H-8" }, zoneIds = { 238 } },
     ['Enrefort']                         = { zones = { "Windurst Waters map = North|G-10" }, zoneIds = { 238 } },
     ['Etaj-Pohtaj, W.W.']                = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Yhoator Jungle" }, zoneIds = { 124 }, note = "Notes:\nAppears, when Elshimo Uplands is under weekly conquest-control by Windurst. ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Elshimo Uplands Supplies for finishing Supply Quest :*Accepts Garrison starting item Coeurl Leather Missive ;Notes for characters only without Windurst as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer." },
@@ -5634,23 +5637,24 @@ local npcIcons = T{
     ['Foi-Mui']                          = { zones = { "Windurst Waters map = North|K-6" }, zoneIds = { 238 } },
     ['Fomina']                           = { type = "Regional Merchant", icon = "RegionalVendor.png", zones = { "Windurst Waters map = South|D-8" }, zoneIds = { 238 } },
     ['Four of Hearts']                   = { zones = { "Windurst Waters map = North|F-7" }, zoneIds = { 238 } },
-    ['Fuepepe']                          = { type = "Quest Giver", zones = { "Windurst Waters map = North|L-6" }, zoneIds = { 238 }, note = "Starts Quests:\n* Making the Grade\n\nInvolved in Quests:\n* SMN AF2: Class Reunion\n* Nothing Matters" },
+    ['Fuepepe']                          = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* Making the Grade\n\nInvolved in Quests:\n* Class Reunion\n* Nothing Matters" },
     ['Funpo-Shipo']                      = { type = "Quest Associate", zones = { "Windurst Waters map = North|G-9" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)" },
-    ['Furakku-Norakku']                  = { type = "Quest Associate", zones = { "Windurst Waters map = North|G-8, Optistery" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Chasing Tales\n* Early Bird Catches the Bookworm\n* SMN AF2: Class Reunion" },
-    ['Furan-Furin']                      = { type = "Weather Reporter", icon = "WeatherChecker.png", zones = { "Windurst Waters map = North|F-8" }, zoneIds = { 238 }, note = "Notes:\nChecks weather for the following locations: :* East Sarutabaruta :* West Sarutabaruta :* Tahrongi Canyon :* Buburimu Peninsula :* Meriphataud Mountains" },
-    ['Gantineux']                        = { type = "Quest NPC", icon = "QuestNPC.png", zones = { "Windurst Waters map = North|E-10; Hostel above Rarab Tail Hostelry" }, zoneIds = { 238 }, note = "Starts Quests:\n* Acting in Good Faith\n" },
+    ['Furakku-Norakku']                  = { type = "Quest Associate", icon = "QuestAssociate.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Chasing Tales\n* Early Bird Catches the Bookworm\n* Class Reunion" },
+    ['Furan-Furin']                      = { type = "Weather Reporter", icon = "WeatherChecker.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\nChecks weather for:\n* East Sarutabaruta\n* West Sarutabaruta\n* Tahrongi Canyon\n* Buburimu Peninsula\n* Meriphataud Mountains" },
+    ['Gantineux']                        = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* Acting in Good Faith" },
     ['Gevirun-Gabirun']                  = { zones = { "Windurst Waters map = South|E-5" }, zoneIds = { 238 } },
     ['Ghantata, W.W.']                   = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Yhoator Jungle" }, zoneIds = { 124 }, note = "Notes:\nAppears, when Elshimo Uplands is under weekly conquest-control by Windurst. ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Elshimo Uplands Supplies for finishing Supply Quest ;Notes for characters only without Windurst as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer." },
-    ['Gordias']                          = { type = "Flavor NPC", icon = "Dialogue.png", zones = { "Windurst Waters map = North|F-9" }, zoneIds = { 238 }, note = "Notes:\nDialog: \"Ahhh, I'm sooo full! I just ate ten servings! Hahaha... Are you impressed? Well, that there resturant sells only Tarutaru-sized servings. Ten servings is quite an easy amount to stomach.\"" },
-    ['Guwanana']                         = { type = "Harvest Festival", icon = "Event.png", zones = { "Windurst Waters (South)" }, zoneIds = { 238 }, note = "Notes:\nOne of The Dark Lilies of the Harvest Festival event, held each October since 2004. Guwanana's Story: Glimmer...shimmer... Shimmer...glimmer... Little fishies... Shimmering fishy-wishes... Where have you all gone...? Little fishies... Glimmering fishy-wishies... Are you here...? You mustaru be hiding... Here and there... The fishy-wishies I let free... Shimmering... glimmering...fish... But...I don'taru see you...? Where have you gone...? The same as before... Nowhere to be found... But wait... That shimmer-glimmering... The Flash spell fused into your scaly-wales... Glimmer...shimmer... So many little fishy-wishies... You survived..." },
+    ['Gordias']                          = { type = "Flavor NPC", icon = "Dialogue.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Patron of the Rarab Tail Hostelry restaurant." },
+    ['Guwanana']                         = { type = "Harvest Festival", icon = "Event.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Appears for the Dark Lilies Harvest Festival event." },
     ['Hakeem']                           = { type = "Advanced Synthesis Support", icon = "GuildMaster.png", zones = { "Windurst Waters map = North|D-9" }, zoneIds = { 238 } },
     ['Hariga-Origa']                     = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = North|F-8, Optistery" }, zoneIds = { 238 }, note = "Starts Quests:\n* Glyph Hanger\n* A Smudge on One's Record" },
+    ['Hermin-Harmon']                    = { type = "CW Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, link = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Down_to_Earth", note = "Crystal Warrior:\n* Starts quest: Down to Earth.\n* Level 1 Windurst starting quest." },
     ['Hilkomu-Makimu']                   = { type = "Standard Merchant", icon = "Merchant.png", zones = { "Windurst Waters map = South|G-7" }, zoneIds = { 238 } },
     ['Hobibi']                           = { zones = { "Windurst Waters map = North|H-8" }, zoneIds = { 238 } },
-    ['Honoi-Gomoi']                      = { type = "Quest Giver", zones = { "Windurst Waters, South" }, zoneIds = { 238 }, note = "Starts Quests:\n* Wild Card\n\nInvolved in Quests:\n* Crying Over Onions\n* Hat in Hand\n* Starlight Celebration 2008\n* Starlight Celebration 2010\n\nInvolved in Missions:\n* The Road Forks: The Road Forks\n* Promathia Mission 5-3: Three Paths\n* Past Sins (Louverance Path)" },
+    ['Honoi-Gomoi']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* Wild Card\n\nInvolved in Quests:\n* Crying Over Onions\n* Hat in Hand\n* Starlight Celebration 2008\n* Starlight Celebration 2010\n\nInvolved in Missions:\n* The Road Forks\n* Three Paths\n* Past Sins (Louverance Path)" },
     ['Hororo']                           = { zones = { "Windurst Waters map = North|H-8" }, zoneIds = { 238 } },
     ['Ildy-Goldy']                       = { type = "Quest Associate", zones = { "Windurst" }, note = "Involved in Quests:\n* Tuning Out\n* SMN AF1: The Puppet Master\n* SMN AF2: Class Reunion\n* SMN AF3: Carbuncle Debacle" },
-    ['Jack of Hearts']                   = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Waters map = North|G-9" }, zoneIds = { 238 }, note = "Notes:\nOffers General Information and a Map of Windurst: :Allow me to assist you if you are lost. What can Jack do for you? :*\"To show you a map of Windurst.\": [Displays an overview map of Windurst] :*\"How to give items to townsfolk.\": Interchange of items and money between people and things is called \"Trading.\" First target entity to interact with. Nothing happens unless reciever is properly targeted. Open main menu. Press \"Trade\" button. Next choose items to hand over! Press \"Confirm\" button! Targeted entity should receive items. :*\"How to go outside and battle.\": Before setting out to battle: Confirm equipment is properly equipped! Magic-users \"Use\" spell scrolls on themselves to learn magic! Before commencing battle wiht monster: \"Check\" monster to confirm its strength! After battle is won: Look for \"Spoils\" dropped by monsters. If in party, \"Cast Lots\" for spoils! :*\"About quests and missions.\": Quests are requests for help from ordinary townsfolk. It pays to help people in need. Missions are official requests for assistance made by the Windurst authorities. You can receive missions from the guards at the town's gatehouse. :*\"Nothing in particular.\": Feel free to ask next time you need Jack's help. Over and out!" },
+    ['Jack of Hearts']                   = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Shows important NPCs and available quests on the town map.\n* Explains trading, combat, quests, and missions." },
     ['Jacodaut']                         = { type = "Advanced Synthesis Support", icon = "GuildMaster.png", zones = { "Windurst Waters map = North|D-9" }, zoneIds = { 238 } },
     ['Janta-Jonta']                      = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Waters map = North|E-9" }, zoneIds = { 238 }, note = "Notes:\nOccasionally drops below the decking and walks in the water." },
     ['Jatan-Paratan']                    = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = North|F-10" }, zoneIds = { 238 }, note = "Starts Quests:\n* Wondering Minstrel" },
@@ -5659,8 +5663,8 @@ local npcIcons = T{
     ['Karuru']                           = { zones = { "Windurst Waters map = North|F-8" }, zoneIds = { 238 } },
     ['Kayeel-Payeel']                    = { type = "Trust Coordinator", icon = "Trust.png", zones = { "Windurst Waters map = North|G-7" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Starlight Celebration\n" },
     ['Kenapa-Keppa']                     = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = South|J-9" }, zoneIds = { 238 }, note = "Starts Quests:\n* Overnight Delivery\n\nInvolved in Quests:\n* Food for Thought\n* Hat in Hand\n* Starlight Celebration 2008\n* Starlight Celebration 2010" },
-    ['Kerutoto']                         = { type = "Riding the Clouds", icon = "QuestNPC.png", zones = { "Windurst Waters map = South|J-8" }, zoneIds = { 238 }, note = "Starts Quests:\n* Food for Thought\n* Blue Ribbon Blues\n* Waking Dreams\n\nInvolved in Quests:\n* Riding on the Clouds\n\nInvolved in Missions:\n* Windurst Mission 7-2: Awakening of the Gods\n* Promathia Mission 5-3: Three Paths\n* Where Messengers Gather (Ulmia's Path)\n" },
-    ['Khuta Colaara']                    = { type = "Map Vendor", icon = "MapDealer.png", zones = { "Windurst" } },
+    ['Kerutoto']                         = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* Food for Thought\n* Blue Ribbon Blues\n* Waking Dreams\n\nInvolved in Quests:\n* Riding on the Clouds\n\nInvolved in Missions:\n* Awakening of the Gods\n* Three Paths\n* Where Messengers Gather (Ulmia's Path)" },
+    ['Khuta Colaara']                    = { type = "Map Vendor", icon = "MapDealer.png", zones = { "Windurst Waters" }, zoneIds = { 238 } },
     ['King of Hearts']                   = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "Windurst" }, note = "Involved in Missions:\n* Aht Urhgan Mission 19: Sweets for the Soul\n* Aht Urhgan Mission 20: Teahouse Tumult\n* Aht Urhgan Mission 21: Finders Keepers\n* Aht Urhgan Mission 22: Shield of Diplomacy\n* Aht Urhgan Mission 23: Social Graces\n* Aht Urhgan Mission 24: Foiled Ambition\n* Aht Urhgan Mission 39: Allied Rumblings\n* Aht Urhgan Mission 40: Unraveling Reason\n* Aht Urhgan Mission 41: Light of Judgment\n" },
     ['Kipo-Opo']                         = { type = "Advanced Synthesis Support", icon = "GuildMaster.png", zones = { "Windurst Waters map = North|D-9" }, zoneIds = { 238 } },
     ['Kirarara']                         = { zones = { "Windurst Waters map = North|K-6" }, zoneIds = { 238 } },
@@ -5669,15 +5673,15 @@ local npcIcons = T{
     ['Koko Lihzeh']                      = { type = "Riding the Clouds", icon = "QuestNPC.png", zones = { "Windurst Waters map = North|K-6" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Riding on the Clouds\n" },
     ['Koowawa']                          = { zones = { "Windurst Waters map = North|E-9" }, zoneIds = { 238 } },
     ['Kopopo']                           = { type = "Cooking Merchant", icon = "GuildMerchant.png", zones = { "Windurst Waters map = North|E-8" }, zoneIds = { 238 }, note = "Notes:\nOpen: 5:00 - 20:00.No longer closed Darksday." },
-    ['Kororo']                           = { type = "Quest Giver", zones = { "Windurst Woods Manustery" }, zoneIds = { 241 }, note = "Starts Quests:\n* A Greeting Cardian\n\nInvolved in Quests:\n* Lost Chick" },
+    ['Kororo']                           = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Woods Manustery" }, zoneIds = { 241 }, note = "Starts Quests:\n* A Greeting Cardian\n\nInvolved in Quests:\n* Lost Chick" },
     ['Koru-Moru (S)']                    = { type = "Aurastery Minister", icon = "Dialogue.png", zones = { "Windurst Waters (S), cutscene only" }, zoneIds = { 94 }, note = "Involved in Quests:\n* The Tigress Stirs\n* The Tigress Strikes\n* Knot Quite There\n" },
     ['Kotan-Moritan']                    = { zones = { "Windurst Waters map = North|G-7" }, zoneIds = { 238 } },
     ['Kuesoso']                          = { zones = { "Windurst Waters map = North|K-7" }, zoneIds = { 238 } },
     ['Kupulele']                         = { type = "Lore NPC", icon = "Dialogue.png", zones = { "Windurst" }, note = "Notes:\n* Discusses various events in Vana'diel with Kupold and Kupeliont." },
     ['Kuron-Makaron']                    = { type = "Survey", icon = "Dialogue.png", zones = { "Windurst Waters (S) map = North|H-10" }, zoneIds = { 94 }, note = "Notes:\nKuron-Makaron is the Mithra Mercenaries' Morale Manager. His mission also comprises of monitoring Miss Mihgo's minions, and communicating all he accumulates to her majesty. ---- When talking to Kuron-Makaron, you are able to comment on the following: privacy issues, leaders, battle strategies, and internal policies. ;Privacy Issues. \"Worried about the wrath of our wily warlords? Well, you can wash those worries away. I only offer our officers one's opinions, not the omens behind them. Whether the Warlord warrants the execution of any one suggestion, now, that is the question--the answer to that question being yes and no. The moods of our mighty commanders metamorphose with waxing and waning of the moons. However, I pledge on my honor that I shall make your recommendations known.\" ;Our Leaders. \"Oh-ho, so you seek to speak on our superiors' specific behaviors. Or perhaps you plan to proffer Kuron-Makaron a present of plump pamamas to procure a promotion? Ha-la-li-la-la! A joke, a jest. Please, just a moment while I adjust my vest. Now tell me...\" :*Ariesan Master Caster Lutete. :\"Oh, Master Caster Lutete of the Ariesan War Warlocks, descendant of Medada, the first ever Manustery Minister. Yes, her eminence exceeds at administering investigations and inquiries to gather intelligence on our infamous enemy's malicious machinations.\" :(Suggests a focus of: Reconnaissance.) :*Capricornian Master Caster Zonpa-Zippa. :\"Oooh, Master Caster Zonpa-Zippa of the Capricornian War Warlocks... Did you know he also moonlights as Manustery Minister? Amazing are his modern methods of military machina manufacturing. Increased Cardian construction is what he cries at the conferences of our commanders.\" :(Suggests a focus of: Troop conditioning & Weapons development.) :*Aquarian Master Caster Kayeel-Payeel. :\"Ah, Master Caster Kayeel-Payeel of the Aquarian War Warlocks is known for his subtle strategies that earn his erudites victory after victory on the violent fields of battle.\" :(Suggests a focus of: Diversionary tactics.) :*Patriarch Protector Principal Nyumomo. :\"Presented with the predicament of protecting those people with prestigious positions within the Parliament of Patriarchs, the principal's principal problems involve improving the federation's fundamental fortifications of its filigrees and foundations.\" :(Suggests a focus of: Stronghold defense & Stronghold outfitting.) :*Anaconda Mercenary Major Vashai. :\"Perih Vashai, major of our mightiest Mithra Mercenary menagerie. Yes, she secures steadfast support from her soldiers by ensuring that the steady stream of supplies seldom strays from suitable levels.\" :(Suggests a focus of: Battleline preservation.) :*Wildcat General Zhwan. :\"Haja Zhwan, you say? The savage superintendent of our saviours from the south is said to savor the screams of the enemy soldiers as she slices through their ranks. She's been granted a voice within parliment, but her opinings oft fall on deaf organs of aural origin.\" :(Suggests a focus of: Preemptive strike & Resource procurement.) ;Our Battle Strategies. \"Strategies of battle, you say? Why, sure! I'm certain our superiors are on the edges of their seats, straining to discern what suggestions you strain to suggest.\" :*A preemptive strike. :\"Quite a dynamic decision... Expanding territory through the execution of an expansive assault. Ex-Warlock Warlord Lungo-Nango would be ecstatic!\" :(Total offensive strategy, little defense; typically sends several armies at a time to attack a beastmen held territory.) :*Diversionary tactics. :\"Sending forth a small squad of elite agents to sever supply lines... Superb!\" :(Offensive strategy; sends one or two armies at a time break supply lines.) :*Battleline preservation. :\"Doubling defenses to maintain battlelines... A solid decision...though not that daring. :(Defensive strategy; keeps typically two armies at fortifications.) :*Stronghold defense. :\"Supplement stronghold soldiers and sentries to strengthen and stabilize supply routes. Sound thinking!\" :(Total defensive strategy, little offense; majority of armies defend fortifications.) :*Troop conditioning. :\"Whip the whippersnappers into tip-top ship-shape? A simple, yet superb strategy. Stupendous!\" :(neutral strategy; armies will take more time out between battles, but are stronger.) :*Reconnaissance. :\"Intriguing... It is a fact that intel is integral to the integration of internally formulated battle formulas onto the battlefield.\" :(neutral strategy.) :*Sabotage. :\"Ah, dangerous and daring! Special units sneaking into enemy strongholds to cause chaos and provoke pandemonium!\" :(neutral strategy.) ;Our Internal Policies. \"Management of internal idiosyncrasies! Yes, improvements are imperative!\" :*Resource procurement. :\"Rounding up resources to ready ourselves for an extended engagement with the ever-advancing enemy... Excellent!\" :*Military supply procurement. :\"Super! It is no surprise that you've selected supplies as the single most significant steps to success.\" :*Logistics. :\"Savvy! Supply route fortification ensures improved defense for our strongholds.\" :*Stronghold outfitting. :\"Stabilization of supply flows to our strongholds will help enhance our basic defenses.\" :*Weapons production. :\"Marvelous! Ameliorated management methods of the federation's guilds will make sure our boys are outfitted with ample equipment.\" :*Weapons development. :\"Brilliant! The best brains in the bludgeoning business brought together to build even better bludgeons for our boys in blue...er, green!\" :*Public security. :\"Sound advice! A nation would always strive to secure the safety of the citizens before seeking anything else!\" :*Stronghold fortifications. :\"It's so simple--strong walls to stop sieges. A sound suggestion, soldier.\" ---- A player may pick each choice weekly before next Campaign Tally. Depending on the choices made, they will help sway the Federation's choices for the next Campaign Tally. Talking to Dallus-Mallus will give you the information of the current nation's strategy. The more players give comments to Kuron-Makaron, the more likely a certain leader, strategy, and internal policy will be picked. It is also believed that the higher the rank, the stronger the player's comments are heard over others. Decide comments wisely, the choices may affect how campaign battles are organized and what campaign operations are available. Also, once you have made your decision, you cannot change it till after the next Campaign Tally." },
-    ['Kyume-Romeh']                      = { type = "Quest Associate", zones = { "Windurst Waters map = North|F-10, In Timbre Timbers Tavern" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)\n* Making Headlines\n* Hat in Hand\n\nInvolved in Missions:\n* The Road Forks: The Road Forks" },
+    ['Kyume-Romeh']                      = { type = "Quest Associate", icon = "QuestAssociate.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)\n* Making Headlines\n* Hat in Hand\n\nInvolved in Missions:\n* The Road Forks" },
     ['Lago-Charago']                     = { type = "Adventurer's Assistant", icon = "AdventurersAssistant.png", zones = { "Windurst Waters map = North|F-8" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)\n" },
-    ['Leepe-Hoppe']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = South|J-9, on top of the Rhinostery" }, zoneIds = { 238 }, note = "Starts Quests:\n* The Moonlit Path\n* Tuning In\n* Tuning Out\n\nInvolved in Missions:\n* Windurst Mission 1-3: The Price of Peace\n* Windurst Mission 7-2: Awakening of the Gods" },
+    ['Leepe-Hoppe']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* The Moonlit Path\n* Tuning In\n* Tuning Out\n\nInvolved in Missions:\n* The Price of Peace\n* Awakening of the Gods" },
     ['Lumomo']                           = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = North|F-10" }, zoneIds = { 238 }, note = "Starts Quests:\n* Eco-Warrior (Windurst)" },
     ['Machitata']                        = { type = "Residence Renter", icon = "RoomRenters.png", zones = { "Windurst Waters map = North|L-11" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Hat in Hand" },
     ['Majiji']                           = { zones = { "Windurst Waters map = North|K-6" }, zoneIds = { 238 } },
@@ -5685,42 +5689,44 @@ local npcIcons = T{
     ['Maqu Molpih']                      = { type = "Regional Merchant", icon = "RegionalVendor.png", zones = { "Windurst Waters map = South|H-8" }, zoneIds = { 238 } },
     ['Mashishi']                         = { zones = { "Windurst Waters map = South|D-10" }, zoneIds = { 238 } },
     ['Mashuu-Ajuu']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = North|K-6" }, zoneIds = { 238 }, note = "Starts Quests:\n* Let Sleeping Dogs Lie\n* Reap What You Sow" },
-    ['Maysoon']                          = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Waters map = North|E-9" }, zoneIds = { 238 }, note = "Starts Quests:\n* Hoist the Jelly, Roger\n\nInvolved in Quests:\n* Cook's Pride\n" },
+    ['Master Lao']                       = { type = "Geomancer Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = South|K-8" }, zoneIds = { 238 }, link = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#The_Unamed_Way", note = "Starts Quests:\n* The Unamed Way\n* The Earth Holds Its Breath\n\nNotes:\n* Unlocks Geomancer and handles its\nlevel 40 artifact quest." },
+    ['Maysoon']                          = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* Hoist the Jelly, Roger\n\nInvolved in Quests:\n* Cook's Pride" },
     ['Mejina-Monjina']                   = { zones = { "Windurst Waters map = North|F-8" }, zoneIds = { 238 } },
     ['Mimomo']                           = { zones = { "Windurst Waters map = North|L-6" }, zoneIds = { 238 } },
     ['Miriri']                           = { zones = { "Windurst Waters map = North|H-10" }, zoneIds = { 238 } },
     ['Moari-Kaaori']                     = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = South|C-9" }, zoneIds = { 238 }, note = "Starts Quests:\n* Say It with Flowers" },
     ['Moitoto']                          = { zones = { "Windurst Waters map = North|G-8" }, zoneIds = { 238 } },
-    ['Mokyokyo']                         = { type = "Gate Guard", icon = "Guard.png", zones = { "Windurst Waters map = North|F-5" }, zoneIds = { 238 }, note = "Starts Missions:\n* Windurst Missions\n" },
-    ['Moreno-Toeno']                     = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = North|L-6, in the Aurastery" }, zoneIds = { 238 }, note = "Starts Quests:\n* Teacher's Pet\n\nInvolved in Missions:\n* Windurst Mission 2-2: A Testing Time\n* Windurst Mission 8-1: Vain\n" },
+    ['Mokyokyo']                         = { type = "Mission Giver", icon = "MissionGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Missions:\n* Windurst Missions" },
+    ['Moreno-Toeno']                     = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* Teacher's Pet\n\nInvolved in Missions:\n* A Testing Time\n* Vain" },
     ['Myumimi']                          = { zones = { "Windurst Waters map = South|H-8" }, zoneIds = { 238 } },
-    ['Naiko-Paneiko']                    = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters South" }, zoneIds = { 238 }, note = "Starts Quests:\n* Making Headlines\n* Scooped!\n* The Weekly Adventurer &mdash; see Naiko-Paneiko (S)\n\nInvolved in Quests:\n* Riding on the Clouds\n" },
+    ['Naiko-Paneiko']                    = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* Making Headlines\n* Scooped!\n\nInvolved in Quests:\n* Riding on the Clouds" },
     ['Nasoh Joli']                       = { zones = { "Windurst Waters map = South|H-8" }, zoneIds = { 238 } },
     ['Nine of Hearts']                   = { zones = { "Windurst Waters map = North|K-11" }, zoneIds = { 238 } },
     ['Npopo']                            = { type = "Quest Associate", zones = { "Windurst Waters map = North|G-4" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Lure of the Wildcat (Windurst)" },
-    ['Ohbiru-Dohbiru']                   = { type = "Fast Travel Quest", icon = "QuestNPC.png", zones = { "Windurst Waters map = South|J-9, in the Rhinostery" }, zoneIds = { 238 }, note = "Starts Quests:\n* Water Way to Go\n* Toraimarai Turmoil\n\nInvolved in Quests:\n* Food for Thought\n* Say It with Flowers\n\nInvolved in Missions:\n* The Road Forks: The Road Forks" },
+    ['Ohbiru-Dohbiru']                   = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* Water Way to Go!\n* Toraimarai Turmoil\n\nInvolved in Quests:\n* Food for Thought\n* Say It with Flowers\n\nInvolved in Missions:\n* The Road Forks" },
     ['Okaka']                            = { zones = { "Windurst Waters map = North|H-10" }, zoneIds = { 238 } },
     ['Orn']                              = { type = "Quest Associate", zones = { "Windurst Waters map = North|F-9" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Early Bird Catches the Bookworm" },
     ['Otete']                            = { type = "Regional Merchant", icon = "RegionalVendor.png", zones = { "Windurst Waters map = South|J-8, behind the Rhinostery" }, zoneIds = { 238 } },
     ['Pakesse-Myukesse']                 = { zones = { "Windurst Waters map = North|K-6" }, zoneIds = { 238 } },
     ['Paku-Nakku']                       = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = North|K-6" }, zoneIds = { 238 }, note = "Starts Quests:\n* Let Sleeping Dogs Lie" },
     ['Panaa Fom']                        = { zones = { "Windurst Waters map = North|G-11" }, zoneIds = { 238 } },
-    ['Panna-Donna']                      = { zones = { "Windurst Waters map = North|F-5" }, zoneIds = { 238 } },
+    ['Panna-Donna']                      = { type = "Mission Giver", icon = "MissionGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Missions:\n* Windurst Missions" },
     ['Pechiru-Mashiru']                  = { type = "Quest Associate", zones = { "Windurst Waters map = North|L-6" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Let Sleeping Dogs Lie\n* Hat in Hand" },
+    ['Perara']                           = { type = "CW Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, link = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Say_Peas", note = "Crystal Warrior:\n* Starts quest: Say Peas.\n* Starts quest: Get Cracking.\n* Windurst starting gear quests." },
     ['Pelpopo']                          = { type = "Mission Associate", zones = { "Windurst Waters (S) map = North|G-9" }, zoneIds = { 94 }, note = "Involved in Missions:\n* Deep Cover I (Windurst)\n* Deep Cover II (Windurst)\n* Deep Cover III (Windurst)" },
     ['Pia']                              = { zones = { "Windurst Waters map = South|I-7" }, zoneIds = { 238 } },
-    ['Piketo-Puketo']                    = { type = "Guild Master", icon = "GuildMaster.png", zones = { "Windurst Waters map = North|D-9" }, zoneIds = { 238 }, note = "Notes:\nThis NPC will: :*Sign you up for the Culinarians' Guild :*Accept the items you need to turn in, to go up in rank for the Cooking Guild. :*You must have Cooking skill level 28 (Novice) or higher to sign up for Guild Points." },
+    ['Piketo-Puketo']                    = { type = "Guild Master", icon = "GuildMaster.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Cooking Guild master.\n* Handles guild enrollment and rank tests." },
     ['Pojimo-Rojimo']                    = { zones = { "Windurst Waters map = North|F-8" }, zoneIds = { 238 } },
     ['Porupen-Kyurupen']                 = { zones = { "Windurst Waters map = North|H-9" }, zoneIds = { 238 } },
     ['Prestapiq']                        = { type = "Regional Merchant", icon = "RegionalVendor.png", zones = { "Windurst Waters map = North|G-7" }, zoneIds = { 238 } },
     ['Pulykiki']                         = { zones = { "Windurst Waters map = South|E-5" }, zoneIds = { 238 } },
-    ['Puroiko-Maiko, W.W.']              = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Windurst Waters map = North|G-5" }, zoneIds = { 238 }, note = "Notes:\n;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the Windurst Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for Windurst) at certain conditions. It will be also possible to get some items of other Nations (Items for Bastok / Items for San d'Oria) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without Windurst as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer." },
+    ['Puroiko-Maiko, W.W.']              = { type = "Conquest Overseer", icon = "ConquestOverseer.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Casts Signet and sells conquest rewards.\n* Accepts crystals for Windurst rank points.\n* Handles supply quests and Expeditionary Forces." },
     ['Qhum Knaidjn']                     = { type = "Guild Points", icon = "GuildworkersUnionRepresentative.png", zones = { "Windurst Waters map = North|E-9" }, zoneIds = { 238 } },
     ['Quartermaster (Windurst)']         = { type = "Mission Associate", zones = { "Windurst Waters (S)(North)" }, zoneIds = { 94 }, note = "Involved in Missions:\n* Stock and Awe I (Windurst)\n* Stock and Awe II (Windurst)\n* Stock and Awe III (Windurst)\n* Stock and Awe IV (Windurst)\n* Materiel Storm I (Windurst)\n* Materiel Storm II (Windurst)\n* Materiel Storm III (Windurst)\n* Materiel Storm IV (Windurst)\n* Search and Seizure I (Windurst)" },
     ['Queo-Paeo']                        = { zones = { "Windurst Waters map = South|F-8" }, zoneIds = { 238 } },
     ['Rabiri-Tabiri']                    = { zones = { "Windurst Waters map = North|E-9" }, zoneIds = { 238 } },
     ['Ramasese']                         = { zones = { "Windurst Waters map = North|J-8" }, zoneIds = { 238 } },
-    ['Ranpi-Monpi']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = North|D-9, in the Culinarian's Guild" }, zoneIds = { 238 }, note = "Involved in Quests:\n* A Crisis in the Making\n* For Want of a Pot\n* In a Stew\n* The Dawn of Delectability\n" },
+    ['Ranpi-Monpi']                      = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Starts Quests:\n* A Crisis in the Making\n\nInvolved in Quests:\n* For Want of a Pot\n* In a Stew\n* The Dawn of Delectability" },
     ['Ranpi-Monpi (S)']                  = { type = "Cooking Quest", icon = "QuestNPC.png", zones = { "Windurst Waters (S) map = North|D-9" }, zoneIds = { 94 }, note = "Starts Quests:\n* The Dawn of Delectability\n" },
     ['Reh Hapli']                        = { zones = { "Windurst Waters map = North|F-10" }, zoneIds = { 238 } },
     ['Ritopopo']                         = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "Windurst" }, note = "Involved in Quests:\n* Past Reflections\n* Blessed Radiance" },
@@ -5730,7 +5736,7 @@ local npcIcons = T{
     ['Selenana']                         = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "Windurst Waters South at the Rhinostery" }, zoneIds = { 238 }, note = "Involved in Quests:\n* Healing Herbs" },
     ['Serukoko']                         = { zones = { "Windurst Waters map = North|F-7" }, zoneIds = { 238 } },
     ['Seven of Hearts']                  = { zones = { "Windurst Waters map = South|H-8" }, zoneIds = { 238 } },
-    ['Shanana']                          = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Waters map = North|G-11" }, zoneIds = { 238 }, note = "Notes:\nOnce in several hundred years, a great wizard is born out of the Tarutaru in Windurst. This wizard is so powerful, he is called the Mastermind of the Millen[n]ium. Decades ago, a child formidable enough to carry that title graduated at the top of his class from the School of Magic. I'm sure you'll hear his name mentioned as the hero who saved Windurst." },
+    ['Shanana']                          = { type = "Dialogue NPC", icon = "Dialogue.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Shares local history about Windurst's legendary Mastermind of the Millennium." },
     ['Shante-Fante']                     = { zones = { "Windurst Waters map = North|F-8" }, zoneIds = { 238 } },
     ['Shasha']                           = { zones = { "Windurst Waters map = South|D-6" }, zoneIds = { 238 } },
     ['Shataru-Potaru']                   = { zones = { "Windurst Waters map = North|K-7" }, zoneIds = { 238 } },
@@ -5745,7 +5751,7 @@ local npcIcons = T{
     ['Ten of Hearts']                    = { zones = { "Windurst Waters map = North|F-5" }, zoneIds = { 238 } },
     ['Tonana']                           = { type = "Teleport Service", icon = "WarpNPC.png", zones = { "Windurst Waters map = North|G-8" }, zoneIds = { 238 }, note = "Notes:\nA Warp NPC. She will warp you for free to Pattsu-Yabittsu (Windurst Woods, K-12)." },
     ['Torikoko']                         = { zones = { "Windurst Waters map = South|H-8" }, zoneIds = { 238 } },
-    ['Tosuka-Porika']                    = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters map = North|G-8, Optistery Abyssea - Grauberg" }, zoneIds = { 254 }, note = "Starts Quests:\n* Chasing Tales\n* Early Bird Catches the Bookworm\n\nInvolved in Quests:\n* Hat in Hand\n* Past Reflections\n* Blessed Radiance\n\nInvolved in Missions:\n* Windurst Mission 2-1: Lost for Words\n* Windurst Mission 7-1: The Sixth Ministry\n* Windurst Mission 8-2: The Jester Who'd Be King\n* Chains of Promathia Mission 3-3: The Road Forks\n" },
+    ['Tosuka-Porika']                    = { type = "Quest Giver", icon = "QuestGiver.png", zones = { "Windurst Waters", "Abyssea - Grauberg" }, zoneIds = { 238, 254 }, note = "Starts Quests:\n* Chasing Tales\n* Early Bird Catches the Bookworm\n\nInvolved in Quests:\n* Hat in Hand\n* Past Reflections\n* Blessed Radiance\n\nInvolved in Missions:\n* Lost for Words\n* The Sixth Ministry\n* The Jester Who'd Be King\n* The Road Forks" },
     ['Tsuran-Botaran']                   = { zones = { "Windurst Waters map = South|H-8" }, zoneIds = { 238 } },
     ['Upih Khachla']                     = { type = "Standard Merchant", icon = "Merchant.png", zones = { "Windurst Waters map = North|H-9, Ensasa's Catalyst Shop" }, zoneIds = { 238 } },
     ['Uran-Mafran']                      = { type = "Cutscene NPC", icon = "Cutscene.png", zones = { "Windurst" }, note = "Involved in Quests:\n* Trial by Fire\n* Trial by Ice\n* Trial by Wind\n* Trial by Earth\n* Trial by Lightning\n* Trial by Water\n* SMN AF1: The Puppet Master\n* SMN AF3: Carbuncle Debacle\n" },
@@ -5754,7 +5760,7 @@ local npcIcons = T{
     ['Yuli Yaam']                        = { zones = { "Windurst Waters map = North|F-10" }, zoneIds = { 238 } },
     ['Yung Yaam']                        = { zones = { "Windurst Waters map = North|H-10, Timbre Timbers Tavern" }, zoneIds = { 238 } },
     ['Zabirego-Hajigo']                  = { type = "Reputation", icon = "ReputationNPC.png", zones = { "Windurst Waters map = North|F-10, Timbre Timbers Tavern" }, zoneIds = { 238 } },
-    ['Zelala']                           = { type = "Map Marker", icon = "MapMarker.png", zones = { "Windurst Waters map = North|L-10" }, zoneIds = { 238 }, note = "Notes:\nMarks one's town map with the locations of various NPCs important to adventures: *Home Points *Item Depository *Melody Minstrels *Weather Reporters *Traveling Bards *Reputation *Immigration *Armor Depository *Teleportation *Pursuivant *Gold World Pass Vendor *Zelala even marks the location of three NPCs located inside Heavens Tower." },
+    ['Zelala']                           = { type = "Map Marker", icon = "MapMarker.png", zones = { "Windurst Waters" }, zoneIds = { 238 }, note = "Notes:\n* Marks useful services and important NPCs on the Windurst map." },
 
 -- Windurst (S)
 
@@ -6059,11 +6065,11 @@ local npcIcons = T{
 
 
     ['Abubu'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Cutscene NPC',
+        icon = 'QuestAssociate.png',
         zones = { 'Heavens Tower', 'West Sarutabaruta [S]' },
         zoneIds = { 95, 242 },
-        note = 'Needs Review.',
+        note = 'Involved in Quests:\n* Recollections\n* The Root of the Problem',
     },
 
 
@@ -8435,11 +8441,11 @@ local npcIcons = T{
 
 
     ['Caliburn'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Traveler',
+        icon = 'Traveler.png',
         zones = { 'Windurst Waters' },
         zoneIds = { 238 },
-        note = 'Needs Review.',
+        link = 'https://www.bg-wiki.com/ffxi/Caliburn_(NPC)',
     },
 
 
@@ -8714,11 +8720,11 @@ local npcIcons = T{
 
 
     ['Chabobo'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Special Event Coordinator',
+        icon = 'SpecialEventCoordinator.png',
         zones = { 'Windurst Woods' },
         zoneIds = { 241 },
-        note = 'Needs Review.',
+        note = 'Notes:\n* Hosts seasonal mini-games and rewards during Valentione\'s Day.',
     },
 
 
@@ -8777,11 +8783,21 @@ local npcIcons = T{
 
 
     ['Chat Manual'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Chat Etiquette Guide',
+        icon = 'LocalGuide.png',
         zones = { 'Bastok Mines', 'Northern San d\'Oria', 'Windurst Walls' },
-        zoneIds = { 231, 234, 239 },
-        note = 'Needs Review.',
+        zoneIds = { 234, 231, 239 },
+        note = 'Notes:\n- Explains chat etiquette and considerate interaction with other players.',
+    },
+
+    ['Dim Sparkle'] = {
+        type = 'CW Quest Objective',
+        icon = 'QuestNPC.png',
+        zones = { 'Windurst Walls' },
+        zoneIds = { 239 },
+        link = 'https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Give_Me_a_Ring',
+        note = 'Crystal Warrior:\n* Involved in quest: Give Me a Ring.\n* Examine it to recover Moyeyo\'s missing ring.',
+        worldOffsetY = 0.25,
     },
 
 
@@ -8903,11 +8919,11 @@ local npcIcons = T{
 
 
     ['Claiborne'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Chocobo Circuit',
+        icon = 'VCSChocoboRacingAssociate.png',
         zones = { 'Bastok Mines', 'Chocobo Circuit', 'Southern San d\'Oria', 'Windurst Woods' },
         zoneIds = { 70, 230, 234, 241 },
-        note = 'Needs Review.',
+        note = 'Notes:\n* Provides Chocobo Circuit registration and racing information.',
     },
 
 
@@ -9794,38 +9810,34 @@ local npcIcons = T{
 
 
     ['Dhahah'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Pet',
+        icon = 'Pet.png',
         zones = { 'Windurst Woods' },
         zoneIds = { 241 },
-        note = 'Needs Review.',
     },
 
 
     ['Dhahih'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Pet',
+        icon = 'Pet.png',
         zones = { 'Windurst Woods' },
         zoneIds = { 241 },
-        note = 'Needs Review.',
     },
 
 
     ['Dhakih'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Pet',
+        icon = 'Pet.png',
         zones = { 'Windurst Woods' },
         zoneIds = { 241 },
-        note = 'Needs Review.',
     },
 
 
     ['Dhakoh'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Pet',
+        icon = 'Pet.png',
         zones = { 'Windurst Woods' },
         zoneIds = { 241 },
-        note = 'Needs Review.',
     },
 
 
@@ -10901,11 +10913,11 @@ local npcIcons = T{
 
 
     ['Ensemble Maven'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Special Event Coordinator',
+        icon = 'SpecialEventCoordinator.png',
         zones = { 'Bastok Markets', 'Bastok Mines', 'Northern San d\'Oria', 'Southern San d\'Oria', 'Windurst Waters', 'Windurst Woods' },
         zoneIds = { 230, 231, 234, 235, 238, 241 },
-        note = 'Needs Review.',
+        note = 'Notes:\n* Judges seasonal costume contests.',
     },
 
 
@@ -11711,11 +11723,11 @@ local npcIcons = T{
 
 
     ['Fashionista'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Special Event Coordinator',
+        icon = 'SpecialEventCoordinator.png',
         zones = { 'Bastok Markets', 'Bastok Mines', 'Northern San d\'Oria', 'Southern San d\'Oria', 'Windurst Waters', 'Windurst Woods' },
         zoneIds = { 230, 231, 234, 235, 238, 241 },
-        note = 'Needs Review.',
+        note = 'Notes:\n* Coordinates seasonal fashion contests.',
     },
 
 
@@ -15761,11 +15773,10 @@ local npcIcons = T{
 
 
     ['Iron Bar Gate'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Door',
+        icon = 'Door.png',
         zones = { 'Castle Zvahl Baileys', 'Castle Zvahl Baileys [S]', 'Castle Zvahl Keep', 'Castle Zvahl Keep [S]', 'Heavens Tower' },
         zoneIds = { 138, 155, 161, 162, 242 },
-        note = 'Needs Review.',
     },
 
 
@@ -16598,11 +16609,10 @@ local npcIcons = T{
 
 
     ['Karababa'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Cutscene NPC',
+        icon = 'Cutscene.png',
         zones = { 'Aht Urhgan Whitegate', 'Aydeewa Subterrane', 'Heavens Tower', 'Navukgo Execution Chamber' },
         zoneIds = { 50, 64, 68, 242 },
-        note = 'Needs Review.',
     },
 
 
@@ -17165,11 +17175,11 @@ local npcIcons = T{
 
 
     ['Kodada'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Cutscene NPC',
+        icon = 'QuestAssociate.png',
         zones = { 'Heavens Tower', 'West Sarutabaruta [S]' },
         zoneIds = { 95, 242 },
-        note = 'Needs Review.',
+        note = 'Involved in Quests:\n* The Root of the Problem',
     },
 
 
@@ -17318,11 +17328,11 @@ local npcIcons = T{
 
 
     ['Kopua-Mobua A.M.A.N.'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Mentor Recruiter',
+        icon = 'QuestGuide.png',
         zones = { 'Windurst Woods' },
         zoneIds = { 241 },
-        note = 'Needs Review.',
+        note = 'Notes:\n* Registers eligible adventurers for the Mentor system.',
     },
 
 
@@ -17921,11 +17931,11 @@ local npcIcons = T{
 
 
     ['Library book'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Quest Object',
+        icon = 'History.png',
         zones = { 'Windurst Waters' },
         zoneIds = { 238 },
-        note = 'Needs Review.',
+        note = 'Involved in Quests:\n* Her Memories: Of Malign Maladies',
     },
 
 
@@ -18776,11 +18786,10 @@ local npcIcons = T{
 
 
     ['Marble Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Door',
+        icon = 'Door.png',
         zones = { 'Heavens Tower', 'Toraimarai Canal', 'Windurst Waters', 'Windurst Waters [S]' },
         zoneIds = { 94, 169, 238, 242 },
-        note = 'Needs Review.',
     },
 
 
@@ -19037,11 +19046,11 @@ local npcIcons = T{
 
 
     ['Memorian'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Mission Object',
+        icon = 'Automaton.png',
         zones = { 'Aht Urhgan Whitegate', 'Chateau d\'Oraguille', 'Palborough Mines', 'Rabao', 'Windurst Walls', 'Windurst Waters' },
         zoneIds = { 50, 143, 233, 238, 239, 247 },
-        note = 'Needs Review.',
+        note = 'Involved in Missions:\n* The Voracious Resurgence',
     },
 
 
@@ -21206,11 +21215,10 @@ local npcIcons = T{
 
 
     ['Ore Door'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Door',
+        icon = 'Door.png',
         zones = { 'Castle Zvahl Keep', 'Castle Zvahl Keep [S]', 'Heavens Tower', 'Throne Room', 'Throne Room [S]' },
         zoneIds = { 155, 156, 162, 165, 242 },
-        note = 'Needs Review.',
     },
 
 
@@ -22727,11 +22735,11 @@ local npcIcons = T{
 
 
     ['Rakocha-Mukocha'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Cutscene NPC',
+        icon = 'QuestAssociate.png',
         zones = { 'Heavens Tower', 'West Sarutabaruta [S]' },
         zoneIds = { 95, 242 },
-        note = 'Needs Review.',
+        note = 'Involved in Quests:\n* The Root of the Problem',
     },
 
 
@@ -24851,29 +24859,32 @@ local npcIcons = T{
 
 
     ['Spriggan Crier'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Special Event',
+        icon = 'SpecialEventCoordinator.png',
         zones = { 'North Gustaberg', 'Port Bastok', 'Southern San d\'Oria', 'West Ronfaure', 'West Sarutabaruta', 'Windurst Waters' },
         zoneIds = { 100, 106, 115, 230, 236, 238 },
-        note = 'Needs Review.',
+        link = 'https://www.bg-wiki.com/ffxi/Spriggan_Crier_(NPC)',
+        note = 'Notes:\n* FINAL FANTASY XIV crossover event NPC.\n* Exchanges elemental crystals for a Red Spriggan Spirit.',
     },
 
 
     ['Spriggan Graverobber'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Special Event',
+        icon = 'SpecialEventCoordinator.png',
         zones = { 'North Gustaberg', 'Port Bastok', 'Southern San d\'Oria', 'West Ronfaure', 'West Sarutabaruta', 'Windurst Waters' },
         zoneIds = { 100, 106, 115, 230, 236, 238 },
-        note = 'Needs Review.',
+        link = 'https://www.bg-wiki.com/ffxi/Spriggan_Graverobber_(NPC)',
+        note = 'Notes:\n* FINAL FANTASY XIV crossover event NPC.\n* Exchanges elemental crystals for a Purple Spriggan Spirit.',
     },
 
 
     ['Spriggan Sifter'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Special Event',
+        icon = 'SpecialEventCoordinator.png',
         zones = { 'North Gustaberg', 'Port Bastok', 'Southern San d\'Oria', 'West Ronfaure', 'West Sarutabaruta', 'Windurst Waters' },
         zoneIds = { 100, 106, 115, 230, 236, 238 },
-        note = 'Needs Review.',
+        link = 'https://www.bg-wiki.com/ffxi/Spriggan_Sifter_(NPC)',
+        note = 'Involved in Quests:\n* FINAL FANTASY XIV: A Realm Reborn Crossover\n* FINAL FANTASY XIV: A Realm Reborn Crossover II\n* Anniversary MMO Collaboration',
     },
 
 
@@ -25256,11 +25267,11 @@ local npcIcons = T{
 
 
     ['Symphonic Curator'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Mog House Music',
+        icon = 'QuestNode.png',
         zones = { 'Aht Urhgan Whitegate', 'Al Zahbi', 'Bastok Markets', 'Bastok Markets [S]', 'Bastok Mines', 'Eastern Adoulin', 'Lower Jeuno', 'Northern San d\'Oria', 'Port Bastok', 'Port Jeuno', 'Port San d\'Oria', 'Port Windurst', 'Ru\'Lude Gardens', 'Southern San d\'Oria', 'Southern San d\'Oria [S]', 'Upper Jeuno', 'Western Adoulin', 'Windurst Walls', 'Windurst Waters', 'Windurst Waters [S]', 'Windurst Woods' },
         zoneIds = { 48, 50, 80, 87, 94, 230, 231, 232, 234, 235, 236, 238, 239, 240, 241, 243, 244, 245, 246, 256, 257 },
-        note = 'Needs Review.',
+        note = 'Notes:\n* Selects Mog House background music unlocked through sheet music and furnishings.',
     },
 
 
@@ -25409,11 +25420,11 @@ local npcIcons = T{
 
 
     ['Tales\' Beginning'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Scenario Resume Point',
+        icon = 'History.png',
         zones = { 'Bastok Markets', 'Bastok Mines', 'Lower Delkfutt\'s Tower', 'Lower Jeuno', 'Norg', 'Northern San d\'Oria', 'Port Bastok', 'Port Jeuno', 'Port San d\'Oria', 'Port Windurst', 'Southern San d\'Oria', 'Windurst Walls', 'Windurst Waters', 'Windurst Woods' },
         zoneIds = { 184, 230, 231, 232, 234, 235, 236, 238, 239, 240, 241, 245, 246, 252 },
-        note = 'Needs Review.',
+        note = 'Notes:\n* Resumes a postponed expansion opening scenario.',
     },
 
 
@@ -26534,11 +26545,11 @@ local npcIcons = T{
 
 
     ['Transporter'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Transit Portal',
+        icon = 'VeridicalConflux.png',
         zones = { 'Heavens Tower', 'Toraimarai Canal' },
         zoneIds = { 169, 242 },
-        note = 'Needs Review.',
+        note = 'Notes:\n* Transports visitors between connected levels or areas.',
     },
 
 
@@ -26705,11 +26716,10 @@ local npcIcons = T{
 
 
     ['Trick Flan'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Harvest Festival',
+        icon = 'SpecialEventCoordinator.png',
         zones = { 'Bastok Markets', 'Northern San d\'Oria', 'Windurst Waters' },
         zoneIds = { 231, 235, 238 },
-        note = 'Needs Review.',
     },
 
 
@@ -27794,11 +27804,10 @@ local npcIcons = T{
 
 
     ['Water in Space'] = {
-        type = 'Unknown',
-        icon = 'Dialogue.png',
+        type = 'Cutscene Object',
+        icon = 'Cutscene.png',
         zones = { 'Full Moon Fountain', 'Heavens Tower' },
         zoneIds = { 170, 242 },
-        note = 'Needs Review.',
     },
 
 

@@ -898,16 +898,18 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         return;
     end
 
-    if (
-        hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25)
-    ) then
-        hpColor = hpBarSettings.lowColor or hpColor;
-    end
+    local hpCriticalActive =
+        hpBarSettings.criticalColorEnabled == true and
+        hpPercent <= (tonumber(hpBarSettings.criticalColorPercent) or 25);
 
-    local hpLowActive =
+    if (hpCriticalActive == true) then
+        hpColor = hpBarSettings.criticalColor or { 1.0, 0.15, 0.10, 1.0 };
+    elseif (
         hpBarSettings.lowColorEnabled == true and
-        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 25);
+        hpPercent <= (tonumber(hpBarSettings.lowColorPercent) or 50)
+    ) then
+        hpColor = hpBarSettings.lowColor or { 1.0, 0.55, 0.05, 1.0 };
+    end
 
     if (
         mpBarSettings.lowColorEnabled == true and
@@ -1203,8 +1205,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             texture = hpBarSettings.texture or 'Solid',
             textureStrength = tonumber(hpBarSettings.textureStrength) or 100,
             textureId = hpBarLoaded == true and barTextures.GetTextureId(hpBarSettings.texture) or nil,
-            animationEnabled = hpBarLoaded == true and hpLowActive == true and hpBarSettings.lowAnimationEnabled == true,
-            animationTextureId = hpBarLoaded == true and hpLowActive == true and hpBarSettings.lowAnimationEnabled == true and barAnimations.GetTextureId(hpBarSettings.lowAnimation) or nil,
+            animationEnabled = hpBarLoaded == true and hpCriticalActive == true and hpBarSettings.lowAnimationEnabled == true,
+            animationTextureId = hpBarLoaded == true and hpCriticalActive == true and hpBarSettings.lowAnimationEnabled == true and barAnimations.GetTextureId(hpBarSettings.lowAnimation) or nil,
             animationSpeed = tonumber(hpBarSettings.lowAnimationSpeed) or 40,
             animationColor = hpBarSettings.lowAnimationColor,
             showAtPercent = tonumber(hpBarSettings.showAtPercent) or 100,

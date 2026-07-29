@@ -19,6 +19,7 @@ local objects = {};
 local objectOrder = {};
 local objectCount = 0;
 local maxObjects = 256;
+local evictionGraceSeconds = 2.0;
 
 -- ==========================================================
 -- = CACHE HELPERS =
@@ -33,6 +34,10 @@ local function TouchKey(key)
     end
 
     table.insert(objectOrder, key);
+
+    if (objects[key] ~= nil) then
+        objects[key].lastTouch = os.clock();
+    end
 end
 
 local function DestroyEntry(key)
@@ -60,7 +65,15 @@ end
 
 local function TrimCache()
     while (objectCount > maxObjects and #objectOrder > 0) do
-        local oldestKey = table.remove(objectOrder, 1);
+        local oldestKey = objectOrder[1];
+        local entry = objects[oldestKey];
+        local idleSeconds = os.clock() - (tonumber(entry ~= nil and entry.lastTouch) or 0);
+
+        if (idleSeconds < evictionGraceSeconds) then
+            break;
+        end
+
+        table.remove(objectOrder, 1);
         DestroyEntry(oldestKey);
     end
 end
@@ -169,6 +182,7 @@ local function GetObject(text, options)
         texture = nil,
         width = 0,
         height = 0,
+        lastTouch = os.clock(),
     };
     objects[key] = entry;
     objectCount = objectCount + 1;

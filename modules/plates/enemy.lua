@@ -325,14 +325,19 @@ end
 
 local function TouchPlateCacheEntry(cached)
     if (cached == nil) then
-        return;
+        return false;
+    end
+
+    if (
+        cached.textureKey == nil or
+        cached.texture == nil or
+        canvasTexture.TouchTextureForKey(cached.textureKey, cached.texture) ~= true
+    ) then
+        return false;
     end
 
     cached.lastUsed = os.clock();
-
-    if (cached.textureKey ~= nil) then
-        canvasTexture.TouchKey(cached.textureKey);
-    end
+    return true;
 end
 
 local function TrimPlateCache()
@@ -1812,7 +1817,9 @@ local function QueueCachedEnemy(enemy, cached, stateName, importantAlwaysOnTop, 
         return false;
     end
 
-    TouchPlateCacheEntry(cached);
+    if (TouchPlateCacheEntry(cached) ~= true) then
+        return false;
+    end
 
     local plateTextureId = canvasTexture.GetTextureId(cached.texture);
 

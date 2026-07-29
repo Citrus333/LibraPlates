@@ -73,14 +73,19 @@ end
 
 local function TouchPlateCacheEntry(cached)
     if (cached == nil) then
-        return;
+        return false;
+    end
+
+    if (
+        cached.textureKey == nil or
+        cached.texture == nil or
+        canvasTexture.TouchTextureForKey(cached.textureKey, cached.texture) ~= true
+    ) then
+        return false;
     end
 
     cached.lastUsed = os.clock();
-
-    if (cached.textureKey ~= nil) then
-        canvasTexture.TouchKey(cached.textureKey);
-    end
+    return true;
 end
 
 local function TrimPlateCache()
@@ -382,7 +387,9 @@ local function QueueCachedPlate(entity, cached, targetStateName, clickTargetType
         return false;
     end
 
-    TouchPlateCacheEntry(cached);
+    if (TouchPlateCacheEntry(cached) ~= true) then
+        return false;
+    end
 
     local plateTextureId = canvasTexture.GetTextureId(cached.texture);
 
@@ -545,7 +552,7 @@ local function QueueNpcObject(entity)
         ) then
             local distanceMatches = true;
 
-            if (indexed.distanceEnabled == true and targetStateName ~= 'Idle') then
+            if (indexed.distanceEnabled == true) then
                 local distanceText = FormatDistanceText({ prefix = indexed.distancePrefix or '' }, entity.distance);
                 distanceMatches = distanceText == indexed.distanceText;
             end
@@ -608,10 +615,9 @@ local function QueueNpcObject(entity)
     local signatureTimer = perfMeter.BeginDetail('npc.signature');
     local cacheKey = table.concat({
         clickTargetType,
+        tostring(entity.index or 0),
         widgetLayoutStateName,
-        displayName,
         targetStateName,
-        tostring(distanceText or ''),
     }, ':');
     local signature = BuildPlateSignature(displayName, renderedDisplayName, resolvedEntityName, targetStateName, npcInfo, {
         background = backgroundSettings,
@@ -631,8 +637,13 @@ local function QueueNpcObject(entity)
     local textureHeight = nil;
     local elementRects = nil;
 
-    if (HasAnimatedTargetMarker(targetMarker) ~= true and cached ~= nil and cached.signature == signature and cached.texture ~= nil) then
-        TouchPlateCacheEntry(cached);
+    if (
+        HasAnimatedTargetMarker(targetMarker) ~= true and
+        cached ~= nil and
+        cached.signature == signature and
+        cached.texture ~= nil and
+        TouchPlateCacheEntry(cached) == true
+    ) then
         plateTexture = cached.texture;
         textureWidth = cached.textureWidth;
         textureHeight = cached.textureHeight;
@@ -983,8 +994,13 @@ local function QueueTacticalNpc(entity)
     local textureHeight = nil;
     local elementRects = nil;
 
-    if (HasAnimatedTargetMarker(targetMarker) ~= true and cached ~= nil and cached.signature == signature and cached.texture ~= nil) then
-        TouchPlateCacheEntry(cached);
+    if (
+        HasAnimatedTargetMarker(targetMarker) ~= true and
+        cached ~= nil and
+        cached.signature == signature and
+        cached.texture ~= nil and
+        TouchPlateCacheEntry(cached) == true
+    ) then
         plateTexture = cached.texture;
         textureWidth = cached.textureWidth;
         textureHeight = cached.textureHeight;

@@ -4,8 +4,11 @@ return {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-A.M.A.N. Reclaimers exchange armour and weapons from certain areas for Reclamation Marks. Upon accumulating 1,000 Reclamation Marks, they will be automatically converted to 1 Copper Voucher, and automatically stored with the A.M.A.N. NPCs. They accept Armour and Weapons from the following areas: *Alluvion Skirmish *Delve *Domain Invasion *Geas Fete *:High-Tier Mission Battlefields *Reive *Skirmish *Sinister Reign *Unity Concord/Wanted NM (only battles added on or after the Thursday, January 15, 2015 version update) *Vagary",
-            ["type"] = "Vagary Rewards",
+- Exchanges eligible equipment for\
+Reclamation Marks.\
+- Every 1,000 marks are automatically\
+converted into one Copper Voucher.",
+            ["type"] = "Reclamation Service",
         },
         ["A.M.A.N. Validator"] = {
             ["_source"] = "npc",
@@ -51,7 +54,8 @@ A.M.A.N. Reclaimers exchange armour and weapons from certain areas for Reclamati
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Dialogue: I remember 20 years ago when I was in charge of protecting Galkan Bridge from the beastmen. For a large part of the Crystal War, we had her blocked off on both sides. The government said it was to keep enemy spies from infiltrating Bastok's central areas. However, there was rumor that it was to prevent Galka from coming over on this side of the river and rioting. It would be a lie if I told you it wasn't hard for me, a Galka, to work against my brothers like that. I still have nightmares about the time I had to force back groups of refugees trying to escape the flames that engulfed their homes in the mines district. And now I'm back here patrolling the bridge as I did long ago. Perhaps destiny has a tighter grip on us than I thought...",
+- Recalls guarding Galkan Bridge\
+during the Crystal War.",
             ["type"] = "Great War Recaller",
         },
         ["Anguysh"] = {
@@ -109,6 +113,7 @@ A category of NPCs whose purpose is to enrich Atmacite, upgrade stratum abyssite
         },
         ["Big Harvest"] = {
             ["_source"] = "npc",
+            ["icon"] = "Defender.png",
             ["type"] = "Defender",
         },
         ["Biggorf"] = {
@@ -184,7 +189,7 @@ for milestone rewards.",
         },
         ["Cleades"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * Bastok Missions\
 \
@@ -259,7 +264,8 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers directions around Bastok: :Yes? Are you in need of assistance? :*\"Ask.\": Which area do you want to know about? :*\"The Mog House, Metalworks, and the port.\": First, go north from here, then turn east and go down the steps to get to the entrance of the residential area. You can put your inventory in order or change jobs in your Mog House there. There is also another entrance to the residential area on the other side of that big building to the left. If you go north at the intersection instead, you'll come across the entrance to the Metalworks. The Metalworks is Bastok's center. It's a complex of metal forges, the Blacksmiths' Guild, and all administrative buildings including the President's Office. Walk further north, passing the other entrance to the residential area on your right, and go down the steps through a small housing area where you'll find the magic shop, and you'll be at the entrance to the port. The Port District is where you'll find the air travel agency, the tavern, the drawbridge, and the North Gate. Come back and ask me again if you need further assistance. :*\"The shops and the Mines District.\": From here you can see on the left, in order, the Goldsmiths' Guild and the jewelry store. Further back along the canal is a housing area. On the right is the area where street vendors set up shop, and further down you'll find more houses and the music store. If you go down the stairs and head south, you'll come to the entrance to the Mines District. The Mines District is where you'll find the Zeruhn Mines, the Alchemists' Guild, and the South Gate. Come back and ask me again if you need further assistance. :*\"The Kulatz Bridge and the West Gate.\": On the other side of this fountain is the auction house. You can bid for items or put your own items up for sale at the auctioneer's window. The Galkan deliveryman there can also send items to people's houses as well as your own. To the south of the auction house is the Kulatz Bridge. The weapons, armor, and goods shops are there. If you cross the bridge, you'll come to the West Gate. Walk through the gate to go to South Gustaberg. You should be able to find one of the guards in charge of assigning missions, and a high guard in charge of conquests, nearby. Come back and ask me again if you need further assistance. :*\"Don't ask.\"",
+- Provides directions around Bastok\
+Markets and to neighboring districts.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Fashionista"] = {
@@ -284,7 +290,8 @@ Offers directions around Bastok: :Yes? Are you in need of assistance? :*\"Ask.\"
             ["_source"] = "npc",
             ["icon"] = "TutorialNPC.png",
             ["note"] = "Notes:\
-* Provides tutorial information for newly created characters. *See Tutorial NPC for more information about the 7 mini quests.",
+- Provides tutorial information for\
+new adventurers.",
             ["type"] = "Tutorial",
         },
         ["Gwill"] = {
@@ -337,7 +344,7 @@ Involved in Missions:\
         },
         ["Igsli"] = {
             ["_source"] = "npc",
-            ["icon"] = "MentorRecruiter.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Unity Concord\
 \
@@ -347,7 +354,7 @@ Involved in Quests:\
         },
         ["Isakoth"] = {
             ["_source"] = "npc",
-            ["icon"] = "RecordsOfEminence.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Records of Eminence\
 \
@@ -441,7 +448,10 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Notes:\
-Matthias crafts the following pieces of Dancer Artifact Armor when given the appropriate items: *Dancer's Bangles *Dancer's Tiara *Dancer's Shoes Note: You will need to speak with Olgald in Upper Jeuno (G-7) before talking to Matthias in order to place a request with him.",
+- Crafts Dancer's Bangles, Dancer's\
+Tiara, and Dancer's Shoes.\
+- Speak with Olgald in Upper Jeuno\
+before placing a request.",
             ["type"] = "Dancer Quest",
         },
         ["Michea"] = {
@@ -503,7 +513,11 @@ Involved in Missions:\
         ["Octavien"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "QuestNPC.png",
-            ["type"] = "Job Unlock",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Runic_Insurrection",
+            ["note"] = "CatsEyeXI:\
+* Starts quest: Runic Insurrection.\
+* Unlocks Rune Fencer.",
+            ["type"] = "Rune Fencer Job Unlock",
         },
         ["Offa"] = {
             ["_source"] = "npc",
@@ -546,7 +560,11 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ItemStorage.png",
             ["note"] = "Notes:\
-Find a nearby Porter Moogle and talk to him and select the option to buy a Slip. Once you find the slip you want you select it and confirm your selection. Each slip will cost you 1000 gil to buy. After purchasing any storage slip, you may trade 1-7 corresponding items per trade along with the slip. NOTE: This does NOT mean you can only store up to 7 items on a single slip, it simply means you can only transfer up to 7 at a time to the Porter for storage. At any time after you have the slip you can continue to make trades of 1-7 items along with the corresponding slip, thereby storing all your like items with the Moogle instead of in your MH. This feature is handy when you later get another armor drop, like in Dynamis, and want to store it somewhere until you need it. To withdraw an item simply trade him the corresponding slip and he will give you an option to retrieve your armor. You only pay an initial fee of 1,000 gil when purchasing a storage slip, you will not pay every time you store or withdraw gear. Storage slips cannot be discarded unless all stored items are retrieved first. As of Feb. 14, 2011, items with a Magian Trial insignia can no longer be stored with a Porter Moogle. Any items with an active trial stored before that date have had all trial progress erased.",
+- Sells storage slips for 1,000 gil.\
+- Trade a slip with up to seven\
+eligible items per transaction.\
+- Trade a slip alone to retrieve\
+stored equipment.",
             ["type"] = "Item Storage",
         },
         ["Pretty Heart"] = {
@@ -577,7 +595,12 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-Main Conquest related NPC for Bastok citizens. ;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Recharges Empress Band, Chariot Band, and Emperor Band. :*Accepts traded Crystals for filling up the Bastok Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for Bastok) at certain conditions. It will be also possible to get some items of other Nations (Items for San d'Oria / Items for Windurst) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without Bastok as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer.",
+- Casts Signet and recharges\
+Conquest experience bands.\
+- Accepts crystals and sells items\
+for Conquest Points.\
+- Handles supply runs and\
+Expeditionary Forces for Bastok.",
             ["type"] = "Conquest Overseer",
         },
         ["Raghd"] = {
@@ -594,7 +617,10 @@ Main Conquest related NPC for Bastok citizens. ;Notes for characters only with B
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers General Information and a Map of Bastok: :I am charged with the task of assisting novice adventurers. What would you like to know? :*\"How do I give items to people?\": Giving items ot other people is called \"trading.\" It is done by selecting \"Trade\" from the main menu on the right. You must target the person either before or after selecting \"Trade.\" Then just choose the items you wish to give the person when your inventory window appears. \"Trading\" is crucial to completing quests and missions, and also during conquests. Remember it well. If you have an Adventurer Coupon in your possession, use \"Trade\" now to give it to me. I will hand you some starting gil in return. Come to me if there is anything more you would like to know. :*\"Where can I fight monsters?\": Before you take on any fiends, there are a few things you should remember. First, always have weapons and armor equipped, and spells memorized from scrolls. Second, always \"check\" your target before engaging it. Never take on a foe that seems too strong for you to defeat alone. Third, when you are in a party, make it a habit to cast lots fro your share of the party \"spoils\" after successfully defeating a monster. Come to me if there is anything more you would like to know. :*\"What are quests and missions?\": Some people in town will ask you to do certain taks for them. These are called \"quests.\" Complete them, and they should reward you for your efforts. There are also tasks you can do for your country, know as \"missions.\" There is a guard at each gate charged with assigning them. Speak to the guards for more details. Come to me if there is anything more you would like to know. :*\"I want to see a map of the city.\": [Displays an overview map of Bastok] :*\"Nothing for now.\": Come to me if there is anything more you would like to know.",
+- Explains basic adventuring systems.\
+- Displays a map of Bastok.\
+- Exchanges an Adventurer Coupon\
+for starting gil.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Reinberta"] = {
@@ -632,13 +658,13 @@ Anomaly in Konschtat Highlands\
         },
         ["Salimah"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Quests:\
 * Gourmet\
 \
 Starts Missions:\
 * Bastok Mission 9-2: Where Two Paths Converge",
-            ["type"] = "Quest Giver",
+            ["type"] = "Quest and Mission Giver",
         },
         ["Samia"] = {
             ["_source"] = "npc",
@@ -670,7 +696,7 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
         },
         ["Sludge"] = {
             ["_source"] = "npc",
-            ["icon"] = "SpecialEventCoordinator.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * DRAGON QUEST X ONLINE Crossover",
             ["type"] = "Special Event",
@@ -709,7 +735,12 @@ and returned unchanged.",
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
             ["note"] = "Notes:\
-Forecast Areas: *Valkurm Dunes *Gustaberg *Konschtat Highlands *Pashhow Marshlands *Eastern Altepa Desert",
+Checks weather for the following areas:\
+* Valkurm Dunes\
+* Gustaberg\
+* Konschtat Highlands\
+* Pashhow Marshlands\
+* Eastern Altepa Desert",
             ["type"] = "Weather Reporter",
         },
         ["Tancredi"] = {
@@ -731,7 +762,9 @@ Forecast Areas: *Valkurm Dunes *Gustaberg *Konschtat Highlands *Pashhow Marshlan
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
             ["note"] = "Notes:\
-* Open: Always *No longer closed Iceday. *No longer shares stock with Visala. Stock is the same selection as Celestina offers. *Prices and stock are static.",
+- Open at all times.\
+- Sells the same selection as Celestina.\
+- Prices and stock are static.",
             ["type"] = "Goldsmithing Merchant",
         },
         ["Trick Bones"] = {
@@ -825,7 +858,9 @@ allegiance.",
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
             ["note"] = "Notes:\
-* Open: 8:00 - 23:00 *No longer closed Iceday *No longer shares stock with Teerth",
+- Open from 8:00 to 23:00.\
+- No longer closes on Iceday or\
+shares stock with Teerth.",
             ["type"] = "Goldsmithing Merchant",
         },
         ["Voidwatch Officer"] = {
@@ -899,55 +934,62 @@ Eminence armor after Rank 4.",
         ["Door:\"Dragon's Claws\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber entrance portal leading into the local commercial shop layout. Turning the iron door handle coordinates your city navigation and uncovers neighborhood background records.",
+            ["note"] = "Entrance to Dragon's Claws.",
             ["type"] = "Security Gate",
         },
         ["Door:Brunhilde Armourer"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic wooden barrier door partitioning the artisan smithing merchant shop. Shifting the latch gives you access to browse equipment sets or progress commercial delivery checks.",
+            ["note"] = "Entrance to Brunhilde Armourer.",
             ["type"] = "Security Gate",
         },
         ["Door:Carmelide's Jewelry"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A refined shopfront portal protecting a jewelry boutique inside the trade district. Pulling the handle updates urban exploration files or updates active civic tasks.",
+            ["note"] = "Entrance to Carmelide's Jewelry.",
             ["type"] = "Security Gate",
         },
         ["Door:Goldsmiths' Guild"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An elegant wooden partition protecting artisan metalworking halls. Unlatching the door frame provides entry to claim advanced synthetic craft trials.",
+            ["note"] = "Entrance to the Goldsmiths' Guild.",
             ["type"] = "Security Gate",
         },
         ["Door:Harmodios's Music"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The standard wood door frame partitioning the local music merchant rooms. Interfacing with the latch uncovers neighborhood tracking clues or triggers localized background flavor cutscenes.",
+            ["note"] = "Entrance to Harmodios's Music.",
+            ["type"] = "Security Gate",
+        },
+        ["Door:House"] = {
+            ["_source"] = "item",
+            ["icon"] = "Door.png",
+            ["note"] = "Notes:\
+* Entrance to a residence.",
             ["type"] = "Security Gate",
         },
         ["Door:Mjoll's Goods"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic wooden door hinged to the municipal trade stall layout blocks. Unlatching the door frame provides entry to check active trade manifests or advance urban side tasks.",
+            ["note"] = "Entrance to Mjoll's Goods.",
             ["type"] = "Security Gate",
         },
         ["Door:Sororo the Scribe"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A simple residential door framework leading straight into the records office. Passing the frame tracks advanced Republic milestones or triggers urban scenario dialogues.",
+            ["note"] = "Entrance to Sororo the Scribe.",
             ["type"] = "Security Gate",
         },
         ["Door:Trader's Home"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic residential wooden door set into the city stonework layouts. Unlatching the frame allows you to enter merchant quarters to fulfill commercial delivery checks or urban side tasks.",
+            ["note"] = "Entrance to the Trader's Home.",
             ["type"] = "Security Gate",
         },
         ["Symphonic Curator"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
+            ["note"] = "Changes the area's background music.",
             ["type"] = "Quest Node",
         },
         ["Synergy Furnace"] = {
@@ -960,7 +1002,7 @@ Eminence armor after Rank 4.",
         ["Tales' Beginning"] = {
             ["_source"] = "item",
             ["icon"] = "History.png",
-            ["note"] = "A distinct magical marker manifest near prominent municipal gathering hubs. Interfacing with its surface reviews historical records and initiates localized storyline expansions.",
+            ["note"] = "A marker used to begin or review story content.",
             ["type"] = "Quest Node",
         },
     },

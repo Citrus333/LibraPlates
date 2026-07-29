@@ -1466,9 +1466,12 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         if (
             cachedWorldPlate ~= nil and
             cachedWorldPlate.signature == signature and
-            cachedWorldPlate.vitalSignature == vitalSignature
+            cachedWorldPlate.vitalSignature == vitalSignature and
+            canvasTexture.TouchTextureForKey(
+                cachedWorldPlate.textureKey,
+                cachedWorldPlate.plateTextureId
+            ) == true
         ) then
-            canvasTexture.TouchKey(cachedWorldPlate.textureKey);
             cachedWorldPlate.lastUsed = os.clock();
             perfMeter.Count('self.cache.hit', 1);
             QueueRenderedWorldPlate(

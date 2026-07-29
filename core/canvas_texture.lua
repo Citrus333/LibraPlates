@@ -40,6 +40,12 @@ local lastRenderBaseKey = '';
 local lastRenderTextureKey = '';
 local lastRenderSize = '';
 local maxTextures = 96;
+-- Textures returned to ImGui/world-marker draw lists can remain referenced
+-- after the Lua code that queued them has finished.  Never evict a texture
+-- that was used recently; doing so can let D3D reuse its pointer while a
+-- queued draw still references it, producing swapped/oversized plates or a
+-- client crash.
+local textureEvictionGraceSeconds = 2.0;
 local width = 1024;
 local height = 512;
 local drawOffsetX = 0;
@@ -274,16 +280,20 @@ end
 
 local function TrimTextureCache(protectedKey)
     while (textureCount > maxTextures and #textureOrder > 0) do
-        local evictionIndex = 1;
+        local evictionIndex = nil;
+        local now = os.clock();
 
-        if (protectedKey ~= nil and textureOrder[evictionIndex] == protectedKey) then
-            evictionIndex = nil;
+        for i = 1, #textureOrder do
+            local candidateKey = textureOrder[i];
+            local candidateInfo = textureInfo[candidateKey] or {};
+            local idleSeconds = now - (tonumber(candidateInfo.lastTouch) or 0);
 
-            for i = 2, #textureOrder do
-                if (textureOrder[i] ~= protectedKey) then
-                    evictionIndex = i;
-                    break;
-                end
+            if (
+                candidateKey ~= protectedKey and
+                idleSeconds >= textureEvictionGraceSeconds
+            ) then
+                evictionIndex = i;
+                break;
             end
         end
 
@@ -293,6 +303,47 @@ local function TrimTextureCache(protectedKey)
 
         ReleaseTextureKey(textureOrder[evictionIndex], true);
     end
+end
+
+local function ReleaseTextureKeyIfIdle(key)
+    key = tostring(key or '');
+
+    if (key == '') then
+        return false;
+    end
+
+    if (textures[key] ~= nil) then
+        local info = textureInfo[key] or {};
+        local idleSeconds = os.clock() - (tonumber(info.lastTouch) or 0);
+
+        if (idleSeconds < textureEvictionGraceSeconds) then
+            return false;
+        end
+
+        return ReleaseTextureKey(key, false);
+    end
+
+    local aliases = textureAliases[key];
+
+    if (type(aliases) ~= 'table') then
+        return false;
+    end
+
+    local actualKeys = {};
+
+    for actualKey, _ in pairs(aliases) do
+        actualKeys[#actualKeys + 1] = actualKey;
+    end
+
+    local released = false;
+
+    for _, actualKey in ipairs(actualKeys) do
+        if (ReleaseTextureKeyIfIdle(actualKey) == true) then
+            released = true;
+        end
+    end
+
+    return released;
 end
 
 local function GetManualNameOutlineRadius(value)
@@ -3541,22 +3592,40 @@ function canvasTexture.TouchKey(key)
     return TouchTextureKey(key);
 end
 
+function canvasTexture.TouchTextureForKey(key, texture)
+    key = tostring(key or '');
+
+    local id = TextureId(texture);
+    local actualKey = id ~= nil and textureIdToKey[id] or nil;
+
+    if (key == '' or actualKey == nil) then
+        return false;
+    end
+
+    if (actualKey ~= key) then
+        local aliases = textureAliases[key];
+
+        if (type(aliases) ~= 'table' or aliases[actualKey] ~= true) then
+            return false;
+        end
+    end
+
+    return TouchTextureKey(actualKey);
+end
+
 function canvasTexture.ReleaseKey(key)
-    return ReleaseTextureKey(key, false);
+    -- Plate caches are cleared from render/update callbacks.  Their previous
+    -- textures can still be referenced by a queued draw, so treat an explicit
+    -- release as a request and retain anything touched during the grace
+    -- window.  The global LRU will reclaim it once it is safely idle.
+    return ReleaseTextureKeyIfIdle(key);
 end
 
 function canvasTexture.Invalidate()
-    local keys = {};
-
-    for key, _ in pairs(textures) do
-        keys[#keys + 1] = key;
-    end
-
-    for _, key in ipairs(keys) do
-        ReleaseTextureKey(key, false);
-    end
-
-    textureAliases = {};
+    -- Cache signatures include renderVersion, so bumping it forces every
+    -- owner to redraw its canvas.  Do not release render targets immediately:
+    -- settings callbacks run during a render frame and queued world/ImGui
+    -- draws may still reference those textures until the frame is submitted.
     renderVersion = renderVersion + 1;
 end
 

@@ -398,6 +398,14 @@ Involved in Missions:\
             ["icon"] = "ItemDeliverer.png",
             ["type"] = "Item Deliverer",
         },
+        ["Kirk"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Starts quest:\
+* Starts quest: Master of Puppets.",
+            ["type"] = "Level cap increased",
+            ["worldOffsetY"] = 0.4,			
+        },
         ["Lame Deer"] = {
             ["_source"] = "npc",
             ["icon"] = "Defender.png",
@@ -847,11 +855,9 @@ Checks weather for the following areas:\
             ["_source"] = "catseye_npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Crystal Warrior:\
-* Starts quest: Running Rings\
-Around.\
+* Starts quest: Running RingsAround.\
 * Rewards Bastokan Ring.\
-* Can be completed regardless of\
-allegiance.",
+* Can be completed regardless of allegiance.",
             ["type"] = "CW Starting Ring",
         },
         ["Visala"] = {

@@ -1,8 +1,7 @@
 local plates = {};
 local perfMeter = require('core.perf_meter');
-local log = require('core.log');
+local errorBoundary = require('core.error_boundary');
 
-local renderWarnings = {};
 local perfIsolation = {
     self = false,
     enemy = false,
@@ -24,83 +23,43 @@ plates.trust = require('modules.plates.trust');
 plates.pet = require('modules.plates.pet');
 
 -- ============================================================
--- Lifecycle
--- ============================================================
-
-function plates.Load()
-end
-
-function plates.Unload()
-end
-
--- ============================================================
 -- Rendering
 -- ============================================================
 
 function plates.Render()
     local selfStart = perfMeter.Start();
-    local ok, err = true, nil;
     if (perfIsolation.self ~= true) then
-        ok, err = pcall(plates.self.Render);
-    end
-    if (ok ~= true and renderWarnings.self ~= true) then
-        renderWarnings.self = true;
-        log.Warn('Self plates disabled after render error: ' .. tostring(err));
+        errorBoundary.Call('render.plates.self', 'Self plate render', plates.self.Render);
     end
     perfMeter.Stop('plates.self', selfStart);
 
     local enemyStart = perfMeter.Start();
-    ok, err = true, nil;
     if (perfIsolation.enemy ~= true) then
-        ok, err = pcall(plates.enemy.Render, false);
-    end
-    if (ok ~= true and renderWarnings.enemy ~= true) then
-        renderWarnings.enemy = true;
-        log.Warn('Enemy plates disabled after render error: ' .. tostring(err));
+        errorBoundary.Call('render.plates.enemy', 'Enemy plate render', plates.enemy.Render, false);
     end
     perfMeter.Stop('plates.enemy', enemyStart);
 
     local pcStart = perfMeter.Start();
-    ok, err = true, nil;
     if (perfIsolation.pc ~= true) then
-        ok, err = pcall(plates.pc.Render);
-    end
-    if (ok ~= true and renderWarnings.pc ~= true) then
-        renderWarnings.pc = true;
-        log.Warn('PC plates disabled after render error: ' .. tostring(err));
+        errorBoundary.Call('render.plates.pc', 'PC plate render', plates.pc.Render);
     end
     perfMeter.Stop('plates.pc', pcStart);
 
     local trustStart = perfMeter.Start();
-    ok, err = true, nil;
     if (perfIsolation.trust ~= true) then
-        ok, err = pcall(plates.trust.Render);
-    end
-    if (ok ~= true and renderWarnings.trust ~= true) then
-        renderWarnings.trust = true;
-        log.Warn('Trust plates disabled after render error: ' .. tostring(err));
+        errorBoundary.Call('render.plates.trust', 'Trust plate render', plates.trust.Render);
     end
     perfMeter.Stop('plates.trust', trustStart);
 
     local petStart = perfMeter.Start();
-    ok, err = true, nil;
     if (perfIsolation.pet ~= true) then
-        ok, err = pcall(plates.pet.Render);
-    end
-    if (ok ~= true and renderWarnings.pet ~= true) then
-        renderWarnings.pet = true;
-        log.Warn('Pet plates disabled after render error: ' .. tostring(err));
+        errorBoundary.Call('render.plates.pet', 'Pet plate render', plates.pet.Render);
     end
     perfMeter.Stop('plates.pet', petStart);
 
     local npcStart = perfMeter.Start();
-    ok, err = true, nil;
     if (perfIsolation.npc ~= true) then
-        ok, err = pcall(plates.npc.Render);
-    end
-    if (ok ~= true and renderWarnings.npc ~= true) then
-        renderWarnings.npc = true;
-        log.Warn('NPC/Object plates disabled after render error: ' .. tostring(err));
+        errorBoundary.Call('render.plates.npc', 'NPC/Object plate render', plates.npc.Render);
     end
     perfMeter.Stop('plates.npc', npcStart);
 end

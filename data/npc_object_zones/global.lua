@@ -491,6 +491,20 @@ supply quest unlocks.",
             ["icon"] = "Merchant.png",
             ["type"] = "Standard Merchant",
         },
+        ["Ephemeral Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "EphemeralMoogle.png",
+            ["note"] = "Notes:\
+* Stores and withdraws crystals and clusters.\
+* Holds up to 5,000 crystals of each element.",
+            ["type"] = "Crystal Storage",
+        },
+        ["Ephemeral Box"] = {
+            ["_source"] = "catseye_item",
+            ["icon"] = "EphemeralBox.png",
+            ["type"] = "CW Storage",
+            ["worldOffsetY"] = 0.25,
+        },
         ["Eunirange"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",

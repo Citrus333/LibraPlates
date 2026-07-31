@@ -974,10 +974,6 @@ local function QueueTrust(trust)
     perfMeter.EndDetail(queueTimer);
 end
 
-function trustPlate.Build()
-    return nil;
-end
-
 local function TrustWidgetEnabled(layoutStateName, widgetName, defaults)
     local settings = state.GetWidgetSettings('Trust', layoutStateName, widgetName, defaults);
     return settings ~= nil and settings.enabled == true;

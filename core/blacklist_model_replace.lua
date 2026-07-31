@@ -36,10 +36,6 @@ local fomorModels = {
     galka = { 0x05, 0x08, 0x0F, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
 };
 local sourceFixedFomorModels = {
-    -- LandSandBoat mob_pools: Fomor_Red_Mage has two source-backed model words:
-    -- pool 1389 = 0x0408 / 1032, level-match pool 6525 = 0x0409 / 1033.
-    -- 1032 is already the Mithra family default and does not produce a Hume
-    -- female Fomor on live PCs, so use the adjacent level-match Red Mage row.
     hume_female = 1033,
 };
 local raceFamilyAliases = {
@@ -142,9 +138,16 @@ local function ReadActIndex(ffiRef, packet)
     return value;
 end
 
-local function ReadName(ffiRef, packet)
+local function ReadName(ffiRef, packet, packetLength)
+    local available = math.max(0, math.floor(tonumber(packetLength) or 0) - 0x5A);
+    local nameLength = math.min(16, available);
+
+    if (nameLength <= 0) then
+        return '';
+    end
+
     local ok, value = pcall(function()
-        return ffiRef.string(packet + 0x5A, 16);
+        return ffiRef.string(packet + 0x5A, nameLength);
     end);
 
     if (ok ~= true) then
@@ -269,6 +272,32 @@ local function GetPacketDataString(e)
     end
 
     return nil;
+end
+
+local function GetWritablePacketByteLength(e)
+    if (e == nil) then
+        return 0;
+    end
+
+    -- data_modified_raw points at the writable form of the packet. Prefer the
+    -- actual Lua packet string length so validation describes that same buffer.
+    if (type(e.data_modified) == 'string' and #e.data_modified > 0) then
+        return #e.data_modified;
+    end
+
+    if (type(e.data) == 'string' and #e.data > 0) then
+        return #e.data;
+    end
+
+    if (type(e.data_raw) == 'string' and #e.data_raw > 0) then
+        return #e.data_raw;
+    end
+
+    return math.max(0, math.floor(tonumber(e.size) or 0));
+end
+
+local function PacketHasBytes(e, requiredLength)
+    return GetWritablePacketByteLength(e) >= math.max(0, math.floor(tonumber(requiredLength) or 0));
 end
 
 local function AddIncomingPacket(id, bytes)
@@ -1246,7 +1275,7 @@ local function QueueBlacklistModelRecovery(player, fixedModelId, originalHair, m
         modelBytes = CloneModelBytes(modelBytes),
         queuedAt = now,
         nextAt = now + 0.35,
-        expiresAt = now + 2.50,
+        expiresAt = now + 15.00,
         attempts = 0,
     };
 end
@@ -1359,18 +1388,53 @@ local function HasRecoveredBlacklistLook(index, expectedHair)
         and tonumber(entity.Look ~= nil and entity.Look.Hair or nil) == targetHair;
 end
 
-local function ProcessBlacklistModelRecoveries()
-    if (playerBlacklist.GetModelReplaceSettings().modelReplaceUseFomor == false) then
-        pendingBlacklistRecoveries = {};
-        return;
+local function CancelBlacklistModelRecoveries()
+    local entityManager = nil;
+
+    for _, pending in pairs(pendingBlacklistRecoveries) do
+        local index = tonumber(pending.index) or 0;
+
+        if (index <= 0) then
+            local resolvedIndex = ResolveRawPlayerIndex(pending.serverId or pending.name);
+            index = tonumber(resolvedIndex) or 0;
+        end
+
+        if (index > 0) then
+            entityManager = entityManager or GetEntityManager();
+            SetRawEntityCostume(entityManager, index, 0);
+            SetRawEntityType(index, 0);
+            SetModelRefreshFlags(entityManager, index);
+            PulseTarget(index);
+        end
     end
 
+    pendingBlacklistRecoveries = {};
+    suppressBlacklistRecoveryWrites = {};
+    stableBlacklistRecoveredActors = {};
+end
+
+local function ProcessBlacklistModelRecoveries()
     local now = os.clock();
     local entityManager = nil;
     local entities = nil;
 
     for key, pending in pairs(pendingBlacklistRecoveries) do
         if (now > (tonumber(pending.expiresAt) or 0)) then
+            local index = tonumber(pending.index) or 0;
+
+            if (index <= 0) then
+                local resolvedIndex = ResolveRawPlayerIndex(pending.serverId or pending.name);
+                index = tonumber(resolvedIndex) or 0;
+            end
+
+            if (index > 0) then
+                entityManager = entityManager or GetEntityManager();
+                SetRawEntityCostume(entityManager, index, 0);
+                SetRawEntityType(index, 0);
+                SetModelRefreshFlags(entityManager, index);
+                PulseTarget(index);
+            end
+
             pendingBlacklistRecoveries[key] = nil;
         elseif (now >= (tonumber(pending.nextAt) or 0)) then
             local index = tonumber(pending.index) or 0;
@@ -1392,8 +1456,24 @@ local function ProcessBlacklistModelRecoveries()
                 local currentCostume = tonumber(entity.CostumeId) or 0;
                 local currentHair = tonumber(entity.Look ~= nil and entity.Look.Hair or nil);
                 local originalHair = tonumber(pending.originalHair);
+                entities = entities or (pcall(require, 'core.entities') and require('core.entities') or nil);
+                local recoveryInfo = entities ~= nil and entities.GetEntityDebugInfo ~= nil
+                    and entities.GetEntityDebugInfo(index, 64.4)
+                    or nil;
 
-                if (
+                local recoveryDistance = tonumber(recoveryInfo ~= nil and recoveryInfo.distance or nil) or math.huge;
+                local recoveryReady = recoveryInfo ~= nil
+                    and recoveryInfo.visible == true
+                    and recoveryInfo.visibleWithSkeleton == true
+                    and recoveryInfo.settled == true;
+
+                if (recoveryDistance > 25.0) then
+                    pending.nearAt = nil;
+                    pending.nextAt = now + 0.10;
+                elseif (recoveryReady ~= true and (now - (tonumber(pending.nearAt) or now)) < 2.00) then
+                    pending.nearAt = tonumber(pending.nearAt) or now;
+                    pending.nextAt = now + 0.10;
+                elseif (
                     originalHair ~= nil and
                     currentHair == originalHair and
                     (now - (tonumber(pending.queuedAt) or now)) < 1.50 and
@@ -1403,6 +1483,15 @@ local function ProcessBlacklistModelRecoveries()
                 elseif (currentType ~= 2 and currentCostume ~= (tonumber(pending.fixedModelId) or 0)) then
                     pendingBlacklistRecoveries[key] = nil;
                 else
+                    -- Capture the loaded costume look before clearing CostumeId/Type or
+                    -- requesting a model refresh; those writes can restore the player's
+                    -- original equipment before the stable look is copied.
+                    local queuedRace = tonumber(pending.modelBytes ~= nil and pending.modelBytes[2] or nil);
+                    local liveModelBytes = BuildModelBytesFromLiveLook(
+                        index,
+                        pending.modelBytes,
+                        queuedRace or tonumber(entity.Race)
+                    );
                     entityManager = entityManager or GetEntityManager();
                     local costumeSet = SetRawEntityCostume(entityManager, index, 0);
                     local typeSet = SetRawEntityType(index, 0);
@@ -1412,7 +1501,6 @@ local function ProcessBlacklistModelRecoveries()
                     pending.attempts = (tonumber(pending.attempts) or 0) + 1;
 
                     if (debugEnabled == true or blacklistWatch ~= nil) then
-                        entities = entities or (pcall(require, 'core.entities') and require('core.entities') or nil);
                         local info = entities ~= nil and entities.GetEntityDebugInfo ~= nil
                             and entities.GetEntityDebugInfo(index, 64.4)
                             or nil;
@@ -1430,8 +1518,6 @@ local function ProcessBlacklistModelRecoveries()
 
                     if (costumeSet == true and typeSet == true) then
                         suppressBlacklistRecoveryWrites[key] = now + 2.00;
-                        local queuedRace = tonumber(pending.modelBytes ~= nil and pending.modelBytes[2] or nil);
-                        local liveModelBytes = BuildModelBytesFromLiveLook(index, pending.modelBytes, queuedRace or tonumber(entity.Race));
                         stableBlacklistRecoveredActors[key] = {
                             hair = tonumber(liveModelBytes ~= nil and liveModelBytes[1] or currentHair),
                             race = tonumber(liveModelBytes ~= nil and liveModelBytes[2] or entity.Race),
@@ -1440,7 +1526,9 @@ local function ProcessBlacklistModelRecoveries()
                         };
                         pendingBlacklistRecoveries[key] = nil;
                     elseif (pending.attempts >= 3) then
-                        pendingBlacklistRecoveries[key] = nil;
+                        -- Keep the recovery alive until its bounded timeout. The timeout
+                        -- path always clears the temporary Type-2/costume state.
+                        pending.nextAt = now + 0.25;
                     else
                         pending.nextAt = now + 0.25;
                     end
@@ -1927,7 +2015,7 @@ local function ParseNpcModelPacket(e)
 
     local data = e.data_modified or e.data;
 
-    if (type(data) ~= 'string') then
+    if (type(data) ~= 'string' or #data < 0x34) then
         return nil;
     end
 
@@ -2072,6 +2160,10 @@ local function HandlePlayerModelPacket00E(e, settings)
         return;
     end
 
+    if (PacketHasBytes(e, 0x34) ~= true) then
+        return;
+    end
+
     local ffiRef = GetFfi();
 
     if (ffiRef == nil) then
@@ -2095,7 +2187,8 @@ local function HandlePlayerModelPacket00E(e, settings)
 
     local serverId = ReadServerId(ffiRef, packet);
     local actIndex = ReadActIndex(ffiRef, packet);
-    local name = HasFlag(sendFlag, 0x08) == true and ReadName(ffiRef, packet) or '';
+    local packetLength = GetWritablePacketByteLength(e);
+    local name = HasFlag(sendFlag, 0x08) == true and ReadName(ffiRef, packet, packetLength) or '';
     local player = GetEntityPlayer(actIndex, serverId, name);
     local entry = playerBlacklist.GetEntry(player);
 
@@ -2175,6 +2268,10 @@ function blacklistModelReplace.HandlePacketIn(e)
         return;
     end
 
+    if (PacketHasBytes(e, 0x5A) ~= true) then
+        return;
+    end
+
     local ffiRef = GetFfi();
 
     if (ffiRef == nil) then
@@ -2197,7 +2294,8 @@ function blacklistModelReplace.HandlePacketIn(e)
 
     local serverId = ReadServerId(ffiRef, packet);
     local actIndex = ReadActIndex(ffiRef, packet);
-    local name = HasFlag(sendFlag, 0x08) == true and ReadName(ffiRef, packet) or '';
+    local packetLength = GetWritablePacketByteLength(e);
+    local name = HasFlag(sendFlag, 0x08) == true and ReadName(ffiRef, packet, packetLength) or '';
     local player = GetEntityPlayer(actIndex, serverId, name);
     CachePlayerPacket(player, e);
     local entry = playerBlacklist.GetEntry(player);
@@ -2715,7 +2813,14 @@ end
 function blacklistModelReplace.Update()
     pendingCostumeApplies = {};
     pendingLookApplies = {};
-    ProcessBlacklistModelRecoveries();
+    local settings = playerBlacklist.GetModelReplaceSettings();
+
+    if (settings.modelReplaceUseFomor ~= false) then
+        ProcessBlacklistModelRecoveries();
+    elseif next(pendingBlacklistRecoveries) ~= nil then
+        CancelBlacklistModelRecoveries();
+    end
+
     ProcessBlacklistLookWatch();
 
     if (blacklistWatch == nil) then

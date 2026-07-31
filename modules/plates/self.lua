@@ -1441,7 +1441,9 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         end
     end
 
-    local cacheEligible = animatedBarActive ~= true and enmityActive ~= true;
+    -- The enmity icon is already represented by the world-plate signature.
+    -- Only the continuously animated bar needs to bypass the static cache.
+    local cacheEligible = animatedBarActive ~= true;
     local signature = nil;
     local vitalSignature = nil;
     local cacheKey = GetWorldCacheKey(stateName, targetStateName, layoutStateName, plateData.canvasWidth ~= nil);
@@ -1528,10 +1530,6 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         textureHeight,
         plateClickRects
     );
-end
-
-function selfPlate.Build()
-    return nil;
 end
 
 function selfPlate.SetLagTestSuppressed(value)

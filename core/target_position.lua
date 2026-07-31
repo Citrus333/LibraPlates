@@ -152,4 +152,13 @@ function targetPosition.Resolve(index)
     };
 end
 
+function targetPosition.RefreshDevice()
+    device = d3d.get_device();
+    return device ~= nil;
+end
+
+function targetPosition.ResetDevice()
+    device = nil;
+end
+
 return targetPosition;

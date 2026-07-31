@@ -1117,10 +1117,6 @@ local function AnyNpcTargetModuleCanLoad()
         targetModuleMarker.HasDrawableSettings('Object', objectSubtargetSettings) == true;
 end
 
-function npcPlate.Build()
-    return nil;
-end
-
 function npcPlate.ClearCache()
     ClearPlateCache();
 end

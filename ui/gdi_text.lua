@@ -41,6 +41,13 @@ local function GetGdi()
     end
 
     gdi = result;
+
+    if (gdi.set_auto_render ~= nil) then
+        pcall(function ()
+            gdi:set_auto_render(true);
+        end);
+    end
+
     return gdi;
 end
 
@@ -293,6 +300,11 @@ function gdiText.Shutdown()
             gdi:set_auto_render(false);
         end);
     end
+
+    objects = {};
+    frameId = 0;
+    gdi = nil;
+    gdiLoadAttempted = false;
 end
 
 gdiText.GetGdi = GetGdi;

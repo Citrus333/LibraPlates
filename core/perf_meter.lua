@@ -2,6 +2,7 @@ local perfMeter = {};
 
 local imgui = require('imgui');
 local adaptivePerformance = require('core.adaptive_performance');
+local log = require('core.log');
 
 local overlayEnabled = false;
 local compactOverlay = true;
@@ -60,6 +61,12 @@ local detailOrder = {
     'event.mouse',
     'alerts.packet',
     'alerts.text',
+    'text.itemFlicker',
+    'text.fishing',
+    'text.restingTick',
+    'text.pet',
+    'text.enemyStatuses',
+    'text.quickMenu',
     'command.actionRange',
     'command.aoe',
     'command.mounts',
@@ -126,6 +133,12 @@ local labels = {
     ['event.mouse'] = 'Mouse event',
     ['alerts.packet'] = 'Alerts packet',
     ['alerts.text'] = 'Alerts text',
+    ['text.itemFlicker'] = 'Text: item flicker',
+    ['text.fishing'] = 'Text: fishing',
+    ['text.restingTick'] = 'Text: resting tick',
+    ['text.pet'] = 'Text: pet',
+    ['text.enemyStatuses'] = 'Text: enemy statuses',
+    ['text.quickMenu'] = 'Text: quick menu',
     ['command.actionRange'] = 'Command action range',
     ['command.aoe'] = 'Command AOE',
     ['command.mounts'] = 'Command mounts',
@@ -964,7 +977,9 @@ function perfMeter.BeginFrame()
     recordingLastFrameClock = now;
 
     if (recordingActive == true and os.clock() >= (tonumber(recordingEndClock) or 0)) then
-        perfMeter.StopTimedReport(true);
+        if (perfMeter.StopTimedReport(true) == true) then
+            log.Info('Performance recording complete; report saved.');
+        end
     end
 
     frameIndex = frameIndex + 1;

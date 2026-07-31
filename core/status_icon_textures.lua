@@ -9,6 +9,11 @@ local cache = {};
 local device = d3d8.get_device();
 local packCache = nil;
 
+local function GetDevice()
+    device = d3d8.get_device();
+    return device;
+end
+
 local function PathExists(path)
     local ok, exists = pcall(function()
         return ashita.fs.exists(path);
@@ -159,8 +164,9 @@ end
 
 local function LoadFromResource(statusId)
     statusId = tonumber(statusId) or 0;
+    local activeDevice = GetDevice();
 
-    if (statusId <= 0 or statusId > 0x3FF or device == nil) then
+    if (statusId <= 0 or statusId > 0x3FF or activeDevice == nil) then
         return nil;
     end
 
@@ -174,7 +180,7 @@ local function LoadFromResource(statusId)
         local ptr = ffi.new('IDirect3DTexture8*[1]');
 
         if (ffi.C.D3DXCreateTextureFromFileInMemoryEx(
-            device,
+            activeDevice,
             icon.Bitmap,
             icon.ImageSize,
             0xFFFFFFFF,
@@ -266,6 +272,17 @@ end
 
 function statusIconTextures.ResolvePackName(iconPack)
     return ResolvePack(iconPack);
+end
+
+function statusIconTextures.Clear()
+    cache = {};
+    packCache = nil;
+    device = nil;
+end
+
+function statusIconTextures.RefreshDevice()
+    device = d3d8.get_device();
+    return device ~= nil;
 end
 
 return statusIconTextures;

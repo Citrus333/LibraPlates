@@ -7,6 +7,19 @@ local state = require('core.state');
 local worldDepthPlate = {};
 local device = d3d.get_device();
 
+local function GetDevice()
+    device = d3d.get_device();
+    return device;
+end
+
+local function ReleaseInterface(value)
+    if (value ~= nil) then
+        pcall(function()
+            value:Release();
+        end);
+    end
+end
+
 ffi.cdef[[
     typedef struct {
         float x, y, z;
@@ -159,6 +172,10 @@ function worldDepthPlate.RenderSelf()
         return;
     end
 
+    if (GetDevice() == nil) then
+        return;
+    end
+
     local center = entities.GetSelfCanvasCenter(canvasDefaults.offsetX, canvasDefaults.offsetY);
 
     if (center == nil or center.boneWorldX == nil or center.boneWorldY == nil or center.boneWorldZ == nil) then
@@ -256,10 +273,19 @@ function worldDepthPlate.RenderSelf()
     device:SetTextureStageState(0, D3DTSS_COLORARG1, saveColorArg1);
     device:SetTextureStageState(0, D3DTSS_ALPHAOP, saveAlphaOp);
     device:SetTextureStageState(0, D3DTSS_ALPHAARG1, saveAlphaArg1);
+    ReleaseInterface(saveTex);
 
     if (ok ~= true) then
         error(err);
     end
+end
+
+function worldDepthPlate.ResetDevice()
+    device = nil;
+end
+
+function worldDepthPlate.RefreshDevice()
+    return GetDevice() ~= nil;
 end
 
 return worldDepthPlate;

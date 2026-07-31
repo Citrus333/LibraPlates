@@ -1,5 +1,6 @@
 local trustNames = require('core.trust_names');
 local entities = require('core.entities');
+local entityResolver = require('core.entity_resolver');
 
 local actionRelevance = {};
 
@@ -20,25 +21,7 @@ local function GetEntityManager()
 end
 
 function actionRelevance.GetIndexFromServerId(serverId)
-    serverId = tonumber(serverId) or 0;
-
-    if (serverId == 0) then
-        return 0;
-    end
-
-    local entityManager = GetEntityManager();
-
-    if (entityManager == nil) then
-        return 0;
-    end
-
-    for index = 1, 0x8FF do
-        if (SafeCall(0, function() return entityManager:GetServerId(index); end) == serverId) then
-            return index;
-        end
-    end
-
-    return 0;
+    return entityResolver.GetIndex(serverId);
 end
 
 function actionRelevance.GetEntityName(index)

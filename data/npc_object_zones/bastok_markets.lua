@@ -290,8 +290,7 @@ Markets and to neighboring districts.",
             ["_source"] = "npc",
             ["icon"] = "TutorialNPC.png",
             ["note"] = "Notes:\
-- Provides tutorial information for\
-new adventurers.",
+- Provides tutorial information for new adventurers.",
             ["type"] = "Tutorial",
         },
         ["Gwill"] = {
@@ -344,7 +343,7 @@ Involved in Missions:\
         },
         ["Igsli"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
+            ["icon"] = "OutpostTeleporter.png",
             ["note"] = "Starts Quests:\
 * Unity Concord\
 \
@@ -371,6 +370,13 @@ Involved in Quests:\
 * Delivery Helper target NPC for Kiddie Presents.",
             ["type"] = "Holiday Event",
         },
+        ["Julberg"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
+* Running Rings Around",
+            ["type"] = "Quest Associate",
+        },
         ["Julio"] = {
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
@@ -383,7 +389,7 @@ Involved in Quests:\
         },
         ["Ken"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Lure of the Wildcat (Bastok)\
 * All by Myself\
@@ -391,7 +397,7 @@ Involved in Quests:\
 Involved in Missions:\
 * The Voracious Resurgence #2: The Brygid Cup\
 ",
-            ["type"] = "Aspiring Musketeer",
+            ["type"] = "Quest Associate",
         },
         ["Khonzon"] = {
             ["_source"] = "npc",
@@ -438,13 +444,13 @@ Involved in Missions:\
         },
         ["Marin"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Involved in Quests:\
 * All by Myself\
 \
 Involved in Missions:\
 * The Voracious Resurgence #2: The Brygid Cup",
-            ["type"] = "Escort Quest",
+            ["type"] = "Quest Giver",
         },
         ["Market Moogle"] = {
             ["_source"] = "npc",
@@ -507,7 +513,7 @@ Involved in Missions:\
         },
         ["Neavias"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Crystal Warrior:\
 * Starts quest: Birdsearch.\
 * Level 5 Bastok starting quest.",
@@ -520,21 +526,19 @@ Involved in Missions:\
         },
         ["Octavien"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
-            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Runic_Insurrection",
-            ["note"] = "CatsEyeXI:\
-* Starts quest: Runic Insurrection.\
-* Unlocks Rune Fencer.",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Starts Quests:\
+* Runic Insurrection.",
             ["type"] = "Rune Fencer Job Unlock",
         },
         ["Offa"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "Involved in Quests:\
-* Smoke on the Mountain\
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Starts Quests:\
 * A Proper Burial\
-",
-            ["type"] = "Quest NPC",
+Involved in Quests:\
+* Smoke on the Mountain",
+            ["type"] = "Quest Giver",
         },
         ["Oggodett"] = {
             ["_source"] = "npc",
@@ -633,7 +637,7 @@ for starting gil.",
         },
         ["Reinberta"] = {
             ["_source"] = "npc",
-            ["icon"] = "GuildMaster.png",
+            ["icon"] = "gsm_GuildMaster.png",
             ["note"] = "Involved in Quests:\
 * Confessions of a Bellmaker\
 ",

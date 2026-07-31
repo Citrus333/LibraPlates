@@ -1,6 +1,7 @@
 local ffi = require('ffi');
 local log = require('core.log');
 local actionRelevance = require('core.action_relevance');
+local entityResolver = require('core.entity_resolver');
 
 local enemyCasts = {};
 local casts = {};
@@ -57,25 +58,7 @@ local function GetEntityManager()
 end
 
 local function GetIndexFromServerId(serverId)
-    serverId = tonumber(serverId) or 0;
-
-    if (serverId == 0) then
-        return 0;
-    end
-
-    local entityManager = GetEntityManager();
-
-    if (entityManager == nil) then
-        return 0;
-    end
-
-    for index = 1, 0x8FF do
-        if (SafeCall(0, function() return entityManager:GetServerId(index); end) == serverId) then
-            return index;
-        end
-    end
-
-    return 0;
+    return entityResolver.GetIndex(serverId);
 end
 
 local function GetSelfServerId()

@@ -429,10 +429,6 @@ end
 function playerBlacklist.GetModelReplaceSettings()
     local store = EnsureStore();
 
-    if (store.modelReplaceEnabled == nil) then
-        store.modelReplaceEnabled = true;
-    end
-
     store.modelReplaceRace = tonumber(store.modelReplaceRace) or defaultForcedFomorRace;
     store.modelReplaceHair = tonumber(store.modelReplaceHair) or defaultForcedFomorHair;
     if (store.modelReplacePreserveRace == nil) then
@@ -446,8 +442,9 @@ function playerBlacklist.GetModelReplaceSettings()
         store.modelReplaceClearGear = true;
     end
     if (store.modelReplaceUseFomor == nil) then
-        store.modelReplaceUseFomor = true;
+        store.modelReplaceUseFomor = store.modelReplaceEnabled ~= false;
     end
+    store.modelReplaceEnabled = nil;
     if (store.displayNameReplaceEnabled == nil) then
         store.displayNameReplaceEnabled = true;
     end
@@ -466,6 +463,34 @@ function playerBlacklist.GetModelReplaceSettings()
     end
     if (type(store.modelReplaceFixedFomorModels) ~= 'table') then
         store.modelReplaceFixedFomorModels = {};
+    end
+    local temporaryModelIds = {
+        hume = 0x03FA,
+        elvaan = 0x03FF,
+        tarutaru = 0x0403,
+        mithra = 0x0409,
+        galka = 0x040F,
+    };
+    local restoredKnownSettings = false;
+    for family, temporaryId in pairs(temporaryModelIds) do
+        if (tonumber(store.modelReplaceFixedFomorModels[family]) == temporaryId) then
+            store.modelReplaceFixedFomorModels[family] = defaultFixedFomorModels[family];
+            restoredKnownSettings = true;
+        end
+    end
+    for _, key in ipairs({
+        'hume_male', 'hume_female',
+        'elvaan_male', 'elvaan_female',
+        'tarutaru_male', 'tarutaru_female',
+        'mithra_female', 'galka_male',
+    }) do
+        if (store.modelReplaceFixedFomorModels[key] ~= nil) then
+            store.modelReplaceFixedFomorModels[key] = nil;
+            restoredKnownSettings = true;
+        end
+    end
+    if (restoredKnownSettings == true) then
+        state.SaveThrottled(0.25);
     end
     store.modelReplacePacketCache = {};
     for family, modelId in pairs(defaultFixedFomorModels) do

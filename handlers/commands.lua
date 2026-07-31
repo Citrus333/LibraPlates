@@ -1842,14 +1842,14 @@ function commands.Handle(e)
         local settings = playerBlacklist.GetModelReplaceSettings();
 
         if (action == 'on' or action == 'enable') then
-            settings.modelReplaceEnabled = true;
+            settings.modelReplaceUseFomor = true;
             state.Save();
             log.Info('Blacklist model replacement enabled.');
             return;
         end
 
         if (action == 'off' or action == 'disable') then
-            settings.modelReplaceEnabled = false;
+            settings.modelReplaceUseFomor = false;
             state.Save();
             log.Info('Blacklist model replacement disabled.');
             return;
@@ -2029,7 +2029,7 @@ function commands.Handle(e)
         end
 
         log.Info(
-            'Blacklist model replacement enabled=' .. tostring(settings.modelReplaceEnabled == true) ..
+            'Blacklist model replacement enabled=' .. tostring(settings.modelReplaceUseFomor ~= false) ..
             ' race=' .. tostring(settings.modelReplaceRace) ..
             ' hair=' .. tostring(settings.modelReplaceHair) ..
             ' preserveRace=' .. tostring(settings.modelReplacePreserveRace ~= false) ..
@@ -2696,6 +2696,44 @@ function commands.Handle(e)
             lagTest.Start(tonumber(args[4]), 'self');
         else
             lagTest.Start(tonumber(args[3]));
+        end
+
+        return;
+    end
+
+    if (subcommand == 'bottleneck' or subcommand == 'bottlenecktest' or subcommand == 'worldtest') then
+        if (tostring(args[3] or ''):lower() == 'cancel') then
+            lagTest.Cancel();
+        else
+            lagTest.StartBottleneck(tonumber(args[3]));
+        end
+
+        return;
+    end
+
+    if (subcommand == 'worlddraw') then
+        if (tostring(args[3] or ''):lower() == 'off') then
+            worldMarkerProbe.SetDrawSuppressed(true);
+            log.Info('World texture drawing suppressed for diagnostics; plate modules remain active. Use /lp worlddraw on to restore.');
+        elseif (tostring(args[3] or ''):lower() == 'on') then
+            worldMarkerProbe.SetDrawSuppressed(false);
+            log.Info('World texture drawing restored.');
+        else
+            log.Info('World texture drawing is ' .. (worldMarkerProbe.GetDrawSuppressed() == true and 'suppressed' or 'active') .. '. Usage: /lp worlddraw on|off');
+        end
+
+        return;
+    end
+
+    if (subcommand == 'atlasdraw') then
+        if (tostring(args[3] or ''):lower() == 'off') then
+            worldMarkerProbe.SetAtlasDrawSuppressed(true);
+            log.Info('Atlas texture submission suppressed for diagnostics; plate modules and anchor passes remain active.');
+        elseif (tostring(args[3] or ''):lower() == 'on') then
+            worldMarkerProbe.SetAtlasDrawSuppressed(false);
+            log.Info('Atlas texture submission restored.');
+        else
+            log.Info('Atlas texture submission is ' .. (worldMarkerProbe.GetAtlasDrawSuppressed() == true and 'suppressed' or 'active') .. '. Usage: /lp atlasdraw on|off');
         end
 
         return;

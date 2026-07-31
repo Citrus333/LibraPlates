@@ -1,6 +1,16 @@
+local ffi = require('ffi');
+
+pcall(ffi.cdef, [[
+    int MoveFileExA(const char* lpExistingFileName, const char* lpNewFileName, unsigned long dwFlags);
+]]);
+
+local kernel32 = nil;
+pcall(function()
+    kernel32 = ffi.load('kernel32');
+end);
+
 local state = {
     worldEnabled = false,
-    worldRuntimeDisabled = false,
     configOpen = false,
     profile = nil,
     profileManifest = nil,
@@ -31,6 +41,8 @@ local normalSaveBackupIntervalSeconds = 600;
 local backupPruneIntervalSeconds = 600;
 local maxBackupFiles = 1;
 local maxBackupBytes = 256 * 1024 * 1024;
+local MOVEFILE_REPLACE_EXISTING = 0x00000001;
+local MOVEFILE_WRITE_THROUGH = 0x00000008;
 local SerializeValue = nil;
 local CopyTable = nil;
 local ApplyLoadedWorldEnabled = nil;
@@ -374,17 +386,84 @@ local function LoadLuaTableFile(path)
     return nil;
 end
 
-local function WriteLuaTableFile(path, value)
-    local file = io.open(path, 'w');
+local function ReplaceFileAtomically(sourcePath, targetPath)
+    if (kernel32 == nil or kernel32.MoveFileExA == nil) then
+        return false;
+    end
+
+    local ok, result = pcall(function()
+        return kernel32.MoveFileExA(
+            tostring(sourcePath),
+            tostring(targetPath),
+            MOVEFILE_REPLACE_EXISTING + MOVEFILE_WRITE_THROUGH
+        );
+    end);
+
+    return ok == true and tonumber(result) ~= 0;
+end
+
+local function WriteSerializedLuaFile(path, serialized, validator)
+    path = tostring(path or '');
+    serialized = tostring(serialized or '');
+
+    if (path == '' or serialized == '') then
+        return false;
+    end
+
+    local temporaryPath = path .. '.tmp';
+    pcall(function()
+        os.remove(temporaryPath);
+    end);
+
+    local file = io.open(temporaryPath, 'wb');
 
     if (file == nil) then
         return false;
     end
 
-    file:write('return ' .. SerializeValue(value, 0) .. '\n');
+    local writeOk = pcall(function()
+        file:write(serialized);
+        file:flush();
+    end);
     file:close();
 
+    if (writeOk ~= true or ReadFileSize(temporaryPath) ~= string.len(serialized)) then
+        pcall(function()
+            os.remove(temporaryPath);
+        end);
+        return false;
+    end
+
+    local loaded = LoadLuaTableFile(temporaryPath);
+
+    if (
+        type(loaded) ~= 'table' or
+        (type(validator) == 'function' and validator(loaded) ~= true)
+    ) then
+        pcall(function()
+            os.remove(temporaryPath);
+        end);
+        return false;
+    end
+
+    if (ReplaceFileAtomically(temporaryPath, path) ~= true) then
+        pcall(function()
+            os.remove(temporaryPath);
+        end);
+        return false;
+    end
+
     return true;
+end
+
+local function WriteLuaTableFile(path, value)
+    return WriteSerializedLuaFile(
+        path,
+        'return ' .. SerializeValue(value, 0) .. '\n',
+        function(loaded)
+            return type(loaded) == 'table';
+        end
+    );
 end
 
 local function IsSettingsProfile(value)
@@ -748,7 +827,6 @@ end
 
 function state.Load()
     state.worldEnabled = true;
-    state.worldRuntimeDisabled = false;
     state.configOpen = false;
     state.profile = nil;
     state.profileManifest = nil;
@@ -853,14 +931,10 @@ function state.Save()
 
     BackupActiveProfile(profileName, false);
 
-    local file = io.open(state.activeProfilePath, 'w');
-
-    if (file == nil) then
+    if (WriteSerializedLuaFile(state.activeProfilePath, serialized, IsSettingsProfile) ~= true) then
         return false;
     end
 
-    file:write(serialized);
-    file:close();
     state.lastSave = os.clock();
     state.loadedFromDisk = true;
     state.savedThisSession = true;
@@ -913,7 +987,6 @@ end
 
 function state.SetWorldEnabled(enabled)
     state.worldEnabled = (enabled == true);
-    state.worldRuntimeDisabled = false;
 
     local profile = state.GetProfile();
     profile.global.worldEnabled = state.worldEnabled == true;
@@ -921,15 +994,7 @@ function state.SetWorldEnabled(enabled)
 end
 
 function state.GetWorldEnabled()
-    return state.worldEnabled == true and state.worldRuntimeDisabled ~= true;
-end
-
-function state.SetWorldRuntimeDisabled(disabled)
-    state.worldRuntimeDisabled = disabled == true;
-end
-
-function state.GetWorldRuntimeDisabled()
-    return state.worldRuntimeDisabled == true;
+    return state.worldEnabled == true;
 end
 
 -- ============================================================
@@ -1026,10 +1091,6 @@ function state.GetVisualBlacklist()
         runtime.visualBlacklist.pendingNames = {};
     end
 
-    if (runtime.visualBlacklist.modelReplaceEnabled == nil) then
-        runtime.visualBlacklist.modelReplaceEnabled = true;
-    end
-
     runtime.visualBlacklist.modelReplaceRace = tonumber(runtime.visualBlacklist.modelReplaceRace) or 5;
     runtime.visualBlacklist.modelReplaceHair = tonumber(runtime.visualBlacklist.modelReplaceHair) or 2;
     if (runtime.visualBlacklist.modelReplacePreserveRace == nil) then
@@ -1039,8 +1100,9 @@ function state.GetVisualBlacklist()
         runtime.visualBlacklist.modelReplaceClearGear = true;
     end
     if (runtime.visualBlacklist.modelReplaceUseFomor == nil) then
-        runtime.visualBlacklist.modelReplaceUseFomor = true;
+        runtime.visualBlacklist.modelReplaceUseFomor = runtime.visualBlacklist.modelReplaceEnabled ~= false;
     end
+    runtime.visualBlacklist.modelReplaceEnabled = nil;
     if (runtime.visualBlacklist.displayNameReplaceEnabled == nil) then
         runtime.visualBlacklist.displayNameReplaceEnabled = true;
     end

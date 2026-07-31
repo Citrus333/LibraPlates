@@ -1,6 +1,7 @@
 local bit = require('bit');
 local enmityIcons = require('core.enmity_icons');
 local engagedEnemies = require('core.engaged_enemies');
+local entityResolver = require('core.entity_resolver');
 
 local enmity = {};
 local enemyTargetServerIds = {};
@@ -28,23 +29,8 @@ local function GetEntityManager()
 end
 
 local function GetServerId(index)
-    index = tonumber(index) or 0;
-
-    if (index == 0) then
-        return nil;
-    end
-
-    local entityManager = GetEntityManager();
-
-    if (entityManager == nil) then
-        return nil;
-    end
-
-    local serverId = SafeCall(nil, function()
-        return entityManager:GetServerId(index);
-    end);
-
-    return tonumber(serverId);
+    local serverId = entityResolver.GetServerId(index);
+    return serverId > 0 and serverId or nil;
 end
 
 local function GetLiveTargetIndex(index)
@@ -82,25 +68,7 @@ local function ResolveServerId(serverId, index)
 end
 
 local function GetIndexFromServerId(serverId)
-    serverId = tonumber(serverId) or 0;
-
-    if (serverId == 0) then
-        return 0;
-    end
-
-    local entityManager = GetEntityManager();
-
-    if (entityManager == nil) then
-        return 0;
-    end
-
-    for index = 0, 2303 do
-        if ((tonumber(SafeCall(0, function() return entityManager:GetServerId(index); end)) or 0) == serverId) then
-            return index;
-        end
-    end
-
-    return 0;
+    return entityResolver.GetIndex(serverId);
 end
 
 local function IsMobIndex(entityManager, index)

@@ -283,6 +283,10 @@ local function GetFamilyCandidates(value)
         end
 
         for _, name in ipairs(metadata[4] or {}) do
+            -- Windows can register a styled face by its full internal name
+            -- (for example, "Source Sans 3 Medium") without exposing the
+            -- stripped family ("Source Sans 3") through GDI enumeration.
+            AddCandidate(result, seen, name);
             AddCandidate(result, seen, StripStyleName(name));
         end
     end

@@ -3,14 +3,10 @@ local textureLoader = require('core.texture_loader');
 local backgroundTextures = {};
 local textureIds = {};
 local filesCache = nil;
-local avatarArtworkTextureIds = {};
 local avatarArtworkFilesCache = nil;
-local pupArtworkTextureIds = {};
-local pupEquipmentArtworkTextureIds = {};
-local pupElementTextureIds = {};
-local drgArtworkTextureIds = {};
-local bstArtworkTextureIds = {};
-local geoArtworkTextureIds = {};
+local artworkEntries = {};
+local artworkDecodedBytes = 0;
+local artworkDecodedByteLimit = 64 * 1024 * 1024;
 
 local function GetAddonPath()
     local ok, path = pcall(function()
@@ -77,6 +73,72 @@ end
 
 function backgroundTextures.GetPupElementArtworkFolderPath()
     return backgroundTextures.GetPupArtworkFolderPath() .. 'elements\\';
+end
+
+local function EvictUnusedArtwork(currentKey)
+    while artworkDecodedBytes > artworkDecodedByteLimit do
+        local oldestKey = nil;
+        local oldestUsed = nil;
+
+        for key, entry in pairs(artworkEntries) do
+            local lastUsed = tonumber(entry ~= nil and entry.lastUsed) or 0;
+
+            if key ~= currentKey and (oldestUsed == nil or lastUsed < oldestUsed) then
+                oldestKey = key;
+                oldestUsed = lastUsed;
+            end
+        end
+
+        if (oldestKey == nil) then
+            break;
+        end
+
+        local entry = artworkEntries[oldestKey];
+        artworkEntries[oldestKey] = nil;
+        artworkDecodedBytes = math.max(
+            0,
+            artworkDecodedBytes - math.max(0, tonumber(entry ~= nil and entry.decodedBytes) or 0)
+        );
+
+        if (entry ~= nil and entry.path ~= nil) then
+            textureLoader.Release(entry.path, true);
+        end
+    end
+end
+
+local function GetArtworkTextureId(key, path)
+    key = tostring(key or '');
+    path = tostring(path or '');
+
+    if (key == '' or path == '') then
+        return nil;
+    end
+
+    local texture = textureLoader.LoadPreserveAlpha(path);
+
+    if (texture == nil) then
+        return nil;
+    end
+
+    local decodedBytes = textureLoader.GetDecodedBytes(path, true);
+    local entry = artworkEntries[key];
+
+    if (entry == nil) then
+        entry = {};
+        artworkEntries[key] = entry;
+        artworkDecodedBytes = artworkDecodedBytes + decodedBytes;
+    elseif (tonumber(entry.decodedBytes) or 0) ~= decodedBytes then
+        artworkDecodedBytes = math.max(
+            0,
+            artworkDecodedBytes - math.max(0, tonumber(entry.decodedBytes) or 0) + decodedBytes
+        );
+    end
+
+    entry.path = path;
+    entry.decodedBytes = decodedBytes;
+    entry.lastUsed = os.clock();
+    EvictUnusedArtwork(key);
+    return textureLoader.ToTextureId(texture);
 end
 
 function backgroundTextures.GetFiles()
@@ -159,15 +221,9 @@ function backgroundTextures.GetAvatarArtworkTextureId(fileName)
     end
 
     local key = 'pet/smn/detached/' .. fileName;
-    if (avatarArtworkTextureIds[key] ~= nil) then
-        return avatarArtworkTextureIds[key];
-    end
-
-    avatarArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+    return GetArtworkTextureId(key,
         backgroundTextures.GetAvatarArtworkFolderPath() .. fileName
-    ));
-
-    return avatarArtworkTextureIds[key];
+    );
 end
 
 function backgroundTextures.GetPupArtworkTextureId(fileName)
@@ -178,15 +234,9 @@ function backgroundTextures.GetPupArtworkTextureId(fileName)
     end
 
     local key = 'pet/pup/detached/' .. fileName;
-    if (pupArtworkTextureIds[key] ~= nil) then
-        return pupArtworkTextureIds[key];
-    end
-
-    pupArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+    return GetArtworkTextureId(key,
         backgroundTextures.GetPupArtworkFolderPath() .. fileName
-    ));
-
-    return pupArtworkTextureIds[key];
+    );
 end
 
 function backgroundTextures.GetDrgArtworkTextureId(fileName)
@@ -197,15 +247,9 @@ function backgroundTextures.GetDrgArtworkTextureId(fileName)
     end
 
     local key = 'pet/drg/' .. fileName;
-    if (drgArtworkTextureIds[key] ~= nil) then
-        return drgArtworkTextureIds[key];
-    end
-
-    drgArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+    return GetArtworkTextureId(key,
         backgroundTextures.GetDrgArtworkFolderPath() .. fileName
-    ));
-
-    return drgArtworkTextureIds[key];
+    );
 end
 
 function backgroundTextures.GetBstArtworkTextureId(fileName)
@@ -216,15 +260,9 @@ function backgroundTextures.GetBstArtworkTextureId(fileName)
     end
 
     local key = 'pet/bst/' .. fileName;
-    if (bstArtworkTextureIds[key] ~= nil) then
-        return bstArtworkTextureIds[key];
-    end
-
-    bstArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+    return GetArtworkTextureId(key,
         backgroundTextures.GetBstArtworkFolderPath() .. fileName
-    ));
-
-    return bstArtworkTextureIds[key];
+    );
 end
 
 function backgroundTextures.GetGeoArtworkTextureId(fileName)
@@ -235,15 +273,9 @@ function backgroundTextures.GetGeoArtworkTextureId(fileName)
     end
 
     local key = 'pet/geo/' .. fileName;
-    if (geoArtworkTextureIds[key] ~= nil) then
-        return geoArtworkTextureIds[key];
-    end
-
-    geoArtworkTextureIds[key] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
+    return GetArtworkTextureId(key,
         backgroundTextures.GetGeoArtworkFolderPath() .. fileName
-    ));
-
-    return geoArtworkTextureIds[key];
+    );
 end
 
 function backgroundTextures.GetPupEquipmentArtworkTextureId(layer, fileName)
@@ -256,17 +288,7 @@ function backgroundTextures.GetPupEquipmentArtworkTextureId(layer, fileName)
     end
 
     local key = 'pet/pup/detached/' .. layer .. '/' .. fileName;
-    if (pupEquipmentArtworkTextureIds[key] ~= nil) then
-        return pupEquipmentArtworkTextureIds[key] ~= false
-            and pupEquipmentArtworkTextureIds[key]
-            or nil;
-    end
-
-    local textureId = textureLoader.ToTextureId(
-        textureLoader.LoadPreserveAlpha(folder .. fileName)
-    );
-    pupEquipmentArtworkTextureIds[key] = textureId or false;
-    return textureId;
+    return GetArtworkTextureId(key, folder .. fileName);
 end
 
 function backgroundTextures.GetPupElementArtworkTextureId(fileName)
@@ -276,17 +298,35 @@ function backgroundTextures.GetPupElementArtworkTextureId(fileName)
     end
 
     local key = 'pet/pup/detached/elements/' .. fileName;
-    if (pupElementTextureIds[key] ~= nil) then
-        return pupElementTextureIds[key] ~= false
-            and pupElementTextureIds[key]
-            or nil;
+    return GetArtworkTextureId(key,
+        backgroundTextures.GetPupElementArtworkFolderPath() .. fileName
+    );
+end
+
+function backgroundTextures.GetArtworkCacheStats()
+    local count = 0;
+
+    for _ in pairs(artworkEntries) do
+        count = count + 1;
     end
 
-    local textureId = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(
-        backgroundTextures.GetPupElementArtworkFolderPath() .. fileName
-    ));
-    pupElementTextureIds[key] = textureId or false;
-    return textureId;
+    return {
+        count = count,
+        decodedBytes = artworkDecodedBytes,
+        decodedByteLimit = artworkDecodedByteLimit,
+    };
+end
+
+function backgroundTextures.Clear()
+    for _, entry in pairs(artworkEntries) do
+        if (entry ~= nil and entry.path ~= nil) then
+            textureLoader.Release(entry.path, true);
+        end
+    end
+
+    artworkEntries = {};
+    artworkDecodedBytes = 0;
+    textureIds = {};
 end
 
 return backgroundTextures;

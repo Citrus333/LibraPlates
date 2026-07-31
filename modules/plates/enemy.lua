@@ -2102,6 +2102,9 @@ end
 
 local function BuildEnemyCacheSignature(context, useLiveHpBar)
     local enemy = context.enemy;
+    local targetMarkerAnimationKey = HasAnimatedTargetMarker(context.targetMarker) == true
+        and tostring(math.floor(os.clock() * 12))
+        or 'static';
     local function StatusRowsKey(rows, iconSettings)
         local parts = {};
         local showTimers = iconSettings ~= nil and iconSettings.showTimers == true;
@@ -2126,6 +2129,7 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
         'state=' .. tostring(context.stateName or 'Idle'),
         'layoutState=' .. tostring(context.layoutStateName or 'Idle'),
         'targetMarker=' .. TargetMarkerKey(context.targetMarker),
+        'targetMarkerFrame=' .. targetMarkerAnimationKey,
         'castBar=' .. CastBarKey(context),
         'statusIconPack=' .. tostring(context.globalSettings ~= nil and context.globalSettings.statusIcons ~= nil and context.globalSettings.statusIcons.iconPack or ''),
         'enemyIconStyle=' .. tostring(context.globalSettings ~= nil and context.globalSettings.enemyIconStyle or ''),
@@ -2339,9 +2343,9 @@ local function QueueEnemy(enemy)
     local cacheSkipReason = nil;
     local hasDynamicDistance = context.distanceText ~= nil and context.distanceText ~= '';
     local cacheableTargetState = context.stateName == 'Idle' or context.stateName == 'Target' or context.stateName == 'Subtarget';
-    -- Sprite markers are part of the rendered plate texture.  Refresh only
-    -- targeted animated markers so their frames advance; idle plates remain cached.
-    local cacheEligible = cacheableTargetState == true and HasAnimatedTargetMarker(context.targetMarker) ~= true;
+    -- Animated target markers are represented by a 12 FPS signature bucket,
+    -- so targeted plates can remain cached between animation frames.
+    local cacheEligible = cacheableTargetState == true;
     local cacheKey = nil;
     local signature = nil;
 
@@ -2527,10 +2531,6 @@ local function QueueEnemy(enemy)
         worldMarker = worldMarker,
     });
     perfMeter.EndDetail(queueTimer);
-end
-
-function enemyPlate.Build()
-    return nil;
 end
 
 function enemyPlate.SetAnchorBone(value)

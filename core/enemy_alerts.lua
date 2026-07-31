@@ -12,6 +12,7 @@ local alertSounds = require('core.alert_sounds');
 local gdiTextTexture = require('ui.gdi_text_texture');
 local globalDefaults = require('config.global');
 local petDurations = require('data.pet_durations');
+local entityResolver = require('core.entity_resolver');
 
 local enemyAlerts = {};
 local alerts = {};
@@ -89,25 +90,7 @@ local function GetEntityManager()
 end
 
 local function GetIndexFromServerId(serverId)
-    serverId = tonumber(serverId) or 0;
-
-    if (serverId == 0) then
-        return 0;
-    end
-
-    local entityManager = GetEntityManager();
-
-    if (entityManager == nil) then
-        return 0;
-    end
-
-    for index = 1, 0x8FF do
-        if (SafeCall(0, function() return entityManager:GetServerId(index); end) == serverId) then
-            return index;
-        end
-    end
-
-    return 0;
+    return entityResolver.GetIndex(serverId);
 end
 
 local function GetEntityName(index)

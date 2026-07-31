@@ -64,6 +64,10 @@ local staticPanelEditDrag = nil;
 local DrawStaticPlateTexture = nil;
 local DrawStaticArtworkTexture = nil;
 local detachedSetupPreview = nil;
+local renderedPetCanvasCache = {};
+local zonePetRenderBlocked = false;
+local zonePetRenderBlockedUntil = 0;
+local zonePetStableFrames = 0;
 local pupOverloadGaugeTest = {
     chance = nil,
     element = nil,
@@ -375,7 +379,10 @@ local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefi
     local borderSize = tonumber(settings.borderSize) or backgroundDefaults.borderSize;
 
     if (usingAvatarArtwork == true) then
-        baseHeight = baseWidth * (256 / 600);
+        -- Current Avatar/Spirit artwork uses the native 1200x550 aspect.
+        -- Preserve it instead of squeezing the frame into the legacy 600x256
+        -- ratio.
+        baseHeight = baseWidth * (550 / 1200);
         offsetX = 0;
         offsetY = 0;
         color = { 0.0, 0.0, 0.0, 0.0 };
@@ -1737,6 +1744,186 @@ local function BuildStaticPetTextureKey(prefix, petIndex)
     }, '|');
 end
 
+local function StaticPetScalarKey(value)
+    if (type(value) == 'boolean') then
+        return value == true and '1' or '0';
+    end
+
+    if (type(value) == 'number') then
+        return string.format('%.3f', value);
+    end
+
+    return tostring(value);
+end
+
+local function StaticPetTableKey(value, depth, seen)
+    depth = tonumber(depth) or 0;
+
+    if (type(value) ~= 'table') then
+        return StaticPetScalarKey(value);
+    end
+
+    if (depth > 9) then
+        return '<depth>';
+    end
+
+    seen = seen or {};
+    if (seen[value] == true) then
+        return '<cycle>';
+    end
+    seen[value] = true;
+
+    local keys = {};
+    for key, _ in pairs(value) do
+        if (
+            key ~= '_elementRects' and
+            key ~= '_canvasCrop' and
+            key ~= 'anchorRect' and
+            key ~= 'backgroundAnchorRect' and
+            key ~= 'chevronAnchorRect' and
+            key ~= 'arrowAnchorRect'
+        ) then
+            keys[#keys + 1] = key;
+        end
+    end
+
+    table.sort(keys, function(left, right)
+        return tostring(left) < tostring(right);
+    end);
+
+    local parts = {};
+    for _, key in ipairs(keys) do
+        parts[#parts + 1] = tostring(key) .. '=' .. StaticPetTableKey(value[key], depth + 1, seen);
+    end
+
+    seen[value] = nil;
+    return '{' .. table.concat(parts, ';') .. '}';
+end
+
+local function HasAnimatedStaticPetBar(plateData)
+    for _, bar in ipairs({
+        plateData.hpBar,
+        plateData.mpBar,
+        plateData.tpBar,
+        plateData.castBar,
+    }) do
+        if (type(bar) == 'table' and bar.animationEnabled == true) then
+            return true;
+        end
+    end
+
+    for _, bar in ipairs(plateData.extraBars or {}) do
+        if (type(bar) == 'table' and bar.animationEnabled == true) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
+local function BuildStaticPetRenderSignature(plateData)
+    -- Only include data that the detached canvas can actually draw. World
+    -- position, distance, entity state, and other source-plate bookkeeping
+    -- must not force a redraw of a fixed screen-space pet frame.
+    local visible = {
+        name = plateData.name,
+        forceName = plateData.forceName,
+        nameOffsetX = plateData.nameOffsetX,
+        nameOffsetY = plateData.nameOffsetY,
+        nameFontSize = plateData.nameFontSize,
+        nameColor = plateData.nameColor,
+        nameOutlineEnabled = plateData.nameOutlineEnabled,
+        nameOutlineColor = plateData.nameOutlineColor,
+        nameOutlineSize = plateData.nameOutlineSize,
+        nameAnchorTo = plateData.nameAnchorTo,
+        nameAnchorPoint = plateData.nameAnchorPoint,
+        hp = plateData.hp,
+        mp = plateData.mp,
+        tp = plateData.tp,
+        cast = plateData.cast,
+        background = plateData.background,
+        hpBar = plateData.hpBar,
+        mpBar = plateData.mpBar,
+        tpBar = plateData.tpBar,
+        castBar = plateData.castBar,
+        icons = plateData.icons,
+        extraBars = plateData.extraBars,
+        badges = plateData.badges,
+        textRows = plateData.textRows,
+        canvasWidth = plateData.canvasWidth,
+        canvasHeight = plateData.canvasHeight,
+    };
+
+    local signature = tostring(canvasTexture.GetRenderVersion()) .. '|' .. StaticPetTableKey(visible);
+    if (HasAnimatedStaticPetBar(plateData) == true) then
+        -- Low-resource pulse effects remain animated without rebuilding at
+        -- the full game frame rate.
+        signature = signature .. '|animation=' .. tostring(math.floor(os.clock() * 10));
+    end
+
+    return signature;
+end
+
+local function PruneRenderedPetCanvasCache(now, protectedKey)
+    for cacheKey, entry in pairs(renderedPetCanvasCache) do
+        if (
+            cacheKey ~= protectedKey and
+            (now - (tonumber(entry.lastUsedAt) or 0)) > 5.0
+        ) then
+            renderedPetCanvasCache[cacheKey] = nil;
+        end
+    end
+end
+
+local function RenderCachedPetCanvas(plateData, key, metric)
+    key = tostring(key or 'pet');
+    local startedAt = perfMeter.Start();
+    local now = os.clock();
+    local signature = BuildStaticPetRenderSignature(plateData);
+    local cached = renderedPetCanvasCache[key];
+
+    if (
+        cached ~= nil and
+        cached.texture ~= nil and
+        canvasTexture.TouchTextureForKey(key, cached.texture) == true and
+        (
+            cached.signature == signature or
+            (now - (tonumber(cached.renderedAt) or 0)) < 0.10
+        )
+    ) then
+        cached.lastUsedAt = now;
+        plateData._elementRects = cached.elementRects;
+        plateData._canvasCrop = cached.canvasCrop;
+        perfMeter.Stop(metric, startedAt);
+        return cached.texture, cached.width, cached.height;
+    end
+
+    local texture, textureWidth, textureHeight = canvasTexture.Render(
+        plateData,
+        key,
+        signature
+    );
+
+    if (texture ~= nil and textureWidth ~= nil and textureHeight ~= nil) then
+        renderedPetCanvasCache[key] = {
+            texture = texture,
+            width = textureWidth,
+            height = textureHeight,
+            signature = signature,
+            renderedAt = now,
+            lastUsedAt = now,
+            elementRects = plateData._elementRects,
+            canvasCrop = plateData._canvasCrop,
+        };
+    else
+        renderedPetCanvasCache[key] = nil;
+    end
+
+    PruneRenderedPetCanvasCache(now, key);
+    perfMeter.Stop(metric, startedAt);
+    return texture, textureWidth, textureHeight;
+end
+
 local function GetStaticPetContentCrop(plateData, textureWidth, textureHeight, ignoredKinds, includedKinds)
     local sourceW = math.max(1, tonumber(textureWidth) or 1024);
     local sourceH = math.max(1, tonumber(textureHeight) or 512);
@@ -2233,9 +2420,11 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
     -- The source plate may already contain layout bounds for its normal Background
     -- widget. Detached frames have their own background and must rebuild those bounds.
     staticPlateData._elementRects = nil;
-    local detachedCanvasStart = perfMeter.Start();
-    local staticTexture, staticTextureWidth, staticTextureHeight = canvasTexture.Render(staticPlateData, BuildStaticPetTextureKey(prefix, petIndex));
-    perfMeter.Stop('pet.detached.canvas', detachedCanvasStart);
+    local staticTexture, staticTextureWidth, staticTextureHeight = RenderCachedPetCanvas(
+        staticPlateData,
+        BuildStaticPetTextureKey(prefix, petIndex),
+        'pet.detached.canvas'
+    );
     local staticTextureId = canvasTexture.GetTextureId(staticTexture);
 
     if (staticTextureId == nil or staticTextureWidth == nil or staticTextureHeight == nil) then
@@ -3648,10 +3837,7 @@ local function BuildNameOnlyPlateData(source, nameText)
 end
 
 local function RenderMeasuredPetCanvas(plateData, key, metric)
-    local startedAt = perfMeter.Start();
-    local texture, textureWidth, textureHeight = canvasTexture.Render(plateData, key);
-    perfMeter.Stop(metric, startedAt);
-    return texture, textureWidth, textureHeight;
+    return RenderCachedPetCanvas(plateData, key, metric);
 end
 
 local function ReadImguiVec2(first, second)
@@ -5587,10 +5773,6 @@ local function QueueLuopan(pet)
     });
 end
 
-function petPlate.Build()
-    return nil;
-end
-
 function petPlate.SetAnchorBone(value)
     local bone = math.floor(tonumber(value) or petAnchorBone);
 
@@ -5625,6 +5807,26 @@ function petPlate.GetPositionDebugText()
 end
 
 function petPlate.Render()
+    if (zonePetRenderBlocked == true) then
+        if (os.clock() < zonePetRenderBlockedUntil) then
+            return;
+        end
+
+        local center = entities.GetSelfCanvasCenter(0, 0);
+        if (center == nil or center.visibleSkeleton ~= true) then
+            zonePetStableFrames = 0;
+            return;
+        end
+
+        zonePetStableFrames = zonePetStableFrames + 1;
+        if (zonePetStableFrames < 30) then
+            return;
+        end
+
+        zonePetRenderBlocked = false;
+        zonePetStableFrames = 0;
+    end
+
     local detachedPreviewPrefix = DrawQueuedDetachedSetupPreview();
 
     if (state.GetWorldEnabled() ~= true) then
@@ -5697,6 +5899,33 @@ function petPlate.Render()
     if (luopan ~= nil) then
         QueueLuopan(luopan);
     end
+end
+
+function petPlate.HandlePacketIn(e)
+    if (e == nil or tonumber(e.id) ~= 0x000A) then
+        return;
+    end
+
+    zonePetRenderBlocked = true;
+    zonePetRenderBlockedUntil = os.clock() + 3.0;
+    zonePetStableFrames = 0;
+    renderedPetCanvasCache = {};
+    staticPanelEditDrag = nil;
+    detachedSetupPreview = nil;
+    detachedDrgTimerCache.updatedAt = -1000;
+    detachedDrgTimerCache.callWyvernTicks = 0;
+    detachedDrgTimerCache.spiritLinkTicks = 0;
+    detachedDrgTimerCache.spiritBondTicks = 0;
+    detachedDrgTimerCache.spiritBondActive = false;
+    detachedDrgTimerCache.spiritBondSeconds = nil;
+    detachedDrgTimerCache.recastMaxTicks = {};
+    detachedGeoTimerCache.updatedAt = -1000;
+    detachedGeoTimerCache.ticks = {};
+    ResetAvatarFavorState();
+end
+
+function petPlate.HandleLogin()
+    petPlate.HandlePacketIn({ id = 0x000A });
 end
 
 return petPlate;

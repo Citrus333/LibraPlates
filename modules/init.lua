@@ -1,14 +1,23 @@
 local modules = {};
 local state = require('core.state');
 local log = require('core.log');
+local errorBoundary = require('core.error_boundary');
 local entities = require('core.entities');
+local entityResolver = require('core.entity_resolver');
+local targetPosition = require('core.target_position');
+local occlusion = require('core.occlusion');
 local targeting = require('core.targeting');
 local mouseControls = require('core.mouse_controls');
 local worldMarkerProbe = require('core.world_marker_probe');
+local worldDepthPlate = require('core.world_depth_plate');
 local nativeTargetArrow = require('core.native_target_arrow');
 local targetModuleMarker = require('core.target_module_marker');
 local quickMenu = require('core.quick_menu');
 local canvasTexture = require('core.canvas_texture');
+local backgroundTextures = require('core.background_textures');
+local statusIconTextures = require('core.status_icon_textures');
+local gdiText = require('ui.gdi_text');
+local gdiTextTexture = require('ui.gdi_text_texture');
 local peerInspector = require('modules.peer_inspector');
 local perfMeter = require('core.perf_meter');
 local diagnostics = require('core.diagnostics');
@@ -228,7 +237,17 @@ end
 -- ============================================================
 
 function modules.Load()
+    errorBoundary.Reset();
+    entityResolver.Reset();
     jobChange.Cancel();
+    canvasTexture.Clear();
+    backgroundTextures.Clear();
+    statusIconTextures.Clear();
+    statusIconTextures.RefreshDevice();
+    worldDepthPlate.RefreshDevice();
+    entities.RefreshDevice();
+    targetPosition.RefreshDevice();
+    occlusion.RefreshDevice();
     canvasTexture.SetCacheLimit(targeting.GetSettings().textureCacheLimit);
     worldMarkerProbe.SetImgui(imgui);
     worldMarkerProbe.SetEnabled(true);
@@ -240,7 +259,6 @@ function modules.Load()
     worldMarkerProbe.SetVerticalOffset(0.16);
     worldMarkerProbe.SetNameVerticalOffset(0.54);
 
-    modules.plates.Load();
     modules.settings.Load();
 
     UpdateNativeNamesVisibility(true);
@@ -248,11 +266,21 @@ function modules.Load()
 end
 
 function modules.Unload()
+    entityResolver.Reset();
     jobChange.Cancel();
     nativeTargetArrow.RestoreAll();
     mouseControls.Release();
+    worldMarkerProbe.Shutdown();
     modules.settings.Unload();
-    modules.plates.Unload();
+    gdiTextTexture.Clear();
+    gdiText.Shutdown();
+    canvasTexture.Clear();
+    backgroundTextures.Clear();
+    statusIconTextures.Clear();
+    worldDepthPlate.ResetDevice();
+    occlusion.ResetDevice();
+    targetPosition.ResetDevice();
+    entities.ResetDevice();
 end
 
 function modules.Render()
@@ -261,103 +289,113 @@ function modules.Render()
     local totalStart = perfMeter.Start();
 
     if (perfIsolation.mouse == true) then
-        mouseControls.Release();
+        errorBoundary.Call('render.mouse.release', 'Mouse-control release', mouseControls.Release);
     elseif (state.GetConfigOpen() ~= true) then
-        mouseControls.Update();
+        errorBoundary.Call('render.mouse.update', 'Mouse-control update', mouseControls.Update);
     end
 
     local settingsStart = perfMeter.Start();
-    modules.settings.Render();
+    errorBoundary.Call('render.settings', 'Settings render', modules.settings.Render);
     perfMeter.Stop('settings', settingsStart);
 
     local targetingStart = perfMeter.Start();
     if (perfIsolation.targeting ~= true) then
-        targeting.Update();
+        errorBoundary.Call('render.targeting', 'Targeting update', targeting.Update);
     end
     perfMeter.Stop('targeting', targetingStart);
 
     local nativeStart = perfMeter.Start();
     if (perfIsolation.native ~= true) then
-        UpdateNativeTargetArrowVisibility();
-        UpdateNativeNamesVisibility(false);
-        UpdateNativeNamesRetry();
-        UpdateTargetModulePrewarm();
-        jobChange.Update();
-        warpMenu.Update();
-        enemyCasts.TickDebug();
+        errorBoundary.Call('render.native.arrow', 'Native target-arrow update', UpdateNativeTargetArrowVisibility);
+        errorBoundary.Call('render.native.names.visibility', 'Native-name visibility update', UpdateNativeNamesVisibility, false);
+        errorBoundary.Call('render.native.names.retry', 'Native-name retry update', UpdateNativeNamesRetry);
+        errorBoundary.Call('render.target.prewarm', 'Target-module prewarm', UpdateTargetModulePrewarm);
+        errorBoundary.Call('render.job_change', 'Job-change update', jobChange.Update);
+        errorBoundary.Call('render.warp_menu', 'Warp-menu update', warpMenu.Update);
+        errorBoundary.Call('render.enemy_cast_debug', 'Enemy-cast debug update', enemyCasts.TickDebug);
     end
     perfMeter.Stop('native', nativeStart);
 
     if (state.GetConfigOpen() ~= true) then
-        worldMarkerProbe.UpdateFocusState();
-        worldMarkerProbe.SetClickHandlers(targeting.SelectTarget, targeting.SelectEnemyTarget, targeting.AttackEnemyTarget);
-        worldMarkerProbe.DrawRawClickDebug();
+        errorBoundary.Call('render.world.focus', 'World-marker focus update', worldMarkerProbe.UpdateFocusState);
+        errorBoundary.Call(
+            'render.world.click_handlers',
+            'World-marker click-handler update',
+            worldMarkerProbe.SetClickHandlers,
+            targeting.SelectTarget,
+            targeting.SelectEnemyTarget,
+            targeting.AttackEnemyTarget
+        );
+        errorBoundary.Call('render.world.click_debug', 'World-marker click debug', worldMarkerProbe.DrawRawClickDebug);
     end
 
     local platesStart = perfMeter.Start();
-    local ok, err = pcall(function()
-        modules.plates.Render();
-    end);
+    errorBoundary.Call('render.plates', 'Plate rendering', modules.plates.Render);
     perfMeter.Stop('plates.total', platesStart);
-
-    if (ok ~= true) then
-        state.SetWorldRuntimeDisabled(true);
-        log.Warn('World render disabled after error: ' .. tostring(err));
-    end
 
     local overlayStart = perfMeter.Start();
     if (perfIsolation.overlays ~= true) then
-        modules.targetOverlay.Render();
+        errorBoundary.Call('render.target_overlay', 'Target-overlay render', modules.targetOverlay.Render);
     end
     perfMeter.Stop('target.overlay', overlayStart);
 
     local peerStart = perfMeter.Start();
     if (perfIsolation.overlays ~= true) then
-        peerInspector.Render();
+        errorBoundary.Call('render.peer', 'Peer-inspector render', peerInspector.Render);
     end
     perfMeter.Stop('peer', peerStart);
 
     local quickStart = perfMeter.Start();
     if (perfIsolation.overlays ~= true) then
-        quickMenu.Render();
+        errorBoundary.Call('render.quick_menu', 'Quick-menu render', quickMenu.Render);
     end
     perfMeter.Stop('quick.menu', quickStart);
 
     if (perfIsolation.overlays ~= true) then
-        cursorOverlay.Render();
-        fishingStaminaOverlay.Render();
-        enemyAlerts.Render();
+        errorBoundary.Call('render.cursor', 'Cursor-overlay render', cursorOverlay.Render);
+        errorBoundary.Call('render.fishing_stamina', 'Fishing-stamina render', fishingStaminaOverlay.Render);
+        errorBoundary.Call('render.enemy_alerts', 'Enemy-alert render', enemyAlerts.Render);
     end
 
     perfMeter.Stop('total', totalStart);
-    lagTest.Update();
-    diagnostics.Update();
-    perfMeter.RenderOverlay();
+    errorBoundary.Call('render.lag_test', 'Lag-test update', lagTest.Update);
+    errorBoundary.Call('render.diagnostics', 'Diagnostics update', diagnostics.Update);
+    errorBoundary.Call('render.perf_overlay', 'Performance-overlay render', perfMeter.RenderOverlay);
 end
 
 function modules.HandleMouse(e)
     if (perfIsolation.mouse == true) then
-        mouseControls.Release();
+        errorBoundary.Call('mouse.release', 'Mouse-control release', mouseControls.Release);
         return;
     end
 
-    cursorOverlay.HandleMouse(e);
-    worldMarkerProbe.UpdateFocusState();
+    errorBoundary.Call('mouse.cursor', 'Cursor-overlay mouse handler', cursorOverlay.HandleMouse, e);
+    errorBoundary.Call('mouse.world_focus', 'World-marker mouse focus update', worldMarkerProbe.UpdateFocusState);
 
     if (state.GetConfigOpen() == true) then
         return;
     end
 
-    if (
-        state.GetWorldEnabled() == true and
-        worldMarkerProbe.GetEnabled() == true and
-        worldMarkerProbe.GetReplacePlates() == true and
-        worldMarkerProbe.HandleMouse(e, targeting.SelectTarget, targeting.SelectEnemyTarget, targeting.AttackEnemyTarget, targeting.InteractFishingGatheringTarget, quickMenu.OpenForPlate) == true
-    ) then
+    local _, handled = errorBoundary.Call('mouse.world_marker', 'World-marker mouse handler', function()
+        return
+            state.GetWorldEnabled() == true and
+            worldMarkerProbe.GetEnabled() == true and
+            worldMarkerProbe.GetReplacePlates() == true and
+            worldMarkerProbe.HandleMouse(
+                e,
+                targeting.SelectTarget,
+                targeting.SelectEnemyTarget,
+                targeting.AttackEnemyTarget,
+                targeting.InteractFishingGatheringTarget,
+                quickMenu.OpenForPlate
+            ) == true;
+    end);
+
+    if (handled == true) then
         return;
     end
 
-    mouseControls.HandleMouse(e);
+    errorBoundary.Call('mouse.controls', 'Mouse-control handler', mouseControls.HandleMouse, e);
 end
 
 function modules.SetPerfIsolation(name, value)
@@ -435,9 +473,13 @@ function modules.DrawWorldMarker()
     end
 
     local drawStart = perfMeter.Start();
-    local ok, err = pcall(function()
-        worldMarkerProbe.DrawQueued(entities.GetEntityManager, entities.GetBone);
-    end);
+    errorBoundary.Call(
+        'render.world_marker',
+        'World-marker render',
+        worldMarkerProbe.DrawQueued,
+        entities.GetEntityManager,
+        entities.GetBone
+    );
     perfMeter.Stop('world.draw', drawStart);
 
     local stats = worldMarkerProbe.GetPerfStats();
@@ -455,10 +497,6 @@ function modules.DrawWorldMarker()
         perfMeter.SetCounter('clickRects.other', stats.clickRectsOther);
     end
 
-    if (ok ~= true) then
-        state.SetWorldRuntimeDisabled(true);
-        log.Warn('World marker render disabled after error: ' .. tostring(err));
-    end
 end
 
 function modules.UpdateNativeTargetArrow()

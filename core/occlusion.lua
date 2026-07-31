@@ -35,6 +35,14 @@ local function FormatNativeStatus(nativeStatus)
     );
 end
 
+local function EnsureDevice()
+    if (d3d8dev == nil) then
+        d3d8dev = d3d.get_device();
+    end
+
+    return d3d8dev;
+end
+
 function occlusion.IsScreenPointOccluded(screenX, screenY, screenZ, settings)
     if (settings == nil or settings.enabled ~= true) then
         return false;
@@ -56,7 +64,13 @@ function occlusion.IsScreenPointOccluded(screenX, screenY, screenZ, settings)
     end
 
     if (deviceSet ~= true) then
-        local ok, err = nativeDepthBridge.SetDevice(d3d8dev);
+        local activeDevice = EnsureDevice();
+
+        if (activeDevice == nil) then
+            return false;
+        end
+
+        local ok, err = nativeDepthBridge.SetDevice(activeDevice);
         deviceSet = (ok == true);
 
         if (deviceSet ~= true) then
@@ -92,7 +106,13 @@ function occlusion.TestScreenPoint(screenX, screenY, screenZ, settings)
     end
 
     if (deviceSet ~= true) then
-        local ok, err = nativeDepthBridge.SetDevice(d3d8dev);
+        local activeDevice = EnsureDevice();
+
+        if (activeDevice == nil) then
+            return nil, 'device unavailable', nativeDepthBridge.GetLastNativeStatus();
+        end
+
+        local ok, err = nativeDepthBridge.SetDevice(activeDevice);
         deviceSet = (ok == true);
 
         if (deviceSet ~= true) then
@@ -121,6 +141,24 @@ function occlusion.PrintStatus()
     log.Info(FormatNativeStatus(nativeStatus));
 
     return status;
+end
+
+function occlusion.RefreshDevice()
+    d3d8dev = d3d.get_device();
+    deviceSet = false;
+    statusPrinted = false;
+    testErrorPrinted = false;
+    return d3d8dev ~= nil;
+end
+
+function occlusion.ResetDevice()
+    pcall(function()
+        nativeDepthBridge.SetDevice(nil);
+    end);
+    d3d8dev = nil;
+    deviceSet = false;
+    statusPrinted = false;
+    testErrorPrinted = false;
 end
 
 return occlusion;

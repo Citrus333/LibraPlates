@@ -33,6 +33,12 @@ local D3DX_DEFAULT = 0xFFFFFFFF;
 local DEFAULT_COLOR_KEY = 0xFF000000;
 local S_OK = 0;
 
+local function GetCacheKey(path, preserveAlpha)
+    return preserveAlpha == true
+        and (tostring(path or '') .. '|preserve-alpha')
+        or tostring(path or '');
+end
+
 local function IsDetachedArtworkPath(path)
     local normalized = string.lower(tostring(path or '')):gsub('/', '\\');
     return string.find(normalized, '\\detached\\', 1, true) ~= nil;
@@ -48,7 +54,8 @@ local function LoadWithColorKey(path, colorKey, cacheKey)
     cacheKey = tostring(cacheKey or path);
 
     if (cache[cacheKey] ~= nil) then
-        return cache[cacheKey];
+        cache[cacheKey].lastUsed = os.clock();
+        return cache[cacheKey].texture;
     end
 
     local exists = false;
@@ -62,6 +69,7 @@ local function LoadWithColorKey(path, colorKey, cacheKey)
     end
 
     local texturePointer = ffi.new('IDirect3DTexture8*[1]');
+    local imageInfo = ffi.new('D3DXIMAGE_INFO[1]');
     local device = d3d.get_device();
 
     if (device == nil) then
@@ -80,7 +88,7 @@ local function LoadWithColorKey(path, colorKey, cacheKey)
         D3DX_DEFAULT,
         D3DX_DEFAULT,
         colorKey,
-        nil,
+        imageInfo,
         nil,
         texturePointer
     );
@@ -89,8 +97,17 @@ local function LoadWithColorKey(path, colorKey, cacheKey)
         return nil;
     end
 
-    cache[cacheKey] = d3d.gc_safe_release(ffi.cast('IDirect3DTexture8*', texturePointer[0]));
-    return cache[cacheKey];
+    local width = math.max(0, tonumber(imageInfo[0].Width) or 0);
+    local height = math.max(0, tonumber(imageInfo[0].Height) or 0);
+    cache[cacheKey] = {
+        texture = d3d.gc_safe_release(ffi.cast('IDirect3DTexture8*', texturePointer[0])),
+        path = path,
+        width = width,
+        height = height,
+        decodedBytes = width * height * 4,
+        lastUsed = os.clock(),
+    };
+    return cache[cacheKey].texture;
 end
 
 function textureLoader.ClearCache()
@@ -99,16 +116,47 @@ end
 
 function textureLoader.Load(path)
     if (IsDetachedArtworkPath(path)) then
-        return LoadWithColorKey(path, 0, tostring(path or '') .. '|preserve-alpha');
+        return LoadWithColorKey(path, 0, GetCacheKey(path, true));
     end
 
-    return LoadWithColorKey(path, DEFAULT_COLOR_KEY, path);
+    return LoadWithColorKey(path, DEFAULT_COLOR_KEY, GetCacheKey(path, false));
 end
 
 -- PNG artwork already carries its own alpha channel. Loading it without the
 -- legacy black color key preserves opaque black pixels in the artwork.
 function textureLoader.LoadPreserveAlpha(path)
-    return LoadWithColorKey(path, 0, tostring(path or '') .. '|preserve-alpha');
+    return LoadWithColorKey(path, 0, GetCacheKey(path, true));
+end
+
+function textureLoader.GetDecodedBytes(path, preserveAlpha)
+    local entry = cache[GetCacheKey(path, preserveAlpha == true)];
+    return math.max(0, tonumber(entry ~= nil and entry.decodedBytes) or 0);
+end
+
+function textureLoader.Release(path, preserveAlpha)
+    local key = GetCacheKey(path, preserveAlpha == true);
+
+    if (cache[key] == nil) then
+        return false;
+    end
+
+    cache[key] = nil;
+    return true;
+end
+
+function textureLoader.GetCacheStats()
+    local count = 0;
+    local decodedBytes = 0;
+
+    for _, entry in pairs(cache) do
+        count = count + 1;
+        decodedBytes = decodedBytes + math.max(0, tonumber(entry ~= nil and entry.decodedBytes) or 0);
+    end
+
+    return {
+        count = count,
+        decodedBytes = decodedBytes,
+    };
 end
 
 function textureLoader.ToTextureId(texture)

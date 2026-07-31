@@ -39,6 +39,10 @@ local lastEvictedAt = 0;
 local lastRenderBaseKey = '';
 local lastRenderTextureKey = '';
 local lastRenderSize = '';
+local retiredTextureSequence = 0;
+local retiredTextureKeys = {};
+local lastIdlePruneAt = 0;
+local renderSuspendedUntil = 0;
 local maxTextures = 96;
 -- Textures returned to ImGui/world-marker draw lists can remain referenced
 -- after the Lua code that queued them has finished.  Never evict a texture
@@ -71,6 +75,24 @@ local D3DTOP_MODULATE = 4;
 local D3DTA_DIFFUSE = 0;
 local D3DTA_TEXTURE = 2;
 local DrawTexture = nil;
+
+local function RequireD3dSuccess(result, label)
+    if result ~= nil and result ~= C.S_OK then
+        error(tostring(label or 'D3D call') .. ' failed with HRESULT ' .. tostring(result), 0);
+    end
+
+    return result;
+end
+
+local function ReleaseInterface(value)
+    if (value == nil) then
+        return;
+    end
+
+    pcall(function()
+        value:Release();
+    end);
+end
 
 local function ClampColorChannel(value)
     value = tonumber(value) or 0;
@@ -305,6 +327,29 @@ local function TrimTextureCache(protectedKey)
     end
 end
 
+local function PruneIdleTextures(protectedKey)
+    local now = os.clock();
+
+    if ((now - lastIdlePruneAt) < 1.0) then
+        return;
+    end
+
+    lastIdlePruneAt = now;
+    local staleKeys = {};
+
+    for key, info in pairs(textureInfo) do
+        local idleSeconds = now - (tonumber(info ~= nil and info.lastTouch) or 0);
+
+        if (key ~= protectedKey and idleSeconds >= 15.0) then
+            staleKeys[#staleKeys + 1] = key;
+        end
+    end
+
+    for _, key in ipairs(staleKeys) do
+        ReleaseTextureKey(key, false);
+    end
+end
+
 local function ReleaseTextureKeyIfIdle(key)
     key = tostring(key or '');
 
@@ -446,13 +491,13 @@ local function DrawRect(device, x, y, w, h, color)
         { x1, y2, z, rhw, color },
     });
 
-    device:SetTexture(0, nil);
-    device:SetVertexShader(D3DFVF_XYZRHW_DIFFUSE);
-    device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
-    device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
-    device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
-    device:SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
-    device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, 2, vertices, ffi.sizeof('lp_canvas_color_vertex_t'));
+    RequireD3dSuccess(device:SetTexture(0, nil), 'SetTexture');
+    RequireD3dSuccess(device:SetVertexShader(D3DFVF_XYZRHW_DIFFUSE), 'SetVertexShader');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1), 'Set COLOROP');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE), 'Set COLORARG1');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1), 'Set ALPHAOP');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE), 'Set ALPHAARG1');
+    RequireD3dSuccess(device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, 2, vertices, ffi.sizeof('lp_canvas_color_vertex_t')), 'Draw rectangle');
 end
 
 local function DrawRingSegment(device, centerX, centerY, outerRadius, innerRadius, startAngle, endAngle, color, segmentCount)
@@ -495,13 +540,13 @@ local function DrawRingSegment(device, centerX, centerY, outerRadius, innerRadiu
         vertices[index] = { i1x, i1y, z, rhw, color }; index = index + 1;
     end
 
-    device:SetTexture(0, nil);
-    device:SetVertexShader(D3DFVF_XYZRHW_DIFFUSE);
-    device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
-    device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
-    device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
-    device:SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
-    device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, segments * 2, vertices, ffi.sizeof('lp_canvas_color_vertex_t'));
+    RequireD3dSuccess(device:SetTexture(0, nil), 'SetTexture');
+    RequireD3dSuccess(device:SetVertexShader(D3DFVF_XYZRHW_DIFFUSE), 'SetVertexShader');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1), 'Set COLOROP');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE), 'Set COLORARG1');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1), 'Set ALPHAOP');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE), 'Set ALPHAARG1');
+    RequireD3dSuccess(device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, segments * 2, vertices, ffi.sizeof('lp_canvas_color_vertex_t')), 'Draw rounded rectangle');
 end
 
 local function DrawRectOutline(device, x, y, w, h, color, thickness)
@@ -589,15 +634,15 @@ local function DrawRoundedTexture(device, textureId, x, y, w, h, color, radius, 
         AddVertex(points[nextIndex][1], points[nextIndex][2]);
     end
 
-    device:SetTexture(0, ffi.cast('IDirect3DBaseTexture8*', ffi.cast('uintptr_t', textureId)));
-    device:SetVertexShader(D3DFVF_XYZRHW_DIFFUSE_TEX1);
-    device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
-    device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-    device:SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
-    device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
-    device:SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
-    device:SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
-    device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, #points, vertices, ffi.sizeof('lp_canvas_texture_vertex_t'));
+    RequireD3dSuccess(device:SetTexture(0, ffi.cast('IDirect3DBaseTexture8*', ffi.cast('uintptr_t', textureId))), 'SetTexture');
+    RequireD3dSuccess(device:SetVertexShader(D3DFVF_XYZRHW_DIFFUSE_TEX1), 'SetVertexShader');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE), 'Set COLOROP');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE), 'Set COLORARG1');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE), 'Set COLORARG2');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE), 'Set ALPHAOP');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE), 'Set ALPHAARG1');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE), 'Set ALPHAARG2');
+    RequireD3dSuccess(device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, #points, vertices, ffi.sizeof('lp_canvas_texture_vertex_t')), 'Draw texture polygon');
 end
 
 local function DrawRoundedRect(device, x, y, w, h, color, radius)
@@ -939,15 +984,15 @@ DrawTexture = function(device, textureId, x, y, w, h, color, u2, v2, flipX)
         { x1, y2, z, rhw, color, texU1, texV2 },
     });
 
-    device:SetTexture(0, ffi.cast('IDirect3DBaseTexture8*', ffi.cast('uintptr_t', textureId)));
-    device:SetVertexShader(D3DFVF_XYZRHW_DIFFUSE_TEX1);
-    device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
-    device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-    device:SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
-    device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
-    device:SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
-    device:SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
-    device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, 2, vertices, ffi.sizeof('lp_canvas_texture_vertex_t'));
+    RequireD3dSuccess(device:SetTexture(0, ffi.cast('IDirect3DBaseTexture8*', ffi.cast('uintptr_t', textureId))), 'SetTexture');
+    RequireD3dSuccess(device:SetVertexShader(D3DFVF_XYZRHW_DIFFUSE_TEX1), 'SetVertexShader');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE), 'Set COLOROP');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE), 'Set COLORARG1');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE), 'Set COLORARG2');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE), 'Set ALPHAOP');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE), 'Set ALPHAARG1');
+    RequireD3dSuccess(device:SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE), 'Set ALPHAARG2');
+    RequireD3dSuccess(device:DrawPrimitiveUP(D3DPT_TRIANGLELIST, 2, vertices, ffi.sizeof('lp_canvas_texture_vertex_t')), 'Draw texture');
 end
 
 local function DrawScrollingBarOverlay(device, barX, barY, barW, barH, progress, bar)
@@ -997,18 +1042,41 @@ local function DrawScrollingBarOverlay(device, barX, barY, barW, barH, progress,
     end
 end
 
-local function EnsureTexture(device, key, alias)
-    key = tostring(key or 'world');
+local function TakeReusableStagingTexture(key)
+    key = tostring(key or '');
+    local queue = retiredTextureKeys[key];
 
-    if (textures[key] ~= nil) then
-        local info = textureInfo[key] or {};
+    -- Keep the two most recently published textures alive because ImGui can
+    -- still reference them from queued draw data. Reuse only an older third
+    -- buffer. This turns continuously updating pet timers into a bounded
+    -- three-texture rotation instead of allocating a new render target every
+    -- frame and retaining hundreds of them during the grace window.
+    while (type(queue) == 'table' and #queue >= 2) do
+        local retiredKey = table.remove(queue, 1);
+        local texture = textures[retiredKey];
 
-        if (tonumber(info.width) == width and tonumber(info.height) == height) then
-            TouchTextureKey(key);
-            return textures[key];
+        if (texture ~= nil) then
+            local id = TextureId(texture);
+            if (id ~= nil) then
+                textureIdToKey[id] = nil;
+            end
+
+            textures[retiredKey] = nil;
+            textureInfo[retiredKey] = nil;
+            RemoveTextureAlias(retiredKey);
+            RemoveTextureOrderKey(retiredKey);
+            textureCount = math.max(0, textureCount - 1);
+            return texture;
         end
+    end
 
-        ReleaseTextureKey(key);
+    return nil;
+end
+
+local function CreateStagingTexture(device, key)
+    local reusable = TakeReusableStagingTexture(key);
+    if (reusable ~= nil) then
+        return reusable;
     end
 
     local ok, hr, created = pcall(function()
@@ -1019,28 +1087,70 @@ local function EnsureTexture(device, key, alias)
         return nil;
     end
 
-    textures[key] = d3d.gc_safe_release(created);
+    return d3d.gc_safe_release(created);
+end
+
+local function PublishTexture(key, alias, texture, crop, renderSignature)
+    key = tostring(key or 'world');
+    alias = tostring(alias or '');
+
+    local previous = textures[key];
+    local previousInfo = textureInfo[key];
+
+    if (previous ~= nil) then
+        -- A previously returned texture can still be referenced by a queued
+        -- ImGui/world draw. Move it to a retired cache key so the normal grace
+        -- period and LRU eviction own its lifetime instead of releasing it
+        -- while the current frame may still use its pointer.
+        retiredTextureSequence = retiredTextureSequence + 1;
+        local retiredKey = key .. '|retired=' .. tostring(retiredTextureSequence);
+        local previousId = TextureId(previous);
+
+        textures[retiredKey] = previous;
+        textureInfo[retiredKey] = previousInfo or {
+            createdAt = os.clock(),
+            lastTouch = os.clock(),
+            width = width,
+            height = height,
+        };
+
+        if (previousId ~= nil) then
+            textureIdToKey[previousId] = retiredKey;
+        end
+
+        RemoveTextureAlias(key);
+        RemoveTextureOrderKey(key);
+        textureOrder[#textureOrder + 1] = retiredKey;
+        AddTextureAlias(alias, retiredKey);
+        retiredTextureKeys[key] = retiredTextureKeys[key] or {};
+        retiredTextureKeys[key][#retiredTextureKeys[key] + 1] = retiredKey;
+    end
+
+    textureCount = textureCount + 1;
+    textures[key] = texture;
     textureInfo[key] = {
         createdAt = os.clock(),
         lastTouch = os.clock(),
         width = width,
         height = height,
+        crop = crop,
+        renderSignature = renderSignature,
     };
     AddTextureAlias(alias, key);
-    textureCount = textureCount + 1;
 
-    local id = TextureId(textures[key]);
+    local id = TextureId(texture);
 
     if (id ~= nil) then
         textureIdToKey[id] = key;
     end
 
     TouchTextureKey(key);
+    PruneIdleTextures(key);
     -- Never evict the render target being returned to this frame's caller.
     -- A stale duplicate in the LRU list previously allowed a newly-created
     -- canvas to be released here and then drawn as black or unrelated content.
     TrimTextureCache(key);
-    return textures[key];
+    return texture;
 end
 
 local function DrawBarLabel(device, barX, barY, barW, barH, bar)
@@ -1604,6 +1714,23 @@ function canvasTexture.GetTextureCrop(value)
     return info ~= nil and info.crop or nil;
 end
 
+function canvasTexture.GetWorldBatchInfo(value)
+    local id = TextureId(value) or tonumber(value);
+    local key = id ~= nil and textureIdToKey[id] or nil;
+    local info = key ~= nil and textureInfo[key] or nil;
+
+    if (info == nil) then
+        return nil;
+    end
+
+    return {
+        key = key,
+        width = tonumber(info.width),
+        height = tonumber(info.height),
+        revision = tonumber(info.createdAt),
+    };
+end
+
 local function HasRectKind(rects, kind)
     local wanted = tostring(kind or '');
 
@@ -1951,7 +2078,13 @@ local function ResolveAnchorRects(rects, plate)
         end
     end
 
+    local groupingChanged = false;
+
     local function ApplyShift(rect, dx, dy)
+        if (math.abs(tonumber(dx) or 0) > 0.01 or math.abs(tonumber(dy) or 0) > 0.01) then
+            groupingChanged = true;
+        end
+
         local pad = tonumber(rect.padding) or 0;
         rect.drawX1 = (tonumber(rect.drawX1) or 0) + dx;
         rect.drawY1 = (tonumber(rect.drawY1) or 0) + dy;
@@ -2019,9 +2152,16 @@ local function ResolveAnchorRects(rects, plate)
         };
     end
 
-    for _, group in pairs(groups) do
-        local entries = group.entries or {};
-        if (#entries > 0) then
+    -- An anchored element may itself be the parent of another anchored
+    -- element (for example HP Bar -> MP Bar -> TP Bar).  Group placement
+    -- changes the final parent bounds, so resolve repeatedly with fresh
+    -- bounds until the complete chain settles.
+    for _ = 1, 12 do
+        bounds = BuildBoundsByKind(rects);
+        groupingChanged = false;
+
+        for _, group in pairs(groups) do
+            local entries = group.entries or {};
             if (#entries > 0) then
                 local anchorPoint = tostring(group.anchorPoint or 'Center');
                 local axis = (anchorPoint == 'Top' or anchorPoint == 'Top Left' or anchorPoint == 'Top Right' or anchorPoint == 'Bottom' or anchorPoint == 'Bottom Left' or anchorPoint == 'Bottom Right') and 'y' or 'x';
@@ -2113,6 +2253,10 @@ local function ResolveAnchorRects(rects, plate)
                     end
                 end
             end
+        end
+
+        if (groupingChanged ~= true) then
+            break;
         end
     end
 end
@@ -2938,8 +3082,29 @@ local function AddTargetMarkerForegroundRects(rects, centerX, centerY, marker)
     end
 end
 
-function canvasTexture.Render(plate, key)
-    perfMeter.CountCanvasRender(plate, key);
+local function GetSignedCachedTexture(textureKey, renderSignature)
+    if (renderSignature == nil) then
+        return nil;
+    end
+
+    local cachedTexture = textures[textureKey];
+    local cachedInfo = textureInfo[textureKey];
+    if (
+        cachedTexture == nil or
+        cachedInfo == nil or
+        cachedInfo.renderSignature ~= renderSignature
+    ) then
+        return nil;
+    end
+
+    TouchTextureKey(textureKey);
+    return cachedTexture;
+end
+
+function canvasTexture.Render(plate, key, renderSignature)
+    if (os.clock() < renderSuspendedUntil) then
+        return nil, nil, nil;
+    end
 
     local oldWidth = width;
     local oldHeight = height;
@@ -3036,18 +3201,33 @@ function canvasTexture.Render(plate, key)
     plate._canvasCrop = crop;
 
     local textureKey = baseKey .. '|crop=' .. tostring(crop.x) .. ',' .. tostring(crop.y) .. ',' .. tostring(width) .. 'x' .. tostring(height);
+    local effectiveRenderSignature = renderSignature ~= nil
+        and (tostring(renderVersion) .. '|' .. tostring(renderSignature))
+        or nil;
     lastRenderBaseKey = baseKey;
     lastRenderTextureKey = textureKey;
     lastRenderSize = tostring(width) .. 'x' .. tostring(height);
-    local targetTexture = EnsureTexture(device, textureKey, baseKey);
+
+    -- Detached pet frames and other explicitly signed canvases can retain the
+    -- completed render target until something visible changes. Layout bounds
+    -- are still rebuilt above, so dragging and hit testing remain current
+    -- without spending another off-screen D3D render every frame.
+    local cachedTexture = GetSignedCachedTexture(textureKey, effectiveRenderSignature);
+    if (cachedTexture ~= nil) then
+        return Finish(cachedTexture, width, height);
+    end
+
+    perfMeter.CountCanvasRender(plate, key);
+
+    -- Always draw into a private staging texture. The live cache entry is
+    -- replaced only after the entire draw and D3D restoration both succeed.
+    -- A failed redraw therefore cannot overwrite or publish a black/partial
+    -- plate.
+    local targetTexture = CreateStagingTexture(device, textureKey);
 
     if (targetTexture == nil or targetTexture.GetSurfaceLevel == nil) then
         return Finish(nil, width, height);
     end
-
-    local textureInfoEntry = textureInfo[textureKey] or {};
-    textureInfoEntry.crop = crop;
-    textureInfo[textureKey] = textureInfoEntry;
 
     local okSurface, hrSurface, surface = pcall(function()
         return targetTexture:GetSurfaceLevel(0);
@@ -3062,32 +3242,63 @@ function canvasTexture.Render(plate, key)
     end);
 
     if (okTarget ~= true or hrTarget ~= C.S_OK or oldTarget == nil) then
-        d3d.gc_safe_release(surface);
+        ReleaseInterface(surface);
         return Finish(nil, width, height);
     end
 
-    local _, saveZ = device:GetRenderState(D3DRS_ZENABLE);
-    local _, saveLight = device:GetRenderState(D3DRS_LIGHTING);
-    local _, saveBlend = device:GetRenderState(D3DRS_ALPHABLENDENABLE);
-    local _, saveSrc = device:GetRenderState(D3DRS_SRCBLEND);
-    local _, saveDst = device:GetRenderState(D3DRS_DESTBLEND);
-    local _, saveFvf = device:GetVertexShader();
-    local _, saveTex = device:GetTexture(0);
-    local _, savePixelShader = device:GetPixelShader();
+    local saved = {};
+    local captureOk, captureErr = pcall(function()
+        local function Capture(getter, label)
+            local hr, value = getter();
+
+            if hr ~= C.S_OK then
+                error('Get ' .. tostring(label) .. ' failed with HRESULT ' .. tostring(hr));
+            end
+
+            return value;
+        end
+
+        saved.z = Capture(function() return device:GetRenderState(D3DRS_ZENABLE); end, 'ZENABLE');
+        saved.light = Capture(function() return device:GetRenderState(D3DRS_LIGHTING); end, 'LIGHTING');
+        saved.blend = Capture(function() return device:GetRenderState(D3DRS_ALPHABLENDENABLE); end, 'ALPHABLENDENABLE');
+        saved.src = Capture(function() return device:GetRenderState(D3DRS_SRCBLEND); end, 'SRCBLEND');
+        saved.dst = Capture(function() return device:GetRenderState(D3DRS_DESTBLEND); end, 'DESTBLEND');
+        saved.fvf = Capture(function() return device:GetVertexShader(); end, 'VERTEXSHADER');
+        saved.texture = Capture(function() return device:GetTexture(0); end, 'TEXTURE0');
+        saved.pixelShader = Capture(function() return device:GetPixelShader(); end, 'PIXELSHADER');
+        saved.colorOp = Capture(function() return device:GetTextureStageState(0, D3DTSS_COLOROP); end, 'COLOROP');
+        saved.colorArg1 = Capture(function() return device:GetTextureStageState(0, D3DTSS_COLORARG1); end, 'COLORARG1');
+        saved.colorArg2 = Capture(function() return device:GetTextureStageState(0, D3DTSS_COLORARG2); end, 'COLORARG2');
+        saved.alphaOp = Capture(function() return device:GetTextureStageState(0, D3DTSS_ALPHAOP); end, 'ALPHAOP');
+        saved.alphaArg1 = Capture(function() return device:GetTextureStageState(0, D3DTSS_ALPHAARG1); end, 'ALPHAARG1');
+        saved.alphaArg2 = Capture(function() return device:GetTextureStageState(0, D3DTSS_ALPHAARG2); end, 'ALPHAARG2');
+        saved.viewport = Capture(function() return device:GetViewport(); end, 'VIEWPORT');
+    end);
+
+    if (captureOk ~= true) then
+        ReleaseInterface(saved.texture);
+        ReleaseInterface(oldTarget);
+        ReleaseInterface(surface);
+        Finish(nil, width, height);
+        error('Canvas state capture failed for ' .. textureKey .. ': ' .. tostring(captureErr), 0);
+    end
 
     local setOk, setHr = pcall(function()
         return device:SetRenderTarget(surface);
     end);
 
+    local drawOk = false;
+    local drawErr = nil;
+
     if (setOk == true and setHr == C.S_OK) then
-        pcall(function()
-            device:Clear(0, nil, 1, 0x00000000, 1.0, 0);
-            device:SetPixelShader(0);
-            device:SetRenderState(D3DRS_ZENABLE, 0);
-            device:SetRenderState(D3DRS_LIGHTING, 0);
-            device:SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
-            device:SetRenderState(D3DRS_SRCBLEND, 5);
-            device:SetRenderState(D3DRS_DESTBLEND, 6);
+        drawOk, drawErr = pcall(function()
+            RequireD3dSuccess(device:Clear(0, nil, 1, 0x00000000, 1.0, 0), 'Clear canvas');
+            RequireD3dSuccess(device:SetPixelShader(0), 'SetPixelShader');
+            RequireD3dSuccess(device:SetRenderState(D3DRS_ZENABLE, 0), 'Set ZENABLE');
+            RequireD3dSuccess(device:SetRenderState(D3DRS_LIGHTING, 0), 'Set LIGHTING');
+            RequireD3dSuccess(device:SetRenderState(D3DRS_ALPHABLENDENABLE, 1), 'Set ALPHABLENDENABLE');
+            RequireD3dSuccess(device:SetRenderState(D3DRS_SRCBLEND, 5), 'Set SRCBLEND');
+            RequireD3dSuccess(device:SetRenderState(D3DRS_DESTBLEND, 6), 'Set DESTBLEND');
 
             local hp = math.max(0, math.min(100, tonumber(plate.hp) or 100)) / 100;
             local mp = math.max(0, math.min(100, tonumber(plate.mp) or 100));
@@ -3548,27 +3759,76 @@ function canvasTexture.Render(plate, key)
             end
 
         end);
+    else
+        drawErr = setOk == true
+            and ('SetRenderTarget failed with HRESULT ' .. tostring(setHr))
+            or tostring(setHr);
     end
 
-    pcall(function()
-        device:SetRenderTarget(oldTarget);
-    end);
+    local restoreErrors = {};
+    local function Restore(label, callback)
+        local ok, result = pcall(callback);
 
-    device:SetTexture(0, saveTex);
-    device:SetRenderState(D3DRS_ZENABLE, saveZ);
-    device:SetRenderState(D3DRS_LIGHTING, saveLight);
-    device:SetRenderState(D3DRS_ALPHABLENDENABLE, saveBlend);
-    device:SetRenderState(D3DRS_SRCBLEND, saveSrc);
-    device:SetRenderState(D3DRS_DESTBLEND, saveDst);
-    device:SetVertexShader(saveFvf);
-    if (savePixelShader ~= nil) then
-        device:SetPixelShader(savePixelShader);
+        if (ok ~= true) then
+            restoreErrors[#restoreErrors + 1] = tostring(label) .. ': ' .. tostring(result);
+        elseif result ~= nil and result ~= C.S_OK then
+            restoreErrors[#restoreErrors + 1] = tostring(label) .. ': HRESULT ' .. tostring(result);
+        end
     end
 
-    d3d.gc_safe_release(oldTarget);
-    d3d.gc_safe_release(surface);
+    -- Attempt every restoration even if an earlier one fails. This prevents a
+    -- single bad Set call from skipping the remaining D3D cleanup.
+    Restore('render target', function() device:SetRenderTarget(oldTarget); end);
+    Restore('viewport', function() device:SetViewport(saved.viewport); end);
+    Restore('texture 0', function() device:SetTexture(0, saved.texture); end);
+    Restore('ZENABLE', function() device:SetRenderState(D3DRS_ZENABLE, saved.z); end);
+    Restore('LIGHTING', function() device:SetRenderState(D3DRS_LIGHTING, saved.light); end);
+    Restore('ALPHABLENDENABLE', function() device:SetRenderState(D3DRS_ALPHABLENDENABLE, saved.blend); end);
+    Restore('SRCBLEND', function() device:SetRenderState(D3DRS_SRCBLEND, saved.src); end);
+    Restore('DESTBLEND', function() device:SetRenderState(D3DRS_DESTBLEND, saved.dst); end);
+    Restore('VERTEXSHADER', function() device:SetVertexShader(saved.fvf); end);
+    Restore('PIXELSHADER', function() device:SetPixelShader(saved.pixelShader or 0); end);
+    Restore('COLOROP', function() device:SetTextureStageState(0, D3DTSS_COLOROP, saved.colorOp); end);
+    Restore('COLORARG1', function() device:SetTextureStageState(0, D3DTSS_COLORARG1, saved.colorArg1); end);
+    Restore('COLORARG2', function() device:SetTextureStageState(0, D3DTSS_COLORARG2, saved.colorArg2); end);
+    Restore('ALPHAOP', function() device:SetTextureStageState(0, D3DTSS_ALPHAOP, saved.alphaOp); end);
+    Restore('ALPHAARG1', function() device:SetTextureStageState(0, D3DTSS_ALPHAARG1, saved.alphaArg1); end);
+    Restore('ALPHAARG2', function() device:SetTextureStageState(0, D3DTSS_ALPHAARG2, saved.alphaArg2); end);
 
-    return Finish(targetTexture, width, height);
+    ReleaseInterface(saved.texture);
+    ReleaseInterface(oldTarget);
+    ReleaseInterface(surface);
+
+    if (drawOk ~= true or #restoreErrors > 0) then
+        local parts = {};
+
+        if (drawOk ~= true) then
+            parts[#parts + 1] = 'draw: ' .. tostring(drawErr);
+        end
+
+        if (#restoreErrors > 0) then
+            parts[#parts + 1] = 'restore: ' .. table.concat(restoreErrors, '; ');
+        end
+
+        Finish(nil, width, height);
+        error('Canvas render failed for ' .. textureKey .. ': ' .. table.concat(parts, ' | '), 0);
+    end
+
+    local publishOk, publishedTexture = pcall(
+        PublishTexture,
+        textureKey,
+        baseKey,
+        targetTexture,
+        crop,
+        effectiveRenderSignature
+    );
+
+    if (publishOk ~= true) then
+        Finish(nil, width, height);
+        error('Canvas cache publish failed for ' .. textureKey .. ': ' .. tostring(publishedTexture), 0);
+    end
+
+    return Finish(publishedTexture, width, height);
 end
 
 function canvasTexture.GetTextureId(value)
@@ -3627,6 +3887,49 @@ function canvasTexture.Invalidate()
     -- settings callbacks run during a render frame and queued world/ImGui
     -- draws may still reference those textures until the frame is submitted.
     renderVersion = renderVersion + 1;
+end
+
+function canvasTexture.GetRenderVersion()
+    return renderVersion;
+end
+
+function canvasTexture.SuspendForZone(seconds)
+    renderSuspendedUntil = math.max(
+        renderSuspendedUntil,
+        os.clock() + math.max(1.0, tonumber(seconds) or 3.0)
+    );
+    canvasTexture.Invalidate();
+end
+
+function canvasTexture.HandlePacketIn(e)
+    if (e ~= nil and tonumber(e.id) == 0x000A) then
+        canvasTexture.SuspendForZone(3.0);
+    end
+end
+
+function canvasTexture.HandleLogin()
+    canvasTexture.SuspendForZone(3.0);
+end
+
+function canvasTexture.Clear()
+    textures = {};
+    textureInfo = {};
+    textureOrder = {};
+    textureIdToKey = {};
+    textureAliases = {};
+    textureCount = 0;
+    textureEvictions = 0;
+    evictionWindowStart = os.clock();
+    evictionWindowCount = 0;
+    evictionRatePerMinute = 0;
+    lastEvictedKey = '';
+    lastEvictedAt = 0;
+    lastRenderBaseKey = '';
+    lastRenderTextureKey = '';
+    lastRenderSize = '';
+    retiredTextureSequence = 0;
+    retiredTextureKeys = {};
+    lastIdlePruneAt = 0;
 end
 
 function canvasTexture.GetCacheStats()

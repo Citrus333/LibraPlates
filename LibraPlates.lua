@@ -11,7 +11,7 @@ require('common');
 
 local state = require('core.state');
 local commands = require('handlers.commands');
-local log = require('core.log');
+local errorBoundary = require('core.error_boundary');
 local modules = require('modules.init');
 local aoeNameHighlight = require('core.aoe_name_highlight');
 local nativeTargetArrow = require('core.native_target_arrow');
@@ -32,6 +32,7 @@ local bstCharmTimer = require('core.bst_charm_timer');
 local fishing = require('core.fishing');
 local crafting = require('core.crafting');
 local textureLoader = require('core.texture_loader');
+local canvasTexture = require('core.canvas_texture');
 local npcObjectInfo = require('core.npc_object_info');
 local quickMenu = require('core.quick_menu');
 local mogHouseExit = require('core.mog_house_exit');
@@ -54,19 +55,19 @@ local function RegisterNativeDrawHooks()
     end
 
     ashita.events.register('d3d_dp', 'libraplates_native_target_trace_dp', function(e)
-        nativeTargetArrow.HandleDrawPrimitive(e);
+        errorBoundary.Call('draw_hook.dp', 'Native target-arrow DrawPrimitive hook', nativeTargetArrow.HandleDrawPrimitive, e);
     end);
 
     ashita.events.register('d3d_dip', 'libraplates_native_target_trace_dip', function(e)
-        nativeTargetArrow.HandleDrawIndexedPrimitive(e);
+        errorBoundary.Call('draw_hook.dip', 'Native target-arrow DrawIndexedPrimitive hook', nativeTargetArrow.HandleDrawIndexedPrimitive, e);
     end);
 
     ashita.events.register('d3d_dpup', 'libraplates_native_target_trace_dpup', function(e)
-        nativeTargetArrow.HandleDrawPrimitiveUp(e);
+        errorBoundary.Call('draw_hook.dpup', 'Native target-arrow DrawPrimitiveUp hook', nativeTargetArrow.HandleDrawPrimitiveUp, e);
     end);
 
     ashita.events.register('d3d_dipup', 'libraplates_native_target_trace_dipup', function(e)
-        nativeTargetArrow.HandleDrawIndexedPrimitiveUp(e);
+        errorBoundary.Call('draw_hook.dipup', 'Native target-arrow DrawIndexedPrimitiveUp hook', nativeTargetArrow.HandleDrawIndexedPrimitiveUp, e);
     end);
 
     nativeDrawHooksRegistered = true;
@@ -115,6 +116,7 @@ ashita.events.register('unload', 'libraplates_unload', function()
     textureLoader.ClearCache();
     npcObjectInfo.ClearTextureCache();
     quickMenu.ClearTextureCache();
+    collectgarbage('collect');
 end);
 
 -- ============================================================
@@ -124,72 +126,76 @@ end);
 ashita.events.register('command', 'libraplates_command', function(e)
     local eventTimer = perfMeter.BeginDetail('event.command');
     local actionRangeTimer = perfMeter.BeginDetail('command.actionRange');
-    itemFlickerTrace.HandleCommandText(e.command);
-    targetActionRange.HandleCommandText(e.command);
-    modules.plates.pet.HandleCommandText(e.command);
+    errorBoundary.Call('command.item_flicker', 'Item-flicker command handler', itemFlickerTrace.HandleCommandText, e.command);
+    errorBoundary.Call('command.action_range', 'Action-range command handler', targetActionRange.HandleCommandText, e.command);
+    errorBoundary.Call('command.pet', 'Pet command handler', modules.plates.pet.HandleCommandText, e.command);
     perfMeter.EndDetail(actionRangeTimer);
     local aoeTimer = perfMeter.BeginDetail('command.aoe');
-    aoeNameHighlight.HandleCommandText(e.command);
+    errorBoundary.Call('command.aoe', 'AoE-name command handler', aoeNameHighlight.HandleCommandText, e.command);
     perfMeter.EndDetail(aoeTimer);
     local mountsTimer = perfMeter.BeginDetail('command.mounts');
-    mounts.HandleCommandText(e.command);
+    errorBoundary.Call('command.mounts', 'Mount command handler', mounts.HandleCommandText, e.command);
     perfMeter.EndDetail(mountsTimer);
     local otherTimer = perfMeter.BeginDetail('command.other');
-    anonStatus.HandleCommandText(e.command);
-    playerBlacklist.HandleCommandText(e.command);
-    commands.Handle(e);
+    errorBoundary.Call('command.anon', 'Anonymous-status command handler', anonStatus.HandleCommandText, e.command);
+    errorBoundary.Call('command.blacklist', 'Blacklist command handler', playerBlacklist.HandleCommandText, e.command);
+    errorBoundary.Call('command.general', 'LibraPlates command handler', commands.Handle, e);
     perfMeter.EndDetail(otherTimer);
     perfMeter.EndDetail(eventTimer);
 end);
 
 ashita.events.register('mouse', 'libraplates_mouse', function(e)
     local eventTimer = perfMeter.BeginDetail('event.mouse');
-    modules.HandleMouse(e);
+    errorBoundary.Call('event.mouse', 'Mouse event handler', modules.HandleMouse, e);
     perfMeter.EndDetail(eventTimer);
 end);
 
 ashita.events.register('login', 'libraplates_login', function()
-    targeting.HandleLogin();
-    modules.HandleLogin();
+    errorBoundary.Call('login.canvas_texture', 'Canvas login-transition handler', canvasTexture.HandleLogin);
+    errorBoundary.Call('login.pet_plate', 'Pet-plate login-transition handler', modules.plates.pet.HandleLogin);
+    errorBoundary.Call('login.targeting', 'Targeting login handler', targeting.HandleLogin);
+    errorBoundary.Call('login.modules', 'Module login handler', modules.HandleLogin);
 end);
 
 ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
     local eventTimer = perfMeter.BeginDetail('event.packetIn');
-    itemFlickerTrace.HandlePacketIn(e);
-    blacklistModelReplace.HandlePacketIn(e);
-    mounts.HandlePacketIn(e);
-    targeting.HandlePacketIn(e);
-    mogJobDebug.HandlePacketIn(e);
-    engagedEnemies.HandlePacketIn(e);
-    enmity.HandlePacketIn(e);
-    enemyCasts.HandlePacketIn(e);
-    targetActionRange.HandlePacketIn(e);
+    errorBoundary.Call('packet_in.canvas_texture', 'Canvas zone-transition handler', canvasTexture.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.pet_plate', 'Pet-plate zone-transition handler', modules.plates.pet.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.item_flicker', 'Item-flicker incoming-packet handler', itemFlickerTrace.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.blacklist', 'Blacklist incoming-packet handler', blacklistModelReplace.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.mounts', 'Mount incoming-packet handler', mounts.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.targeting', 'Targeting incoming-packet handler', targeting.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.mog_job_debug', 'Mog-job debug incoming-packet handler', mogJobDebug.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.engaged_enemies', 'Engaged-enemy incoming-packet handler', engagedEnemies.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.enmity', 'Enmity incoming-packet handler', enmity.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.enemy_casts', 'Enemy-cast incoming-packet handler', enemyCasts.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.action_range', 'Action-range incoming-packet handler', targetActionRange.HandlePacketIn, e);
     local alertsTimer = perfMeter.BeginDetail('alerts.packet');
-    enemyAlerts.HandlePacketIn(e);
+    errorBoundary.Call('packet_in.enemy_alerts', 'Enemy-alert incoming-packet handler', enemyAlerts.HandlePacketIn, e);
     perfMeter.EndDetail(alertsTimer);
-    enemyStatuses.HandlePacketIn(e);
-    partyStatuses.HandlePacketIn(e);
-    trustStatusIcons.HandlePacketIn(e);
-    luopanStatuses.HandlePacketIn(e);
-    bstCharmTimer.HandlePacketIn(e);
-    mogHouseExit.HandlePacketIn(e);
-    questLogTest.HandlePacketIn(e);
-    quickMenu.HandlePacketIn(e);
-    fishing.HandlePacketIn(e);
-    crafting.HandlePacketIn(e);
+    errorBoundary.Call('packet_in.enemy_statuses', 'Enemy-status incoming-packet handler', enemyStatuses.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.party_statuses', 'Party-status incoming-packet handler', partyStatuses.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.trust_statuses', 'Trust-status incoming-packet handler', trustStatusIcons.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.luopan_statuses', 'Luopan-status incoming-packet handler', luopanStatuses.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.bst_charm', 'BST charm-timer incoming-packet handler', bstCharmTimer.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.mog_house_exit', 'Mog-house exit incoming-packet handler', mogHouseExit.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.quest_log_test', 'Quest-log test incoming-packet handler', questLogTest.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.quick_menu', 'Quick-menu incoming-packet handler', quickMenu.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.fishing', 'Fishing incoming-packet handler', fishing.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.crafting', 'Crafting incoming-packet handler', crafting.HandlePacketIn, e);
     perfMeter.EndDetail(eventTimer);
 end);
 
 ashita.events.register('packet_out', 'libraplates_packet_out', function(e)
     local eventTimer = perfMeter.BeginDetail('event.packetOut');
-    itemFlickerTrace.HandlePacketOut(e);
-    mounts.HandlePacketOut(e);
-    targetActionRange.HandlePacketOut(e);
-    mogJobDebug.HandlePacketOut(e);
-    petState.HandlePacketOut(e);
-    bstCharmTimer.HandlePacketOut(e);
-    quickMenu.HandlePacketOut(e);
-    fishing.HandlePacketOut(e);
+    errorBoundary.Call('packet_out.item_flicker', 'Item-flicker outgoing-packet handler', itemFlickerTrace.HandlePacketOut, e);
+    errorBoundary.Call('packet_out.mounts', 'Mount outgoing-packet handler', mounts.HandlePacketOut, e);
+    errorBoundary.Call('packet_out.action_range', 'Action-range outgoing-packet handler', targetActionRange.HandlePacketOut, e);
+    errorBoundary.Call('packet_out.mog_job_debug', 'Mog-job debug outgoing-packet handler', mogJobDebug.HandlePacketOut, e);
+    errorBoundary.Call('packet_out.pet_state', 'Pet-state outgoing-packet handler', petState.HandlePacketOut, e);
+    errorBoundary.Call('packet_out.bst_charm', 'BST charm-timer outgoing-packet handler', bstCharmTimer.HandlePacketOut, e);
+    errorBoundary.Call('packet_out.quick_menu', 'Quick-menu outgoing-packet handler', quickMenu.HandlePacketOut, e);
+    errorBoundary.Call('packet_out.fishing', 'Fishing outgoing-packet handler', fishing.HandlePacketOut, e);
     perfMeter.EndDetail(eventTimer);
 end);
 
@@ -215,8 +221,14 @@ end
 
 ashita.events.register('text_in', 'libraplates_text_in', function(e)
     local eventTimer = perfMeter.BeginDetail('event.textIn');
-    itemFlickerTrace.HandleTextIn(e);
-    if (fishing.HandleTextIn(e) == true or (e ~= nil and e.blocked == true)) then
+    local itemFlickerTimer = perfMeter.BeginDetail('text.itemFlicker');
+    errorBoundary.Call('text_in.item_flicker', 'Item-flicker text handler', itemFlickerTrace.HandleTextIn, e);
+    perfMeter.EndDetail(itemFlickerTimer);
+
+    local fishingTimer = perfMeter.BeginDetail('text.fishing');
+    local _, fishingHandled = errorBoundary.Call('text_in.fishing', 'Fishing text handler', fishing.HandleTextIn, e);
+    perfMeter.EndDetail(fishingTimer);
+    if (fishingHandled == true or (e ~= nil and e.blocked == true)) then
         perfMeter.EndDetail(eventTimer);
         return;
     end
@@ -226,56 +238,61 @@ ashita.events.register('text_in', 'libraplates_text_in', function(e)
         return;
     end
 
-    restingTick.HandleTextIn(e);
-    modules.plates.pet.HandleTextIn(e);
+    local restingTimer = perfMeter.BeginDetail('text.restingTick');
+    errorBoundary.Call('text_in.resting_tick', 'Resting-tick text handler', restingTick.HandleTextIn, e);
+    perfMeter.EndDetail(restingTimer);
+
+    local petTimer = perfMeter.BeginDetail('text.pet');
+    errorBoundary.Call('text_in.pet', 'Pet text handler', modules.plates.pet.HandleTextIn, e);
+    perfMeter.EndDetail(petTimer);
+
     local alertsTimer = perfMeter.BeginDetail('alerts.text');
-    enemyAlerts.HandleTextIn(e);
+    errorBoundary.Call('text_in.enemy_alerts', 'Enemy-alert text handler', enemyAlerts.HandleTextIn, e);
     perfMeter.EndDetail(alertsTimer);
-    enemyStatuses.HandleTextIn(e);
-    quickMenu.HandleTextIn(e);
+
+    local enemyStatusesTimer = perfMeter.BeginDetail('text.enemyStatuses');
+    errorBoundary.Call('text_in.enemy_statuses', 'Enemy-status text handler', enemyStatuses.HandleTextIn, e);
+    perfMeter.EndDetail(enemyStatusesTimer);
+
+    local quickMenuTimer = perfMeter.BeginDetail('text.quickMenu');
+    errorBoundary.Call('text_in.quick_menu', 'Quick-menu text handler', quickMenu.HandleTextIn, e);
+    perfMeter.EndDetail(quickMenuTimer);
     perfMeter.EndDetail(eventTimer);
 end);
 
 ashita.events.register('d3d_present', 'libraplates_present', function()
     local eventStart = perfMeter.Start();
-    local ok, err = pcall(function()
-        adaptivePerformance.UpdateFrame();
-        blacklistModelReplace.Update();
-        mounts.Update();
-        profileAutoSwitch.Update();
-        itemFlickerTrace.HandlePresent();
-        nativeTargetArrow.SetTraceCapturePaused(false);
-        nativeTargetArrow.EndTraceFrame();
-        nativeTargetArrow.SetTraceCapturePaused(true);
-        fishing.HandlePresent();
-        modules.UpdateNativeTargetArrow();
-        UpdateNativeDrawHooks();
-        modules.ResetWorldMarker();
-        modules.Render();
-        UpdateNativeDrawHooks();
-        modules.PrepareWorldMarkerFont();
-    end);
-
-    if (ok ~= true) then
-        state.SetConfigOpen(false);
-        log.Warn('Config render disabled after error: ' .. tostring(err));
-    end
+    errorBoundary.Call('present.adaptive_performance', 'Adaptive-performance frame update', adaptivePerformance.UpdateFrame);
+    errorBoundary.Call('present.blacklist', 'Blacklist frame update', blacklistModelReplace.Update);
+    errorBoundary.Call('present.mounts', 'Mount frame update', mounts.Update);
+    errorBoundary.Call('present.profile_switch', 'Profile auto-switch update', profileAutoSwitch.Update);
+    errorBoundary.Call('present.item_flicker', 'Item-flicker frame update', itemFlickerTrace.HandlePresent);
+    errorBoundary.Call('present.native_trace_resume', 'Native target trace resume', nativeTargetArrow.SetTraceCapturePaused, false);
+    errorBoundary.Call('present.native_trace_end', 'Native target trace finalization', nativeTargetArrow.EndTraceFrame);
+    errorBoundary.Call('present.native_trace_pause', 'Native target trace pause', nativeTargetArrow.SetTraceCapturePaused, true);
+    errorBoundary.Call('present.fishing', 'Fishing frame update', fishing.HandlePresent);
+    errorBoundary.Call('present.native_target', 'Native target-arrow frame update', modules.UpdateNativeTargetArrow);
+    errorBoundary.Call('present.native_hooks.before', 'Native draw-hook update', UpdateNativeDrawHooks);
+    errorBoundary.Call('present.world_reset', 'World-marker pass reset', modules.ResetWorldMarker);
+    errorBoundary.Call('present.modules', 'LibraPlates module render', modules.Render);
+    errorBoundary.Call('present.native_hooks.after', 'Native draw-hook post-render update', UpdateNativeDrawHooks);
+    errorBoundary.Call('present.world_font', 'World-marker font preparation', modules.PrepareWorldMarkerFont);
     perfMeter.Stop('present.frame', eventStart);
 end);
 
 ashita.events.register('d3d_beginscene', 'libraplates_world_marker_beginscene', function()
     local eventStart = perfMeter.Start();
-    modules.UpdateNativeTargetArrow();
-    UpdateNativeDrawHooks();
-    nativeTargetArrow.SetTraceCapturePaused(true);
-    modules.DrawWorldMarker();
-    nativeTargetArrow.SetTraceCapturePaused(false);
+    errorBoundary.Call('beginscene.native_target', 'Begin-scene native target-arrow update', modules.UpdateNativeTargetArrow);
+    errorBoundary.Call('beginscene.native_hooks', 'Begin-scene native draw-hook update', UpdateNativeDrawHooks);
+    errorBoundary.Call('beginscene.trace_pause', 'Begin-scene native trace pause', nativeTargetArrow.SetTraceCapturePaused, true);
+    errorBoundary.Call('beginscene.world_marker', 'Begin-scene world-marker render', modules.DrawWorldMarker);
+    errorBoundary.Call('beginscene.trace_resume', 'Begin-scene native trace resume', nativeTargetArrow.SetTraceCapturePaused, false);
     perfMeter.Stop('beginscene.frame', eventStart);
 end);
 
 ashita.events.register('d3d_endscene', 'libraplates_native_target_endscene', function()
     local eventStart = perfMeter.Start();
-    modules.UpdateNativeTargetArrow();
-    UpdateNativeDrawHooks();
+    errorBoundary.Call('endscene.native_target', 'End-scene native target-arrow update', modules.UpdateNativeTargetArrow);
+    errorBoundary.Call('endscene.native_hooks', 'End-scene native draw-hook update', UpdateNativeDrawHooks);
     perfMeter.Stop('endscene.frame', eventStart);
 end);

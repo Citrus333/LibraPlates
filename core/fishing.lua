@@ -110,9 +110,6 @@ local function TouchHud()
     hudRevision = hudRevision + 1;
 end
 
-local function ReleaseMouseState()
-end
-
 local function CleanName(value)
     return tostring(value or ''):gsub('\170', ''):gsub('%c', ''):gsub('^%s+', ''):gsub('%s+$', '');
 end
@@ -1514,7 +1511,6 @@ function fishing.MarkFishingEnded(seconds, replace)
     local duration = math.max(1, tonumber(seconds) or 6);
     local untilClock = now + duration;
 
-    ReleaseMouseState();
     postFishingCooldownStart = now;
     postFishingCooldownDuration = duration;
     if (replace == true) then

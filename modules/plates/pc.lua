@@ -1413,7 +1413,6 @@ local function QueuePlayer(player)
     end
 
     local cacheEligible = targetStateName == 'Idle'
-        and state.GetConfigOpen() ~= true
         and distanceText == nil
         and (hpBarLoads ~= true or liveHpBarStyle.enabled == true or hpAnimationEnabled ~= true)
         and (mpBarLoads ~= true or liveMpBarStyle.enabled == true or mpAnimationEnabled ~= true)
@@ -1758,10 +1757,6 @@ local function QueuePlayer(player)
         }, 'pc', 0, plateWorldOffsetY),
     });
     perfMeter.EndDetail(queueTimer);
-end
-
-function pcPlate.Build()
-    return nil;
 end
 
 function pcPlate.Render()

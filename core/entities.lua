@@ -123,6 +123,10 @@ local function Vec4Transform(v, m)
 end
 
 local function WorldToScreen(x, y, z)
+    if (d3d8dev == nil) then
+        return nil, nil, nil;
+    end
+
     local _, viewport = d3d8dev:GetViewport();
     local _, view = d3d8dev:GetTransform(C.D3DTS_VIEW);
     local _, projection = d3d8dev:GetTransform(C.D3DTS_PROJECTION);
@@ -141,6 +145,15 @@ local function WorldToScreen(x, y, z)
     local screenY = math.floor((1 - ndcY) * 0.5 * viewport.Height);
 
     return screenX, screenY, ndcZ;
+end
+
+function entities.RefreshDevice()
+    d3d8dev = d3d.get_device();
+    return d3d8dev ~= nil;
+end
+
+function entities.ResetDevice()
+    d3d8dev = nil;
 end
 
 local function GetBone(actorPointer, bone)

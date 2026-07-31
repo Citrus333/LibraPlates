@@ -5,6 +5,8 @@ local state = require('core.state');
 local widgets = require('modules.widgets.init');
 local anchorControls = require('modules.widgets.anchor_controls');
 local preview = require('modules.settings.preview');
+local helpTroubleshooter = require('modules.settings.help_troubleshooter');
+LibraPlatesHelpSearch = require('modules.settings.help_search');
 LibraPlatesPetPlate = require('modules.plates.pet');
 LibraPlatesSettingsWindowLayout = require('modules.settings.window_layout');
 LibraPlatesHelpSearchTerms = require('data.help_search_terms');
@@ -699,7 +701,6 @@ local detectedGameFpsMode = 'Unknown';
 local openDropdown = nil;
 local helpSearchBuffer = { '' };
 _G.LibraPlatesUserGuideSearchBuffer = _G.LibraPlatesUserGuideSearchBuffer or { '' };
-local troubleshooterExpandedTitle = nil;
 LibraPlatesCustomAlertTriggerBuffers = LibraPlatesCustomAlertTriggerBuffers or {};
 LibraPlatesCustomAlertExpandedIndex = LibraPlatesCustomAlertExpandedIndex or nil;
 LibraPlatesCustomAlertPendingDelete = LibraPlatesCustomAlertPendingDelete or nil;
@@ -1123,13 +1124,11 @@ local widgetKeys = {
     ['Quick Menu (module)'] = 'Quick Menu',
     ['AOE range (module)'] = 'AOE range',
     ['Enemy Alerts (module)'] = 'Screen Alerts',
-    ['Mounted (module)'] = 'Mounted',
     ['Crafting (module)'] = 'Crafting',
     ['Fishing (module)'] = 'Fishing',
     ['Global'] = 'Fishing',
     ['Fish stamina'] = 'Fishing',
     ['Gathering (module)'] = 'Gathering',
-    ['Death (module)'] = 'Death',
     ['NPC icon'] = 'NPC icon',
     ['Object icon'] = 'Object icon',
     ['Markers'] = 'Markers',
@@ -2233,11 +2232,9 @@ function GetModuleWidgets(entity, stateName)
         ['Enmity (module)'] = 'Enmity',
         ['Resting (module)'] = 'Resting',
         ['Quick Menu (module)'] = 'Quick Menu',
-        ['Mounted (module)'] = 'Mounted',
         ['Crafting (module)'] = 'Crafting',
         ['Fishing (module)'] = 'Fishing',
         ['Gathering (module)'] = 'Gathering',
-        ['Death (module)'] = 'Death',
     };
 
     for _, widget in ipairs(GetEditWidgetsFor(entity, stateName)) do
@@ -10275,7 +10272,7 @@ function LibraPlatesSettingsDrawGeneralBlacklistSection()
                 blacklistSettings.modelReplaceUseFomor = value == true;
                 state.Save();
             end);
-            uiTooltip.Info('Controls the blacklist Fomor packet replacement. Turning it off does not remove blacklist entries.', true);
+            uiTooltip.Info('Enables blacklist Fomor packet replacement. Turning it off does not remove blacklist entries.', true);
 
             imgui.TextColored(settingsLabelColor, 'Name color');
             imgui.SameLine();
@@ -11891,124 +11888,23 @@ local helpGeneralEntries = {
 };
 
 local function NormalizeHelpText(value)
-    return tostring(value or ''):lower():gsub('[^%w%s]+', ' '):gsub('%s+', ' '):gsub('^%s+', ''):gsub('%s+$', '');
+    return LibraPlatesHelpSearch.Normalize(value);
 end
 
 function LibraPlatesSettingsGetHelpQueryAlternatives(word)
-    word = NormalizeHelpText(word);
-    local alternatives = { word };
-    local seen = { [word] = true };
-
-    for _, group in ipairs((LibraPlatesHelpSearchTerms or {}).aliases or {}) do
-        local groupMatches = false;
-        for _, term in ipairs(group) do
-            local normalizedTerm = NormalizeHelpText(term);
-            for termWord in normalizedTerm:gmatch('%S+') do
-                if (termWord == word) then
-                    groupMatches = true;
-                    break;
-                end
-            end
-            if (groupMatches == true) then
-                break;
-            end
-        end
-
-        if (groupMatches == true) then
-            for _, term in ipairs(group) do
-                local normalizedTerm = NormalizeHelpText(term);
-                if (seen[normalizedTerm] ~= true) then
-                    seen[normalizedTerm] = true;
-                    alternatives[#alternatives + 1] = normalizedTerm;
-                end
-            end
-        end
-    end
-
-    return alternatives;
+    return LibraPlatesHelpSearch.GetQueryAlternatives(word, LibraPlatesHelpSearchTerms);
 end
 
 function LibraPlatesSettingsBuildHelpSearchTerms(entry)
-    local searchTerms = LibraPlatesHelpSearchTerms or {};
-    local parts = {};
-
-    local function add(value)
-        value = tostring(value or '');
-        if (value ~= '') then
-            parts[#parts + 1] = value;
-        end
-    end
-
-    add((searchTerms.settings or {})[entry.section]);
-    add((searchTerms.entities or {})[entry.entity]);
-    add((searchTerms.states or {})[entry.state]);
-    add((searchTerms.widgets or {})[entry.widget]);
-    add((searchTerms.features or {})[entry.title]);
-    add(entry.terms);
-
-    return table.concat(parts, ' ');
+    return LibraPlatesHelpSearch.BuildEntryTerms(entry, LibraPlatesHelpSearchTerms);
 end
 
 function LibraPlatesSettingsHelpWordsAreClose(left, right)
-    left = tostring(left or '');
-    right = tostring(right or '');
-    local leftLength = #left;
-    local rightLength = #right;
-
-    if (math.min(leftLength, rightLength) < 3 or math.abs(leftLength - rightLength) > 1) then
-        return false;
-    end
-
-    if (leftLength == rightLength) then
-        local differences = 0;
-        for index = 1, leftLength do
-            if (left:sub(index, index) ~= right:sub(index, index)) then
-                differences = differences + 1;
-                if (differences > 1) then
-                    return false;
-                end
-            end
-        end
-        return differences == 1;
-    end
-
-    local shorter = leftLength < rightLength and left or right;
-    local longer = leftLength < rightLength and right or left;
-    local shortIndex = 1;
-    local longIndex = 1;
-    local skipped = false;
-
-    while (shortIndex <= #shorter and longIndex <= #longer) do
-        if (shorter:sub(shortIndex, shortIndex) == longer:sub(longIndex, longIndex)) then
-            shortIndex = shortIndex + 1;
-            longIndex = longIndex + 1;
-        elseif (skipped == false) then
-            skipped = true;
-            longIndex = longIndex + 1;
-        else
-            return false;
-        end
-    end
-
-    return true;
+    return LibraPlatesHelpSearch.WordsAreClose(left, right);
 end
 
 function LibraPlatesSettingsHelpAlternativeMatches(haystack, alternative, allowFuzzy)
-    if (haystack:find(alternative, 1, true) ~= nil) then
-        return true;
-    end
-
-    if (allowFuzzy ~= true or alternative:find(' ', 1, true) ~= nil) then
-        return false;
-    end
-
-    for haystackWord in haystack:gmatch('%S+') do
-        if (LibraPlatesSettingsHelpWordsAreClose(alternative, haystackWord) == true) then
-            return true;
-        end
-    end
-
-    return false;
+    return LibraPlatesHelpSearch.AlternativeMatches(haystack, alternative, allowFuzzy);
 end
 
 local function BuildHelpEntries()
@@ -13983,56 +13879,14 @@ local function DrawHelpFindSettings()
     end
 end
 
-local function TroubleshooterEntryMatches(entry, query)
-    if (query == '') then
-        return true;
-    end
-
-    local checkText = '';
-    for _, check in ipairs(entry.checks or {}) do
-        checkText = checkText .. ' ' .. tostring(check);
-    end
-
-    local haystack = NormalizeHelpText(tostring(entry.title or '') .. ' ' .. tostring(entry.path or '') .. ' ' .. tostring(entry.aliases or '') .. ' ' .. checkText);
-
-    for word in query:gmatch('%S+') do
-        if (haystack:find(word, 1, true) == nil) then
-            return false;
-        end
-    end
-
-    return true;
-end
-
 local function DrawHelpTroubleshooter()
-    LibraPlatesSettingsDrawBreadcrumb(T{ 'Help', 'Troubleshooter' });
-    DrawSettingsHeader('Checklists');
-    imgui.TextWrapped('Choose a topic to see its checklist.');
-    imgui.Spacing();
-
-    for row, entry in ipairs(troubleshooterEntries) do
-        local title = tostring(entry.title or 'Troubleshooter');
-        local expanded = troubleshooterExpandedTitle == title;
-
-        if (imgui.Button ~= nil and imgui.Button((expanded and 'Hide ' or 'Show ') .. title .. '##TroubleshooterToggle' .. tostring(row)) == true) then
-            troubleshooterExpandedTitle = expanded and nil or title;
-            expanded = not expanded;
-        end
-
-        if (expanded == true) then
-            imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, tostring(entry.path or ''));
-
-            for _, check in ipairs(entry.checks or {}) do
-                imgui.TextWrapped('- ' .. tostring(check));
-            end
-
-            if (entry.tab ~= nil and imgui.Button ~= nil and imgui.Button('Go to ' .. tostring(entry.tab) .. '##TroubleshooterGo' .. tostring(row)) == true) then
-                GoToHelpEntry(entry);
-            end
-        end
-
-        imgui.Separator();
-    end
+    helpTroubleshooter.Draw(troubleshooterEntries, {
+        drawBreadcrumb = function()
+            LibraPlatesSettingsDrawBreadcrumb(T{ 'Help', 'Troubleshooter' });
+        end,
+        drawHeader = DrawSettingsHeader,
+        goTo = GoToHelpEntry,
+    });
 end
 
 local function DrawHelpTab()
@@ -14120,8 +13974,6 @@ if (selectedTab == 'Modules') then
             return;
         end
 
-        DrawYellowHeader(selectedModuleWidget .. ' module');
-        imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Not built yet.');
         return;
     end
 
@@ -16737,9 +16589,6 @@ end
 
 local function DrawSelectedEditorPlates()
     if (selectedTab ~= 'Plates') then
-        LibraPlatesSettingsDrawBreadcrumb(T{ selectedTab });
-        imgui.Separator();
-        imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Not built yet.');
         return;
     end
 
@@ -17157,8 +17006,6 @@ local function DrawSelectedEditorPlates()
         return;
     end
 
-    DrawYellowHeader(GetWidgetDisplayLabel(selectedWidget) .. ' settings');
-    imgui.TextColored({ 0.65, 0.90, 1.0, 1.0 }, 'Not built yet.');
 end
 
 DrawSelectedEditor = function()

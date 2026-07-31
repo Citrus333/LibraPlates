@@ -1,6 +1,7 @@
 local bit = require('bit');
 local entities = require('core.entities');
 local log = require('core.log');
+local entityResolver = require('core.entity_resolver');
 
 local engagedEnemies = {};
 local tracked = {};
@@ -50,41 +51,7 @@ local function GetPartyManager()
 end
 
 local function GetIndexFromServerId(serverId)
-    serverId = tonumber(serverId) or 0;
-
-    if (serverId == 0) then
-        return 0;
-    end
-
-    local entityManager = GetEntityManager();
-
-    if (entityManager == nil) then
-        return 0;
-    end
-
-    if (bit.band(serverId, 0x1000000) ~= 0) then
-        local index = bit.band(serverId, 0xFFF);
-
-        if (index >= 0x900) then
-            index = index - 0x100;
-        end
-
-        if (
-            index > 0 and
-            index < 0x900 and
-            SafeCall(0, function() return entityManager:GetServerId(index); end) == serverId
-        ) then
-            return index;
-        end
-    end
-
-    for index = 1, 0x8FF do
-        if (SafeCall(0, function() return entityManager:GetServerId(index); end) == serverId) then
-            return index;
-        end
-    end
-
-    return 0;
+    return entityResolver.GetIndex(serverId);
 end
 
 local function GetPartyServerIds()

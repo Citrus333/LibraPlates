@@ -60,11 +60,26 @@ local detachedFavorEffectStatusIds = {
 };
 local AVATAR_FAVOR_ABILITY_ID = 250;
 local AVATAR_FAVOR_RECAST_TIMER_ID = 176;
+local BST_MAIN_JOB_ID = 9;
+local DRG_MAIN_JOB_ID = 14;
+local SMN_MAIN_JOB_ID = 15;
+local PUP_MAIN_JOB_ID = 18;
+local GEO_MAIN_JOB_ID = 21;
 local staticPanelEditDrag = nil;
 local DrawStaticPlateTexture = nil;
 local DrawStaticArtworkTexture = nil;
 local detachedSetupPreview = nil;
 local renderedPetCanvasCache = {};
+local detachedPreparedPlateCache = {};
+local petPrepare = {
+    smn = nil,
+    caches = {},
+};
+local petWidgetSettingsCache = {};
+local petGlobalSettingsCache = {
+    revision = nil,
+    settings = nil,
+};
 local zonePetRenderBlocked = false;
 local zonePetRenderBlockedUntil = 0;
 local zonePetStableFrames = 0;
@@ -97,6 +112,40 @@ local detachedGeoTimerCache = {
 };
 local GetAvatarFavorStatusElapsed = nil;
 local GetAvatarFavorCooldownSeconds = nil;
+
+local function GetPetGlobalSettings()
+    local revision = state.GetRevision();
+
+    if (
+        petGlobalSettingsCache.settings == nil or
+        petGlobalSettingsCache.revision ~= revision
+    ) then
+        petGlobalSettingsCache.revision = revision;
+        petGlobalSettingsCache.settings = state.GetGlobalSettings(globalDefaults);
+    end
+
+    return petGlobalSettingsCache.settings;
+end
+
+local function GetPetWidgetSettings(entityName, layoutStateName, widgetName, defaults)
+    local revision = state.GetRevision();
+    local key = table.concat({
+        tostring(entityName or ''),
+        tostring(layoutStateName or ''),
+        tostring(widgetName or ''),
+    }, '\30');
+    local cached = petWidgetSettingsCache[key];
+
+    if (cached == nil or cached.revision ~= revision) then
+        cached = {
+            revision = revision,
+            settings = state.GetWidgetSettings(entityName, layoutStateName, widgetName, defaults),
+        };
+        petWidgetSettingsCache[key] = cached;
+    end
+
+    return cached.settings;
+end
 local BuildResourceText = nil;
 local BuildPercentFallbackResourceText = nil;
 local petAnchorBone = 12;
@@ -596,7 +645,7 @@ local function ApplyDetachedAvatarWidgets(plateData, background)
     local tpSettings = background.avatarTpBarSettings or detachedDefaults.avatarTpBarSettings or {};
     local castSettings = background.avatarCastBarSettings or detachedDefaults.avatarCastBarSettings or {};
     local scaleInverse = tonumber(background.scaleInverse) or 1;
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local enmitySettings = background.avatarEnmitySettings or globalSettings.enmity or (globalDefaults.enmity or {});
 
     if (nameSettings.enabled == false) then
@@ -878,7 +927,7 @@ local function ApplyDetachedPupWidgets(plateData, background)
     local enmitySettings = background.pupEnmitySettings or defaults.pupEnmitySettings or {};
     local maneuverSettings = background.pupManeuverSettings or defaults.pupManeuverSettings or maneuverDefaults;
     local scaleInverse = tonumber(background.scaleInverse) or 1;
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
 
     if (nameSettings.enabled == false) then
         plateData.name = '';
@@ -994,7 +1043,7 @@ local function ApplyDetachedDrgWidgets(plateData, background)
     local tpSettings = background.drgTpBarSettings or defaults.drgTpBarSettings or tpBarDefaults;
     local enmitySettings = background.drgEnmitySettings or defaults.drgEnmitySettings or {};
     local scaleInverse = tonumber(background.scaleInverse) or 1;
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local setupPreview = plateData.detachedDrgSetupPreview == true;
 
     if (nameSettings.enabled == false) then
@@ -1092,7 +1141,7 @@ local function ApplyDetachedBstWidgets(plateData, background)
     local actionSettings = background.bstActionSettings or defaults.bstActionSettings or {};
     local rewardSettings = background.bstRewardSettings or defaults.bstRewardSettings or {};
     local scaleInverse = tonumber(background.scaleInverse) or 1;
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local setupPreview = plateData.detachedBstSetupPreview == true;
     if (type(plateData.detachedBstBadges) == 'table') then
         plateData.badges = plateData.detachedBstBadges;
@@ -1318,7 +1367,7 @@ local function ApplyDetachedGeoWidgets(plateData, background)
     local effectsSettings = background.geoActiveEffectsSettings or defaults.geoActiveEffectsSettings or {};
     local fullCircleSettings = background.geoFullCircleSettings or defaults.geoFullCircleSettings or {};
     local scaleInverse = tonumber(background.scaleInverse) or 1;
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local setupPreview = plateData.detachedGeoSetupPreview == true;
 
     if (nameSettings.enabled == false) then
@@ -1582,7 +1631,7 @@ local function AddDetachedAvatarGemMeters(plateData, background)
     local wardSettings = background.avatarWardSettings or detachedDefaults.avatarWardSettings or {};
     local rageSettings = background.avatarRageSettings or detachedDefaults.avatarRageSettings or {};
     local favorSettings = background.avatarFavorSettings or detachedDefaults.avatarFavorSettings or {};
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local scaleInverse = tonumber(background.scaleInverse) or 1;
     local rawWidth = tonumber(background.rawWidth) or 220;
     local rawHeight = tonumber(background.rawHeight) or 74;
@@ -1692,8 +1741,7 @@ local function AddDetachedAvatarGemMeters(plateData, background)
         end
     elseif (
         favorSettings.enabled ~= false and
-        favorSettings.showCooldown ~= false and
-        plateData.detachedAvatarHasPet ~= true
+        favorSettings.showCooldown ~= false
     ) then
         local favorText = favorCooldownSeconds > 0
             and statusTimerFormat.Format(favorCooldownSeconds)
@@ -1879,18 +1927,40 @@ local function RenderCachedPetCanvas(plateData, key, metric)
     key = tostring(key or 'pet');
     local startedAt = perfMeter.Start();
     local now = os.clock();
-    local signature = BuildStaticPetRenderSignature(plateData);
+    local targetMarker = plateData ~= nil and plateData.targetMarker or nil;
+    local refreshSeconds = metric == 'pet.detached.canvas'
+        and 0.25
+        or ((targetMarker ~= nil and targetMarker.enabled == true) and 0.10 or 0.20);
+    local lookupStartedAt = perfMeter.Start();
     local cached = renderedPetCanvasCache[key];
-
-    if (
+    local cachedTextureValid =
         cached ~= nil and
         cached.texture ~= nil and
-        canvasTexture.TouchTextureForKey(key, cached.texture) == true and
-        (
-            cached.signature == signature or
-            (now - (tonumber(cached.renderedAt) or 0)) < 0.10
-        )
+        canvasTexture.TouchTextureForKey(key, cached.texture) == true;
+
+    -- Pet canvases are intentionally limited to 10 updates per second.
+    -- Return the known-good cached image before serializing the complete
+    -- plate-data tree; previously that expensive signature was rebuilt on
+    -- every game frame even though the result could not yet be redrawn.
+    if (
+        cachedTextureValid == true and
+        (now - (tonumber(cached.checkedAt) or tonumber(cached.renderedAt) or 0)) < refreshSeconds
     ) then
+        cached.lastUsedAt = now;
+        plateData._elementRects = cached.elementRects;
+        plateData._canvasCrop = cached.canvasCrop;
+        perfMeter.Stop(metric .. '.lookup', lookupStartedAt);
+        perfMeter.Stop(metric, startedAt);
+        return cached.texture, cached.width, cached.height;
+    end
+    perfMeter.Stop(metric .. '.lookup', lookupStartedAt);
+
+    local signatureStartedAt = perfMeter.Start();
+    local signature = BuildStaticPetRenderSignature(plateData);
+    perfMeter.Stop(metric .. '.signature', signatureStartedAt);
+
+    if (cachedTextureValid == true and cached.signature == signature) then
+        cached.checkedAt = now;
         cached.lastUsedAt = now;
         plateData._elementRects = cached.elementRects;
         plateData._canvasCrop = cached.canvasCrop;
@@ -1898,11 +1968,13 @@ local function RenderCachedPetCanvas(plateData, key, metric)
         return cached.texture, cached.width, cached.height;
     end
 
+    local renderStartedAt = perfMeter.Start();
     local texture, textureWidth, textureHeight = canvasTexture.Render(
         plateData,
         key,
         signature
     );
+    perfMeter.Stop(metric .. '.render', renderStartedAt);
 
     if (texture ~= nil and textureWidth ~= nil and textureHeight ~= nil) then
         renderedPetCanvasCache[key] = {
@@ -1911,6 +1983,7 @@ local function RenderCachedPetCanvas(plateData, key, metric)
             height = textureHeight,
             signature = signature,
             renderedAt = now,
+            checkedAt = now,
             lastUsedAt = now,
             elementRects = plateData._elementRects,
             canvasCrop = plateData._canvasCrop,
@@ -2116,7 +2189,7 @@ local function DrawPupOverloadGaugeTest(drawList, frameCenterX, frameCenterY, se
     local percentText = displayChance ~= nil
         and string.format('%d%%', math.floor(chance + 0.5))
         or '--%';
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local textTextureId, textWidth, textHeight = gdiTextTexture.GetTexture(percentText, {
         fontFamily = fonts.GetRole(globalSettings, settings.useSmallFont == true),
         fontFlags = fonts.GetRoleFlags(globalSettings, settings.useSmallFont == true),
@@ -2209,7 +2282,7 @@ local function AddDetachedDrgAbilityBars(plateData, background, preview)
     plateData.extraBars = plateData.extraBars or {};
 
     local defaults = ((globalDefaults.targeting or {}).drgPetStaticBackgroundSettings or {});
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local scaleInverse = tonumber(background.scaleInverse) or 1;
 
     local function AddBar(kind, settings, fallback, progress, text, active)
@@ -2304,7 +2377,7 @@ local function DrawDetachedDrgAbilityTimers(drawList, frameCenterX, frameCenterY
         return;
     end
 
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     RefreshDetachedDrgTimerCache();
 
     local function DrawTimer(settings, timerTicks, previewText, previewActive, forceActive, activeSeconds)
@@ -2366,6 +2439,7 @@ end
 
 local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targetingSettings, windowId, petName, settingsPrefix)
     local detachedTotalStart = perfMeter.Start();
+    local detachedPrepareStart = perfMeter.Start();
     settingsPrefix = tostring(settingsPrefix or prefix);
     local staticScale = math.max(0.10, math.min(2.00, (tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticScale')) or 35) / 100));
     if (prefix == 'pup' or prefix == 'drg' or prefix == 'bst') then
@@ -2376,58 +2450,101 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
         staticScale = 0.60;
     end
 
-    local staticBackground = BuildStaticPetBackground(targetingSettings, prefix, settingsPrefix, staticScale, petName);
-    local pupOverallScale = prefix == 'pup'
-        and math.max(0.25, math.min(2.50, (tonumber(staticBackground.pupOverallScale) or 100) / 100))
-        or 1.0;
-    local drawScale = staticScale * pupOverallScale;
-    local staticPlateData = CopySettingsWith(plateData, {
-        background = staticBackground,
-        -- Target and Subtarget markers belong to the pet's normal world plate.
-        -- Do not duplicate the same marker on its detached frame.
-        targetMarker = { enabled = false },
-    });
     local editEnabled = GetDetachedPetSetting(
         targetingSettings,
         prefix,
         settingsPrefix,
         'PetStaticEditFrame'
     ) == true;
-    if (prefix == 'pup' and editEnabled == true) then
-        staticPlateData.detachedPupSetupPreview = true;
-        staticPlateData.detachedPupManeuverState = pupManeuvers.GetPreviewState();
-    elseif (prefix == 'drg' and editEnabled == true) then
-        staticPlateData.detachedDrgSetupPreview = true;
-    elseif (prefix == 'bst' and editEnabled == true) then
-        staticPlateData.detachedBstSetupPreview = true;
-        staticPlateData.detachedBstName = tostring(staticBackground.bstPetState) == 'Charmed Pet'
-            and 'Charmed Pet'
-            or 'CourierCarrie';
-    elseif (prefix == 'geo' and editEnabled == true) then
-        staticPlateData.detachedGeoSetupPreview = true;
+    local now = os.clock();
+    local revision = state.GetRevision();
+    local preparedKey = table.concat({
+        tostring(prefix or ''),
+        tostring(petIndex or 0),
+        settingsPrefix,
+    }, '\30');
+    local prepared = detachedPreparedPlateCache[preparedKey];
+    local preparationCurrent =
+        prepared ~= nil and
+        prepared.revision == revision and
+        prepared.editEnabled == editEnabled and
+        prepared.staticScale == staticScale and
+        prepared.petName == tostring(petName or '') and
+        (now - (tonumber(prepared.preparedAt) or 0)) < 0.25;
+    local staticBackground;
+    local pupOverallScale;
+    local drawScale;
+    local staticPlateData;
+
+    if (preparationCurrent == true) then
+        perfMeter.Count('pet.detached.prepare.hit', 1);
+        staticBackground = prepared.background;
+        pupOverallScale = prepared.pupOverallScale;
+        drawScale = prepared.drawScale;
+        staticPlateData = prepared.plateData;
+    else
+        perfMeter.Count('pet.detached.prepare.miss', 1);
+        staticBackground = BuildStaticPetBackground(targetingSettings, prefix, settingsPrefix, staticScale, petName);
+        pupOverallScale = prefix == 'pup'
+            and math.max(0.25, math.min(2.50, (tonumber(staticBackground.pupOverallScale) or 100) / 100))
+            or 1.0;
+        drawScale = staticScale * pupOverallScale;
+        staticPlateData = CopySettingsWith(plateData, {
+            background = staticBackground,
+            -- Target and Subtarget markers belong to the pet's normal world plate.
+            -- Do not duplicate the same marker on its detached frame.
+            targetMarker = { enabled = false },
+        });
+        if (prefix == 'pup' and editEnabled == true) then
+            staticPlateData.detachedPupSetupPreview = true;
+            staticPlateData.detachedPupManeuverState = pupManeuvers.GetPreviewState();
+        elseif (prefix == 'drg' and editEnabled == true) then
+            staticPlateData.detachedDrgSetupPreview = true;
+        elseif (prefix == 'bst' and editEnabled == true) then
+            staticPlateData.detachedBstSetupPreview = true;
+            staticPlateData.detachedBstName = tostring(staticBackground.bstPetState) == 'Charmed Pet'
+                and 'Charmed Pet'
+                or 'CourierCarrie';
+        elseif (prefix == 'geo' and editEnabled == true) then
+            staticPlateData.detachedGeoSetupPreview = true;
+        end
+        ApplyDetachedAvatarWidgets(staticPlateData, staticBackground);
+        ApplyDetachedPupWidgets(staticPlateData, staticBackground);
+        ApplyDetachedDrgWidgets(staticPlateData, staticBackground);
+        ApplyDetachedBstWidgets(staticPlateData, staticBackground);
+        ApplyDetachedGeoWidgets(staticPlateData, staticBackground);
+        AddDetachedAvatarGemMeters(staticPlateData, staticBackground);
+        AddDetachedDrgAbilityBars(
+            staticPlateData,
+            staticBackground,
+            staticPlateData.detachedDrgSetupPreview == true
+        );
+        -- The source plate may already contain layout bounds for its normal Background
+        -- widget. Detached frames have their own background and must rebuild those bounds.
+        staticPlateData._elementRects = nil;
+        detachedPreparedPlateCache[preparedKey] = {
+            revision = revision,
+            editEnabled = editEnabled,
+            staticScale = staticScale,
+            petName = tostring(petName or ''),
+            preparedAt = now,
+            background = staticBackground,
+            pupOverallScale = pupOverallScale,
+            drawScale = drawScale,
+            plateData = staticPlateData,
+        };
     end
-    ApplyDetachedAvatarWidgets(staticPlateData, staticBackground);
-    ApplyDetachedPupWidgets(staticPlateData, staticBackground);
-    ApplyDetachedDrgWidgets(staticPlateData, staticBackground);
-    ApplyDetachedBstWidgets(staticPlateData, staticBackground);
-    ApplyDetachedGeoWidgets(staticPlateData, staticBackground);
-    AddDetachedAvatarGemMeters(staticPlateData, staticBackground);
-    AddDetachedDrgAbilityBars(
-        staticPlateData,
-        staticBackground,
-        staticPlateData.detachedDrgSetupPreview == true
-    );
-    -- The source plate may already contain layout bounds for its normal Background
-    -- widget. Detached frames have their own background and must rebuild those bounds.
-    staticPlateData._elementRects = nil;
+    perfMeter.Stop('pet.detached.prepare', detachedPrepareStart);
     local staticTexture, staticTextureWidth, staticTextureHeight = RenderCachedPetCanvas(
         staticPlateData,
         BuildStaticPetTextureKey(prefix, petIndex),
         'pet.detached.canvas'
     );
+    local detachedDrawStart = perfMeter.Start();
     local staticTextureId = canvasTexture.GetTextureId(staticTexture);
 
     if (staticTextureId == nil or staticTextureWidth == nil or staticTextureHeight == nil) then
+        perfMeter.Stop('pet.detached.draw', detachedDrawStart);
         perfMeter.Stop('pet.detached.total', detachedTotalStart);
         return;
     end
@@ -2691,6 +2808,7 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
             pupOverallScale
         );
     end
+    perfMeter.Stop('pet.detached.draw', detachedDrawStart);
     perfMeter.Stop('pet.detached.total', detachedTotalStart);
 end
 
@@ -2742,9 +2860,9 @@ end
 
 local function BuildSmnDetachedPlaceholderPlate()
     local layoutStateName = 'Avatar';
-    local nameSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Name', nameDefaults);
-    local backgroundSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Background', backgroundDefaults);
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local nameSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'Name', nameDefaults);
+    local backgroundSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'Background', backgroundDefaults);
+    local globalSettings = GetPetGlobalSettings();
 
     return {
         hp = 0,
@@ -4410,20 +4528,146 @@ DrawStaticArtworkTexture = function(textureId, centerX, centerY, width, height, 
     return true;
 end
 
+function petPrepare.Get(kind, pet, layoutStateName, targetStateName)
+    local prepared = petPrepare.caches[tostring(kind or '')];
+    local refreshSeconds = (targetStateName == 'Target' or targetStateName == 'Subtarget') and 0.10 or 0.20;
+    if (
+        prepared ~= nil and
+        prepared.revision == state.GetRevision() and
+        prepared.petIndex == tonumber(pet.index) and
+        prepared.petName == tostring(pet.name or '') and
+        prepared.layoutStateName == layoutStateName and
+        prepared.targetStateName == targetStateName and
+        (os.clock() - (tonumber(prepared.preparedAt) or 0)) < refreshSeconds
+    ) then
+        perfMeter.Count('pet.' .. tostring(kind) .. '.prepare.hit', 1);
+        return prepared;
+    end
+
+    perfMeter.Count('pet.' .. tostring(kind) .. '.prepare.miss', 1);
+    return nil;
+end
+
+function petPrepare.Save(kind, prepared)
+    prepared.revision = state.GetRevision();
+    prepared.preparedAt = os.clock();
+    petPrepare.caches[tostring(kind or '')] = prepared;
+    return prepared;
+end
+
+function petPrepare.Queue(pet, prepared)
+    local plateData = prepared.plateData;
+    local targetingSettings = prepared.targetingSettings;
+    local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
+        plateData,
+        prepared.textureKeyPrefix .. tostring(pet.index),
+        'pet.world.canvas'
+    );
+    local plateTextureId = canvasTexture.GetTextureId(plateTexture);
+
+    if (plateTextureId == nil) then
+        return false;
+    end
+
+    local worldPlateTextureId = plateTextureId;
+    local worldTextureWidth = textureWidth;
+    local worldTextureHeight = textureHeight;
+    local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+
+    if (prepared.petPlateMode ~= 'Normal') then
+        DrawDetachedStaticPetFrame(
+            prepared.detachedPrefix,
+            pet.index,
+            plateData,
+            targetingSettings,
+            prepared.detachedKeyPrefix .. tostring(pet.index),
+            pet.name,
+            prepared.detachedSettingsPrefix
+        );
+    end
+
+    if (prepared.petPlateMode == 'Detach from pet') then
+        local nameOnlyPlateData = BuildNameOnlyPlateData(
+            plateData,
+            ShortenName(pet.name, prepared.nameSettings.shortenName)
+        );
+        local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
+            nameOnlyPlateData,
+            prepared.nameTextureKeyPrefix .. tostring(pet.index),
+            'pet.name.canvas'
+        );
+        local nameTextureId = canvasTexture.GetTextureId(nameTexture);
+
+        if (nameTextureId == nil) then
+            return false;
+        end
+
+        worldPlateTextureId = nameTextureId;
+        worldTextureWidth = nameTextureWidth;
+        worldTextureHeight = nameTextureHeight;
+        worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
+    end
+
+    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(
+        2.35,
+        prepared.worldHeight or 1.18,
+        worldTextureWidth,
+        worldTextureHeight
+    );
+    local offsetY = tonumber(prepared.worldOffsetY) or petWorldOffsetY;
+
+    worldMarkerProbe.QueuePlate({
+        targetIndex = pet.index,
+        serverId = pet.serverId,
+        distance = pet.distance,
+        hp = prepared.hpPercent,
+        mp = prepared.mpPercent,
+        tp = prepared.tpValue,
+        name = '',
+        isSelf = false,
+        stateName = prepared.targetStateName,
+        clickTargetType = 'pet',
+        worldMarker = targeting.ApplyPlateScalingSettings({
+            hpBar = { enabled = false },
+            plateTextureId = worldPlateTextureId,
+            plateAlwaysOnTop = true,
+            plateTacticalOverlayOnly = true,
+            anchorBone = prepared.anchorBone or petAnchorBone,
+            plateWorldWidth = plateWorldWidth,
+            plateWorldHeight = plateWorldHeight,
+            plateWorldOffsetY = offsetY,
+            plateOverlayOffsetY = prepared.overlayOffsetY,
+            plateTextureWidth = worldTextureWidth,
+            plateTextureHeight = worldTextureHeight,
+            plateClickRects = worldClickRects,
+            plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
+            clickTargetType = 'pet',
+            layoutStateName = prepared.layoutStateName,
+        }, 'pet', 0, offsetY),
+    });
+    return true;
+end
+
 local function QueueBstPet(pet)
     local layoutStateName = GetBstStateName(pet);
     local targetStateName = targeting.GetTargetStateName(pet.index);
-    local nameSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Name', nameDefaults);
-    local backgroundSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Background', backgroundDefaults);
-    local hpBarSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'HP Bar', barDefaults);
-    local tpBarSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'TP Bar', tpBarDefaults);
-    local petTimerSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Pet timer', petTimerDefaults);
-    local petStateSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Pet state', petStateDefaults);
-    local sicSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Sic', readyBarDefaults);
-    local readySettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Ready bar', readyBarDefaults);
-    local rewardSettings = state.GetWidgetSettings('Pet (BST)', layoutStateName, 'Reward', rewardBarDefaults);
+    local prepared = petPrepare.Get('bst', pet, layoutStateName, targetStateName);
+    if (prepared ~= nil) then
+        petPrepare.Queue(pet, prepared);
+        return;
+    end
+
+    local nameSettings = GetPetWidgetSettings('Pet (BST)', layoutStateName, 'Name', nameDefaults);
+    local backgroundSettings = GetPetWidgetSettings('Pet (BST)', layoutStateName, 'Background', backgroundDefaults);
+    local hpBarSettings = GetPetWidgetSettings('Pet (BST)', layoutStateName, 'HP Bar', barDefaults);
+    local tpBarSettings = GetPetWidgetSettings('Pet (BST)', layoutStateName, 'TP Bar', tpBarDefaults);
+    local petTimerSettings = GetPetWidgetSettings('Pet (BST)', layoutStateName, 'Pet timer', petTimerDefaults);
+    local petStateSettings = GetPetWidgetSettings('Pet (BST)', layoutStateName, 'Pet state', petStateDefaults);
+    local sicSettings = GetPetWidgetSettings('Pet (BST)', layoutStateName, 'Sic', readyBarDefaults);
+    local readySettings = GetPetWidgetSettings('Pet (BST)', layoutStateName, 'Ready bar', readyBarDefaults);
+    local rewardSettings = GetPetWidgetSettings('Pet (BST)', layoutStateName, 'Reward', rewardBarDefaults);
     local targetMarker = targetModuleMarker.Build('Pet (BST)', layoutStateName, targetStateName, hpBarSettings, pet.distance);
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local targetingSettings = targeting.GetSettings();
     local hpPercent = ClampPercent(pet.hpPercent, 100);
     local tpValue = ClampTp(pet.tp);
@@ -4699,36 +4943,71 @@ local function QueueBstPet(pet)
     plateData.detachedBstBadges = detachedData.badges;
     plateData.detachedBstExtraBars = detachedData.extraBars;
 
+    local petPlateMode = tostring(
+        GetDetachedPetSetting(targetingSettings, 'bst', settingsPrefix, 'PetPlateMode')
+        or 'Normal'
+    );
+
+    if (petPlateMode ~= 'Normal') then
+        plateData.detachedBstTp = tpValue;
+    end
+
+    prepared = petPrepare.Save('bst', {
+        petIndex = tonumber(pet.index),
+        petName = tostring(pet.name or ''),
+        layoutStateName = layoutStateName,
+        targetStateName = targetStateName,
+        plateData = plateData,
+        targetingSettings = targetingSettings,
+        petPlateMode = petPlateMode,
+        hpPercent = hpPercent,
+        tpValue = tpValue,
+        nameSettings = nameSettings,
+        textureKeyPrefix = 'bst-pet-',
+        nameTextureKeyPrefix = 'bst-pet-name-',
+        detachedPrefix = 'bst',
+        detachedKeyPrefix = 'static_' .. settingsPrefix .. '_pet_',
+        detachedSettingsPrefix = settingsPrefix,
+        anchorBone = petAnchorBone,
+        worldOffsetY = petWorldOffsetY,
+    });
+    petPrepare.Queue(pet, prepared);
+end
+
+function petPrepare.QueueSmn(pet, prepared)
+    local plateData = prepared.plateData;
+    local targetingSettings = prepared.targetingSettings;
+    local petPlateMode = prepared.petPlateMode;
+    local layoutStateName = prepared.layoutStateName;
+    local targetStateName = prepared.targetStateName;
+    local hpPercent = prepared.hpPercent;
+    local tpValue = prepared.tpValue;
+    local nameSettings = prepared.nameSettings;
     local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
         plateData,
-        'bst-pet-' .. tostring(pet.index),
+        'smn-pet-' .. tostring(pet.index),
         'pet.world.canvas'
     );
     local plateTextureId = canvasTexture.GetTextureId(plateTexture);
 
     if (plateTextureId == nil) then
-        return;
+        return false;
     end
 
-    local petPlateMode = tostring(
-        GetDetachedPetSetting(targetingSettings, 'bst', settingsPrefix, 'PetPlateMode')
-        or 'Normal'
-    );
     local worldPlateTextureId = plateTextureId;
     local worldTextureWidth = textureWidth;
     local worldTextureHeight = textureHeight;
     local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
 
     if (petPlateMode ~= 'Normal') then
-        plateData.detachedBstTp = tpValue;
         DrawDetachedStaticPetFrame(
-            'bst',
+            'smn',
             pet.index,
             plateData,
             targetingSettings,
-            'static_' .. settingsPrefix .. '_pet_' .. tostring(pet.index),
+            'static_smn_pet_' .. tostring(pet.index),
             pet.name,
-            settingsPrefix
+            layoutStateName == 'Spirit' and 'smnSpirit' or 'smnAvatar'
         );
     end
 
@@ -4736,13 +5015,13 @@ local function QueueBstPet(pet)
         local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
         local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
             nameOnlyPlateData,
-            'bst-pet-name-' .. tostring(pet.index),
+            'smn-pet-name-' .. tostring(pet.index),
             'pet.name.canvas'
         );
         local nameTextureId = canvasTexture.GetTextureId(nameTexture);
 
         if (nameTextureId == nil) then
-            return;
+            return false;
         end
 
         worldPlateTextureId = nameTextureId;
@@ -4779,21 +5058,45 @@ local function QueueBstPet(pet)
             clickTargetType = 'pet',
         }, 'pet', 0, petWorldOffsetY),
     });
+    return true;
 end
 
 local function QueueSmnPet(pet)
+    local smnTotalStart = perfMeter.Start();
     local layoutStateName = (pet.petType == 'spirit') and 'Spirit' or 'Avatar';
     local targetStateName = targeting.GetTargetStateName(pet.index);
-    local nameSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Name', nameDefaults);
-    local backgroundSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Background', backgroundDefaults);
-    local hpBarSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'HP Bar', smnHpBarDefaults);
-    local mpBarSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'MP Bar', smnMpBarDefaults);
-    local tpBarSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'TP Bar', smnTpBarDefaults);
-    local castBarSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Cast bar', smnCastBarDefaults);
-    local wardSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Ward timer', wardBarDefaults);
-    local rageSettings = state.GetWidgetSettings('Pet (SMN)', layoutStateName, 'Rage timer', rageBarDefaults);
+    local now = os.clock();
+    local revision = state.GetRevision();
+    local prepared = petPrepare.smn;
+    local refreshSeconds = (targetStateName == 'Target' or targetStateName == 'Subtarget') and 0.10 or 0.20;
+
+    if (
+        prepared ~= nil and
+        prepared.revision == revision and
+        prepared.petIndex == tonumber(pet.index) and
+        prepared.petName == tostring(pet.name or '') and
+        prepared.layoutStateName == layoutStateName and
+        prepared.targetStateName == targetStateName and
+        (now - (tonumber(prepared.preparedAt) or 0)) < refreshSeconds
+    ) then
+        perfMeter.Count('pet.smn.prepare.hit', 1);
+        petPrepare.QueueSmn(pet, prepared);
+        perfMeter.Stop('pet.smn.total', smnTotalStart);
+        return;
+    end
+
+    perfMeter.Count('pet.smn.prepare.miss', 1);
+    local smnBuildStart = perfMeter.Start();
+    local nameSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'Name', nameDefaults);
+    local backgroundSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'Background', backgroundDefaults);
+    local hpBarSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'HP Bar', smnHpBarDefaults);
+    local mpBarSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'MP Bar', smnMpBarDefaults);
+    local tpBarSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'TP Bar', smnTpBarDefaults);
+    local castBarSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'Cast bar', smnCastBarDefaults);
+    local wardSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'Ward timer', wardBarDefaults);
+    local rageSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'Rage timer', rageBarDefaults);
     local targetMarker = targetModuleMarker.Build('Pet (SMN)', layoutStateName, targetStateName, hpBarSettings, pet.distance);
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local targetingSettings = targeting.GetSettings();
     local hpPercent = ClampPercent(pet.hpPercent, 100);
     local mpPercent = ClampPercent(pet.mpPercent, 0);
@@ -5018,81 +5321,24 @@ local function QueueSmnPet(pet)
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
-    local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
-        plateData,
-        'smn-pet-' .. tostring(pet.index),
-        'pet.world.canvas'
-    );
-    local plateTextureId = canvasTexture.GetTextureId(plateTexture);
-
-    if (plateTextureId == nil) then
-        return;
-    end
-
-    local worldPlateTextureId = plateTextureId;
-    local worldTextureWidth = textureWidth;
-    local worldTextureHeight = textureHeight;
-    local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
-
-    if (petPlateMode ~= 'Normal') then
-        DrawDetachedStaticPetFrame(
-            'smn',
-            pet.index,
-            plateData,
-            targetingSettings,
-            'static_smn_pet_' .. tostring(pet.index),
-            pet.name,
-            layoutStateName == 'Spirit' and 'smnSpirit' or 'smnAvatar'
-        );
-    end
-
-    if (petPlateMode == 'Detach from pet') then
-        local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
-        local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
-            nameOnlyPlateData,
-            'smn-pet-name-' .. tostring(pet.index),
-            'pet.name.canvas'
-        );
-        local nameTextureId = canvasTexture.GetTextureId(nameTexture);
-
-        if (nameTextureId == nil) then
-            return;
-        end
-
-        worldPlateTextureId = nameTextureId;
-        worldTextureWidth = nameTextureWidth;
-        worldTextureHeight = nameTextureHeight;
-        worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
-    end
-
-    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, worldTextureWidth, worldTextureHeight);
-
-    worldMarkerProbe.QueuePlate({
-        targetIndex = pet.index,
-        serverId = pet.serverId,
-        distance = pet.distance,
-        hp = hpPercent,
-        tp = tpValue,
-        name = '',
-        isSelf = false,
-        stateName = targetStateName,
-        clickTargetType = 'pet',
-        worldMarker = targeting.ApplyPlateScalingSettings({
-            hpBar = { enabled = false },
-            plateTextureId = worldPlateTextureId,
-            plateAlwaysOnTop = true,
-            plateTacticalOverlayOnly = true,
-            anchorBone = petAnchorBone,
-            plateWorldWidth = plateWorldWidth,
-            plateWorldHeight = plateWorldHeight,
-            plateWorldOffsetY = petWorldOffsetY,
-            plateTextureWidth = worldTextureWidth,
-            plateTextureHeight = worldTextureHeight,
-            plateClickRects = worldClickRects,
-            plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
-            clickTargetType = 'pet',
-        }, 'pet', 0, petWorldOffsetY),
-    });
+    perfMeter.Stop('pet.smn.build', smnBuildStart);
+    prepared = {
+        revision = revision,
+        petIndex = tonumber(pet.index),
+        petName = tostring(pet.name or ''),
+        layoutStateName = layoutStateName,
+        targetStateName = targetStateName,
+        preparedAt = now,
+        plateData = plateData,
+        targetingSettings = targetingSettings,
+        petPlateMode = petPlateMode,
+        hpPercent = hpPercent,
+        tpValue = tpValue,
+        nameSettings = nameSettings,
+    };
+    petPrepare.smn = prepared;
+    petPrepare.QueueSmn(pet, prepared);
+    perfMeter.Stop('pet.smn.total', smnTotalStart);
 end
 
 local function QueueWyvernPet(pet)
@@ -5101,13 +5347,23 @@ local function QueueWyvernPet(pet)
     local wyvernAnchorBone = petPlate.GetWyvernAnchorBone(pet);
     local wyvernWorldOffsetY = petPlate.GetWyvernWorldOffsetY(pet);
     local wyvernOverlayOffsetY = petPlate.GetWyvernOverlayOffsetY(pet);
-    local nameSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'Name', nameDefaults);
-    local backgroundSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'Background', backgroundDefaults);
-    local hpBarSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'HP Bar', barDefaults);
-    local tpBarSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'TP Bar', tpBarDefaults);
-    local distanceSettings = state.GetWidgetSettings('Wyvern', layoutStateName, 'Distance', distanceDefaults);
+    local prepared = petPrepare.Get('drg', pet, layoutStateName, targetStateName);
+    if (prepared ~= nil) then
+        -- The resting/airborne anchor can change independently of plate data.
+        prepared.anchorBone = wyvernAnchorBone;
+        prepared.worldOffsetY = wyvernWorldOffsetY;
+        prepared.overlayOffsetY = wyvernOverlayOffsetY;
+        petPrepare.Queue(pet, prepared);
+        return;
+    end
+
+    local nameSettings = GetPetWidgetSettings('Wyvern', layoutStateName, 'Name', nameDefaults);
+    local backgroundSettings = GetPetWidgetSettings('Wyvern', layoutStateName, 'Background', backgroundDefaults);
+    local hpBarSettings = GetPetWidgetSettings('Wyvern', layoutStateName, 'HP Bar', barDefaults);
+    local tpBarSettings = GetPetWidgetSettings('Wyvern', layoutStateName, 'TP Bar', tpBarDefaults);
+    local distanceSettings = GetPetWidgetSettings('Wyvern', layoutStateName, 'Distance', distanceDefaults);
     local targetMarker = targetModuleMarker.Build('Wyvern', layoutStateName, targetStateName, hpBarSettings, pet.distance);
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local targetingSettings = targeting.GetSettings();
     local hpPercent = ClampPercent(pet.hpPercent, 100);
     local tpValue = ClampTp(pet.tp);
@@ -5248,90 +5504,47 @@ local function QueueWyvernPet(pet)
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
-    local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
-        plateData,
-        'wyvern-pet-' .. tostring(pet.index),
-        'pet.world.canvas'
-    );
-    local plateTextureId = canvasTexture.GetTextureId(plateTexture);
-
-    if (plateTextureId == nil) then
-        return;
-    end
-
     local petPlateMode = tostring(targetingSettings.drgPetPlateMode or 'Normal');
-    local worldPlateTextureId = plateTextureId;
-    local worldTextureWidth = textureWidth;
-    local worldTextureHeight = textureHeight;
-    local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
-
-    if (petPlateMode ~= 'Normal') then
-        DrawDetachedStaticPetFrame('drg', pet.index, plateData, targetingSettings, 'static_drg_pet_' .. tostring(pet.index), pet.name);
-    end
-
-    if (petPlateMode == 'Detach from pet') then
-        local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
-        local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
-            nameOnlyPlateData,
-            'drg-pet-name-' .. tostring(pet.index),
-            'pet.name.canvas'
-        );
-        local nameTextureId = canvasTexture.GetTextureId(nameTexture);
-
-        if (nameTextureId == nil) then
-            return;
-        end
-
-        worldPlateTextureId = nameTextureId;
-        worldTextureWidth = nameTextureWidth;
-        worldTextureHeight = nameTextureHeight;
-        worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
-    end
-
-    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, worldTextureWidth, worldTextureHeight);
-
-    worldMarkerProbe.QueuePlate({
-        targetIndex = pet.index,
-        serverId = pet.serverId,
-        distance = pet.distance,
-        hp = hpPercent,
-        tp = tpValue,
-        name = '',
-        isSelf = false,
-        stateName = targetStateName,
-        clickTargetType = 'pet',
-        worldMarker = targeting.ApplyPlateScalingSettings({
-            hpBar = { enabled = false },
-            plateTextureId = worldPlateTextureId,
-            plateAlwaysOnTop = true,
-            plateTacticalOverlayOnly = true,
-            anchorBone = wyvernAnchorBone,
-            plateWorldWidth = plateWorldWidth,
-            plateWorldHeight = plateWorldHeight,
-            plateWorldOffsetY = wyvernWorldOffsetY,
-            plateOverlayOffsetY = wyvernOverlayOffsetY,
-            plateTextureWidth = worldTextureWidth,
-            plateTextureHeight = worldTextureHeight,
-            plateClickRects = worldClickRects,
-            plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
-            clickTargetType = 'pet',
-            layoutStateName = layoutStateName,
-        }, 'pet', 0, petWorldOffsetY),
+    prepared = petPrepare.Save('drg', {
+        petIndex = tonumber(pet.index),
+        petName = tostring(pet.name or ''),
+        layoutStateName = layoutStateName,
+        targetStateName = targetStateName,
+        plateData = plateData,
+        targetingSettings = targetingSettings,
+        petPlateMode = petPlateMode,
+        hpPercent = hpPercent,
+        tpValue = tpValue,
+        nameSettings = nameSettings,
+        textureKeyPrefix = 'wyvern-pet-',
+        nameTextureKeyPrefix = 'drg-pet-name-',
+        detachedPrefix = 'drg',
+        detachedKeyPrefix = 'static_drg_pet_',
+        anchorBone = wyvernAnchorBone,
+        worldOffsetY = wyvernWorldOffsetY,
+        overlayOffsetY = wyvernOverlayOffsetY,
     });
+    petPrepare.Queue(pet, prepared);
 end
 
 local function QueuePupPet(pet)
     local layoutStateName = 'Automaton';
     local targetStateName = targeting.GetTargetStateName(pet.index);
-    local nameSettings = state.GetWidgetSettings('Automaton', layoutStateName, 'Name', nameDefaults);
-    local backgroundSettings = state.GetWidgetSettings('Automaton', layoutStateName, 'Background', backgroundDefaults);
-    local hpBarSettings = state.GetWidgetSettings('Automaton', layoutStateName, 'HP Bar', barDefaults);
-    local mpBarSettings = state.GetWidgetSettings('Automaton', layoutStateName, 'MP Bar', mpBarDefaults);
-    local tpBarSettings = state.GetWidgetSettings('Automaton', layoutStateName, 'TP Bar', tpBarDefaults);
-    local distanceSettings = state.GetWidgetSettings('Automaton', layoutStateName, 'Distance', distanceDefaults);
-    local maneuverSettings = state.GetWidgetSettings('Automaton', layoutStateName, 'Maneuvers', maneuverDefaults);
+    local prepared = petPrepare.Get('pup', pet, layoutStateName, targetStateName);
+    if (prepared ~= nil) then
+        petPrepare.Queue(pet, prepared);
+        return;
+    end
+
+    local nameSettings = GetPetWidgetSettings('Automaton', layoutStateName, 'Name', nameDefaults);
+    local backgroundSettings = GetPetWidgetSettings('Automaton', layoutStateName, 'Background', backgroundDefaults);
+    local hpBarSettings = GetPetWidgetSettings('Automaton', layoutStateName, 'HP Bar', barDefaults);
+    local mpBarSettings = GetPetWidgetSettings('Automaton', layoutStateName, 'MP Bar', mpBarDefaults);
+    local tpBarSettings = GetPetWidgetSettings('Automaton', layoutStateName, 'TP Bar', tpBarDefaults);
+    local distanceSettings = GetPetWidgetSettings('Automaton', layoutStateName, 'Distance', distanceDefaults);
+    local maneuverSettings = GetPetWidgetSettings('Automaton', layoutStateName, 'Maneuvers', maneuverDefaults);
     local targetMarker = targetModuleMarker.Build('Automaton', layoutStateName, targetStateName, hpBarSettings, pet.distance);
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local targetingSettings = targeting.GetSettings();
     local hpPercent = ClampPercent(pet.hpPercent, 100);
     local mpPercent = ClampPercent(pet.mpPercent, 0);
@@ -5528,88 +5741,45 @@ local function QueuePupPet(pet)
         enmity.AddIcon(plateData, globalSettings.enmity, 'ally');
     end
 
-    local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
-        plateData,
-        'pup-pet-' .. tostring(pet.index),
-        'pet.world.canvas'
-    );
-    local plateTextureId = canvasTexture.GetTextureId(plateTexture);
-
-    if (plateTextureId == nil) then
-        return;
-    end
-
     local petPlateMode = tostring(targetingSettings.pupPetPlateMode or 'Normal');
-    local worldPlateTextureId = plateTextureId;
-    local worldTextureWidth = textureWidth;
-    local worldTextureHeight = textureHeight;
-    local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
-
-    if (petPlateMode ~= 'Normal') then
-        DrawDetachedStaticPetFrame('pup', pet.index, plateData, targetingSettings, 'static_pup_pet_' .. tostring(pet.index), pet.name);
-    end
-
-    if (petPlateMode == 'Detach from pet') then
-        local nameOnlyPlateData = BuildNameOnlyPlateData(plateData, ShortenName(pet.name, nameSettings.shortenName));
-        local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
-            nameOnlyPlateData,
-            'pup-pet-name-' .. tostring(pet.index),
-            'pet.name.canvas'
-        );
-        local nameTextureId = canvasTexture.GetTextureId(nameTexture);
-
-        if (nameTextureId == nil) then
-            return;
-        end
-
-        worldPlateTextureId = nameTextureId;
-        worldTextureWidth = nameTextureWidth;
-        worldTextureHeight = nameTextureHeight;
-        worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
-    end
-
-    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, worldTextureWidth, worldTextureHeight);
-
-    worldMarkerProbe.QueuePlate({
-        targetIndex = pet.index,
-        serverId = pet.serverId,
-        distance = pet.distance,
-        hp = hpPercent,
-        mp = mpPercent,
-        tp = tpValue,
-        name = '',
-        isSelf = false,
-        stateName = targetStateName,
-        clickTargetType = 'pet',
-        worldMarker = targeting.ApplyPlateScalingSettings({
-            hpBar = { enabled = false },
-            plateTextureId = worldPlateTextureId,
-            plateAlwaysOnTop = true,
-            plateTacticalOverlayOnly = true,
-            anchorBone = petAnchorBone,
-            plateWorldWidth = plateWorldWidth,
-            plateWorldHeight = plateWorldHeight,
-            plateWorldOffsetY = petWorldOffsetY,
-            plateTextureWidth = worldTextureWidth,
-            plateTextureHeight = worldTextureHeight,
-            plateClickRects = worldClickRects,
-            plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
-            clickTargetType = 'pet',
-            layoutStateName = layoutStateName,
-        }, 'pet', 0, petWorldOffsetY),
+    prepared = petPrepare.Save('pup', {
+        petIndex = tonumber(pet.index),
+        petName = tostring(pet.name or ''),
+        layoutStateName = layoutStateName,
+        targetStateName = targetStateName,
+        plateData = plateData,
+        targetingSettings = targetingSettings,
+        petPlateMode = petPlateMode,
+        hpPercent = hpPercent,
+        mpPercent = mpPercent,
+        tpValue = tpValue,
+        nameSettings = nameSettings,
+        textureKeyPrefix = 'pup-pet-',
+        nameTextureKeyPrefix = 'pup-pet-name-',
+        detachedPrefix = 'pup',
+        detachedKeyPrefix = 'static_pup_pet_',
+        anchorBone = petAnchorBone,
+        worldOffsetY = petWorldOffsetY,
     });
+    petPrepare.Queue(pet, prepared);
 end
 
 local function QueueLuopan(pet)
     local layoutStateName = 'Luopan';
     local targetStateName = targeting.GetTargetStateName(pet.index);
-    local nameSettings = state.GetWidgetSettings('Luopan', layoutStateName, 'Name', nameDefaults);
-    local backgroundSettings = state.GetWidgetSettings('Luopan', layoutStateName, 'Background', backgroundDefaults);
-    local hpBarSettings = state.GetWidgetSettings('Luopan', layoutStateName, 'HP Bar', barDefaults);
-    local buffsSettings = state.GetWidgetSettings('Luopan', layoutStateName, 'Buffs', luopanBuffsDefaults);
-    local distanceSettings = state.GetWidgetSettings('Luopan', layoutStateName, 'Distance', distanceDefaults);
+    local prepared = petPrepare.Get('geo', pet, layoutStateName, targetStateName);
+    if (prepared ~= nil) then
+        petPrepare.Queue(pet, prepared);
+        return;
+    end
+
+    local nameSettings = GetPetWidgetSettings('Luopan', layoutStateName, 'Name', nameDefaults);
+    local backgroundSettings = GetPetWidgetSettings('Luopan', layoutStateName, 'Background', backgroundDefaults);
+    local hpBarSettings = GetPetWidgetSettings('Luopan', layoutStateName, 'HP Bar', barDefaults);
+    local buffsSettings = GetPetWidgetSettings('Luopan', layoutStateName, 'Buffs', luopanBuffsDefaults);
+    local distanceSettings = GetPetWidgetSettings('Luopan', layoutStateName, 'Distance', distanceDefaults);
     local targetMarker = targetModuleMarker.Build('Luopan', layoutStateName, targetStateName, hpBarSettings, pet.distance);
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local globalSettings = GetPetGlobalSettings();
     local targetingSettings = targeting.GetSettings();
     local hpPercent = ClampPercent(pet.hpPercent, 100);
     local hpColor = hpBarSettings.color or barDefaults.color;
@@ -5688,89 +5858,26 @@ local function QueueLuopan(pet)
     end
     AddStatusIconsToPlate(plateData, luopanStatuses.GetRows('buff'), buffsSettings, globalSettings, 'buffs');
 
-    local plateTexture, textureWidth, textureHeight = RenderMeasuredPetCanvas(
-        plateData,
-        'luopan-' .. tostring(pet.index),
-        'pet.world.canvas'
-    );
-    local plateTextureId = canvasTexture.GetTextureId(plateTexture);
-
-    if (plateTextureId == nil) then
-        return;
-    end
-
     local petPlateMode = tostring(targetingSettings.geoPetPlateMode or 'Normal');
-    local worldPlateTextureId = plateTextureId;
-    local worldTextureWidth = textureWidth;
-    local worldTextureHeight = textureHeight;
-    local worldClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
-
-    if (petPlateMode ~= 'Normal') then
-        DrawDetachedStaticPetFrame(
-            'geo',
-            pet.index,
-            plateData,
-            targetingSettings,
-            'static_geo_pet_' .. tostring(pet.index),
-            pet.name
-        );
-    end
-
-    if (petPlateMode == 'Detach from pet') then
-        local nameOnlyPlateData = BuildNameOnlyPlateData(
-            plateData,
-            ShortenName(pet.name, nameSettings.shortenName)
-        );
-        local nameTexture, nameTextureWidth, nameTextureHeight = RenderMeasuredPetCanvas(
-            nameOnlyPlateData,
-            'luopan-name-' .. tostring(pet.index),
-            'pet.name.canvas'
-        );
-        local nameTextureId = canvasTexture.GetTextureId(nameTexture);
-
-        if (nameTextureId == nil) then
-            return;
-        end
-
-        worldPlateTextureId = nameTextureId;
-        worldTextureWidth = nameTextureWidth;
-        worldTextureHeight = nameTextureHeight;
-        worldClickRects = nameOnlyPlateData._elementRects or canvasTexture.GetElementRects(nameOnlyPlateData);
-    end
-
-    local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(
-        2.35,
-        luopanPlateWorldHeight,
-        worldTextureWidth,
-        worldTextureHeight
-    );
-
-    worldMarkerProbe.QueuePlate({
-        targetIndex = pet.index,
-        serverId = pet.serverId,
-        distance = pet.distance,
-        hp = hpPercent,
-        name = '',
-        isSelf = false,
-        stateName = targetStateName,
-        clickTargetType = 'pet',
-        worldMarker = targeting.ApplyPlateScalingSettings({
-            hpBar = { enabled = false },
-            plateTextureId = worldPlateTextureId,
-            plateAlwaysOnTop = true,
-            plateTacticalOverlayOnly = true,
-            anchorBone = petAnchorBone,
-            plateWorldWidth = plateWorldWidth,
-            plateWorldHeight = plateWorldHeight,
-            plateWorldOffsetY = luopanWorldOffsetY,
-            plateTextureWidth = worldTextureWidth,
-            plateTextureHeight = worldTextureHeight,
-            plateClickRects = worldClickRects,
-            plateClickTargetEnabled = targetingSettings.enablePetPlateTargeting ~= false,
-            clickTargetType = 'pet',
-            layoutStateName = layoutStateName,
-        }, 'pet', 0, luopanWorldOffsetY),
+    prepared = petPrepare.Save('geo', {
+        petIndex = tonumber(pet.index),
+        petName = tostring(pet.name or ''),
+        layoutStateName = layoutStateName,
+        targetStateName = targetStateName,
+        plateData = plateData,
+        targetingSettings = targetingSettings,
+        petPlateMode = petPlateMode,
+        hpPercent = hpPercent,
+        nameSettings = nameSettings,
+        textureKeyPrefix = 'luopan-',
+        nameTextureKeyPrefix = 'luopan-name-',
+        detachedPrefix = 'geo',
+        detachedKeyPrefix = 'static_geo_pet_',
+        anchorBone = petAnchorBone,
+        worldOffsetY = luopanWorldOffsetY,
+        worldHeight = luopanPlateWorldHeight,
     });
+    petPrepare.Queue(pet, prepared);
 end
 
 function petPlate.SetAnchorBone(value)
@@ -5841,7 +5948,11 @@ function petPlate.Render()
         return;
     end
 
-    local pet = entities.GetOwnBstPet();
+    -- Only one of these pet-class branches can be active as the player's
+    -- main job. Read that job once instead of asking all five entity helpers
+    -- to repeat the same party-memory lookup every game frame.
+    local mainJobId = entities.GetPlayerMainJobId();
+    local pet = mainJobId == BST_MAIN_JOB_ID and entities.GetOwnBstPet() or nil;
     local layoutStateName = pet ~= nil and GetBstStateName(pet) or nil;
     petState.SyncPet(pet);
     bstCharmTimer.SyncPet(pet, layoutStateName == 'Charmed Pet');
@@ -5850,7 +5961,7 @@ function petPlate.Render()
         QueueBstPet(pet);
     end
 
-    local smnPet = entities.GetOwnSmnPet();
+    local smnPet = mainJobId == SMN_MAIN_JOB_ID and entities.GetOwnSmnPet() or nil;
     -- Keep Favor's local charge clock current even while no Avatar is out so
     -- the meter pauses cleanly between summons instead of gaining that time.
     UpdateAvatarFavorCharge(smnPet);
@@ -5860,7 +5971,7 @@ function petPlate.Render()
     elseif (detachedPreviewPrefix ~= 'smn') then
         local targetingSettings = targeting.GetSettings();
         if (
-            IsPlayerOnSmn() == true and
+            mainJobId == SMN_MAIN_JOB_ID and
             targetingSettings ~= nil and
             tostring(GetDetachedPetSetting(targetingSettings, 'smn', 'smnAvatar', 'PetPlateMode') or 'Normal') ~= 'Normal'
         ) then
@@ -5873,13 +5984,13 @@ function petPlate.Render()
         end
     end
 
-    local drgPet = entities.GetOwnDrgPet();
+    local drgPet = mainJobId == DRG_MAIN_JOB_ID and entities.GetOwnDrgPet() or nil;
 
     if (drgPet ~= nil) then
         QueueWyvernPet(drgPet);
     end
 
-    local pupPet = entities.GetOwnPupPet();
+    local pupPet = mainJobId == PUP_MAIN_JOB_ID and entities.GetOwnPupPet() or nil;
 
     if (pupPet ~= nil) then
         QueuePupPet(pupPet);
@@ -5894,7 +6005,7 @@ function petPlate.Render()
         pupEquipmentTest.frame = nil;
     end
 
-    local luopan = entities.GetOwnLuopan();
+    local luopan = mainJobId == GEO_MAIN_JOB_ID and entities.GetOwnLuopan() or nil;
 
     if (luopan ~= nil) then
         QueueLuopan(luopan);
@@ -5910,6 +6021,12 @@ function petPlate.HandlePacketIn(e)
     zonePetRenderBlockedUntil = os.clock() + 3.0;
     zonePetStableFrames = 0;
     renderedPetCanvasCache = {};
+    detachedPreparedPlateCache = {};
+    petPrepare.smn = nil;
+    petPrepare.caches = {};
+    petWidgetSettingsCache = {};
+    petGlobalSettingsCache.revision = nil;
+    petGlobalSettingsCache.settings = nil;
     staticPanelEditDrag = nil;
     detachedSetupPreview = nil;
     detachedDrgTimerCache.updatedAt = -1000;

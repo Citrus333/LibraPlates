@@ -101,6 +101,14 @@ local detailOrder = {
     'enemy.status',
     'enemy.canvas',
     'enemy.queue',
+    'pet.world.canvas.signature',
+    'pet.world.canvas.lookup',
+    'pet.world.canvas.render',
+    'pet.detached.prepare',
+    'pet.detached.canvas.signature',
+    'pet.detached.canvas.lookup',
+    'pet.detached.canvas.render',
+    'pet.detached.draw',
 };
 
 local labels = {
@@ -121,6 +129,14 @@ local labels = {
     ['pet.detached.total'] = 'Pet detached frame total',
     ['pet.detached.canvas'] = 'Detached frame canvas',
     ['pet.name.canvas'] = 'Pet name-only canvas',
+    ['pet.world.canvas.signature'] = 'Pet normal signature',
+    ['pet.world.canvas.lookup'] = 'Pet normal cache lookup',
+    ['pet.world.canvas.render'] = 'Pet normal canvas rebuild',
+    ['pet.detached.prepare'] = 'Detached frame preparation',
+    ['pet.detached.canvas.signature'] = 'Detached frame signature',
+    ['pet.detached.canvas.lookup'] = 'Detached frame cache lookup',
+    ['pet.detached.canvas.render'] = 'Detached frame canvas rebuild',
+    ['pet.detached.draw'] = 'Detached frame draw',
     ['plates.npc'] = 'NPC/Object module',
     ['world.draw'] = 'World draw',
     ['target.overlay'] = 'Target overlay module',
@@ -771,6 +787,29 @@ end
 
 function perfMeter.WritePerformanceReport()
     return WritePerformanceReport();
+end
+
+function perfMeter.WriteWorldDiagnostic(results)
+    local path = GetReportPath():gsub('LibraPlates%-performance%-', 'LibraPlates-world-diagnostic-');
+    local file = io.open(path, 'w');
+
+    if (file == nil) then
+        return nil;
+    end
+
+    results = results or {};
+    file:write('LibraPlates World Diagnostic\n');
+    file:write('Created: ' .. tostring(os.date('%Y-%m-%d %H:%M:%S') or '') .. '\n');
+    file:write(string.format(
+        'normal=%.1f\natlas-hidden=%.1f\nstacking-off=%.1f\nlight-prepass=%.1f\nworld-off=%.1f\n',
+        tonumber(results['normal']) or 0,
+        tonumber(results['atlas hidden']) or 0,
+        tonumber(results['stacking off']) or 0,
+        tonumber(results['light prepass']) or 0,
+        tonumber(results['world off']) or 0
+    ));
+    file:close();
+    return path;
 end
 
 function perfMeter.StartTimedReport(seconds)

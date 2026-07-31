@@ -96,6 +96,7 @@ local mobInfoIconTextureIds = {};
 local catseyeIconTextureIds = {};
 local plateCache = {};
 local indexCache = {};
+local animatedPreparedPlateCache = {};
 local maxPlateCacheEntries = 64;
 local lastPlateCacheTrim = 0;
 local wasConfigOpen = false;
@@ -320,6 +321,7 @@ local function ClearPlateCache()
 
     plateCache = {};
     indexCache = {};
+    animatedPreparedPlateCache = {};
     collectgarbage('step', 64);
 end
 
@@ -2102,9 +2104,6 @@ end
 
 local function BuildEnemyCacheSignature(context, useLiveHpBar)
     local enemy = context.enemy;
-    local targetMarkerAnimationKey = HasAnimatedTargetMarker(context.targetMarker) == true
-        and tostring(math.floor(os.clock() * 12))
-        or 'static';
     local function StatusRowsKey(rows, iconSettings)
         local parts = {};
         local showTimers = iconSettings ~= nil and iconSettings.showTimers == true;
@@ -2129,7 +2128,6 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
         'state=' .. tostring(context.stateName or 'Idle'),
         'layoutState=' .. tostring(context.layoutStateName or 'Idle'),
         'targetMarker=' .. TargetMarkerKey(context.targetMarker),
-        'targetMarkerFrame=' .. targetMarkerAnimationKey,
         'castBar=' .. CastBarKey(context),
         'statusIconPack=' .. tostring(context.globalSettings ~= nil and context.globalSettings.statusIcons ~= nil and context.globalSettings.statusIcons.iconPack or ''),
         'enemyIconStyle=' .. tostring(context.globalSettings ~= nil and context.globalSettings.enemyIconStyle or ''),
@@ -2343,9 +2341,11 @@ local function QueueEnemy(enemy)
     local cacheSkipReason = nil;
     local hasDynamicDistance = context.distanceText ~= nil and context.distanceText ~= '';
     local cacheableTargetState = context.stateName == 'Idle' or context.stateName == 'Target' or context.stateName == 'Subtarget';
-    -- Animated target markers are represented by a 12 FPS signature bucket,
-    -- so targeted plates can remain cached between animation frames.
-    local cacheEligible = cacheableTargetState == true;
+    -- Animated target markers select live sprite frames and must not be stored
+    -- inside a static plate snapshot; doing so desynchronizes the marker and
+    -- its soft background highlight.
+    local hasAnimatedTargetMarker = HasAnimatedTargetMarker(context.targetMarker) == true;
+    local cacheEligible = cacheableTargetState == true and hasAnimatedTargetMarker ~= true;
     local cacheKey = nil;
     local signature = nil;
 
@@ -2398,32 +2398,96 @@ local function QueueEnemy(enemy)
     end
     perfMeter.EndDetail(settingsTimer);
 
-    local buildTimer = perfMeter.BeginDetail('enemy.build');
-    local plateData = BuildEnemyPlateData(context);
-    if (useLiveHpBar == true) then
-        plateData.hpBar = { enabled = false };
-    end
-    perfMeter.EndDetail(buildTimer);
+    local now = os.clock();
+    local prepared = animatedPreparedPlateCache[tonumber(enemy.index) or 0];
+    local preparedCurrent =
+        hasAnimatedTargetMarker == true and
+        prepared ~= nil and
+        prepared.revision == state.GetRevision() and
+        prepared.stateName == tostring(context.stateName or '') and
+        prepared.identityKey == GetEnemyIdentityKey(enemy) and
+        (now - (tonumber(prepared.preparedAt) or 0)) < (1 / 20);
+    local plateData;
 
-    local statusTimer = perfMeter.BeginDetail('enemy.status');
-    ApplyEnemyStatusWidgets(context, plateData);
-    perfMeter.EndDetail(statusTimer);
+    if (preparedCurrent == true) then
+        perfMeter.Count('enemy.animatedPrepare.hit', 1);
+        plateData = prepared.plateData;
+        -- Only the marker sprite is frame-sensitive. Keep it live while
+        -- reusing the name/bar/status structure prepared for this animation
+        -- interval.
+        plateData.targetMarker = context.targetMarker;
+    else
+        perfMeter.Count('enemy.animatedPrepare.miss', 1);
+        local buildTimer = perfMeter.BeginDetail('enemy.build');
+        plateData = BuildEnemyPlateData(context);
+        if (useLiveHpBar == true) then
+            plateData.hpBar = { enabled = false };
+        end
+        perfMeter.EndDetail(buildTimer);
 
-    if (context.hasActiveDetail == true and enmity.ShouldDrawEnemy(enemy, context.globalSettings) == true) then
-        enmity.AddIcon(plateData, context.globalSettings.enmity, 'enemy');
+        local statusTimer = perfMeter.BeginDetail('enemy.status');
+        ApplyEnemyStatusWidgets(context, plateData);
+        perfMeter.EndDetail(statusTimer);
+
+        if (context.hasActiveDetail == true and enmity.ShouldDrawEnemy(enemy, context.globalSettings) == true) then
+            enmity.AddIcon(plateData, context.globalSettings.enmity, 'enemy');
+        end
+        if (plateData.aoeNameActive == true) then
+            aoeRangeVisuals.Apply(plateData, context.aoeRangeSettings, context.hpBarSettings);
+        end
+
+        if (hasAnimatedTargetMarker == true) then
+            prepared = {
+                revision = state.GetRevision(),
+                stateName = tostring(context.stateName or ''),
+                identityKey = GetEnemyIdentityKey(enemy),
+                preparedAt = now,
+                plateData = plateData,
+            };
+            animatedPreparedPlateCache[tonumber(enemy.index) or 0] = prepared;
+        end
     end
     plateData.debugClickRects = worldMarkerProbe.GetClickDebug();
     plateData.debugClickRectColor = 0x01FFD400;
-    if (plateData.aoeNameActive == true) then
-        aoeRangeVisuals.Apply(plateData, context.aoeRangeSettings, context.hpBarSettings);
-    end
 
     local canvasTimer = perfMeter.BeginDetail('enemy.canvas');
     local hasCatseyeSpecialNameIcon = IsCatseyeSpecialNameIcon(enemy) == true;
     local textureKey = 'enemy-v9-' .. tostring(enemy.index) .. '-' .. GetEnemyIdentityKey(enemy):gsub('[^%w%-_]', '-') .. (hasCatseyeSpecialNameIcon == true and '-catseye-star' or '') .. (plateData.canvasWidth ~= nil and '-aoe' or '');
-    local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
-    local plateTextureId = canvasTexture.GetTextureId(plateTexture);
-    local plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+    local reuseAnimatedTexture =
+        preparedCurrent == true and
+        prepared ~= nil and
+        prepared.textureKey == textureKey and
+        prepared.plateTextureId ~= nil and
+        canvasTexture.TouchTextureForKey(textureKey, prepared.plateTextureId) == true;
+    local plateTexture;
+    local textureWidth;
+    local textureHeight;
+    local plateTextureId;
+    local plateClickRects;
+
+    if (reuseAnimatedTexture == true) then
+        perfMeter.Count('enemy.animatedCanvas.hit', 1);
+        textureWidth = prepared.textureWidth;
+        textureHeight = prepared.textureHeight;
+        plateTextureId = prepared.plateTextureId;
+        plateClickRects = prepared.plateClickRects;
+    else
+        if (hasAnimatedTargetMarker == true) then
+            perfMeter.Count('enemy.animatedCanvas.miss', 1);
+        end
+
+        plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
+        plateTextureId = canvasTexture.GetTextureId(plateTexture);
+        plateClickRects = plateData._elementRects or canvasTexture.GetElementRects(plateData);
+
+        if (hasAnimatedTargetMarker == true and prepared ~= nil and plateTextureId ~= nil) then
+            prepared.textureKey = textureKey;
+            prepared.plateTextureId = plateTextureId;
+            prepared.textureWidth = textureWidth;
+            prepared.textureHeight = textureHeight;
+            prepared.plateClickRects = plateClickRects;
+        end
+    end
     perfMeter.EndDetail(canvasTimer);
     local plateScale = 1.0;
 

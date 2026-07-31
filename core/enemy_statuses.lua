@@ -3,6 +3,9 @@ require('common');
 local statusEffects = require('core.status_effects');
 local playerStatuses = require('core.player_statuses');
 local actionRelevance = require('core.action_relevance');
+local engagedEnemies = require('core.engaged_enemies');
+local entityResolver = require('core.entity_resolver');
+local targeting = require('core.targeting');
 
 local enemyStatuses = {};
 local tracked = {};
@@ -59,6 +62,7 @@ local LUNAR_CRY_EFFECT_B = 148;
 local LUNAR_CRY_DURATION = 60;
 local GEO_AURA_RADIUS = 5.5;
 local activeGeoEnemyAura = nil;
+local visibleNameCache = {};
 
 local indiEnemyAuras = {
     [769] = 540, -- Indi-Poison
@@ -336,22 +340,71 @@ local function GetServerIdByVisibleName(name)
         return 0;
     end
 
-    for index = 0, 2303 do
-        local entity = SafeEntityCall(nil, function()
-            return entityManager:GetEntity(index);
-        end);
+    local function ResolveCandidate(index)
+        index = tonumber(index) or 0;
+
+        if (index <= 0 or index > 2303) then
+            return 0;
+        end
+
+        local entity = SafeEntityCall(nil, function() return entityManager:GetEntity(index); end);
         local entityName = entity ~= nil and tostring(entity.Name or '') or '';
 
         if (entityName ~= '' and NormalizeName(entityName) == wanted) then
-            local serverId = SafeEntityCall(0, function()
-                return entityManager:GetServerId(index);
-            end);
-
-            serverId = tonumber(serverId) or 0;
+            local serverId = entityResolver.GetServerId(index);
 
             if (serverId > 0 and actionRelevance.IsPartyOrAllianceServerId(serverId) ~= true) then
+                visibleNameCache[wanted] = {
+                    index = index,
+                    serverId = serverId,
+                    seenAt = os.clock(),
+                };
                 return serverId;
             end
+        end
+
+        return 0;
+    end
+
+    local cached = visibleNameCache[wanted];
+    if (cached ~= nil and (os.clock() - (tonumber(cached.seenAt) or 0)) <= 30.0) then
+        local cachedServerId = ResolveCandidate(cached.index);
+
+        if cachedServerId > 0 and cachedServerId == tonumber(cached.serverId) then
+            return cachedServerId;
+        end
+
+        visibleNameCache[wanted] = nil;
+    end
+
+    local candidates = {};
+    local seenIndexes = {};
+    local function AddCandidate(index)
+        index = tonumber(index) or 0;
+
+        if (index > 0 and index <= 2303 and seenIndexes[index] ~= true) then
+            seenIndexes[index] = true;
+            candidates[#candidates + 1] = index;
+        end
+    end
+
+    local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
+    AddCandidate(targetIndex);
+    AddCandidate(subTargetIndex);
+
+    for _, index in ipairs(engagedEnemies.GetTrackedIndexes()) do
+        AddCandidate(index);
+    end
+
+    for serverId in pairs(tracked) do
+        AddCandidate(entityResolver.GetIndex(serverId));
+    end
+
+    for _, index in ipairs(candidates) do
+        local serverId = ResolveCandidate(index);
+
+        if (serverId > 0) then
+            return serverId;
         end
     end
 
@@ -436,13 +489,16 @@ function enemyStatuses.HandleTextIn(e)
     end
 
     if (gainedName ~= nil and gainedStatus ~= nil and TrackStatus ~= nil) then
-        local serverId = GetServerIdByVisibleName(gainedName);
         local statusId = GetStatusIdByStatusName(gainedStatus);
 
-        if (serverId > 0 and statusId ~= nil) then
-            TrackStatus(serverId, statusId, 300);
-            AddDebugLine('text tracked buff name=' .. tostring(gainedName) .. ' status=' .. tostring(gainedStatus) .. ' id=' .. tostring(statusId));
-            return;
+        if (statusId ~= nil) then
+            local serverId = GetServerIdByVisibleName(gainedName);
+
+            if (serverId > 0) then
+                TrackStatus(serverId, statusId, 300);
+                AddDebugLine('text tracked buff name=' .. tostring(gainedName) .. ' status=' .. tostring(gainedStatus) .. ' id=' .. tostring(statusId));
+                return;
+            end
         end
     end
 
@@ -452,13 +508,16 @@ function enemyStatuses.HandleTextIn(e)
     end
 
     if (wearsName ~= nil and wearsStatus ~= nil and ClearStatus ~= nil) then
-        local serverId = GetServerIdByVisibleName(wearsName);
         local statusId = GetStatusIdByStatusName(wearsStatus);
 
-        if (serverId > 0 and statusId ~= nil) then
-            ClearStatus(serverId, statusId);
-            AddDebugLine('text cleared buff name=' .. tostring(wearsName) .. ' status=' .. tostring(wearsStatus) .. ' id=' .. tostring(statusId));
-            return;
+        if (statusId ~= nil) then
+            local serverId = GetServerIdByVisibleName(wearsName);
+
+            if (serverId > 0) then
+                ClearStatus(serverId, statusId);
+                AddDebugLine('text cleared buff name=' .. tostring(wearsName) .. ' status=' .. tostring(wearsStatus) .. ' id=' .. tostring(statusId));
+                return;
+            end
         end
     end
 

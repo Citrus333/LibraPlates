@@ -55,12 +55,54 @@ local widgets = require('modules.widgets.init');
 local selfPlate = {};
 local lagTestSuppressed = false;
 local cachedWorldPlates = {};
+local selfSettingsCache = {
+    widgets = {},
+    globalRevision = nil,
+    globalSettings = nil,
+};
 local cachedWorldPlateLimit = 4;
 local cachedWorldTextureKey = 'self-world';
 local restingWidgetStableY = nil;
 local restingWidgetStableClock = nil;
 local restingWidgetDelaySeconds = 0.22;
 local restingWidgetMoveThreshold = 18;
+
+function selfSettingsCache.GetGlobal()
+    local revision = state.GetRevision();
+
+    if (
+        selfSettingsCache.globalSettings == nil or
+        selfSettingsCache.globalRevision ~= revision
+    ) then
+        selfSettingsCache.globalRevision = revision;
+        selfSettingsCache.globalSettings = state.GetGlobalSettings(globalDefaults);
+    end
+
+    return selfSettingsCache.globalSettings;
+end
+
+function selfSettingsCache.GetRevision()
+    return state.GetRevision();
+end
+
+function selfSettingsCache.GetWidget(layoutStateName, widgetName, defaults)
+    local revision = state.GetRevision();
+    local key = table.concat({
+        tostring(layoutStateName or ''),
+        tostring(widgetName or ''),
+    }, '\30');
+    local cached = selfSettingsCache.widgets[key];
+
+    if (cached == nil or cached.revision ~= revision) then
+        cached = {
+            revision = revision,
+            settings = state.GetWidgetSettings('Self', layoutStateName, widgetName, defaults),
+        };
+        selfSettingsCache.widgets[key] = cached;
+    end
+
+    return cached.settings;
+end
 
 local function GetDisplayHeight()
     if (imgui.GetIO == nil) then
@@ -301,7 +343,7 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
 end
 
 local function BuildAoeNameSettings(layoutStateName, nameSettings, targetIndex)
-    local aoeRangeSettings = state.GetWidgetSettings('Self', 'Combat', 'AOE range', aoeRangeDefaults);
+    local aoeRangeSettings = selfSettingsCache.GetWidget('Combat', 'AOE range', aoeRangeDefaults);
 
     if (aoeRangeSettings.enabled ~= true or aoeNameHighlight.IsHighlighted(targetIndex, 'self') ~= true) then
         return nameSettings;
@@ -790,29 +832,68 @@ end
 local function QueueWorldMarker(center, nameSettings, stateName)
     local targetStateName = targeting.GetTargetStateName(center.index);
     local layoutStateName = (targetStateName == 'Target' or targetStateName == 'Subtarget') and 'Combat' or GetLayoutStateName(stateName);
-    nameSettings = state.GetWidgetSettings('Self', layoutStateName, 'Name', nameDefaults);
-    local gameModeIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Game mode icon', gameModeIconDefaults);
-    local partyLeaderIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Party leader icon', partyLeaderIconDefaults);
-    local allianceLeaderIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Alliance leader icon', allianceLeaderIconDefaults);
-    local bazaarIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Bazaar icon', bazaarIconDefaults);
-    local linkshellIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Linkshell icon', linkshellIconDefaults);
-    local awayIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Away icon', awayIconDefaults);
-    local disconnectIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Disconnect icon', disconnectIconDefaults);
+    local earlyCacheKey = GetWorldCacheKey(stateName, targetStateName, layoutStateName, false);
+    local earlyCached = cachedWorldPlates[earlyCacheKey];
+    local now = os.clock();
+
+    -- A stable self plate does not need its complete widget tree and two
+    -- recursive signatures rebuilt at the game frame rate. Keep movement live
+    -- in the world renderer while refreshing plate contents at 20 Hz. Target
+    -- and subtarget layouts are included; selecting something must not force
+    -- the complete self canvas to rebuild every rendered frame.
+    if (
+        (stateName == 'Idle' or stateName == 'Combat') and
+        (
+            targetStateName == 'Idle' or
+            targetStateName == 'Target' or
+            targetStateName == 'Subtarget'
+        ) and
+        earlyCached ~= nil and
+        earlyCached.revision == selfSettingsCache.GetRevision() and
+        (now - (tonumber(earlyCached.lastFullRefresh) or 0)) < 0.05 and
+        canvasTexture.TouchTextureForKey(
+            earlyCached.textureKey,
+            earlyCached.plateTextureId
+        ) == true
+    ) then
+        earlyCached.lastUsed = now;
+        perfMeter.Count('self.cache.earlyHit', 1);
+        QueueRenderedWorldPlate(
+            center,
+            ClampPercent(center.hpPercent, 100),
+            targetStateName,
+            layoutStateName,
+            earlyCached.plateTextureId,
+            earlyCached.textureWidth,
+            earlyCached.textureHeight,
+            earlyCached.plateClickRects
+        );
+        return;
+    end
+
+    nameSettings = selfSettingsCache.GetWidget(layoutStateName, 'Name', nameDefaults);
+    local gameModeIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'Game mode icon', gameModeIconDefaults);
+    local partyLeaderIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'Party leader icon', partyLeaderIconDefaults);
+    local allianceLeaderIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'Alliance leader icon', allianceLeaderIconDefaults);
+    local bazaarIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'Bazaar icon', bazaarIconDefaults);
+    local linkshellIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'Linkshell icon', linkshellIconDefaults);
+    local awayIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'Away icon', awayIconDefaults);
+    local disconnectIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'Disconnect icon', disconnectIconDefaults);
     local anonIconDefaults = require('config.widgets.anon_icon');
-    local anonIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Anon icon', anonIconDefaults);
-    local starsIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Stars icon', starsIconDefaults);
+    local anonIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'Anon icon', anonIconDefaults);
+    local starsIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'Stars icon', starsIconDefaults);
     local levelSyncIconDefaults = require('config.widgets.level_sync_icon');
-    local levelSyncIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'Level sync icon', levelSyncIconDefaults);
-    local newAdventurerIconSettings = state.GetWidgetSettings('Self', layoutStateName, 'New adventurer icon', newAdventurerIconDefaults);
-    local backgroundSettings = state.GetWidgetSettings('Self', layoutStateName, 'Background', backgroundDefaults);
-    local hpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'HP Bar', barDefaults);
-    local mpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'MP Bar', mpBarDefaults);
-    local tpBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'TP Bar', tpBarDefaults);
-    local castBarSettings = state.GetWidgetSettings('Self', layoutStateName, 'Cast bar', castBarDefaults);
-    local aoeRangeSettings = state.GetWidgetSettings('Self', 'Combat', 'AOE range', aoeRangeDefaults);
-    local buffsSettings = state.GetWidgetSettings('Self', layoutStateName, 'Buffs', buffsDefaults);
-    local debuffsSettings = state.GetWidgetSettings('Self', layoutStateName, 'Debuffs', debuffsDefaults);
-    local globalSettings = state.GetGlobalSettings(globalDefaults);
+    local levelSyncIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'Level sync icon', levelSyncIconDefaults);
+    local newAdventurerIconSettings = selfSettingsCache.GetWidget(layoutStateName, 'New adventurer icon', newAdventurerIconDefaults);
+    local backgroundSettings = selfSettingsCache.GetWidget(layoutStateName, 'Background', backgroundDefaults);
+    local hpBarSettings = selfSettingsCache.GetWidget(layoutStateName, 'HP Bar', barDefaults);
+    local mpBarSettings = selfSettingsCache.GetWidget(layoutStateName, 'MP Bar', mpBarDefaults);
+    local tpBarSettings = selfSettingsCache.GetWidget(layoutStateName, 'TP Bar', tpBarDefaults);
+    local castBarSettings = selfSettingsCache.GetWidget(layoutStateName, 'Cast bar', castBarDefaults);
+    local aoeRangeSettings = selfSettingsCache.GetWidget('Combat', 'AOE range', aoeRangeDefaults);
+    local buffsSettings = selfSettingsCache.GetWidget(layoutStateName, 'Buffs', buffsDefaults);
+    local debuffsSettings = selfSettingsCache.GetWidget(layoutStateName, 'Debuffs', debuffsDefaults);
+    local globalSettings = selfSettingsCache.GetGlobal();
     local restingSettings = globalSettings.resting or {};
     local hpPercent = ClampPercent(center.hpPercent, 100);
     local mpPercent = ClampPercent(center.mpPercent, 100);
@@ -1475,6 +1556,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             ) == true
         ) then
             cachedWorldPlate.lastUsed = os.clock();
+            cachedWorldPlate.lastFullRefresh = os.clock();
+            cachedWorldPlate.revision = selfSettingsCache.GetRevision();
             perfMeter.Count('self.cache.hit', 1);
             QueueRenderedWorldPlate(
                 center,
@@ -1510,6 +1593,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             vitalSignature = vitalSignature,
             textureKey = renderTextureKey,
             lastUsed = os.clock(),
+            lastFullRefresh = os.clock(),
+            revision = selfSettingsCache.GetRevision(),
             plateTextureId = plateTextureId,
             textureWidth = textureWidth,
             textureHeight = textureHeight,
@@ -1574,8 +1659,8 @@ function selfPlate.Render()
     local stateName = GetLiveSelfStateName(center);
     local layoutStateName = GetLayoutStateName(stateName);
     local isEngaged = tonumber(center.status) == 1;
-    local nameSettings = state.GetWidgetSettings('Self', layoutStateName, 'Name', nameDefaults);
-    local backgroundSettings = state.GetWidgetSettings('Self', layoutStateName, 'Background', backgroundDefaults);
+    local nameSettings = selfSettingsCache.GetWidget(layoutStateName, 'Name', nameDefaults);
+    local backgroundSettings = selfSettingsCache.GetWidget(layoutStateName, 'Background', backgroundDefaults);
 
     if (stateName ~= 'Fishing' and fishing.IsSessionActive() ~= true) then
         fishing.ClearResult();

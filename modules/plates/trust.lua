@@ -674,6 +674,34 @@ local function QueueTrust(trust)
     local layoutStateName = GetLayoutStateName(trust, targetStateName);
     local useTargetOverlay = layoutStateName == 'Combat' or targetStateName ~= 'Idle';
     local isProtectedPlate = useTargetOverlay == true;
+    local hpPercent = ClampPercent(trust.hpPercent, 100);
+    local mpPercent = ClampPercent(trust.mpPercent, 100);
+    local tpValue = tonumber(trust.tp) or 0;
+    local indexed = indexCache[tonumber(trust.index) or 0];
+    local earlyCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
+    local now = os.clock();
+
+    if (
+        state.GetConfigOpen() ~= true and
+        earlyCached ~= nil and
+        earlyCached.revision == state.GetRevision() and
+        earlyCached.targetStateName == targetStateName and
+        earlyCached.layoutStateName == layoutStateName and
+        (now - (tonumber(earlyCached.lastFullRefresh) or 0)) < 0.05 and
+        QueueCachedTrust(
+            trust,
+            earlyCached,
+            targetStateName,
+            layoutStateName,
+            hpPercent,
+            mpPercent,
+            tpValue,
+            useTargetOverlay
+        ) == true
+    ) then
+        perfMeter.Count('trust.cache.earlyHit', 1);
+        return;
+    end
 
     local suppressExpensiveWorldWidgets = adaptivePerformance.ShouldDisableExpensiveWorldWidgets(isProtectedPlate);
     local settingsTimer = perfMeter.BeginDetail('trust.settings');
@@ -687,9 +715,6 @@ local function QueueTrust(trust)
     local debuffsSettings = state.GetWidgetSettings('Trust', layoutStateName, 'Debuffs', debuffsDefaults);
     local aoeRangeSettings = ResolveFriendlyAoeRangeSettings();
     local globalSettings = state.GetGlobalSettings(globalDefaults);
-    local hpPercent = ClampPercent(trust.hpPercent, 100);
-    local mpPercent = ClampPercent(trust.mpPercent, 100);
-    local tpValue = tonumber(trust.tp) or 0;
     local tpPercent = ClampTp(tpValue) / 10;
     local hpColor = hpBarSettings.color or { 0.90, 0.20, 0.20, 1.0 };
     local mpColor = mpBarSettings.color or { 0.20, 0.45, 0.95, 1.0 };
@@ -751,6 +776,10 @@ local function QueueTrust(trust)
         local cached = indexed ~= nil and indexed.signature == signature and plateCache[indexed.cacheKey] or nil;
 
         if (QueueCachedTrust(trust, cached, targetStateName, layoutStateName, hpPercent, mpPercent, tpValue, useTargetOverlay) == true) then
+            cached.revision = state.GetRevision();
+            cached.targetStateName = targetStateName;
+            cached.layoutStateName = layoutStateName;
+            cached.lastFullRefresh = os.clock();
             perfMeter.Count('trust.cache.hit', 1);
             perfMeter.EndDetail(settingsTimer);
             return;
@@ -934,6 +963,10 @@ local function QueueTrust(trust)
             plateWorldWidth = plateWorldWidth,
             plateWorldHeight = plateWorldHeight,
             plateWorldOffsetY = plateWorldOffsetY,
+            revision = state.GetRevision(),
+            targetStateName = targetStateName,
+            layoutStateName = layoutStateName,
+            lastFullRefresh = os.clock(),
         };
         indexCache[tonumber(trust.index) or 0] = {
             cacheKey = cacheKey,

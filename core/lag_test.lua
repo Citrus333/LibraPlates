@@ -256,6 +256,7 @@ function lagTest.Update()
             active = false;
             phase = nil;
             Restore();
+            local diagnosticPath = perfMeter.WriteWorldDiagnostic(bottleneckResults);
             log.Info(string.format(
                 'World diagnostic complete: normal=%.1f atlas-hidden=%.1f stacking-off=%.1f light-prepass=%.1f world-off=%.1f FPS. All original states restored.',
                 tonumber(bottleneckResults['normal']) or 0,
@@ -264,6 +265,11 @@ function lagTest.Update()
                 tonumber(bottleneckResults['light prepass']) or 0,
                 tonumber(bottleneckResults['world off']) or 0
             ));
+            if (diagnosticPath ~= nil) then
+                log.Info('World diagnostic saved: ' .. tostring(diagnosticPath));
+            else
+                log.Warn('World diagnostic completed but its result file could not be saved.');
+            end
             return;
         end
     end

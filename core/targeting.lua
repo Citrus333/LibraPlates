@@ -315,6 +315,58 @@ local function GetTargetingSettings()
         global.targeting.disableExpensiveWorldWidgets = false;
     end
 
+    if (global.targeting.otherPlayerDetail == nil) then
+        local preset = tostring(global.targeting.performancePreset or 'Custom');
+        if (preset == 'Performance') then
+            global.targeting.otherPlayerDetail = 'Name only';
+            global.targeting.otherPlayerApplyAlways = true;
+        elseif (preset == 'Mid') then
+            global.targeting.otherPlayerDetail = 'Name + HP';
+            global.targeting.otherPlayerApplyCombat = true;
+            global.targeting.otherPlayerApplyLevelSync = true;
+            global.targeting.otherPlayerApplyCrowdedTown = true;
+            global.targeting.otherPlayerApplyCrowdedNonTown = true;
+        elseif (preset == 'High') then
+            global.targeting.otherPlayerDetail = 'Name + HP + Game mode';
+            global.targeting.otherPlayerApplyLevelSync = true;
+            global.targeting.otherPlayerApplyCrowdedTown = true;
+            global.targeting.otherPlayerApplyCrowdedNonTown = true;
+        else
+            global.targeting.otherPlayerDetail = 'Full configured plate';
+        end
+    end
+
+    if (global.targeting.otherPlayerApplyAlways == nil) then
+        global.targeting.otherPlayerApplyAlways = false;
+    end
+
+    if (global.targeting.otherPlayerApplyCombat == nil) then
+        global.targeting.otherPlayerApplyCombat = false;
+    end
+
+    if (global.targeting.otherPlayerApplyLevelSync == nil) then
+        global.targeting.otherPlayerApplyLevelSync = false;
+    end
+
+    local legacyCrowdedEnabled = global.targeting.otherPlayerApplyCrowded == true;
+    local legacyCrowdedThreshold = tonumber(global.targeting.otherPlayerCrowdedThreshold) or 20;
+
+    if (global.targeting.otherPlayerApplyCrowdedTown == nil) then
+        global.targeting.otherPlayerApplyCrowdedTown = legacyCrowdedEnabled;
+    end
+
+    if (global.targeting.otherPlayerCrowdedTownThreshold == nil) then
+        global.targeting.otherPlayerCrowdedTownThreshold = legacyCrowdedThreshold;
+    end
+
+    if (global.targeting.otherPlayerApplyCrowdedNonTown == nil) then
+        global.targeting.otherPlayerApplyCrowdedNonTown = legacyCrowdedEnabled;
+    end
+
+    if (global.targeting.otherPlayerCrowdedNonTownThreshold == nil) then
+        global.targeting.otherPlayerCrowdedNonTownThreshold = legacyCrowdedThreshold;
+    end
+
     if (global.targeting.plateStackingEnabled == nil) then
         global.targeting.plateStackingEnabled = true;
     end
@@ -567,6 +619,30 @@ local function GetTargetingSettings()
     global.targeting.hideDistantWorldPlates = global.targeting.hideDistantWorldPlates == true;
     global.targeting.worldPlateDistanceLimit = math.max(5.0, math.min(64.4, tonumber(global.targeting.worldPlateDistanceLimit) or 49.9));
     global.targeting.disableExpensiveWorldWidgets = global.targeting.disableExpensiveWorldWidgets == true;
+    local otherPlayerDetail = tostring(global.targeting.otherPlayerDetail or 'Full configured plate');
+    if (
+        otherPlayerDetail ~= 'Full configured plate' and
+        otherPlayerDetail ~= 'Name + HP + Game mode' and
+        otherPlayerDetail ~= 'Name + HP' and
+        otherPlayerDetail ~= 'Name only'
+    ) then
+        otherPlayerDetail = 'Full configured plate';
+    end
+    global.targeting.otherPlayerDetail = otherPlayerDetail;
+    global.targeting.otherPlayerApplyAlways = global.targeting.otherPlayerApplyAlways == true;
+    global.targeting.otherPlayerApplyCombat = global.targeting.otherPlayerApplyCombat == true;
+    global.targeting.otherPlayerApplyLevelSync = global.targeting.otherPlayerApplyLevelSync == true;
+    global.targeting.otherPlayerApplyCrowdedTown = global.targeting.otherPlayerApplyCrowdedTown == true;
+    global.targeting.otherPlayerCrowdedTownThreshold = math.max(5, math.min(100, math.floor((tonumber(global.targeting.otherPlayerCrowdedTownThreshold) or 20) + 0.5)));
+    global.targeting.otherPlayerApplyCrowdedNonTown = global.targeting.otherPlayerApplyCrowdedNonTown == true;
+    global.targeting.otherPlayerCrowdedNonTownThreshold = math.max(5, math.min(100, math.floor((tonumber(global.targeting.otherPlayerCrowdedNonTownThreshold) or 20) + 0.5)));
+    global.targeting.otherPlayerApplyCrowded =
+        global.targeting.otherPlayerApplyCrowdedTown == true or
+        global.targeting.otherPlayerApplyCrowdedNonTown == true;
+    global.targeting.otherPlayerCrowdedThreshold = math.min(
+        global.targeting.otherPlayerCrowdedTownThreshold,
+        global.targeting.otherPlayerCrowdedNonTownThreshold
+    );
     global.targeting.plateStackingEnabled = global.targeting.plateStackingEnabled ~= false;
     local plateStackingScope = tostring(global.targeting.plateStackingScope or 'PC + Enemy');
     if (
@@ -631,8 +707,8 @@ local function GetTargetingSettings()
     return global.targeting;
 end
 
-function targeting.GetWorldPlateRange()
-    local settings = targeting.GetSettings();
+function targeting.GetWorldPlateRange(settings)
+    settings = settings or targeting.GetSettings();
     local range = tonumber(settings.enemyPlateRange) or 49.9;
 
     if (settings.hideDistantWorldPlates == true) then
@@ -642,8 +718,8 @@ function targeting.GetWorldPlateRange()
     return math.max(5.0, math.min(64.4, range));
 end
 
-function targeting.GetPlateDistanceScaleSettings(entityName)
-    local settings = targeting.GetSettings();
+function targeting.GetPlateDistanceScaleSettings(entityName, settings)
+    settings = settings or targeting.GetSettings();
 
     if (settings.customEntityDistanceScaling ~= true) then
         return {
@@ -674,8 +750,8 @@ function targeting.GetPlateDistanceScaleSettings(entityName)
     };
 end
 
-function targeting.GetPlatePositionOffset(entityName)
-    local settings = targeting.GetSettings();
+function targeting.GetPlatePositionOffset(entityName, settings)
+    settings = settings or targeting.GetSettings();
     local key = tostring(entityName or ''):lower();
     local offsets = type(settings.platePositionOffsets) == 'table' and settings.platePositionOffsets[key] or nil;
 
@@ -720,13 +796,14 @@ function targeting.HasActivePcHeightAdjustments()
     return false;
 end
 
-function targeting.ApplyPlateScalingSettings(worldMarker, entityName, baseOffsetX, baseOffsetY)
+function targeting.ApplyPlateScalingSettings(worldMarker, entityName, baseOffsetX, baseOffsetY, settings)
     if (type(worldMarker) ~= 'table') then
         return worldMarker;
     end
 
-    local scale = targeting.GetPlateDistanceScaleSettings(entityName);
-    local offset = targeting.GetPlatePositionOffset(entityName);
+    settings = settings or targeting.GetSettings();
+    local scale = targeting.GetPlateDistanceScaleSettings(entityName, settings);
+    local offset = targeting.GetPlatePositionOffset(entityName, settings);
     local offsetUnit = 0.01;
 
     worldMarker.plateWorldOffsetX = (tonumber(baseOffsetX) or tonumber(worldMarker.plateWorldOffsetX) or 0) + ((tonumber(offset.x) or 0) * offsetUnit);

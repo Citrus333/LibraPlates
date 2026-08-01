@@ -23,6 +23,9 @@ local recordingPreviousDetail = nil;
 local recordingLastFrameClock = 0;
 local recordingPeakFrameGapMs = 0;
 local recordingPeakFrameGapAt = 0;
+local pcSpikeSamples = {};
+local pcSpikeSampleCount = 0;
+local maxPcSpikeSamples = 20;
 local eventTrail = {};
 local maxEventTrail = 80;
 local GetCounter = nil;
@@ -736,6 +739,31 @@ local function WritePerformanceReport()
     file:write('canvasSizesAll=' .. tostring(GetCanvasSizeBreakdown('')) .. '\n');
     file:write('canvasSizesPc=' .. tostring(GetCanvasSizeBreakdown('pc')) .. '\n');
 
+    file:write('\nPC Player Spikes\n');
+    file:write('samples=' .. tostring(pcSpikeSampleCount) .. '\n');
+    file:write('ElapsedMs\tName\tIndex\tServerId\tLastStage\tLuaBeforeKB\tLuaAfterKB\tLuaDeltaKB\n');
+    if (#pcSpikeSamples == 0) then
+        file:write('none\n');
+    else
+        table.sort(pcSpikeSamples, function(a, b)
+            return (tonumber(a.elapsedMs) or 0) > (tonumber(b.elapsedMs) or 0);
+        end);
+
+        for _, spike in ipairs(pcSpikeSamples) do
+            file:write(string.format(
+                '%.2f\t%s\t%s\t%s\t%s\t%.1f\t%.1f\t%+.1f\n',
+                tonumber(spike.elapsedMs) or 0,
+                tostring(spike.name or ''):gsub('[\r\n\t]', ' '),
+                tostring(spike.index or ''),
+                tostring(spike.serverId or ''),
+                tostring(spike.stage or ''):gsub('[\r\n\t]', ' '),
+                tonumber(spike.memoryBeforeKb) or 0,
+                tonumber(spike.memoryAfterKb) or 0,
+                tonumber(spike.memoryDeltaKb) or 0
+            ));
+        end
+    end
+
     file:write('\nTexture Cache\n');
     file:write(string.format(
         'used=%s/%s\nevictionsPerMinute=%.1f\ntotalEvictions=%s\nlastRender=%s\nlastRenderSize=%s\nlastEvicted=%s\n',
@@ -861,6 +889,66 @@ function perfMeter.GetTimedReportStatus()
         math.max(0, (tonumber(recordingEndClock) or os.clock()) - os.clock()),
         tonumber(recordingDuration) or 0
     );
+end
+
+function perfMeter.BeginPcPlayerSpike(player)
+    if (recordingActive ~= true) then
+        return nil;
+    end
+
+    player = player or {};
+    return {
+        clock = os.clock(),
+        memoryBeforeKb = collectgarbage('count'),
+        name = player.name,
+        index = player.index,
+        serverId = player.serverId,
+        stage = 'start',
+    };
+end
+
+function perfMeter.MarkPcPlayerSpike(token, stage)
+    if (token ~= nil) then
+        token.stage = tostring(stage or '');
+    end
+end
+
+function perfMeter.EndPcPlayerSpike(token)
+    if (token == nil or token.clock == nil) then
+        return;
+    end
+
+    local memoryAfterKb = collectgarbage('count');
+    local sample = {
+        elapsedMs = math.max(0, (os.clock() - token.clock) * 1000.0),
+        memoryBeforeKb = tonumber(token.memoryBeforeKb) or 0,
+        memoryAfterKb = memoryAfterKb,
+        memoryDeltaKb = memoryAfterKb - (tonumber(token.memoryBeforeKb) or memoryAfterKb),
+        name = token.name,
+        index = token.index,
+        serverId = token.serverId,
+        stage = token.stage,
+    };
+    pcSpikeSampleCount = pcSpikeSampleCount + 1;
+
+    if (#pcSpikeSamples < maxPcSpikeSamples) then
+        pcSpikeSamples[#pcSpikeSamples + 1] = sample;
+        return;
+    end
+
+    local fastestIndex = 1;
+    local fastestElapsed = tonumber(pcSpikeSamples[1].elapsedMs) or 0;
+    for index = 2, #pcSpikeSamples do
+        local elapsed = tonumber(pcSpikeSamples[index].elapsedMs) or 0;
+        if (elapsed < fastestElapsed) then
+            fastestIndex = index;
+            fastestElapsed = elapsed;
+        end
+    end
+
+    if (sample.elapsedMs > fastestElapsed) then
+        pcSpikeSamples[fastestIndex] = sample;
+    end
 end
 
 local function DrawReportButton()
@@ -1386,6 +1474,8 @@ function perfMeter.Reset()
     counters = {};
     lastCounters = {};
     eventTrail = {};
+    pcSpikeSamples = {};
+    pcSpikeSampleCount = 0;
     frameIndex = 0;
 end
 

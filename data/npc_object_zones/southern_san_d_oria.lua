@@ -803,16 +803,6 @@ Mania mini-game.\
 * Exchanges monthly Jingly rewards.",
             ["type"] = "Mandragora Mania",
         },
-        ["Maruna-Kurina"] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Explains Campaign and tracks\
-freelancer alliances and influence.\
-* Appears in towns but does not\
-participate in battles.",
-            ["type"] = "Freelance",
-        },
         ["Maugie"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",

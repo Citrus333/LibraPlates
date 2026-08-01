@@ -12,6 +12,11 @@ return {
             ["icon"] = "RecordsOfEminence.png",
             ["type"] = "Records of Eminence",
         },
+        ["Albinie"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Merchant.png",
+            ["type"] = "Standard Merchant",
+        },
         ["Ambleon"] = {
             ["_source"] = "npc",
             ["icon"] = "WorldPassDealer.png",
@@ -329,8 +334,13 @@ Involved in Quests:\
         ["Huebald"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "Trials.png",
-            ["note"] = "* Starts equipment augment trials.\
-* Transfers NQ augments to HQ versions.\
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Novice_Trials",
+            ["note"] = "Novice Trials:\
+* Starts equipment augment trials.\
+* Available to all character types\
+with no cooldown.\
+* Transfers completed NQ augments\
+to crafted HQ versions.\
 * Trials may be completed on any job.",
             ["type"] = "Novice Trials",
         },

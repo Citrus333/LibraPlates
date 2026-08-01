@@ -49,11 +49,6 @@ return {
 According to Vana'diel Tribune http://www.playonline.com/ff11/guide/development/vt/08/02-2.html, this NPC was produced by Rhinostery and was presented to San d'Oria, Bastok and Windurst.",
             ["type"] = "New Year Event",
         },
-        ["Albinie"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
-            ["type"] = "Standard Merchant",
-        },
         ["Allied Armored Belfry"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
@@ -112,6 +107,11 @@ To equip 100 job points are needed.",
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["type"] = "Master Caster",
+        },
+        ["Artisan Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Inventory.png",
+            ["type"] = "Inventory Expansion",
         },
         ["Ash"] = {
             ["_source"] = "catseye_npc",
@@ -336,13 +336,6 @@ Involved in Missions:\
 * Several are released by Choh Moui when her other two pets, Azo & Vahi, are defeated in battle. They will not disappear if she is defeated. *Also appeared in event: Blazing Buffaloes",
             ["type"] = "Seasonal Event",
         },
-        ["Chomo Jinjahl"] = {
-            ["_source"] = "npc",
-            ["icon"] = "GuildMerchant.png",
-            ["note"] = "Notes:\
-Always open.No longer closed Darksday.",
-            ["type"] = "Cooking Merchant",
-        },
         ["Choplix"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -486,11 +479,6 @@ Up, Up and Away.\
 supply quest unlocks.",
             ["type"] = "Outpost Warp",
         },
-        ["Ensasa"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
-            ["type"] = "Standard Merchant",
-        },
         ["Ephemeral Moogle"] = {
             ["_source"] = "npc",
             ["icon"] = "EphemeralMoogle.png",
@@ -511,6 +499,11 @@ supply quest unlocks.",
             ["note"] = "Notes:\
 Located on the barge during the routes from North Landing to Central Landing, and from South Landing to Central Landing via the Emfea Waterway.",
             ["type"] = "Barge NPC",
+        },
+        ["Explorer Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "ExplorerMoogle.png",
+            ["type"] = "Teleport Service",
         },
         ["Fablinix"] = {
             ["_source"] = "npc",
@@ -581,11 +574,6 @@ Appears with 4 other NPCs: *Taruger *Auspicious Tiger *Auspicious Tigress *Auspi
             ["note"] = "Notes:\
 Provided information about Chocobo Racing and recruited adventurers for the CRA Bastok team. She was removed from the game on 9/9/2010, along with Monteverle, Salvador, and Turumi-Byrumi.",
             ["type"] = "VCS Chocobo Racing Associate",
-        },
-        ["Gamimi"] = {
-            ["_source"] = "npc",
-            ["icon"] = "WorldPassDealer.png",
-            ["type"] = "World Pass",
         },
         ["Garazu-Horeizu"] = {
             ["_source"] = "npc",
@@ -814,11 +802,6 @@ Will report how long until the Airship arrives at its destination.",
 * Hitting the Marquisate\
 ",
             ["type"] = "Atarefaunet's Band",
-        },
-        ["Khuta Colaara"] = {
-            ["_source"] = "npc",
-            ["icon"] = "MapDealer.png",
-            ["type"] = "Map Vendor",
         },
         ["Kilhwch"] = {
             ["_source"] = "npc",
@@ -1218,13 +1201,6 @@ Will report how long until the Airship arrives at its destination.",
             ["icon"] = "CampaignArbiter.png",
             ["type"] = "Campaign",
         },
-        ["Pompi-Rompi"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-See also *2009 - (10/13/2009) Produce your own wedding! Presenting the new wedding support service! *Celebratory Chest *Matrimonial Coffer",
-            ["type"] = "Wedding event NPC.",
-        },
         ["Popochu"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -1289,13 +1265,6 @@ Involved in Missions:\
 * WOTG16: Sandswept Memories\
 ",
             ["type"] = "Mission",
-        },
-        ["Rakano-Marukano"] = {
-            ["_source"] = "npc",
-            ["icon"] = "ImmigrationNPC.png",
-            ["note"] = "Notes:\
-Cost to Change Allegiance when Windurst is in: :1st Place in Conquest - 40,000g :2nd Place in Conquest - 12,000g :3rd Place in Conquest - 4,000g *The taru is right inside the room with the door that says Clerical Chamber, across the fountain when you zone in. *When changing allegiance, you retain all conquest points. *If this is the first time you've switched to this nation, you are reset to Rank 1. *If you decide later to return to your previous Nation, you will get your previous Rank back. *Any rewards for missions done in other nations are retained when you switch (i.e. you will keep your Airship Pass, etc.) * You will keep all Outposts from your old nations. :*This only applies to outpost data that was saved to the game on and after the 6/9/2008 patch. Any outpost data saved prior will have to be quested again. GMs have clarified that the reason for this inconvenience is due to previous \"thematic\" deletions of outpost data from completed supply missions at the time of the allegiance change. Example: A player was allied with San d'Oria with all outposts complete and changed to Bastok on 5/1/08 and then obtained all outposts again. That player then changes allegiance to Windurst on 6/20/08. All outpost data for San d'Oria is lost but all outpost data for Bastok is saved.",
-            ["type"] = "Immigration",
         },
         ["Ramblix"] = {
             ["_source"] = "npc",
@@ -2365,6 +2334,10 @@ Involved in Missions:\
 * Triggers the level 40 capped Treant fight, then inspect again.",
             ["type"] = "CW Storage Unlock",
             ["worldOffsetY"] = 0.25,
+        },
+        ["Door:House"] = {
+            ["_source"] = "item",
+            ["icon"] = "Door.png",
         },
         ["Ergon Locus"] = {
             ["_source"] = "item",

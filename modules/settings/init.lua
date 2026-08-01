@@ -9877,6 +9877,14 @@ local function DrawGeneralPerformanceSection(settings)
                 hideDistantWorldPlates = true,
                 worldPlateDistanceLimit = 25.0,
                 disableExpensiveWorldWidgets = true,
+                otherPlayerDetail = 'Name only',
+                otherPlayerApplyAlways = true,
+                otherPlayerApplyCombat = false,
+                otherPlayerApplyLevelSync = false,
+                otherPlayerApplyCrowdedTown = false,
+                otherPlayerCrowdedTownThreshold = 20,
+                otherPlayerApplyCrowdedNonTown = false,
+                otherPlayerCrowdedNonTownThreshold = 20,
                 textureCacheLimit = 64,
             },
             Mid = {
@@ -9892,6 +9900,14 @@ local function DrawGeneralPerformanceSection(settings)
                 hideDistantWorldPlates = true,
                 worldPlateDistanceLimit = 40.0,
                 disableExpensiveWorldWidgets = false,
+                otherPlayerDetail = 'Name + HP',
+                otherPlayerApplyAlways = false,
+                otherPlayerApplyCombat = true,
+                otherPlayerApplyLevelSync = true,
+                otherPlayerApplyCrowdedTown = true,
+                otherPlayerCrowdedTownThreshold = 20,
+                otherPlayerApplyCrowdedNonTown = true,
+                otherPlayerCrowdedNonTownThreshold = 20,
                 textureCacheLimit = 128,
             },
             High = {
@@ -9907,6 +9923,14 @@ local function DrawGeneralPerformanceSection(settings)
                 hideDistantWorldPlates = false,
                 worldPlateDistanceLimit = 49.9,
                 disableExpensiveWorldWidgets = false,
+                otherPlayerDetail = 'Name + HP + Game mode',
+                otherPlayerApplyAlways = false,
+                otherPlayerApplyCombat = false,
+                otherPlayerApplyLevelSync = true,
+                otherPlayerApplyCrowdedTown = true,
+                otherPlayerCrowdedTownThreshold = 20,
+                otherPlayerApplyCrowdedNonTown = true,
+                otherPlayerCrowdedNonTownThreshold = 20,
                 textureCacheLimit = 128,
             },
             Ultra = {
@@ -9922,6 +9946,14 @@ local function DrawGeneralPerformanceSection(settings)
                 hideDistantWorldPlates = false,
                 worldPlateDistanceLimit = 64.4,
                 disableExpensiveWorldWidgets = false,
+                otherPlayerDetail = 'Full configured plate',
+                otherPlayerApplyAlways = false,
+                otherPlayerApplyCombat = false,
+                otherPlayerApplyLevelSync = false,
+                otherPlayerApplyCrowdedTown = false,
+                otherPlayerCrowdedTownThreshold = 20,
+                otherPlayerApplyCrowdedNonTown = false,
+                otherPlayerCrowdedNonTownThreshold = 20,
                 textureCacheLimit = 192,
             },
         };
@@ -9944,6 +9976,14 @@ local function DrawGeneralPerformanceSection(settings)
         settings.hideDistantWorldPlates = preset.hideDistantWorldPlates;
         settings.worldPlateDistanceLimit = preset.worldPlateDistanceLimit;
         settings.disableExpensiveWorldWidgets = preset.disableExpensiveWorldWidgets;
+        settings.otherPlayerDetail = preset.otherPlayerDetail;
+        settings.otherPlayerApplyAlways = preset.otherPlayerApplyAlways;
+        settings.otherPlayerApplyCombat = preset.otherPlayerApplyCombat;
+        settings.otherPlayerApplyLevelSync = preset.otherPlayerApplyLevelSync;
+        settings.otherPlayerApplyCrowdedTown = preset.otherPlayerApplyCrowdedTown;
+        settings.otherPlayerCrowdedTownThreshold = preset.otherPlayerCrowdedTownThreshold;
+        settings.otherPlayerApplyCrowdedNonTown = preset.otherPlayerApplyCrowdedNonTown;
+        settings.otherPlayerCrowdedNonTownThreshold = preset.otherPlayerCrowdedNonTownThreshold;
         settings.textureCacheLimit = canvasTexture.SetCacheLimit(preset.textureCacheLimit);
         state.Save();
     end
@@ -10132,7 +10172,7 @@ local function DrawGeneralPerformanceSection(settings)
             end
 
             if (selectedPreset ~= 'Custom') then
-                imgui.TextWrapped('Preset controls world plate count, distance limit, update rate, and cache size. Choose Custom to edit them.');
+                imgui.TextWrapped('Preset controls world plate count, distance limit, update rate, cache size, and the default other-player detail rules. Choose Custom to edit them.');
             end
         end);
 
@@ -10176,10 +10216,6 @@ local function DrawGeneralPerformanceSection(settings)
                     end
                 end
 
-                DrawPerformanceCheckbox('Disable expensive widgets', settings.disableExpensiveWorldWidgets == true, function(value)
-                    settings.performancePreset = 'Custom';
-                    settings.disableExpensiveWorldWidgets = value == true;
-                end, 'Drops expensive idle world-only extras from supported non-PC plates. PC World widget selections remain authoritative.', 'DisableExpensiveWorldWidgets');
             end);
 
             LibraPlatesSettingsDrawBoxedPanel('Texture cache', function()
@@ -10198,6 +10234,99 @@ local function DrawGeneralPerformanceSection(settings)
                 DrawPerformanceInfo('Shows how many cached plate textures are in use and whether old textures are being evicted from the cache.');
             end);
         end
+
+        LibraPlatesSettingsDrawBoxedPanel('Other players', function()
+            DrawPerformanceCombo(
+                'Reduced detail',
+                T{ 'Full configured plate', 'Name + HP + Game mode', 'Name + HP', 'Name only' },
+                settings.otherPlayerDetail or 'Full configured plate',
+                function(value)
+                    settings.performancePreset = 'Custom';
+                    settings.otherPlayerDetail = value;
+                end,
+                'OtherPlayerDetail',
+                'Controls the reduced plate used for players outside your party or alliance. Outside the selected activation conditions, the normal PC World plate is used.'
+            );
+
+            imgui.TextColored({ 0.98, 0.82, 0.18, 1.0 }, 'Apply reduced detail when');
+
+            DrawPerformanceCheckbox('Always', settings.otherPlayerApplyAlways == true, function(value)
+                settings.performancePreset = 'Custom';
+                settings.otherPlayerApplyAlways = value == true;
+                if (value == true) then
+                    settings.otherPlayerApplyCombat = false;
+                    settings.otherPlayerApplyLevelSync = false;
+                    settings.otherPlayerApplyCrowdedTown = false;
+                    settings.otherPlayerApplyCrowdedNonTown = false;
+                end
+            end, 'Uses reduced detail continuously. Party and alliance members always retain their complete configured plates.', 'OtherPlayerApplyAlways');
+
+            DrawPerformanceCheckbox('In combat', settings.otherPlayerApplyCombat == true, function(value)
+                settings.performancePreset = 'Custom';
+                settings.otherPlayerApplyCombat = value == true;
+                if (value == true) then
+                    settings.otherPlayerApplyAlways = false;
+                end
+            end, 'Uses reduced detail while your character is engaged in combat.', 'OtherPlayerApplyCombat');
+
+            DrawPerformanceCheckbox('While level synced', settings.otherPlayerApplyLevelSync == true, function(value)
+                settings.performancePreset = 'Custom';
+                settings.otherPlayerApplyLevelSync = value == true;
+                if (value == true) then
+                    settings.otherPlayerApplyAlways = false;
+                end
+            end, 'Uses reduced detail while your character has the Level Sync status.', 'OtherPlayerApplyLevelSync');
+
+            DrawPerformanceCheckbox('In crowded towns', settings.otherPlayerApplyCrowdedTown == true, function(value)
+                settings.performancePreset = 'Custom';
+                settings.otherPlayerApplyCrowdedTown = value == true;
+                if (value == true) then
+                    settings.otherPlayerApplyAlways = false;
+                end
+            end, 'Uses reduced detail in town zones when at least the selected number of unrelated players are nearby.', 'OtherPlayerApplyCrowdedTown');
+
+            if (settings.otherPlayerApplyCrowdedTown == true) then
+                local townCrowdedThreshold, townCrowdedThresholdChanged = DrawPerformanceNumber(
+                    'Town crowd threshold',
+                    settings.otherPlayerCrowdedTownThreshold or 20,
+                    'OtherPlayerCrowdedTownThreshold',
+                    5,
+                    100,
+                    1,
+                    'Only nearby players outside your party or alliance count toward the town threshold.'
+                );
+                if (townCrowdedThresholdChanged == true) then
+                    settings.performancePreset = 'Custom';
+                    settings.otherPlayerCrowdedTownThreshold = math.max(5, math.min(100, math.floor((tonumber(townCrowdedThreshold) or 20) + 0.5)));
+                end
+            end
+
+            DrawPerformanceCheckbox('In crowded non-town zones', settings.otherPlayerApplyCrowdedNonTown == true, function(value)
+                settings.performancePreset = 'Custom';
+                settings.otherPlayerApplyCrowdedNonTown = value == true;
+                if (value == true) then
+                    settings.otherPlayerApplyAlways = false;
+                end
+            end, 'Uses reduced detail in fields, dungeons, battlefields, and other non-town zones when enough unrelated players are nearby.', 'OtherPlayerApplyCrowdedNonTown');
+
+            if (settings.otherPlayerApplyCrowdedNonTown == true) then
+                local nonTownCrowdedThreshold, nonTownCrowdedThresholdChanged = DrawPerformanceNumber(
+                    'Non-town crowd threshold',
+                    settings.otherPlayerCrowdedNonTownThreshold or 20,
+                    'OtherPlayerCrowdedNonTownThreshold',
+                    5,
+                    100,
+                    1,
+                    'Only nearby players outside your party or alliance count toward the non-town threshold.'
+                );
+                if (nonTownCrowdedThresholdChanged == true) then
+                    settings.performancePreset = 'Custom';
+                    settings.otherPlayerCrowdedNonTownThreshold = math.max(5, math.min(100, math.floor((tonumber(nonTownCrowdedThreshold) or 20) + 0.5)));
+                end
+            end
+
+            imgui.TextWrapped('Party and alliance members always retain their complete configured plates. Multiple activation conditions use OR logic.');
+        end);
     end);
 end
 

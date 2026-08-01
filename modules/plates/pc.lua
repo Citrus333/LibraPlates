@@ -42,8 +42,11 @@ local targetModuleMarker = require('core.target_module_marker');
 local targeting = require('core.targeting');
 local enmity = require('core.enmity');
 local partyStatuses = require('core.party_statuses');
+local playerStatuses = require('core.player_statuses');
+local jobChange = require('core.job_change');
 local worldDepthPlate = require('core.world_depth_plate');
 local worldMarkerProbe = require('core.world_marker_probe');
+local pcTargetMarkerSignature = require('core.pc_target_marker_signature');
 
 pcall(require, 'common');
 
@@ -63,6 +66,7 @@ local idleDirectDynamicCacheSeconds = 0.35;
 local idleDirectStaticCacheSeconds = 2.00;
 local pcIdleCanvasBuildsThisFrame = 0;
 local pcIdleCanvasBuildLimitThisFrame = 0;
+local lastUnrelatedNearbyPlayerCount = 0;
 local plateWorkGateCache = {
     clock = 0,
     engaged = nil,
@@ -128,6 +132,7 @@ local function ClearPlateCache()
 
     plateCache = {};
     indexCache = {};
+    pcTargetMarkerSignature.Reset();
     collectgarbage('step', 64);
 end
 
@@ -655,7 +660,7 @@ local function CachedPlayerIdentityMatches(player, cached)
     return tostring(cached.name or '') == tostring(player ~= nil and player.name or '');
 end
 
-local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, isProtectedPlate, isPartyPlayer)
+local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, isProtectedPlate, isPartyPlayer, targetingSettings, otherPlayerDetail, targetMarker)
     if (cached == nil or cached.texture == nil) then
         return false;
     end
@@ -664,7 +669,13 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
         return false;
     end
 
-    local targetingSettings = targeting.GetSettings();
+    local requestedOtherPlayerDetail = tostring(otherPlayerDetail or 'Full configured plate');
+    local cachedOtherPlayerDetail = tostring(cached.otherPlayerDetail or 'Full configured plate');
+    if (cachedOtherPlayerDetail ~= requestedOtherPlayerDetail) then
+        return false;
+    end
+
+    targetingSettings = targetingSettings or targeting.GetSettings();
     local streamerNames = require('core.streamer_names');
 
     if ((cached.streamerNameSignature or 'streamer=legacy') ~= streamerNames.GetSignature(player, targetingSettings)) then
@@ -716,19 +727,20 @@ local function QueueCachedPlayer(player, cached, targetStateName, useTargetOverl
             plateTextureWidth = cached.textureWidth,
             plateTextureHeight = cached.textureHeight,
             plateClickRects = cached.elementRects,
+            animatedTargetMarker = pcTargetMarkerSignature.BuildLiveOverlay(targetMarker, cached.elementRects),
             clickTargetType = 'pc',
             clickName = player.name,
             layoutStateName = layoutStateName,
             protectedPlate = isProtectedPlate == true,
             partyPlate = isPartyPlayer == true,
-        }, 'pc', 0, cached.plateWorldOffsetY),
+        }, 'pc', 0, cached.plateWorldOffsetY, targetingSettings),
     });
     perfMeter.EndDetail(queueTimer);
 
     return true;
 end
 
-local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, maxAgeOverride, isProtectedPlate, isPartyPlayer)
+local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, maxAgeOverride, isProtectedPlate, isPartyPlayer, targetingSettings, otherPlayerDetail)
     if (targetStateName ~= 'Idle' or useTargetOverlay == true or state.GetConfigOpen() == true) then
         return false;
     end
@@ -745,6 +757,17 @@ local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, la
         return false;
     end
 
+    -- The index cache points at the most recently used canvas for this PC.
+    -- Immediately after changing targets that canvas can still be the former
+    -- Target/Combat plate. Never reuse it as an Idle plate: doing so leaves
+    -- the old target highlight visible until the normal cache window expires.
+    if (
+        tostring(cached.targetStateName or 'Idle') ~= tostring(targetStateName or 'Idle') or
+        tostring(cached.layoutStateName or 'Idle') ~= tostring(layoutStateName or 'Idle')
+    ) then
+        return false;
+    end
+
     local now = os.clock();
     local lastRefresh = tonumber(cached.lastFullRefresh) or 0;
     local maxAge = tonumber(maxAgeOverride) or adaptivePerformance.GetWorldRefreshSeconds('pc');
@@ -753,7 +776,7 @@ local function QueueFreshIdleCache(player, targetStateName, useTargetOverlay, la
         return false;
     end
 
-    if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, isProtectedPlate, isPartyPlayer) == true) then
+    if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, hpBarStyle, mpBarStyle, tpBarStyle, isProtectedPlate, isPartyPlayer, targetingSettings, otherPlayerDetail) == true) then
         perfMeter.Count('pc.cache.directHit', 1);
         return true;
     end
@@ -894,7 +917,7 @@ local function BuildPcPlateData(context)
     local hpBarColor = context.hpBarOutOfRange == true and SolidColor(context.hpBarSettings.outOfRangeColor, { 0.02, 0.08, 0.12, 1.0 }) or context.hpColor;
     local hpBarAnimationColor = context.hpBarOutOfRange == true and hpBarColor or context.hpBarSettings.lowAnimationColor;
     local nameColor = context.nameSettings.color or { 1.0, 1.0, 1.0, 1.0 };
-    local targetingSettings = targeting.GetSettings();
+    local targetingSettings = context.targetingSettings or targeting.GetSettings();
     local playerBlacklist = require('core.player_blacklist');
     local streamerNames = require('core.streamer_names');
 
@@ -1062,7 +1085,10 @@ local function BuildPcPlateData(context)
     return plateData;
 end
 
-local function QueuePlayer(player)
+local function QueuePlayerInternal(player, pcSpike, targetingSettings, otherPlayerDetail)
+    targetingSettings = targetingSettings or targeting.GetSettings();
+    perfMeter.MarkPcPlayerSpike(pcSpike, 'eligibility');
+
     local function canUseLiveResourceBarSettings(settings)
         settings = settings or {};
 
@@ -1097,10 +1123,16 @@ local function QueuePlayer(player)
     local isTacticalPlayer = isPartyPlayer == true;
     local isProtectedPlate = isPartyPlayer == true or isTargetContext == true;
 
-    -- PC World widget selections are authoritative.  A global performance
-    -- option must not silently collapse configured idle player plates to
-    -- name-only while the same widgets remain enabled in settings.
-    local suppressExpensiveWorldWidgets = false;
+    -- Ashita party slots 0-17 always retain their complete configured plate.
+    -- Reduced detail applies only to unrelated players.
+    local appliedOtherPlayerDetail = isPartyPlayer == true
+        and 'Full configured plate'
+        or tostring(otherPlayerDetail or 'Full configured plate');
+    local suppressExpensiveWorldWidgets = appliedOtherPlayerDetail ~= 'Full configured plate';
+    local reducedDetailKeepsHp =
+        appliedOtherPlayerDetail == 'Name + HP' or
+        appliedOtherPlayerDetail == 'Name + HP + Game mode';
+    local reducedDetailKeepsGameMode = appliedOtherPlayerDetail == 'Name + HP + Game mode';
     perfMeter.SetCounter('pc.expensiveSetting', suppressExpensiveWorldWidgets == true and 1 or 0);
     if (isProtectedPlate == true) then
         perfMeter.Count('pc.expensiveProtected', 1);
@@ -1139,7 +1171,11 @@ local function QueuePlayer(player)
     local earlyDistanceSettings = nil;
     local canUseFreshIdleCache = false;
 
-    if (targetStateName == 'Idle' and useTargetOverlay ~= true and state.GetConfigOpen() ~= true) then
+    if (
+        targetStateName == 'Idle' and
+        useTargetOverlay ~= true and
+        state.GetConfigOpen() ~= true
+    ) then
         canUseFreshIdleCache = true;
     end
 
@@ -1148,18 +1184,20 @@ local function QueuePlayer(player)
         and adaptivePerformance.GetPlateRefreshSeconds('tactical', 'critical')
         or nil;
 
+    perfMeter.MarkPcPlayerSpike(pcSpike, 'early cache');
     if (
         (canUseFreshIdleCache == true or canUseTacticalCacheWindow == true) and
-        QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, nil, nil, nil, earlyCacheMaxAge, isProtectedPlate, isPartyPlayer) == true
+        QueueFreshIdleCache(player, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, nil, nil, nil, earlyCacheMaxAge, isProtectedPlate, isPartyPlayer, targetingSettings, appliedOtherPlayerDetail) == true
     ) then
         return;
     end
 
+    perfMeter.MarkPcPlayerSpike(pcSpike, 'settings');
     local settingsTimer = perfMeter.BeginDetail('pc.settings');
     local backgroundSettings = state.GetWidgetSettings('PC', layoutStateName, 'Background', backgroundDefaults);
     local nameSettings = state.GetWidgetSettings('PC', layoutStateName, 'Name', nameDefaults);
     local distanceSettings = earlyDistanceSettings or state.GetWidgetSettings('PC', layoutStateName, 'Distance', distanceDefaults);
-    local showDistanceBadge = WidgetLoads(distanceSettings, 'Distance') == true;
+    local showDistanceBadge = suppressExpensiveWorldWidgets ~= true and WidgetLoads(distanceSettings, 'Distance') == true;
     local hpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'HP Bar', barDefaults);
     local mpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'MP Bar', mpBarDefaults);
     local tpBarSettings = state.GetWidgetSettings('PC', layoutStateName, 'TP Bar', tpBarDefaults);
@@ -1182,9 +1220,15 @@ local function QueuePlayer(player)
     local levelSyncIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'Level sync icon', levelSyncIconDefaults);
     local newAdventurerIconSettings = state.GetWidgetSettings('PC', layoutStateName, 'New adventurer icon', newAdventurerIconDefaults);
     local nativeUiPolicy = require('core.native_ui_policy');
+    local targetVisualDistance = pcTargetMarkerSignature.GetVisualDistance(
+        player.index,
+        GetPlayerIdentityKey(player),
+        targetStateName,
+        player.distance
+    );
     local targetMarker = targetStateName ~= 'Idle'
         and nativeUiPolicy.ShouldDrawLibraTargetingSystem() == true
-        and targetModuleMarker.Build('PC', targetModuleStateName, targetStateName, hpBarSettings, player.distance)
+        and targetModuleMarker.Build('PC', targetModuleStateName, targetStateName, hpBarSettings, targetVisualDistance)
         or { enabled = false };
 
     local globalSettings = state.GetGlobalSettings(globalDefaults);
@@ -1194,10 +1238,13 @@ local function QueuePlayer(player)
     local tpColor = tpBarSettings.color or { 0.95, 0.55, 0.05, 1.0 };
     local icons = {};
     local nameLoads = WidgetLoads(nameSettings, 'Name');
-    local backgroundLoads = WidgetLoads(backgroundSettings, 'Background');
-    local hpBarLoads = hasHp == true and WidgetLoads(hpBarSettings, 'HP Bar');
-    local mpBarLoads = hasMp == true and WidgetLoads(mpBarSettings, 'MP Bar');
-    local tpBarLoads = hasTp == true and WidgetLoads(tpBarSettings, 'TP Bar');
+    local backgroundLoads = suppressExpensiveWorldWidgets ~= true and WidgetLoads(backgroundSettings, 'Background');
+    local hpBarLoads =
+        (suppressExpensiveWorldWidgets ~= true or reducedDetailKeepsHp == true) and
+        hasHp == true and
+        WidgetLoads(hpBarSettings, 'HP Bar');
+    local mpBarLoads = suppressExpensiveWorldWidgets ~= true and hasMp == true and WidgetLoads(mpBarSettings, 'MP Bar');
+    local tpBarLoads = suppressExpensiveWorldWidgets ~= true and hasTp == true and WidgetLoads(tpBarSettings, 'TP Bar');
     local jobLoads = suppressExpensiveWorldWidgets ~= true and WidgetLoads(jobSettings, 'Job');
     local levelLoads = suppressExpensiveWorldWidgets ~= true and WidgetLoads(levelSettings, 'Level');
     local resolvedHpColor, hpCriticalActive = barWarning.ResolveHp(hpBarSettings, barDefaults, hpPercent, hpColor);
@@ -1265,6 +1312,7 @@ local function QueuePlayer(player)
     local liveMpBarStyle = mpBarLoads == true and makeLiveBarStyle(mpBarSettings, mpColor, 180, 8, 16) or { enabled = false };
     local liveTpBarStyle = tpBarLoads == true and makeLiveBarStyle(tpBarSettings, tpColor, 180, 6, 28) or { enabled = false };
 
+    perfMeter.MarkPcPlayerSpike(pcSpike, 'icons');
     local iconsTimer = perfMeter.BeginDetail('pc.icons');
     local gameModeIconTextureId = nil;
     local linkshellIconTextureId = nil;
@@ -1279,11 +1327,14 @@ local function QueuePlayer(player)
     local gameMasterIconTextureId = nil;
     local allianceLeaderIconTextureId = nil;
     local partyLeaderIconTextureId = nil;
-    local playerGameModeText = suppressExpensiveWorldWidgets ~= true and gameMode.Resolve(player.index, false) or nil;
+    local playerGameModeText = gameMode.Resolve(player.index, false);
     local playerAnonNameColor = playerIndicators.HasAnonNameColor(player.index) == true;
     local isGameMaster = playerIndicators.IsGameMaster(player.index) == true;
 
-    if (suppressExpensiveWorldWidgets ~= true and WidgetLoads(gameModeIconSettings, 'Game mode icon') == true) then
+    if (
+        (suppressExpensiveWorldWidgets ~= true or reducedDetailKeepsGameMode == true) and
+        WidgetLoads(gameModeIconSettings, 'Game mode icon') == true
+    ) then
         gameModeIconTextureId = gameMode.GetIconTextureId(playerGameModeText);
         AddIcon(icons, gameModeIconSettings, gameModeIconTextureId, -72, -54, 'gameModeIcon');
     end
@@ -1319,7 +1370,7 @@ local function QueuePlayer(player)
         AddIcon(icons, starsIconSettings, starsIconTextureId, -48, -54, 'starsIcon');
     end
 
-    if (isGameMaster == true) then
+    if (suppressExpensiveWorldWidgets ~= true and isGameMaster == true) then
         gameMasterIconTextureId = playerIndicators.GetGameMasterIconTextureId(player.index);
         AddIcon(icons, {
             enabled = true,
@@ -1345,7 +1396,7 @@ local function QueuePlayer(player)
         AddIcon(icons, newAdventurerIconSettings, newAdventurerIconTextureId, 24, -54, 'newAdventurerIcon');
     end
 
-    if (layoutStateName == 'Combat') then
+    if (suppressExpensiveWorldWidgets ~= true and layoutStateName == 'Combat') then
         if (WidgetLoads(allianceLeaderIconSettings, 'Alliance leader icon') == true) then
             allianceLeaderIconTextureId = playerIndicators.GetAllianceLeaderIconTextureId(player.index);
             AddIcon(icons, allianceLeaderIconSettings, allianceLeaderIconTextureId, -120, -54, 'allianceLeaderIcon');
@@ -1360,8 +1411,8 @@ local function QueuePlayer(player)
 
     local distanceText = nil;
 
-    if (showDistanceBadge == true and player.distance ~= nil) then
-        distanceText = FormatDistanceText(distanceSettings, player.distance);
+    if (showDistanceBadge == true and targetVisualDistance ~= nil) then
+        distanceText = FormatDistanceText(distanceSettings, targetVisualDistance);
     end
 
     local isEngaged = tonumber(player.status) == 1;
@@ -1412,8 +1463,13 @@ local function QueuePlayer(player)
         return;
     end
 
-    local cacheEligible = targetStateName == 'Idle'
-        and distanceText == nil
+    local cacheableTargetState =
+        targetStateName == 'Idle' or
+        targetStateName == 'Target' or
+        targetStateName == 'Subtarget';
+    local hasAnimatedTargetMarker = pcTargetMarkerSignature.HasAnimatedMarker(targetMarker) == true;
+    local cacheEligible = cacheableTargetState == true
+        and (distanceText == nil or targetStateName ~= 'Idle')
         and (hpBarLoads ~= true or liveHpBarStyle.enabled == true or hpAnimationEnabled ~= true)
         and (mpBarLoads ~= true or liveMpBarStyle.enabled == true or mpAnimationEnabled ~= true)
         and (tpBarLoads ~= true or liveTpBarStyle.enabled == true);
@@ -1423,18 +1479,19 @@ local function QueuePlayer(player)
     local staleCached = nil;
     local blacklistSignature = require('core.player_blacklist').GetSignature(player);
     local streamerNames = require('core.streamer_names');
-    local streamerNameSignature = streamerNames.GetSignature(player, targeting.GetSettings());
+    local streamerNameSignature = streamerNames.GetSignature(player, targetingSettings);
     local canUseStaleCachedPlate =
         (hpBarLoads ~= true or liveHpBarStyle.enabled == true) and
         (mpBarLoads ~= true or liveMpBarStyle.enabled == true) and
         (tpBarLoads ~= true or liveTpBarStyle.enabled == true);
 
+    perfMeter.MarkPcPlayerSpike(pcSpike, 'signature and cache');
     if (cacheEligible == true) then
         cacheKey = 'pc:' .. tostring(player.index) .. ':' .. GetPlayerIdentityKey(player);
         signature = table.concat({
             'v=1',
             'policy=' .. canvasTexture.GetRenderPolicyKey(),
-            'overwriteNativeNameColors=' .. tostring(targeting.GetSettings().overwriteNativeNameColors ~= false),
+            'overwriteNativeNameColors=' .. tostring(targetingSettings.overwriteNativeNameColors ~= false),
             'blacklist=' .. blacklistSignature,
             streamerNameSignature,
             'gameModeText=' .. tostring(playerGameModeText or ''),
@@ -1444,6 +1501,8 @@ local function QueuePlayer(player)
             'layout=' .. tostring(layoutStateName or ''),
             'overlay=' .. (useTargetOverlay == true and '1' or '0'),
             'targetState=' .. tostring(targetStateName or 'Idle'),
+            'targetMarker=' .. pcTargetMarkerSignature.GetMarkerKey(targetMarker, false),
+            'otherPlayerDetail=' .. tostring(appliedOtherPlayerDetail),
             'status=' .. tostring(player.status or ''),
             'engaged=' .. (currentPlayerEngaged == true and '1' or '0'),
             'hasHp=' .. (hasHp == true and '1' or '0'),
@@ -1457,7 +1516,7 @@ local function QueuePlayer(player)
             'hasTp=' .. (hasTp == true and '1' or '0'),
             'tpValue=' .. tostring(tpValue or ''),
             'distance=' .. tostring(distanceText or ''),
-            suppressExpensiveWorldWidgets == true and 'expensiveWorldWidgets=suppressed' or ('game=' .. tostring(gameModeIconTextureId or '')),
+            'game=' .. tostring(gameModeIconTextureId or ''),
             suppressExpensiveWorldWidgets == true and 'linkshell=suppressed' or ('linkshell=' .. tostring(linkshellIconTextureId or '')),
             suppressExpensiveWorldWidgets == true and 'linkshellTint=suppressed' or ('linkshellTint=' .. ColorKey(linkshellTint)),
             suppressExpensiveWorldWidgets == true and 'bazaar=suppressed' or ('bazaar=' .. tostring(bazaarIconTextureId or '')),
@@ -1478,7 +1537,7 @@ local function QueuePlayer(player)
             'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'criticalColorEnabled', 'criticalColorPercent', 'criticalColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor', 'outOfRangeOpacityEnabled', 'outOfRangeDefaultDistance', 'outOfRangeColor' }),
             'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize' }),
             'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'loadMode', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'texture', 'textureStrength', 'showValue', 'showPercent', 'showAtPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
-            suppressExpensiveWorldWidgets == true and 'gameModeIcon:suppressed' or ('gameModeIcon:' .. SettingKey(gameModeIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder' })),
+            'gameModeIcon:' .. SettingKey(gameModeIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder' }),
             suppressExpensiveWorldWidgets == true and 'linkshellIcon:suppressed' or ('linkshellIcon:' .. SettingKey(linkshellIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
             suppressExpensiveWorldWidgets == true and 'bazaarIcon:suppressed' or ('bazaarIcon:' .. SettingKey(bazaarIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
             suppressExpensiveWorldWidgets == true and 'awayIcon:suppressed' or ('awayIcon:' .. SettingKey(awayIconSettings, { 'enabled', 'loadMode', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' })),
@@ -1496,7 +1555,7 @@ local function QueuePlayer(player)
         staleCached = indexed ~= nil and plateCache[indexed.cacheKey] or nil;
         local cached = indexed ~= nil and indexed.signature == signature and staleCached or nil;
 
-        if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle, isProtectedPlate, isPartyPlayer) == true) then
+        if (QueueCachedPlayer(player, cached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle, isProtectedPlate, isPartyPlayer, targetingSettings, appliedOtherPlayerDetail, targetMarker) == true) then
             cached.lastFullRefresh = os.clock();
             perfMeter.Count('pc.cache.hit', 1);
             return;
@@ -1504,10 +1563,11 @@ local function QueuePlayer(player)
 
         if (
             canUseStaleCachedPlate == true and
-            adaptivePerformance.ShouldThrottleBackground() == true and
             staleCached ~= nil and
+            tostring(staleCached.targetStateName or 'Idle') == tostring(targetStateName or 'Idle') and
+            adaptivePerformance.ShouldThrottleBackground() == true and
             (os.clock() - (tonumber(staleCached.lastUsed) or 0)) < 1.00 and
-            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle, isProtectedPlate, isPartyPlayer) == true
+            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle, isProtectedPlate, isPartyPlayer, targetingSettings, appliedOtherPlayerDetail, targetMarker) == true
         ) then
             perfMeter.Count('pc.cache.smooth', 1);
             return;
@@ -1529,7 +1589,8 @@ local function QueuePlayer(player)
     ) then
         if (
             staleCached ~= nil and
-            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle, isProtectedPlate, isPartyPlayer) == true
+            tostring(staleCached.targetStateName or 'Idle') == tostring(targetStateName or 'Idle') and
+            QueueCachedPlayer(player, staleCached, targetStateName, useTargetOverlay, layoutStateName, hasHp, hasMp, hasTp, hpPercent, mpPercent, tpValue, liveHpBarStyle, liveMpBarStyle, liveTpBarStyle, isProtectedPlate, isPartyPlayer, targetingSettings, appliedOtherPlayerDetail, targetMarker) == true
         ) then
             perfMeter.Count('pc.cache.deferred', 1);
         else
@@ -1539,9 +1600,11 @@ local function QueuePlayer(player)
         return;
     end
 
+    perfMeter.MarkPcPlayerSpike(pcSpike, 'build');
     local buildTimer = perfMeter.BeginDetail('pc.build');
     local nameTextSize = nameAoeActive == true and math.max(tonumber(nameSettings.textSize) or nameDefaults.textSize, tonumber(aoeRangeSettings.fontSize) or aoeRangeDefaults.fontSize) or nameSettings.textSize;
     local plateData = BuildPcPlateData({
+        targetingSettings = targetingSettings,
         player = player,
         hpPercent = hpPercent,
         mpPercent = mpPercent,
@@ -1563,10 +1626,12 @@ local function QueuePlayer(player)
         tpBarLoads = tpBarLoads,
         tpBarSettings = tpBarSettings,
         tpColor = tpColor,
-        targetMarker = targetMarker,
+        targetMarker = hasAnimatedTargetMarker == true
+            and pcTargetMarkerSignature.BuildCanvasMarker(targetMarker)
+            or targetMarker,
         gameModeText = playerGameModeText,
         icons = icons,
-        anchorFallbackDefinitions = suppressExpensiveWorldWidgets == true and {} or {
+        anchorFallbackDefinitions = {
             { kind = 'gameModeIcon', settings = gameModeIconSettings, defaults = gameModeIconDefaults, defaultX = -72, defaultY = -54 },
             { kind = 'linkshellIcon', settings = linkshellIconSettings, defaults = linkshellIconDefaults, defaultX = 48, defaultY = -54 },
             { kind = 'bazaarIcon', settings = bazaarIconSettings, defaults = bazaarIconDefaults, defaultX = 72, defaultY = -54 },
@@ -1671,6 +1736,7 @@ local function QueuePlayer(player)
     end
     perfMeter.EndDetail(buildTimer);
 
+    perfMeter.MarkPcPlayerSpike(pcSpike, 'canvas');
     local canvasTimer = perfMeter.BeginDetail('pc.canvas');
     local textureKey = 'pc-' .. tostring(player.index) .. '-' .. GetPlayerIdentityKey(player):gsub('[^%w%-_]', '-') .. (plateData.canvasWidth ~= nil and '-aoe' or '');
     local plateTexture, textureWidth, textureHeight = canvasTexture.Render(plateData, textureKey);
@@ -1694,7 +1760,10 @@ local function QueuePlayer(player)
             identityKey = GetPlayerIdentityKey(player),
             serverId = player.serverId,
             name = player.name,
+            targetStateName = targetStateName,
+            layoutStateName = layoutStateName,
             streamerNameSignature = streamerNameSignature,
+            otherPlayerDetail = appliedOtherPlayerDetail,
             lastUsed = os.clock(),
             lastFullRefresh = os.clock(),
             hasDynamicVisuals = buffsLoad == true or debuffsLoad == true or (distanceText ~= nil and distanceText ~= ''),
@@ -1716,9 +1785,8 @@ local function QueuePlayer(player)
         indexCache[tonumber(player.index) or 0] = nil;
     end
 
+    perfMeter.MarkPcPlayerSpike(pcSpike, 'world queue');
     local queueTimer = perfMeter.BeginDetail('pc.queue');
-    local targetingSettings = targeting.GetSettings();
-
     worldMarkerProbe.QueuePlate({
         targetIndex = player.index,
         serverId = player.serverId,
@@ -1749,14 +1817,21 @@ local function QueuePlayer(player)
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = elementRects,
+            animatedTargetMarker = pcTargetMarkerSignature.BuildLiveOverlay(targetMarker, elementRects),
             clickTargetType = 'pc',
             clickName = player.name,
             layoutStateName = layoutStateName,
             protectedPlate = isProtectedPlate == true,
             partyPlate = isPartyPlayer == true,
-        }, 'pc', 0, plateWorldOffsetY),
+        }, 'pc', 0, plateWorldOffsetY, targetingSettings),
     });
     perfMeter.EndDetail(queueTimer);
+end
+
+local function QueuePlayer(player, targetingSettings, otherPlayerDetail)
+    local pcSpike = perfMeter.BeginPcPlayerSpike(player);
+    QueuePlayerInternal(player, pcSpike, targetingSettings, otherPlayerDetail);
+    perfMeter.EndPcPlayerSpike(pcSpike);
 end
 
 function pcPlate.Render()
@@ -1804,13 +1879,37 @@ function pcPlate.Render()
         return;
     end
 
-    local range = targeting.GetWorldPlateRange();
+    local targetingSettings = targeting.GetSettings();
+    local configuredOtherPlayerDetail = tostring(targetingSettings.otherPlayerDetail or 'Full configured plate');
+    local isTownZone = jobChange.IsTownZone() == true;
+    local crowdedSettingEnabled = nil;
+    local crowdedThreshold = nil;
+
+    if (isTownZone == true) then
+        crowdedSettingEnabled = targetingSettings.otherPlayerApplyCrowdedTown == true;
+        crowdedThreshold = tonumber(targetingSettings.otherPlayerCrowdedTownThreshold) or 20;
+    else
+        crowdedSettingEnabled = targetingSettings.otherPlayerApplyCrowdedNonTown == true;
+        crowdedThreshold = tonumber(targetingSettings.otherPlayerCrowdedNonTownThreshold) or 20;
+    end
+
+    local baseReducedDetailActive =
+        targetingSettings.otherPlayerApplyAlways == true or
+        (targetingSettings.otherPlayerApplyCombat == true and currentPlayerEngaged == true) or
+        (targetingSettings.otherPlayerApplyLevelSync == true and playerStatuses.HasSelfLevelSyncStatus() == true);
+    local previousCrowdedActive =
+        crowdedSettingEnabled == true and
+        lastUnrelatedNearbyPlayerCount >= crowdedThreshold;
+    local specialPlayerDetail = (baseReducedDetailActive == true or previousCrowdedActive == true)
+        and configuredOtherPlayerDetail
+        or 'Full configured plate';
+    local range = targeting.GetWorldPlateRange(targetingSettings);
     local queuedSpecialPlayers = {};
 
     if (canRenderPartyPlayers == true) then
         for _, player in ipairs(entities.GetPartyPlayers(range)) do
             queuedSpecialPlayers[tonumber(player.index) or 0] = true;
-            QueuePlayer(player);
+            QueuePlayer(player, targetingSettings, specialPlayerDetail);
         end
     end
 
@@ -1829,7 +1928,7 @@ function pcPlate.Render()
                 local player = entities.GetPlayerByIndex(index, range);
                 if (player ~= nil) then
                     queuedSpecialPlayers[tonumber(player.index) or 0] = true;
-                    QueuePlayer(player);
+                    QueuePlayer(player, targetingSettings, specialPlayerDetail);
                 end
             end
         end
@@ -1879,13 +1978,61 @@ function pcPlate.Render()
         pcIdleCanvasBuildLimitThisFrame = 0;
     end
 
+    local unrelatedNearbyPlayerCount = 0;
+    for _, player in ipairs(players) do
+        if (tonumber(player.slot) == nil and entities.IsOwnPetIndex(player.index) ~= true) then
+            unrelatedNearbyPlayerCount = unrelatedNearbyPlayerCount + 1;
+        end
+    end
+    lastUnrelatedNearbyPlayerCount = unrelatedNearbyPlayerCount;
+
+    local crowdedActive =
+        crowdedSettingEnabled == true and
+        unrelatedNearbyPlayerCount >= crowdedThreshold;
+    local reducedDetailActive = baseReducedDetailActive == true or crowdedActive == true;
+    local nearbyPlayerDetail = reducedDetailActive == true
+        and configuredOtherPlayerDetail
+        or 'Full configured plate';
+    local maxWorldPlateCount = math.max(
+        0,
+        math.floor((tonumber(targetingSettings.maxWorldPlateCount) or 0) + 0.5)
+    );
+    local unrelatedPlayerBudget = nil;
+
+    if (maxWorldPlateCount > 0) then
+        unrelatedPlayerBudget = math.max(
+            0,
+            maxWorldPlateCount - worldMarkerProbe.GetQueuedPlateCount()
+        );
+    end
+
+    perfMeter.SetCounter('pcUnrelatedSimplify', reducedDetailActive == true and configuredOtherPlayerDetail ~= 'Full configured plate' and 1 or 0);
+    perfMeter.SetCounter('pcUnrelatedNearby', unrelatedNearbyPlayerCount);
+    perfMeter.SetCounter('pcCrowdedTownZone', isTownZone == true and 1 or 0);
+    perfMeter.SetCounter('pcCrowdedActive', crowdedActive == true and 1 or 0);
+
+    local earlySelectedCount = 0;
+    local earlySkippedCount = 0;
+
     for _, player in ipairs(players) do
         if (queuedSpecialPlayers[tonumber(player.index) or 0] ~= true and entities.IsOwnPetIndex(player.index) ~= true) then
-            QueuePlayer(player);
+            if (unrelatedPlayerBudget == nil or earlySelectedCount < unrelatedPlayerBudget) then
+                local queuedBefore = worldMarkerProbe.GetQueuedPlateCount();
+                QueuePlayer(player, targetingSettings, nearbyPlayerDetail);
+
+                if (worldMarkerProbe.GetQueuedPlateCount() > queuedBefore) then
+                    earlySelectedCount = earlySelectedCount + 1;
+                end
+            else
+                earlySkippedCount = earlySkippedCount + 1;
+            end
         end
     end
 
     perfMeter.SetCounter('pcScanned', #(players or {}));
+    perfMeter.SetCounter('pcEarlyBudget', unrelatedPlayerBudget or 0);
+    perfMeter.SetCounter('pcEarlySelected', earlySelectedCount);
+    perfMeter.SetCounter('pcEarlySkipped', earlySkippedCount);
 
     pcIdleCanvasBuildLimitThisFrame = 0;
 end

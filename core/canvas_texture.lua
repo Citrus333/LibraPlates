@@ -809,6 +809,35 @@ end
 
 DrawTexture = nil;
 
+local function ResolveTargetMarkerBackgroundBounds(centerX, centerY, marker)
+    local targetW = tonumber(marker.width) or 220;
+    local targetH = tonumber(marker.height) or 74;
+    local bgW = tonumber(marker.backgroundWidth) or targetW;
+    local bgH = tonumber(marker.backgroundHeight) or targetH;
+    local bgX = centerX - (bgW * 0.5) + (tonumber(marker.backgroundOffsetX) or 0);
+    local bgY = centerY - (bgH * 0.5) + (tonumber(marker.backgroundOffsetY) or 0);
+    local anchorRect = marker.backgroundAnchorRect or marker.anchorRect;
+
+    if (
+        marker.backgroundAnchorToPlate == true and
+        anchorRect ~= nil and
+        tonumber(anchorRect.x1) ~= nil and
+        tonumber(anchorRect.y1) ~= nil and
+        tonumber(anchorRect.x2) ~= nil and
+        tonumber(anchorRect.y2) ~= nil and
+        tonumber(anchorRect.x2) > tonumber(anchorRect.x1) and
+        tonumber(anchorRect.y2) > tonumber(anchorRect.y1)
+    ) then
+        local spacing = math.max(0, tonumber(marker.backgroundSpacing) or 0);
+        bgX = tonumber(anchorRect.x1) - spacing + (tonumber(marker.backgroundOffsetX) or 0);
+        bgY = tonumber(anchorRect.y1) - spacing + (tonumber(marker.backgroundOffsetY) or 0);
+        bgW = math.max(1, (tonumber(anchorRect.x2) - tonumber(anchorRect.x1)) + (spacing * 2));
+        bgH = math.max(1, (tonumber(anchorRect.y2) - tonumber(anchorRect.y1)) + (spacing * 2));
+    end
+
+    return bgX, bgY, bgW, bgH;
+end
+
 local function DrawTargetMarker(device, centerX, centerY, marker, pass)
     marker = marker or {};
     pass = tostring(pass or 'all');
@@ -833,28 +862,7 @@ local function DrawTargetMarker(device, centerX, centerY, marker, pass)
     local distanceScale = 1.0;
 
     if (pass ~= 'foreground' and marker.showBackground == true) then
-        local bgW = tonumber(marker.backgroundWidth) or targetW;
-        local bgH = tonumber(marker.backgroundHeight) or targetH;
-        local bgX = centerX - (bgW * 0.5) + (tonumber(marker.backgroundOffsetX) or 0);
-        local bgY = centerY - (bgH * 0.5) + (tonumber(marker.backgroundOffsetY) or 0);
-        local anchorRect = marker.backgroundAnchorRect or marker.anchorRect;
-
-        if (
-            marker.backgroundAnchorToPlate == true and
-            anchorRect ~= nil and
-            tonumber(anchorRect.x1) ~= nil and
-            tonumber(anchorRect.y1) ~= nil and
-            tonumber(anchorRect.x2) ~= nil and
-            tonumber(anchorRect.y2) ~= nil and
-            tonumber(anchorRect.x2) > tonumber(anchorRect.x1) and
-            tonumber(anchorRect.y2) > tonumber(anchorRect.y1)
-        ) then
-            local spacing = math.max(0, tonumber(marker.backgroundSpacing) or 0);
-            bgX = tonumber(anchorRect.x1) - spacing + (tonumber(marker.backgroundOffsetX) or 0);
-            bgY = tonumber(anchorRect.y1) - spacing + (tonumber(marker.backgroundOffsetY) or 0);
-            bgW = math.max(1, (tonumber(anchorRect.x2) - tonumber(anchorRect.x1)) + (spacing * 2));
-            bgH = math.max(1, (tonumber(anchorRect.y2) - tonumber(anchorRect.y1)) + (spacing * 2));
-        end
+        local bgX, bgY, bgW, bgH = ResolveTargetMarkerBackgroundBounds(centerX, centerY, marker);
 
         if (marker.backgroundTextureId ~= nil) then
             DrawTexture(device, marker.backgroundTextureId, bgX, bgY, bgW, bgH, backgroundColor);
@@ -892,13 +900,21 @@ local function DrawTargetMarker(device, centerX, centerY, marker, pass)
         local margin = 4;
         arrowY = math.max((arrowH * 0.5) + margin, math.min(canvasH - (arrowH * 0.5) - margin, arrowY));
 
-        if (marker.showLock == true and marker.lockTextureId ~= nil) then
+        if (
+            marker.showLock == true and
+            marker.lockTextureId ~= nil and
+            marker.suppressAnimatedLockDraw ~= true
+        ) then
             local lockX = arrowX + (tonumber(marker.lockOffsetX) or 0);
             local lockY = math.max((lockH * 0.5) + margin, arrowY - (arrowH * 0.5) - (lockH * 0.5) + (tonumber(marker.lockOffsetY) or -24));
             DrawTexture(device, marker.lockTextureId, lockX - (lockW * 0.5), lockY - (lockH * 0.5), lockW, lockH, lockColor);
         end
 
-        if (marker.showArrow == true and marker.arrowTextureId ~= nil) then
+        if (
+            marker.showArrow == true and
+            marker.arrowTextureId ~= nil and
+            marker.suppressAnimatedArrowDraw ~= true
+        ) then
             DrawTexture(device, marker.arrowTextureId, arrowX - (arrowW * 0.5), arrowY - (arrowH * 0.5), arrowW, arrowH, arrowColor);
         end
     end
@@ -2947,34 +2963,19 @@ local function AddTargetMarkerBackgroundRect(rects, centerX, centerY, marker)
         return;
     end
 
-    local targetW = tonumber(marker.width) or 220;
-    local targetH = tonumber(marker.height) or 74;
-    local bgW = tonumber(marker.backgroundWidth) or targetW;
-    local bgH = tonumber(marker.backgroundHeight) or targetH;
-    local bgX = centerX - (bgW * 0.5) + (tonumber(marker.backgroundOffsetX) or 0);
-    local bgY = centerY - (bgH * 0.5) + (tonumber(marker.backgroundOffsetY) or 0);
-    local anchorRect = marker.backgroundAnchorRect or marker.anchorRect;
+    local bgX, bgY, bgW, bgH = ResolveTargetMarkerBackgroundBounds(centerX, centerY, marker);
 
-    if (
-        marker.backgroundAnchorToPlate == true and
-        anchorRect ~= nil and
-        tonumber(anchorRect.x1) ~= nil and
-        tonumber(anchorRect.y1) ~= nil and
-        tonumber(anchorRect.x2) ~= nil and
-        tonumber(anchorRect.y2) ~= nil and
-        tonumber(anchorRect.x2) > tonumber(anchorRect.x1) and
-        tonumber(anchorRect.y2) > tonumber(anchorRect.y1)
-    ) then
-        local spacing = math.max(0, tonumber(marker.backgroundSpacing) or 0);
-        bgX = tonumber(anchorRect.x1) - spacing + (tonumber(marker.backgroundOffsetX) or 0);
-        bgY = tonumber(anchorRect.y1) - spacing + (tonumber(marker.backgroundOffsetY) or 0);
-        bgW = math.max(1, (tonumber(anchorRect.x2) - tonumber(anchorRect.x1)) + (spacing * 2));
-        bgH = math.max(1, (tonumber(anchorRect.y2) - tonumber(anchorRect.y1)) + (spacing * 2));
-    end
-
-    if (marker.backgroundClickable ~= false) then
-        AddRect(rects, bgX, bgY, bgW, bgH, 0, 'targetModuleBackground');
-    end
+    AddRect(
+        rects,
+        bgX,
+        bgY,
+        bgW,
+        bgH,
+        0,
+        'targetModuleBackground',
+        nil,
+        marker.backgroundClickable == false
+    );
 end
 
 local function GetTargetMarkerDistanceScale(marker)

@@ -632,6 +632,45 @@ local function DrawAlwaysVisiblePlates(drawList)
                 0xFFFFFFFF
             );
 
+            local animatedMarker = plate.animatedTargetMarker;
+            local function DrawAnimatedComponent(component)
+                if (
+                    component == nil or
+                    tonumber(component.textureId) == nil or
+                    tonumber(component.textureId) == 0 or
+                    tonumber(component.x1) == nil or
+                    tonumber(component.y1) == nil or
+                    tonumber(component.x2) == nil or
+                    tonumber(component.y2) == nil
+                ) then
+                    return;
+                end
+
+                local textureWidth = math.max(1, tonumber(plate.textureWidth) or 1);
+                local textureHeight = math.max(1, tonumber(plate.textureHeight) or 1);
+                local screenWidth = tonumber(rect.x2) - tonumber(rect.x1);
+                local screenHeight = tonumber(rect.y2) - tonumber(rect.y1);
+                local x1 = tonumber(rect.x1) + ((tonumber(component.x1) / textureWidth) * screenWidth);
+                local y1 = tonumber(rect.y1) + ((tonumber(component.y1) / textureHeight) * screenHeight);
+                local x2 = tonumber(rect.x1) + ((tonumber(component.x2) / textureWidth) * screenWidth);
+                local y2 = tonumber(rect.y1) + ((tonumber(component.y2) / textureHeight) * screenHeight);
+
+                drawList:AddImage(
+                    tonumber(component.textureId),
+                    { x1, y1 },
+                    { x2, y2 },
+                    { 0, 0 },
+                    { 1, 1 },
+                    GetColorU32(component.color or { 1, 1, 1, 1 })
+                );
+            end
+
+            if (animatedMarker ~= nil) then
+                DrawAnimatedComponent(animatedMarker.lock);
+                DrawAnimatedComponent(animatedMarker.arrow);
+                perfMeter.Count('pc.targetArrow.liveDraw', 1);
+            end
+
             if (worldMarkerProbe.GetCanvasCenterDebug() == true) then
                 local cx = (rect.x1 + rect.x2) * 0.5;
                 local cy = (rect.y1 + rect.y2) * 0.5;

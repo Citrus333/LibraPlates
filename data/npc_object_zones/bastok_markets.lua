@@ -1,5 +1,10 @@
 return {
     ["npcs"] = {
+	    ["A.M.A.N. Liaison"] = {
+            ["_source"] = "npc",
+            ["icon"] = "RecordsOfEminence.png",
+            ["type"] = "Records of Eminence",
+        },	
         ["A.M.A.N. Reclaimer"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
@@ -75,7 +80,6 @@ during the Crystal War.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Stamp Hunt\
-\
 Involved in Quests:\
 * Lure of the Wildcat (Bastok)",
             ["type"] = "Quest Giver",
@@ -146,10 +150,8 @@ A category of NPCs whose purpose is to enrich Atmacite, upgrade stratum abyssite
             ["note"] = "Starts Quests:\
 * Brygid the Stylist\
 * Brygid the Stylist Returns\
-\
 Involved in Quests:\
 * Riding on the Clouds\
-\
 Involved in Missions:\
 * The Brygid Cup\
 ",
@@ -192,7 +194,6 @@ for milestone rewards.",
             ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * Bastok Missions\
-\
 Involved in Missions:\
 * Bastok Mission 1-3: Fetichism\
 * Bastok Mission 3-2: To the Forsaken Mines",
@@ -212,7 +213,6 @@ at a 3-to-1 rate.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * The Bare Bones\
-\
 Involved in Quests:\
 * Beyond the Stars, Beyond Infinity and Beat Around the Bushin\
 ",
@@ -300,7 +300,6 @@ Markets and to neighboring districts.",
 * The Return of the Adventurer\
 * The Cold Light of Day\
 * Riding on the Clouds\
-\
 Involved in Missions:\
 * Bastok Mission 1-3: Fetichism\
 ",
@@ -346,7 +345,6 @@ Involved in Missions:\
             ["icon"] = "OutpostTeleporter.png",
             ["note"] = "Starts Quests:\
 * Unity Concord\
-\
 Involved in Quests:\
 * Unity Concord (Quest)",
             ["type"] = "Unity Concord",
@@ -356,7 +354,6 @@ Involved in Quests:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Records of Eminence\
-\
 Involved in Quests:\
 * Records of Eminence: Tutorial\
 * Teleports by Twilight\
@@ -393,7 +390,6 @@ Involved in Quests:\
             ["note"] = "Involved in Quests:\
 * Lure of the Wildcat (Bastok)\
 * All by Myself\
-\
 Involved in Missions:\
 * The Voracious Resurgence #2: The Brygid Cup\
 ",
@@ -447,7 +443,6 @@ Involved in Missions:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Involved in Quests:\
 * All by Myself\
-\
 Involved in Missions:\
 * The Voracious Resurgence #2: The Brygid Cup",
             ["type"] = "Quest Giver",
@@ -473,12 +468,10 @@ before placing a request.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * The Elvaan Goldsmith\
-\
 Involved in Quests:\
 * Father Figure\
 * Distant Loyalties\
 * The First Meeting\
-\
 Involved in Missions:\
 * Bastok Mission 1-3: Fetichism\
 * Bastok Mission 9-2: Where Two Paths Converge\
@@ -503,10 +496,8 @@ During Adventurer Appreciation Campaign 2012, a moon rabbit hopped around Bastok
             ["note"] = "Starts Quests:\
 * Mom, the Adventurer?\
 * The Signpost Marks the Spot\
-\
 Involved in Quests:\
 * The Tenshodo Showdown\
-\
 Involved in Missions:\
 * The Voracious Resurgence #2: The Brygid Cup",
             ["type"] = "Quest Giver",
@@ -645,13 +636,11 @@ for starting gil.",
         },
         ["Reisle"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "Trust.png",
-            ["note"] = "Matter of Trust I:\
-* Bastok level 10 Trust quest\
-giver.\
-* Sends you to inspect the Crystal\
-Anomaly in Konschtat Highlands\
-(K-5).",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Crystal Warrior:\
+* Starts quest: A Matter of Trust (Windurst).\
+* Starts quest: A Matter of Trust II (Windurst).\
+* Starts quest: A Matter of Trust III (Windurst).",
             ["type"] = "CW Trust Quest",
         },
         ["Rock Jaw"] = {
@@ -673,7 +662,6 @@ Anomaly in Konschtat Highlands\
             ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Quests:\
 * Gourmet\
-\
 Starts Missions:\
 * Bastok Mission 9-2: Where Two Paths Converge",
             ["type"] = "Quest and Mission Giver",
@@ -685,7 +673,7 @@ Starts Missions:\
         },
         ["Selh'teus"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Mission:\
 * Chains of Promathia\
 * Rhapsodies of Vana'diel\
@@ -737,7 +725,6 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
             ["_source"] = "catseye_npc",
             ["icon"] = "Squires.png",
             ["note"] = "Stores Relic +1 armor.\
-\
 Augments are preserved\
 and returned unchanged.",
             ["type"] = "Armor Storage",
@@ -849,7 +836,7 @@ Checks weather for the following areas:\
         },
         ["Valkeng"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Mission:\
 * Treasures of Aht Urhgan\
 ",
@@ -944,57 +931,38 @@ Eminence armor after Rank 4.",
         ["Door:\"Dragon's Claws\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Entrance to Dragon's Claws.",
-            ["type"] = "Security Gate",
         },
         ["Door:Brunhilde Armourer"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Entrance to Brunhilde Armourer.",
-            ["type"] = "Security Gate",
         },
         ["Door:Carmelide's Jewelry"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Entrance to Carmelide's Jewelry.",
-            ["type"] = "Security Gate",
         },
         ["Door:Goldsmiths' Guild"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Entrance to the Goldsmiths' Guild.",
-            ["type"] = "Security Gate",
         },
         ["Door:Harmodios's Music"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Entrance to Harmodios's Music.",
-            ["type"] = "Security Gate",
         },
         ["Door:House"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Notes:\
-* Entrance to a residence.",
-            ["type"] = "Security Gate",
         },
         ["Door:Mjoll's Goods"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Entrance to Mjoll's Goods.",
-            ["type"] = "Security Gate",
         },
         ["Door:Sororo the Scribe"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Entrance to Sororo the Scribe.",
-            ["type"] = "Security Gate",
         },
         ["Door:Trader's Home"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Entrance to the Trader's Home.",
-            ["type"] = "Security Gate",
         },
         ["Symphonic Curator"] = {
             ["_source"] = "item",

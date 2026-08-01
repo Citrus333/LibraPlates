@@ -55,7 +55,8 @@ can no longer use.",
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Guest of HauteurWelcome to Bastok",
+* Guest of Hauteur\
+* Welcome to Bastok",
             ["type"] = "Quest Associate",
         },
         ["Belka"] = {
@@ -82,14 +83,15 @@ can no longer use.",
         },
         ["Bobortimer"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
+            ["icon"] = "Trials.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Novice_Trials",
             ["note"] = "Novice Trials:\
-* Starts no-cooldown equipment\
-augment trials.\
-* Can transfer completed NQ\
-augments to crafted HQ versions.\
-* Trials may be completed on any\
-job.",
+* Starts equipment augment trials.\
+* Available to all character types\
+with no cooldown.\
+* Transfers completed NQ augments\
+to crafted HQ versions.\
+* Trials may be completed on any job.",
             ["type"] = "Novice Trials",
         },
         ["Bodaway"] = {
@@ -101,6 +103,13 @@ job.",
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["type"] = "Bonanza Reward",
+        },
+        ["Bozzo"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "TenshodoMerchant.png",
+            ["note"] = "CatsEyeXI:\
+* Opens the shop menus for Jabbar and Silver Owl.",
+            ["type"] = "Tenshodo Shop Broker",
         },
         ["Brita"] = {
             ["_source"] = "npc",
@@ -126,10 +135,16 @@ Stands outside the Air Travel Agency and gives the departure times for Airships.
 * Love and Ice\
 * A Test of True Love\
 * Lovers in the Dusk\
-\
 Involved in Quests:\
 * The Siren's Tear",
             ["type"] = "Quest Giver",
+        },
+        ["Cheh Raihah"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Notes:\
+* Appears with the Conquest Troupe when Bastok is ranked first in Conquest.",
+            ["type"] = "Conquest Troupe",
         },
         ["Clarion Star"] = {
             ["_source"] = "npc",
@@ -164,6 +179,13 @@ trusts, and other utility items.\
 * Some items require Rhapsody key\
 items from Momiji.",
             ["type"] = "Curio Shop",
+        },
+        ["Dahjal"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Notes:\
+* Appears with the Conquest Troupe when Bastok is ranked first in Conquest.",
+            ["type"] = "Conquest Troupe",
         },
         ["Dalba"] = {
             ["_source"] = "npc",
@@ -200,7 +222,8 @@ items from Momiji.",
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers General Information and a Map of Bastok: :I am charged with the task of assisting novice adventurers. What would you like to know? :*\"How do I give items to people?\": Giving items ot other people is called \"trading.\" It is done by selecting \"Trade\" from the main menu on the right. You must target the person either before or after selecting \"Trade.\" Then just choose the items you wish to give the person when your inventory window appears. \"Trading\" is crucial to completing quests and missions, and also during conquests. Remember it well. If you have an Adventurer Coupon in your possession, use \"Trade\" now to give it to me. I will hand you some starting gil in return. Come to me if there is anything more you would like to know. :*\"Where can I fight monsters?\": Before you take on any fiends, there are a few things you should remember. First, always have weapons and armor equipped, and spells memorized from scrolls. Second, always \"check\" your target before engaging it. Never take on a foe that seems too strong for you to defeat alone. Third, when you are in a party, make it a habit to cast lots for your share of the party \"spoils\" after successfully defeating a monster. Come to me if there is anything more you would like to know. :*\"What are quests and missions?\": Some people in town will ask you to do certain taks for them. These are called \"quests.\" Complete them, and they should reward you for your efforts. There are also tasks you can do for your country, known as \"missions.\" There is a guard at each gate charged with assigning them. Speak to the guards for more details. Come to me if there is anything more you would like to know. :*\"I want to see a map of the city.\": [Displays an overview map of Bastok] :*\"Nothing for now.\": Come to me if there is anything more you would like to know.",
+* Provides guidance for new adventurers.\
+* Identifies quest-related NPCs on the map.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Eburacon"] = {
@@ -220,7 +243,6 @@ Offers General Information and a Map of Bastok: :I am charged with the task of a
             ["icon"] = "Dialogue.png",
             ["note"] = "Starts Quests:\
 * Ayame and Kaede\
-\
 Involved in Quests:\
 * 20 in Pirate Years\
 * I'll Take the Big Box",
@@ -273,7 +295,7 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["note"] = "Notes:\
-Exchanges mog pells for a variety of items specific to each. Dispenses an event item for those that attended the Final Fantasy XI Fan Festival 2007 (Nomad Cap), Final Fantasy XI 5th Anniversary Fan Event in 2007 (Moogle Cap), the Final Fantasy XI Fan Festival 2006 (Moogle Rod), Harpsichord, and the Stuffed Chocobo. This NPC will now also dispense the Tidal Talisman. As of May 16th, also distributes Destrier Beret. As of the release of Seekers of Adoulin, also dispenses Chocobo Shirt. Those attending will get a registration code that must be associated with the account before starting the game, then you will be able to pick up your item from one of the listed Festive Moogles. The URL to log in to your square enix account is: https://secure.square-enix.com/account Log in to your account. At the bottom left is a button Select Services. Afterwards click FFXI. There will now appear a FFXI logo with 2 buttons to the right, 1 blue the other white. Click the blue button, it says Add a service account. Put in the registration code. Then hit the orange button. Click the character to give the item to. Click the orange button again. Keep on clicking till you can notice your done. Repeat for beret. Then if you were logged in on a second comp throughout this process log completely off. Log on, talk to the festive moogle and enjoy your items! * The Harpsichord item is available to those who purchased a [http://www.square-enix.co.jp/music/sem/page/ff11_piano/ Piano Collections FINAL FANTASY XI CD]. * The Stuffed Chocobo is only available to those who purchased a Chirping Chocobo Chick from the Square Enix online store. * The Tidal Talisman is only available to those who purchased the pendant of the same name from the Square Enix online store during the limited time it was on sale. * The Destrier Beret is obtainable for those who have bought and registered the Final Fantasy XI Ultimate Collection: Abyssea Edition, or the Final Fantasy XI Ultimate Collection: Seekers Edition. * The Chocobo Shirt is obtainable for those who purchased the Final Fantasy XI Ultimate Collection: Seekers Edition.",
+* Redeems Mog Pells and campaign codes for special event rewards.",
             ["type"] = "Event Reward",
         },
         ["Flaco"] = {
@@ -285,14 +307,23 @@ Exchanges mog pells for a variety of items specific to each. Dispenses an event 
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the Bastok Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for Bastok) at certain conditions. It will be also possible to get some items of other Nations (Items for San d'Oria / Items for Windurst) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters only without Bastok as current Allegiance: :*Doesn't offer any function For further information see Conquest Overseer.",
+* Casts Signet and manages Conquest services.\
+* Exchanges Conquest Points for items.\
+* Accepts crystals for Bastok mission rank.\
+* Manages supply runs and Expeditionary Forces.",
             ["type"] = "Conquest Overseer",
         },
         ["Fo Mocorho"] = {
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
             ["note"] = "Notes:\
-Checks weather for the following locations: :*Valkurm Dunes :*Gustaberg :*Konschtat Highlands :*Pashhow Marshlands :*Rabao :*Eastern and Western Altepa Desert",
+Checks weather for:\
+* Valkurm Dunes\
+* Gustaberg\
+* Konschtat Highlands\
+* Pashhow Marshlands\
+* Rabao\
+* Altepa Desert",
             ["type"] = "Weather Reporter",
         },
         ["Gallagher"] = {
@@ -328,7 +359,7 @@ Checks weather for the following locations: :*Valkurm Dunes :*Gustaberg :*Konsch
             ["_source"] = "npc",
             ["icon"] = "MapMarker.png",
             ["note"] = "Notes:\
-Marks one's town map with the locations of various NPCs important to adventures: *Home Points *Item Depository *Melody Minstrels *Weather Reporters *Traveling Bards *Reputation *Immigration *Armor Depository *Teleportation *Pursuivant *Gold World Pass Vendor",
+* Marks important service NPCs on the Bastok map.",
             ["type"] = "Map Marker",
         },
         ["Hilda"] = {
@@ -339,7 +370,6 @@ Marks one's town map with the locations of various NPCs important to adventures:
 * Cid's Secret\
 * The Usual\
 * Riding on the Clouds\
-\
 Involved in Missions:\
 * The Voracious Resurgence #2: The Brygid Cup\
 ",
@@ -356,7 +386,8 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "MentorRecruiter.png",
             ["note"] = "Notes:\
-Store Holiday: Darksday Shop Hours: 12:00-20:00 Sells: *Linkshell 6000 gil *Pendant Compass 375 gil | historicalbackground =",
+* Sells Linkshells and Pendant Compasses.\
+* Open 12:00-20:00; closed on Darksday.",
             ["type"] = "Linkshell Distributor",
         },
         ["Jabbar"] = {
@@ -377,7 +408,6 @@ Store Holiday: Darksday Shop Hours: 12:00-20:00 Sells: *Linkshell 6000 gil *Pend
             ["icon"] = "QuestNPC.png",
             ["note"] = "Starts Quests:\
 * Trial by Earth\
-\
 Involved in Quests:\
 * SMN AF1: The Puppet Master",
             ["type"] = "Avatar Quest",
@@ -404,7 +434,6 @@ Involved in Quests:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * 20 in Pirate Years (NIN AF1)\
-\
 Involved in Quests:\
 * Ayame and Kaede\
 * Chasing Dreams\
@@ -466,15 +495,34 @@ Allows you play a shooting range mini-game. You must have the blue swimsuits fro
             ["note"] = "Boat access between Mog Garden and the three nation ports.",
             ["type"] = "Transportation",
         },
+        ["Mokop-Sankop"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Notes:\
+* Appears with the Conquest Troupe when Bastok is ranked first in Conquest.",
+            ["type"] = "Conquest Troupe",
+        },
         ["Mustafa"] = {
             ["_source"] = "npc",
             ["icon"] = "AirshipTravelAgent.png",
             ["type"] = "Airship Travel",
         },
+        ["Nalta"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Notes:\
+* Appears with the Conquest Troupe when Bastok is ranked first in Conquest.",
+            ["type"] = "Conquest Troupe",
+        },
         ["Nicadio"] = {
             ["_source"] = "npc",
             ["icon"] = "Defender.png",
             ["type"] = "Defender",
+        },
+        ["Nokkhi Jinjahl"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Merchant.png",
+            ["type"] = "Quiver Merchant",
         },
         ["Numa"] = {
             ["_source"] = "npc",
@@ -488,7 +536,6 @@ Allows you play a shooting range mini-game. You must have the blue swimsuits fro
 * Ghosts of the Past\
 * The First Meeting\
 * The Walls of Your Mind\
-\
 Involved in Missions:\
 * The Voracious Resurgence 1-2: The Brygid Cup\
 * The Voracious Resurgence 7-2: Uran-Mafran of the Maelstrom\
@@ -522,7 +569,6 @@ Involved in Missions:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Silence of the Rams\
-\
 Involved in Quests:\
 * Lure of the Wildcat (Bastok)",
             ["type"] = "Quest Giver",
@@ -531,7 +577,8 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Pelinvarde will give a fortune/fate reading to an adventuring duo if both party members are present. The cost is 120 gil for the reading which appears to just be some random flavor text with no in-game effect.",
+* Gives adventuring duos a fortune reading for 120 gil.\
+* The reading has no gameplay effect.",
             ["type"] = "Fortune Teller",
         },
         ["Powhatan"] = {
@@ -572,7 +619,7 @@ Pelinvarde will give a fortune/fate reading to an adventuring duo if both party 
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Sells key items required for High-Tier Mission Battlefields. See the Phantom Gems page for individual requirements",
+* Sells key items for High-Tier Mission Battlefields.",
             ["type"] = "HTMB Vendor",
         },
         ["Ravorara"] = {
@@ -598,7 +645,6 @@ Sells key items required for High-Tier Mission Battlefields. See the Phantom Gem
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Till Death Do Us Part\
-\
 Involved in Quests:\
 * Forever to Hold",
             ["type"] = "Quest Giver",
@@ -617,7 +663,7 @@ Involved in Quests:\
         },
         ["Ruenda"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * The Brygid Cup",
             ["type"] = "Mission Associate",
@@ -651,7 +697,8 @@ Shell, and Copper Ore.",
             ["_source"] = "npc",
             ["icon"] = "TenshodoMerchant.png",
             ["note"] = "Notes:\
-* Open: 1:00 - 23:00 *No longer closed Iceday. *Must be a member of the Tenshodo to buy from this merchant.",
+* Sells items to Tenshodo members.\
+* Open 1:00-23:00.",
             ["type"] = "Tenshodo Merchant",
         },
         ["Spriggan Crier"] = {
@@ -664,14 +711,16 @@ Shell, and Copper Ore.",
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Notes:\
-After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossover, trade the Spriggan Crier one crystal of each of the 8 elements to obtain a Red Spriggan Spirit. Trade the Red Spriggan Spirit to Suibhne in the Feretory after completing Monstrosity (Quest) to unlock the playable Spriggan.C (MON) monster.",
+* Trades a Red Spriggan Spirit for one crystal of each element after unlocking a crossover booby prize.\
+* The spirit unlocks Spriggan.C in Monstrosity.",
             ["type"] = "Special Event",
         },
         ["Spriggan Graverobber (NPC)"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
             ["note"] = "Notes:\
-After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossover, trade the Spriggan Graverobber one crystal of each of the 8 elements to obtain a Purple Spriggan Spirit. Trade the Purple Spriggan Spirit to Suibhne in the Feretory after completing Monstrosity (Quest) to unlock the playable Spriggan.G (MON) monster.",
+* Trades a Purple Spriggan Spirit for one crystal of each element after unlocking a crossover booby prize.\
+* The spirit unlocks Spriggan.G in Monstrosity.",
             ["type"] = "Special Event",
         },
         ["Spriggan Sifter (NPC)"] = {
@@ -730,7 +779,7 @@ After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossov
         },
         ["Tiger Tooth"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Bastok Mission 3-2: To the Forsaken Mines (cutscene)",
             ["type"] = "Mission Associate",
@@ -813,62 +862,46 @@ After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossov
         ["Door:\"Steaming Sheep\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber entrance portal leading into the local port tavern. Turning the iron door handle coordinates your town navigation and uncovers neighborhood background records.",
-            ["type"] = "Security Gate",
         },
         ["Door:Arrivals Entrance"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The structural port checkpoint door separating international traffic. Passing past the framework manages airship terminal transit scripts or processes tracking goals.",
-            ["type"] = "Security Gate",
         },
         ["Door:Arrivals Exit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy terminal gateway threshold exiting the arrivals deck. Shifting the latch moves you out into the public city port districts from travel layers.",
-            ["type"] = "Security Gate",
         },
         ["Door:Departures Entrance"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The localized security check portal blockading the departure docks. Passing through checks active boarding passes to grant access to transit lines.",
-            ["type"] = "Security Gate",
         },
         ["Door:Departures Exit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber framework exiting the airship platform. Shifting the latch moves you off travel vessels to return securely into the terminal.",
-            ["type"] = "Security Gate",
         },
         ["Door:Galvin's Gear"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic wooden barrier door partitioning the outfitter shop layout blocks. Unlatching the door frame provides entry to check active trade manifests or advance urban side tasks.",
-            ["type"] = "Security Gate",
         },
         ["Door:Warehouse 1"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A fortified wooden door framework partitioning off high-security harbor warehouses. Presenting commercial shipping manifests commands the frame to swing open.",
-            ["type"] = "Security Gate",
         },
         ["Door:Warehouse 2"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The companion storage room gateway threshold exiting the harbor lanes. Shifting the latch lets you enter supply vaults to check delivery parameters or retrieve quest items.",
-            ["type"] = "Security Gate",
         },
         ["Rendezvous Point"] = {
             ["_source"] = "item",
             ["icon"] = "RendezvousPoint.png",
-            ["note"] = "A designated strategic staging waypoint manifest within city districts or deep inside the void loops. Resting at this point handles mission registration checks or uncovers regional lore archives.",
-            ["type"] = "Quest Node",
+            ["note"] = "Manage your Adventuring Fellow's quests, combat style, appearance, and dialogue.",
+            ["type"] = "Adventuring Fellow",
         },
         ["Symphonic Curator"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
-            ["type"] = "Quest Node",
+            ["note"] = "Selects Mog House background music from your available tunes.",
+            ["type"] = "Orchestrion",
         },
         ["Synergy Furnace"] = {
             ["_source"] = "item",
@@ -880,8 +913,8 @@ After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossov
         ["Tales' Beginning"] = {
             ["_source"] = "item",
             ["icon"] = "History.png",
-            ["note"] = "A distinct magical marker manifest near prominent municipal gathering hubs. Interfacing with its surface reviews historical records and initiates localized storyline expansions.",
-            ["type"] = "Quest Node",
+            ["note"] = "Resumes a mission opening scenario that you previously postponed.",
+            ["type"] = "Mission Resume Point",
         },
     },
 }

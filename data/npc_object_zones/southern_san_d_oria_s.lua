@@ -45,7 +45,7 @@ her allegiance.",
         },
         ["Adjutant"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Crystal Fist I (S)\
 * Crystal Fist II (S)\
@@ -59,7 +59,7 @@ her allegiance.",
         },
         ["Aissaville"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Mission Associate",
@@ -150,7 +150,7 @@ information, and teleportation.",
         },
         ["Andagge"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Mission Associate",
@@ -181,7 +181,6 @@ information, and teleportation.",
             ["link"] = "https://www.bg-wiki.com/ffxi/Areuhat",
             ["note"] = "Involved in Quests:\
 * Beast from the East\
-\
 Notes:\
 * Campaign freelance who appears here\
 while allied with San d'Oria.\
@@ -200,7 +199,7 @@ Shell Bugs after completing the quest.",
         },
         ["Aurfet"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Mission Associate",
@@ -351,14 +350,14 @@ information, and teleportation.",
         },
         ["Corseihaut"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Mission Associate",
         },
         ["Coucheutand"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Mission Associate",
@@ -368,7 +367,6 @@ information, and teleportation.",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * |\
-\
 Involved in Missions:\
 * San d'Oria Mission 4-1: Magicite\
 * Bastok Mission 4-1: Magicite\
@@ -412,7 +410,6 @@ Enchelles.",
             ["icon"] = "Cutscene.png",
             ["note"] = "Starts Quests:\
 * Bonds That Never Die\
-\
 Involved in Quests:\
 * Perils of the Griffon\
 * In a Haze of Glory\
@@ -452,7 +449,7 @@ Involved in Quests:\
         },
         ["Dilgeur"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Bridge Too Far I (San d'Oria)",
             ["type"] = "Mission Associate",
@@ -501,7 +498,7 @@ Storeroom.",
         },
         ["Eideialc"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Notes:\
 * Appears in San d'Oria mission\
 scenes.",
@@ -555,7 +552,7 @@ information, and teleportation.",
         },
         ["Eumielle"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Mission Associate",
@@ -591,7 +588,6 @@ information, and teleportation.",
             ["link"] = "https://www.bg-wiki.com/ffxi/Exoroche_(S)",
             ["note"] = "Starts Quests:\
 * Son and Father\
-\
 Notes:\
 * Appears at (K-9) while Campaign is\
 not active.",
@@ -599,7 +595,7 @@ not active.",
         },
         ["Farouel"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Mission Associate",
@@ -651,7 +647,6 @@ information, and teleportation.",
             ["note"] = "Involved in Quests:\
 * Signed in Blood\
 * Tea with a Tonberry?\
-\
 Involved in Missions:\
 * San d'Oria Mission 4-1: Magicite\
 * Bastok Mission 4-1: Magicite\
@@ -738,7 +733,6 @@ information, and teleportation.",
             ["note"] = "Involved in Quests:\
 * Boy and the Beast\
 * Wrath of the Griffon\
-\
 Involved in Missions:\
 * Affairs of State\
 ",
@@ -754,7 +748,6 @@ Involved in Missions:\
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * The Long March North\
-\
 Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Quest Associate",
@@ -771,7 +764,7 @@ information, and teleportation.",
         },
         ["Hegouard"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Mayakov Dance Troupe\
 ",
@@ -788,7 +781,7 @@ information, and teleportation.",
         },
         ["Hestrefalcat"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Steamed Rams\
 ",
@@ -818,7 +811,6 @@ Conquest services.",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Gifts of the Griffon\
-\
 Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Quest Associate",
@@ -873,7 +865,7 @@ Conquest services.",
         },
         ["Klythios"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Boy and the Beast\
 ",
@@ -910,7 +902,6 @@ Kupulele and Kupold.",
             ["note"] = "Involved in Quests:\
 * Her Majesty's Garden\
 * Unexpected Treasure\
-\
 Involved in Missions:\
 * San d'Oria Mission 6-1: Leaute's Last Wishes\
 ",
@@ -918,7 +909,7 @@ Involved in Missions:\
         },
         ["Lena"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Mayakov Dance Troupe\
 ",
@@ -933,7 +924,7 @@ Involved in Missions:\
         },
         ["Leuonard"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Gilded Claws\
 * The Voracious Resurgence\
@@ -960,7 +951,7 @@ information, and teleportation.",
         },
         ["Lilisette"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG05: While the Cat is Away\
 * WOTG06: A Timeswept Butterfly\
@@ -1008,7 +999,6 @@ Linkpearls to players.",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Gifts of the Griffon\
-\
 Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Quest Associate",
@@ -1038,19 +1028,18 @@ Inlet.",
         },
         ["Louvairausse"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG22: A Sanguinary Prelude",
             ["type"] = "Mission",
         },
         ["Louverance"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Over the Hills and Far Away\
 * Signed in Blood\
 * Tea with a Tonberry?\
-\
 Involved in Missions:\
 * The Road Forks: The Road Forks\
 * Where Messengers Gather (Ulmia's Path)\
@@ -1064,7 +1053,6 @@ Involved in Missions:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Gifts of the Griffon\
-\
 Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Quest Giver",
@@ -1107,14 +1095,13 @@ information, and teleportation.",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Missions:\
 * Proof of Valor\
-\
 Involved in Quests:\
 * Gifts of the Griffon",
             ["type"] = "Quest Associate",
         },
         ["Machudiaux"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Mayakov Dance Troupe\
 ",
@@ -1132,9 +1119,9 @@ information, and teleportation.",
         },
         ["Mailleronce"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
-* WOTG21: Proof of Valor",
+* Proof of Valor",
             ["type"] = "Mission Associate",
         },
         ["Mainchelite"] = {
@@ -1142,13 +1129,21 @@ information, and teleportation.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Steamed Rams\
-\
 Involved in Quests:\
 * Her Memories: Carnelian Footfalls\
-\
 Involved in Missions:\
 * Back to the Beginning",
             ["type"] = "Quest Giver",
+        },
+        ["Maruna-Kurina"] = {
+            ["_source"] = "npc",
+            ["icon"] = "CampaignArbiter.png",
+            ["note"] = "Notes:\
+* Explains Campaign and tracks\
+freelancer alliances and influence.\
+* Appears in towns but does not\
+participate in battles.",
+            ["type"] = "Freelance",
         },
         ["Mayakov"] = {
             ["_source"] = "npc",
@@ -1205,7 +1200,7 @@ rewards for Allied Notes.\
         },
         ["Minautte"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Steamed Rams\
 ",
@@ -1236,10 +1231,8 @@ representative.",
 * Give a Moogle a Break\
 * Moogles in the Wild\
 * The Moogle's Picnic!\
-\
 Involved in Quests:\
 * Unexpected Treasure\
-\
 Starts Missions:\
 * A Moogle Kupo d'Etat\
 * Drenched! It Began with a Raindrop\
@@ -1249,7 +1242,6 @@ Starts Missions:\
 * Lender Beware! Read the Fine Print\
 * Rescue! A Moogle's Labor of Love\
 * Relief! A Triumphant Return\
-\
 Involved in Missions:\
 * Burgeoning Dread\
 ",
@@ -1260,7 +1252,6 @@ Involved in Missions:\
             ["icon"] = "Dialogue.png",
             ["note"] = "Involved in Quests:\
 * Undying Flames\
-\
 Involved in Missions:\
 * San d'Oria Mission 4-1: Magicite\
 * Bastok Mission 4-1: Magicite\
@@ -1291,7 +1282,7 @@ information, and teleportation.",
         },
         ["Nag'molada"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Chains of Promathia\
 ",
@@ -1309,7 +1300,7 @@ Conquest services.",
         },
         ["Nalkuku"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Mayakov Dance Troupe\
 ",
@@ -1405,7 +1396,7 @@ Ops.",
         },
         ["Paulyvan"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Steamed Rams\
 ",
@@ -1416,7 +1407,6 @@ Ops.",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * |\
-\
 Involved in Missions:\
 * San d'Oria Mission 4-1: Magicite\
 * Bastok Mission 4-1: Magicite\
@@ -1474,7 +1464,7 @@ Conquest services.",
         },
         ["Portentous Woman"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * The Scent of Danger\
 ",
@@ -1491,7 +1481,7 @@ porter storage slips.\
         },
         ["Portia"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG05: While the Cat is Away\
 * WOTG06: A Timeswept Butterfly\
@@ -1554,7 +1544,7 @@ Conquest services.",
         },
         ["Ragelise"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG04: The Queen of the Dance\
 * WOTG05: While the Cat is Away\
@@ -1612,7 +1602,7 @@ team.",
         },
         ["Raminel"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Riding on the Clouds\
 ",
@@ -1623,7 +1613,6 @@ team.",
             ["icon"] = "Dialogue.png",
             ["note"] = "Involved in Quests:\
 * Steamed Rams\
-\
 Involved in Missions:\
 * Back to the Beginning\
 ",
@@ -1668,11 +1657,9 @@ information, and teleportation.",
             ["note"] = "Involved in Quests:\
 * Boy and the Beast\
 * The Long March North\
-\
 Starts Missions:\
 * WOTG09: Dancers in Distress\
 * WOTG12: Affairs of State\
-\
 Involved in Missions:\
 * WOTG11: A Spoonful of Sugar\
 * WOTG20: On Thin Ice\
@@ -1687,7 +1674,7 @@ Involved in Missions:\
         },
         ["Remiotte"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG04: The Queen of the Dance\
 * WOTG21: Proof of Valor",
@@ -1718,7 +1705,6 @@ information, and teleportation.",
 * Wrath of the Griffon\
 * Perils of the Griffon\
 * The Price of Valor\
-\
 Involved in Quests:\
 * Gifts of the Griffon\
 * Boy and the Beast\
@@ -1742,7 +1728,7 @@ time.",
         },
         ["Rochefogne"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * San d'Oria Mission 1-1: Smash the Orcish Scouts\
 * San d'Oria Mission 1-2: Bat Hunt\
@@ -1801,7 +1787,6 @@ information, and teleportation.",
 * The Price of Valor\
 * Bonds That Never Die\
 * Chasing Shadows\
-\
 Involved in Missions:\
 * WOTG02: Back to the Beginning\
 * WOTG14: A Nation on the Brink\
@@ -1850,7 +1835,6 @@ Involved in Missions:\
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Gifts of the Griffon\
-\
 Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Quest Associate",
@@ -1864,7 +1848,7 @@ Involved in Missions:\
         },
         ["Savae E Paleade"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Journey Abroad",
             ["type"] = "Mission Associate",
@@ -1898,7 +1882,6 @@ territory.",
             ["icon"] = "Dialogue.png",
             ["note"] = "Involved in Quests:\
 * Her Majesty's Garden\
-\
 Involved in Missions:\
 * San d'Oria Mission 1-3: Save the Childern\
 * San d'Oria Mission 2-2: The Davoi Report\
@@ -1963,7 +1946,6 @@ information, and teleportation.",
             ["link"] = "https://www.bg-wiki.com/ffxi/Thierride",
             ["note"] = "Starts Quests:\
 * Beans Ahoy!\
-\
 Notes:\
 * Royal Army cook and former\
 fisherman.",
@@ -1996,10 +1978,8 @@ information, and teleportation.",
             ["icon"] = "Guard.png",
             ["note"] = "Involved in Quests:\
 * Divine Interference\
-\
 Starts Missions:\
 * Aht Urhgan Mission 38: Stirrings of War\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 5: Confessions of Royalty\
 * Aht Urhgan Mission 20: Teahouse Tumult\
@@ -2037,7 +2017,6 @@ information, and teleportation.",
             ["icon"] = "Dialogue.png",
             ["note"] = "Involved in Quests:\
 * The Long March North\
-\
 Involved in Missions:\
 * Delkfutt the Great\
 ",
@@ -2054,11 +2033,10 @@ helping find compatible partners.",
         },
         ["Vauderame"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * The Tenshodo Showdown\
 * Hitting the Marquisate\
-\
 Involved in Missions:\
 * San d'Oria Mission 1-2: Bat Hunt\
 * San d'Oria Mission 3-1: Infiltrate Davoi\
@@ -2069,7 +2047,7 @@ Involved in Missions:\
         },
         ["Vestillet"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG06: A Timeswept Butterfly\
 * WOTG07: Purple, The New Black\
@@ -2083,7 +2061,7 @@ Involved in Missions:\
         },
         ["Vichauxdat"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * WOTG21: Proof of Valor",
             ["type"] = "Mission Associate",
@@ -2121,7 +2099,6 @@ Campaign strategies and tactics.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Seeing Spots\
-\
 Involved in Quests:\
 * Wrath of the Griffon (interested in the Military Scrip)\
 * Beast from the East (seen in the background talking with customer)\
@@ -2229,23 +2206,14 @@ Conquest services.",
         ["Door:House"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Notes:\
-* Entrance to a residence.",
-            ["type"] = "Security Gate",
         },
         ["Door Lion\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Notes:\
-* Entrance to Lion Springs.",
-            ["type"] = "Security Gate",
         },
         ["Door:\"Lion Springs\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Notes:\
-* Entrance to Lion Springs.",
-            ["type"] = "Security Gate",
         },
         ["Eland Coffer"] = {
             ["_source"] = "item",
@@ -2257,9 +2225,6 @@ Conquest services.",
         ["Gate Sentry"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "Notes:\
-* Security checkpoint.",
-            ["type"] = "Security Gate",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",

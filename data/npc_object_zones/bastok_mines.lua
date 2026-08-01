@@ -1,11 +1,15 @@
 return {
     ["npcs"] = {
+        ["A.M.A.N. Liaison"] = {
+            ["_source"] = "npc",
+            ["icon"] = "RecordsOfEminence.png",
+            ["type"] = "Records of Eminence",
+        },
         ["Abd-al-Raziq"] = {
             ["_source"] = "npc",
-            ["icon"] = "GuildMaster.png",
+            ["icon"] = "alc_GuildMaster.png",
             ["note"] = "Involved in Quests:\
 * Lost Chick\
-\
 Involved in Missions:\
 * That Which Curdles Blood\
 ",
@@ -13,7 +17,7 @@ Involved in Missions:\
         },
         ["Amar"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Bastok Mission 8-2: Enter the Talekeeper",
             ["type"] = "Mission Associate",
@@ -43,7 +47,6 @@ Involved in Missions:\
             ["icon"] = "GuildMaster.png",
             ["note"] = "Involved in Quests:\
 * Lost Chick\
-\
 Involved in Missions:\
 * The Voracious Resurgence #2: The Brygid Cup\
 ",
@@ -60,7 +63,6 @@ Involved in Missions:\
             ["note"] = "Involved in Quests:\
 * The Eleventh's Hour\
 * Riding on the Clouds\
-\
 Involved in Missions:\
 * San d'Oria Mission 4-1: Magicite\
 * Bastok Mission 4-1: Magicite\
@@ -74,7 +76,6 @@ Involved in Missions:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Drachenfall\
-\
 Involved in Missions:\
 * The Voracious Resurgence #2: The Brygid Cup",
             ["type"] = "Quest Giver",
@@ -102,6 +103,14 @@ Involved in Missions:\
             ["icon"] = "ChocoboRenter.png",
             ["type"] = "Rental Chocobo",
         },
+        ["Chat Manual"] = {
+            ["_source"] = "item",
+            ["icon"] = "TutorialNPC.png",
+            ["note"] = "Notes:\
+- Explains chat etiquette and considerate interaction with other players.",
+            ["type"] = "Chat Etiquette Guide",
+			["worldOffsetY"] = 0.75,
+        },
         ["Christina"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
@@ -119,6 +128,7 @@ Involved in Missions:\
         },
         ["Conrad"] = {
             ["_source"] = "npc",
+            ["icon"] = "ExplorerMoogle.png",
             ["type"] = "Outpost Teleporter",
         },
         ["Courier Helper"] = {
@@ -134,7 +144,10 @@ then return for credit.",
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-;Notes for characters with Bastok as current Allegiance: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the Bastok Mission-Rank bar (the red bar at the character's profile) :*Sells items for Conquest Points (Items for Bastok) at certain conditions. It will be also possible to get some items of other Nations (Items for San d'Oria / Items for Windurst) at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Starts Supply Run Missions and offers a list of already delivered supplies :*Starts an Expeditionary Force by giving an E.F. region insignia to you :*Explains the Conquest system by choosing some available questions. ;Notes for characters without Bastok as current Allegiance: :*Doesn't offer any function. For further information see Conquest Overseer.",
+- Casts Signet and recharges Conquest experience bands.\
+- Accepts crystals and sells items for Conquest Points.\
+- Handles supply runs and Expeditionary Forces for Bastok citizens.\
+- Explains the Conquest system.",
             ["type"] = "Conquest Overseer",
         },
         ["Crystal Crunch"] = {
@@ -148,7 +161,7 @@ at a 3-to-1 rate.",
         },
         ["Davyad"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Bastok Mission 3-2: To the Forsaken Mines (Optional)\
 * Bastok Mission 6-1: Return of the Talekeeper\
@@ -157,10 +170,12 @@ at a 3-to-1 rate.",
         },
         ["Deadly Spider"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
-            ["note"] = "Involved in Missions:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Quests:\
+* Stamp Hunt\
+Involved in Missions:\
 * Bastok Mission 6-1: Return of the Talekeeper",
-            ["type"] = "Mission Associate",
+            ["type"] = "Quest and Mission Associate",
         },
         ["Deegis"] = {
             ["_source"] = "npc",
@@ -175,10 +190,8 @@ at a 3-to-1 rate.",
             ["note"] = "Starts Quests:\
 * The Talekeeper's Truth\
 * The Talekeeper's Gift\
-\
 Involved in Quests:\
 * Lure of the Wildcat (Bastok)\
-\
 Involved in Missions:\
 * Bastok Mission 8-2: Enter the Talekeeper\
 * Bastok Mission 9-2: Where Two Paths Converge\
@@ -200,10 +213,8 @@ for credit.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Rivals\
-\
 Involved in Quests:\
 * The Talekeeper's Gift\
-\
 Involved in Missions:\
 * Bastok Mission 8-2: Enter the Talekeeper",
             ["type"] = "Quest Giver",
@@ -213,7 +224,6 @@ Involved in Missions:\
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Lost Chick\
-\
 Involved in Missions:\
 * Bastok Mission 8-2: Enter the Talekeeper",
             ["type"] = "Quest Associate",
@@ -222,7 +232,8 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Offers Directions Around Town: :What's the matter? Are you lost? Ask for directions? :*\"Ask.\": Where do you want to go? :*\"The South Gate and the residential area.\": See that building south from here, on the left? That's the auction house. You can buy other people's items or sell items yourself there. You can sen items to your friends there as well. Just talk to the Galkan deliveryman on post. If you keep going south, you'll find the South Gate. Go through it to go to South Gustaberg. If you are a Bastoker, you can also receive missions from the guard at the gatehouse. If you go left from the South Gate towards the east, you'll come across another building. That's where you'll find the Chocobo Stables. You can rent chocobos there to help you on those long trips. If you go further east you'll come to the enterance to the residential area. Go on inside if you want to drop off items in your room. If you are not from Bastok, however, you'll need to get a Rent-a-Room first. That's about it. I can explain it to you again, but it might be better for you to just go to those places yourself and talk to the people there. :*\"The Markets and the Mines.\": Go through the arch west of here. You will see a road sloping down on your right. Walk down that road to go to the Markets District. If you go straight west, you'll be able to see the enterance to the mines. Inside the mines you will find miners, of course--but also monsters. They aren't very tough, but you should still be careful. That's about it. I can explain it to you again, but it might be better for you to just go to those places yourself and talk to the people there. :*\"The mining town and Alchemists' Guild.\": To the north of this fork there are two arches, one big and one small. The big arch leads to the lower level of the mining town, wihle the small one leads to its surface level. If you walk through the small arch to the surface level, you'll find an inn to your left. Across from the inn is the armory. If you go further down the road, you'll come across a goods shop and the back exit of the mining town. Go through the exit and you'll be behind the auction house. You'll also find stairs of to the side, midway down the mining town street. Those connect the surface and lower levels. At the far end of the lower level, to the east, is where you'll find the Alchemists' Guild. That's about it. I can explain it to you again, but it might be better for you to just go to those places yourself and talk to the people there. :*\"Uh, nevermind.\" :*\"Don't ask.\"",
+- Provides directions around Bastok Mines.\
+- Locates the gates, residential area, shops, Chocobo Stables, and Alchemists' Guild.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Echo Hawk"] = {
@@ -230,12 +241,20 @@ Offers Directions Around Town: :What's the matter? Are you lost? Ask for directi
             ["icon"] = "QuestNPC.png",
             ["note"] = "Involved in Quests:\
 * Lure of the Wildcat (Bastok)\
-\
 Involved in Missions:\
 * Bastok Mission 6-1: Return of the Talekeeper\
 * Bastok Mission 8-2: Enter the Talekeeper\
 ",
             ["type"] = "Quest NPC",
+        },
+        ["Eggbert"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Easter Event:\
+* Crystal Warrior egg exchange NPC.\
+* Trades eggs 3-to-1 outside nation Mog Houses.",
+            ["type"] = "Easter Event",
+            ["worldOffsetY"] = 0.4,
         },
         ["Elki"] = {
             ["_source"] = "npc",
@@ -321,10 +340,8 @@ Involved in Missions:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Minesweeper\
-\
 Involved in Quests:\
 * Lost Chick\
-\
 Involved in Missions:\
 * Bastok Mission 6-1: Return of the Talekeeper",
             ["type"] = "Quest Giver",
@@ -378,11 +395,9 @@ Involved in Missions:\
 * Blade of Darkness\
 * Blade of Death\
 * Inheritance\
-\
 Involved in Quests:\
 * Rivals\
 * The Eleventh's Hour\
-\
 Involved in Missions:\
 * Bastok Mission 6-1: Return of the Talekeeper\
 * Bastok Mission 7-1: The Final Image\
@@ -409,7 +424,8 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Notes:\
-* Explains the basics and rules for The Chocobo Hot and Cold Game. *Hands out Tandjana Wildgrass for the The Chocobo Hot and Cold Game once per day.",
+- Explains the Chocobo Hot and Cold Game.\
+- Provides Tandjana Wildgrass once per day.",
             ["type"] = "Quest NPC",
         },
         ["Leonie"] = {
@@ -417,11 +433,26 @@ Involved in Missions:\
             ["icon"] = "RoomRenters.png",
             ["type"] = "Room Renter",
         },
+        ["Linkshell Concierge"] = {
+            ["_source"] = "npc",
+            ["icon"] = "linkshell.png",
+            ["note"] = "Notes:\
+- Lists linkshells currently recruiting members.\
+- Distributes registered linkpearls to interested players.\
+- Accepts linkpearls from recruiting linkshells.",
+            ["type"] = "Linkshell Recruitment",
+        },
         ["Mariadok"] = {
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
             ["note"] = "Notes:\
-Checks weather for the following locations: :*Pashhow Marshlands :*Valkurm Dunes :*Gustaberg :*Konschtat Highlands :*Eastern Altepa Desert :*Western Altepa Desert",
+Checks weather for:\
+- Pashhow Marshlands\
+- Valkurm Dunes\
+- Gustaberg\
+- Konschtat Highlands\
+- Eastern Altepa Desert\
+- Western Altepa Desert",
             ["type"] = "Weather Reporter",
         },
         ["Market Moogle"] = {
@@ -439,7 +470,7 @@ Checks weather for the following locations: :*Pashhow Marshlands :*Valkurm Dunes
         },
         ["Medicine Eagle"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Bastok Mission 6-1: Return of the Talekeeper",
             ["type"] = "Mission Associate",
@@ -451,7 +482,7 @@ Checks weather for the following locations: :*Pashhow Marshlands :*Valkurm Dunes
         },
         ["Mydon"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Bastok Mission 8-2: Enter the Talekeeper",
             ["type"] = "Mission Associate",
@@ -470,7 +501,9 @@ Checks weather for the following locations: :*Pashhow Marshlands :*Valkurm Dunes
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
             ["note"] = "Notes:\
-* Open: Always. *No longer shares stock with Maymunah, and prices are static. *Has much higher stock limits than Maymunah, but can be depleted. *Stock is replenished over time, and everything is restocked.",
+- Open at all times.\
+- Uses fixed prices and separate stock from Maymunah.\
+- Stock replenishes over time.",
             ["type"] = "Alchemy Guild Merchant",
         },
         ["Orenix"] = {
@@ -487,7 +520,6 @@ Venture Guild.\
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Beauty and the Galka\
-\
 Involved in Missions:\
 * Bastok Mission 8-2: Enter the Talekeeper",
             ["type"] = "Quest Associate",
@@ -498,7 +530,6 @@ Involved in Missions:\
             ["note"] = "Involved in Quests:\
 * Fallen Comrades\
 * Out of the Depths\
-\
 Involved in Missions:\
 * Bastok Mission 8-2: Enter the Talekeeper\
 * Bastok Mission 9-2: Where Two Paths Converge",
@@ -509,7 +540,6 @@ Involved in Missions:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * The Doorman\
-\
 Involved in Quests:\
 * The Talekeeper's Truth\
 ",
@@ -557,6 +587,17 @@ Involved in Quests:\
 * The Signpost Marks the Spot",
             ["type"] = "Quest Associate",
         },
+        ["Rumbling Valley"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Earthen_Echoes",
+            ["note"] = "Starts Quests:\
+* Earthen Echoes\
+Details:\
+- Requires 60 Flint Stones.\
+- Rewards the Stoneskin spell.",
+            ["type"] = "Stoneskin Quest",
+        },
         ["Selh'teus"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
@@ -590,7 +631,7 @@ Involved in Quests:\
         },
         ["Sinister Moon"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Crystal Warrior:\
 * Starts quests: Buzz Off, Buzz\
 Kill.\
@@ -609,7 +650,6 @@ Kill.\
 * Stamp Hunt\
 * Starlight Celebration 2008\
 * Starlight Celebration 2009\
-\
 Involved in Missions:\
 * Bastok Mission 6-1: Return of the Talekeeper",
             ["type"] = "Quest Associate",
@@ -619,7 +659,6 @@ Involved in Missions:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Groceries\
-\
 Involved in Quests:\
 * Starlight Celebration 2008\
 * Starlight Celebration 2009",
@@ -652,10 +691,9 @@ Involved in Quests:\
         },
         ["Virnage"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Altana's Sorrow\
-\
 Involved in Quests:\
 * A Question of Faith\
 * Starlight Celebration 2008\
@@ -712,35 +750,30 @@ A member of the Vana'diel Chocobo Society. This Galka will help you raise your o
         },
     },
     ["objects"] = {
+        ["Alchemy Tome"] = {
+            ["_source"] = "item",
+            ["icon"] = "Book.png",
+			["worldOffsetY"] = 0.25,
+        },
         ["Door:\"Bat's Lair\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber entrance portal partitioning the deep mining tavern. Activating the handle manages your movement through the mining district layout or logs local story lines.",
-            ["type"] = "Security Gate",
         },
         ["Door:Alchemists' Guild"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A secure portal archway partitioning off the industrial chemical laboratories. Operating the handle opens up advanced crafting synthesis areas and checks active guild progression parameters.",
-            ["type"] = "Security Gate",
         },
         ["Door:Boytz's Knickknacks"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic merchant door set into the dark mining district tunnels. Unlatching the framework lets you slide quietly into the specialty retail vaults to fulfill delivery checks.",
-            ["type"] = "Security Gate",
         },
         ["Door:Chocobo Stables"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic timber sliding barrier sealing off regional mount stables. Unlatching the frame allows you to access transport paths, check vouchers, or purchase racing gear.",
-            ["type"] = "Security Gate",
         },
         ["Door:Deegis's Armour"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A secure shopfront portal separating the armory showroom from the main streets. Verifying your transaction records commands the heavy wooden frame to open.",
-            ["type"] = "Security Gate",
         },
         ["Enigmatic Footprints #2"] = {
             ["_source"] = "item",
@@ -751,8 +784,6 @@ A member of the Vana'diel Chocobo Society. This Galka will help you raise your o
         ["Gate: Chocobo Circuit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standard track boundary gate partitioning off the grand racing lanes. Interfacing with the terminal matches registration tokens to grant your character lane access.",
-            ["type"] = "Security Gate",
         },
         ["Shard of Sunlight"] = {
             ["_source"] = "item",

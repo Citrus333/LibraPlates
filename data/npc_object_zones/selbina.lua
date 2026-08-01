@@ -251,14 +251,15 @@ Involved in Missions:\
         },
         ["Mellie"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
+            ["icon"] = "Trials.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Novice_Trials",
             ["note"] = "Novice Trials:\
-* Starts no-cooldown equipment\
-augment trials.\
-* Can transfer completed NQ\
-augments to crafted HQ versions.\
-* Trials may be completed on any\
-job.",
+* Starts equipment augment trials.\
+* Available to all character types\
+with no cooldown.\
+* Transfers completed NQ augments\
+to crafted HQ versions.\
+* Trials may be completed on any job.",
             ["type"] = "Novice Trials",
         },
         ["Melyon"] = {

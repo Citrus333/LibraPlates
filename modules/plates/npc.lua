@@ -491,10 +491,14 @@ local function QueueNpcObject(entity)
     -- A normal town/service NPC keeps its World widgets while targeted.
     -- Campaign allies are the exception: they are genuine combat actors and
     -- use the Tactical NPC plate while fighting.
-    local useNpcCombatWidgets = isCatseyeServiceNpc ~= true and settingsEntityName == 'NPC' and (
-        entity.campaignAlly == true or
-        IsAlliedTacticalNpc(entity) == true
-    );
+    local useNpcCombatWidgets =
+        isCatseyeServiceNpc ~= true and
+        settingsEntityName == 'NPC' and
+        entity.campaignBattleActor == true and
+        (
+            entity.campaignAlly == true or
+            IsAlliedTacticalNpc(entity) == true
+        );
     local layoutStateName = (isTacticalTarget == true and (settingsEntityName ~= 'NPC' or useNpcCombatWidgets == true))
         and 'Combat' or 'Idle';
     local targetMarkerLayoutStateName = isTacticalTarget == true and 'Combat' or 'Idle';

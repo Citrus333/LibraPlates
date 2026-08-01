@@ -4,11 +4,9 @@ return {
             ["_source"] = "catseye_npc",
             ["icon"] = "AetherTraveler.png",
             ["note"] = "Aether Traveler:\
-* Weekend shop from Friday JST\
-midnight to Monday JST midnight.\
+* Weekend shop from Friday JST midnight to Monday JST midnight.\
 * Buys and stores Aether Fragments.\
-* Weekly requests can earn extra\
-fragments.",
+* Weekly requests can earn extra fragments.",
             ["type"] = "Aether Fragment Shop",
         },
         ["Anneliese"] = {
@@ -293,7 +291,17 @@ Pyropox's twin brother.",
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
             ["note"] = "Notes:\
-Checks the weather for the following locations: :*Valkurm Dunes :*Jugner Forest :*Batallia Downs :*Pashhow Marshlands :*Rolanberry Fields :*Meriphataud Mountains :*Sauromugue Champaign :*The Sanctuary of Zi'Tah :*Qufim Island :*Jeuno",
+Checks weather for:\
+* Valkurm Dunes\
+* Jugner Forest\
+* Batallia Downs\
+* Pashhow Marshlands\
+* Rolanberry Fields\
+* Meriphataud Mountains\
+* Sauromugue Champaign\
+* The Sanctuary of Zi'Tah\
+* Qufim Island\
+* Jeuno",
             ["type"] = "Weather Reporter",
         },
         ["Leyla"] = {
@@ -338,7 +346,7 @@ This NPC will display a map of Jeuno.",
         },
         ["Munitions Moogle"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "MunitionsMoogle.png",
             ["note"] = "Notes:\
 * Will return any lost ammunition-generating belt granted as part of augmenting REMA item level 119 ranged weaponry. Will only perform this service once per character. Trade the Moogle the corresponding item to retrieve your belt.",
             ["type"] = "Ammunition Recovery",
@@ -372,8 +380,7 @@ This NPC will display a map of Jeuno.",
             ["_source"] = "catseye_npc",
             ["icon"] = "Oboro.png",
             ["note"] = "CatsEyeXI:\
-* Creates job-specific weapons in\
-exchange for materials.",
+* Creates job-specific weapons in exchange for materials.",
             ["type"] = "JSE Weapons",
         },
         ["Omiro-Zamiro"] = {

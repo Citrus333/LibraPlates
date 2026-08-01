@@ -597,6 +597,7 @@ local function AddPlateClickRects(targetIndex, targetType, rects, union, metadat
         plateOverlayRect = metadata ~= nil and metadata.plateOverlayRect or nil,
         plateOverlayOffsetX = metadata ~= nil and metadata.plateOverlayOffsetX or nil,
         plateOverlayOffsetY = metadata ~= nil and metadata.plateOverlayOffsetY or nil,
+        animatedTargetMarker = metadata ~= nil and metadata.animatedTargetMarker or nil,
         clickEnabled = metadata == nil or metadata.clickEnabled ~= false,
         rects = rects,
         union = union,
@@ -788,6 +789,7 @@ local function SetSelfClickRectsFromCanvas(device, targetIndex, wx, wy, wz, styl
         plateOverlayRect = nil,
         plateOverlayOffsetX = tonumber(style.plateOverlayOffsetX) or 0,
         plateOverlayOffsetY = tonumber(style.plateOverlayOffsetY) or 0,
+        animatedTargetMarker = style.animatedTargetMarker,
         clickEnabled = style.plateClickTargetEnabled ~= false,
     };
 
@@ -3493,28 +3495,21 @@ function worldMarkerProbe.QueuePlate(plate)
     end
 
     queuedPlateSet[plate.targetIndex] = true;
-    queuedPlates[#queuedPlates + 1] = {
-        targetIndex = plate.targetIndex,
-        serverId = plate.serverId,
-        hp = plate.hp or 100,
-        mp = plate.mp,
-        tp = (plate.vitals ~= nil and plate.vitals.tp or plate.petTp),
-        vitals = plate.vitals,
-        name = plate.name or '',
-        trustIsMine = plate.trustIsMine,
-        jobText = plate.jobText or '',
-        jobIconTextureId = plate.jobIconTextureId,
-        distance = plate.distance,
-        isSelf = plate.isSelf == true,
-        isProtectedPlate = plate.isProtectedPlate == true,
-        isPartyPlayer = plate.isPartyPlayer == true,
-        stateName = plate.stateName,
-        layoutStateName = plate.layoutStateName,
-        _plateScreenOffsetX = tonumber(plate.screenOffsetX) or 0,
-        _plateScreenOffsetY = tonumber(plate.screenOffsetY) or 0,
-        worldMarker = plate.worldMarker,
-        clickTargetType = plate.clickTargetType or (plate.isSelf == true and 'self' or 'enemy'),
-    };
+    -- Plate modules already create a frame-owned queue record. Keep that
+    -- record instead of cloning it into another table for every visible
+    -- entity on every frame. Large battles previously created two queue
+    -- tables per plate and forced multi-megabyte garbage collections.
+    plate.hp = plate.hp or 100;
+    plate.tp = plate.vitals ~= nil and plate.vitals.tp or plate.petTp;
+    plate.name = plate.name or '';
+    plate.jobText = plate.jobText or '';
+    plate.isSelf = plate.isSelf == true;
+    plate.isProtectedPlate = plate.isProtectedPlate == true;
+    plate.isPartyPlayer = plate.isPartyPlayer == true;
+    plate._plateScreenOffsetX = tonumber(plate.screenOffsetX) or 0;
+    plate._plateScreenOffsetY = tonumber(plate.screenOffsetY) or 0;
+    plate.clickTargetType = plate.clickTargetType or (plate.isSelf == true and 'self' or 'enemy');
+    queuedPlates[#queuedPlates + 1] = plate;
 
     if (plate.isSelf == true) then
         lastSelfJobText = tostring(plate.jobText or '');
@@ -3523,6 +3518,10 @@ function worldMarkerProbe.QueuePlate(plate)
     end
 
     lastQueuedCount = #queuedPlates;
+end
+
+function worldMarkerProbe.GetQueuedPlateCount()
+    return #queuedPlates;
 end
 
 function worldMarkerProbe.QueueStaticPlate(plate)
@@ -5546,6 +5545,7 @@ function worldMarkerProbe.GetAlwaysVisiblePlates()
                     rect = entry.plateOverlayRect,
                     overlayOffsetX = entry.plateOverlayOffsetX,
                     overlayOffsetY = entry.plateOverlayOffsetY,
+                    animatedTargetMarker = entry.animatedTargetMarker,
                 };
             end
         end

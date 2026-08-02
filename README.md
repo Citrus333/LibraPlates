@@ -31,10 +31,15 @@ The big idea is simple: if something is on your screen, LibraPlates tries to mak
 
 This section is temporary while the screenshot set is being built.
 
-| Blacklist |
+| Combat | Blacklist | SMN pet frame |
+| --- | --- | --- |
+| ![Combat feature card](docs/screenshots/features/combat.png) | ![Blacklist feature card](docs/screenshots/features/blacklist.png) | ![SMN pet frame feature card](docs/screenshots/features/smn.png) |
+| Clickable combat plates with useful enemy info. | Blacklist and privacy tools. | Custom SMN avatar/spirit pet frame support. |
+
+| PUP automaton |
 | --- |
-| ![Blacklist feature card](docs/screenshots/features/blacklist.png) |
-| Hide, rename, recolor, or replace blacklisted players, with quick-menu controls and Streamer Mode-friendly privacy tools. |
+| ![PUP automaton animation](docs/screenshots/features/pup_animation.gif) |
+| PUP automaton support with custom frame, maneuvers, and overload/burden helpers. |
 
 ## Screenshots to add
 

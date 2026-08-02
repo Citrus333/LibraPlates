@@ -795,6 +795,13 @@ His galkan name is Garbenn.",
             ["icon"] = "Jeuno.png",
             ["type"] = "Consulate Representative",
         },
+        ["Matabe"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
+* Faded Promises",
+            ["type"] = "Quest Associate",
+        },
     },
     ["objects"] = {
         ["Celebratory Chest"] = {

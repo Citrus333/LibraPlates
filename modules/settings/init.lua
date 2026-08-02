@@ -9866,7 +9866,6 @@ local function DrawGeneralPerformanceSection(settings)
         local presets = {
             Performance = {
                 performanceMode = 'Performance',
-                maxWorldPlateCount = 20,
                 worldPlateUpdateRate = 'Low',
                 worldCriticalRefreshRate = 2.0,
                 worldMediumRefreshRate = 1.0,
@@ -9889,7 +9888,6 @@ local function DrawGeneralPerformanceSection(settings)
             },
             Mid = {
                 performanceMode = 'Balanced',
-                maxWorldPlateCount = 40,
                 worldPlateUpdateRate = 'Balanced',
                 worldCriticalRefreshRate = 3.0,
                 worldMediumRefreshRate = 2.0,
@@ -9912,7 +9910,6 @@ local function DrawGeneralPerformanceSection(settings)
             },
             High = {
                 performanceMode = 'Quality',
-                maxWorldPlateCount = 80,
                 worldPlateUpdateRate = 'Full',
                 worldCriticalRefreshRate = 5.0,
                 worldMediumRefreshRate = 3.0,
@@ -9935,7 +9932,6 @@ local function DrawGeneralPerformanceSection(settings)
             },
             Ultra = {
                 performanceMode = 'Quality',
-                maxWorldPlateCount = 0,
                 worldPlateUpdateRate = 'Full',
                 worldCriticalRefreshRate = 10.0,
                 worldMediumRefreshRate = 8.0,
@@ -9965,7 +9961,6 @@ local function DrawGeneralPerformanceSection(settings)
         end
 
         settings.performanceMode = adaptivePerformance.SetSelectedMode(preset.performanceMode);
-        settings.maxWorldPlateCount = preset.maxWorldPlateCount;
         settings.worldPlateUpdateRate = preset.worldPlateUpdateRate;
         settings.worldCriticalRefreshRate = preset.worldCriticalRefreshRate;
         settings.worldMediumRefreshRate = preset.worldMediumRefreshRate;
@@ -10132,15 +10127,20 @@ local function DrawGeneralPerformanceSection(settings)
         end, true);
 
         LibraPlatesSettingsDrawBoxedPanel('Game FPS', function()
-            DrawInlineComboRow('Mode', gameFps.GetModeChoices(), settings.gameFpsMode or 'Keep current', function(value)
-                settings.gameFpsMode = gameFps.NormalizeMode(value);
-                local ok, message = gameFps.ApplyMode(settings.gameFpsMode);
+            -- This is an action selector, not a persistent desired state. FFXI or
+            -- another addon can change the live divisor later, so retaining FPS1 or
+            -- FPS2 here can make the selector disagree with the detected mode and
+            -- prevents selecting the same action again.
+            settings.gameFpsMode = 'Keep current';
+            DrawInlineComboRow('Mode', gameFps.GetModeChoices(), 'Keep current', function(value)
+                local requestedMode = gameFps.NormalizeMode(value);
+                local ok, message = gameFps.ApplyMode(requestedMode);
                 if (ok == true) then
-                    if (settings.gameFpsMode == 'Keep current') then
+                    if (requestedMode == 'Keep current') then
                         log.Info('Game FPS setting changed to Keep current.');
                     else
-                        detectedGameFpsMode = settings.gameFpsMode;
-                        log.Info('Game FPS set to ' .. tostring(settings.gameFpsMode) .. '.');
+                        detectedGameFpsMode = requestedMode;
+                        log.Info('Game FPS set to ' .. tostring(requestedMode) .. '.');
                     end
                 else
                     log.Warn('Game FPS change failed: ' .. tostring(message or 'unknown error'));
@@ -10151,7 +10151,25 @@ local function DrawGeneralPerformanceSection(settings)
             if (imgui.Button('Check##GameFpsDetect')) then
                 CheckGameFpsMode();
             end
-            imgui.TextWrapped('FFXI\'s native frame rate is 30 FPS. FPS2 uses the game\'s original 30 FPS timing and is the recommended setting for normal play. FPS1 runs at 60 FPS, which increases rendering work and can make some animation or timing behavior less consistent with the original client.');
+            local fpsInfoText = 'FFXI\'s native frame rate is 30 FPS. FPS2 uses the game\'s original 30 FPS timing and is the recommended setting for normal play. FPS1 runs at 60 FPS, which increases rendering work and can make some animation or timing behavior less consistent with the original client.';
+            local fpsInfoColor = { 0.55, 0.85, 1.00, 1.00 };
+            local textColorIndex = GetImguiColor ~= nil and GetImguiColor('Text') or nil;
+
+            if (imgui.PushStyleColor ~= nil and imgui.PopStyleColor ~= nil and textColorIndex ~= nil) then
+                imgui.PushStyleColor(textColorIndex, fpsInfoColor);
+                imgui.TextWrapped(fpsInfoText);
+                imgui.PopStyleColor(1);
+            else
+                local pushedWrap = false;
+                if (imgui.PushTextWrapPos ~= nil) then
+                    imgui.PushTextWrapPos(0);
+                    pushedWrap = true;
+                end
+                imgui.TextColored(fpsInfoColor, fpsInfoText);
+                if (pushedWrap == true and imgui.PopTextWrapPos ~= nil) then
+                    imgui.PopTextWrapPos();
+                end
+            end
         end);
 
         local selectedPreset = settings.performancePreset or 'Custom';
@@ -10185,12 +10203,6 @@ local function DrawGeneralPerformanceSection(settings)
             end);
 
             LibraPlatesSettingsDrawBoxedPanel('World plates', function()
-                local maxCount, maxCountChanged = DrawPerformanceNumber('Max world plate count', settings.maxWorldPlateCount or 0, 'MaxWorldPlateCount', 0, 300, 1, '0 means unlimited. When limited, Self, target, subtarget, and tactical plates are kept first.');
-                if (maxCountChanged == true) then
-                    settings.performancePreset = 'Custom';
-                    settings.maxWorldPlateCount = math.max(0, math.min(300, math.floor((tonumber(maxCount) or 0) + 0.5)));
-                end
-
                 DrawPerformanceCombo('Update rate', T{ 'Full', 'Balanced', 'Low' }, settings.worldPlateUpdateRate or 'Full', function(value)
                     settings.performancePreset = 'Custom';
                     settings.worldPlateUpdateRate = value;
@@ -10208,12 +10220,10 @@ local function DrawGeneralPerformanceSection(settings)
                     settings.hideDistantWorldPlates = value == true;
                 end, 'Hides world plates past the distance limit. Target, subtarget, and tactical plates are kept.', 'HideDistantWorldPlates');
 
-                if (settings.hideDistantWorldPlates == true) then
-                    local distanceLimit, distanceLimitChanged = DrawPerformanceNumber('Distance limit', settings.worldPlateDistanceLimit or 49.9, 'WorldPlateDistanceLimit', 5, 64.4, 1, 'World plates farther away than this distance are hidden when Hide distant world plates is enabled. Target, subtarget, and tactical plates are kept.');
-                    if (distanceLimitChanged == true) then
-                        settings.performancePreset = 'Custom';
-                        settings.worldPlateDistanceLimit = math.max(5.0, math.min(64.4, tonumber(distanceLimit) or 49.9));
-                    end
+                local distanceLimit, distanceLimitChanged = DrawPerformanceNumber('Distance limit', settings.worldPlateDistanceLimit or 49.9, 'WorldPlateDistanceLimit', 5, 64.4, 1, 'World plates farther away than this distance are hidden when Hide distant world plates is enabled. The saved limit is not applied while distance hiding is disabled. Target, subtarget, and tactical plates are kept.');
+                if (distanceLimitChanged == true) then
+                    settings.performancePreset = 'Custom';
+                    settings.worldPlateDistanceLimit = math.max(5.0, math.min(64.4, tonumber(distanceLimit) or 49.9));
                 end
 
             end);

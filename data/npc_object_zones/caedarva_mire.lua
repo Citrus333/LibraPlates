@@ -3,21 +3,22 @@ return {
         ["Amkeen"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* The Prankster\
-",
+            ["note"] = "Quest NPC:\
+* The Prankster",
             ["type"] = "Quest Associate",
         },
         ["Automaton"] = {
             ["_source"] = "npc",
             ["icon"] = "Automaton.png",
-            ["note"] = "Repair shop, and standard attachment merchants.",
+            ["note"] = "Automaton services:\
+* Repairs automatons.\
+* Sells standard attachments.",
             ["type"] = "Automaton",
         },
         ["Balrahn Eidolon"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * Forging a New Myth\
 * Coming Full Circle",
             ["type"] = "Cutscene NPC",
@@ -30,9 +31,8 @@ return {
         ["Elisabeth"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* The Prankster\
-",
+            ["note"] = "Quest NPC:\
+* The Prankster",
             ["type"] = "Quest Associate",
         },
         ["Hadwahn"] = {
@@ -43,72 +43,64 @@ return {
         ["Kwadaaf"] = {
             ["_source"] = "npc",
             ["icon"] = "MapDealer.png",
-            ["note"] = "Involved in Missions:\
-* Aht Urhgan Mission 9: Undersea Scouting\
-",
+            ["note"] = "Mission NPC:\
+* Undersea Scouting",
             ["type"] = "Map Giver",
         },
         ["Moguel"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "Event.png",
             ["note"] = "Mog Vault:\
-* Weekly letter moogle / Kupo Nut\
-trade target.\
-* Near the rams, via Arrapago Reef\
-exit 6.",
+* Weekly Kupo Nut trade NPC.\
+* Near the rams through Arrapago Reef exit 6.",
             ["type"] = "Letter Moogle",
         },
         ["Nahshib"] = {
             ["_source"] = "npc",
             ["icon"] = "AssaultMissionGiver.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest and mission NPC:\
 * Beginnings\
-\
-Involved in Missions:\
-* Aht Urhgan Mission 2: Immortal Sentries\
-* Aht Urhgan Mission 31: Shades of Vengeance\
-",
+* Immortal Sentries\
+* Shades of Vengeance",
             ["type"] = "Periqia Assault",
         },
         ["Nareema"] = {
             ["_source"] = "npc",
             ["icon"] = "AssaultMissionGiver.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest and mission NPC:\
 * Beginnings\
-\
-Involved in Missions:\
 * Immortal Sentries\
-* Azure Experiments\
-",
+* Azure Experiments",
             ["type"] = "Azouph Assault",
         },
         ["Nasheefa"] = {
             ["_source"] = "npc",
             ["icon"] = "Gate.png",
-            ["note"] = "An imperial attendant stationed right out at the mouth of the cavern opening. Handing her one Imperial Silver Piece satisfies the baseline transit toll to let you pass down into the Alzadaal Undersea Ruins.",
+            ["note"] = "Alzadaal access:\
+* Trade one Imperial Silver Piece to enter.",
             ["type"] = "Alzadaal Toll Attendant",
         },
         ["Nuimahn"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Grants Access to Alzadaal Undersea Ruins by trading 1 Imperial Silver Piece",
+            ["note"] = "Alzadaal access:\
+* Trade one Imperial Silver Piece to enter.",
             ["type"] = "Ruins Access",
         },
         ["Odin"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Mission NPC:\
 * Treasures of Aht Urhgan\
-* The Voracious Resurgence\
-",
+* The Voracious Resurgence",
             ["type"] = "Mission Associate",
         },
         ["Tyamah"] = {
             ["_source"] = "npc",
             ["icon"] = "MapDealer.png",
-            ["note"] = "Notes:\
-* Grants access to Alzadaal Undersea Ruins for One Imperial Silver Piece, or for free if you have a Remnants Permit in your possession.",
+            ["note"] = "Alzadaal access:\
+* Trade one Imperial Silver Piece.\
+* Entry is free while carrying a Remnants Permit.",
             ["type"] = "Map Giver",
         },
     },
@@ -116,104 +108,121 @@ Grants Access to Alzadaal Undersea Ruins by trading 1 Imperial Silver Piece",
         ["Door_276"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The first heavy iron-reinforced barrier door partitioning wet marshland grottos and swamp tombs. Procuring the matching regional token unlatches the door framework so your squad can pass.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Door_277"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The second designated security partition manifest along the dangerous swamp routes. Satisfying localized area conditions commands the heavy iron-reinforced framework to slide open.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Door_278"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The third heavy gate structure fortifying the subterranean mire ruins. Clearing the surrounding baseline combat trials triggers the remote winches to swing the panel aside.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Door_279"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The final structural locking boundary sealing the inner marshland sanctuary chambers. Meeting direct area requirements unseals the entryway, allowing your squad to advance into deeper sectors.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Engraved Tablet"] = {
             ["_source"] = "item",
             ["icon"] = "Tablet.png",
-            ["note"] = "An ancient stone slab etched with complicated runic characters. Studying the crisp inscriptions coordinates critical translation stages and weapon trials required to forge ultimate Mythic armaments.",
+            ["note"] = "Mythic weapon objective:\
+* Examine for weapon-trial progress.",
             ["type"] = "Quest Node",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Heavy Iron Gate"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A fortified metallic grate partitioning secure empire outposts and subterranean cells. Procuring a regional passkey or skeleton item unlatches the heavy frame so you can pass.",
+            ["note"] = "Locked gate.\
+* Opens with the appropriate key or nearby mechanism.",
             ["type"] = "Security Gate",
         },
         ["Jazaraat's Headstone"] = {
             ["_source"] = "item",
             ["icon"] = "Monument.png",
-            ["note"] = "A solemn stone burial monument rising above the damp marshlands. Offering an ancient weapon shell to this monument initiates dark spiritual attunements required to unlock legendary armaments.",
+            ["note"] = "Weapon quest location:\
+* Trade the required weapon item for quest progress.",
             ["type"] = "Quest Node",
         },
         ["Peculiar Footprints"] = {
             ["_source"] = "item",
             ["icon"] = "Footprint.png",
-            ["note"] = "Faint, mysterious tracking grooves pressed into the dungeon mud or overworld soil layers. Studying the unusual marks uncovers hidden investigative records to advance active side quests.",
+            ["note"] = "Quest location:\
+* Examine for quest progress.",
             ["type"] = "Quest Node",
         },
         ["Peculiar Plant"] = {
             ["_source"] = "item",
             ["icon"] = "FeyBlossoms.png",
-            ["note"] = "An unnatural, pulsing marshland botanical growth thriving in the damp fen muck. Studying its alien vegetation satisfies strict regional gathering quotas and unlocks advanced side quests.",
+            ["note"] = "Quest location:\
+* Examine or gather for quest progress.",
             ["type"] = "Quest Node",
         },
         ["Perikia"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "An iron-gated cavern entrance anchoring the regional reef boundary thresholds. Passing through this dark opening leaves the mire behind to launch your alliance straight into instanced Assault operations.",
+            ["note"] = "Assault entrance:\
+* Enter Periqia operations.",
             ["type"] = "Transit Portal",
         },
         ["Riftworn Pyxis"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A locked extraplanar drop chest container materializing immediately post-combat across Voidwatch fields. Breaking its lock rewards your squad with combat currencies or temporary buffs.",
+            ["note"] = "Voidwatch rewards:\
+* Contains loot and temporary items.",
             ["type"] = "Loot Container",
         },
         ["Runic Seal"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A massive magical barrier gate blocking off secure empire vaults. Presenting recognized regional relics or satisfying clearance protocols commands the heavy runic seal to part.",
+            ["note"] = "Locked gate.\
+* Opens after meeting the required conditions.",
             ["type"] = "Security Gate",
         },
         ["Savage Scars"] = {
             ["_source"] = "item",
             ["icon"] = "VoidwatchRift.png",
-            ["note"] = "A jagged tear split into the ground matter. Activating this violent spatial distortion checks your temporary alignment relics to draw forth formidable extraplanar entities for Voidwatch operations.",
+            ["note"] = "Voidwatch:\
+* Enter the battlefield.",
             ["type"] = "Transit Portal",
         },
         ["Seaprince's Tombstone"] = {
             ["_source"] = "item",
             ["icon"] = "Gravestone.png",
-            ["note"] = "A solemn stone burial monument rising above the damp marshlands. Offering an ancient weapon shell to this monument initiates dark spiritual attunements required to unlock legendary armaments.",
+            ["note"] = "Weapon quest location:\
+* Trade the required weapon item for quest progress.",
             ["type"] = "Quest Node",
         },
         ["Vexing Sniffles"] = {
             ["_source"] = "item",
             ["icon"] = "VoidwatchRift.png",
-            ["note"] = "An ethereal runic seal atmospheric distortion drifting over the damp marshlands. Directing your cosmic tracking keys into the rift forces open an extraplanar tear to initiate high-tier campaign operations.",
+            ["note"] = "Voidwatch:\
+* Enter the battlefield.",
             ["type"] = "Transit Portal",
         },
         ["Warhorse Hoofprint"] = {
             ["_source"] = "item",
             ["icon"] = "Hoofprint.png",
-            ["note"] = "A deep stamp left in the mud by a charging military mount. Examining the unique tracking indentation retrieves evidence needed to advance your continental investigation journals.",
+            ["note"] = "Quest location:\
+* Examine for tracking progress.",
             ["type"] = "Quest Node",
         },
     },

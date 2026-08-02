@@ -57,25 +57,27 @@ return {
 ",
             ["type"] = "Quest Associate",
         },
-        ["Auscanard"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Service-Clerk.png",
-            ["note"] = "Exchanges Bayld for movement-related survival items such as Sprinter's Shoes and sneaking oils.",
-            ["type"] = "Service Clerk",
-        },
-        ["Barenngo"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
-            ["note"] = "Involved in Quests:\
+			["Auscanard"] = {
+				["_source"] = "npc",
+				["icon"] = "Service-Clerk.png",
+				["note"] = "Bayld exchange:\
+* Sells movement and travel items.",
+				["type"] = "Service Clerk",
+			},
+			["Barenngo"] = {
+				["_source"] = "npc",
+				["icon"] = "QuestGiver.png",
+				["note"] = "Quest NPC:\
 * Don't Ever Leaf Me",
-            ["type"] = "Quest Giver",
-        },
-        ["Bastingart"] = {
-            ["_source"] = "npc",
-            ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Hosts the 'Guess That Number' mini-game, rewarding Mummers Medals which can be traded at Masad for items.",
-            ["type"] = "Special Event Coordinator",
-        },
+				["type"] = "Quest Giver",
+			},
+			["Bastingart"] = {
+				["_source"] = "npc",
+				["icon"] = "SpecialEventCoordinator.png",
+				["note"] = "Guess That Number:\
+* Earn Mummers Medals.",
+				["type"] = "Special Event Coordinator",
+			},
         ["Behff Oibbah"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -160,13 +162,13 @@ return {
 ",
             ["type"] = "Quest Associate",
         },
-        ["Civil Registrar"] = {
-            ["_source"] = "npc",
-            ["icon"] = "FameChecker.png",
-            ["note"] = "Notes:\
-Provides players with details for a specific coalition: *The coalition's role. *The state of the coalition. *Types of coalition assignments. *Current expansion plans. *The coalition's referendum support. *A player's current rank in the coalition. (Fame for Coalition Assignments)",
-            ["type"] = "Fame Checker",
-        },
+			["Civil Registrar"] = {
+				["_source"] = "npc",
+				["icon"] = "FameChecker.png",
+				["note"] = "Coalition info:\
+* Check coalition status and your current rank.",
+				["type"] = "Fame Checker",
+			},
         ["Clautaire"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
@@ -209,13 +211,14 @@ Provides players with details for a specific coalition: *The coalition's role. *
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
-        ["Detrovio"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-He will augment any Level 99 J.S.E. Cape upon trading the cape with a Refractive Crystal for a 400 Bayld fee. *If you do not like the new augments and choose to keep the old ones, it will still consume the crystal.",
-            ["type"] = "Augment NPC",
-        },
+			["Detrovio"] = {
+				["_source"] = "npc",
+				["icon"] = "Dialogue.png",
+				["note"] = "JSE Cape augments:\
+* Trade a Lv.99 JSE Cape + Refractive Crystal.\
+* Costs 400 Bayld.",
+				["type"] = "Augment NPC",
+			},
         ["Dewalt"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
@@ -409,25 +412,26 @@ Involved in Quests:\
 ",
             ["type"] = "Quest Associate",
         },
-        ["Ishvad"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
-            ["note"] = "Notes:\
-* Prices for the items sold by this NPC are not affected by Fame level. *Prices for the items sold by this NPC are reduced by Alliance Shirt +1.",
-            ["type"] = "Standard Merchant",
-        },
-        ["Ivoh Haalameb"] = {
-            ["_source"] = "npc",
-            ["icon"] = "PastEventWatcher.png",
-            ["type"] = "Past Event Watcher",
-        },
-        ["Jausephiane"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
-            ["note"] = "Notes:\
-Sells permanent key items used to teleport from Adoulinian Waypoints to mainland cities and towns.",
-            ["type"] = "Waypoint Vendor",
-        },
+			["Ishvad"] = {
+				["_source"] = "npc",
+				["icon"] = "Merchant.png",
+				["note"] = "Merchant:\
+* Prices ignore Fame.\
+* Alliance Shirt +1 grants a discount.",
+				["type"] = "Standard Merchant",
+			},
+			["Ivoh Haalameb"] = {
+				["_source"] = "npc",
+				["icon"] = "PastEventWatcher.png",
+				["type"] = "Past Event Watcher",
+			},
+			["Jausephiane"] = {
+				["_source"] = "npc",
+				["icon"] = "Merchant.png",
+				["note"] = "Waypoint vendor:\
+* Sells teleport key items for mainland destinations.",
+				["type"] = "Waypoint Vendor",
+			},
         ["Jorin"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
@@ -470,12 +474,13 @@ Sells permanent key items used to teleport from Adoulinian Waypoints to mainland
 * Transporting",
             ["type"] = "Dialogue NPC",
         },
-        ["Lalla-Dalla"] = {
-            ["_source"] = "npc",
-            ["icon"] = "MiniGame.png",
-            ["note"] = "Hosts the interactive 'Box Fortune 6' dice gambling mini-game, allowing players to exchange Bayld for specialized Mummers' Medals.",
-            ["type"] = "Mini-Game",
-        },
+			["Lalla-Dalla"] = {
+				["_source"] = "npc",
+				["icon"] = "MiniGame.png",
+				["note"] = "Box Fortune 6:\
+* Play for Mummers' Medals.",
+				["type"] = "Mini-Game",
+			},
         ["Ledericus"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
@@ -683,13 +688,13 @@ Involved in Quests:\
 * A Thirst for the Eons",
             ["type"] = "Quest Associate",
         },
-        ["Porter Moogle"] = {
-            ["_source"] = "npc",
-            ["icon"] = "ItemStorage.png",
-            ["note"] = "Notes:\
-Find a nearby Porter Moogle and talk to him and select the option to buy a Slip. Once you find the slip you want you select it and confirm your selection. Each slip will cost you 1000 gil to buy. After purchasing any storage slip, you may trade 1-7 corresponding items per trade along with the slip. NOTE: This does NOT mean you can only store up to 7 items on a single slip, it simply means you can only transfer up to 7 at a time to the Porter for storage. At any time after you have the slip you can continue to make trades of 1-7 items along with the corresponding slip, thereby storing all your like items with the Moogle instead of in your MH. This feature is handy when you later get another armor drop, like in Dynamis, and want to store it somewhere until you need it. To withdraw an item simply trade him the corresponding slip and he will give you an option to retrieve your armor. You only pay an initial fee of 1,000 gil when purchasing a storage slip, you will not pay every time you store or withdraw gear. Storage slips cannot be discarded unless all stored items are retrieved first. As of Feb. 14, 2011, items with a Magian Trial insignia can no longer be stored with a Porter Moogle. Any items with an active trial stored before that date have had all trial progress erased.",
-            ["type"] = "Item Storage",
-        },
+		["Porter Moogle"] = {
+			["_source"] = "npc",
+			["icon"] = "ItemStorage.png",
+			["note"] = "Item storage:\
+* Purchase storage slips and store eligible equipment.",
+			["type"] = "Item Storage",
+		},
         ["Preterig"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
@@ -722,13 +727,13 @@ Sells: *Apple Juice 300 *Frontier Soda 125 *Melon Pie 1,560 *Orange Juice 200",
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
-        ["Rienne"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-* Once you have surveyed an Ergon Locus, the tincture associated with it will appear on the list for sale. *Check with Chamulele for current survey status affecting potency of each tincture.",
-            ["type"] = "Survey Officer",
-        },
+			["Rienne"] = {
+				["_source"] = "npc",
+				["icon"] = "Dialogue.png",
+				["note"] = "Ergon tinctures:\
+* Sells tinctures for surveyed Ergon Loci.",
+				["type"] = "Survey Officer",
+			},
         ["Rising Solstice"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
@@ -823,13 +828,13 @@ Sells: *Pickaxe 200 *Hatchet 500 *Sickle 300 *Dart 10 *Hawkeye 60 *Iron Arrow 8"
 * A Certain Substitute Patrolman",
             ["type"] = "Dialogue NPC",
         },
-        ["Wescolina"] = {
-            ["_source"] = "npc",
-            ["icon"] = "afstorage.png",
-            ["note"] = "Notes:\
-* You can commission Geomancer Artifact Armor from Wescolina by talking to her on Geomancer after flagging the quest The Bloodline of Zacariah. ",
-            ["type"] = "Artifact Quest",
-        },
+			["Wescolina"] = {
+				["_source"] = "npc",
+				["icon"] = "afstorage.png",
+				["note"] = "Geomancer Artifact Armor:\
+* Commission artifact armor after starting 'The Bloodline of Zacariah'.",
+				["type"] = "Artifact Quest",
+			},
         ["Wesley"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -863,103 +868,121 @@ Sells: *Pickaxe 200 *Hatchet 500 *Sickle 300 *Dart 10 *Hawkeye 60 *Iron Arrow 8"
 * Exchanges Bayld for books",
             ["type"] = "Bayld Vendor",
         },
+        ["Louisareaux"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
+* A Thirst for the Eons",
+            ["type"] = "Quest Associate",
+        },
     },
-    ["objects"] = {
-        ["Amchuchu's Laboratory"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "The heavy entrance portal framework anchoring the inventor's lab headquarters. Stepping past this threshold delivers you straight into the main office to handle pioneering research reviews.",
-            ["type"] = "Security Gate",
-        },
-        ["Contemplation Site"] = {
-            ["_source"] = "item",
-            ["icon"] = "ContemplationSite.png",
-            ["note"] = "A scenic, quiet overlook tucked away within the bustling city walls. Pausing here allows you to gather your thoughts, trigger historical lore cutscenes, or progress urban civic quests.",
-            ["type"] = "Quest Node",
-        },
-        ["Door: Amchuchu's Laboratory"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "The heavy workshop door frame leading straight into the inventor lab. Interfacing with the latch uncovers pioneering research files or triggers extensive Adoulin side quest lines.",
-            ["type"] = "Security Gate",
-        },
-        ["Door: Depository"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A secure storage portal partition blockading the city archive facility vaults. Verifying your pioneer clearance tokens unblocks the framework to let you retrieve quest items.",
-            ["type"] = "Security Gate",
-        },
-        ["Door: Svenja's Manor"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "An elegant, massive portal archway guarding the high noble estate chambers. Presenting proper aristocratic credentials unseals the ward, letting you cross to launch localized side campaigns.",
-            ["type"] = "Security Gate",
-        },
-        ["Door:Hospital"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A standard wooden barrier door partitioning the port city clinic layout blocks. Unlatching the frame allows you to enter medical quarters to fulfill advanced pioneer side tasks.",
-            ["type"] = "Security Gate",
-        },
-        ["Door:Svenja's Manor"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "The secondary specific duplicate portal framework guarding the high noble estate grounds. Shifting the latch moves you off public paths to launch targeted local side campaigns.",
-            ["type"] = "Security Gate",
-        },
-        ["Fontis Xanira"] = {
-            ["_source"] = "item",
-            ["icon"] = "Spring.png",
-            ["note"] = "The grand, rushing central fountain dominating the city plaza. Investigating the pristine waters reveals sacred clues needed to cure ancient curses or advance civic storyline paths.",
-            ["type"] = "Quest Node",
-        },
-        ["Inconspicuous Barrel"] = {
-            ["_source"] = "item",
-            ["icon"] = "Crate.png",
-            ["note"] = "A worn wooden storage barrel tucked away in town alleys or submerged within the sewer grids. Searching the container uncovers hidden contacts and secret patterns required to forge Rune Fencer Relic Armor.",
-            ["type"] = "Loot Container",
-        },
-        ["Mischief Marker"] = {
-            ["_source"] = "item",
-            ["icon"] = "QuestNode.png",
-            ["note"] = "A subtle, secretive carving etched directly into the city stone. Inspecting the mark unlocks hidden street-pioneer questlines or evaluates specialized holiday event tasks.",
-            ["type"] = "Quest Node",
-        },
-        ["Port Storage"] = {
-            ["_source"] = "item",
-            ["icon"] = "Crate.png",
-            ["note"] = "A heavy structural cargo crate stored near the warehouse docks. Searching through its contents balances local supply manifests and registers delivery parameters for your active Couriers' Coalition assignments.",
-            ["type"] = "Loot Container",
-        },
-        ["Runic Overflow"] = {
-            ["_source"] = "item",
-            ["icon"] = "QuestNode.png",
-            ["note"] = "A pulsing magical leak escaping through cracks in the regional landmass. Studying the unstable runic energy updates active pioneer journals and advances advanced frontier side tasks.",
-            ["type"] = "Quest Node",
-        },
-        ["Sauce Barrel"] = {
-            ["_source"] = "item",
-            ["icon"] = "Crate.png",
-            ["note"] = "A seasoned wooden barrel tucked away in the warehouse docks. Searching the storage container uncovers hidden contacts and retrieves specialized regional culinary supplies.",
-            ["type"] = "Loot Container",
-        },
-        ["Soul Pyre"] = {
-            ["_source"] = "item",
-            ["icon"] = "TreasureCasket.png",
-            ["note"] = "A glowing extraction column manifesting immediately post-combat across the continent. Accessing its light yields lost items, recovery tokens, or temporary regional combat enhancements.",
-            ["type"] = "Loot Container",
-        },
-        ["Sunrise Beacon"] = {
-            ["_source"] = "item",
-            ["icon"] = "QuestNode.png",
-            ["note"] = "A tactical maritime signaling pillar anchoring the port city plaza. Reading the log updates your pioneer geographic data and uncovers files for active frontier research goals.",
-            ["type"] = "Quest Node",
-        },
-        ["Symphonic Curator"] = {
-            ["_source"] = "item",
-            ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
-            ["type"] = "Quest Node",
-        },
+		["objects"] = {
+			["Amchuchu's Laboratory"] = {
+				["_source"] = "item",
+				["icon"] = "Door.png",
+				["note"] = "Entrance to Amchuchu's Laboratory.",
+				["type"] = "Security Gate",
+			},
+			["Contemplation Site"] = {
+				["_source"] = "item",
+				["icon"] = "ContemplationSite.png",
+				["note"] = "Quest location:\
+* Examine for quest or mission progress.",
+				["type"] = "Quest Node",
+			},
+			["Door: Amchuchu's Laboratory"] = {
+				["_source"] = "item",
+				["icon"] = "Door.png",
+				["note"] = "Entrance to Amchuchu's Laboratory.",
+				["type"] = "Security Gate",
+			},
+			["Door: Depository"] = {
+				["_source"] = "item",
+				["icon"] = "Door.png",
+				["note"] = "Entrance to the Depository.",
+				["type"] = "Security Gate",
+			},
+			["Door: Svenja's Manor"] = {
+				["_source"] = "item",
+				["icon"] = "Door.png",
+				["note"] = "Entrance to Svenja's Manor.",
+				["type"] = "Security Gate",
+			},
+			["Door:Hospital"] = {
+				["_source"] = "item",
+				["icon"] = "Door.png",
+				["note"] = "Entrance to the Hospital.",
+				["type"] = "Security Gate",
+			},
+			["Door:Svenja's Manor"] = {
+				["_source"] = "item",
+				["icon"] = "Door.png",
+				["note"] = "Entrance to Svenja's Manor.",
+				["type"] = "Security Gate",
+			},
+			["Fontis Xanira"] = {
+				["_source"] = "item",
+				["icon"] = "Spring.png",
+				["note"] = "Quest location:\
+* Examine for quest or mission progress.",
+				["type"] = "Quest Node",
+			},
+			["Inconspicuous Barrel"] = {
+				["_source"] = "item",
+				["icon"] = "Crate.png",
+				["note"] = "Quest location:\
+* Examine for Rune Fencer artifact quests.",
+				["type"] = "Loot Container",
+			},
+			["Mischief Marker"] = {
+				["_source"] = "item",
+				["icon"] = "QuestNode.png",
+				["note"] = "Quest location:\
+* Examine for quest progress.",
+				["type"] = "Quest Node",
+			},
+			["Port Storage"] = {
+				["_source"] = "item",
+				["icon"] = "Crate.png",
+				["note"] = "Quest location:\
+* Examine for Couriers' Coalition assignments.",
+				["type"] = "Loot Container",
+			},
+			["Runic Overflow"] = {
+				["_source"] = "item",
+				["icon"] = "QuestNode.png",
+				["note"] = "Quest location:\
+* Examine for quest progress.",
+				["type"] = "Quest Node",
+			},
+			["Sauce Barrel"] = {
+				["_source"] = "item",
+				["icon"] = "Crate.png",
+				["note"] = "Quest location:\
+* Examine for quest progress.",
+				["type"] = "Loot Container",
+			},
+			["Soul Pyre"] = {
+				["_source"] = "item",
+				["icon"] = "TreasureCasket.png",
+				["note"] = "Battlefield rewards:\
+* Recover loot and temporary items.",
+				["type"] = "Loot Container",
+			},
+			["Sunrise Beacon"] = {
+				["_source"] = "item",
+				["icon"] = "QuestNode.png",
+				["note"] = "Quest location:\
+* Examine for quest progress.",
+				["type"] = "Quest Node",
+			},
+			["Symphonic Curator"] = {
+				["_source"] = "item",
+				["icon"] = "QuestNode.png",
+				["note"] = "Music player:\
+* Change the area's background music.",
+				["type"] = "Quest Node",
+			},
+		},
     },
 }

@@ -3,18 +3,16 @@ return {
         ["Esha'ntarl"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Mission NPC:\
 * The Shrouded Canvas\
-* The Warpin\
-",
+* The Warpin",
             ["type"] = "Quest Associate",
         },
         ["Nag'molada"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Chains of Promathia\
-",
+            ["note"] = "Mission NPC:\
+* Chains of Promathia",
             ["type"] = "Mission Associate",
         },
     },
@@ -22,20 +20,23 @@ return {
         ["Armoury Crate"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A reinforced storage chest appearing upon victory in battlefield instances or remnants sectors. Prying open the heavy lid drops specialized weapons, armor components, or unique instance progression resources for your squad.",
+            ["note"] = "Battlefield rewards:\
+* Contains equipment and other loot.",
             ["type"] = "Loot Container",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Spatial Displacement"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A shimmering spatial distortion tearing through the floating sky tracks. Stepping directly into the rift bridges separate landmass layers to teleport your party into core expansion battlefields.",
+            ["note"] = "Battlefield entrance:\
+* Enter the battlefield.",
             ["type"] = "Transit Portal",
         },
     },

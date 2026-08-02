@@ -3,18 +3,16 @@ return {
         ["Grav'iton"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Mission NPC:\
 * The Shrouded Canvas\
-* Dawn\
-",
+* Dawn",
             ["type"] = "Quest Associate",
         },
         ["Yve'noile"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Chains of Promathia\
-",
+            ["note"] = "Mission NPC:\
+* Chains of Promathia",
             ["type"] = "Mission Associate",
         },
     },
@@ -22,13 +20,15 @@ return {
         ["Celestial Gate"] = {
             ["_source"] = "item",
             ["icon"] = "VoidwatchRift.png",
-            ["note"] = "A brilliant cosmic barrier standing at the threshold of the ultimate dimensional arena. Pushing through this shimmering boundary transports you directly into final-tier boss confrontations.",
+            ["note"] = "Battlefield entrance.\
+* Enter the final battle.",
             ["type"] = "Security Gate",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },

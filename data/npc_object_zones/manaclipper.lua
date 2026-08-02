@@ -2,14 +2,14 @@ return {
     ["npcs"] = {
         ["Gniyah Mischatt"] = {
             ["_source"] = "npc",
-            ["icon"] = "AdventurersAssistant.png",
+            ["icon"] = "Ferry-Schedule.png",
             ["note"] = "Notes:\
 Provides information on when the Manaclipper will arrive at its destination.",
-            ["type"] = "Adventurer's Assistant",
+            ["type"] = "Ferry Schedule",
         },
         ["Khots Chalahko"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "BargeCaptain.png",
             ["note"] = "Notes:\
 Provides a scenic commentary while travelling on the Manaclipper.",
             ["type"] = "Clipper Guide",

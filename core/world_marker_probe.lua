@@ -3342,6 +3342,130 @@ function worldMarkerProbe.GetAnchorDebug(targetIndex, getEntityManager, getBone)
     };
 end
 
+-- Safe exact-anchor capture for actors whose skeleton pointer is unavailable or
+-- unsafe to inspect.  This intentionally uses only the same actor/object reads
+-- and native nameplate helper that the normal exact-anchor render path uses.
+function worldMarkerProbe.GetSafeAnchorDebug(targetIndex, getEntityManager)
+    targetIndex = tonumber(targetIndex);
+
+    if (targetIndex == nil or targetIndex == 0 or getEntityManager == nil) then
+        return nil, 'missing-args';
+    end
+
+    local entityManager = getEntityManager();
+
+    if (entityManager == nil) then
+        return nil, 'missing-entity-manager';
+    end
+
+    local actorPointer = nil;
+    local actorOk = pcall(function()
+        actorPointer = entityManager:GetActorPointer(targetIndex);
+    end);
+
+    if (actorOk ~= true or actorPointer == nil or actorPointer == 0) then
+        return nil, 'missing-actor';
+    end
+
+    local function safeNumber(fn)
+        local ok, value = pcall(fn);
+
+        if (ok ~= true) then
+            return nil;
+        end
+
+        return tonumber(value);
+    end
+
+    local baseX = safeNumber(function() return ashita.memory.read_float(actorPointer + 0x678); end);
+    local baseY = safeNumber(function() return ashita.memory.read_float(actorPointer + 0x680); end);
+    local baseZ = safeNumber(function() return ashita.memory.read_float(actorPointer + 0x67C); end);
+    local objectPointer = safeNumber(function()
+        return ashita.memory.read_uint32(actorPointer + 0x674 + 0x44);
+    end);
+
+    if (
+        baseX == nil or baseY == nil or baseZ == nil or
+        objectPointer == nil or objectPointer == 0
+    ) then
+        return nil, 'missing-anchor-data';
+    end
+
+    local helper = FindNameplateHelper();
+
+    if (helper == nil or helper == 0) then
+        return nil, 'missing-helper';
+    end
+
+    if (worldMarkerProbe._helperFunction == nil) then
+        worldMarkerProbe._helperFunction = ffi.cast('lp_get_nameplate_offset_f', helper);
+    end
+
+    local offset = worldMarkerProbe._exactAnchorOffset;
+    offset.x = 0;
+    offset.y = 0;
+    offset.z = 0;
+
+    local helperOk, helperError = pcall(function()
+        worldMarkerProbe._helperFunction(
+            ffi.cast('void*', objectPointer),
+            NormalizeAnchorBone(anchorBone),
+            offset
+        );
+    end);
+
+    if (helperOk ~= true) then
+        return nil, 'helper-failed:' .. tostring(helperError);
+    end
+
+    local offsetX = tonumber(offset.x);
+    local offsetY = tonumber(offset.y);
+    local offsetZ = tonumber(offset.z);
+    local heading = safeNumber(function() return entityManager:GetHeading(targetIndex); end);
+    local rotatedX = nil;
+    local rotatedY = nil;
+    local rotatedInverseX = nil;
+    local rotatedInverseY = nil;
+
+    if (heading ~= nil) then
+        local cosHeading = math.cos(heading);
+        local sinHeading = math.sin(heading);
+        rotatedX = baseX + (offsetX * cosHeading) - (offsetZ * sinHeading);
+        rotatedY = baseY + (offsetX * sinHeading) + (offsetZ * cosHeading);
+        rotatedInverseX = baseX + (offsetX * cosHeading) + (offsetZ * sinHeading);
+        rotatedInverseY = baseY - (offsetX * sinHeading) + (offsetZ * cosHeading);
+    end
+
+    return {
+        targetIndex = targetIndex,
+        baseX = baseX,
+        baseY = baseY,
+        baseZ = baseZ,
+        offsetX = offsetX,
+        offsetY = offsetY,
+        offsetZ = offsetZ,
+        exactX = baseX + offsetX,
+        exactY = baseY + offsetZ,
+        exactZ = baseZ + offsetY,
+        heading = heading,
+        rotatedX = rotatedX,
+        rotatedY = rotatedY,
+        rotatedInverseX = rotatedInverseX,
+        rotatedInverseY = rotatedInverseY,
+        entityX = safeNumber(function() return entityManager:GetLocalPositionX(targetIndex); end),
+        entityY = safeNumber(function() return entityManager:GetLocalPositionY(targetIndex); end),
+        entityZ = safeNumber(function() return entityManager:GetLocalPositionZ(targetIndex); end),
+        lastX = safeNumber(function() return entityManager:GetLastPositionX(targetIndex); end),
+        lastY = safeNumber(function() return entityManager:GetLastPositionY(targetIndex); end),
+        lastZ = safeNumber(function() return entityManager:GetLastPositionZ(targetIndex); end),
+        entityType = safeNumber(function() return entityManager:GetType(targetIndex); end),
+        spawnFlags = safeNumber(function() return entityManager:GetSpawnFlags(targetIndex); end),
+        renderFlags0 = safeNumber(function() return entityManager:GetRenderFlags0(targetIndex); end),
+        renderFlags1 = safeNumber(function() return entityManager:GetRenderFlags1(targetIndex); end),
+        helperStatus = helperStatus,
+    };
+end
+
 function worldMarkerProbe.GetVisibilityDebug(targetIndex, getEntityManager, getBone)
     targetIndex = tonumber(targetIndex);
 
@@ -4762,50 +4886,6 @@ local function GetPlateQueuePriority(plate, targetIndex, subTargetIndex)
     return 70;
 end
 
-local function GetDrawableQueuedPlates()
-    local settings = targeting.GetSettings();
-    local maxCount = math.floor((tonumber(settings.maxWorldPlateCount) or 0) + 0.5);
-
-    if (maxCount <= 0 or #queuedPlates <= maxCount) then
-        return queuedPlates;
-    end
-
-    local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
-    local list = {};
-    local out = {};
-    local reservedCount = 0;
-
-    for _, plate in ipairs(queuedPlates) do
-        local targetType = tostring(plate ~= nil and plate.clickTargetType or ''):lower();
-
-        if (plate ~= nil and plate.isProtectedPlate == true) then
-            out[#out + 1] = plate;
-            reservedCount = reservedCount + 1;
-        else
-            list[#list + 1] = {
-                plate = plate,
-                priority = GetPlateQueuePriority(plate, targetIndex, subTargetIndex),
-                distance = tonumber(plate.distance) or 9999,
-            };
-        end
-    end
-
-    table.sort(list, function(left, right)
-        if (left.priority ~= right.priority) then
-            return left.priority < right.priority;
-        end
-
-        return left.distance < right.distance;
-    end);
-
-    local remaining = math.max(0, maxCount - reservedCount);
-    for index = 1, math.min(remaining, #list) do
-        out[#out + 1] = list[index].plate;
-    end
-
-    return out;
-end
-
 local function SortDrawablePlatesForDraw(drawablePlates)
     if (type(drawablePlates) ~= 'table' or #drawablePlates <= 1) then
         return drawablePlates;
@@ -4895,7 +4975,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         pendingClickRects = {};
         worldMarkerProbe._pendingStackRects = {};
 
-        local drawablePlates = SortDrawablePlatesForDraw(GetDrawableQueuedPlates());
+        local drawablePlates = SortDrawablePlatesForDraw(queuedPlates);
         worldMarkerProbe._lastClickPlates = drawablePlates;
         worldMarkerProbe._lastClickGetEntityManager = getEntityManager;
         worldMarkerProbe._lastClickGetBone = getBone;
@@ -4943,7 +5023,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
     end
 
     lastDrawCount = 0;
-    local drawablePlates = SortDrawablePlatesForDraw(GetDrawableQueuedPlates());
+    local drawablePlates = SortDrawablePlatesForDraw(queuedPlates);
     worldMarkerProbe._lastClickPlates = drawablePlates;
     worldMarkerProbe._lastClickGetEntityManager = getEntityManager;
     worldMarkerProbe._lastClickGetBone = getBone;

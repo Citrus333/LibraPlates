@@ -5,15 +5,13 @@ return {
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * An Explorer's Footsteps\
-\
 Involved in Quests:\
 * Chasing Dreams\
 * Signed in Blood\
-\
 Involved in Missions:\
 * RoV 1-1-3 - Set Free\
 * RoV 1-1-4 - The Beginning",
-            ["type"] = "Quest Giver",
+            ["type"] = "Mission Associate",
         },
         ["Aleria"] = {
             ["_source"] = "npc",
@@ -22,7 +20,7 @@ Involved in Missions:\
         },
         ["Baa"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Only the Best",
             ["type"] = "Sheep",
@@ -43,7 +41,7 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "Ferry-Schedule.png",
             ["note"] = "Notes:\
-Displays the remaining time in Vana'Diel hours and Earth minutes until the arrival or departure of the boat to Mhaura.",
+* Shows the Vana'diel and Earth time remaining until the ferry arrives or departs for Mhaura.",
             ["type"] = "Ferry Schedule",
         },
         ["Catus"] = {
@@ -53,7 +51,7 @@ Displays the remaining time in Vana'Diel hours and Earth minutes until the arriv
         },
         ["Chenon"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "FishRanking.png",
             ["type"] = "Fish Ranking",
         },
         ["Chutarmire"] = {
@@ -63,7 +61,8 @@ Displays the remaining time in Vana'Diel hours and Earth minutes until the arriv
         },
         ["Cokhe-Lokhe"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Soup_of_the_Day",
             ["note"] = "Starts Quests:\
 * Soup of the Day (repeatable)",
             ["type"] = "Repeatable Quest",
@@ -97,10 +96,9 @@ Displays the remaining time in Vana'Diel hours and Earth minutes until the arriv
         ["Elrica"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * Seeds of Flame\
-* Waking the Colossus\
-",
+* Waking the Colossus",
             ["type"] = "Quest Associate",
         },
         ["Esteban"] = {
@@ -112,9 +110,8 @@ Displays the remaining time in Vana'Diel hours and Earth minutes until the arriv
         ["Evrard"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* The Rescue\
-",
+            ["note"] = "Involved in Quests:\
+* The Rescue",
             ["type"] = "Quest Associate",
         },
         ["Falgima"] = {
@@ -129,10 +126,9 @@ Displays the remaining time in Vana'Diel hours and Earth minutes until the arriv
         },
         ["Gabwaleid"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Riding on the Clouds\
-",
+* Riding on the Clouds",
             ["type"] = "Quest Associate",
         },
         ["Gibol"] = {
@@ -147,17 +143,16 @@ Displays the remaining time in Vana'Diel hours and Earth minutes until the arriv
         },
         ["Helina"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Treasures of the Earth\
-",
+* Treasures of the Earth",
             ["type"] = "Empyrean Armor",
         },
         ["Herminia"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Sells level 8 armor: Kenpogi Set and Tunic Set.",
+* Sells the level 8 Kenpogi and Tunic armor sets.",
             ["type"] = "Standard Merchant",
         },
         ["Humilitie"] = {
@@ -188,8 +183,11 @@ Sells level 8 armor: Kenpogi Set and Tunic Set.",
         },
         ["Khartes"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "Here Be Dragons:\
+            ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Here_Be_Dragons",
+            ["note"] = "Starts Quests:\
+* Here Be Dragons\
+Notes:\
 * Unlocks mining in Gustav Tunnel.\
 * Use the Miner's Helmet in Gustav Tunnel D-11 to spawn Ore Melter, then return.",
             ["type"] = "HELM Unlock Quest",
@@ -211,26 +209,23 @@ Sells level 8 armor: Kenpogi Set and Tunic Set.",
         },
         ["Manusiel"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Quests#Helping_Hands",
             ["note"] = "Crystal Warrior:\
-* Starts quests: Helping Hands and\
-Rolling with Punches.\
-* Level 20 early gear quests in\
-Selbina.",
+* Starts quest: Helping Hands.\
+* Rewards augmented Lizard Gloves.",
             ["type"] = "CW Early Gear",
         },
         ["Mathilde"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Riding on the Clouds\
-\
 Involved in Missions:\
 * Promathia Mission 6-3: More Questions than Answers\
 * Those Who Lurk in Shadows (III)\
-* Remember Me in Your Dreams\
-",
-            ["type"] = "Riding the Clouds",
+* Remember Me in Your Dreams",
+            ["type"] = "Mission Associate",
         },
         ["Mathilde's Son"] = {
             ["_source"] = "npc",
@@ -239,7 +234,7 @@ Involved in Missions:\
         },
         ["Mee"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Only the Best",
             ["type"] = "Sheep",
@@ -255,10 +250,8 @@ Involved in Missions:\
             ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Novice_Trials",
             ["note"] = "Novice Trials:\
 * Starts equipment augment trials.\
-* Available to all character types\
-with no cooldown.\
-* Transfers completed NQ augments\
-to crafted HQ versions.\
+* Available to all character types with no cooldown.\
+* Transfers completed NQ augments to crafted HQ versions.\
 * Trials may be completed on any job.",
             ["type"] = "Novice Trials",
         },
@@ -267,10 +260,8 @@ to crafted HQ versions.\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Only the Best\
-\
 Involved in Quests:\
-* Riding on the Clouds\
-",
+* Riding on the Clouds",
             ["type"] = "Quest Giver",
         },
         ["Mendoline"] = {
@@ -290,10 +281,10 @@ Involved in Quests:\
         },
         ["Naillina"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionGiver.png",
-            ["note"] = "Starts Missions:\
-* RoV 1-1-3 - Set Free",
-            ["type"] = "Mission Giver",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Emissary from the Seas",
+            ["type"] = "Mission Associate",
         },
         ["Oleg"] = {
             ["_source"] = "npc",
@@ -311,17 +302,15 @@ Involved in Quests:\
             ["note"] = "Starts Quests:\
 * Under the Sea\
 * The Gift\
-* The Real Gift\
-",
+* The Real Gift",
             ["type"] = "Quest Giver",
         },
         ["Pacomart"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
-* The Beginning\
-",
-            ["type"] = "Quest Starter",
+* The Beginning",
+            ["type"] = "Mission Giver",
         },
         ["Pascaut"] = {
             ["_source"] = "npc",
@@ -337,7 +326,9 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "ItemStorage.png",
             ["note"] = "Notes:\
-Find a nearby Porter Moogle and talk to him and select the option to buy a Slip. Once you find the slip you want you select it and confirm your selection. Each slip will cost you 1000 gil to buy. After purchasing any storage slip, you may trade 1-7 corresponding items per trade along with the slip. NOTE: This does NOT mean you can only store up to 7 items on a single slip, it simply means you can only transfer up to 7 at a time to the Porter for storage. At any time after you have the slip you can continue to make trades of 1-7 items along with the corresponding slip, thereby storing all your like items with the Moogle instead of in your MH. This feature is handy when you later get another armor drop, like in Dynamis, and want to store it somewhere until you need it. To withdraw an item simply trade him the corresponding slip and he will give you an option to retrieve your armor. You only pay an initial fee of 1,000 gil when purchasing a storage slip, you will not pay every time you store or withdraw gear. Storage slips cannot be discarded unless all stored items are retrieved first. As of Feb. 14, 2011, items with a Magian Trial insignia can no longer be stored with a Porter Moogle. Any items with an active trial stored before that date have had all trial progress erased.",
+* Sells storage slips for 1,000 gil.\
+* Stores and retrieves eligible equipment using the corresponding slip.\
+* Equipment with an active Magian trial cannot be stored.",
             ["type"] = "Item Storage",
         },
         ["Quelpia"] = {
@@ -348,8 +339,6 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
         ["Raging Tiger"] = {
             ["_source"] = "npc",
             ["icon"] = "FerryBoardingGuard.png",
-            ["note"] = "Notes:\
-* Guard at the entrance of Selbina port",
             ["type"] = "Port Guard",
         },
         ["Ramona"] = {
@@ -363,8 +352,7 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
             ["_source"] = "catseye_npc",
             ["icon"] = "Renovio.png",
             ["note"] = "CatsEyeXI:\
-* Upgrades custom augmented level\
-30 gearsets to +1.\
+* Upgrades custom augmented level 30 gearsets to +1.\
 * Pairs with Steel Teeth in Mhaura.",
             ["type"] = "Lv30 Gear Upgrades",
         },
@@ -387,12 +375,11 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
         },
         ["Sneaking Tiger"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * The Tenshodo Showdown\
-* Hitting the Marquisate\
-",
-            ["type"] = "Cutscene NPC",
+* Hitting the Marquisate",
+            ["type"] = "Quest Associate",
         },
         ["Thunder Hawk"] = {
             ["_source"] = "npc",
@@ -404,15 +391,13 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
         ["Tilala"] = {
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
-            ["note"] = "Notes:\
-Despite being a male Tarutaru, his name conforms to female Tarutaru naming conventions. This may be a subtle nod to the preponderance of feminine tendencies in the fashion industry.",
             ["type"] = "Clothcraft Merchant",
         },
         ["Torapiont"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Sells level 9-36 weapons and level 1-14 ammo.",
+* Sells level 9–36 weapons and level 1–14 ammunition.",
             ["type"] = "Standard Merchant",
         },
         ["Valgeir"] = {
@@ -431,10 +416,9 @@ Sells level 9-36 weapons and level 1-14 ammo.",
         },
         ["Vobo"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Riding on the Clouds\
-",
+* Riding on the Clouds",
             ["type"] = "Quest Associate",
         },
         ["Vuntar"] = {
@@ -448,7 +432,19 @@ Sells level 9-36 weapons and level 1-14 ammo.",
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
             ["note"] = "Notes:\
-Checks weather for the following locations: :*Pashhow Marshlands :*Ronfaure (East and West) :*La Theine Plateau :*Valkurm Dunes :*Jugner Forest :*Batallia Downs :*Gustaberg (North and South) :*Konschtat Highlands :*Rolanberry Fields :*Cape Teriggan :*Ferry :*Jeuno",
+Checks weather for:\
+* East and West Ronfaure\
+* La Theine Plateau\
+* Valkurm Dunes\
+* Jugner Forest\
+* Batallia Downs\
+* North and South Gustaberg\
+* Konschtat Highlands\
+* Pashhow Marshlands\
+* Rolanberry Fields\
+* Cape Teriggan\
+* Ferry routes\
+* Jeuno",
             ["type"] = "Weather Reporter",
         },
         ["Wenzel"] = {
@@ -473,10 +469,9 @@ Checks weather for the following locations: :*Pashhow Marshlands :*Ronfaure (Eas
         },
         ["Zaldon"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Inside the Belly\
-\
 Involved in Quests:\
 * Under the Sea\
 * Indomitable Spirit\
@@ -488,26 +483,18 @@ Involved in Quests:\
         ["Door:Fishermen's Guild"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber entrance portal leading into the port town maritime guild hall. Turning the door handle coordinates your city navigation and uncovers local crafting records.",
-            ["type"] = "Security Gate",
         },
         ["Door:Mayor's Residence"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A secure portal archway partitioning off the local administrative mayoral estate. Passing through the threshold tracks municipal missions and handles localized storyline developments.",
-            ["type"] = "Security Gate",
         },
         ["Door:Shepherd's Muster"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standard wooden barrier door partitioning the local seaside tavern. Shifting the latch gives you access to search for hidden tracking clues or progress urban delivery checks.",
-            ["type"] = "Security Gate",
         },
         ["Door:Weavers' Guild"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standard wooden partition protecting artisan textile crafting halls. Activating the handle opens up advanced synthetic craft yards and checks active guild progression parameters.",
-            ["type"] = "Security Gate",
         },
     },
 }

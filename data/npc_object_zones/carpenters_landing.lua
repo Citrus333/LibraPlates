@@ -5,7 +5,6 @@ return {
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Mithran Delicacies\
-\
 Involved in Quests:\
 * Tea with a Tonberry?",
             ["type"] = "Quest Giver",

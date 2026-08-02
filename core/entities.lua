@@ -771,6 +771,30 @@ IsVisibleEntity = function(entityManager, index, requireSkeleton, allowInvisible
     return true;
 end
 
+local function IsLoadedIdlePlayerEntity(entityManager, index)
+    if (entityManager == nil or IsPlayerIndexRange(index) ~= true) then
+        return false;
+    end
+
+    local okFlags, renderFlags = pcall(function()
+        return entityManager:GetRenderFlags0(index);
+    end);
+
+    if (okFlags ~= true or renderFlags == nil or bit.band(renderFlags, 0x4000) ~= 0) then
+        return false;
+    end
+
+    local okActor, actorPointer = pcall(function()
+        return entityManager:GetActorPointer(index);
+    end);
+
+    return
+        okActor == true and
+        actorPointer ~= nil and
+        actorPointer ~= 0 and
+        HasLoadedSkeleton(entityManager, index) == true;
+end
+
 local function GetSelfIndex()
     local selfIndex = nil;
 
@@ -1541,8 +1565,11 @@ function entities.GetNearbyPlayers(maxDistance)
         if (
             index ~= selfIndex and
             IsMobIndex(entityManager, index) ~= true and
-            IsVisibleEntity(entityManager, index, false) == true and
-            HasLoadedSkeleton(entityManager, index) == true
+            -- FFXI does not reliably retain the 0x200 render bit or nonzero
+            -- actor-alpha bytes for valid untargeted PCs at a distance. A
+            -- loaded actor/skeleton plus the explicit suppression bit is the
+            -- stable idle-world eligibility check.
+            IsLoadedIdlePlayerEntity(entityManager, index) == true
         ) then
             local ent = GetEntity(index);
             local isCurrentTargetContext = tonumber(index) == tonumber(targetIndex) or tonumber(index) == tonumber(subTargetIndex);

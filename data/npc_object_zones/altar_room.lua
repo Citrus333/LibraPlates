@@ -15,6 +15,14 @@ return {
 ",
             ["type"] = "Cutscene NPC",
         },
+        ["Tsoo Haja the Umbra"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Dialogue.png",
+            ["note"] = "Involved in Quests:\
+* A Moral Manifest?\
+",
+            ["type"] = "Adventuring Fellow",
+        },
     },
     ["objects"] = {
         ["Beastmen's Banner"] = {

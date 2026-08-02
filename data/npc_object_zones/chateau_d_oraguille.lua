@@ -233,11 +233,9 @@ Involved in Missions:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Knight Stalker\
-\
 Involved in Quests:\
 * Lure of the Wildcat (San d'Oria)\
 * The Holy Crest\
-\
 Involved in Missions:\
 * San d'Oria Mission 8-2: Lightbringer\
 * San d'Oria Mission 9-2: The Heir to the Light\

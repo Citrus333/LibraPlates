@@ -2,11 +2,10 @@ return {
     ["npcs"] = {
         ["Abda-Lurabda"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
-* Aht Urhgan Mission 9: Undersea Scouting\
-",
-            ["type"] = "Puppet Name Changer",
+* Aht Urhgan Mission 9: Undersea Scouting",
+            ["type"] = "Mission Associate",
         },
         ["Abeesha"] = {
             ["_source"] = "npc",
@@ -15,11 +14,10 @@ return {
         },
         ["Abquhbah"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Starts Quests:\
 * Promotion: Lance Corporal\
 * Promotion: Chief Sergeant\
-\
 Involved in Quests:\
 * Promotion: Private First Class\
 * Promotion: Sergeant Major\
@@ -30,7 +28,6 @@ Involved in Quests:\
 * The Rider Cometh\
 * Unwavering Resolve\
 * A Stygian Pact\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 11: Imperial Schemes\
 * Aht Urhgan Mission 12: Royal Puppeteer\
@@ -47,9 +44,8 @@ Involved in Missions:\
 * Aht Urhgan Mission 38: Stirrings of War\
 * Aht Urhgan Mission 43: Fangs of the Lion\
 * Aht Urhgan Mission 46: Imperial Coronation\
-* Aht Urhgan Mission 48: Eternal Mercenary\
-",
-            ["type"] = "Mercenary Rank",
+* Aht Urhgan Mission 48: Eternal Mercenary",
+            ["type"] = "Mission Associate",
         },
         ["Adahva"] = {
             ["_source"] = "npc",
@@ -60,23 +56,21 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* The Prankster\
-",
+* The Prankster",
             ["type"] = "Quest Giver",
         },
         ["Ahgdeen"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Not Meant to Be",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Quest Associate",
         },
         ["Ahkk Jharcham"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Keeping Notes\
-",
+* Keeping Notes",
             ["type"] = "Quest Giver",
         },
         ["Ahtuuzah"] = {
@@ -87,42 +81,38 @@ Involved in Missions:\
         ["Alcander"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* The Prankster\
-",
+            ["note"] = "Involved in Quests:\
+* The Prankster",
             ["type"] = "Quest Associate",
         },
         ["Alexander"] = {
             ["_source"] = "npc",
-            ["icon"] = "Monster.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
 * Nashmeira's Plea\
-Involved in Quest:\
+Involved in Quests:\
 * Waking the Colossus\
-* Divine Interference\
-",
-            ["type"] = "Monster",
+* Divine Interference",
+            ["type"] = "Mission Associate",
         },
         ["Allard"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-*  Can be taken prisoner in Besieged. * If Allard is taken prisoner, Taten-Bilten (Al Zahbi Clothcraft Guild Merchant) will be too distraught to open his shop.",
+* Can be taken prisoner during Besieged.\
+* Taten-Bilten's shop closes while Allard is imprisoned.",
             ["type"] = "Standard Merchant",
         },
         ["Amajal"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Child, who complains about poor and rich and that her mother is not allowed to get behind the Imperial Whitegate.",
             ["type"] = "Child",
         },
         ["Amnaf"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * Aht Urhgan Mission 31: Shades of Vengeance\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 10: Astral Waves\
 * Aht Urhgan Mission 11: Imperial Schemes\
@@ -137,19 +127,17 @@ Involved in Missions:\
 * Aht Urhgan Mission 39: Allied Rumblings\
 * Aht Urhgan Mission 41: Light of Judgment\
 * Aht Urhgan Mission 42: Path of Darkness",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Mission Giver",
         },
         ["Aphmau"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Involved in Quests:\
 * Saga of the Skyserpent\
 * Soothing Waters\
-\
 Starts Missions:\
 * Aht Urhgan Mission 29: Puppet in Peril\
 * Aht Urhgan Mission 35: Legacy of the Lost\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 11: Imperial Schemes\
 * Aht Urhgan Mission 12: Royal Puppeteer\
@@ -162,34 +150,33 @@ Involved in Missions:\
 * Aht Urhgan Mission 30: Prevalence of Pirates\
 * Aht Urhgan Mission 32: In the Blood\
 * Aht Urhgan Mission 34: Testing the Waters\
-* Aht Urhgan Mission 35: Legacy of the Lost\
-",
-            ["type"] = "Cutscene NPC",
+* Aht Urhgan Mission 35: Legacy of the Lost",
+            ["type"] = "Mission Giver",
         },
         ["Arcuhbah"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Quests:\
 * The Prankster\
-Involved in Mission:\
-* The Road to Aht Urhgan\
-",
-            ["type"] = "Quest Associate",
+Involved in Missions:\
+* The Road to Aht Urhgan",
+            ["type"] = "Mission Associate",
         },
         ["Arzizah"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Aht Urhgan Mission 17: Guests of the Empire\
-* Ever Forward\
-",
-            ["type"] = "City Gate Guard",
+* Ever Forward",
+            ["type"] = "Mission Associate",
         },
         ["Asrahd"] = {
             ["_source"] = "npc",
             ["icon"] = "ImperialGateGuard.png",
             ["note"] = "Notes:\
-:*Casts Sanction on registered mercenaries (w/ Sanction Enhancements) :*Recharges Chariot Band, Emperor Band, or Empress Band. :*Sells items for Imperial Standing at appropriate rank. :*Explains Sanction, Imperial Standing, and Besieged system by choosing some available questions.",
+* Casts Sanction and recharges conquest bands.\
+* Sells Imperial Standing rewards.\
+* Explains Sanction, Imperial Standing, and Besieged.",
             ["type"] = "Imperial Gate Guard",
         },
         ["Atiza"] = {
@@ -228,9 +215,8 @@ Involved in Mission:\
         ["Balajaha"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Black Market\
-",
+            ["note"] = "Involved in Quests:\
+* Black Market",
             ["type"] = "Quest Associate",
         },
         ["Balakaf"] = {
@@ -239,7 +225,6 @@ Involved in Mission:\
             ["note"] = "Starts Quests:\
 * Get the Picture\
 * Five Seconds of Fame\
-\
 Involved in Quests:\
 * Arts and Crafts",
             ["type"] = "Quest Giver",
@@ -251,18 +236,17 @@ Involved in Quests:\
         },
         ["Bashraf"] = {
             ["_source"] = "npc",
-            ["icon"] = "ChocoboRenter.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Give Peace a Chance\
-* Three Men and a Closet\
-",
-            ["type"] = "Chocobo Guide",
+* Three Men and a Closet",
+            ["type"] = "Quest Associate",
         },
         ["Baya Hiramayuh"] = {
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-Tells you when the next ferry to and from Mhaura will arrive and depart.",
+* Reports the Mhaura ferry arrival and departure times.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Berangere"] = {
@@ -281,27 +265,27 @@ Trades completed astrarium from Nyzul Isle Uncharted Area Survey for armor.",
         },
         ["Bharifhal"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Forging a New Myth\
 * Coming Full Circle",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Quest Associate",
         },
         ["Bhoy Yhupplo"] = {
             ["_source"] = "npc",
             ["icon"] = "AssaultMissionGiver.png",
             ["note"] = "Notes:\
-Offers various Assault Missions for an I.D tag. Sells items for accumulated Assault points (stage-specific).",
+* Issues Assault missions using an Imperial Army I.D. Tag.\
+* Exchanges Assault Points for rewards.",
             ["type"] = "Assault Officer",
         },
         ["Biyaada"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Saga of the Skyserpent\
-* Ode to the Serpents\
-",
-            ["type"] = "Quest NPC",
+* Ode to the Serpents",
+            ["type"] = "Quest Associate",
         },
         ["Bjibar"] = {
             ["_source"] = "npc",
@@ -331,15 +315,14 @@ Offers various Assault Missions for an I.D tag. Sells items for accumulated Assa
         },
         ["Cacaroon"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Two Horn the Savage\
 * Led Astray\
 * Rat Race\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 4: Knight of Gold",
-            ["type"] = "Quest Associate",
+            ["type"] = "Mission Associate",
         },
         ["Caradoc"] = {
             ["_source"] = "npc",
@@ -351,7 +334,9 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-*  Can be taken in a Besieged. * When prisoner, the Al Zahbi Woodworking Guild Merchant will be too distraught to open her shop. * Corsairs looking to collect the dice for Phantom Roll should also seek out Jajaroon and Chichiroon in Nashmau.",
+* Can be taken prisoner during Besieged.\
+* The Al Zahbi Woodworking Guild shop closes while Chayaya is imprisoned.\
+* Sells Phantom Roll dice.",
             ["type"] = "Standard Merchant",
         },
         ["Chochoroon"] = {
@@ -367,22 +352,19 @@ Involved in Missions:\
         ["Clavauert"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* The Prince and the Hopper\
-",
+            ["note"] = "Involved in Quests:\
+* The Prince and the Hopper",
             ["type"] = "Quest Associate",
         },
         ["Clavauert B Chanoix"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * The Prince and the Hopper\
-\
 Involved in Missions:\
 * Escort Professor Chanoix\
-* Apkallu Seizure\
-",
-            ["type"] = "Historical Figure",
+* Apkallu Seizure",
+            ["type"] = "Mission Associate",
         },
         ["Dabhuh"] = {
             ["_source"] = "npc",
@@ -395,14 +377,14 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ItemDeliverer.png",
             ["note"] = "Notes:\
-If Dabigo is taken hostage during Besieged, the Item Delivery services in Al Zahbi will be shut down.",
+* Item Delivery services close while Dabigo is held prisoner.",
             ["type"] = "Item Deliverer",
         },
         ["Dahaaba"] = {
             ["_source"] = "npc",
             ["icon"] = "ChocoboRenter.png",
             ["note"] = "Notes:\
-This NPC can be captured during Besieged.",
+* Can be taken prisoner during Besieged.",
             ["type"] = "Chocobo Renter",
         },
         ["Dahaeel"] = {
@@ -424,15 +406,15 @@ This NPC can be captured during Besieged.",
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
             ["note"] = "Notes:\
-:Open: 6:00 - 21:00 :No longer closed on Firesday. :Refuses to sell items if Chayaya is taken prisoner.",
+* Open from 6:00 to 21:00.\
+* Refuses service while Chayaya is held prisoner.",
             ["type"] = "Woodworking Merchant",
         },
         ["Deminza"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* The Prankster\
-",
+            ["note"] = "Involved in Quests:\
+* The Prankster",
             ["type"] = "Quest Associate",
         },
         ["Devonte"] = {
@@ -444,54 +426,52 @@ This NPC can be captured during Besieged.",
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
             ["note"] = "Notes:\
-Used in Puppetmaster crafted artifact armor: :*Puppetry Babouches :*Puppetry Dastanas :*Puppetry Tobe",
+* Crafts Puppetry Babouches, Puppetry Dastanas, and Puppetry Tobe.",
             ["type"] = "Puppetmaster Crafting",
         },
         ["Djinabaha"] = {
             ["_source"] = "npc",
             ["icon"] = "AuctionManager.png",
             ["note"] = "Notes:\
-This NPC is the manager of the Auction House. If he is captured in Besieged, Al Zahbi's Auction House will not function.",
+* Manages the Auction House.\
+* Al Zahbi's Auction House closes while Djinabaha is held prisoner.",
             ["type"] = "Auction House",
         },
         ["Dkhaaya"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Olduum\
-",
+* Olduum",
             ["type"] = "Quest Giver",
         },
         ["Drahbah"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-* Takes {{Gil Icon",
+* Appraises items obtained from Assault.",
             ["type"] = "Appraiser",
         },
         ["Dwago"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Only accessible after paying to board the Silver Sea route to Nashmau ferry",
+* Accessible after paying to board the Silver Sea route to Nashmau.",
             ["type"] = "Standard Merchant",
         },
         ["Ekhu Pesshyadha"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * The Die Is Cast\
 * Got It All\
-* Arts and Crafts\
-",
-            ["type"] = "Flavor NPC",
+* Arts and Crafts",
+            ["type"] = "Quest Associate",
         },
         ["Elisabeth"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* The Prankster\
-",
+            ["note"] = "Involved in Quests:\
+* The Prankster",
             ["type"] = "Quest Associate",
         },
         ["Esoteric Hound"] = {
@@ -506,10 +486,10 @@ Only accessible after paying to board the Silver Sea route to Nashmau ferry",
         },
         ["Eunheem"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Soothing Waters",
-            ["type"] = "Quest Giver",
+            ["type"] = "Quest Associate",
         },
         ["Faihal"] = {
             ["_source"] = "npc",
@@ -520,37 +500,40 @@ Only accessible after paying to board the Silver Sea route to Nashmau ferry",
         },
         ["Falzum"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Promotion: Lance Corporal\
 * Promotion: Second Lieutenant\
 * Promotion: First Lieutenant\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 4: Knight of Gold\
-* Aht Urhgan Mission 22: Shield of Diplomacy\
-",
-            ["type"] = "Cutscene NPC",
+* Aht Urhgan Mission 22: Shield of Diplomacy",
+            ["type"] = "Mission Associate",
         },
         ["Falzuuk"] = {
             ["_source"] = "npc",
             ["icon"] = "ImperialGateGuard.png",
             ["note"] = "Notes:\
-:*Casts Sanction on registered mercenaries (w/ Sanction Enhancements) :*Recharges Chariot Band, Emperor Band, or Empress Band. :*Sells items for Imperial Standing at appropriate rank. :*Explains Sanction, Imperial Standing, and Besieged system by choosing some available questions.",
+* Casts Sanction and recharges conquest bands.\
+* Sells Imperial Standing rewards.\
+* Explains Sanction, Imperial Standing, and Besieged.",
             ["type"] = "Imperial Gate Guard",
         },
         ["Famad"] = {
             ["_source"] = "npc",
             ["icon"] = "AssaultMissionGiver.png",
             ["note"] = "Notes:\
-Offers various Assault Missions for an I.D tag. Sells items for accumulated Assault points (stage-specific). Offers Assault Missions: :*Excavation Duty Mercenary Rank PSC and above :*Lebros Supplies Mercenary Rank PFC and above :*Troll Fugitives Mercenary Rank SP and above :*Evade and Escape Mercenary Rank LC and above :*Siegemaster Assassination Mercenary Rank C and above :*Apkallu Breeding Mercenary Rank S and above :*Wamoura Farm Raid Mercenary Rank SM and above :*Egg Conservation Mercenary Rank CS and above :*Operation: Black Pearl Mercenary Rank SL and above :*Better Than One Mercenary Rank FL",
+* Issues Lebros Cavern Assault missions using an Imperial Army I.D. Tag.\
+* Exchanges Lebros Assault Points for rewards.",
             ["type"] = "Lebros Assault",
         },
         ["Famatar"] = {
             ["_source"] = "npc",
             ["icon"] = "ImperialGateGuard.png",
             ["note"] = "Notes:\
-:*Casts Sanction on registered mercenaries (w/ Sanction Enhancements) :*Recharges Chariot Band, Emperor Band, or Empress Band. :*Sells items for Imperial Standing at appropriate rank. :*Explains Sanction, Imperial Standing, and Besieged system by choosing some available questions.",
+* Casts Sanction and recharges conquest bands.\
+* Sells Imperial Standing rewards.\
+* Explains Sanction, Imperial Standing, and Besieged.",
             ["type"] = "Imperial Gate Guard",
         },
         ["Fari-Wari"] = {
@@ -560,8 +543,7 @@ Offers various Assault Missions for an I.D tag. Sells items for accumulated Assa
 * Saga of the Skyserpent\
 * Ode to the Serpents\
 * Soothing Waters\
-* Embers of His Past\
-",
+* Embers of His Past",
             ["type"] = "Quest Giver",
         },
         ["Fayeewah"] = {
@@ -574,28 +556,24 @@ Offers various Assault Missions for an I.D tag. Sells items for accumulated Assa
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Delivering the Goods\
-\
 Involved in Quests:\
-* Vanishing Act\
-",
+* Vanishing Act",
             ["type"] = "Quest Giver",
         },
         ["Foudeel"] = {
             ["_source"] = "npc",
-            ["icon"] = "ChocoboRenter.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Give Peace a Chance\
-* Three Men and a Closet\
-",
-            ["type"] = "Chocobo Guide",
+* Three Men and a Closet",
+            ["type"] = "Quest Associate",
         },
         ["Fubruhn"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
-* Aht Urhgan Mission 3: President Salaheem\
-",
-            ["type"] = "Mog Locker Administrator",
+* Aht Urhgan Mission 3: President Salaheem",
+            ["type"] = "Mission Associate",
         },
         ["Furious Boulder"] = {
             ["_source"] = "npc",
@@ -609,27 +587,29 @@ Involved in Quests:\
         },
         ["Gadalar"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Saga of the Skyserpent\
 * Soothing Waters\
-* Embers of His Past\
-",
-            ["type"] = "Serpent General",
+* Embers of His Past",
+            ["type"] = "Quest Associate",
         },
         ["Gajaad"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-An NPC looking for signatures and donations of imperial currency to rebuild Al Zahbi. Notes: This NPC tracks how many Imperial Bronze Pieces you have donated. For every 100 Imperial Bronze Pieces you donate, he will reward you with Walahra Water. After donating 1,000 Imperial Bronze Pieces, he will reward you with Walahra Turban. If Chochoroon has been kidnapped during Besieged, you won't be able to trade Imperial Bronze Pieces to Gajaad. Important Note: Any Imperial Bronze Piece traded to Gajaad will strengthen Imperial defense and influence the number of NPC volunteer/Immortals that help in Besieged. Underneath an excerpt copied from Allakhazam.com. See discussion for more information on this research. The cap on the Imperial defense value is 200, separated into two parts: hired mercenaries (120 defense) and NPC representatives (80 defense). The 10 merchant NPCs outside of Besieged account for 8 defense each. The 5 generals seem to have no effect on the Imperial defense. The Imperial defense value can be raised by donating bronzepieces to Gajaad in Al Zahbi, the Walahra Turban NPC. Gajaad will accept coins even after you've obtained a turban. Gajaad will not accept donations if the appraisal NPC, Chochoroon, is a prisoner. Every 5 bronzepieces raises the defense value by 1 point up to the 120-point mercenary cap. There seems to be no limit to the number of times any one person can trade coins for defense. Merchant NPCs affect the presence of Volunteers and Immortals in Besieged. Donations affect the presence of Qiqirns, goblins and members of the Imperial army. Easy way to determine your server's mercenary defense value: 1. Determine the number of generals in Al Zahbi's bastion. 2. Subtract the number of missing generals from the total number of prisoners (if 0 are missing, subtract nothing). 3. Multiply the number of non-general prisoners by 8. 4. Subtract the value from step 3 from 200. 5. Subtract the Empire's current defense value from the value in step 4. 6. Multiply the value from step 5 by 5. This will give you the number of Imperial bronzepieces to trade in order to cap out the mercenary defense value. If the value of step 5 is zero, then the mercenary defense is already capped!",
+* Accepts Imperial Bronze Pieces to strengthen Al Zahbi's defenses.\
+* Rewards Walahra Water for every 100 pieces donated.\
+* Rewards a Walahra Turban after donating 1,000 pieces.\
+* Cannot accept donations while Chochoroon is held prisoner.",
             ["type"] = "Donation Collector",
         },
         ["Galiwao"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Led Astray",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Quest Associate",
         },
         ["Galzweesh"] = {
             ["_source"] = "npc",
@@ -643,14 +623,14 @@ An NPC looking for signatures and donations of imperial currency to rebuild Al Z
         },
         ["Ganmuul"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Red Versus Blue",
             ["type"] = "Mission Associate",
         },
         ["Gasharyad"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Supplies Recovery",
             ["type"] = "Mission Associate",
@@ -658,8 +638,6 @@ An NPC looking for signatures and donations of imperial currency to rebuild Al Z
         ["Gathweeda"] = {
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
-            ["note"] = "Notes:\
-No longer closed on Lightningsday.",
             ["type"] = "Alchemy Guild Merchant",
         },
         ["Gavrie"] = {
@@ -678,40 +656,45 @@ No longer closed on Lightningsday.",
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-* He starts at the auction house in Springserpent Square. *As long as he is present in Besieged, everybody will receive a Fool's Drink{{temp|nc",
+* Defends Springserpent Square during Besieged.\
+* Grants access to Fool's Drink while present.",
             ["type"] = "Serpent General",
         },
         ["General Mihli"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-* She starts near the Hall of Binding in Flameserpent Square. *As long as she is present in Besieged, everybody will receive a Megalixir {{temp|nc",
+* Defends Flameserpent Square during Besieged.\
+* Grants access to a Megalixir while present.",
             ["type"] = "Serpent General",
         },
         ["General Najelith"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-* She starts atop Galeserpent Square. *As long as she is present in Besieged, everybody will receive a Revitalizer {{temp|nc",
+* Defends Galeserpent Square during Besieged.\
+* Grants access to a Revitalizer while present.",
             ["type"] = "Serpent General",
         },
         ["General Rughadjeen"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-* He starts in Ulthalam Parade. *As long as he is present in Besieged, everybody will receive a Fanatic's Drink {{temp|nc",
+* Defends Ulthalam Parade during Besieged.\
+* Grants access to Fanatic's Drink while present.",
             ["type"] = "Serpent General",
         },
         ["General Zazarg"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-* He starts in Chocobo Alley atop the square. *As long as he is present in Besieged, everybody will receive a Giant's Drink {{temp|nc",
+* Defends Chocobo Alley during Besieged.\
+* Grants access to Giant's Drink while present.",
             ["type"] = "Serpent General",
         },
         ["Ghahnis"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Red Versus Blue",
             ["type"] = "Mission Associate",
@@ -727,14 +710,13 @@ No longer closed on Lightningsday.",
         },
         ["Ghatsad"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * No Strings Attached\
 * The Rider Cometh\
 * Unwavering Resolve\
 * A Stygian Pact\
 * Upgrading Your Automaton\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 9: Undersea Scouting\
 * Aht Urhgan Mission 10: Astral Waves\
@@ -744,7 +726,7 @@ Involved in Missions:\
 * Aht Urhgan Mission 41: Light of Judgment\
 * Aht Urhgan Mission 44: Nashmeira's Plea\
 * Aht Urhgan Mission 47: The Empress Crowned",
-            ["type"] = "Puppetmaster Quest",
+            ["type"] = "Mission Associate",
         },
         ["Gidappa"] = {
             ["_source"] = "npc",
@@ -772,49 +754,44 @@ Involved in Missions:\
         ["Gogoroon"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Imperial Heist\
-",
+            ["note"] = "Involved in Quests:\
+* An Imperial Heist",
             ["type"] = "Quest Associate",
         },
         ["Gowam"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * Legend of the Wandering Boots\
-* Gabbing Goblins\
-",
+* Gabbing Goblins",
             ["type"] = "Quest Associate",
         },
         ["Goyuyu"] = {
             ["_source"] = "npc",
             ["icon"] = "AuctionManager.png",
             ["note"] = "Notes:\
-* Auction House services will not be available if Djinabaha is taken hostage.",
+* Auction House services close while Djinabaha is held prisoner.",
             ["type"] = "Auction House",
         },
         ["Gukool Ja"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Imperial Heist\
-",
+            ["note"] = "Involved in Quests:\
+* An Imperial Heist",
             ["type"] = "Quest Associate",
         },
         ["Gurfurlur"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Besieged\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Besieged",
             ["type"] = "Mission Associate",
         },
         ["Habadahl"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Imperial Heist\
-",
+            ["note"] = "Involved in Quests:\
+* An Imperial Heist",
             ["type"] = "Quest Associate",
         },
         ["Hadahda"] = {
@@ -850,7 +827,7 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "ArmorStorer.png",
             ["note"] = "Notes:\
-Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
+* Stores level 24-60 artifact, relic, RSE, and other equipment sets.",
             ["type"] = "Armor Depository",
         },
         ["Halbeeya"] = {
@@ -865,18 +842,16 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
         },
         ["Harbuhl"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* The Price of Gold\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* The Price of Gold",
             ["type"] = "Mission Associate",
         },
         ["Harjeel"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Imperial Heist\
-",
+            ["note"] = "Involved in Quests:\
+* An Imperial Heist",
             ["type"] = "Quest Associate",
         },
         ["Hashayra"] = {
@@ -896,37 +871,36 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
             ["_source"] = "npc",
             ["icon"] = "MapMarker.png",
             ["note"] = "Notes:\
-Marks one's town map with the locations of various NPCs important to adventures: *Home Points *Item Depository *Melody Minstrels *Weather Reporters *Traveling Bards *Reputation *Immigration *Armor Depository *Teleportation *Pursuivant *Gold World Pass Vendor *Because of the transient nature of NPCs within the Besieged zone, Hugo will only mark NPCs in Aht Urhgan Whitegate.",
+* Marks useful NPC locations on the Aht Urhgan Whitegate map.\
+* Al Zahbi NPCs are omitted because their availability changes with Besieged.",
             ["type"] = "Map Marker",
         },
         ["Imeeya"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Immortal Guard"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-* Unknown if all Immortal Guards have the same spell set in each Besieged, or if each has her own unique spell set. *The Imperial Defense value needed for Immortal Guards to appear is rather high, around 160-170 or higher.",
+* Defends allied NPCs during Besieged.\
+* Appears when Imperial Defense is sufficiently high.",
             ["type"] = "Imperial Guard",
         },
         ["Imperial Spy"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "ImperialSpy.png",
             ["note"] = "Imperial Incursion:\
-* Stores trophies required to start\
-Imperial Incursion.\
-* Teleports the party to the\
-corresponding Incursion zone.",
+* Stores trophies required to start Imperial Incursion.\
+* Teleports the party to the corresponding Incursion zone.",
             ["type"] = "Incursion Warp",
         },
         ["Imperial Stormer"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Lebros Supplies",
             ["type"] = "Mission Associate",
@@ -942,7 +916,8 @@ corresponding Incursion zone.",
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-* Casts Protect IV and Shell III on himself, and Cure III and Cure IV on his NPC allies if they are low on HP. *Casts Holy and Flash on enemies. *The exact Imperial Defense value needed for these soldiers to show up is not known, though it appears a value of 100 or greater is required.",
+* Supports allied NPCs with protective and healing magic during Besieged.\
+* Appears when Imperial Defense is sufficiently high.",
             ["type"] = "Imperial Guard",
         },
         ["Iphaaf"] = {
@@ -964,16 +939,16 @@ corresponding Incursion zone.",
             ["_source"] = "npc",
             ["icon"] = "AssaultMissionGiver.png",
             ["note"] = "Notes:\
-Offers various Assault Missions for an I.D tag. Sells items for accumulated Assault points (stage-specific). Offers Assault Missions: :*Imperial Agent Rescue Mercenary Rank PSC and above :*Preemptive Strike Mercenary Rank PFC and above :*Sagelord Elimination Mercenary Rank SP and above :*Breaking Morale Mercenary Rank LC and above :*The Double Agent Mercenary Rank C and above :*Imperial Treasure Retrieval Mercenary Rank S and above :*Blitzkrieg Mercenary Rank SM and above :*Marids in the Mist Mercenary Rank CS and above :*Azure Ailments Mercenary Rank SL and above :*The Susanoo Shuffle Mercenary Rank FL",
+* Issues Mamool Ja Training Grounds Assault missions using an Imperial Army I.D. Tag.\
+* Exchanges Mamool Assault Points for rewards.",
             ["type"] = "Mamool Assault",
         },
         ["Isween"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * Give Peace a Chance\
-* Moment of Truth\
-",
+* Moment of Truth",
             ["type"] = "Quest Associate",
         },
         ["Jarafah"] = {
@@ -984,23 +959,18 @@ Offers various Assault Missions for an I.D tag. Sells items for accumulated Assa
         ["Joaquin"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Imperial Heist\
-",
+            ["note"] = "Involved in Quests:\
+* An Imperial Heist",
             ["type"] = "Quest Associate",
         },
         ["Jumaaf"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
-            ["note"] = "Notes:\
-* Guard at the entrance of Commissions Agency.",
             ["type"] = "Agency Guard",
         },
         ["Kabihyam"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
-            ["note"] = "Notes:\
-Guard at the entrance at Walahra Temple",
             ["type"] = "Temple Guard",
         },
         ["Kaduru-Haiduru"] = {
@@ -1016,15 +986,14 @@ Guard at the entrance at Walahra Temple",
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-* This NPC is subject to capture from Besieged, and may not be in the shop.",
+* Can be taken prisoner during Besieged.",
             ["type"] = "Standard Merchant",
         },
         ["Kalidaaf"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Kalimahf"] = {
@@ -1044,11 +1013,10 @@ Guard at the entrance at Walahra Temple",
         },
         ["Karababa"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
 * Toraimarai Turmoil\
-* Passing Glory\
-",
+* Passing Glory",
             ["type"] = "Mission Associate",
         },
         ["Kazween"] = {
@@ -1065,14 +1033,15 @@ Guard at the entrance at Walahra Temple",
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
             ["note"] = "Notes:\
-This NPC will: :*Provide Fishing Synth. Image Support for free. :*Provide Fishing Adv. Synth. Image Support for 1 Imperial Bronze Piece.",
+* Provides free fishing synthesis support.\
+* Provides advanced fishing synthesis support for one Imperial Bronze Piece.",
             ["type"] = "Synthesis Support",
         },
         ["Khaf Jhifanm"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-You must pay Tazhaal 100g to gain entry to Port Al Zahbi (ship to Mhaura)to reach Khaf Jhifanm, She is in front of boxes to the far right.",
+* Located inside Port Al Zahbi after paying Tazhaal 100 gil for access.",
             ["type"] = "Standard Merchant",
         },
         ["Khoi Gamduhla"] = {
@@ -1088,10 +1057,9 @@ You must pay Tazhaal 100g to gain entry to Port Al Zahbi (ship to Mhaura)to reac
         },
         ["Koja Salaheem"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Imperial Whitegate\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Imperial Whitegate",
             ["type"] = "Mission Associate",
         },
         ["Koyol-Futenol"] = {
@@ -1112,13 +1080,13 @@ You must pay Tazhaal 100g to gain entry to Port Al Zahbi (ship to Mhaura)to reac
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Three Men and a Closet\
-\
 Involved in Quests:\
 * Promotion: Second Lieutenant",
             ["type"] = "Quest Giver",
         },
         ["Kuhmden"] = {
             ["_source"] = "npc",
+            ["icon"] = "Dialogue.png",
             ["type"] = "Philosophy Student",
         },
         ["Kuhn Tsahnpri"] = {
@@ -1128,7 +1096,7 @@ Involved in Quests:\
         },
         ["Kuihlud"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Supplies Recovery",
             ["type"] = "Mission Associate",
@@ -1140,65 +1108,59 @@ Involved in Quests:\
         },
         ["Kushdeel"] = {
             ["_source"] = "npc",
-            ["icon"] = "GuildMerchant.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Omens\
-* Transformations\
-",
-            ["type"] = "Blue Mage AF Armour Crafter",
+* Transformations",
+            ["type"] = "Quest Associate",
         },
         ["Lageegee"] = {
             ["_source"] = "npc",
             ["icon"] = "AssaultMissionGiver.png",
             ["note"] = "Notes:\
-Offers various Assault Missions for an I.D tag. Sells items for accumulated Assault points (stage-specific). Offers Assault Missions: :*Seagull Grounded Mercenary Rank PSC and above :*Requiem Mercenary Rank PFC and above :*Saving Private Ryaaf Mercenary Rank SP and above :*Shooting Down the Baron Mercenary Rank LC and above :*Building Bridges Mercenary Rank C and above :*Stop the Bloodshed Mercenary Rank S and above :*Defuse the Threat Mercenary Rank SM and above :*Operation: Snake Eyes Mercenary Rank CS and above :*Wake the Puppet Mercenary Rank SL and above :*The Price is Right Mercenary Rank FL",
+* Issues Periqia Assault missions using an Imperial Army I.D. Tag.\
+* Exchanges Periqia Assault Points for rewards.",
             ["type"] = "Periqia Assault",
         },
         ["Laruha"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Lathuya"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Omens\
-* Transformations\
-",
-            ["type"] = "Quest Giver",
+* Transformations",
+            ["type"] = "Quest Associate",
         },
         ["Luqrabah"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Mabebe"] = {
             ["_source"] = "npc",
             ["icon"] = "ItemDeliverer.png",
             ["note"] = "Notes:\
-* Item Delivery services will not be available if Dabigo is taken hostage.",
+* Item Delivery services close while Dabigo is held prisoner.",
             ["type"] = "Item Deliverer",
         },
         ["Macici"] = {
             ["_source"] = "npc",
-            ["icon"] = "GuildMaster.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Promotion: Chief Sergeant\
-",
-            ["type"] = "Advanced Synthesis Support",
+* Promotion: Chief Sergeant",
+            ["type"] = "Quest Associate",
         },
         ["Mafwahb"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
-            ["note"] = "Notes:\
-* Guard the gate to Imperial Whitegate. No commoners can pass.",
             ["type"] = "City Gate Guard",
         },
         ["Malfud"] = {
@@ -1211,9 +1173,8 @@ Not available if the beastmen have the Astral Candescence.",
         ["Malzaab"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Mariyaam"] = {
@@ -1245,14 +1206,13 @@ Not available if the beastmen have the Astral Candescence.",
         ["Maudadt"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Maymun 74"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Wake the Puppet",
             ["type"] = "Mission Associate",
@@ -1264,18 +1224,16 @@ Not available if the beastmen have the Astral Candescence.",
         },
         ["Medusa"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Besieged\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Besieged",
             ["type"] = "Mission Associate",
         },
         ["Megomak"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Besieged\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Besieged",
             ["type"] = "Mission Associate",
         },
         ["Mhasbaf"] = {
@@ -1288,18 +1246,16 @@ Not available if the beastmen have the Astral Candescence.",
         },
         ["Mihli Aliapoh"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Soothing Waters\
-",
-            ["type"] = "Serpent General",
+* Soothing Waters",
+            ["type"] = "Quest Associate",
         },
         ["Mikilulu"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Milazahn"] = {
@@ -1311,10 +1267,9 @@ Not available if the beastmen have the Astral Candescence.",
         },
         ["Minfram"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* The Price of Gold\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* The Price of Gold",
             ["type"] = "Mission Associate",
         },
         ["Mishhar"] = {
@@ -1327,7 +1282,7 @@ Not available if the beastmen have the Astral Candescence.",
         },
         ["Mnejing"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Forging a New Myth\
 * Coming Full Circle\
@@ -1335,7 +1290,6 @@ Not available if the beastmen have the Astral Candescence.",
 * Unwavering Resolve\
 * A Stygian Pact\
 * Divine Interference\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 18: Passing Glory\
 * Aht Urhgan Mission 19: Sweets for the Soul\
@@ -1347,20 +1301,18 @@ Involved in Missions:\
 * Aht Urhgan Mission 34: Testing the Waters\
 * Aht Urhgan Mission 35: Legacy of the Lost\
 * Aht Urhgan Mission 39: Allied Rumblings\
-* Aht Urhgan Mission 47: The Empress Crowned\
-",
-            ["type"] = "Cutscene NPC",
+* Aht Urhgan Mission 47: The Empress Crowned",
+            ["type"] = "Mission Associate",
         },
         ["Moogle (Mog House)"] = {
             ["_source"] = "npc",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Quests:\
 * Give a Moogle a Break\
 * Moogles in the Wild\
 * The Moogle's Picnic!\
-\
 Involved in Quests:\
 * Unexpected Treasure\
-\
 Starts Missions:\
 * A Moogle Kupo d'Etat\
 * Drenched! It Began with a Raindrop\
@@ -1370,24 +1322,23 @@ Starts Missions:\
 * Lender Beware! Read the Fine Print\
 * Rescue! A Moogle's Labor of Love\
 * Relief! A Triumphant Return\
-\
 Involved in Missions:\
-* Burgeoning Dread\
-",
-            ["type"] = "MHMU worker",
+* Burgeoning Dread",
+            ["type"] = "Mission Giver",
         },
         ["Mrohk Sahjuuli"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Ghanraam will exchange items from Salvage II ruins expeditions and crafting items for pieces of Salvage +1 armor. Mrohk Sahjuuli can also store plans obtained in Salvage II runs. * To upgrade a piece, trade her the plans (if she isn't storing them already). Then trade her the other required items at the same time: lv.45 armor piece, the payment (Imp. Pieces), and if you are making a +1 piece from the Salvage (I) Armor, then trade the lv.75 armor piece as well. If doing She will give you the reward immediately, unlike Salvage (I) armor.",
+* Stores plans obtained from Salvage II.\
+* Exchanges plans, armor, crafting materials, and Imperial currency for Salvage +1 armor.",
             ["type"] = "Upgrade NPC",
         },
         ["Muji Tsalahn"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-* Give informationen when next ferry to Mhaura departs.",
+* Reports the Mhaura ferry departure time.",
             ["type"] = "Adventurer's Helper",
         },
         ["Mulnith"] = {
@@ -1397,7 +1348,7 @@ Ghanraam will exchange items from Salvage II ruins expeditions and crafting item
         },
         ["Mulwahah"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Orichalcum Survey",
             ["type"] = "Mission Associate",
@@ -1405,16 +1356,13 @@ Ghanraam will exchange items from Salvage II ruins expeditions and crafting item
         ["Munahda"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Musdahl"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
-            ["note"] = "Notes:\
-Guard at the gate to the place \"Way of Devout\"",
             ["type"] = "Sacred Site Guard",
         },
         ["Mushayra"] = {
@@ -1436,24 +1384,21 @@ Guard at the gate to the place \"Way of Devout\"",
         },
         ["Nadee Periyaha"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Rat Race\
-",
-            ["type"] = "Dialogue NPC",
+* Rat Race",
+            ["type"] = "Quest Associate",
         },
         ["Nadeey"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Soothing Waters\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 4: Knight of Gold\
 * Aht Urhgan Mission 28: Bastion of Knowledge\
-* Reunited\
-",
-            ["type"] = "Mission Ring Replacement",
+* Reunited",
+            ["type"] = "Mission Associate",
         },
         ["Nafiwaa"] = {
             ["_source"] = "npc",
@@ -1465,101 +1410,11 @@ Involved in Missions:\
         ["Naja Salaheem"] = {
             ["_source"] = "npc",
             ["icon"] = "MissionGiver.png",
-            ["note"] = "Starts Quests:\
-* Promotion: Private First Class\
-* Promotion: Superior Private\
-* Promotion: Sergeant\
-* Promotion: Sergeant Major\
-* Promotion: Second Lieutenant\
-* Promotion: First Lieutenant\
-\
-Involved in Quests:\
-* Lure of the Wildcat (All Nations)\
-* Promotion: Lance Corporal\
-* Promotion: Captain\
-* An Imperial Heist\
-* Coming Full Circle\
-* Unwavering Resolve\
-* Waking the Colossus\
-* Lure of the Wildcat:\
-* Trade Invitation Cards after completing Immortal Sentries for Imperial Currency:\
-* Number of Cards (Reward)\
-* One Invitation Cards (Imperial Bronze Piece x 1)\
-* Two Invitation Cards (Imperial Bronze Piece x 2)\
-* Three Invitation Cards (Imperial Bronze Piece x 3)\
-* Four Invitation Cards (Imperial Mythril Piece x 1)\
-* Note that Rank 2 for San d'Orians or advancement to Mission 2-3 for Windurstians and Bastokers is required to enter the Chateau d'Oraguille. 5 of the NPCs for Lure of the Wildcat quest are there, and thus access to it is required to get the Mythril piece as a reward.\
-* Titles Given:\
-* Assault Rank 1: Private Second Class\
-* Assault Rank 2: Private First Class\
-* Assault Rank 3: Superior Private\
-* Assault Rank 5: Corporal\
-* Assault Rank 6: Sergeant\
-* Assault Rank 7: Sergeant Major\
-* Assault Rank 8: Chief Sergant\
-* Assault Rank 9: Second Lieutenant\
-* Assault Rank 10: First Lieutenant\
-* Assault Rank 11: Captain\
-* Lure of the Wildcat (All Nations): Wildcat Publicist\
-* Battle NPC:\
-* Naja fights alongside the party in the battle against Amnaf for Aht Urhgan Mission 42: Path of Darkness.\
-* Uses Hundred Fists.\
-\
-Starts Missions:\
-* Aht Urhgan Mission 1: Land of Sacred Serpents\
-* Aht Urhgan Mission 2: Immortal Sentries\
-* Aht Urhgan Mission 3: President Salaheem\
-* Aht Urhgan Mission 4: Knight of Gold\
-* Aht Urhgan Mission 8: A Mercenary Life\
-* Aht Urhgan Mission 9: Undersea Scouting\
-* Aht Urhgan Mission 11: Imperial Schemes\
-* Aht Urhgan Mission 12: Royal Puppeteer\
-* Aht Urhgan Mission 13: Lost Kingdom\
-* Aht Urhgan Mission 14: The Dolphin Crest\
-* Aht Urhgan Mission 15: The Black Coffin\
-* Aht Urhgan Mission 16: Ghosts of the Past\
-* Aht Urhgan Mission 17: Guests of the Empire\
-* Aht Urhgan Mission 18: Passing Glory\
-* Aht Urhgan Mission 19: Sweets for the Soul\
-* Aht Urhgan Mission 20: Teahouse Tumult\
-* Aht Urhgan Mission 21: Finders Keepers\
-* Aht Urhgan Mission 22: Shield of Diplomacy\
-* Aht Urhgan Mission 23: Social Graces\
-* Aht Urhgan Mission 24: Foiled Ambition\
-* Aht Urhgan Mission 25: Playing the Part\
-* Aht Urhgan Mission 26: Seal of the Serpent\
-* Aht Urhgan Mission 27: Misplaced Nobility\
-* Aht Urhgan Mission 28: Bastion of Knowledge\
-* Aht Urhgan Mission 29: Puppet in Peril\
-* Aht Urhgan Mission 30: Prevalence of Pirates\
-* Aht Urhgan Mission 31: Shades of Vengeance\
-* Aht Urhgan Mission 32: In the Blood\
-* Aht Urhgan Mission 33: Sentinels' Honor\
-* Aht Urhgan Mission 34: Testing the Waters\
-* Aht Urhgan Mission 35: Legacy of the Lost\
-* Aht Urhgan Mission 36: Gaze of the Saboteur\
-* Aht Urhgan Mission 37: Path of Blood\
-* Aht Urhgan Mission 38: Stirrings of War\
-* Aht Urhgan Mission 39: Allied Rumblings\
-* Aht Urhgan Mission 40: Unraveling Reason\
-* Aht Urhgan Mission 41: Light of Judgment\
-* Aht Urhgan Mission 42: Path of Darkness\
-* Aht Urhgan Mission 43: Fangs of the Lion\
-* Aht Urhgan Mission 44: Nashmeira's Plea\
-* Aht Urhgan Mission 45: Ragnarok\
-* Aht Urhgan Mission 46: Imperial Coronation\
-* Aht Urhgan Mission 47: The Empress Crowned\
-* Aht Urhgan Mission 48: Eternal Mercenary\
-\
-Involved in Missions:\
-* Aht Urhgan Mission 7: Westerly Winds\
-* Aht Urhgan Mission 19: Sweets for the Soul\
-* Aht Urhgan Mission 21: Finders Keepers\
-* Aht Urhgan Mission 23: Social Graces\
-* Aht Urhgan Mission 37: Path of Blood\
-* Aht Urhgan Mission 38: Stirrings of War\
-* Aht Urhgan Mission 42: Path of Darkness\
-* Aht Urhgan Mission 47: The Empress Crowned",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Naja_Salaheem",
+            ["note"] = "Mercenary Missions:\
+* Starts mercenary promotion quests from Private First Class through First Lieutenant.\
+* Starts and advances most Aht Urhgan missions.\
+* Handles Wildcat invitation-card rewards after Immortal Sentries.",
             ["type"] = "Mission Giver",
         },
         ["Najaaj"] = {
@@ -1569,26 +1424,25 @@ Involved in Missions:\
         },
         ["Najelith"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * When the Bow Breaks\
 * Soothing Waters\
-* Embers of His Past\
-",
-            ["type"] = "Serpent General",
+* Embers of His Past",
+            ["type"] = "Quest Associate",
         },
         ["Nasheefa"] = {
             ["_source"] = "npc",
             ["icon"] = "Gate.png",
-            ["note"] = "An imperial attendant stationed right out at the mouth of the cavern opening. Handing her one Imperial Silver Piece satisfies the baseline transit toll to let you pass down into the Alzadaal Undersea Ruins.",
+            ["note"] = "Notes:\
+* Grants access to the Alzadaal Undersea Ruins for one Imperial Silver Piece.",
             ["type"] = "Alzadaal Toll Attendant",
         },
         ["Nashmeira"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Starts Quests:\
 * Forging a New Myth\
-\
 Involved in Quests:\
 * Saga of the Skyserpent\
 * Soothing Waters\
@@ -1598,7 +1452,6 @@ Involved in Quests:\
 * The Rider Cometh\
 * Unwavering Resolve\
 * A Stygian Pact\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 11: Imperial Schemes\
 * Aht Urhgan Mission 12: Royal Puppeteer\
@@ -1619,16 +1472,14 @@ Involved in Missions:\
 * Aht Urhgan Mission 43: Fangs of the Lion\
 * Aht Urhgan Mission 44: Nashmeira's Plea\
 * Aht Urhgan Mission 45: Ragnarok\
-* Aht Urhgan Mission 47: The Empress Crowned\
-",
-            ["type"] = "Cutscene NPC",
+* Aht Urhgan Mission 47: The Empress Crowned",
+            ["type"] = "Mission Associate",
         },
         ["Nateeyu"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Ndego"] = {
@@ -1638,27 +1489,24 @@ Involved in Missions:\
         },
         ["Neosaliat"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Promotion: Second Lieutenant\
-* Promotion: First Lieutenant\
-",
-            ["type"] = "Cutscene NPC",
+* Promotion: First Lieutenant",
+            ["type"] = "Quest Associate",
         },
         ["Nijaom"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Five Seconds of Fame\
-",
+* Five Seconds of Fame",
             ["type"] = "Quest Associate",
         },
         ["Nizahluf"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* The Price of Gold\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* The Price of Gold",
             ["type"] = "Mission Associate",
         },
         ["Nonoroon"] = {
@@ -1675,46 +1523,43 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "GuildMaster.png",
             ["note"] = "Notes:\
-* Payment for Advanced Synthesis support is one Imperial Bronze Piece.",
+* Provides advanced synthesis support for one Imperial Bronze Piece.",
             ["type"] = "Advanced Synthesis Support",
         },
         ["Odilon"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Imperial Heist\
-",
+            ["note"] = "Involved in Quests:\
+* An Imperial Heist",
             ["type"] = "Quest Associate",
         },
         ["Odin"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
 * Treasures of Aht Urhgan\
-* The Voracious Resurgence\
-",
+* The Voracious Resurgence",
             ["type"] = "Mission Associate",
         },
         ["Ohsi Shomahl"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-This NPC will let you change the background music while in the Kokba Hostel.",
+* Changes the background music inside the Kokba Hostel.",
             ["type"] = "Music Selection",
         },
         ["Opococo"] = {
             ["_source"] = "npc",
             ["icon"] = "ItemDeliverer.png",
             ["note"] = "Notes:\
-* Item Delivery services will not be available if Dabigo is taken hostage.",
+* Item Delivery services close while Dabigo is held prisoner.",
             ["type"] = "Item Deliverer",
         },
         ["Ovjang"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Starts Quests:\
 * An Imperial Heist\
-\
 Involved in Quests:\
 * Forging a New Myth\
 * Coming Full Circle\
@@ -1722,7 +1567,6 @@ Involved in Quests:\
 * Unwavering Resolve\
 * A Stygian Pact\
 * Divine Interference\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 11: Imperial Schemes\
 * Aht Urhgan Mission 12: Royal Puppeteer\
@@ -1736,22 +1580,21 @@ Involved in Missions:\
 * Aht Urhgan Mission 34: Testing the Waters\
 * Aht Urhgan Mission 35: Legacy of the Lost\
 * Aht Urhgan Mission 39: Allied Rumblings\
-* Aht Urhgan Mission 47: The Empress Crowned\
-",
-            ["type"] = "Cutscene NPC",
+* Aht Urhgan Mission 47: The Empress Crowned",
+            ["type"] = "Mission Associate",
         },
         ["Petrino"] = {
             ["_source"] = "npc",
             ["icon"] = "Automaton.png",
-            ["note"] = "Notes:\
-* Puppet of Zyfhil",
             ["type"] = "Automaton",
         },
         ["Porter Moogle"] = {
             ["_source"] = "npc",
             ["icon"] = "ItemStorage.png",
             ["note"] = "Notes:\
-Find a nearby Porter Moogle and talk to him and select the option to buy a Slip. Once you find the slip you want you select it and confirm your selection. Each slip will cost you 1000 gil to buy. After purchasing any storage slip, you may trade 1-7 corresponding items per trade along with the slip. NOTE: This does NOT mean you can only store up to 7 items on a single slip, it simply means you can only transfer up to 7 at a time to the Porter for storage. At any time after you have the slip you can continue to make trades of 1-7 items along with the corresponding slip, thereby storing all your like items with the Moogle instead of in your MH. This feature is handy when you later get another armor drop, like in Dynamis, and want to store it somewhere until you need it. To withdraw an item simply trade him the corresponding slip and he will give you an option to retrieve your armor. You only pay an initial fee of 1,000 gil when purchasing a storage slip, you will not pay every time you store or withdraw gear. Storage slips cannot be discarded unless all stored items are retrieved first. As of Feb. 14, 2011, items with a Magian Trial insignia can no longer be stored with a Porter Moogle. Any items with an active trial stored before that date have had all trial progress erased.",
+* Sells storage slips for 1,000 gil.\
+* Stores and retrieves eligible equipment using the corresponding slip.\
+* Up to seven items can be traded at once.",
             ["type"] = "Item Storage",
         },
         ["Prillaure"] = {
@@ -1764,8 +1607,6 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
         ["Qahzwin"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
-            ["note"] = "Notes:\
-Guard at the entrance of Chamber of Passage",
             ["type"] = "Passage Guard",
         },
         ["Qarimul"] = {
@@ -1775,7 +1616,7 @@ Guard at the entrance of Chamber of Passage",
         },
         ["Qiqirn Dealer"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Counting Sheep",
             ["type"] = "Mission Associate",
@@ -1784,26 +1625,27 @@ Guard at the entrance of Chamber of Passage",
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* Only present in Al Zahbi when the Imperial Defense value is extremely low, around 30 or lower. *Appears in place of Volunteers. *Wields a dagger and shortbow. *Uses standard Qiqirn attacks.",
+* Appears instead of Volunteers when Imperial Defense is extremely low.\
+* Uses a dagger, shortbow, and standard Qiqirn attacks.",
             ["type"] = "Campaign Warrior",
         },
         ["Qiqirn Greengrocer"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Counting Sheep",
             ["type"] = "Mission Associate",
         },
         ["Qiqirn Mine Baron"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Counting Sheep",
             ["type"] = "Mission Associate",
         },
         ["Qiqirn Shepherd"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Counting Sheep",
             ["type"] = "Mission Associate",
@@ -1813,9 +1655,7 @@ Guard at the entrance of Chamber of Passage",
             ["icon"] = "Quartermaster.png",
             ["note"] = "Imperial Incursion:\
 * Sells items for Imperial Marks.\
-* Imperial Marks come from Tier 3\
-Imperial Incursion bosses and some\
-other mobs.",
+* Imperial Marks come from Tier 3 Imperial Incursion bosses and other enemies.",
             ["type"] = "Imperial Marks",
         },
         ["Qulsun"] = {
@@ -1828,7 +1668,6 @@ other mobs.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * A Taste of Honey\
-\
 Involved in Quests:\
 * Arts and Crafts\
 * Five Seconds of Fame\
@@ -1838,27 +1677,25 @@ Involved in Quests:\
         },
         ["Rafsween"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* The Price of Gold\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* The Price of Gold",
             ["type"] = "Mission Associate",
         },
         ["Rahdjab"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Red Versus Blue",
             ["type"] = "Mission Associate",
         },
         ["Raillefal"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Aht Urhgan Mission 4: Knight of Gold\
-* Aht Urhgan Mission 7: Westerly Winds\
-",
-            ["type"] = "Dialogue NPC",
+* Aht Urhgan Mission 7: Westerly Winds",
+            ["type"] = "Mission Associate",
         },
         ["Rajaaha"] = {
             ["_source"] = "npc",
@@ -1872,17 +1709,15 @@ Involved in Quests:\
 * Luck of the Draw\
 * The Die Is Cast\
 * Against All Odds\
-\
 Involved in Quests:\
 * Equipped for All Occasions\
 * The Prankster\
-* Three Men and a Closet\
-",
+* Three Men and a Closet",
             ["type"] = "Quest Giver",
         },
         ["Raubahn"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * An Empty Vessel\
 * Beginnings\
@@ -1894,7 +1729,6 @@ Involved in Quests:\
 * Forging a New Myth\
 * Coming Full Circle\
 * Divine Interference\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 11: Imperial Schemes\
 * Aht Urhgan Mission 21: Finders Keepers\
@@ -1908,21 +1742,18 @@ Involved in Missions:\
 * Aht Urhgan Mission 45: Ragnarok\
 * Aht Urhgan Mission 47: The Empress Crowned\
 * Deserter\
-* Red Versus Blue\
-",
-            ["type"] = "Cutscene NPC",
+* Red Versus Blue",
+            ["type"] = "Mission Associate",
         },
         ["Razfahd"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Involved in Quests:\
 * Saga of the Skyserpent\
 * Fist of the People\
-\
 Starts Missions:\
 * Aht Urhgan Mission 27: Misplaced Nobility\
 * Aht Urhgan Mission 32: In the Blood\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 11: Imperial Schemes\
 * Aht Urhgan Mission 18: Passing Glory\
@@ -1934,9 +1765,8 @@ Involved in Missions:\
 * Aht Urhgan Mission 39: Allied Rumblings\
 * Aht Urhgan Mission 41: Light of Judgment\
 * Aht Urhgan Mission 44: Nashmeira's Plea\
-* Aht Urhgan Mission 45: Ragnarok\
-",
-            ["type"] = "Cutscene NPC",
+* Aht Urhgan Mission 45: Ragnarok",
+            ["type"] = "Mission Giver",
         },
         ["Rhub Wusthamoi"] = {
             ["_source"] = "npc",
@@ -1945,29 +1775,26 @@ Involved in Missions:\
         },
         ["Rhushouf"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Red Versus Blue",
             ["type"] = "Mission Associate",
         },
         ["Rishfee"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Involved in Quests:\
 * Saga of the Skyserpent\
-\
 Starts Missions:\
 * Aht Urhgan Mission 28: Bastion of Knowledge\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 10: Astral Waves\
 * Aht Urhgan Mission 11: Imperial Schemes\
 * Aht Urhgan Mission 12: Royal Puppeteer\
 * Aht Urhgan Mission 17: Guests of the Empire\
 * Aht Urhgan Mission 18: Passing Glory\
-* Aht Urhgan Mission 29: Puppet in Peril\
-",
-            ["type"] = "Cutscene NPC",
+* Aht Urhgan Mission 29: Puppet in Peril",
+            ["type"] = "Mission Giver",
         },
         ["Riyadahf"] = {
             ["_source"] = "npc",
@@ -1976,50 +1803,47 @@ Involved in Missions:\
         },
         ["Rodin-Comidin"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Divine Interference\
-\
 Involved in Missions:\
 * Aht Urhgan Mission 38: Stirrings of War\
 * Aht Urhgan Mission 39: Allied Rumblings\
 * Aht Urhgan Mission 41: Light of Judgment\
 * Aht Urhgan Mission 42: Path of Darkness",
-            ["type"] = "Quest Associate",
+            ["type"] = "Mission Associate",
         },
         ["Rongelouts"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Promotion: Second Lieutenant\
-* Promotion: First Lieutenant\
-",
-            ["type"] = "Cutscene NPC",
+* Promotion: First Lieutenant",
+            ["type"] = "Quest Associate",
         },
         ["Rubahah"] = {
             ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Led Astray",
-            ["type"] = "Standard Merchant",
+            ["type"] = "Quest Associate",
         },
         ["Rughadjeen"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Saga of the Skyserpent\
 * When the Bow Breaks\
 * Fist of the People\
 * Soothing Waters\
-* Embers of His Past\
-",
-            ["type"] = "Serpent General",
+* Embers of His Past",
+            ["type"] = "Quest Associate",
         },
         ["Rujen-Gorgen"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-* Explains the Ward-System",
+* Explains the Mog House Ward system.",
             ["type"] = "Ward Guide",
         },
         ["Ryo"] = {
@@ -2029,11 +1853,10 @@ Involved in Missions:\
         },
         ["Rytaal"] = {
             ["_source"] = "npc",
-            ["icon"] = "AdventurersAssistant.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
-* Aht Urhgan Mission 3: President Salaheem\
-",
-            ["type"] = "Adventurer's Assistant",
+* Aht Urhgan Mission 3: President Salaheem",
+            ["type"] = "Mission Associate",
         },
         ["Sahnadjean"] = {
             ["_source"] = "npc",
@@ -2043,23 +1866,23 @@ Involved in Missions:\
         ["Sajaaya"] = {
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
-            ["note"] = "Notes:\
-Forecast Areas: :Wajaom Woodlands :Bhaflau Thickets :Mount Zhayolm :Caedarva Mire",
+            ["note"] = "Checks weather for:\
+* Wajaom Woodlands\
+* Bhaflau Thickets\
+* Mount Zhayolm\
+* Caedarva Mire",
             ["type"] = "Weather Reporter",
         },
         ["Sajahb"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
-            ["note"] = "Notes:\
-Guard at the hidden exit to Bhaflau Thickets",
             ["type"] = "Hidden Passage Guard",
         },
         ["Sajalda"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Salaifa"] = {
@@ -2069,7 +1892,7 @@ Guard at the hidden exit to Bhaflau Thickets",
         },
         ["Salimuhl"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Supplies Recovery",
             ["type"] = "Mission Associate",
@@ -2089,9 +1912,8 @@ Guard at the hidden exit to Bhaflau Thickets",
         ["Salwa-Molwa"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Sanraku"] = {
@@ -2126,24 +1948,25 @@ Guard at the hidden exit to Bhaflau Thickets",
         },
         ["Shailham"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
-* Red Versus Blue\
-",
-            ["type"] = "Squadron Leader",
+* Red Versus Blue",
+            ["type"] = "Mission Associate",
         },
         ["Shajaf"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Sells the key items necessary to start ISNM fights.",
+* Sells key items used to enter ISNM battles.",
             ["type"] = "ISNM Vendor",
         },
         ["Sharin-Garin"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-:* Answers questions about the Chamber of Passage, Runic Portals and Staging Points. :* Sells Runic Portal Use Permits for 200 Imperial Standing. :** He will not sell Runic Portal Use Permits if the Astral Candescence is in the hands of the beastmen. If you already had a permit prior to the Astral Candescence being taken, you will still be able to use it.",
+* Explains the Chamber of Passage, Runic Portals, and Staging Points.\
+* Sells Runic Portal Use Permits for 200 Imperial Standing.\
+* Permits cannot be purchased while beastmen hold the Astral Candescence.",
             ["type"] = "Runic Portal Guide",
         },
         ["Shayadar"] = {
@@ -2162,33 +1985,30 @@ Sells the key items necessary to start ISNM fights.",
         },
         ["Silver Kettle"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Promotion: Second Lieutenant",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Quest Associate",
         },
         ["Sojan-Tamjan"] = {
             ["_source"] = "npc",
             ["icon"] = "AuctionManager.png",
             ["note"] = "Notes:\
-* Auction House services will not be available if Djinabaha is taken hostage.",
+* Auction House services close while Djinabaha is held prisoner.",
             ["type"] = "Auction House",
         },
         ["Somnolent Rooster"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
-            ["note"] = "Notes:\
-Guards the entrance the harbor to Nashmau",
             ["type"] = "Harbor Guard",
         },
         ["Sorrowful Sage"] = {
             ["_source"] = "npc",
-            ["icon"] = "AssaultMissionGiver.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * Nyzul Isle Investigation\
-* Nyzul Isle Uncharted Area Survey\
-",
-            ["type"] = "Nyzul Assault",
+* Nyzul Isle Uncharted Area Survey",
+            ["type"] = "Mission Giver",
         },
         ["Sujyahn"] = {
             ["_source"] = "npc",
@@ -2204,8 +2024,7 @@ Guards the entrance the harbor to Nashmau",
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Fear of the Dark II\
-",
+* Fear of the Dark II",
             ["type"] = "Quest Giver",
         },
         ["Syaid"] = {
@@ -2227,8 +2046,7 @@ Guards the entrance the harbor to Nashmau",
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Fist of the People\
-",
+* Fist of the People",
             ["type"] = "Quest Giver",
         },
         ["Talruf"] = {
@@ -2238,16 +2056,17 @@ Guards the entrance the harbor to Nashmau",
         },
         ["Talwahn"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Five Seconds of Fame",
-            ["type"] = "Citizen",
+            ["type"] = "Quest Associate",
         },
         ["Tateeya"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Talk to her once as Puppetmaster and trade attachments to make them available to be equipped. After talking to her the initial time on Puppetmaster, she will accept attachments regardless of your current job.",
+* Registers traded automaton attachments for use.\
+* The first interaction must be completed as Puppetmaster.",
             ["type"] = "Automaton Attachment Assistant",
         },
         ["Taten-Bilten"] = {
@@ -2259,15 +2078,14 @@ Talk to her once as Puppetmaster and trade attachments to make them available to
             ["_source"] = "npc",
             ["icon"] = "TicketSalesperson.png",
             ["note"] = "Notes:\
-Provided access to ferry to Mhaura for 100 gil.",
+* Grants access to the Mhaura ferry for 100 gil.",
             ["type"] = "Ferry Travel",
         },
         ["Teepapa"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Tehf Kimasnahya"] = {
@@ -2275,7 +2093,6 @@ Provided access to ferry to Mhaura for 100 gil.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Got It All\
-\
 Involved in Quests:\
 * Three Men and a Closet",
             ["type"] = "Quest Giver",
@@ -2288,9 +2105,8 @@ Involved in Quests:\
         ["Tinga-Matonga"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Tohka Telposkha"] = {
@@ -2303,11 +2119,11 @@ Involved in Quests:\
         },
         ["Topok-Hippok"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Delivering the Goods\
 * Vanishing Act",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Quest Associate",
         },
         ["Truffle"] = {
             ["_source"] = "npc",
@@ -2343,7 +2159,6 @@ Involved in Quests:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Vanishing Act\
-\
 Involved in Quests:\
 * Delivering the Goods\
 * A Taste of Honey",
@@ -2353,34 +2168,32 @@ Involved in Quests:\
             ["_source"] = "catseye_npc",
             ["icon"] = "VaultKeeper.png",
             ["note"] = "CatsEyeXI:\
-* Opens the Imperial Vault with\
-Vault Points.\
-* Points are likely earned from the\
-Imperial Vault quest.",
+* Opens the Imperial Vault using Vault Points.",
             ["type"] = "Imperial Vault",
         },
         ["Voidwatch Purveyor"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-Used to puchase Ascent Items for Voidwatch. Item will cost the player their regional credits and not cruor. Those wishing to use Cruor can purchase the cells at a Voidwatch Officer except for Jade Cells.",
+* Sells Voidwatch ascent items for regional credits.\
+* Voidwatch Officers sell most cells for cruor instead.",
             ["type"] = "Voidwatch Vendor",
         },
         ["Volunteer"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* Wields a one-handed axe and uses axe weapon skills. *Does not appear to use Warrior job abilities. *Appears in varying numbers, depending on the Imperial Defense value.",
+* Defends Al Zahbi during Besieged using axe weapon skills.\
+* The number present depends on Imperial Defense.",
             ["type"] = "Campaign Volunteer",
         },
         ["Wahboud"] = {
             ["_source"] = "npc",
-            ["icon"] = "ChocoboRenter.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Give Peace a Chance\
-* Three Men and a Closet\
-",
-            ["type"] = "Chocobo Guide",
+* Three Men and a Closet",
+            ["type"] = "Quest Associate",
         },
         ["Wahnid"] = {
             ["_source"] = "npc",
@@ -2390,28 +2203,25 @@ Used to puchase Ascent Items for Voidwatch. Item will cost the player their regi
         ["Wahraga"] = {
             ["_source"] = "npc",
             ["icon"] = "GuildMerchant.png",
-            ["note"] = "Notes:\
-No longer closed on Lightningsday.",
             ["type"] = "Alchemy Guild Merchant",
         },
         ["Wajran"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Waoud"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * An Empty Vessel\
 * Beginnings\
 * Omens\
 * Transformations\
 * The Beast Within",
-            ["type"] = "Blue Mage Unlock",
+            ["type"] = "Quest Giver",
         },
         ["Warjal"] = {
             ["_source"] = "npc",
@@ -2421,25 +2231,22 @@ No longer closed on Lightningsday.",
         ["Wasuhd"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Imperial Heist\
-",
+            ["note"] = "Involved in Quests:\
+* An Imperial Heist",
             ["type"] = "Quest Associate",
         },
         ["Wathdeeh"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Wawaroon"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Wazyih"] = {
@@ -2451,10 +2258,9 @@ No longer closed on Lightningsday.",
         },
         ["Wharudu"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* The Price of Gold\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* The Price of Gold",
             ["type"] = "Mission Associate",
         },
         ["Wiyaom"] = {
@@ -2475,9 +2281,8 @@ No longer closed on Lightningsday.",
         ["Yadhiwa"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Imperial Heist\
-",
+            ["note"] = "Involved in Quests:\
+* An Imperial Heist",
             ["type"] = "Quest Associate",
         },
         ["Yafaaf"] = {
@@ -2487,17 +2292,17 @@ No longer closed on Lightningsday.",
         },
         ["Yafahb"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Operation Teatime\
-",
-            ["type"] = "Cutscene NPC",
+* Operation Teatime",
+            ["type"] = "Quest Associate",
         },
         ["Yahsra"] = {
             ["_source"] = "npc",
             ["icon"] = "AssaultMissionGiver.png",
             ["note"] = "Notes:\
-Offers various Assault Missions for an I.D tag. Sells items for accumulated Assault points (stage-specific). Offers Assault Missions: :*Leujaoam Cleansing Mercenary Rank PSC and above :*Orichalcum Survey Mercenary Rank PFC and above :*Escort Professor Clavauert Mercenary Rank SP and above :*Shanarha Grass Conservation Mercenary Rank LC and above :*Counting Sheep Mercenary Rank C and above :*Supplies Recovery Mercenary Rank S and above :*Azure Experiments Mercenary Rank SM and above :*Imperial Code Mercenary Rank CS and above :*Red Versus Blue Mercenary Rank SL and above :*Bloody Rondo Mercenary Rank FL",
+* Issues Leujaoam Sanctum Assault missions using an Imperial Army I.D. Tag.\
+* Exchanges Leujaoam Assault Points for rewards.",
             ["type"] = "Leujaoam Assault",
         },
         ["Yajahm"] = {
@@ -2508,26 +2313,24 @@ Offers various Assault Missions for an I.D tag. Sells items for accumulated Assa
         ["Yamuld"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Rock Bottom\
-",
+            ["note"] = "Involved in Quests:\
+* Rock Bottom",
             ["type"] = "Quest Associate",
         },
         ["Yando-Memondo"] = {
             ["_source"] = "npc",
             ["icon"] = "AuctionManager.png",
             ["note"] = "Notes:\
-* Auction House services will not be available if Djinabaha is taken hostage.",
+* Auction House services close while Djinabaha is held prisoner.",
             ["type"] = "Auction House",
         },
         ["Yasmeel"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Promotion: Second Lieutenant\
-* Promotion: First Lieutenant\
-",
-            ["type"] = "Cutscene NPC",
+* Promotion: First Lieutenant",
+            ["type"] = "Quest Associate",
         },
         ["Yayaroon"] = {
             ["_source"] = "npc",
@@ -2536,18 +2339,16 @@ Offers various Assault Missions for an I.D tag. Sells items for accumulated Assa
         },
         ["Yazhaal"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* The Price of Gold\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* The Price of Gold",
             ["type"] = "Mission Associate",
         },
         ["Yazquhl"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Imperial Heist\
-",
+            ["note"] = "Involved in Quests:\
+* An Imperial Heist",
             ["type"] = "Quest Associate",
         },
         ["Yazweel"] = {
@@ -2572,7 +2373,7 @@ Offers various Assault Missions for an I.D tag. Sells items for accumulated Assa
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-If Zafif is captured during Besieged, the Goldsmithing shop in Al Zahbi will not open until she is rescued.",
+* The Al Zahbi Goldsmithing shop closes while Zafif is held prisoner.",
             ["type"] = "Standard Merchant",
         },
         ["Zaldur"] = {
@@ -2588,26 +2389,22 @@ If Zafif is captured during Besieged, the Goldsmithing shop in Al Zahbi will not
         ["Zarfhid"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
-            ["note"] = "Notes:\
-Hume attendant at the Port in charge of letting people into the city",
             ["type"] = "City Gate Guard",
         },
         ["Zasshal"] = {
             ["_source"] = "npc",
-            ["icon"] = "AssaultMissionGiver.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Duties, Tasks, and Deeds\
-",
-            ["type"] = "Assault Permits",
+* Duties, Tasks, and Deeds",
+            ["type"] = "Quest Associate",
         },
         ["Zazarg"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Fist of the People\
-* Soothing Waters\
-",
-            ["type"] = "Serpent General",
+* Soothing Waters",
+            ["type"] = "Quest Associate",
         },
         ["Zhamwaa"] = {
             ["_source"] = "npc",
@@ -2627,8 +2424,6 @@ Hume attendant at the Port in charge of letting people into the city",
         ["Zwinam"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
-            ["note"] = "Notes:\
-Guards exit to Wajaom Woodlands.",
             ["type"] = "Zone Guard",
         },
         ["Zwiyaam"] = {
@@ -2643,188 +2438,189 @@ Guards exit to Wajaom Woodlands.",
 * Five Seconds of Fame",
             ["type"] = "Quest Associate",
         },
+        ["Emiliu"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "Emiliu.png",
+            ["note"] = "CatsEyeXI:\
+* Provides outpost teleports after completing Up, Up and Away.\
+* Outposts still require their normal supply-quest unlocks.",
+            ["type"] = "Outpost Warp",
+        },
+        ["Geppetto"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "Geppetto.png",
+            ["note"] = "CatsEyeXI:\
+* Exchanges incorrectly coded automaton attachments for the correct versions.\
+* Corrected attachments can be traded to Tateeya.\
+* Does not exchange out-of-era attachments.",
+            ["type"] = "Attachment Fixer",
+        },
+        ["Irvina"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "Event.png",
+            ["note"] = "CatsEyeXI:\
+* Upgrades completed Salvage armor pieces.\
+* Trade the base armor from Ghanraam with all required materials at once.",
+            ["type"] = "Salvage Upgrades",
+        },
+        ["Wildcat Armorer"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "WildcatArmorer.png",
+            ["note"] = "Crystal Warrior:\
+* Sells Assault Point gear for Nyzul Isle Investigation Tokens.\
+* Provides an alternative while Assaults are unavailable.",
+            ["type"] = "Assault Gear Vendor",
+        },
+        ["Wildcat Captain"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "WildcatCaptain.png",
+            ["note"] = "CatsEyeXI:\
+* Handles mercenary promotions based on Aht Urhgan mission progress.",
+            ["type"] = "Imperial Promotion",
+        },
+        ["Tatan-Bilten"] = {
+            ["_source"] = "npc",
+            ["icon"] = "GuildMerchant.png",
+            ["type"] = "Clothcraft Guild",
+        },
     },
     ["objects"] = {
         ["Ancient Lockbox"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A reinforced treasure casket materializing post-combat upon a successful instance clear. Cracking the lock distributes unique gear pieces and allocations of tactical imperial rewards to your squad.",
             ["type"] = "Loot Container",
         },
         ["Cushion"] = {
             ["_source"] = "item",
             ["icon"] = "Cushion.png",
-            ["note"] = "An elegant, silk-threaded seat rest placed in the imperial city quarters. Resting here allows you to review local mercantile archives, trigger urban cutscenes, or progress citizen side tasks.",
-            ["type"] = "Quest Node",
         },
         ["Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standard portal separating regional compartments or ship cabins. Throwing open the wooden or iron framework handles room navigation or retreats your squad safely during pirate raids.",
-            ["type"] = "Security Gate",
         },
         ["Door: Automaton Workshop"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A sturdy wooden service door leading directly into the imperial puppet maintenance bay. Activating the latch allows you to step inside to repair your automaton components or progress specialized job trials.",
-            ["type"] = "Security Gate",
         },
         ["Door: Chamber of Passage"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A secure portal partitioning the tactical transit hall. Passing past the framework manages your movement between corporate agency hubs or checks your mercenary clearance levels.",
-            ["type"] = "Security Gate",
         },
         ["Door: Commissions Agency"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy entrance portal blockading the imperial currency exchange office. Throwing back the wood frame grants you access to check active vouchers or handle regional assault trade listings.",
-            ["type"] = "Security Gate",
         },
         ["Door: Kokba Hostel"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic residential wooden door set into the bustling commercial district architecture. Interfacing with the handle uncovers localized mercenary tracking clues or triggers neighborhood flavor lines.",
-            ["type"] = "Security Gate",
         },
         ["Door: Walahra Temple"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An ornate wooden barrier protecting the sacred sanctuary chambers. Stepping through the threshold lets you offer imperial coins to secure ancient enhancements and clear magical trials.",
-            ["type"] = "Security Gate",
         },
         ["Door_1ea"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A specific structural door partition separating regional city blocks. Passing through the frame manages urban layout navigation loops or transitions you into surrounding town squares.",
-            ["type"] = "Security Gate",
         },
         ["Door_1eb"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The secondary localized security gate embedded into the plaster city walls. Turning the handle commands the wooden framework to slide aside to help you bypass busy street paths.",
-            ["type"] = "Security Gate",
         },
         ["Door_1ec"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The third specific door barrier protecting a residential residential layout block. Shifting the latch updates your city exploration files or updates active urban side tasks.",
-            ["type"] = "Security Gate",
         },
         ["Door_1ed"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The fourth specific defensive barrier fortifying the city alley partitions. Unlatching the door frame provides entry to search for hidden quest items or advance active story arcs.",
-            ["type"] = "Security Gate",
         },
         ["Gate: Chocobo Circuit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standard track boundary gate partitioning off the grand racing lanes. Interfacing with the terminal matches registration tokens to grant your character lane access.",
-            ["type"] = "Security Gate",
         },
         ["Gate: The Colosseum"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy iron-grilled security barrier fence section crossing into the arena grounds. Satisfying stadium registration checks drops the frame to allow entry into competitive match sectors.",
-            ["type"] = "Security Gate",
         },
         ["Gate: The Pit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A sturdy iron-barred portcullis partition separating spectators from the combat pits. Triggering the arena console drops the gate to launch battle matches.",
-            ["type"] = "Security Gate",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Notes:\
+* Replays cutscenes for this area.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Harvesting Point"] = {
             ["_source"] = "item",
             ["icon"] = "HarvestPoint.png",
-            ["note"] = "A thick cluster of native overworld botanical flora. Foraging through the greenery uncovers rare crafting items, gathers regional resources, and completes active gathering trials.",
             ["type"] = "Harvest Point",
         },
         ["Ice Cage"] = {
             ["_source"] = "item",
             ["icon"] = "BlockadedPath.png",
-            ["note"] = "A solid, freezing block of ice blocking the sanctum corridors. Striking or melting this frozen structural barrier shatters the frost, liberating the captured imperial soldiers trapped within.",
             ["type"] = "Obstacle Node",
         },
         ["Ironbound Gate"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A reinforced structural gate guarding strategic city thresholds and beastman fortifications. Meeting localized clearance protocols swings the heavy frame aside to open the pathways.",
-            ["type"] = "Security Gate",
         },
         ["Memorian"] = {
             ["_source"] = "item",
             ["icon"] = "Automaton.png",
-            ["note"] = "A strange, magically animated doll standing as a hidden sentinel across various cities. Examining this eerie automaton tracks mysterious energy reactions to advance late-tier missions.",
             ["type"] = "Quest Node",
         },
         ["Qiqirn Mine"] = {
             ["_source"] = "item",
             ["icon"] = "MiningPoint.png",
-            ["note"] = "A hidden, highly volatile proximity explosive device buried beneath the soil. Disarming the ticking tactical mechanism clears a safe corridor for your alliance during dynamic combat operations.",
             ["type"] = "Obstacle Node",
-        },
-        ["Rendezvous Point"] = {
-            ["_source"] = "item",
-            ["icon"] = "RendezvousPoint.png",
-            ["note"] = "A designated strategic staging waypoint manifest within city districts or deep inside the void loops. Resting at this point handles mission registration checks or uncovers regional lore archives.",
-            ["type"] = "Quest Node",
         },
         ["Resume Point"] = {
             ["_source"] = "item",
             ["icon"] = "RendezvousPoint.png",
-            ["note"] = "A localized temporal checkpoint node hovering at key battle paths. Interfacing with the core validates your key item progress parameters to resume interrupted storyline battlefields.",
             ["type"] = "Quest Node",
         },
         ["Rune of Release"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A shimmering, golden runic plate materializing upon victory. Interfacing with the glyph tallies your imperial achievements and warps your entire alliance securely back to the staging docks.",
+            ["note"] = "Notes:\
+* Ends the current Assault and returns the party.",
             ["type"] = "Transit Portal",
         },
         ["Salaheem's Sentinels"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy entrance framework anchoring the mercenary agency headquarters. Stepping past this corporate threshold delivers you straight into the main office to handle promotion reviews or claim currency wages.",
-            ["type"] = "Security Gate",
         },
         ["Symphonic Curator"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
+            ["note"] = "Notes:\
+* Changes the area's background music.",
             ["type"] = "Quest Node",
         },
         ["Vegetation"] = {
             ["_source"] = "item",
             ["icon"] = "HarvestPoint.png",
-            ["note"] = "A thick outcropping of wild botanical brush growing in the sanctum trenches. Foraging through the greenery gathers unique materials and satisfies strict collection parameters during imperial operations.",
             ["type"] = "Harvest Point",
         },
         ["Victory Gate"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A towering iron imperial monument gate framework dominating the capital plaza. Studying its massive architectural engravings reveals historical archives concerning capital defenses and empire army victories.",
-            ["type"] = "Security Gate",
         },
         ["door_master"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standardized structural door layout unit sealing off intense instanced challenge rooms or operations sectors. Overriding the nearby locking mechanism slides the heavy panel away to grant passage.",
-            ["type"] = "Security Gate",
         },
         ["mateki"] = {
             ["_source"] = "item",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "The sacred Astral Candescence relic anchored inside the hall. Guarding this priceless defensive mechanism from aggressive beastman invading forces keeps your city protections active.",
-            ["type"] = "Quest Node",
+            ["displayName"] = "Astral Candescence",
+            ["icon"] = "Event.png",
+            ["note"] = "Besieged:\
+* The beastmen's primary objective during an attack on Al Zahbi.",
+            ["type"] = "Besieged Objective",
         },
     },
 }

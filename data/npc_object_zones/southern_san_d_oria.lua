@@ -1380,6 +1380,13 @@ Starlight Box enemies, then return\
 for credit.",
             ["type"] = "Holiday Event",
         },
+        ["Collione"] = {
+            ["_source"] = "npc",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
+            ["note"] = "Notes:\
+:*Explains the basics and rules for The Chocobo Hot and Cold Game. :*Hands-out Tandjana Wildgrass for the The Chocobo Hot and Cold Game, once per day.",
+            ["type"] = "VCS Chocobo Racing Associate",
+        },
     },
     ["objects"] = {
         ["???"] = {

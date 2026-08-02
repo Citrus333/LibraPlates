@@ -12,6 +12,15 @@ return {
 * Reports the remaining flight time.",
             ["type"] = "Airship Lookout",
         },
+        ["Moodon"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Mog Vault:\
+* Weekly letter moogle / Kupo Nut\
+trade target.\
+* Found on the San d'Oria to Jeuno airship.",
+            ["type"] = "Letter Moogle",
+        },
     },
     ["objects"] = {
         ["???"] = {

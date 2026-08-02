@@ -4,7 +4,8 @@ return {
             ["_source"] = "npc",
             ["icon"] = "TenshodoMerchant.png",
             ["note"] = "Notes:\
-* Open: 9:00 - 23:00 *No longer closed Darksday. *Must be a member of the Tenshodo to buy from this merchant.",
+* Open from 9:00 to 23:00.\
+* Requires Tenshodo membership to purchase items.",
             ["type"] = "Tenshodo Merchant",
         },
         ["Aeka"] = {
@@ -26,7 +27,7 @@ return {
         },
         ["Andrause"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Enemy of the Empire (I)",
             ["type"] = "Mission Associate",
@@ -34,8 +35,6 @@ return {
         ["Atrevaux"] = {
             ["_source"] = "npc",
             ["icon"] = "AuctionManager.png",
-            ["note"] = "Notes:\
-Auction House Representative",
             ["type"] = "Auction House",
         },
         ["Chiyo"] = {
@@ -66,13 +65,9 @@ Auction House Representative",
             ["_source"] = "catseye_npc",
             ["icon"] = "CrookedJones.png",
             ["note"] = "CatsEyeXI:\
-* Level 20+ daily fish turn-in in\
-Norg (H-8).\
-* Provides a random fish request\
-for doubloons.\
-* Doubloons buy treasure hunt\
-rewards; shovel is recommended\
-around 5000 total.",
+* Level 20+ daily fish turn-in in Norg (H-8).\
+* Provides random fish requests for doubloons.\
+* Doubloons purchase treasure-hunt rewards; a shovel is recommended around 5,000 total.",
             ["type"] = "Doubloon Fish Daily",
         },
         ["Deigoff"] = {
@@ -94,12 +89,11 @@ around 5000 total.",
         },
         ["Esha'ntarl"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
 * The Shrouded Canvas\
-* The Warpin\
-",
-            ["type"] = "Quest Associate",
+* The Warpin",
+            ["type"] = "Mission Associate",
         },
         ["Eunsoo"] = {
             ["_source"] = "npc",
@@ -110,7 +104,7 @@ around 5000 total.",
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Speaking with her with your main job set as Dragoon you get the option to change your Wyvern's name for 9800 gil. For a complete list of names see Dragoon Wyvern.",
+* Renames a Dragoon's wyvern for 9,800 gil.",
             ["type"] = "Wyvern Name Changer",
         },
         ["Gabide"] = {
@@ -120,10 +114,9 @@ Speaking with her with your main job set as Dragoon you get the option to change
         },
         ["Gilgamesh"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Starts Quests:\
 * Yomi Okuri - SAM AF 2\
-\
 Involved in Quests:\
 * A Thief in Norg!? - SAM AF 3\
 * Apocalypse Nigh\
@@ -132,18 +125,15 @@ Involved in Quests:\
 * Tenuous Existence\
 * A Sea Dog's Summons\
 * Death and Rebirth\
-\
 Starts Missions:\
 * Zilart Mission 2: Welcome t'Norg\
-\
 Involved in Missions:\
 * Bastok Mission 6-2: The Pirates' Cove\
 * Zilart Mission 9: Ro'Maeve\
 * Zilart Mission 11: The Hall of the Gods\
 * Zilart Mission 15: The Sealed Shrine\
-* Zilart Mission 17: Awakening\
-",
-            ["type"] = "Norg Leader",
+* Zilart Mission 17: Awakening",
+            ["type"] = "Mission Associate",
         },
         ["Gimb"] = {
             ["_source"] = "npc",
@@ -167,24 +157,22 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-Watches attentively over a mysterious path to a steam ship dock, Possibly guards passage to the pirate interceptor (see Ship bound for Mhaura/ Ship bound for Selbina). Talk to him to go to either Mhaura or Selbina by instantaneous boat ride. There is currently no known way to get past him and he does not participate in any of the current story lines.",
+* Provides passage to Mhaura or Selbina.",
             ["type"] = "Passage Guard",
         },
         ["Grav'iton"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
 * The Shrouded Canvas\
-* Dawn\
-",
-            ["type"] = "Quest Associate",
+* Dawn",
+            ["type"] = "Mission Associate",
         },
         ["Gubokka"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Undying Pledge\
-",
+            ["note"] = "Involved in Quests:\
+* An Undying Pledge",
             ["type"] = "Quest Associate",
         },
         ["Hayris"] = {
@@ -218,7 +206,6 @@ Watches attentively over a mysterious path to a steam ship dock, Possibly guards
 * Forge Your Destiny\
 * The Sacred Katana\
 * The Potential Within\
-\
 Involved in Quests:\
 * Yomi Okuri\
 * A Thief in Norg!?",
@@ -228,18 +215,19 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "TenshodoMerchant.png",
             ["note"] = "Notes:\
-Buys and sells weapons and ammo usable by martial arts jobs (Monk, Ninja, Samurai). *Open: 9:00 - 23:00 *Closed: Darksday *Must be a member of the Tenshodo to buy from this merchant.",
+* Sells weapons and ammunition for Monk, Ninja, and Samurai.\
+* Open from 9:00 to 23:00; closed on Darksday.\
+* Requires Tenshodo membership to purchase items.",
             ["type"] = "Tenshodo Merchant",
         },
         ["Kamui"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Tuning Out\
-\
 Involved in Missions:\
 * Zilart Mission 9: Ro'Maeve",
-            ["type"] = "Quest Associate",
+            ["type"] = "Mission Associate",
         },
         ["Keal"] = {
             ["_source"] = "npc",
@@ -250,17 +238,16 @@ Involved in Missions:\
         },
         ["Kieran"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Voidwatch Ops: Border Crossing\
 * VW Op. #115: Li'Telor Variant\
-* Skyward Ho, Voidwatcher!\
-",
-            ["type"] = "Periapt of Clarity.",
+* Skyward Ho, Voidwatcher!",
+            ["type"] = "Voidwatch Quest Giver",
         },
         ["Koetsu"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Zilart Mission 1: The New Frontier",
             ["type"] = "Mission Associate",
@@ -274,10 +261,9 @@ Involved in Missions:\
         },
         ["Lion"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Apocalypse Nigh\
-\
 Involved in Missions:\
 * San d'Oria Mission 2-3: Journey Abroad\
 * Bastok Mission 2-3: The Emissary\
@@ -299,9 +285,8 @@ Involved in Missions:\
 * Rhapsodies Mission 1-2-1: The Path Untraveled\
 * Rhapsodies Mission 1-2-5: A Land After Time\
 * Rhapsodies Mission 3-1-33: Absolute Trust\
-* Rhapsodies Mission 3-1-35: A Rhapsody for the Ages\
-",
-            ["type"] = "Mission",
+* Rhapsodies Mission 3-1-35: A Rhapsody for the Ages",
+            ["type"] = "Mission Associate",
         },
         ["Louartain"] = {
             ["_source"] = "npc",
@@ -331,8 +316,7 @@ Involved in Missions:\
             ["_source"] = "catseye_npc",
             ["icon"] = "Marceo.png",
             ["note"] = "CatsEyeXI:\
-* Level 15+ fish reward NPC in Norg\
-(H-9).\
+* Level 15+ fish reward NPC in Norg (H-9).\
 * Trade eligible fish for rewards.",
             ["type"] = "Fish Rewards",
         },
@@ -352,15 +336,17 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-If you have not spoken with Affi in Escha - Zi'Tah and paid 10 silt for a general explanation of how Escha zones and Geas Fete works, Nolan will not talk to you, telling you he is not open for business yet. Three Eschalixir +2 (or the equivalent value using Eschalixir, Eschalixir +1 and/or Eschalixir +2) are needed to fully upgrade one piece. Trade your piece with one of the eschalixirs to choose your augmenting path and have the piece mezzotinted in preparation for the augments; the eschalixir will be returned.",
+* Augments Escha equipment using Eschalixirs.\
+* Requires Affi's Escha explanation in Escha - Zi'Tah.\
+* Three Eschalixir +2 worth fully upgrades one item.",
             ["type"] = "Escha Guide",
         },
         ["Novice Moogle"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Chasing Dreams",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Quest Associate",
         },
         ["Odilinia"] = {
             ["_source"] = "npc",
@@ -385,8 +371,6 @@ If you have not spoken with Affi in Escha - Zi'Tah and paid 10 silt for a genera
         ["Paito-Maito"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-\"I'm the gaudy-bodyguard of this place. You make one wrong move and I will smack and kick and punch and whack and pummel and smash and crash and grind your bones into powder...and then kick you some more. You follow the rules, I'll let you live. You break them, I break you.\"",
             ["type"] = "Bodyguard",
         },
         ["Paleille"] = {
@@ -397,15 +381,15 @@ If you have not spoken with Affi in Escha - Zi'Tah and paid 10 silt for a genera
         ["Parlemaille"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-\"The jungle that covers this island is so big, it's divided into two--the Yhoator Jungle and the Yuhtunga Jungle. I wouldn't recommend traveling without a map, since you could get lost, or...eaten. Remember, it's a jungle out there. Har har! Get it?",
             ["type"] = "Dialogue NPC",
         },
         ["Porter Moogle"] = {
             ["_source"] = "npc",
             ["icon"] = "ItemStorage.png",
             ["note"] = "Notes:\
-Find a nearby Porter Moogle and talk to him and select the option to buy a Slip. Once you find the slip you want you select it and confirm your selection. Each slip will cost you 1000 gil to buy. After purchasing any storage slip, you may trade 1-7 corresponding items per trade along with the slip. NOTE: This does NOT mean you can only store up to 7 items on a single slip, it simply means you can only transfer up to 7 at a time to the Porter for storage. At any time after you have the slip you can continue to make trades of 1-7 items along with the corresponding slip, thereby storing all your like items with the Moogle instead of in your MH. This feature is handy when you later get another armor drop, like in Dynamis, and want to store it somewhere until you need it. To withdraw an item simply trade him the corresponding slip and he will give you an option to retrieve your armor. You only pay an initial fee of 1,000 gil when purchasing a storage slip, you will not pay every time you store or withdraw gear. Storage slips cannot be discarded unless all stored items are retrieved first. As of Feb. 14, 2011, items with a Magian Trial insignia can no longer be stored with a Porter Moogle. Any items with an active trial stored before that date have had all trial progress erased.",
+* Sells storage slips for 1,000 gil.\
+* Stores and retrieves eligible equipment using the corresponding slip.\
+* Equipment with an active Magian trial cannot be stored.",
             ["type"] = "Item Storage",
         },
         ["Quntsu-Nointsu"] = {
@@ -441,13 +425,12 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
         },
         ["Ryoma"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * 20 in Pirate Years\
 * I'll Take the Big Box\
 * True Will\
 * Bugi Soden\
-\
 Involved in Quests:\
 * Ayame and Kaede",
             ["type"] = "Ninja Quest",
@@ -456,16 +439,19 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
             ["note"] = "Notes:\
-Reports weather for the following areas: *Yuhtunga Jungle *Yhoator Jungle *Ferry *Jeuno",
+Reports weather for:\
+* Yuhtunga Jungle\
+* Yhoator Jungle\
+* Ferry\
+* Jeuno",
             ["type"] = "Weather Reporter",
         },
         ["Shivivi"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Secret of the Damp Scroll\
-",
-            ["type"] = "Dialogue NPC",
+* Secret of the Damp Scroll",
+            ["type"] = "Quest Giver",
         },
         ["Sohyon"] = {
             ["_source"] = "npc",
@@ -478,7 +464,8 @@ Reports weather for the following areas: *Yuhtunga Jungle *Yhoator Jungle *Ferry
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Notes:\
-*  Tenshodo member. * Prices are based on your Norg Reputation. * Always open.",
+* Tenshodo merchant with prices based on Norg reputation.\
+* Always open.",
             ["type"] = "Standard Merchant",
         },
         ["Spasija"] = {
@@ -498,20 +485,25 @@ Reports weather for the following areas: *Yuhtunga Jungle *Yhoator Jungle *Ferry
             ["icon"] = "ReputationNPC.png",
             ["type"] = "Reputation",
         },
+        ["Vestavius"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
+* For Whom the Bell Tolls",
+            ["type"] = "Quest Associate",
+        },
         ["Verctissa"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Trial Size Trial by Water\
-",
+* Trial-Size Trial by Water",
             ["type"] = "Quest Giver",
         },
         ["Vigsterkr"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* The Voracious Resurgence\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* The Voracious Resurgence",
             ["type"] = "Mission Associate",
         },
         ["Vishwas"] = {
@@ -523,7 +515,8 @@ Reports weather for the following areas: *Yuhtunga Jungle *Yhoator Jungle *Ferry
             ["_source"] = "npc",
             ["icon"] = "TenshodoMerchant.png",
             ["note"] = "Notes:\
-* Open: 9:00 - 23:00 *No longer closed on Darksday. *Must be a member of the Tenshodo to buy from this merchant.",
+* Open from 9:00 to 23:00.\
+* Requires Tenshodo membership to purchase items.",
             ["type"] = "Tenshodo Merchant",
         },
         ["Washu"] = {
@@ -531,7 +524,6 @@ Reports weather for the following areas: *Yuhtunga Jungle *Yhoator Jungle *Ferry
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Stop Your Whining\
-\
 Involved in Quests:\
 * Chasing Dreams\
 * Yomi Okuri (SAM AF2)",
@@ -561,7 +553,10 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Standing next to Oseem in their alcove beneath the wooden footbridge. *Tells players their running total of Domain Points. *Explains how players may earn Domain Points and the daily limits of rewards from Domain Invasion. *Exchanges Domain Points for: **Items available from Geas Fete, including Abjurations. **Legacy items that used to directly drop from Domain Invasion dragons. **Sets of item level 119 armor that confer bonuses while participating in Domain Invasion. **Item Level 119 Weapons that confer bonuses while participating in Domain Invasion. **Unique accessories for the ear, ring, waist, and neck equipment slots. **Crafting materials. *Will only talk to players who have earned at least 10 Domain Points. Listed below are his wares, grouped by their Domain Point price.",
+* Reports your current Domain Point total.\
+* Explains Domain Point acquisition and daily reward limits.\
+* Exchanges Domain Points for equipment, accessories, and materials.\
+* Requires at least 10 Domain Points before offering services.",
             ["type"] = "Domain Invasion",
         },
     },
@@ -569,28 +564,23 @@ Standing next to Oseem in their alcove beneath the wooden footbridge. *Tells pla
         ["Door_2"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic residential wooden door partitioning the outlaw cavern hub rooms. Activating the threshold latch manages your movement through the pirate settlement or initiates deep storyline scenarios.",
-            ["type"] = "Security Gate",
         },
         ["Oaken Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A sturdy wooden door partitioning off the dark cavern corridors. Activating the threshold latch manages your movement through the pirate hub or initiates deep storyline scenarios.",
-            ["type"] = "Security Gate",
         },
         ["Sinister Stash"] = {
             ["_source"] = "catseye_item",
             ["icon"] = "Box.png",
             ["note"] = "CatsEyeXI:\
-* Level 20+ daily fish turn-in in Norg (H-8), paired with Crooked Jones.\
-* Used for the doubloon fishing daily and treasure hunt rewards.",
+* Used with Crooked Jones's level 20+ daily fish turn-in in Norg (H-8).\
+* Supports doubloon fishing dailies and treasure-hunt rewards.",
             ["type"] = "Doubloon Fish Daily",
             ["worldOffsetY"] = 0.25,
         },
         ["Tales' Beginning"] = {
             ["_source"] = "item",
             ["icon"] = "History.png",
-            ["note"] = "A distinct magical marker manifest near prominent municipal gathering hubs. Interfacing with its surface reviews historical records and initiates localized storyline expansions.",
             ["type"] = "Quest Node",
         },
     },

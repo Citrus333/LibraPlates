@@ -443,11 +443,6 @@ local function QueueNpcObject(entity)
     local entityName = tostring(entity.entityType or 'NPC');
     local displayName = CleanDisplayName(entity.name);
 
-    if (npcObjectInfo.ShouldHidePlate(displayName) == true) then
-        perfMeter.EndDetail(resolveTimer);
-        return;
-    end
-
     if (entities.IsOwnPetIndex(entity.index) == true) then
         perfMeter.EndDetail(resolveTimer);
         return;

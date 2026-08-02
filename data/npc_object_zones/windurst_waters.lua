@@ -1407,6 +1407,21 @@ for credit.",
 * Marks useful services and important NPCs on the Windurst map.",
             ["type"] = "Map Marker",
         },
+        ["Zhuk Vojahom"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Involved in Quests:\
+* Corsair's Gants\
+",
+            ["type"] = "Quest Giver",
+        },
+        ["Turumi-Byrumi"] = {
+            ["_source"] = "npc",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
+            ["note"] = "Notes:\
+Provided information about Chocobo Racing and recruited adventurers for the CRA Bastok team. He was removed from the game on 9/9/2010, along with Monteverle, Galienne, and Salvador.",
+            ["type"] = "VCS Chocobo Racing Associate",
+        },
     },
     ["objects"] = {
         ["Door:\"Rarab Tail\""] = {

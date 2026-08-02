@@ -2,101 +2,86 @@ return {
     ["npcs"] = {
         ["Bastokan Pursuivant"] = {
             ["_source"] = "npc",
-            ["icon"] = "FerryBoardingGuard.png",
-            ["note"] = "Ballista registration clerk. Manages match schedules, warps faction participants directly to conflict arenas, and distributes replacement Ballista Earrings.",
-            ["type"] = "Transit Personnel",
+            ["icon"] = "BallistaReferee.png",
+            ["note"] = "Bastokan official for Ballista matches.",
+            ["type"] = "Ballista Pursuivant",
         },
         ["Dragatama"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "Notes:\
-Very receptive to Shell Bugs.",
-            ["type"] = "Quest NPC",
+            ["icon"] = "Event.png",
+            ["note"] = "2012 New Year event NPC. Accepts traded items for event rewards or buffs.",
+            ["type"] = "New Year Event",
         },
         ["Ioupie, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Derfland is under weekly conquest-control by San d'Oria. ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Derfland Supplies for finishing Supply Quest ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "San d'Orian outland guard. Appears when San d'Oria controls Derfland.",
             ["type"] = "Conquest Overseer",
         },
         ["Joyful Alicorn"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-Follows Jubilant Alicorn, which is the only member of the procession with which interaction is possible. It is preceded by Jubilant Alicorn and Joyous Alicorn, and proceeded by Mirthful Ixion.",
+            ["note"] = "Non-interactive member of Jubilant Alicorn's New Year procession.",
             ["type"] = "New Year Event",
         },
         ["Joyous Alicorn"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-Follows Jubilant Alicorn, which is the only member of the procession with which interaction is possible. It is preceded by Jubilant Alicorn and proceeded by Joyful Alicorn and Mirthful Ixion.",
+            ["note"] = "Non-interactive member of Jubilant Alicorn's New Year procession.",
             ["type"] = "New Year Event",
         },
         ["Jubilant Alicorn"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-Trade ordinary items one at a time (such as arrows, crossbow bolts, bullets, or ninja tools) to any Jubilant Alicorn to receive special items such as the monstrosity item Ake-Ome Spirit, which unlocks the monipulator form New Year Mandragora (MON). It is proceeded by Joyous Alicorn, Joyful Alicorn, and Mirthful Ixion, and roams the entire zone. It is the leader of the procession and the largest of the four.",
+            ["note"] = "Leads the roaming New Year procession. Trade items one at a time for event rewards.",
             ["type"] = "New Year Event",
         },
         ["Meh Nbolo"] = {
             ["_source"] = "npc",
             ["icon"] = "ArmorStorer.png",
-            ["note"] = "Notes:\
-Armor Storer for a Ballista Event only.",
+            ["note"] = "Stores and retrieves armor during Ballista.",
             ["type"] = "Armor Depository",
         },
         ["Mesachedeau, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Derfland is under weekly conquest-control by San d'Oria. ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Derfland Supplies for finishing Supply Quest :*Accepts Garrison starting item Silver Engraving ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "San d'Orian outpost guard. Appears when San d'Oria controls Derfland.",
             ["type"] = "Conquest Overseer",
         },
         ["Mokto-Lankto, W.W."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Derfland is under weekly conquest-control by Windurst. ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Derfland Supplies for finishing Supply Quest :*Accepts Garrison starting item Silver Engraving ;Notes for characters only without Windurst as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Windurstian outpost guard. Appears when Windurst controls Derfland.",
             ["type"] = "Conquest Overseer",
         },
         ["Sharp Tooth, I.M."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Derfland is under weekly conquest-control by Bastok. ;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts Derfland Supplies for finishing Supply Quest ;Notes for characters only without Bastok as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Bastokan outland guard. Appears when Bastok controls Derfland.",
             ["type"] = "Conquest Overseer",
         },
         ["Shikoko, W.W."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears when Derfland is under control of Windurst. ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Derfland Supplies for finishing Supply Quest ;Notes for characters only without Windurst as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Windurstian outland guard. Appears when Windurst controls Derfland.",
             ["type"] = "Conquest Overseer",
         },
         ["Souun, I.M."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Derfland is under weekly conquest-control by Bastok. ;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts Derfland Supplies for finishing Supply Quest :*Accepts Garrison starting item Silver Engraving ;Notes for characters only without Bastok as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Bastokan outpost guard. Appears when Bastok controls Derfland.",
             ["type"] = "Conquest Overseer",
         },
         ["Suspicious Hume"] = {
             ["_source"] = "npc",
-            ["icon"] = "GoalTracker.png",
-            ["note"] = "Involved in Quests:\
-* Monstrosity (Quest)\
-* Monstrosity\
-",
-            ["type"] = "Monstrosity",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Starts Quest:\
+* Monstrosity (Quest)",
+            ["type"] = "Quest Giver",
         },
         ["Tahmasp"] = {
             ["_source"] = "npc",
-            ["info"] = "Appears when Derfland is under weekly conquest-control by one of the three nations. :*Sells to and buys items from characters allied with the nation that has the weekly conquest-control of this region. :*All items which Standard Merchants normally buy, can be traded by all characters for regional influence points. The points are awarded to the trader's current Allegiance. :*Teleports players who have previously done a Supply Run for the specific region, to their Allegiance Teleport NPC in one of the three cities. For further information, see Outpost Vendor. ;Items sold: *Antidote 316gil *Echo Drops 800gil *Ether 4832gil *Eye Drops 2595gil *Potion 910gil",
-            ["note"] = "Notes:\
-Appears when Derfland is under weekly conquest-control by one of the three nations. :*Sells to and buys items from characters allied with the nation that has the weekly conquest-control of this region. :*All items which Standard Merchants normally buy, can be traded by all characters for regional influence points. The points are awarded to the trader's current Allegiance. :*Teleports players who have previously done a Supply Run for the specific region, to their Allegiance Teleport NPC in one of the three cities. For further information, see Outpost Vendor. ;Items sold: *Antidote 316gil *Echo Drops 800gil *Ether 4832gil *Eye Drops 2595gil *Potion 910gil",
+            ["note"] = "Trades with allies of the nation controlling Derfland and offers outpost teleportation after its supply quest.",
             ["type"] = "Outpost Vendor",
         },
     },
@@ -104,63 +89,59 @@ Appears when Derfland is under weekly conquest-control by one of the three natio
         ["Beastmen's Banner"] = {
             ["_source"] = "item",
             ["icon"] = "BeastmenBanner.png",
-            ["note"] = "A military standard planted deep within hostile territory. Securing this tactical marker advances your localized Expeditionary Force objectives and shifts continental conquest influence metrics.",
-            ["type"] = "Quest Node",
+            ["note"] = "Examining it during an Expeditionary Force operation applies the level cap and spawns four notorious monsters.",
+            ["type"] = "Expeditionary Force",
         },
         ["Field Parchment"] = {
             ["_source"] = "item",
             ["icon"] = "Dialogue.png",
-            ["note"] = "A blank magical scroll mounted near regional field manual locations. Binding your training orders to the parchment engages elite automated operations parameters or validates combat tracking.",
-            ["type"] = "Training & Support",
+            ["note"] = "Starts Fields of Valor elite training battles.",
+            ["type"] = "Elite Training",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Replays cutscenes for this area.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Luck Rune"] = {
             ["_source"] = "item",
-            ["icon"] = "VoidwatchRift.png",
-            ["note"] = "An ancient runic seal etched directly into the dimensional boundaries. Activating this mystic distortion aligns your spatial metrics, drawing forth high-tier Voidwatch campaign campaign operations.",
-            ["type"] = "Transit Portal",
+            ["icon"] = "QuestNode.png",
+            ["note"] = "Awards an elemental crystal during Emila's lucky color mini-quest.",
+            ["type"] = "Quest Node",
         },
         ["Mog-Tablet"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A small, glowing tablet shard hidden across random corners of the world. Scouring the land to locate and recover all eleven missing stone relics unleashes world-wide exploration blessings for all adventurers.",
-            ["type"] = "Quest Node",
+            ["note"] = "One of eleven randomly placed tablets collected for the Mog-Tablet quest.",
+            ["type"] = "Mog-Tablet",
         },
         ["Outpost Gate"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A sturdy wooden perimeter fence gate securing the regional marshland garrison. Slipping past the timber framing allows you to freely cross outposts or tracks local tactical defense conditions.",
-            ["type"] = "Security Gate",
         },
         ["Overturned Soil"] = {
             ["_source"] = "item",
             ["icon"] = "Sands.png",
-            ["note"] = "A localized patch of disturbed earth masking a violent spatial distortion. Channeling your temporary key items into the ground unseals an extraplanar rift to initiate high-tier Voidwatch operations.",
-            ["type"] = "Transit Portal",
+            ["note"] = "Voidwatch battle location.",
+            ["type"] = "Voidwatch Rift",
         },
         ["Riftworn Pyxis"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A locked extraplanar drop chest container materializing immediately post-combat across Voidwatch fields. Breaking its lock rewards your squad with combat currencies or temporary buffs.",
-            ["type"] = "Loot Container",
+            ["note"] = "Appears after a Voidwatch victory and contains battle rewards.",
+            ["type"] = "Voidwatch Reward",
         },
         ["San d'Orian Pursuivant"] = {
             ["_source"] = "item",
-            ["icon"] = "MissionNPC.png",
-            ["note"] = "A prominent military flag signpost monitoring the regional boundaries. Reading the military log updates local conquest statistics and provides critical regional tracking records for Kingdom forces.",
-            ["type"] = "Quest Node",
+            ["icon"] = "Signpost.png",
+            ["type"] = "Ballista Marker",
         },
         ["Windurstian Pursuivant"] = {
             ["_source"] = "item",
             ["icon"] = "Signpost.png",
-            ["note"] = "A prominent military flag signpost monitoring regional field control metrics. Examining the standard updates local conquest records and balances active survey details for Federation aligned tracking groups.",
-            ["type"] = "Quest Node",
+            ["type"] = "Ballista Marker",
         },
     },
 }

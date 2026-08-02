@@ -22,7 +22,6 @@ return {
             ["icon"] = "Cutscene.png",
             ["note"] = "Involved in Quests:\
 * Apocalypse Nigh\
-\
 Involved in Missions:\
 * San d'Oria Mission 4-1: Magicite\
 * Bastok Mission 4-1: Magicite\
@@ -41,7 +40,6 @@ Involved in Missions:\
             ["icon"] = "Cutscene.png",
             ["note"] = "Involved in Quests:\
 * Bonds of Mythril\
-\
 Involved in Missions:\
 * Darkness Descends\
 ",
@@ -57,25 +55,29 @@ recipes are not yet coded.",
             ["type"] = "Chair Shop",
         },
     },
-    ["objects"] = {
-        ["Armoury Crate"] = {
-            ["_source"] = "item",
-            ["icon"] = "TreasureCasket.png",
-            ["note"] = "A reinforced storage chest appearing upon victory in battlefield instances or remnants sectors. Prying open the heavy lid drops specialized weapons, armor components, or unique instance progression resources for your squad.",
-            ["type"] = "Loot Container",
-        },
-        ["Goblin Footprint"] = {
-            ["_source"] = "item",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
-            ["type"] = "Memory Recall",
-            ["worldOffsetY"] = 0,
-        },
-        ["Ore Door"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A massive dark iron barricade blocking off the inner sanctums of power. Presenting the proper key item tokens or satisfying baseline clearance protocols commands the heavy iron framing to open.",
-            ["type"] = "Security Gate",
-        },
+	["objects"] = {
+		["Armoury Crate"] = {
+			["_source"] = "item",
+			["icon"] = "TreasureCasket.png",
+			["note"] = "Battlefield rewards:\
+* Contains equipment and other loot.",
+			["type"] = "Loot Container",
+		},
+		["Goblin Footprint"] = {
+			["_source"] = "item",
+			["icon"] = "Cutscene.png",
+			["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
+			["type"] = "Memory Recall",
+			["worldOffsetY"] = 0,
+		},
+		["Ore Door"] = {
+			["_source"] = "item",
+			["icon"] = "Door.png",
+			["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
+			["type"] = "Security Gate",
+		},
+	},
     },
 }

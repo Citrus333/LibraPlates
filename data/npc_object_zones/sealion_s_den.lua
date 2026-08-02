@@ -23,9 +23,16 @@ return {
 ",
             ["type"] = "Mission Associate",
         },
+        ["Jovial Rat"] = {
+            ["_source"] = "npc",
+			["icon"] = "PastEventWatcher.png",
+            ["note"] = "Notes:\
+* Replays cutscenes for this area.",
+            ["type"] = "Past Event Watcher",
+        },
         ["Sueleen"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Involved in Missions:\
 * Promathia Mission 7-2: Flames in the Darkness\
 * Promathia Mission 7-4: Calm Before the Storm\

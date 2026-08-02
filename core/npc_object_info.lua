@@ -523,10 +523,6 @@ function npcInfo.ShouldHidePlate(name)
 end
 
 function npcInfo.Find(name, entityType, options)
-    if (npcInfo.ShouldHidePlate(name) == true) then
-        return nil;
-    end
-
     local kind = tostring(entityType or ''):lower();
     local cleanName = CleanName(name);
     local ignoreZone = type(options) == 'table' and options.ignoreZone == true;

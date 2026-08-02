@@ -28,15 +28,6 @@ return {
             ["icon"] = "AdventuringFellow.png",
             ["type"] = "Adventuring Fellow",
         },
-        ["Aengus"] = {
-            ["_source"] = "npc",
-            ["icon"] = "GoalTracker.png",
-            ["note"] = "Involved in Quests:\
-* Monstrosity (Quest)\
-* Monstrosity\
-",
-            ["type"] = "Monstrosity",
-        },
         ["Akane, I.M."] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
@@ -63,40 +54,26 @@ According to Vana'diel Tribune http://www.playonline.com/ff11/guide/development/
 * Set up by members of the Allied Forces of Altana in an enemy area when technology levels reach an unknown threshold. The groups that set them up are involved with supplies/sabotage. :*Spawns reinforcements that attack fortifications, depending on which force installed it: :*Bastokan Forces: 1st Legion Aidman :*San d'Orian Forces: Royal Banneret :*Windurstian Forces: Wildcat Vanguard :*Northland Forces: Scylla Brigade Officer :*Reinforcements spawn every 30-60 seconds. :*Every so often a group of NPC's will enter the battle and cure the Allied Belfry, restoring a portion of its HP. *Cannot be cured.",
             ["type"] = "Campaign Battle Ally",
         },
+        ["Allied Enhancer"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "Augmenter.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Content/Campaign#Allied_Enhancers",
+            ["note"] = "CatsEyeXI Campaign:\
+* Upgrades level 68 Iron Ram, Fourth\
+Division, and Cobra armor sets.\
+* Requires Allied Notes and the\
+appropriate Campaign medal.",
+            ["type"] = "Campaign Armor Augmenter",
+        },
         ["Allied Mantelet"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["type"] = "Campaign Battle Ally",
         },
-        ["Almid"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
-            ["note"] = "Involved in Quests:\
-* Vegetable Vegetable Frustration\
-",
-            ["type"] = "Quest Giver",
-        },
         ["Anaconda Mercenary Major Vashai"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["type"] = "Anaconda Mercenary",
-        },
-        ["Anguenet"] = {
-            ["_source"] = "npc",
-            ["icon"] = "AdventurersAssistant.png",
-            ["note"] = "Starts Quests:\
-* Mithran Delicacies\
-\
-Involved in Quests:\
-* Tea with a Tonberry?",
-            ["type"] = "Adventurer's Assistant",
-        },
-        ["Antonia"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
-            ["note"] = "Notes:\
-To equip 100 job points are needed.",
-            ["type"] = "Standard Merchant",
         },
         ["Aquarian Master Caster Kayeel-Payeel"] = {
             ["_source"] = "npc",
@@ -112,14 +89,6 @@ To equip 100 job points are needed.",
             ["_source"] = "npc",
             ["icon"] = "Inventory.png",
             ["type"] = "Inventory Expansion",
-        },
-        ["Ash"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "Blast to the Past:\
-* Unlocks the EXP Guide (S) in Ru'Lude Gardens.\
-* Find the missing pages in Batallia Downs (S), then defeat Assassin Coq from the Shredded Page.",
-            ["type"] = "EXP Guide Unlock",
         },
         ["Auspicious Cub"] = {
             ["_source"] = "npc",
@@ -158,15 +127,6 @@ Appears with 4 other NPCs: *Galger *Taruger *Auspicious Tiger *Auspicious Cub",
 *  Along with Vahi, assists Choh Moui in Campaign battles.",
             ["type"] = "Campaign Battle",
         },
-        ["Bella"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "Crystal Warrior:\
-* Level 30 armor quest: Navigating\
-the Nest.\
-* Rewards Noct Attire Set.",
-            ["type"] = "CW Armor Quest",
-        },
         ["Bernhard"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
@@ -178,11 +138,6 @@ Involved in Missions:\
 * The Fighting Fourth\
 ",
             ["type"] = "Campaign NPC",
-        },
-        ["Beugungel"] = {
-            ["_source"] = "npc",
-            ["icon"] = "GuildMerchant.png",
-            ["type"] = "Woodworking Merchant",
         },
         ["Bhagirath"] = {
             ["_source"] = "npc",
@@ -209,27 +164,6 @@ Involved in Missions:\
 * Bastok Mission 4-1: Magicite\
 * Windurst Mission 4-1: Magicite",
             ["type"] = "Quest Associate",
-        },
-        ["Borghertz"] = {
-            ["_source"] = "npc",
-            ["icon"] = "afstorage.png",
-            ["note"] = "Involved in Quests:\
-* Borghertz's Calling Hands (Summoner)\
-* Borghertz's Chasing Hands (Ranger)\
-* Borghertz's Dragon Hands (Dragoon)\
-* Borghertz's Harmonious Hands (Bard)\
-* Borghertz's Healing Hands (White Mage)\
-* Borghertz's Loyal Hands (Samurai)\
-* Borghertz's Lurking Hands (Ninja)\
-* Borghertz's Shadowy Hands (Dark Knight)\
-* Borghertz's Sneaky Hands (Thief)\
-* Borghertz's Sorcerous Hands (Black Mage)\
-* Borghertz's Stalwart Hands (Paladin)\
-* Borghertz's Striking Hands (Monk)\
-* Borghertz's Vermillion Hands (Red Mage)\
-* Borghertz's Warring Hands (Warrior)\
-* Borghertz's Wild Hands (Beastmaster)",
-            ["type"] = "Artifact Quest",
         },
         ["Bountiful Bunny"] = {
             ["_source"] = "npc",
@@ -270,12 +204,6 @@ A rabbit found roaming in many areas which is accompanied by four other Rabbits 
 * Babban Ny Mheillea\
 ",
             ["type"] = "Campaign Ally",
-        },
-        ["Callisto"] = {
-            ["_source"] = "npc",
-            ["note"] = "Involved in Quests:\
-* Succor to the Sidhe",
-            ["type"] = "Quest Associate",
         },
         ["Camlin"] = {
             ["_source"] = "npc",
@@ -344,44 +272,6 @@ Involved in Missions:\
 ",
             ["type"] = "Adventuring Fellow",
         },
-        ["Chuaie"] = {
-            ["_source"] = "npc",
-            ["icon"] = "AdventurersAssistant.png",
-            ["note"] = "Notes:\
-* Reports the arrival and departure of the barges",
-            ["type"] = "Adventurer's Assistant",
-        },
-        ["Chumimi"] = {
-            ["_source"] = "npc",
-            ["icon"] = "afstorage.png",
-            ["note"] = "Involved in Quests:\
-* The Three Magi\
-* Recollections\
-* The Root of the Problem\
-",
-            ["type"] = "Black Mage Artifact",
-        },
-        ["Cofisephe"] = {
-            ["_source"] = "npc",
-            ["icon"] = "TicketSalesperson.png",
-            ["note"] = "Notes:\
-* Sells Barge Tickets or a Barge Multi-ticket for the barge.",
-            ["type"] = "Barge Ticket",
-        },
-        ["Collione"] = {
-            ["_source"] = "npc",
-            ["icon"] = "VCSChocoboRacingAssociate.png",
-            ["note"] = "Notes:\
-:*Explains the basics and rules for The Chocobo Hot and Cold Game. :*Hands-out Tandjana Wildgrass for the The Chocobo Hot and Cold Game, once per day.",
-            ["type"] = "VCS Chocobo Racing Associate",
-        },
-        ["Coupulie"] = {
-            ["_source"] = "npc",
-            ["icon"] = "TicketSalesperson.png",
-            ["note"] = "Notes:\
-* Sells tickets for the Phanauet Channel barge.",
-            ["type"] = "Barge Ticket",
-        },
         ["D. Shantotto"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
@@ -415,13 +305,6 @@ Involved in Missions:\
 ",
             ["type"] = "Campaign Ally",
         },
-        ["Darden, C.A."] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Jeuno affiliated Campaign Arbiter. Present when Beastmen have control of Garlaige Citadel (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
-        },
         ["Dawn Aureola"] = {
             ["_source"] = "npc",
             ["icon"] = "TacticalAssessment.png",
@@ -446,38 +329,11 @@ Used in Campaign Ops",
 * Commanded by Duskraven during campaign. *Uses weapon skill Seraph Blade",
             ["type"] = "Campaign Warrior",
         },
-        ["Dynause, T.K."] = {
-            ["_source"] = "npc",
-            ["icon"] = "Guard.png",
-            ["type"] = "Temple Knight",
-        },
-        ["Echanie"] = {
-            ["_source"] = "npc",
-            ["icon"] = "TicketSalesperson.png",
-            ["note"] = "Notes:\
-You can purchase Barge Tickets or a Barge Multi-ticket to gain access to the barge.",
-            ["type"] = "Barge Ticket",
-        },
         ["Element (NPC)"] = {
             ["_source"] = "npc",
             ["note"] = "Involved in Missions:\
 * A Challenge! You Could Be a Winner",
             ["type"] = "Mission Associate",
-        },
-        ["Elkum-Norkum, C.C."] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["type"] = "Campaign",
-        },
-        ["Emiliu"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Emiliu.png",
-            ["note"] = "CatsEyeXI:\
-* Outpost teleport service after\
-Up, Up and Away.\
-* Outposts still require normal\
-supply quest unlocks.",
-            ["type"] = "Outpost Warp",
         },
         ["Ephemeral Moogle"] = {
             ["_source"] = "npc",
@@ -492,13 +348,6 @@ supply quest unlocks.",
             ["icon"] = "EphemeralBox.png",
             ["type"] = "CW Storage",
             ["worldOffsetY"] = 0.25,
-        },
-        ["Eunirange"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Located on the barge during the routes from North Landing to Central Landing, and from South Landing to Central Landing via the Emfea Waterway.",
-            ["type"] = "Barge NPC",
         },
         ["Explorer Moogle"] = {
             ["_source"] = "npc",
@@ -519,13 +368,6 @@ Fablinix or \"Fab\" is a Goblin whose diaries are chronicled in A Little Goblin'
 A buffalo found roaming in the areas outside of all three starting cities which is followed by two to three Rancher NPCs. Rancher NPCs mention the opening of the Buffalo Bonanza Ranch in Jeuno.",
             ["type"] = "Event NPC",
         },
-        ["Felourie"] = {
-            ["_source"] = "npc",
-            ["icon"] = "AdventurersAssistant.png",
-            ["note"] = "Notes:\
-Reports the arrival and departure times of the barges.",
-            ["type"] = "Adventurer's Assistant",
-        },
         ["Fickblix"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -535,16 +377,6 @@ Reports the arrival and departure times of the barges.",
 * Windurst Mission 4-1: Magicite\
 ",
             ["type"] = "Goblin Informant",
-        },
-        ["Gabbot"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
-* |\
-\
-Involved in Missions:\
-* Bastok Mission 6-1: Return of the Talekeeper",
-            ["type"] = "Quest Associate",
         },
         ["Gabriele"] = {
             ["_source"] = "npc",
@@ -568,13 +400,6 @@ Will report how long until the Airship arrives at its destination.",
 Appears with 4 other NPCs: *Taruger *Auspicious Tiger *Auspicious Tigress *Auspicious Cub",
             ["type"] = "Dialogue NPC",
         },
-        ["Galienne"] = {
-            ["_source"] = "npc",
-            ["icon"] = "VCSChocoboRacingAssociate.png",
-            ["note"] = "Notes:\
-Provided information about Chocobo Racing and recruited adventurers for the CRA Bastok team. She was removed from the game on 9/9/2010, along with Monteverle, Salvador, and Turumi-Byrumi.",
-            ["type"] = "VCS Chocobo Racing Associate",
-        },
         ["Garazu-Horeizu"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestNPC.png",
@@ -589,30 +414,16 @@ Provided information about Chocobo Racing and recruited adventurers for the CRA 
 * Campaign Ops",
             ["type"] = "Mission Associate",
         },
-        ["Geppetto"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Geppetto.png",
-            ["note"] = "CatsEyeXI:\
-* Exchanges incorrectly coded\
-automaton attachments for the\
-correct versions.\
-* Corrected attachments can be\
-traded to Tateeya.\
-* Does not exchange out-of-era\
-attachments.",
-            ["type"] = "Attachment Fixer",
-        },
-        ["Gisbert, C.A."] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Jeuno affiliated Campaign Arbiter. Present when Beastmen have control of Rolanberry Fields (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
-        },
         ["Gleeful Alicorn"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["type"] = "New Year Event",
+        },
+        ["Gomi-Hiroi"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["note"] = "Seasonal recycling event broker. Spawns across past timeline nations during specific ecological holiday campaigns to manage local rubbish cleaning point distributions.",
+            ["type"] = "Special Event Coordinator",
         },
         ["Gold Musketeer Commander Gogol"] = {
             ["_source"] = "npc",
@@ -625,13 +436,6 @@ attachments.",
             ["note"] = "Notes:\
 If you come across a Goblin Footprint in the depths of Promyvion, you may hear voices. If so, you can trade any item to the Footprint to have Grumblix will appear and replay cutscenes for you. Any items traded (for example, 1 gil), will not be lost.",
             ["type"] = "Past Event Watcher NPC",
-        },
-        ["Guilloud"] = {
-            ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
-            ["note"] = "Involved in Missions:\
-* The Road Forks: The Road Forks",
-            ["type"] = "Mission Associate",
         },
         ["Hani"] = {
             ["_source"] = "npc",
@@ -652,16 +456,6 @@ Involved in Missions:\
 * A rabbit found roaming in many areas which is accompanied by four other Rabbits NPCs. *In 2023, its model was changed to a Lapinion.",
             ["type"] = "Event NPC",
         },
-        ["Holger, I.M."] = {
-            ["_source"] = "npc",
-            ["icon"] = "Guard.png",
-            ["type"] = "Iron Musketeer",
-        },
-        ["Hostarfaux, T.K."] = {
-            ["_source"] = "npc",
-            ["icon"] = "Guard.png",
-            ["type"] = "Temple Knight",
-        },
         ["Ildy-Goldy"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
@@ -681,13 +475,6 @@ Involved in Missions:\
 ",
             ["type"] = "Corsair Quest",
         },
-        ["Ineuteniace"] = {
-            ["_source"] = "npc",
-            ["icon"] = "TicketSalesperson.png",
-            ["note"] = "Notes:\
-* Located on the barge during the route from Central Landing to South Landing via Newtpool, and from South Landing to North Landing. *If Stubborn Dredvodd hops aboard the barge, he will utter a startled warning.",
-            ["type"] = "Ferry NPC",
-        },
         ["Iroha"] = {
             ["_source"] = "npc",
             ["icon"] = "MissionNPC.png",
@@ -701,17 +488,6 @@ Involved in Missions:\
             ["icon"] = "Guard.png",
             ["type"] = "Iron Musketeer",
         },
-        ["Iron Wolf"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "A Crystal Prelude:\
-* Bastokan starter NPC.\
-* Gives a Pickaxe, then asks for\
-material from Brittle Rocks.\
-* Starts the intro NM encounter and\
-warps you out after completion.",
-            ["type"] = "CW Intro Quest",
-        },
         ["Iru-Kuiru"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -721,26 +497,6 @@ warps you out after completion.",
 * Windurst Mission 4-1: Magicite\
 ",
             ["type"] = "Rhinostery Minister",
-        },
-        ["Irvina"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
-            ["note"] = "CatsEyeXI:\
-* Upgrades completed Salvage armor\
-pieces.\
-* Base Salvage armor pieces come\
-from Ghanraam; trade all required\
-items at once.\
-* See Salvage Level 75 Rewards for\
-required base items.",
-            ["type"] = "Salvage Upgrades",
-        },
-        ["Irwyn"] = {
-            ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
-            ["note"] = "Involved in Missions:\
-* Borne by the Wind",
-            ["type"] = "Mission Associate",
         },
         ["Ismenios Cutsilver"] = {
             ["_source"] = "npc",
@@ -758,20 +514,6 @@ required base items.",
             ["note"] = "Notes:\
 *  May assist Rongo-Nango during campaign battles.",
             ["type"] = "Campaign Ally",
-        },
-        ["Jeridade"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
-* The Flying Machine of Eld",
-            ["type"] = "Quest Associate",
-        },
-        ["Joosef"] = {
-            ["_source"] = "npc",
-            ["icon"] = "AirshipTravelAgent.png",
-            ["note"] = "Notes:\
-Will report how long until the Airship arrives at its destination.",
-            ["type"] = "Airship Schedule",
         },
         ["Judith"] = {
             ["_source"] = "npc",
@@ -811,11 +553,6 @@ Will report how long until the Airship arrives at its destination.",
 ",
             ["type"] = "Campaign Freelance",
         },
-        ["Kilian, I.M."] = {
-            ["_source"] = "npc",
-            ["icon"] = "Guard.png",
-            ["type"] = "Iron Musketeer",
-        },
         ["Kingslayer Doggvdegg"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -836,23 +573,6 @@ Involved in Missions:\
 * A Moogle Kupo d'Etat",
             ["type"] = "Mission Giver",
         },
-        ["Kupipi"] = {
-            ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
-            ["link"] = "https://www.bg-wiki.com/ffxi/Kupipi",
-            ["note"] = "Involved in Quests:\
-* Waking the Colossus\
-* The Root of the Problem\
-\
-Involved in Missions:\
-* The Emissary\
-* Journey Abroad\
-* The Three Kingdoms\
-* To Each His Own Right\
-* Written in the Stars\
-* The Jester Who'd Be King",
-            ["type"] = "Government Official",
-        },
         ["Kupold"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -866,13 +586,6 @@ Discusses various events in Vana'diel with Kupulele and Kupeliont.",
             ["note"] = "Notes:\
 * Discusses various events in Vana'diel with Kupold and Kupeliont.",
             ["type"] = "Lore NPC",
-        },
-        ["Laiteconce"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Will report how long until the Barge docks at South Landing and Central Landing.",
-            ["type"] = "Barge Schedule",
         },
         ["Lerren"] = {
             ["_source"] = "npc",
@@ -901,32 +614,6 @@ Will report how long until the Barge docks at South Landing and Central Landing.
             ["icon"] = "Merchant.png",
             ["type"] = "Fishing Merchant",
         },
-        ["Louisareaux"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
-* A Thirst for the Eons",
-            ["type"] = "Quest Associate",
-        },
-        ["Lourdaude"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Involved in Quests:\
-* Mithran Delicacies",
-            ["type"] = "Tonberry",
-        },
-        ["Luise, I.M."] = {
-            ["_source"] = "npc",
-            ["icon"] = "Guard.png",
-            ["type"] = "Iron Musketeer",
-        },
-        ["Luquillaue"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Provides information about when the barge will land.",
-            ["type"] = "Barge Schedule",
-        },
         ["Lycopodium (NPC)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
@@ -934,19 +621,20 @@ Provides information about when the barge will land.",
 * Lycopodium Warps",
             ["type"] = "Quest Giver",
         },
-        ["Maccus"] = {
-            ["_source"] = "npc",
-            ["icon"] = "GoalTracker.png",
-            ["note"] = "Involved in Quests:\
-* Monstrosity (Quest)\
-* Monstrosity\
-",
-            ["type"] = "Monstrosity",
-        },
         ["Magian Moogl"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["type"] = "Emote Trials",
+        },
+        ["Maruna-Kurina"] = {
+            ["_source"] = "npc",
+            ["icon"] = "CampaignArbiter.png",
+            ["note"] = "Notes:\
+* Explains Campaign and tracks\
+freelancer alliances and influence.\
+* Appears in towns but does not\
+participate in battles.",
+            ["type"] = "Freelance",
         },
         ["Marquis Amon"] = {
             ["_source"] = "npc",
@@ -955,27 +643,6 @@ Provides information about when the barge will land.",
 * Bonds of Mythril\
 ",
             ["type"] = "Dark Kindred Noble",
-        },
-        ["Maryse"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-One of The Dark Lilies of the Harvest Festival event held each October since 2004. Follow Maryse without being seen to receive, from the Exorcist, a Witch Hat or Coven Hat.",
-            ["type"] = "Harvest Festival",
-        },
-        ["Matabe"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
-* Faded Promises",
-            ["type"] = "Quest Associate",
-        },
-        ["Mauricio"] = {
-            ["_source"] = "npc",
-            ["icon"] = "AirshipTravelAgent.png",
-            ["note"] = "Notes:\
-Will report how long until the Airship arrives at its destination.",
-            ["type"] = "Airship Schedule",
         },
         ["Midras"] = {
             ["_source"] = "npc",
@@ -998,49 +665,10 @@ Will report how long until the Airship arrives at its destination.",
 ",
             ["type"] = "Quest Giver",
         },
-        ["Mimoza"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
-            ["note"] = "Mog Vault:\
-* Weekly letter moogle / Kupo Nut\
-trade target.\
-* Enter from Ru'Aun #2, then go to basement via F.",
-            ["type"] = "Letter Moogle",
-        },
         ["Mirthful Ixion"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["type"] = "New Year Event",
-        },
-        ["Mnejing"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Mnejing.png",
-            ["note"] = "CatsEyeXI:\
-* Puppetmaster attachment shop.\
-* Accepts Puppetmaster AF\
-commission trades.\
-* Can complete Corsair AF3 for\
-Corsair's Tricorne.",
-            ["type"] = "PUP Attachment Shop",
-        },
-        ["Mogki"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
-            ["note"] = "Mog Vault:\
-* Weekly letter moogle / Kupo Nut\
-trade target.\
-* Found on the Bastok to Jeuno\
-airship.",
-            ["type"] = "Letter Moogle",
-        },
-        ["Mogsy"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
-            ["note"] = "Mog Vault:\
-* Weekly letter moogle / Kupo Nut\
-trade target.\
-* Near the monument.",
-            ["type"] = "Letter Moogle",
         },
         ["Momowa"] = {
             ["_source"] = "npc",
@@ -1048,30 +676,6 @@ trade target.\
             ["note"] = "Notes:\
 *  May assist Rongo-Nango during campaign battles.",
             ["type"] = "Campaign Ally",
-        },
-        ["Mono Nchaa"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
-            ["type"] = "Standard Merchant",
-        },
-        ["Moodon"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
-            ["note"] = "Mog Vault:\
-* Weekly letter moogle / Kupo Nut\
-trade target.\
-* Found on the San d'Oria to Jeuno airship.",
-            ["type"] = "Letter Moogle",
-        },
-        ["Mosco"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
-            ["note"] = "Mog Vault:\
-* Weekly letter moogle / Kupo Nut\
-trade target.\
-* Found on the Windurst to Jeuno\
-airship.",
-            ["type"] = "Letter Moogle",
         },
         ["Mutihb"] = {
             ["_source"] = "npc",
@@ -1091,15 +695,13 @@ airship.",
 ",
             ["type"] = "Quest Giver",
         },
-        ["Nazna"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
-            ["note"] = "Mog Vault:\
-* Weekly letter moogle / Kupo Nut\
-trade target.\
-* Found on the Nashmau to Whitegate\
-ship.",
-            ["type"] = "Letter Moogle",
+        ["Nomad Moogle"] = {
+            ["_source"] = "npc",
+            ["icon"] = "MogHouse.png",
+            ["note"] = "Mog House Services:\
+* Changes main and support jobs.\
+* Provides Mog Safe, Mog Locker, and Delivery Box access.",
+            ["type"] = "Mog House Services",
         },
         ["Noble Warrior"] = {
             ["_source"] = "npc",
@@ -1110,11 +712,6 @@ ship.",
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["type"] = "Transportation",
-        },
-        ["Odzmanouk"] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["type"] = "Freelance",
         },
         ["Oggbi (S)"] = {
             ["_source"] = "npc",
@@ -1140,26 +737,6 @@ Involved in Missions:\
 * Bastok Mission 4-1: Magicite\
 * Windurst Mission 4-1: Magicite",
             ["type"] = "Quest Associate",
-        },
-        ["One-eyed Gwajboj"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Involved in Missions:\
-* A Nation on the Brink (WOTG14)\
-",
-            ["type"] = "Orc General",
-        },
-        ["Ortwin, I.M."] = {
-            ["_source"] = "npc",
-            ["icon"] = "Guard.png",
-            ["type"] = "Iron Musketeer",
-        },
-        ["Oslam"] = {
-            ["_source"] = "npc",
-            ["icon"] = "AirshipTravelAgent.png",
-            ["note"] = "Notes:\
-Will report how long until the Airship arrives at its destination.",
-            ["type"] = "Airship Schedule",
         },
         ["Papako"] = {
             ["_source"] = "npc",
@@ -1196,34 +773,12 @@ Will report how long until the Airship arrives at its destination.",
 * Hitting the Marquisate",
             ["type"] = "Quest Associate",
         },
-        ["Perna-Parna, C.C."] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["type"] = "Campaign",
-        },
         ["Popochu"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
 *  May assist Rongo-Nango during campaign battles. *Casts spells: Banish III and Holy",
             ["type"] = "Caster",
-        },
-        ["Poseaulloie"] = {
-            ["_source"] = "npc",
-            ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Notes:\
-* One of The Dark Lilies of the Harvest Festival event held each October since 2004. Follow Poseaulloie without being seen to receive, from the Exorcist, a Witch Hat or Coven Hat. *Thought to be the Dark Kindred's Shadowhand from the Crystal War when the The Dark Lilies were enslaved by the Shadow Lord.",
-            ["type"] = "Special Event",
-        },
-        ["Povall"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
-* |\
-\
-Involved in Missions:\
-* Bastok Mission 6-1: Return of the Talekeeper",
-            ["type"] = "Quest Associate",
         },
         ["Praefactus Leonnel"] = {
             ["_source"] = "npc",
@@ -1280,13 +835,6 @@ If you come across a Goblin Footprint in the field, you may hear voices. If so, 
 * Part of the staff from Buffalo Bonanza Ranch. *Trade items to receive buffs or items that are used in Happy New Year 2009, or any Happy New Year thereafter. *They are always on the move, and they like to follow the current event Chinese zodiac animal around the area. Wide Scan and mounts are useful for locating and running them down.",
             ["type"] = "Event NPC",
         },
-        ["Ratoulle"] = {
-            ["_source"] = "npc",
-            ["icon"] = "AdventurersAssistant.png",
-            ["note"] = "Notes:\
-* Reports the arrival and departure of the barges.",
-            ["type"] = "Adventurer's Assistant",
-        },
         ["Rejoicing Rabbit"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
@@ -1311,39 +859,6 @@ A rabbit found roaming in many areas which is accompanied by four other Rabbits 
 A rabbit found roaming in many areas which is accompanied by four other Rabbits NPCs.",
             ["type"] = "Event NPC",
         },
-        ["Rhy Epocan"] = {
-            ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
-            ["note"] = "Involved in Missions:\
-* Windurst Mission 3-1: To Each His Own Right\
-* Windurst Mission 3-2: Written in the Stars",
-            ["type"] = "Mission Associate",
-        },
-        ["Robino-Mobino"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Dialogue NPC",
-        },
-        ["Roi"] = {
-            ["_source"] = "npc",
-            ["icon"] = "BargeCaptain.png",
-            ["type"] = "Barge Captain",
-        },
-        ["Rosulatia"] = {
-            ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
-            ["note"] = "Involved in Missions:\
-* Ortharsyne\
-* In the Presence of Royalty\
-* Leafallia (Mission)\
-* Rosulatia's Promise",
-            ["type"] = "Mission",
-        },
-        ["Rouquillot, T.K."] = {
-            ["_source"] = "npc",
-            ["icon"] = "Guard.png",
-            ["type"] = "Temple Knight",
-        },
         ["Royal Guard General Davilles"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
@@ -1353,13 +868,6 @@ A rabbit found roaming in many areas which is accompanied by four other Rabbits 
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["type"] = "Royal Knight",
-        },
-        ["Salvador"] = {
-            ["_source"] = "npc",
-            ["icon"] = "VCSChocoboRacingAssociate.png",
-            ["note"] = "Notes:\
-Provided information about Chocobo Racing and recruited adventurers for the CRA Bastok team. He was removed from the game on 9/9/2010, along with Monteverle, Galienne, and Turumi-Byrumi.",
-            ["type"] = "VCS Chocobo Racing Associate",
         },
         ["Sarmoega"] = {
             ["_source"] = "npc",
@@ -1382,14 +890,6 @@ Undisputed genius inventor and head of the Research Institute for Paranormal Phe
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["type"] = "Campaign Battle",
-        },
-        ["Serino"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Event.png",
-            ["note"] = "Mog Vault:\
-* Initial vault quest moogle on the\
-Jeuno to Kazham airship.",
-            ["type"] = "Mog Vault Quest",
         },
         ["Shamarhaan"] = {
             ["_source"] = "npc",
@@ -1440,14 +940,6 @@ Involved in Quests:\
 ",
             ["type"] = "Chocobo",
         },
-        ["Sirius"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
-            ["note"] = "Involved in Quests:\
-* Vegetable Vegetable Frustration\
-",
-            ["type"] = "Quest Giver",
-        },
         ["Skokkr Undrborn"] = {
             ["_source"] = "npc",
             ["icon"] = "GoalTracker.png",
@@ -1461,24 +953,6 @@ Involved in Quests:\
             ["note"] = "Involved in Quests:\
 * Starlight Celebration 2009",
             ["type"] = "Quest Associate",
-        },
-        ["Star Sibyl"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Involved in Missions:\
-* Windurst Mission 3-3: A New Journey\
-* San d'Oria Mission 4-1: Magicite\
-* Bastok Mission 4-1: Magicite\
-* Windurst Mission 4-1: Magicite\
-* Windurst Mission 5-1: The Final Seal\
-* Windurst Mission 5-2: The Shadow Awaits\
-* Windurst Mission 6-2: Saintly Invitation\
-* Windurst Mission 7-1: The Sixth Ministry\
-* Windurst Mission 9-1: Doll of the Dead\
-* Windurst Mission 9-2: Moon Reading\
-* A Crystalline Prophecy (Mission)\
-",
-            ["type"] = "Star Sibyl",
         },
         ["Stockade"] = {
             ["_source"] = "npc",
@@ -1507,26 +981,6 @@ Involved in Quests:\
             ["note"] = "Notes:\
 * Can be Summoned by Adelheid. *Uses Stunning Blast and then despawns.",
             ["type"] = "Notorious Monster",
-        },
-        ["Suibhne"] = {
-            ["_source"] = "npc",
-            ["icon"] = "GoalTracker.png",
-            ["note"] = "Involved in Quests:\
-* Monstrosity (Quest)\
-* Monstrosity\
-",
-            ["type"] = "Monstrosity",
-        },
-        ["Summit Warden"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "SummitWarden.png",
-            ["note"] = "Summit of the Stars:\
-* Gives one free Apex, Pinnacle, or\
-Apogee token at random each week.\
-* Tokens are used with Ygnas for\
-temporary August or Shantotto II\
-trust access.",
-            ["type"] = "Summit Token Weekly",
         },
         ["Synergy Engineer"] = {
             ["_source"] = "npc",
@@ -1557,24 +1011,10 @@ Teaches Synergy Recipes to players",
 Appears with 4 other NPCs: *Galger *Auspicious Tiger *Auspicious Tigress *Auspicious Cub",
             ["type"] = "New Year Event",
         },
-        ["Tatan-Bilten"] = {
-            ["_source"] = "npc",
-            ["icon"] = "GuildMerchant.png",
-            ["type"] = "Clothcraft Guild",
-        },
         ["Temple Knight General Brunnaut"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["type"] = "Temple Knight",
-        },
-        ["Teyrnon"] = {
-            ["_source"] = "npc",
-            ["icon"] = "GoalTracker.png",
-            ["note"] = "Involved in Quests:\
-* Monstrosity (Quest)\
-* Monstrosity\
-",
-            ["type"] = "Monstrosity",
         },
         ["Toto Kupeliaure"] = {
             ["_source"] = "npc",
@@ -2024,33 +1464,6 @@ Involved in Missions:\
         ["Trust: Zeid II"] = {
             ["_source"] = "npc",
         },
-        ["Tsoo Haja the Umbra"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Involved in Quests:\
-* A Moral Manifest?\
-",
-            ["type"] = "Adventuring Fellow",
-        },
-        ["Turumi-Byrumi"] = {
-            ["_source"] = "npc",
-            ["icon"] = "VCSChocoboRacingAssociate.png",
-            ["note"] = "Notes:\
-Provided information about Chocobo Racing and recruited adventurers for the CRA Bastok team. He was removed from the game on 9/9/2010, along with Monteverle, Galienne, and Salvador.",
-            ["type"] = "VCS Chocobo Racing Associate",
-        },
-        ["Ulla"] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["type"] = "Campaign Freelance",
-        },
-        ["Ulmer, C.A."] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Jeuno affiliated Campaign Arbiter. Present when Beastmen have control of Castle Oztroja (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
-        },
         ["Ulrich"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
@@ -2140,14 +1553,6 @@ Involved in Missions:\
 ",
             ["type"] = "Dialogue NPC",
         },
-        ["Watzahl"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "Involved in Quests:\
-* Corsair's Bottes\
-",
-            ["type"] = "Corsair Quest",
-        },
         ["Werei"] = {
             ["_source"] = "npc",
             ["icon"] = "MissionNPC.png",
@@ -2155,24 +1560,6 @@ Involved in Missions:\
 * Enter the Talekeeper\
 ",
             ["type"] = "Mission",
-        },
-        ["Wildcat Armorer"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "WildcatArmorer.png",
-            ["note"] = "Crystal Warrior:\
-* Sells Assault Point gear for\
-Nyzul Isle Investigation Tokens.\
-* Used because Assaults are not\
-fully functional.",
-            ["type"] = "Assault Gear Vendor",
-        },
-        ["Wildcat Captain"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "WildcatCaptain.png",
-            ["note"] = "CatsEyeXI:\
-* Promotion service based on Aht\
-Urhgan Missions progress.",
-            ["type"] = "Imperial Promotion",
         },
         ["Wildcat General Zhwan"] = {
             ["_source"] = "npc",
@@ -2206,38 +1593,12 @@ Involved in Missions:\
 ",
             ["type"] = "Military Officer",
         },
-        ["Yahliq"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Fishing",
-        },
-        ["Yaibroux, T.K."] = {
-            ["_source"] = "npc",
-            ["icon"] = "Guard.png",
-            ["type"] = "Temple Knight",
-        },
         ["Young Aldo"] = {
             ["_source"] = "npc",
             ["icon"] = "MissionNPC.png",
             ["note"] = "Involved in Missions:\
 * A Crystalline Prophecy (Mission)",
             ["type"] = "Mission",
-        },
-        ["Zhuk Vojahom"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
-            ["note"] = "Involved in Quests:\
-* Corsair's Gants\
-",
-            ["type"] = "Quest Giver",
-        },
-        ["Zubaba"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Involved in Missions:\
-* Windurst Mission 3-2: Written in the Stars\
-",
-            ["type"] = "Lady-in-Waiting",
         },
         ["Zweeha"] = {
             ["_source"] = "npc",

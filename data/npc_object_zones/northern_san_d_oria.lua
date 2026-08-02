@@ -1212,6 +1212,20 @@ Point rewards for the NPC's nation.\
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
+        ["Maryse"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Notes:\
+One of The Dark Lilies of the Harvest Festival event held each October since 2004. Follow Maryse without being seen to receive, from the Exorcist, a Witch Hat or Coven Hat.",
+            ["type"] = "Harvest Festival",
+        },
+        ["Poseaulloie"] = {
+            ["_source"] = "npc",
+            ["icon"] = "SpecialEventCoordinator.png",
+            ["note"] = "Notes:\
+* One of The Dark Lilies of the Harvest Festival event held each October since 2004. Follow Poseaulloie without being seen to receive, from the Exorcist, a Witch Hat or Coven Hat. *Thought to be the Dark Kindred's Shadowhand from the Crystal War when the The Dark Lilies were enslaved by the Shadow Lord.",
+            ["type"] = "Special Event",
+        },
     },
     ["objects"] = {
         ["Chat Manual"] = {

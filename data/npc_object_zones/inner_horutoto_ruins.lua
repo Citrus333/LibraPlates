@@ -4,17 +4,15 @@ return {
             ["_source"] = "catseye_npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Crystal Warrior:\
-* Level 30 armor quest: Horutoto\
-Hakken.\
-* Rewards Soil Garb Set.",
+* Horutoto Hakken.\
+* Rewards the Soil Garb Set.",
             ["type"] = "CW Armor Quest",
         },
         ["King of Wands"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
-* Windurst Mission 3-2: Written in the Stars\
-",
+            ["note"] = "Mission NPC:\
+* Written in the Stars",
             ["type"] = "Cutscene NPC",
         },
     },
@@ -22,146 +20,169 @@ Hakken.\
         ["Ancient Magical Gizmo"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "A strange ancient composite portal locked shut by technical mechanisms inside the ruins. Activating adjacent elemental switches shifts the underlying layout components aside.",
+            ["note"] = "Dungeon switch:\
+* Opens nearby Magical Gizmo gates.",
             ["type"] = "Dungeon Switch",
         },
         ["Black Circle"] = {
             ["_source"] = "item",
             ["icon"] = "BlackCircle.png",
-            ["note"] = "A localized structural sigil floor pattern embedded into the ancient ruins. Standing upon its dark perimeter checks your magical parameter alignments or coordinates hidden Federation mission milestones.",
+            ["note"] = "Quest location:\
+* Examine for mission or quest progress.",
             ["type"] = "Quest Node",
         },
         ["Center Circle"] = {
             ["_source"] = "item",
             ["icon"] = "ShimmeringCircle.png",
-            ["note"] = "The focal ancient seal platform anchoring the subterranean laboratory chambers. Stepping into the central focal node validates specialized magic trials or updates active country side quest parameters.",
+            ["note"] = "Quest location:\
+* Examine for mission or quest progress.",
             ["type"] = "Quest Node",
         },
         ["Cracked Wall"] = {
             ["_source"] = "item",
             ["icon"] = "SealedWall.png",
-            ["note"] = "A fragile masonry section cutting through the subterranean ruins. Striking the unstable brickwork shatters the barrier to reveal hidden chambers or bypass long labyrinth pathways.",
+            ["note"] = "Breakable wall:\
+* Reveals hidden passages.",
             ["type"] = "Obstacle Node",
         },
         ["Gate of Darkness"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A shadowy, magically sealed ancient archway gate blocking access to forbidden ruin tunnels. Overriding the negative alignment currents commands the heavy portal panels to part.",
+            ["note"] = "Locked gate.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Gate of Earth"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A massive elemental stone security portal blocking the subterranean ruin corridors. Presenting the matching regional tablet unlatches the masonry frame so your party can pass.",
+            ["note"] = "Locked gate.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Gate of Fire"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy architectural barrier gate sealed with intense volcanic runes. Overriding the heat-warped security grid commands the stone framework to slide open.",
+            ["note"] = "Locked gate.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Gate of Ice"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A frost-rimed stone partition blockading deep structural vault layouts. Finding and utilizing a specialized key item releases the heavy locking framework to let you pass.",
+            ["note"] = "Locked gate.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Gate of Light"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An elegant, glowing magical energy gateway sealing executive rooms. Satisfying structural defense coordinates commands the intricate portal panels to part.",
+            ["note"] = "Locked gate.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Gate of Thunder"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A fortified stone gateway pulsing with a subtle storm frequency deep within the ruins. Clearing the surrounding baseline combat trials triggers the remote winches to swing the panel aside.",
+            ["note"] = "Locked gate.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Gate of Water"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A monolithic slab of ancient masonry barring the flooded subterranean aqueduct channels. Overriding the nearby locking mechanism slides the heavy panel away to grant exploration passage.",
+            ["note"] = "Locked gate.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Gate of Wind"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy ancient stone structural barrier gate channeled by whistling drafts. Meeting direct area requirements unseals the entryway, allowing your squad to advance into deeper sectors.",
+            ["note"] = "Locked gate.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Gate: Magical Gizmo"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A strange ancient composite portal locked shut by technical mechanisms inside the ruins. Activating adjacent elemental switches shifts the framework aside.",
+            ["note"] = "Locked Magical Gizmo gate.",
             ["type"] = "Security Gate",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Grounds Tome"] = {
             ["_source"] = "item",
             ["icon"] = "SurvivalGuide.png",
-            ["note"] = "A floating magical ledger hovering at key hunting outposts. Reading the text lets you enlist in Grounds of Valor combat regimes, secure experience multipliers, and claim defensive battle enhancements.",
+            ["note"] = "Grounds of Valor:\
+* Start and manage training regimes.",
             ["type"] = "Training Ledger",
         },
         ["Hazy Rune"] = {
             ["_source"] = "item",
             ["icon"] = "VoidwatchRift.png",
-            ["note"] = "A shimmering, distorted runic seal etched directly into the dungeon walls. Directing your cosmic tracking keys into the glyph forces open an extraplanar rift to initiate Voidwatch operations.",
+            ["note"] = "Voidwatch:\
+* Enter the battlefield.",
             ["type"] = "Transit Portal",
         },
         ["Magic Gate of Horutoto"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A massive, sealed stone portal standing deep in the ruins. Opening this legendary structural barrier requires a coordinated group of distinct mages simultaneously activating the surrounding pressure plates.",
+            ["note"] = "Locked gate:\
+* Requires multiple players or another unlocking method.",
             ["type"] = "Security Gate",
         },
         ["Mahogany Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy, reinforced wooden partition barring deep structural labyrinth corridors. Presenting the matching regional keys releases the heavy iron latch so you can explore further ahead.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Red Circle"] = {
             ["_source"] = "item",
             ["icon"] = "RedCircle.png",
-            ["note"] = "A crimson ancient geometric engraving etched directly into the chamber stone. Inspecting its unique runic geometries aligns your parameters to unlock advanced side tasks.",
+            ["note"] = "Quest location:\
+* Examine for mission or quest progress.",
             ["type"] = "Quest Node",
         },
         ["Sealed Portal"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A massive, ancient masonry slab locked tight by glowing historical seals. Disrupting the magical feedback unseals the heavy framework, allowing you to pass into hidden chambers.",
+            ["note"] = "Locked portal.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Switch"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "A heavy mechanical toggling mechanism inset nearby security walls. Moving the device handles layout verification states or flips remote winches to open gated passages.",
+            ["note"] = "Dungeon switch:\
+* Activates nearby mechanisms.",
             ["type"] = "Dungeon Switch",
         },
         ["Tenmado"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ancient glass skylight window set into the overhead stone masonry. Looking up through the frame uncovers faded environmental records and validates advanced country mission progress.",
+            ["note"] = "Quest location:\
+* Examine for mission or quest progress.",
             ["type"] = "Quest Node",
         },
         ["Toraimarai Canal"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy iron gate threshold sealing off the underground waterways. Passing through this player-selectable overworld landmark archway slides you down securely into the Toraimarai Canal network.",
+            ["note"] = "Zone entrance:\
+* Enter Toraimarai Canal.",
             ["type"] = "Security Gate",
         },
         ["White Circle"] = {
             ["_source"] = "item",
             ["icon"] = "ShimmeringCircle.png",
-            ["note"] = "A polished, luminous stone floor sigil situated within the damp ruins. Pausing along its perimeter registers your magic metrics and advances advanced Federation storyline phases.",
+            ["note"] = "Quest location:\
+* Examine for mission or quest progress.",
             ["type"] = "Quest Node",
         },
     },

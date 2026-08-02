@@ -3,25 +3,23 @@ return {
         ["Ahko Mhalijikhari"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * Eco-Warrior (Windurst)",
             ["type"] = "Quest Associate",
         },
         ["Gowam"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Quest NPC:\
 * Legend of the Wandering Boots\
-* Gabbing Goblins\
-",
+* Gabbing Goblins",
             ["type"] = "Quest Associate",
         },
         ["Yazquhl"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Imperial Heist\
-",
+            ["note"] = "Quest NPC:\
+* An Imperial Heist",
             ["type"] = "Quest Associate",
         },
     },
@@ -29,56 +27,65 @@ return {
         ["Cermet Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An enduring portal crafted from indestructible ancient composite materials. Activating its associated technological terminal or matching puzzle triggers parts the panels, granting passage into deep ruins.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Chest"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A standard wooden repository found tucked away inside dungeon corridors or manifested throughout endgame battle sectors. Prying open its lid rewards your squad with regional supplies, maps, or unique currency components.",
+            ["note"] = "Loot container:\
+* Contains items and other rewards.",
             ["type"] = "Loot Container",
         },
         ["Fossil Rock"] = {
             ["_source"] = "item",
             ["icon"] = "MiningPoint.png",
-            ["note"] = "A rich mineral outcropping filled with brittle fossilized remains. Striking the rocky surface with an equipped pickaxe extracts rare geological components or satisfies active gathering trials.",
+            ["note"] = "Mining point:\
+* Mine with a pickaxe.",
             ["type"] = "Mining Point",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Grounds Tome"] = {
             ["_source"] = "item",
             ["icon"] = "SurvivalGuide.png",
-            ["note"] = "A floating magical ledger hovering at key hunting outposts. Reading the text lets you enlist in Grounds of Valor combat regimes, secure experience multipliers, and claim defensive battle enhancements.",
+            ["note"] = "Grounds of Valor:\
+* Start and manage training regimes.",
             ["type"] = "Training Ledger",
         },
         ["Hazy Rune"] = {
             ["_source"] = "item",
             ["icon"] = "VoidwatchRift.png",
-            ["note"] = "A shimmering, distorted runic seal etched directly into the dungeon walls. Directing your cosmic tracking keys into the glyph forces open an extraplanar rift to initiate Voidwatch operations.",
+            ["note"] = "Voidwatch:\
+* Enter the battlefield.",
             ["type"] = "Transit Portal",
         },
         ["Iron Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy, rusted iron partition blocking off narrow mining corridors. Forcing the latch open slides the metal framework aside to give your party access to deep subterranean fossil paths.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Riftworn Pyxis"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A locked extraplanar drop chest container materializing immediately post-combat across Voidwatch fields. Breaking its lock rewards your squad with combat currencies or temporary buffs.",
+            ["note"] = "Voidwatch rewards:\
+* Contains loot and temporary items.",
             ["type"] = "Loot Container",
         },
         ["Rockwell"] = {
             ["_source"] = "item",
             ["icon"] = "Boulder.png",
-            ["note"] = "A rugged stone layout landmark caked in dust. Searching the cracks verifies active exploration paths to check your localized logs or yield rare collection materials.",
+            ["note"] = "Quest location:\
+* Examine for quest progress.",
             ["type"] = "Quest Node",
         },
     },

@@ -3,92 +3,116 @@ return {
         ["Allied Commissary"] = {
             ["_source"] = "npc",
             ["icon"] = "OutpostVendor.png",
-            ["note"] = "Campaign military vendor. Sells supplies, regional food, and tactical provisions using Allied Notes.",
+            ["note"] = "Campaign vendor:\
+* Sells items for Allied Notes.",
             ["type"] = "Campaign Quartermaster",
         },
         ["Detlef, I.M."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Bastok (S) affiliated Campaign Arbiter. Present when Bastok (S) has control of Beadeaux (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
+            ["note"] = "Campaign Arbiter:\
+* Bastok (S).\
+* Grants Allied Tags and Campaign services.",
             ["type"] = "Campaign",
         },
         ["Gerold"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
-* Light in the Darkness\
-",
+            ["note"] = "Mission NPC:\
+* Light in the Darkness",
             ["type"] = "Shadowreign",
         },
         ["Thurlow, C.A."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Jeuno affiliated Campaign Arbiter. Present when Beastmen have control of Beadeaux (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
+            ["note"] = "Campaign Arbiter:\
+* Jeuno.\
+* Grants Allied Tags and Campaign services.",
             ["type"] = "Campaign",
+        },
+        ["Perna-Parna, C.C."] = {
+            ["_source"] = "npc",
+            ["icon"] = "CampaignArbiter.png",
+            ["note"] = "Campaign Arbiter:\
+* Grants Allied Tags and Campaign services.",
+            ["type"] = "Campaign",
+        },
+        ["Rouquillot, T.K."] = {
+            ["_source"] = "npc",
+            ["icon"] = "Guard.png",
+            ["type"] = "Temple Knight",
         },
     },
     ["objects"] = {
         ["Adder Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A grand military campaign reward chest materializing across frontlines in the past timeline. Opening the lock distributes battlefield experience, regional items, or elite wartime currencies to your squad.",
+            ["note"] = "Campaign rewards:\
+* Contains battlefield loot.",
             ["type"] = "Loot Container",
         },
         ["Armoury Crate"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A reinforced storage chest appearing upon victory in battlefield instances or remnants sectors. Prying open the heavy lid drops specialized weapons, armor components, or unique instance progression resources for your squad.",
+            ["note"] = "Battlefield rewards:\
+* Contains equipment and other loot.",
             ["type"] = "Loot Container",
         },
         ["Bison Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A companion campaign treasure chest dropped onto tactical overworld battlefields. Opening this repository distributes elite armor supplies, munitions, and defensive tactical enhancements.",
+            ["note"] = "Campaign rewards:\
+* Contains battlefield loot.",
             ["type"] = "Loot Container",
         },
         ["Corroded Gate"] = {
             ["_source"] = "item",
             ["icon"] = "portcullis.png",
-            ["note"] = "A heavily rusted iron security partition separating the Quadav strongholds from the marshlands. Opening the creaking frame clears a tactical path across the active frontline zones.",
+            ["note"] = "Locked gate.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Coyote Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A campaign battle chest materializing across frontlines in the past timeline. Opening the lock code rewards your squad with combat supplies, weapons components, or temporal campaign currencies.",
+            ["note"] = "Campaign rewards:\
+* Contains battlefield loot.",
             ["type"] = "Loot Container",
         },
         ["Dhole Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A tactical campaign prize repository manifest across past-timeline conflict fields. Breaking its seal rewards your participating alliance with specialized armor provisions and items components.",
+            ["note"] = "Campaign rewards:\
+* Contains battlefield loot.",
             ["type"] = "Loot Container",
         },
         ["Eland Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A grand campaign battle coffer materializing across frontlines in the past timeline. Opening the lock code rewards your squad with elite armor supplies, munitions, and temporal combat rewards.",
+            ["note"] = "Campaign rewards:\
+* Contains battlefield loot.",
             ["type"] = "Loot Container",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Ironbound Gate"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A reinforced structural gate guarding strategic city thresholds and beastman fortifications. Meeting localized clearance protocols swings the heavy frame aside to open the pathways.",
+            ["note"] = "Locked gate.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Sliding Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy stone security barrier dividing the Quadav strongholds. Unlatching the heavy framework shifts localized area layouts to allow your squad passage into deeper corridors.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
     },

@@ -255,10 +255,6 @@ local function GetTargetingSettings()
         global.targeting.performanceMonitorCompact = true;
     end
 
-    if (global.targeting.maxWorldPlateCount == nil) then
-        global.targeting.maxWorldPlateCount = 0;
-    end
-
     if (global.targeting.worldPlateUpdateRate == nil) then
         global.targeting.worldPlateUpdateRate = 'Full';
     end
@@ -600,7 +596,9 @@ local function GetTargetingSettings()
     end
     global.targeting.gameFpsMode = gameFpsMode;
     global.targeting.performanceMonitorCompact = global.targeting.performanceMonitorCompact ~= false;
-    global.targeting.maxWorldPlateCount = math.max(0, math.min(300, math.floor((tonumber(global.targeting.maxWorldPlateCount) or 0) + 0.5)));
+    -- Count-based plate limiting was removed.  Old profiles may still carry
+    -- maxWorldPlateCount; clear it so the next normal profile save removes it.
+    global.targeting.maxWorldPlateCount = nil;
     local updateRate = tostring(global.targeting.worldPlateUpdateRate or 'Full');
     if (updateRate ~= 'Full' and updateRate ~= 'Balanced' and updateRate ~= 'Low') then
         updateRate = 'Full';

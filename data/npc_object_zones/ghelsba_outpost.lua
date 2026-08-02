@@ -54,25 +54,29 @@ return {
             ["type"] = "Quest Associate",
         },
     },
-    ["objects"] = {
-        ["Armoury Crate"] = {
-            ["_source"] = "item",
-            ["icon"] = "TreasureCasket.png",
-            ["note"] = "A reinforced storage chest appearing upon victory in battlefield instances or remnants sectors. Prying open the heavy lid drops specialized weapons, armor components, or unique instance progression resources for your squad.",
-            ["type"] = "Loot Container",
-        },
-        ["Clandestine Marking"] = {
-            ["_source"] = "item",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "A hidden tracking checkpoint tucked safely inside the Orcish stronghold. Examining this subtle scratch mark allows you to safely recover a replacement infiltration costume kit if your disguise fails during local trials.",
-            ["type"] = "Quest Node",
-        },
-        ["Goblin Footprint"] = {
-            ["_source"] = "item",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
-            ["type"] = "Memory Recall",
-            ["worldOffsetY"] = 0,
-        },
+	["objects"] = {
+		["Armoury Crate"] = {
+			["_source"] = "item",
+			["icon"] = "TreasureCasket.png",
+			["note"] = "Battlefield rewards:\
+* Contains equipment and other loot.",
+			["type"] = "Loot Container",
+		},
+		["Clandestine Marking"] = {
+			["_source"] = "item",
+			["icon"] = "Dialogue.png",
+			["note"] = "Quest location:\
+* Recover a replacement disguise.",
+			["type"] = "Quest Node",
+		},
+		["Goblin Footprint"] = {
+			["_source"] = "item",
+			["icon"] = "Cutscene.png",
+			["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
+			["type"] = "Memory Recall",
+			["worldOffsetY"] = 0,
+		},
+	},
     },
 }

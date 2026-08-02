@@ -42,31 +42,35 @@ Involved in Missions:\
             ["type"] = "Mission Associate",
         },
     },
-    ["objects"] = {
-        ["Door_3"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A specific structural door barrier protecting restricted interior rooms. Passing past the framework manages municipal layout navigation scripts or updates active storyline progression phases.",
-            ["type"] = "Security Gate",
-        },
-        ["Goblin Footprint"] = {
-            ["_source"] = "item",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
-            ["type"] = "Memory Recall",
-            ["worldOffsetY"] = 0,
-        },
-        ["Moon Spiral"] = {
-            ["_source"] = "item",
-            ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A shimmering, moonlit distortion gateway warping the fountain waters. Presenting your battlefield credentials lets you breach the portal frame to launch prime avatar battlefields and high-tier trial instances against Fenrir.",
-            ["type"] = "Transit Portal",
-        },
-        ["Water in Space"] = {
-            ["_source"] = "item",
-            ["icon"] = "WaterSpace.png",
-            ["note"] = "A localized fluid distortion floating unnaturally in space. Touching the shimmering anomaly aligns your active scenario logs and initiates profound storyline visions.",
-            ["type"] = "Quest Node",
-        },
+	["objects"] = {
+		["Door_3"] = {
+			["_source"] = "item",
+			["icon"] = "Door.png",
+			["note"] = "Leads to the next room or area.",
+			["type"] = "Security Gate",
+		},
+		["Goblin Footprint"] = {
+			["_source"] = "item",
+			["icon"] = "Cutscene.png",
+			["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
+			["type"] = "Memory Recall",
+			["worldOffsetY"] = 0,
+		},
+		["Moon Spiral"] = {
+			["_source"] = "item",
+			["icon"] = "VeridicalConflux.png",
+			["note"] = "Fenrir:\
+* Enter Prime Avatar and High-Tier Battlefields.",
+			["type"] = "Transit Portal",
+		},
+		["Water in Space"] = {
+			["_source"] = "item",
+			["icon"] = "WaterSpace.png",
+			["note"] = "Quest location:\
+* Examine for quest progress.",
+			["type"] = "Quest Node",
+		},
+	},
     },
 }

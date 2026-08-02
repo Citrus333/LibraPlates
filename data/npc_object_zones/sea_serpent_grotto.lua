@@ -3,17 +3,16 @@ return {
         ["Bou the Righteous"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * Sahagin Key Quest",
             ["type"] = "Quest Associate",
         },
         ["Elrica"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Quest NPC:\
 * Seeds of Flame\
-* Waking the Colossus\
-",
+* Waking the Colossus",
             ["type"] = "Quest Associate",
         },
         ["Gomoya"] = {
@@ -24,49 +23,44 @@ return {
         ["Gubokka"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* An Undying Pledge\
-",
+            ["note"] = "Quest NPC:\
+* An Undying Pledge",
             ["type"] = "Quest Associate",
         },
         ["Hurr the Betrayer"] = {
             ["_source"] = "npc",
             ["icon"] = "GoalTracker.png",
-            ["note"] = "Involved in Quests:\
-* Sahagin Key Quest for the Sahagin Key\
-",
+            ["note"] = "Quest NM:\
+* Sahagin Key Quest",
             ["type"] = "Notorious Monster",
         },
         ["Kupalu-Harupalu"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Involved in Quests:\
-* Relic Weapon: Kikoku\
-",
+            ["note"] = "Quest NPC:\
+* Relic Weapon: Kikoku",
             ["type"] = "Campaign Warrior",
         },
         ["Mieuseloir"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Quest NPC:\
 * The Return of Mieuseloir\
-* Mieuseloir's Marvelous Adventure\
-",
+* Mieuseloir's Marvelous Adventure",
             ["type"] = "Quest Associate",
         },
         ["Mogmi"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "Event.png",
             ["note"] = "Mog Vault:\
-* Weekly letter moogle / Kupo Nut\
-trade target.\
+* Weekly Kupo Nut trade NPC.\
 * Through the Mythril Door.",
             ["type"] = "Letter Moogle",
         },
         ["Ren"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * The Sahagin's Stash\
 * A Thief in Norg!?",
             ["type"] = "Quest Associate",
@@ -74,27 +68,24 @@ trade target.\
         ["Siren"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Quest NPC:\
 * Trial by Wind\
-* Trial Size Trial by Wind\
-",
+* Trial Size Trial by Wind",
             ["type"] = "Mission Associate",
         },
         ["Umon-Paumon"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Quest NPC:\
 * The Return of Mieuseloir\
-* Mieuseloir's Marvelous Adventure\
-",
+* Mieuseloir's Marvelous Adventure",
             ["type"] = "Quest Associate",
         },
         ["Vigsterkr"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* The Voracious Resurgence\
-",
+            ["note"] = "Mission NPC:\
+* The Voracious Resurgence",
             ["type"] = "Mission Associate",
         },
     },
@@ -102,32 +93,37 @@ trade target.\
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Grounds Tome"] = {
             ["_source"] = "item",
             ["icon"] = "SurvivalGuide.png",
-            ["note"] = "A floating magical ledger hovering at key hunting outposts. Reading the text lets you enlist in Grounds of Valor combat regimes, secure experience multipliers, and claim defensive battle enhancements.",
+            ["note"] = "Grounds of Valor:\
+* Start and manage training regimes.",
             ["type"] = "Training Ledger",
         },
         ["Ornamented Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy wooden barrier carved with beastman markings to seal away hidden reef pathways. Presenting rare regional coins or specialized tools unlatches the door framework to let you pass.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Shady Sconce"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "A concealed metal candle bracket mounted to the reef corridor wall. Activating the torch mechanism slides hidden stone partitions aside or verifies advanced key permissions.",
+            ["note"] = "Dungeon switch:\
+* Activate to open paths.",
             ["type"] = "Dungeon Switch",
         },
         ["Waterfall Basin"] = {
             ["_source"] = "item",
             ["icon"] = "Waterfall.png",
-            ["note"] = "A deep underground stone basin gathering runoff from the cave ceilings. Searching the pool updates advanced tracking journals and progresses specific sea-pirate tasks out of Norg.",
+            ["note"] = "Quest location:\
+* Examine for quest progress.",
             ["type"] = "Quest Node",
         },
     },

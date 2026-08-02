@@ -857,6 +857,13 @@ Shell, and Copper Ore.",
             ["icon"] = "RegionalVendor.png",
             ["type"] = "Regional Vendor",
         },
+        ["Salvador"] = {
+            ["_source"] = "npc",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
+            ["note"] = "Notes:\
+Provided information about Chocobo Racing and recruited adventurers for the CRA Bastok team. He was removed from the game on 9/9/2010, along with Monteverle, Galienne, and Turumi-Byrumi.",
+            ["type"] = "VCS Chocobo Racing Associate",
+        },
     },
     ["objects"] = {
         ["Door:\"Steaming Sheep\""] = {

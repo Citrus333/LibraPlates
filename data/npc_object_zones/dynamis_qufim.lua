@@ -5,7 +5,9 @@ return {
         ["Somnial Threshold"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "An eerie spatial fracture node hovering inside the distorted mirror city zones. Stepping through the dark void evaluates your group metrics to warp your alliance directly across battle arenas.",
+			["note"] = "Mirror City:\
+* Teleports your alliance to the next area.\
+* Destination depends on alliance progress.",
             ["type"] = "Transit Portal",
         },
     },

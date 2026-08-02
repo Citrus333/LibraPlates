@@ -3,9 +3,8 @@ return {
         ["Sempurne"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Rhapsodies of Vana'diel\
-",
+            ["note"] = "Mission NPC:\
+* Rhapsodies of Vana'diel",
             ["type"] = "Mission Associate",
         },
     },
@@ -13,20 +12,23 @@ return {
         ["Dimensional Portal"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A swirling cosmic rift tearing through the overworld landscape. Stepping into the blinding light checks your alliance credentials to warp you directly across high-tier expansion battlefields.",
+            ["note"] = "Battlefield entrance.\
+* Enter expansion battlefields.",
             ["type"] = "Transit Portal",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Transcendental Radiance"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A brilliant, pulsing cosmic rift hovering above the dimensional void. Stepping directly into the blinding aura checks your group alignment metrics to launch legendary master battlefield instances.",
+            ["note"] = "Master Trials:\
+* Enter the battlefield.",
             ["type"] = "Transit Portal",
         },
     },

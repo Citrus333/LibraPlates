@@ -1,8 +1,8 @@
 return {
     ["npcs"] = {
-        ["Adjutant (Windurst)"] = {
+        ["Adjutant"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Crystal Fist I (W)\
 * Crystal Fist II (W)\
@@ -19,16 +19,17 @@ return {
             ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
-        ["Ajen-Myoojen (S)"] = {
+        ["Ajen-Myoojen"] = {
             ["_source"] = "npc",
             ["icon"] = "Guard.png",
             ["note"] = "Notes:\
-\"Hold on there, mister-wister!/missie-wissie! Do you know what's waiting on the other side of this gate for tenderific morsels like you, huh? Oh, you do now, do you? Well, it's your funeral...\"",
+* Grants access to West Sarutabaruta (S)",
             ["type"] = "City Gate Guard",
         },
-        ["Ajido-Marujido (S)"] = {
+        ["Ajido-Marujido"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Ajido-Marujido_(S)",
             ["note"] = "Involved in Quests:\
 * The Tigress Stirs\
 * The Tigress Strikes\
@@ -117,9 +118,8 @@ return {
         ["Ehm Lengyon"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Quest:\
-* Cultivating Catastrophe\
-",
+            ["note"] = "Involved in Quests:\
+* Cultivating Catastrophe",
             ["type"] = "Shadowreign",
         },
         ["Eih Lhogotan"] = {
@@ -136,8 +136,7 @@ return {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
             ["note"] = "Involved in Missions:\
-* A Nation on the Brink (WOTG14)\
-",
+* A Nation on the Brink (WOTG14)",
             ["type"] = "Cutscene NPC",
         },
         ["Emhi Tchaoryo"] = {
@@ -161,15 +160,17 @@ return {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-* Appears during Campaign Battles as the avatar pet of Gariri. *Uses all of Ifrit's bloodpacts, favoring Meteor Strike. *Unlike normal avatars, it can be enhanced and healed like NPCs. *All of his melee attacks have additional effect: {{Fire|Fire Damage",
+* Gariri's avatar pet during Campaign Battles.\
+* Uses Ifrit abilities, favoring Meteor Strike.\
+* Can be enhanced and healed like an allied NPC.\
+* Melee attacks deal additional fire damage.",
             ["type"] = "Campaign Battle",
         },
         ["Gariri"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Involved in Quests:\
-* Howl from the Heavens\
-",
+* Howl from the Heavens",
             ["type"] = "Campaign Battle",
         },
         ["Gevarg"] = {
@@ -185,22 +186,14 @@ return {
 * The Tigress Strikes\
 * A Manifest Problem\
 * Manifest Destiny\
-* At Journey's End\
-",
+* At Journey's End",
             ["type"] = "Cutscene NPC",
-        },
-        ["Gomi-Hiroi"] = {
-            ["_source"] = "npc",
-            ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Seasonal recycling event broker. Spawns across past timeline nations during specific ecological holiday campaigns to manage local rubbish cleaning point distributions.",
-            ["type"] = "Special Event Coordinator",
         },
         ["Haja Zhwan"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Involved in Quests:\
-* When One Man Is Not Enough\
-",
+* When One Man Is Not Enough",
             ["type"] = "Campaign Battle",
         },
         ["Hampu-Kampu"] = {
@@ -214,7 +207,9 @@ return {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-*  Summoned by Kayeel-Payeel (S) during Campaign Battles along with the Thunder Fiend. * Mimics Kayeel-Payeel's casting. * You can cure the Thunder Fiend, even though it is a elemental / pet.",
+* Summoned with Thunder Fiend by Kayeel-Payeel during Campaign Battles.\
+* Mimics Kayeel-Payeel's spellcasting.\
+* Can be healed like an allied NPC.",
             ["type"] = "Campaign Battle",
         },
         ["Jalah Mistani"] = {
@@ -222,13 +217,17 @@ return {
             ["icon"] = "MapDealer.png",
             ["type"] = "Map Vendor",
         },
+        ["Kayeel-Payeel"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Shadowreign.png",
+            ["type"] = "Shadowreign",
+        },
         ["Kamolo-Domilo"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
             ["note"] = "Involved in Quests:\
 * Knot Quite There\
-* A Manifest Problem\
-",
+* A Manifest Problem",
             ["type"] = "Cutscene NPC",
         },
         ["Karaha-Baruha"] = {
@@ -238,14 +237,12 @@ return {
 * The Forbidden Path\
 * Howl from the Heavens\
 * At Journey's End\
-\
 Involved in Missions:\
 * San d'Oria Mission 4-1: Magicite\
 * Bastok Mission 4-1: Magicite\
 * Windurst Mission 4-1: Magicite\
 * Windurst Mission 9-1: Doll of the Dead\
-* Chains of Promathia Mission 3-3: The Road Forks\
-",
+* Chains of Promathia Mission 3-3: The Road Forks",
             ["type"] = "Legendary Hero",
         },
         ["Khea Mhyyih"] = {
@@ -253,9 +250,10 @@ Involved in Missions:\
             ["icon"] = "Defender.png",
             ["type"] = "Defender",
         },
-        ["Kipopo (S)"] = {
+        ["Kipopo"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Kipopo_(S)",
             ["note"] = "Involved in Quests:\
 * Say It with a Handbag",
             ["type"] = "Cutscene NPC",
@@ -284,14 +282,14 @@ Involved in Missions:\
             ["icon"] = "Dialogue.png",
             ["type"] = "Child",
         },
-        ["Koru-Moru (S)"] = {
+        ["Koru-Moru"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Koru-Moru_(S)",
             ["note"] = "Involved in Quests:\
 * The Tigress Stirs\
 * The Tigress Strikes\
-* Knot Quite There\
-",
+* Knot Quite There",
             ["type"] = "Aurastery Minister",
         },
         ["Koton-Llaton"] = {
@@ -318,13 +316,6 @@ Involved in Missions:\
 * Summoned by Lhu Mhakaracca in campaign battles, along with Pya.",
             ["type"] = "Campaign Battle",
         },
-        ["Lamurara, C.C."] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Windurst affiliated Campaign Arbiter. Present when Windurst has control of Fort Karugo-Narugo (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
-        },
         ["Lehko Habhoka"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
@@ -339,18 +330,15 @@ Involved in Missions:\
 * Howl from the Heavens\
 * Manifest Destiny\
 * At Journey's End\
-\
 Involved in Missions:\
-* Affairs of State\
-",
+* Affairs of State",
             ["type"] = "Cutscene NPC",
         },
         ["Lhu Mhakaracca"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Involved in Quests:\
-* When One Man Is Not Enough\
-",
+* When One Man Is Not Enough",
             ["type"] = "Campaign Battle",
         },
         ["Libran Caster"] = {
@@ -368,9 +356,8 @@ Involved in Missions:\
         ["Lukka-Lakka"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
-* A Manifest Problem\
-",
+            ["note"] = "Involved in Missions:\
+* A Manifest Problem",
             ["type"] = "Shadowreign",
         },
         ["Luminous Coalescence"] = {
@@ -382,8 +369,7 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Involved in Quests:\
-* Howl from the Heavens\
-",
+* Howl from the Heavens",
             ["type"] = "Campaign Battle",
         },
         ["Mearuru"] = {
@@ -400,13 +386,11 @@ Will allow those who originally aligned to Windurst's campaign and later switche
         },
         ["Miah Riyuh"] = {
             ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Snake on the Plains\
-\
 Involved in Missions:\
-* Back to the Beginning\
-",
+* Back to the Beginning",
             ["type"] = "Campaign",
         },
         ["Mihl Pakorhma"] = {
@@ -427,15 +411,16 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Involved in Quests:\
-* When One Man Is Not Enough\
-",
+* When One Man Is Not Enough",
             ["type"] = "Campaign Battle",
         },
         ["Mindala-Andola, C.C."] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-:*Casts Sigil :*Sells items for Allied Notes (Windurst Campaign Items) at certain conditions. :*Explains the Campaign system by choosing some available questions. :*Tells you the remaining time on your current Sigil effect. For further information see Campaign Arbiter.",
+* Grants Sigil and reports its remaining duration.\
+* Exchanges Allied Notes for eligible Campaign items.\
+* Explains Campaign systems.",
             ["type"] = "Sigil",
         },
         ["Myron, C.A."] = {
@@ -451,8 +436,7 @@ Involved in Missions:\
 * A Feast for Gnats\
 * The Long March North\
 * Howl from the Heavens\
-* Manifest Destiny\
-",
+* Manifest Destiny",
             ["type"] = "Cutscene NPC",
         },
         ["Narito-Pettito"] = {
@@ -468,24 +452,26 @@ Involved in Missions:\
         ["Nhiko Rhaabel"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * Purple, Cleaving\
-* A Timeswept Butterfly\
-",
+* A Timeswept Butterfly",
             ["type"] = "Shadowreign",
         },
         ["Nyumomo"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Battle cry.",
+            ["icon"] = "CampaignArbiter.png",
+            ["note"] = "Notes:\
+* Commands the Patriarch Protectors.\
+* Assisted by five Patrol Worms during Campaign Battles.\
+* Uses high-level earth magic.",
+            ["type"] = "Campaign Battle",
         },
         ["Nzha Abaleenah"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Involved in Missions:\
 * Purple, Cleaving\
-* A Timeswept Butterfly\
-",
+* A Timeswept Butterfly",
             ["type"] = "Shadowreign",
         },
         ["Ozzmo-Mazmo"] = {
@@ -520,7 +506,7 @@ Involved in Missions:\
         },
         ["Pelpopo"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Deep Cover I (Windurst)\
 * Deep Cover II (Windurst)\
@@ -532,9 +518,10 @@ Involved in Missions:\
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
-        ["Perih Vashai (S)"] = {
+        ["Perih Vashai"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Perih_Vashai_(S)",
             ["note"] = "Involved in Quests:\
 * The Tigress Strikes\
 * A Manifest Problem\
@@ -542,8 +529,7 @@ Involved in Missions:\
 * Sins of the Mothers\
 * Howl from the Heavens\
 * Manifest Destiny\
-* At Journey's End\
-",
+* At Journey's End",
             ["type"] = "Cutscene NPC",
         },
         ["Pettette"] = {
@@ -562,7 +548,10 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-:*Appears during Campaign Battles as part of the Piscean Caster War Warlocks. :*In areas under allied control, they will deliver supplies to the fortifications and warp out. :*In areas under beastman control, they will attempt to bomb the fortifications. :*They will attempt to construct an Allied Belfry in offensive Campaign battles when Windurst's technological level allows. :*Piscean casters will not engage the enemy unless they are intercepted.",
+* Campaign reconnaissance and sabotage unit.\
+* Supplies allied fortifications or bombs enemy fortifications.\
+* May construct an Allied Belfry during offensive battles.\
+* Avoids combat unless intercepted.",
             ["type"] = "Campaign Battle",
         },
         ["Pogigi"] = {
@@ -572,34 +561,39 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
 * Trade Sealed Containers to her to receive the corresponding key item for SCNM battle.",
             ["type"] = "Sealed Container",
         },
-        ["Ponono (S)"] = {
+        ["Ponono"] = {
             ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
+            ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Ponono_(S)",
             ["note"] = "Starts Quests:\
-* The Young and the Threadless\
-",
+* The Young and the Threadless",
             ["type"] = "Quest Reward",
         },
         ["Poroggo Prince"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
             ["note"] = "Notes:\
-\"Ribbit! Ribbit!\" *Appears in campaign battle if the Poroggo Servant is successfully influenced. *Uses assorted black magic *Assisted by 3 Poroggo Servants *After using Providence, he will use the extra spells including Death and Breakga. *Frog Cheer will affect all players and other allied forces in range. Maruna-Kurina's Notes: Fanciful-wanciful fairy tales about a frog princess have been passed down in Windurst since days of eld. Some say the newcome prince of these froglike beastmen has been seen leaping and bounding about the frontlines of battle. No doubt the figment of some delusional soldier's imagination, but still... Folklore always spoke of their insatiable-watiable appetites, and now soldiers would tell that feeding them will actually help win them to our cause. ?Give him Lufaise flies,? they say, ?and the frog prince will requite!? I can't make heads or tails of it... N-n-not thataru I bother myself with such childish topics!",
+* Allied Campaign NPC obtained by influencing Poroggo Servants.\
+* Uses black magic and is assisted by three servants.\
+* Providence unlocks Death and Breakga.\
+* Frog Cheer affects nearby allied forces.",
             ["type"] = "Event NPC",
         },
         ["Porter Moogle"] = {
             ["_source"] = "npc",
             ["icon"] = "ItemStorage.png",
             ["note"] = "Notes:\
-Find a nearby Porter Moogle and talk to him and select the option to buy a Slip. Once you find the slip you want you select it and confirm your selection. Each slip will cost you 1000 gil to buy. After purchasing any storage slip, you may trade 1-7 corresponding items per trade along with the slip. NOTE: This does NOT mean you can only store up to 7 items on a single slip, it simply means you can only transfer up to 7 at a time to the Porter for storage. At any time after you have the slip you can continue to make trades of 1-7 items along with the corresponding slip, thereby storing all your like items with the Moogle instead of in your MH. This feature is handy when you later get another armor drop, like in Dynamis, and want to store it somewhere until you need it. To withdraw an item simply trade him the corresponding slip and he will give you an option to retrieve your armor. You only pay an initial fee of 1,000 gil when purchasing a storage slip, you will not pay every time you store or withdraw gear. Storage slips cannot be discarded unless all stored items are retrieved first. As of Feb. 14, 2011, items with a Magian Trial insignia can no longer be stored with a Porter Moogle. Any items with an active trial stored before that date have had all trial progress erased.",
+* Sells storage slips for 1,000 gil.\
+* Stores eligible equipment traded with its matching slip.\
+* Trade a slip to retrieve stored equipment.\
+* A slip cannot be discarded while it contains items.",
             ["type"] = "Item Storage",
         },
         ["Prido-Homildo"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
             ["note"] = "Involved in Quests:\
-* The Long March North\
-",
+* The Long March North",
             ["type"] = "Cutscene NPC",
         },
         ["Prucco-Lurucco"] = {
@@ -630,13 +624,7 @@ Appears during Campaign Battles as part of the Python Mercenary squadron, led by
         },
         ["Quartermaster"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Campaign tactical military supply officer. Stationed inside nation defense checkpoints to handle frontline inventory updates and process dynamic Allied supply distribution lines.",
-            ["type"] = "Shadowreign",
-        },
-        ["Quartermaster (Windurst)"] = {
-            ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Stock and Awe I (Windurst)\
 * Stock and Awe II (Windurst)\
@@ -664,24 +652,17 @@ Appears during Campaign Battles as part of the Python Mercenary squadron, led by
             ["icon"] = "Shadowreign.png",
             ["type"] = "Shadowreign",
         },
-        ["Ralka-Haralka, C.C."] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Windurst (S) affliated Campaign Arbiter. Present when Windurst (S) has control of Bastok Markets (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
-        },
         ["Ranna-Brunna"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
         },
-        ["Ranpi-Monpi (S)"] = {
+        ["Ranpi-Monpi"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Ranpi-Monpi_(S)",
             ["note"] = "Starts Quests:\
-* The Dawn of Delectability\
-",
+* The Dawn of Delectability",
             ["type"] = "Cooking Quest",
         },
         ["Ransnana"] = {
@@ -696,23 +677,20 @@ Appears during Campaign Battles as part of the Python Mercenary squadron, led by
         },
         ["Robel-Akbel"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * A Feast for Gnats\
 * The Long March North\
 * Howl from the Heavens\
-\
 Involved in Quests:\
 * The Tigress Strikes\
 * Knot Quite There\
 * A Manifest Problem\
 * The Forbidden Path\
 * At Journey's End\
-\
 Involved in Missions:\
 * WOTG12: Affairs of State\
-* WOTG26: Fate in Haze\
-",
+* WOTG26: Fate in Haze",
             ["type"] = "Cutscene NPC",
         },
         ["Rohn Ehlbalna"] = {
@@ -722,9 +700,10 @@ Involved in Missions:\
 * Redeeming Rocks",
             ["type"] = "Quest Associate",
         },
-        ["Romaa Mihgo (S)"] = {
+        ["Romaa Mihgo"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Romaa_Mihgo_(S)",
             ["note"] = "Involved in Quests:\
 * The Tigress Stirs\
 * The Tigress Strikes\
@@ -736,12 +715,10 @@ Involved in Missions:\
 * Sins of the Mothers\
 * Howl from the Heavens\
 * At Journey's End\
-\
 Involved in Missions:\
 * WOTG02: Back to the Beginning\
 * WOTG14: A Nation on the Brink\
-* WOTG15: Crossroads of Time\
-",
+* WOTG15: Crossroads of Time",
             ["type"] = "Cobra Commander",
         },
         ["Ruirara"] = {
@@ -761,60 +738,58 @@ Involved in Missions:\
         },
         ["Scotwick"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Allied Notes Notorious Monsters\
-",
+* Allied Notes Notorious Monsters",
             ["type"] = "Allied Notes NM Proprietor",
         },
         ["Shahr Yagenmhi"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
-* Wings of the Goddess\
-",
+            ["note"] = "Involved in Missions:\
+* Wings of the Goddess",
             ["type"] = "Shadowreign",
         },
         ["Shairiri"] = {
             ["_source"] = "npc",
             ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
-* Wings of the Goddess\
-",
+            ["note"] = "Involved in Missions:\
+* Wings of the Goddess",
             ["type"] = "Shadowreign",
         },
-        ["Shantotto (S)"] = {
+        ["Shantotto"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Shantotto_(S)",
             ["note"] = "Involved in Quests:\
 * A Feast for Gnats\
-* The Long March North\
-",
+* The Long March North",
             ["type"] = "Quest Giver",
         },
         ["Shuvo"] = {
             ["_source"] = "npc",
             ["icon"] = "Trust.png",
             ["note"] = "Notes:\
-* Shuvo only appears at ({{Location Tooltip|area=Windurst Waters (S)|map=North|pos=G-7",
+* Trust initiation NPC at G-7 on the north map.",
             ["type"] = "Trust Coordinator",
         },
         ["Soimin-Oimin, C.C."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-# Gives information about the allied campaign. # You can have him Retrace you if you are not already in your nation of allegiance in the past.",
+* Reports Allied Campaign conditions.\
+* Offers Retrace when you are away from your allied nation.",
             ["type"] = "Allied Campaign Info",
         },
-        ["Star Sibyl (S)"] = {
+        ["Star Sibyl"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Star_Sibyl_(S)",
             ["note"] = "Involved in Quests:\
 * The Tigress Strikes\
 * The Forbidden Path\
 * Howl from the Heavens\
-* At Journey's End\
-",
+* At Journey's End",
             ["type"] = "Star Sibyl",
         },
         ["Tahl Mhioguch"] = {
@@ -822,9 +797,10 @@ Involved in Missions:\
             ["icon"] = "Survivor.png",
             ["type"] = "Survivor",
         },
-        ["Tek Lengyon (S)"] = {
+        ["Tek Lengyon"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Tek_Lengyon_(S)",
             ["note"] = "Involved in Quests:\
 * Say It with a Handbag",
             ["type"] = "Cutscene NPC",
@@ -833,7 +809,9 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Notes:\
-*  Summoned by Kayeel-Payeel (S) during Campaign Battles along with the Ice Fiend. * Mimics Kayeel-Payeel's casting. * You can cure the Thunder Fiend, even though it is a elemental / pet.",
+* Summoned with Ice Fiend by Kayeel-Payeel during Campaign Battles.\
+* Mimics Kayeel-Payeel's spellcasting.\
+* Can be healed like an allied NPC.",
             ["type"] = "Campaign Battle",
         },
         ["Tihl Midurhi"] = {
@@ -854,9 +832,10 @@ Involved in Missions:\
 * When One Man Is Not Enough",
             ["type"] = "Quest Associate",
         },
-        ["Tosuka-Porika (S)"] = {
+        ["Tosuka-Porika"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestNPC.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Tosuka-Porika_(S)",
             ["note"] = "Involved in Quests:\
 * The Lost Book",
             ["type"] = "Crystal War Quest",
@@ -878,7 +857,6 @@ Involved in Missions:\
 * The Forbidden Path\
 * Sins of the Mothers\
 * Howl from the Heavens\
-\
 Involved in Missions:\
 * Affairs of State",
             ["type"] = "Quest Associate",
@@ -887,18 +865,16 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Involved in Quests:\
-* When One Man Is Not Enough\
-",
+* When One Man Is Not Enough",
             ["type"] = "Campaign Battle",
         },
-		["Wenonah, C.A."] = {
-			["_source"] = "npc",
-			["icon"] = "WarpNPC.png",
-			["note"] = "Involved in Mission:\
-		* Allied Campaign\
-		",
-			["type"] = "Teleport Service",
-		},
+        ["Wenonah, C.A."] = {
+            ["_source"] = "npc",
+            ["icon"] = "OutpostTeleporter.png",
+            ["note"] = "Involved in Missions:\
+* Allied Campaign",
+            ["type"] = "Teleport Service",
+        },
         ["Wildcat Vanguard"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
@@ -915,8 +891,7 @@ Involved in Missions:\
             ["note"] = "Involved in Missions:\
 * Magna Cache I (Windurst)\
 * Magna Cache II (Windurst)\
-* Magna Cache III (Windurst)\
-",
+* Magna Cache III (Windurst)",
             ["type"] = "Chocobo Renter",
         },
         ["Yassi-Possi"] = {
@@ -926,12 +901,12 @@ Involved in Missions:\
 * Item Delivery services will not be available if the city is under attack.",
             ["type"] = "Item Deliverer",
         },
-        ["Yoran-Oran (S)"] = {
+        ["Yoran-Oran"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Yoran-Oran_(S)",
             ["note"] = "Starts Quests:\
-* The Lost Book\
-",
+* The Lost Book",
             ["type"] = "Rhinostery Minister",
         },
         ["Zolku-Azolku"] = {
@@ -939,19 +914,39 @@ Involved in Missions:\
             ["icon"] = "CampaignArbiter.png",
             ["note"] = "Involved in Quests:\
 * A Manifest Problem\
-* Howl from the Heavens\
-",
+* Howl from the Heavens",
             ["type"] = "Campaign Battle",
         },
-        ["Zonpa-Zippa (S)"] = {
+        ["Zonpa-Zippa"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/Zonpa-Zippa_(S)",
             ["note"] = "Involved in Quests:\
 * Knot Quite There\
 * A Manifest Problem\
-* Howl from the Heavens\
-",
+* Howl from the Heavens",
             ["type"] = "Campaign Battle",
+        },
+        ["Dynause, T.K."] = {
+            ["_source"] = "npc",
+            ["icon"] = "Guard.png",
+            ["type"] = "Temple Knight",
+        },
+        ["Luise, I.M."] = {
+            ["_source"] = "npc",
+            ["icon"] = "Guard.png",
+            ["type"] = "Iron Musketeer",
+        },
+        ["Summit Warden"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "Event.png",
+            ["note"] = "Summit of the Stars:\
+* Gives one free Apex, Pinnacle, or\
+Apogee token at random each week.\
+* Tokens are used with Ygnas for\
+temporary August or Shantotto II\
+trust access.",
+            ["type"] = "Summit Token Weekly",
         },
     },
     ["objects"] = {
@@ -970,8 +965,6 @@ Involved in Missions:\
         ["Cell Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A reinforced iron-barred barrier locking off underground prison blocks or deep ruin vaults. Procuring specialized dungeon keys releases the heavy latch so you can explore further or free captives.",
-            ["type"] = "Security Gate",
         },
         ["Coyote Coffer"] = {
             ["_source"] = "item",
@@ -985,29 +978,25 @@ Involved in Missions:\
             ["note"] = "A tactical campaign prize repository manifest across past-timeline conflict fields. Breaking its seal rewards your participating alliance with specialized armor provisions and items components.",
             ["type"] = "Loot Container",
         },
+        ["Door:Acolyte Hostel"] = {
+            ["_source"] = "item",
+            ["icon"] = "Door.png",
+        },
         ["Door:Acolyte hostel"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic wooden barrier partitioning the religious residential layout blocks. Interfacing with the latch uncovers regional side quest details or updates local lore lines.",
-            ["type"] = "Security Gate",
         },
         ["Door:Optistery"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A dusty academic door hinged to the magical research academy. Pulling the handle uncovers rare library records or validates active Federation quests.",
-            ["type"] = "Security Gate",
         },
         ["Door:Rhinostery"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy wooden entry barrier leading to the magical biological research laboratories. Pulling the handle uncovers rare library records or validates active Federation quest milestones.",
-            ["type"] = "Security Gate",
         },
         ["Door_3"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A specific structural door barrier protecting restricted interior rooms. Passing past the framework manages municipal layout navigation scripts or updates active storyline progression phases.",
-            ["type"] = "Security Gate",
         },
         ["Eland Coffer"] = {
             ["_source"] = "item",
@@ -1018,8 +1007,6 @@ Involved in Missions:\
         ["Marble Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An elegant, polished stone barrier sealing executive chambers and canal networks. Verifying your current national mission clearance commands the ornate framework to part.",
-            ["type"] = "Security Gate",
         },
         ["Suspicious Object"] = {
             ["_source"] = "item",
@@ -1036,8 +1023,6 @@ Involved in Missions:\
         ["Wooden Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A sturdy timber barrier partition blockading subterranean dungeon pathways and municipal vaults. Turning the rusted handle swings the squealing frame aside to clear your exploration path.",
-            ["type"] = "Security Gate",
         },
     },
 }

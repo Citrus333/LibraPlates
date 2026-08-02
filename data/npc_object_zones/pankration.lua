@@ -3,8 +3,8 @@ return {
         ["Abhrem"] = {
             ["_source"] = "npc",
             ["icon"] = "PankrationOfficial.png",
-            ["note"] = "Notes:\
-* Provides services related to Soul Reflector creation, upgrades and naming.",
+            ["note"] = "Soul Reflector services:\
+* Create, upgrade, and rename Soul Reflectors.",
             ["type"] = "Soul Reflector Manager",
         },
         ["Bebo Jhatabia"] = {
@@ -75,15 +75,15 @@ return {
         ["Kadjayhal"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Kadjayhal converts a players Soul Reflector into an Official Soul Reflector. Only official soul reflectors can participate in battles.",
+            ["note"] = "Pankration service:\
+* Certifies Official Soul Reflectors.",
             ["type"] = "Soul Reflector Certification",
         },
         ["Kaheema"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Kaheema allows one to register their monster (Official Soul Reflector) to battle.",
+            ["note"] = "Pankration service:\
+* Registers Official Soul Reflectors for battle.",
             ["type"] = "Monster Registration",
         },
         ["Kanawawa"] = {
@@ -178,9 +178,10 @@ Kaheema allows one to register their monster (Official Soul Reflector) to battle
         },
         ["Zandjarl"] = {
             ["_source"] = "npc",
-            ["info"] = "Zandjarl sells wares related to Pankration and where you convert Imperial Currency into Jetton, currency for Pankration. ==Jettons== Zandjarl will convert Imperial currency into Jettons: ==Wares== Zandjarl will allow people without sufficient Jettons to view his wares: ===2 Jettons=== * A Soultrapper * 12 blank soul plates ===500 Jettons=== * A Soultrapper 2000 * 12 blank high-speed soul plates ===5000 Jettons=== * Zoraal Ja's Helm * Dartorgor's Coif * No.3's Garland * Cacaroon's Hood",
-            ["note"] = "Notes:\
-Zandjarl sells wares related to Pankration and where you convert Imperial Currency into Jetton, currency for Pankration. Jettons: Zandjarl will convert Imperial currency into Jettons: {{:Jetton",
+            ["icon"] = "Merchant.png",
+            ["note"] = "Pankration merchant:\
+* Exchanges Imperial currency for Jettons.\
+* Sells Soultrappers and Pankration items.",
             ["type"] = "Pankration Item Merchant",
         },
         ["Zhashdi"] = {
@@ -198,19 +199,22 @@ Zandjarl sells wares related to Pankration and where you convert Imperial Curren
         ["Cage Fence"] = {
             ["_source"] = "item",
             ["icon"] = "Portcullis.png",
-            ["note"] = "A sturdy structural divider enclosing the arena combat pits. Activating the stadium control triggers drops the iron mesh, releasing combatants directly into the competitive ring.",
+            ["note"] = "Arena gate:\
+* Opens to begin Pankration matches.",
             ["type"] = "Security Gate",
         },
         ["Gate: The Pit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A sturdy iron-barred portcullis partition separating spectators from the combat pits. Triggering the arena console drops the gate to launch battle matches.",
+            ["note"] = "Arena gate:\
+* Opens to begin Pankration matches.",
             ["type"] = "Security Gate",
         },
         ["Speaking Tubes"] = {
             ["_source"] = "item",
             ["icon"] = "SpeakingTubes.png",
-            ["note"] = "An acoustic metal pipe apparatus fixed to the stadium architecture. Interfacing with the tube handles arena system logs, reviews competitive match records, or triggers localized flavor dialogues.",
+            ["note"] = "Arena fixture:\
+* Provides match information and announcements.",
             ["type"] = "Quest Node",
         },
     },

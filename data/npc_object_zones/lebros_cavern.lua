@@ -63,30 +63,35 @@ return {
             ["type"] = "Assault",
         },
     },
-    ["objects"] = {
-        ["Ancient Lockbox"] = {
-            ["_source"] = "item",
-            ["icon"] = "TreasureCasket.png",
-            ["note"] = "A reinforced treasure casket materializing post-combat upon a successful instance clear. Cracking the lock distributes unique gear pieces and allocations of tactical imperial rewards to your squad.",
-            ["type"] = "Loot Container",
-        },
-        ["Rune of Release"] = {
-            ["_source"] = "item",
-            ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A shimmering, golden runic plate materializing upon victory. Interfacing with the glyph tallies your imperial achievements and warps your entire alliance securely back to the staging docks.",
-            ["type"] = "Transit Portal",
-        },
-        ["Switch"] = {
-            ["_source"] = "item",
-            ["icon"] = "Switch.png",
-            ["note"] = "A heavy mechanical toggling mechanism inset nearby security walls. Moving the device handles layout verification states or flips remote winches to open gated passages.",
-            ["type"] = "Dungeon Switch",
-        },
-        ["door_master"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A standardized structural door layout unit sealing off intense instanced challenge rooms or operations sectors. Overriding the nearby locking mechanism slides the heavy panel away to grant passage.",
-            ["type"] = "Security Gate",
-        },
+	["objects"] = {
+		["Ancient Lockbox"] = {
+			["_source"] = "item",
+			["icon"] = "TreasureCasket.png",
+			["note"] = "Battlefield rewards:\
+* Contains equipment and other loot.",
+			["type"] = "Loot Container",
+		},
+		["Rune of Release"] = {
+			["_source"] = "item",
+			["icon"] = "VeridicalConflux.png",
+			["note"] = "Exit portal:\
+* Leave the current instance.",
+			["type"] = "Transit Portal",
+		},
+		["Switch"] = {
+			["_source"] = "item",
+			["icon"] = "Switch.png",
+			["note"] = "Dungeon switch:\
+* Activate to open paths.",
+			["type"] = "Dungeon Switch",
+		},
+		["door_master"] = {
+			["_source"] = "item",
+			["icon"] = "Door.png",
+			["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
+			["type"] = "Security Gate",
+		},
+	},
     },
 }

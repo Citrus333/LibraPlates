@@ -4,24 +4,22 @@ return {
             ["_source"] = "catseye_npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Crystal Warrior:\
-* Level 30 armor quest: Searching\
-the Citadel.\
-* Rewards Seer's Attire Set.",
+* 'Searching the Citadel'.\
+* Rewards the Seer's Attire Set.",
             ["type"] = "CW Armor Quest",
         },
         ["Mashira"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * Rubbish Day\
-* Making Amens!\
-",
+* Making Amens!",
             ["type"] = "Key Supplier",
         },
         ["Wanzo-Unzozo"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * Escort for Hire (Windurst)",
             ["type"] = "Quest Associate",
         },
@@ -30,122 +28,142 @@ the Citadel.\
         ["Banishing Gate #1"] = {
             ["_source"] = "item",
             ["icon"] = "BanishingGate.png",
-            ["note"] = "The first heavy barrier blockading the ancient subterranean fortress. You must have four adventurers stand on the surrounding floor pressure plates simultaneously, or utilize a specialized key item, to lift the door and advance.",
+            ["note"] = "Locked gate.\
+* Opened by activating the required switches or using the appropriate key item.",
             ["type"] = "Security Gate",
         },
         ["Banishing Gate #2"] = {
             ["_source"] = "item",
             ["icon"] = "BanishingGate.png",
-            ["note"] = "The second defensive partition deeper inside the military ruins. Tripping the regional pressure weight sensors with a full party or bypass token raises the gate, allowing your squad to dive further into the dungeon vaults.",
+            ["note"] = "Locked gate.\
+* Opened by activating the required switches or using the appropriate key item.",
             ["type"] = "Security Gate",
         },
         ["Banishing Gate #3"] = {
             ["_source"] = "item",
             ["icon"] = "BanishingGate.png",
-            ["note"] = "The final physical security checkpoint protecting the deepest recesses of the citadel. Coordinate with your allies on the localized floor mechanisms to trigger the heavy winches and open the pathway ahead.",
+            ["note"] = "Locked gate.\
+* Opened by activating the required switches or using the appropriate key item.",
             ["type"] = "Security Gate",
         },
         ["Cermet Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An enduring portal crafted from indestructible ancient composite materials. Activating its associated technological terminal or matching puzzle triggers parts the panels, granting passage into deep ruins.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Crematory Hatch"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy furnace access portal set deep inside the subterranean military ruins. Unlocking the heat-warped seal gives you entry to hidden chambers or drop-down escape tunnels.",
+            ["note"] = "Locked hatch.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Door Lock#1"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "The first specialized wall console anchoring the citadel security network. Operating this terminal coordinates with allied nodes to lift corresponding heavy metal blocking gates across the tunnels.",
+            ["note"] = "Dungeon switch:\
+* Activates nearby gates.",
             ["type"] = "Dungeon Switch",
         },
         ["Door Lock#2"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "The secondary security locking mechanism fixed within the subterranean military layout. Activating its internal mechanisms slides remote gates open to let your squad advance into deeper corridors.",
+            ["note"] = "Dungeon switch:\
+* Activates nearby gates.",
             ["type"] = "Dungeon Switch",
         },
         ["Door Lock#3"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "The third specific security locking bracket mounted to the citadel stone framing. Toggling this handle shifts mechanical weights to lower heavy iron portcullis barriers.",
+            ["note"] = "Dungeon switch:\
+* Activates nearby gates.",
             ["type"] = "Dungeon Switch",
         },
         ["Door Lock#4"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "The fourth specific security mechanism built into the ancient fortress layers. Overriding its restrictive circuitry drops the final partition to grant access to restricted vaults.",
+            ["note"] = "Dungeon switch:\
+* Activates nearby gates.",
             ["type"] = "Dungeon Switch",
         },
         ["GoalPoint"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ancient structural focal destination waypoint hidden deep inside sprawling dungeons. Reaching this layout node validates complex progression flags or completes server event tasks.",
+            ["note"] = "Quest objective:\
+* Reach this location to progress.",
             ["type"] = "Quest Node",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Grounds Tome"] = {
             ["_source"] = "item",
             ["icon"] = "SurvivalGuide.png",
-            ["note"] = "A floating magical ledger hovering at key hunting outposts. Reading the text lets you enlist in Grounds of Valor combat regimes, secure experience multipliers, and claim defensive battle enhancements.",
+            ["note"] = "Grounds of Valor:\
+* Start and manage training regimes.",
             ["type"] = "Training Ledger",
         },
         ["Hazy Rune"] = {
             ["_source"] = "item",
             ["icon"] = "VoidwatchRift.png",
-            ["note"] = "A shimmering, distorted runic seal etched directly into the dungeon walls. Directing your cosmic tracking keys into the glyph forces open an extraplanar rift to initiate Voidwatch operations.",
+            ["note"] = "Voidwatch:\
+* Enter the battlefield.",
             ["type"] = "Transit Portal",
         },
         ["Lycopodium"] = {
             ["_source"] = "item",
             ["icon"] = "HarvestPoint.png",
-            ["note"] = "A friendly, stationary mandragora plant root embedded in the soil. Offering a fresh flower to this native flora manipulates past-timeline energy currents to bypass blocked regional thresholds.",
+            ["note"] = "Quest location:\
+* Examine or interact for quest progress.",
             ["type"] = "Quest Node",
         },
         ["Oaken Box"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A heavy wooden storage chest left abandoned inside the military ruins. Prying open the reinforced lid uncovers lost military provisions or reveals gear records needed for artifact armor trials.",
+            ["note"] = "Loot container:\
+* Contains items and other rewards.",
             ["type"] = "Loot Container",
         },
         ["Riftworn Pyxis"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A locked extraplanar drop chest container materializing immediately post-combat across Voidwatch fields. Breaking its lock rewards your squad with combat currencies or temporary buffs.",
+            ["note"] = "Voidwatch rewards:\
+* Contains loot and temporary items.",
             ["type"] = "Loot Container",
         },
         ["Switch#1"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "The primary floor pressure plate or wall switch operating the citadel layout. Standing on the stone slabs engages remote pulley wires, sliding open massive banishing gate partitions.",
+            ["note"] = "Dungeon switch:\
+* Activates nearby gates.",
             ["type"] = "Dungeon Switch",
         },
         ["Switch#2"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "The secondary floor switch plate mechanism hidden near the tunnel intersections. Stepping onto or activating this mechanism slides remote gears to flip heavy security partitions across multiple floors.",
+            ["note"] = "Dungeon switch:\
+* Activates nearby gates.",
             ["type"] = "Dungeon Switch",
         },
         ["Switch#3"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "The third localized mechanical switch monitoring dungeon sectors. Moving the device handles layout verification states or flips remote winches to open gated passages.",
+            ["note"] = "Dungeon switch:\
+* Activates nearby gates.",
             ["type"] = "Dungeon Switch",
         },
         ["Switch#4"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "The final localized structural switch panel anchoring the intermediate trial sectors. Finalizing this marker unblocks restrictive blast gates to expand your subterranean exploration paths.",
+            ["note"] = "Dungeon switch:\
+* Activates nearby gates.",
             ["type"] = "Dungeon Switch",
         },
     },

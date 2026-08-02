@@ -91,17 +91,6 @@ Steamed Rams and receipt of a Red\
 Recommendation Letter.",
             ["type"] = "Campaign Evaluator",
         },
-        ["Allied Enhancer"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "Augmenter.png",
-            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Content/Campaign#Allied_Enhancers",
-            ["note"] = "CatsEyeXI Campaign:\
-* Upgrades level 68 Iron Ram, Fourth\
-Division, and Cobra armor sets.\
-* Requires Allied Notes and the\
-appropriate Campaign medal.",
-            ["type"] = "Campaign Armor Augmenter",
-        },
         ["Allaipre"] = {
             ["_source"] = "npc",
             ["icon"] = "Cutscene.png",
@@ -711,12 +700,6 @@ supplies or attacks fortifications.\
 * May construct an Allied Belfry.",
             ["type"] = "Campaign Battle",
         },
-        ["Gomi-Hiroi"] = {
-            ["_source"] = "npc",
-            ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Seasonal recycling event broker. Spawns across past timeline nations during specific ecological holiday campaigns to manage local rubbish cleaning point distributions.",
-            ["type"] = "Special Event Coordinator",
-        },
         ["Gray Colossus, L.C."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
@@ -1134,16 +1117,6 @@ Involved in Quests:\
 Involved in Missions:\
 * Back to the Beginning",
             ["type"] = "Quest Giver",
-        },
-        ["Maruna-Kurina"] = {
-            ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Explains Campaign and tracks\
-freelancer alliances and influence.\
-* Appears in towns but does not\
-participate in battles.",
-            ["type"] = "Freelance",
         },
         ["Mayakov"] = {
             ["_source"] = "npc",
@@ -2143,6 +2116,21 @@ Elshimo Lowlands.\
 * Casts Signet and handles regional\
 Conquest services.",
             ["type"] = "Conquest Overseer",
+        },
+        ["Elkum-Norkum, C.C."] = {
+            ["_source"] = "npc",
+            ["icon"] = "CampaignArbiter.png",
+            ["type"] = "Campaign",
+        },
+        ["Kilian, I.M."] = {
+            ["_source"] = "npc",
+            ["icon"] = "Guard.png",
+            ["type"] = "Iron Musketeer",
+        },
+        ["Ulla"] = {
+            ["_source"] = "npc",
+            ["icon"] = "CampaignArbiter.png",
+            ["type"] = "Campaign Freelance",
         },
     },
     ["objects"] = 

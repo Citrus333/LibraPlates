@@ -1993,46 +1993,18 @@ function pcPlate.Render()
     local nearbyPlayerDetail = reducedDetailActive == true
         and configuredOtherPlayerDetail
         or 'Full configured plate';
-    local maxWorldPlateCount = math.max(
-        0,
-        math.floor((tonumber(targetingSettings.maxWorldPlateCount) or 0) + 0.5)
-    );
-    local unrelatedPlayerBudget = nil;
-
-    if (maxWorldPlateCount > 0) then
-        unrelatedPlayerBudget = math.max(
-            0,
-            maxWorldPlateCount - worldMarkerProbe.GetQueuedPlateCount()
-        );
-    end
-
     perfMeter.SetCounter('pcUnrelatedSimplify', reducedDetailActive == true and configuredOtherPlayerDetail ~= 'Full configured plate' and 1 or 0);
     perfMeter.SetCounter('pcUnrelatedNearby', unrelatedNearbyPlayerCount);
     perfMeter.SetCounter('pcCrowdedTownZone', isTownZone == true and 1 or 0);
     perfMeter.SetCounter('pcCrowdedActive', crowdedActive == true and 1 or 0);
 
-    local earlySelectedCount = 0;
-    local earlySkippedCount = 0;
-
     for _, player in ipairs(players) do
         if (queuedSpecialPlayers[tonumber(player.index) or 0] ~= true and entities.IsOwnPetIndex(player.index) ~= true) then
-            if (unrelatedPlayerBudget == nil or earlySelectedCount < unrelatedPlayerBudget) then
-                local queuedBefore = worldMarkerProbe.GetQueuedPlateCount();
-                QueuePlayer(player, targetingSettings, nearbyPlayerDetail);
-
-                if (worldMarkerProbe.GetQueuedPlateCount() > queuedBefore) then
-                    earlySelectedCount = earlySelectedCount + 1;
-                end
-            else
-                earlySkippedCount = earlySkippedCount + 1;
-            end
+            QueuePlayer(player, targetingSettings, nearbyPlayerDetail);
         end
     end
 
     perfMeter.SetCounter('pcScanned', #(players or {}));
-    perfMeter.SetCounter('pcEarlyBudget', unrelatedPlayerBudget or 0);
-    perfMeter.SetCounter('pcEarlySelected', earlySelectedCount);
-    perfMeter.SetCounter('pcEarlySkipped', earlySkippedCount);
 
     pcIdleCanvasBuildLimitThisFrame = 0;
 end

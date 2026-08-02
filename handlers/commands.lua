@@ -2067,8 +2067,7 @@ function commands.Handle(e)
             ' trust=' .. tostring(type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes.trust == true) ..
             ' padding=' .. tostring(settings.plateStackGap) ..
             ' effectivePadding=' .. tostring((tonumber(settings.plateStackGap) or 10) - 10) ..
-            ' speed=' .. tostring(settings.plateStackTravelSpeed) ..
-            ' maxWorldPlateCount=' .. tostring(settings.maxWorldPlateCount or 0)
+            ' speed=' .. tostring(settings.plateStackTravelSpeed)
         );
         return;
     end
@@ -2095,26 +2094,6 @@ function commands.Handle(e)
             ' left=' .. tostring(settings.tacticalScreenClampLeftPadding or 0) ..
             ' right=' .. tostring(settings.tacticalScreenClampRightPadding or 0)
         );
-        return;
-    end
-
-    if (subcommand == 'platecap' or subcommand == 'worldcap') then
-        local action = tostring(args[3] or 'status'):lower();
-        local settings = targeting.GetSettings();
-        local value = tonumber(args[3]);
-
-        if (action == 'off' or action == 'unlimited' or action == 'none') then
-            settings.maxWorldPlateCount = 0;
-            state.Save();
-        elseif (value ~= nil) then
-            settings.maxWorldPlateCount = math.max(0, math.min(300, math.floor(value + 0.5)));
-            state.Save();
-        elseif (action ~= 'status') then
-            log.Warn('Usage: /lp platecap 0|40|80|status');
-            return;
-        end
-
-        log.Info('Max world plate count=' .. tostring(settings.maxWorldPlateCount or 0) .. ' (0 = unlimited).');
         return;
     end
 
@@ -2307,7 +2286,33 @@ function commands.Handle(e)
         local action = tostring(args[3] or 'status'):lower();
         local value = tostring(args[4] or ''):lower();
 
-        if (action == 'debug' or action == 'dump') then
+        if (action == 'safe' or action == 'capture') then
+            local targetIndex = tonumber(args[4]) or targeting.GetCurrentTargetIndex() or targeting.GetCurrentSubTargetIndex();
+            local debug, err = worldMarkerProbe.GetSafeAnchorDebug(targetIndex, entities.GetEntityManager);
+
+            if (debug == nil) then
+                log.Warn('Safe anchor capture failed: ' .. tostring(err) .. ' target=' .. tostring(targetIndex));
+                return;
+            end
+
+            log.Info(
+                'Safe anchor target=' .. tostring(debug.targetIndex) ..
+                ' type=' .. tostring(debug.entityType) ..
+                ' base=' .. tostring(debug.baseX) .. ',' .. tostring(debug.baseY) .. ',' .. tostring(debug.baseZ) ..
+                ' helperOffset=' .. tostring(debug.offsetX) .. ',' .. tostring(debug.offsetY) .. ',' .. tostring(debug.offsetZ) ..
+                ' exact=' .. tostring(debug.exactX) .. ',' .. tostring(debug.exactY) .. ',' .. tostring(debug.exactZ) ..
+                ' heading=' .. tostring(debug.heading) ..
+                ' rotated=' .. tostring(debug.rotatedX) .. ',' .. tostring(debug.rotatedY) ..
+                ' inverse=' .. tostring(debug.rotatedInverseX) .. ',' .. tostring(debug.rotatedInverseY) ..
+                ' entity=' .. tostring(debug.entityX) .. ',' .. tostring(debug.entityY) .. ',' .. tostring(debug.entityZ) ..
+                ' last=' .. tostring(debug.lastX) .. ',' .. tostring(debug.lastY) .. ',' .. tostring(debug.lastZ) ..
+                ' spawn=0x' .. string.format('%X', tonumber(debug.spawnFlags) or 0) ..
+                ' r0=0x' .. string.format('%X', tonumber(debug.renderFlags0) or 0) ..
+                ' r1=0x' .. string.format('%X', tonumber(debug.renderFlags1) or 0) ..
+                ' helper=' .. tostring(debug.helperStatus)
+            );
+            return;
+        elseif (action == 'debug' or action == 'dump') then
             local targetIndex = nil;
 
             if (value == 'pet') then
@@ -2354,7 +2359,7 @@ function commands.Handle(e)
         elseif ((action == 'nameheight' or action == 'nameoffset') and tonumber(args[4]) ~= nil) then
             worldMarkerProbe.SetNameVerticalOffset(tonumber(args[4]));
         elseif (action ~= 'status' and action ~= '') then
-            log.Warn('Usage: /lp anchor bone [0-32] | exact | compare [on/off] | offset <n> | nameheight <n> | debug [pet/index] | status');
+            log.Warn('Usage: /lp anchor bone [0-32] | exact | compare [on/off] | offset <n> | nameheight <n> | safe [index] | debug [pet/index] | status');
             return;
         end
 

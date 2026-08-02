@@ -89,6 +89,13 @@ Follows Elivira. Uses Marksmanship weaponskills.",
 * Bastok affiliated Campaign Arbiter. Present when Bastok has control of Rolanberry Fields (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
             ["type"] = "Campaign",
         },
+        ["Gisbert, C.A."] = {
+            ["_source"] = "npc",
+            ["icon"] = "CampaignArbiter.png",
+            ["note"] = "Notes:\
+* Jeuno affiliated Campaign Arbiter. Present when Beastmen have control of Rolanberry Fields (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
+            ["type"] = "Campaign",
+        },
     },
     ["objects"] = {
         ["Adder Coffer"] = {

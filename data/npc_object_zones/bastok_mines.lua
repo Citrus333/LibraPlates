@@ -748,6 +748,34 @@ Administrates Crafter Points for items used to upgrade Escutcheons. Also sells C
 A member of the Vana'diel Chocobo Society. This Galka will help you raise your own Chocobo if you trade an egg to him.",
             ["type"] = "VCS Chocobo Trainer",
         },
+        ["Gabbot"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
+* |\
+\
+Involved in Missions:\
+* Bastok Mission 6-1: Return of the Talekeeper",
+            ["type"] = "Quest Associate",
+        },
+        ["Povall"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
+* |\
+\
+Involved in Missions:\
+* Bastok Mission 6-1: Return of the Talekeeper",
+            ["type"] = "Quest Associate",
+        },
+        ["Watzahl"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestNPC.png",
+            ["note"] = "Involved in Quests:\
+* Corsair's Bottes\
+",
+            ["type"] = "Corsair Quest",
+        },
     },
     ["objects"] = {
         ["Alchemy Tome"] = {

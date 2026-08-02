@@ -11,34 +11,34 @@ return {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Provides information about Chocobo Racing, and recruits adventurers for the CRA San d'Oria team.This NPC used to be in Southern San d'Oria (H-11) prior to the 9/9/10 patch.| historicalbackground =",
+* Provides Chocobo Racing information.\
+* Recruits adventurers for the CRA San d'Oria team.",
             ["type"] = "VCS Chocobo Racing Associate",
         },
         ["Amaduralle"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Guides (warps) player to different areas in the Chocobo Circuit. Notice the red beret and the Chocobo Jack Coat Set.",
+* Warps players to other areas of the Chocobo Circuit.",
             ["type"] = "Chocobo Circuit",
         },
         ["Azainnie"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Will allow adventures back into the main circuit complex from the grandstand area.",
+* Returns players from the grandstand to the main circuit.",
             ["type"] = "Chocobo Racing",
         },
         ["Berthold"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Hume male spectator NPC roaming around the racing grounds pathways. Provides ambient flavor text regarding Chocobo races.",
             ["type"] = "Citizen",
         },
         ["Boirie"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* For either 50 gil, or a Chocobo Circuit grandstand pass, she will allow you into the grandstands to view the current race.",
+* Grants grandstand access for 50 gil or a Chocobo Circuit grandstand pass.",
             ["type"] = "Chocobo Racing",
         },
         ["Cadwyn"] = {
@@ -50,16 +50,16 @@ return {
         },
         ["Channon"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Sign players' birds up for entry in Adventurer Races.",
+* Registers chocobos for Adventurer Races.",
             ["type"] = "Promenade Assistant",
         },
         ["Chaquoillons"] = {
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
-* Guides (warps) player to different area in the Chocobo Circuit.",
+* Warps players to other areas of the Chocobo Circuit.",
             ["type"] = "Travel Guide",
         },
         ["Chocobo"] = {
@@ -71,13 +71,13 @@ return {
             ["_source"] = "npc",
             ["icon"] = "ChocoboRenter.png",
             ["note"] = "Notes:\
-Offers information on \"The Pashhow Swamptrot\". (New, jockeyless races intended for veteran chocobo breeders.) Will change your Chocobo Racing Association affiliation to Windurst if so desired.",
-            ["type"] = "NPC VCS Chocobo Racing Associate",
+* Provides information about the Pashhow Swamptrot.\
+* Can change your racing affiliation to Windurst.",
+            ["type"] = "VCS Chocobo Racing Associate",
         },
         ["Claiborne"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
-            ["note"] = "Vana'diel Chocobo Society official. Manages registration schedules, official racing cards, and handles entry validation data loops for local chocobo stables.",
             ["type"] = "Chocobo Circuit",
         },
         ["Cordaurie"] = {
@@ -91,21 +91,21 @@ Offers information on \"The Pashhow Swamptrot\". (New, jockeyless races intended
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Will allow adventures back into the main circuit complex from the grandstand area.",
+* Returns players from the grandstand to the main circuit.",
             ["type"] = "Chocobo Racing",
         },
         ["Curtis"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Sign players' birds up for entry in Adventurer Races.",
+* Registers chocobos for Adventurer Races.",
             ["type"] = "Promenade Assistant",
         },
         ["Cyphaireau"] = {
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
-* Guides (warps) player to different areas in the Chocobo Circuit.",
+* Warps players to other areas of the Chocobo Circuit.",
             ["type"] = "Travel Guide",
         },
         ["Cyril"] = {
@@ -125,9 +125,9 @@ Offers information on \"The Pashhow Swamptrot\". (New, jockeyless races intended
         },
         ["Delaulne"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Sign players' birds up for entry in Adventurer Races. C4",
+* Registers chocobos for Adventurer Races.",
             ["type"] = "Promenade Assistant",
         },
         ["Denpepe"] = {
@@ -138,14 +138,13 @@ Offers information on \"The Pashhow Swamptrot\". (New, jockeyless races intended
         ["Eugenia"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Hume female spectator NPC located roaming the racing grounds pathways. Offers ambient localized dialogue regarding the competitive chocobo racers.",
             ["type"] = "Citizen",
         },
         ["Faboise"] = {
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
-* Guides (warps) player to different area in the Chocobo Circuit.",
+* Warps players to other areas of the Chocobo Circuit.",
             ["type"] = "Travel Guide",
         },
         ["Failene"] = {
@@ -164,23 +163,23 @@ Offers information on \"The Pashhow Swamptrot\". (New, jockeyless races intended
         },
         ["Fina"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Sign players' chocobos up for entry in Adventurer Races.",
+* Registers chocobos for Adventurer Races.",
             ["type"] = "Promenade Assistant",
         },
         ["Flige"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Will allow adventures back into the main circuit complex from the grandstand area.",
+* Returns players from the grandstand to the main circuit.",
             ["type"] = "Chocobo Racing",
         },
         ["Foulneporde"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* For either 50 gil, or a Chocobo Circuit grandstand pass, he will allow you into the grandstands to view the current race.",
+* Grants grandstand access for 50 gil or a Chocobo Circuit grandstand pass.",
             ["type"] = "Chocobo Racing",
         },
         ["Gadimo"] = {
@@ -194,7 +193,8 @@ Offers information on \"The Pashhow Swamptrot\". (New, jockeyless races intended
             ["_source"] = "npc",
             ["icon"] = "ChocoboRenter.png",
             ["note"] = "Notes:\
-* roams the circuit with a baby chocobo in tow, betting on his own chocobo (MegaFlare) on C1 Crystal Stake races. Mimicks a real player.",
+* Roams the circuit with a baby chocobo.\
+* Bets on MegaFlare during C1 Crystal Stakes races.",
             ["type"] = "Chocobo Breeder",
         },
         ["Gerlbotz"] = {
@@ -237,9 +237,9 @@ Offers information on \"The Pashhow Swamptrot\". (New, jockeyless races intended
         },
         ["Gustavo"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Sign players' birds up for entry in Adventurer Races.",
+* Registers chocobos for Adventurer Races.",
             ["type"] = "Promenade Assistant",
         },
         ["Happo"] = {
@@ -251,7 +251,7 @@ Offers information on \"The Pashhow Swamptrot\". (New, jockeyless races intended
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* For either 50 gil, or a Chocobo Circuit grandstand pass, he will allow you into the grandstands to view the current race.",
+* Grants grandstand access for 50 gil or a Chocobo Circuit grandstand pass.",
             ["type"] = "Chocobo Racing",
         },
         ["Iluprassa"] = {
@@ -273,14 +273,15 @@ Offers information on \"The Pashhow Swamptrot\". (New, jockeyless races intended
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-Provides information about Chocobo Racing, and recruits adventurers for the CRA Bastok team.This NPC used to be in Bastok Mines (J-9) prior to the 9/9/10 patch.",
+* Provides Chocobo Racing information.\
+* Recruits adventurers for the CRA Bastok team.",
             ["type"] = "VCS Chocobo Racing Associate",
         },
         ["Joilevin"] = {
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
-* Guides (warps) player to different area in the Chocobo Circuit.",
+* Warps players to other areas of the Chocobo Circuit.",
             ["type"] = "Travel Guide",
         },
         ["Jolande"] = {
@@ -304,7 +305,8 @@ Provides information about Chocobo Racing, and recruits adventurers for the CRA 
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-Gives information about, as well as recruiting adventurers into the \"Pashhow Swamptrot.\" Will also change your racing affiliation to San d'Oria, if desired.",
+* Provides information about the Pashhow Swamptrot.\
+* Can change your racing affiliation to San d'Oria.",
             ["type"] = "VCS Chocobo Racing Associate",
         },
         ["Laujaquetemps"] = {
@@ -366,9 +368,9 @@ Gives information about, as well as recruiting adventurers into the \"Pashhow Sw
         },
         ["Manfred"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Sign players' birds up for entry in Adventurer Races.",
+* Registers chocobos for Adventurer Races.",
             ["type"] = "Promenade Assistant",
         },
         ["Markovich"] = {
@@ -385,28 +387,29 @@ Gives information about, as well as recruiting adventurers into the \"Pashhow Sw
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
-* Guides (warps) player to different area in the Chocobo Circuit.",
+* Warps players to other areas of the Chocobo Circuit.",
             ["type"] = "Warp Guide",
         },
         ["Mercedes"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Sign players' birds up for entry in Adventurer Races.",
+* Registers chocobos for Adventurer Races.",
             ["type"] = "Promenade Assistant",
         },
         ["Michaela"] = {
             ["_source"] = "npc",
-            ["icon"] = "ChocoboRenter.png",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* A representative of the CRA, Michaela issues the stands for display of trophies. *The stands available are the CS Bronze Stand, the CS Gold Stand and the CS Mythril Stand. *Michaela will also engrave the stand if required, or trade the trophy and stand for an engraved plaque.",
-            ["type"] = "Chocobo Circuits",
+* Issues bronze, mythril, and gold trophy stands.\
+* Engraves stands or exchanges a trophy and stand for an engraved plaque.",
+            ["type"] = "Chocobo Circuit Associate",
         },
         ["Mulaitrand"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* For either 50 gil, or a Chocobo Circuit grandstand pass, he will allow you into the grandstands to view the current race.",
+* Grants grandstand access for 50 gil or a Chocobo Circuit grandstand pass.",
             ["type"] = "Chocobo Racing",
         },
         ["Nheu Chaftahl"] = {
@@ -418,7 +421,7 @@ Gives information about, as well as recruiting adventurers into the \"Pashhow Sw
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Will allow adventures back into the main circuit complex from the grandstand area.",
+* Returns players from the grandstand to the main circuit.",
             ["type"] = "Chocobo Racing",
         },
         ["Olega"] = {
@@ -451,7 +454,7 @@ Gives information about, as well as recruiting adventurers into the \"Pashhow Sw
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Will allow adventures back into the main circuit complex from the grandstand area.",
+* Returns players from the grandstand to the main circuit.",
             ["type"] = "Chocobo Racing",
         },
         ["Phemille"] = {
@@ -470,7 +473,7 @@ Gives information about, as well as recruiting adventurers into the \"Pashhow Sw
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
-* Guides (warps) player to different area in the Chocobo Circuit.",
+* Warps players to other areas of the Chocobo Circuit.",
             ["type"] = "Travel Guide",
         },
         ["Pretervout"] = {
@@ -522,21 +525,22 @@ Gives information about, as well as recruiting adventurers into the \"Pashhow Sw
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Provides information about Chocobo Racing, and recruits adventurers for the CRA Windurst team.This NPC used to be in Windurst Woods (K-12) prior to the 9/9/10 patch.",
+* Provides Chocobo Racing information.\
+* Recruits adventurers for the CRA Windurst team.",
             ["type"] = "VCS Chocobo Racing Associate",
         },
         ["Russel"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* Sign players' chocobos up for entry in Adventurer Races.",
+* Registers chocobos for Adventurer Races.",
             ["type"] = "Promenade Assistant",
         },
         ["Saffaullette"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-* For either 50 gil, or a Chocobo Circuit grandstand pass, she will allow you into the grandstands to view the current race.",
+* Grants grandstand access for 50 gil or a Chocobo Circuit grandstand pass.",
             ["type"] = "Chocobo Racing",
         },
         ["Sakura"] = {
@@ -577,7 +581,7 @@ Gives information about, as well as recruiting adventurers into the \"Pashhow Sw
             ["_source"] = "npc",
             ["icon"] = "WarpNPC.png",
             ["note"] = "Notes:\
-* Guides (warps) player to different area in the Chocobo Circuit. Notice the red beret and the Chocobo Jack Coat Set.",
+* Warps players to other areas of the Chocobo Circuit.",
             ["type"] = "Warp Guide",
         },
         ["Valerio"] = {
@@ -595,8 +599,6 @@ Gives information about, as well as recruiting adventurers into the \"Pashhow Sw
         ["Gate: Chocobo Circuit"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standard track boundary gate partitioning off the grand racing lanes. Interfacing with the terminal matches registration tokens to grant your character lane access.",
-            ["type"] = "Security Gate",
         },
     },
 }

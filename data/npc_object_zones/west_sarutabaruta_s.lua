@@ -3,9 +3,8 @@ return {
         ["Abubu"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
-* Recollections (Black Mage AF Armor)\
-Also appears as a combat magian in past Windurst battlefield zones.",
+            ["note"] = "Involved in Quest:\
+* Recollections",
             ["type"] = "Quest Associate",
         },
         ["Ace of Batons (S)"] = {
@@ -30,11 +29,9 @@ Also appears as a combat magian in past Windurst battlefield zones.",
         },
         ["Addison, C.A."] = {
             ["_source"] = "npc",
-            ["icon"] = "WarpNPC.png",
-            ["note"] = "Involved in Mission:\
-* Allied Campaign\
-",
-            ["type"] = "Teleport Service",
+            ["icon"] = "CampaignArbiter.png",
+            ["note"] = "Jeunoan Campaign Arbiter. Appears when the Beastmen control the area.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Allied Commissary"] = {
             ["_source"] = "npc",
@@ -49,95 +46,85 @@ Also appears as a combat magian in past Windurst battlefield zones.",
         },
         ["Ekal-Mikal"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Quest:\
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
 * The Weight of Evidence\
-* Restoring the Shield\
-",
-            ["type"] = "Shadowreign",
+* Restoring the Shield",
+            ["type"] = "Quest Associate",
         },
         ["Jubilant Pixie"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Involved in Quest:\
 * Succor to the Sidhe",
             ["type"] = "Quest Associate",
         },
         ["Kindel-Bandel"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Mission:\
-* A Manifest Problem\
-",
-            ["type"] = "Shadowreign",
+* A Manifest Problem",
+            ["type"] = "Mission Associate",
         },
         ["Kodada"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quest:\
-* Cultivating Catastrophe\
-",
+* Cultivating Catastrophe",
             ["type"] = "Quest Associate",
         },
         ["Livura-Novora"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Mission:\
-* A Manifest Problem\
-",
-            ["type"] = "Shadowreign",
+* A Manifest Problem",
+            ["type"] = "Mission Associate",
         },
         ["Mhik Liusihlo, M.C."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Windurst affiliated Campaign Arbiter. Present when Windurst (S) has control of West Sarutabaruta (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+            ["note"] = "Windurstian Campaign Arbiter. Appears when Windurst controls the area.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Nhiko Rhaabel"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
 * Purple, Cleaving\
-* A Timeswept Butterfly\
-",
-            ["type"] = "Shadowreign",
+* A Timeswept Butterfly",
+            ["type"] = "Mission Associate",
         },
         ["Nzha Abaleenah"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
 * Purple, Cleaving\
-* A Timeswept Butterfly\
-",
-            ["type"] = "Shadowreign",
+* A Timeswept Butterfly",
+            ["type"] = "Mission Associate",
         },
         ["Poroggo Servant"] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-:*Influenced by trading a Lufaise Fly. :*To be able to trade additional Lufaise Flies, you will have to zone into nearby Windurst Waters (S) and back out. :*When allied, the Poroggo Prince and several servants will fight in campaign battles. :*Servants use no TP moves or cast spells, but attack fast and have Additional Effect: Weight on their melee attacks.",
-            ["type"] = "Campaign Battle",
+            ["note"] = "Freelance Campaign ally. Trading a Lufaise fly increases Poroggo Prince's influence.",
+            ["type"] = "Freelance",
         },
         ["Rakocha-Mukocha"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quest:\
-* Cultivating Catastrophe\
-",
+* Cultivating Catastrophe",
             ["type"] = "Quest Associate",
         },
         ["Tenacious Fool, L.C."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Bastok affiliated Campaign Arbiter. Present when Bastok (S) has control of West Sarutabaruta (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+            ["note"] = "Bastokan Campaign Arbiter. Appears when Bastok controls the area.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Watchful Pixie"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Involved in Quest:\
 * Succor to the Sidhe",
             ["type"] = "Quest Associate",
         },
@@ -146,87 +133,88 @@ Also appears as a combat magian in past Windurst battlefield zones.",
         ["Adder Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A grand military campaign reward chest materializing across frontlines in the past timeline. Opening the lock distributes battlefield experience, regional items, or elite wartime currencies to your squad.",
-            ["type"] = "Loot Container",
+            ["note"] = "Appears after a Campaign battle with spoils for eligible Adder Union members.",
+            ["type"] = "Union Coffer",
         },
         ["Bison Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A companion campaign treasure chest dropped onto tactical overworld battlefields. Opening this repository distributes elite armor supplies, munitions, and defensive tactical enhancements.",
-            ["type"] = "Loot Container",
+            ["note"] = "Appears after a Campaign battle with spoils for eligible Bison Union members.",
+            ["type"] = "Union Coffer",
         },
         ["Coyote Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A campaign battle chest materializing across frontlines in the past timeline. Opening the lock code rewards your squad with combat supplies, weapons components, or temporal campaign currencies.",
-            ["type"] = "Loot Container",
+            ["note"] = "Appears after a Campaign battle with spoils for eligible Coyote Union members.",
+            ["type"] = "Union Coffer",
         },
         ["Dhole Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A tactical campaign prize repository manifest across past-timeline conflict fields. Breaking its seal rewards your participating alliance with specialized armor provisions and items components.",
-            ["type"] = "Loot Container",
+            ["note"] = "Appears after a Campaign battle with spoils for eligible Dhole Union members.",
+            ["type"] = "Union Coffer",
         },
         ["Door:Clerical Chamber"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An ornate, stone security barrier separating administrative chambers and temple corridors. Verifying national mission clearance commands the framework to part.",
-            ["type"] = "Security Gate",
         },
         ["Eland Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A grand campaign battle coffer materializing across frontlines in the past timeline. Opening the lock code rewards your squad with elite armor supplies, munitions, and temporal combat rewards.",
-            ["type"] = "Loot Container",
+            ["note"] = "Appears after a Campaign battle with spoils for eligible Eland Union members.",
+            ["type"] = "Union Coffer",
         },
         ["Gate Sentry"] = {
             ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A heavily armored defensive barrier guarding tactical checkpoints in the past timeline. Clearing military verification protocols commands the framework to unlatch across frontline borders.",
-            ["type"] = "Security Gate",
+            ["icon"] = "CampaignArbiter.png",
+            ["note"] = "Provides supplies for regional Campaign Ops.",
+            ["type"] = "Campaign Ops",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Replays cutscenes for this area.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Harvesting Point"] = {
             ["_source"] = "item",
             ["icon"] = "HarvestPoint.png",
-            ["note"] = "A thick cluster of native overworld botanical flora. Foraging through the greenery uncovers rare crafting items, gathers regional resources, and completes active gathering trials.",
-            ["type"] = "Harvest Point",
+            ["note"] = "Harvesting point for regional materials.",
+            ["type"] = "Harvesting Point",
         },
         ["Riftworn Pyxis"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A locked extraplanar drop chest container materializing immediately post-combat across Voidwatch fields. Breaking its lock rewards your squad with combat currencies or temporary buffs.",
-            ["type"] = "Loot Container",
+            ["note"] = "Contains rewards after a successful Voidwatch battle.",
+            ["type"] = "Voidwatch Rewards",
         },
         ["Sealed Entrance"] = {
             ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A reinforced wooden gateway blockading the past-timeline border fortifications. Satisfying military clearance protocols unseals the ward, letting you cross out into the frontline zones.",
-            ["type"] = "Security Gate",
+            ["icon"] = "QuestNode.png",
+            ["note"] = "Involved in Quests:\
+* Snake on the Plains\
+* At Journey's End",
+            ["type"] = "Quest Node",
         },
         ["Shredded Label"] = {
             ["_source"] = "item",
             ["icon"] = "Parchment.png",
-            ["note"] = "A torn, battle-worn piece of paper scrap fluttering in the past-timeline winds. Studying the fragmented military script updates your active frontline campaign logs and side trial milestones.",
-            ["type"] = "Quest Node",
+            ["note"] = "Starts the level 60 Allied Notes battle against Cosmos Cocora when the party has Green-labeled crates.",
+            ["type"] = "Allied Notes Battle",
         },
         ["Time Bomb"] = {
             ["_source"] = "item",
             ["icon"] = "Bomb.png",
-            ["note"] = "A highly volatile explosive device deployed on active past-timeline frontlines. Manipulating the ticking interface lets you disarm the device to update tactical battlefield parameters.",
-            ["type"] = "Quest Node",
+            ["note"] = "Campaign hazard. Disarm it before it detonates and damages nearby allied forces.",
+            ["type"] = "Campaign Hazard",
         },
         ["Windurstian Bulwark"] = {
             ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A heavy architectural fortification gateway standing tall along the past-timeline border defense lines. Passing past the timber bracing tracks your battle status and moves you through the nation's protective walls.",
-            ["type"] = "Security Gate",
+            ["icon"] = "QuestNode.png",
+            ["note"] = "Involved in Quest:\
+* Howl from the Heavens",
+            ["type"] = "Quest Node",
         },
     },
 }

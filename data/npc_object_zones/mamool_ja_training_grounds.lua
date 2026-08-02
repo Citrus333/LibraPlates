@@ -101,48 +101,54 @@ return {
             ["type"] = "Mission Associate",
         },
     },
-    ["objects"] = {
-        ["Ancient Lockbox"] = {
-            ["_source"] = "item",
-            ["icon"] = "TreasureCasket.png",
-            ["note"] = "A reinforced treasure casket materializing post-combat upon a successful instance clear. Cracking the lock distributes unique gear pieces and allocations of tactical imperial rewards to your squad.",
-            ["type"] = "Loot Container",
-        },
-        ["Coffer"] = {
-            ["_source"] = "item",
-            ["icon"] = "TreasureCasket.png",
-            ["note"] = "A heavy ornate repository found tucked away inside dungeon chambers or manifested throughout endgame battle sectors. Prying open its lid rewards your squad with regional supplies or unique currency components.",
-            ["type"] = "Loot Container",
-        },
-        ["Pot Hatch"] = {
-            ["_source"] = "item",
-            ["icon"] = "Switch.png",
-            ["note"] = "A hidden structural floor grate doubling as a beastman trapdoor. Activating the latch drops your entire adventuring party down into the lower subterranean corridors of the stronghold.",
-            ["type"] = "Dungeon Switch",
-        },
-        ["Rune of Release"] = {
-            ["_source"] = "item",
-            ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A shimmering, golden runic plate materializing upon victory. Interfacing with the glyph tallies your imperial achievements and warps your entire alliance securely back to the staging docks.",
-            ["type"] = "Transit Portal",
-        },
-        ["Supplies Crate"] = {
-            ["_source"] = "item",
-            ["icon"] = "Crate.png",
-            ["note"] = "A heavy wooden military storage box left abandoned within the training yards. Prying open its reinforced lid recovers essential battlefield provisions and records tracking metrics during active instanced operations.",
-            ["type"] = "Loot Container",
-        },
-        ["Viscous Liquid"] = {
-            ["_source"] = "item",
-            ["icon"] = "Switch.png",
-            ["note"] = "A puddle of thick, gooey organic liquid pooling on the floor tiles. Examining the sticky substance trips hidden structural switches to slide open concealed doors or lower deep stronghold partitions.",
-            ["type"] = "Dungeon Switch",
-        },
-        ["door_master"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A standardized structural door layout unit sealing off intense instanced challenge rooms or operations sectors. Overriding the nearby locking mechanism slides the heavy panel away to grant passage.",
-            ["type"] = "Security Gate",
-        },
+["objects"] = {
+    ["Ancient Lockbox"] = {
+        ["_source"] = "item",
+        ["icon"] = "TreasureCasket.png",
+        ["note"] = "Battlefield rewards:\
+* Contains equipment and other loot.",
+        ["type"] = "Loot Container",
     },
-}
+    ["Coffer"] = {
+        ["_source"] = "item",
+        ["icon"] = "TreasureCasket.png",
+        ["note"] = "Loot container:\
+* Contains items and other rewards.",
+        ["type"] = "Loot Container",
+    },
+    ["Pot Hatch"] = {
+        ["_source"] = "item",
+        ["icon"] = "Switch.png",
+        ["note"] = "Dungeon switch:\
+* Activate to access another area.",
+        ["type"] = "Dungeon Switch",
+    },
+    ["Rune of Release"] = {
+        ["_source"] = "item",
+        ["icon"] = "VeridicalConflux.png",
+        ["note"] = "Exit portal:\
+* Leave the current instance.",
+        ["type"] = "Transit Portal",
+    },
+    ["Supplies Crate"] = {
+        ["_source"] = "item",
+        ["icon"] = "Crate.png",
+        ["note"] = "Loot container:\
+* Contains supplies and other rewards.",
+        ["type"] = "Loot Container",
+    },
+    ["Viscous Liquid"] = {
+        ["_source"] = "item",
+        ["icon"] = "Switch.png",
+        ["note"] = "Dungeon switch:\
+* Activate to open paths.",
+        ["type"] = "Dungeon Switch",
+    },
+    ["door_master"] = {
+        ["_source"] = "item",
+        ["icon"] = "Door.png",
+        ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
+        ["type"] = "Security Gate",
+    },
+},

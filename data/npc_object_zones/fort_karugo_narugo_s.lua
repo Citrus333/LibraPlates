@@ -3,7 +3,7 @@ return {
         ["Allied Commissary"] = {
             ["_source"] = "npc",
             ["icon"] = "OutpostVendor.png",
-            ["note"] = "Campaign military vendor. Sells supplies, regional food, and tactical provisions using Allied Notes.",
+            ["note"] = "Exchanges Allied Notes for Campaign supplies.",
             ["type"] = "Campaign Quartermaster",
         },
         ["Atokoko"] = {
@@ -48,9 +48,10 @@ return {
         },
         ["Joseaneaut"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Campaign tactical military officer.",
-            ["type"] = "Shadowreign",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Knot Quite There",
+            ["type"] = "Quest Associate",
         },
         ["Kahs Dekahsell"] = {
             ["_source"] = "npc",
@@ -64,34 +65,31 @@ return {
         },
         ["Kindel-Bandel"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
-* A Manifest Problem\
-",
-            ["type"] = "Shadowreign",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* A Manifest Problem",
+            ["type"] = "Quest Associate",
         },
         ["Lamurara, C.C."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Windurst affiliated Campaign Arbiter. Present when Windurst has control of Fort Karugo-Narugo (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+            ["note"] = "Windurstian Campaign Arbiter.\
+Appears when Windurst controls the region.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Livura-Novora"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
-* A Manifest Problem\
-",
-            ["type"] = "Shadowreign",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* A Manifest Problem",
+            ["type"] = "Quest Associate",
         },
         ["Lukka-Lakka"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
-* A Manifest Problem\
-",
-            ["type"] = "Shadowreign",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* A Manifest Problem",
+            ["type"] = "Quest Associate",
         },
         ["Lynndi-Sarandi"] = {
             ["_source"] = "npc",
@@ -101,9 +99,9 @@ return {
         ["Marianna, I.M."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* Bastok affiliated Campaign Arbiter. Present when Bastok (S) has control of Fort Karugo-Narugo (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+            ["note"] = "Bastokan Campaign Arbiter.\
+Appears when Bastok controls the region.",
+            ["type"] = "Campaign Arbiter",
         },
         ["Marianne, I.M."] = {
             ["_source"] = "npc",
@@ -128,27 +126,25 @@ return {
         ["Mortimer"] = {
             ["_source"] = "npc",
             ["icon"] = "ItemDeliverer.png",
-            ["note"] = "Notes:\
-* Item Delivery services will not be available if Fort Karugo-Narugo (S) is under beastman control or a campaign battle is occurring.",
+            ["note"] = "Delivery service is unavailable during\
+Campaign Battles or beastman control.",
             ["type"] = "Item Deliverer",
         },
         ["Nhiko Rhaabel"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
-* Purple, Cleaving\
-* A Timeswept Butterfly\
-",
-            ["type"] = "Shadowreign",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Purple, The New Black\
+* A Timeswept Butterfly",
+            ["type"] = "Mission Associate",
         },
         ["Nzha Abaleenah"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
-* Purple, Cleaving\
-* A Timeswept Butterfly\
-",
-            ["type"] = "Shadowreign",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Purple, The New Black\
+* A Timeswept Butterfly",
+            ["type"] = "Mission Associate",
         },
         ["Oruchacha"] = {
             ["_source"] = "npc",
@@ -157,26 +153,24 @@ return {
         },
         ["Patrol Worm"] = {
             ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-*  Appears during Campaign Battles as a squadron of Nyumomo pets. * While they don't move, they will spawn around Nyumomo periodically. * Devastates enemy forces with high tier earth elemental spells (usually cast in unison).",
-            ["type"] = "Campaign Battle",
+            ["icon"] = "Shadowreign.png",
+            ["note"] = "Nyumomo's stationary Campaign unit.\
+Casts earth magic against enemy forces.",
+            ["type"] = "Campaign Unit",
         },
         ["Pattna-Ottna"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* A Manifest Problem\
-",
-            ["type"] = "Cutscene NPC",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Knot Quite There",
+            ["type"] = "Quest Associate",
         },
         ["Pecca-Pocca"] = {
             ["_source"] = "npc",
-            ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Involved in Quests:\
-* Requiem for the Departed\
-",
-            ["type"] = "Campaign",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Requiem for the Departed",
+            ["type"] = "Quest Associate",
         },
         ["Piah Dnakkora"] = {
             ["_source"] = "npc",
@@ -215,13 +209,15 @@ return {
         },
         ["Rachemace"] = {
             ["_source"] = "npc",
-            ["icon"] = "Shadowreign.png",
-            ["note"] = "Involved in Mission:\
-* While the Cat's Away\
-* Purple, Cleaving\
-* A Timeswept Butterfly\
-",
-            ["type"] = "Shadowreign",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Knot Quite There\
+\
+Involved in Missions:\
+* While the Cat is Away\
+* Purple, The New Black\
+* A Timeswept Butterfly",
+            ["type"] = "Mission Associate",
         },
         ["Rhant Tamhujya"] = {
             ["_source"] = "npc",
@@ -240,8 +236,10 @@ return {
         },
         ["Rongo-Nango"] = {
             ["_source"] = "npc",
-            ["icon"] = "JugPetmaster.png",
-            ["type"] = "Jug Petmaster",
+            ["icon"] = "Shadowreign.png",
+            ["note"] = "Campaign Freelance:\
+* Trade Beastmaster jug pets to influence him.",
+            ["type"] = "Campaign Freelance",
         },
         ["Rootie-Mootie"] = {
             ["_source"] = "npc",
@@ -256,7 +254,7 @@ return {
         ["Rotih Moalghett"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Starts Quest:\
 * A Manifest Problem\
 \
 Involved in Quests:\
@@ -277,8 +275,8 @@ Involved in Quests:\
         ["Spondulix"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
-            ["note"] = "Notes:\
-Not available during campaign battles, or when the Beastman Confederate takes control of Fort Karugo-Narugo.",
+            ["note"] = "Unavailable during Campaign Battles\
+or while beastmen control the region.",
             ["type"] = "Merchant",
         },
         ["Sumah Sohlowyt"] = {
@@ -289,126 +287,116 @@ Not available during campaign battles, or when the Beastman Confederate takes co
         ["Wren, C.A."] = {
             ["_source"] = "npc",
             ["icon"] = "CampaignArbiter.png",
-            ["note"] = "Notes:\
-* NE of Teleport location behind a brick wall, not the Fivespires Map. *Jeuno affiliated Campaign Arbiter. Present when Beastmen have control of Fort Karugo-Narugo (S). *Offers Campaign Information, Campaign Allied Tags, Teleportation *Campaign Sword in front of name during Campaign",
-            ["type"] = "Campaign",
+            ["note"] = "Allied Campaign Arbiter.\
+Appears when beastmen control the region.",
+            ["type"] = "Campaign Arbiter",
         },
     },
     ["objects"] = {
         ["Adder Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A grand military campaign reward chest materializing across frontlines in the past timeline. Opening the lock distributes battlefield experience, regional items, or elite wartime currencies to your squad.",
-            ["type"] = "Loot Container",
+            ["type"] = "Campaign Union Coffer",
         },
         ["Bison Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A companion campaign treasure chest dropped onto tactical overworld battlefields. Opening this repository distributes elite armor supplies, munitions, and defensive tactical enhancements.",
-            ["type"] = "Loot Container",
+            ["type"] = "Campaign Union Coffer",
         },
         ["Cavalry Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A fortified outpost door positioned along the defensive battlements of the past timeline. Clearing local military clearance protocols unlocks the framework, allowing your squad to move between garrison rings.",
-            ["type"] = "Security Gate",
         },
         ["Cavalry Gate"] = {
             ["_source"] = "item",
             ["icon"] = "Gate.png",
-            ["note"] = "A heavy tactical barrier sealing the outer canyon approaches of the fort. Throwing the structural winches lifts the barricade to secure the perimeter or open a path for charging reinforcements.",
-            ["type"] = "Security Gate",
         },
         ["Colorful Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A brightly painted wooden gate standing along the fortress battlements. Satisfying the local military watch command slides the wooden bracing aside to grant entry through the garrison lines.",
-            ["type"] = "Security Gate",
+            ["note"] = "Involved in Quest:\
+* A Manifest Problem",
+            ["type"] = "Quest Node",
         },
         ["Coyote Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A campaign battle chest materializing across frontlines in the past timeline. Opening the lock code rewards your squad with combat supplies, weapons components, or temporal campaign currencies.",
-            ["type"] = "Loot Container",
+            ["type"] = "Campaign Union Coffer",
         },
         ["Dhole Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A tactical campaign prize repository manifest across past-timeline conflict fields. Breaking its seal rewards your participating alliance with specialized armor provisions and items components.",
-            ["type"] = "Loot Container",
+            ["type"] = "Campaign Union Coffer",
         },
         ["Eland Coffer"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A grand campaign battle coffer materializing across frontlines in the past timeline. Opening the lock code rewards your squad with elite armor supplies, munitions, and temporal combat rewards.",
-            ["type"] = "Loot Container",
+            ["type"] = "Campaign Union Coffer",
         },
         ["Gate Sentry"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavily armored defensive barrier guarding tactical checkpoints in the past timeline. Clearing military verification protocols commands the framework to unlatch across frontline borders.",
-            ["type"] = "Security Gate",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Replays cutscenes for this area.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Indescript Markings"] = {
             ["_source"] = "item",
             ["icon"] = "Hieroglyphics.png",
-            ["note"] = "Faint, weathered glyphs carved into remote rock faces across the past-timeline war zones. Studying these specific academic milestones tracks down missing military professors to claim specialized Scholar job Artifact Armor.",
-            ["type"] = "Quest Node",
+            ["note"] = "Provides Rafflesia dreamspit for\
+Scholar's Loafers.",
+            ["type"] = "Scholar Artifact",
         },
         ["Painted Wooden Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A brightly painted wooden gate standing along the fortress battlements of the past timeline. Satisfying the local military watch command slides the timber bracing aside to grant entry through the garrison lines.",
-            ["type"] = "Security Gate",
         },
         ["Phosphorous Ward"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A faint, glowing runic boundary seal placed along the fortress walls in the past timeline. Studying the protective matrix confirms active campaign tasks and updates structural survey parameters.",
-            ["type"] = "Quest Node",
+            ["note"] = "Provides access to the Fivespires.",
+            ["type"] = "Area Passage",
         },
         ["Riftworn Pyxis"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A locked extraplanar drop chest container materializing immediately post-combat across Voidwatch fields. Breaking its lock rewards your squad with combat currencies or temporary buffs.",
-            ["type"] = "Loot Container",
+            ["note"] = "Appears after a Voidwatch victory and contains battle rewards.",
+            ["type"] = "Voidwatch Reward",
         },
         ["Shredded Label"] = {
             ["_source"] = "item",
             ["icon"] = "Parchment.png",
-            ["note"] = "A torn, battle-worn piece of paper scrap fluttering in the past-timeline winds. Studying the fragmented military script updates your active frontline campaign logs and side trial milestones.",
-            ["type"] = "Quest Node",
+            ["note"] = "Starts the level 70 Allied Notes NM battle at (E-9) with a green-labeled crate.",
+            ["type"] = "ANNM Battlefield",
         },
         ["Succulent Cactus"] = {
             ["_source"] = "item",
             ["icon"] = "Cactus.png",
-            ["note"] = "A hardy desert botanical element growing in the past-timeline wastes. Searching its thick layers harvests unique regional crafting materials and advances your active military side campaigns.",
+            ["note"] = "Involved in Quest:\
+* Sins of the Mothers",
             ["type"] = "Quest Node",
         },
         ["Sunken Hollow"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A distinct natural ground depression forming a hidden wilderness landmark. Stepping into the recess uncovers lost wartime archives and triggers critical historical campaign cutscenes.",
+            ["note"] = "Involved in Quest:\
+* Sins of the Mothers",
             ["type"] = "Quest Node",
         },
         ["Time Bomb"] = {
             ["_source"] = "item",
             ["icon"] = "Bomb.png",
-            ["note"] = "A highly volatile explosive device deployed on active past-timeline frontlines. Manipulating the ticking interface lets you disarm the device to update tactical battlefield parameters.",
-            ["type"] = "Quest Node",
         },
         ["Warding Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A fortified defense portal safeguarding the frontline battlements in the past timeline. Throwing open this heavy wooden structure expands your movement range through the military perimeter.",
-            ["type"] = "Security Gate",
+            ["note"] = "Involved in Quest:\
+* The Long March North",
+            ["type"] = "Quest Node",
         },
     },
 }

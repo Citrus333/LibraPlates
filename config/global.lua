@@ -478,7 +478,6 @@ return {
         performancePreset = 'Mid',
         gameFpsMode = 'Keep current',
         performanceMonitorCompact = true,
-        maxWorldPlateCount = 0,
         worldPlateUpdateRate = 'Full',
         pcWorldRefreshRate = 1.0,
         enemyWorldRefreshRate = 1.0,

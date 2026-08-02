@@ -5,62 +5,72 @@ return {
         ["Ancient Magical Gizmo"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "A strange ancient composite portal locked shut by technical mechanisms inside the ruins. Activating adjacent elemental switches shifts the underlying layout components aside.",
+            ["note"] = "Dungeon switch:\
+* Activate to open paths.",
             ["type"] = "Dungeon Switch",
         },
         ["Cermet Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An enduring portal crafted from indestructible ancient composite materials. Activating its associated technological terminal or matching puzzle triggers parts the panels, granting passage into deep ruins.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Cracked Wall"] = {
             ["_source"] = "item",
             ["icon"] = "SealedWall.png",
-            ["note"] = "A fragile masonry section cutting through the subterranean ruins. Striking the unstable brickwork shatters the barrier to reveal hidden chambers or bypass long labyrinth pathways.",
+            ["note"] = "Breakable wall:\
+* Destroy to reveal a hidden path.",
             ["type"] = "Obstacle Node",
         },
         ["Gate: Magical Gizmo"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A strange ancient composite portal locked shut by technical mechanisms inside the ruins. Activating adjacent elemental switches shifts the framework aside.",
+            ["note"] = "Locked gate.\
+* Opens after activating the Magical Gizmo.",
             ["type"] = "Security Gate",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Grounds Tome"] = {
             ["_source"] = "item",
             ["icon"] = "SurvivalGuide.png",
-            ["note"] = "A floating magical ledger hovering at key hunting outposts. Reading the text lets you enlist in Grounds of Valor combat regimes, secure experience multipliers, and claim defensive battle enhancements.",
+            ["note"] = "Grounds of Valor:\
+* Start and manage training regimes.",
             ["type"] = "Training Ledger",
         },
         ["Hazy Rune"] = {
             ["_source"] = "item",
             ["icon"] = "VoidwatchRift.png",
-            ["note"] = "A shimmering, distorted runic seal etched directly into the dungeon walls. Directing your cosmic tracking keys into the glyph forces open an extraplanar rift to initiate Voidwatch operations.",
+            ["note"] = "Voidwatch:\
+* Enter the battlefield.",
             ["type"] = "Transit Portal",
         },
         ["Riftworn Pyxis"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A locked extraplanar drop chest container materializing immediately post-combat across Voidwatch fields. Breaking its lock rewards your squad with combat currencies or temporary buffs.",
+            ["note"] = "Voidwatch rewards:\
+* Contains loot and temporary items.",
             ["type"] = "Loot Container",
         },
         ["Stone Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A massive architectural slab of ancient masonry barring deep burial vault corridors. Bypassing the security latch commands the stone framework to slide aside so your party can pass.",
+            ["note"] = "Locked door.\
+* Opens after meeting nearby requirements.",
             ["type"] = "Security Gate",
         },
         ["Switch"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "A heavy mechanical toggling mechanism inset nearby security walls. Moving the device handles layout verification states or flips remote winches to open gated passages.",
+            ["note"] = "Dungeon switch:\
+* Activate to open paths.",
             ["type"] = "Dungeon Switch",
         },
     },

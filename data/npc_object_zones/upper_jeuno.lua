@@ -3,23 +3,23 @@ return {
         ["Adaruel"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* Searching for the Right Words\
-",
+            ["note"] = "Involved in Quests:\
+* Searching for the Right Words",
             ["type"] = "Quest Associate",
         },
         ["Afdeen"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "A student of the great mage Abdhaljs, he handles transport to and the use of Abdhaljs Isle-Purgonorgo (where Brenner is played). He (as well as the Marshal behind him) will handle all Brenner-related affairs, including distribution of the Brenner Bluebook & Brenner Blackbook.",
+            ["note"] = "Notes:\
+- Handles Brenner registration and transportation to Abdhaljs Isle-Purgonorgo.\
+- Distributes Brenner Bluebooks and Blackbooks.",
             ["type"] = "Battlefield Transport",
         },
         ["Ajithaam"] = {
             ["_source"] = "npc",
-            ["icon"] = "WarpNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Lure of the Wildcat (Jeuno)\
-",
+* Lure of the Wildcat (Jeuno)",
             ["type"] = "Mercenary Teleport",
         },
         ["Alfrieda"] = {
@@ -31,15 +31,24 @@ return {
             ["_source"] = "catseye_npc",
             ["icon"] = "Alternix.png",
             ["note"] = "CatsEyeXI Ventures:\
-* Sells items for HELM Venture\
-Points.",
+- Sells items for HELM Venture Points.",
             ["type"] = "HELM Venture Shop",
         },
         ["Appollonia"] = {
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
             ["note"] = "Notes:\
-Checks weather for the following locations: :*Valkurm Dunes :*Jugner Forest :*Batallia Downs :*Pashhow Marshlands :*Rolanberry Fields :*Meriphataud Mountains :*Sauromugue Champaign :*The Sanctuary of Zi'Tah :*Qufim Island :*Jeuno",
+Checks weather for:\
+- Valkurm Dunes\
+- Jugner Forest\
+- Batallia Downs\
+- Pashhow Marshlands\
+- Rolanberry Fields\
+- Meriphataud Mountains\
+- Sauromugue Champaign\
+- The Sanctuary of Zi'Tah\
+- Qufim Island\
+- Jeuno",
             ["type"] = "Weather Reporter",
         },
         ["Areebah"] = {
@@ -63,7 +72,6 @@ Checks weather for the following locations: :*Valkurm Dunes :*Jugner Forest :*Ba
             ["note"] = "Starts Quests:\
 * Crest of Davoi\
 * Save My Sister\
-\
 Involved in Quests:\
 * Save the Clock Tower",
             ["type"] = "Quest Giver",
@@ -85,7 +93,7 @@ Involved in Quests:\
             ["_source"] = "catseye_npc",
             ["icon"] = "QuestNPC.png",
             ["note"] = "Involved in Quests:\
-* Daddy Issue",
+* Daddy Issues",
             ["type"] = "Level Cap",
         },
         ["Brutus"] = {
@@ -98,7 +106,6 @@ Involved in Quests:\
 * Wings of Gold\
 * Scattered into Shadow\
 * Axe the Competition\
-\
 Involved in Quests:\
 * A Chocobo's Tale\
 * The Flying Machine of Eld",
@@ -108,23 +115,22 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-Starting NPC of the Meeble Burrows Excavations. Will award you a Diligence Grimoire and 10 Moblin pheromone sacks. Teleportation Service: : Can teleport you to the Meeble Burrow Excavation site, located in Sauromugue Champaign (J-7) or Batallia Downs (I-8), free of charge.",
+- Starts Meeble Burrows and provides a Diligence Grimoire and Moblin pheromone sacks.\
+- Provides free transport to the Sauromugue Champaign and Batallia Downs excavation sites.",
             ["type"] = "Meeble Burrows",
         },
         ["Cerdoux"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "Cerdoux.png",
             ["note"] = "CatsEyeXI:\
-* Sells items for Party Finder\
-Points.\
-* PFP is earned by using the CEXI\
-exclusive Party Finder addon.",
-            ["type"] = "PFP Shop",
+- Sells items for Party Finder Points.\
+- PFP is earned through the CatsEyeXI Party Finder addon.",
+            ["type"] = " Party Finder Points Shop",
         },
         ["Champalpieu"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Citizen",
+            ["icon"] = "Merchant.png",
+            ["type"] = "Standard Merchant",
         },
         ["ChehRaihah"] = {
             ["_source"] = "npc",
@@ -146,7 +152,6 @@ exclusive Party Finder addon.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * A Clock Most Delicate\
-\
 Involved in Quests:\
 * Save the Clock Tower",
             ["type"] = "Quest Giver",
@@ -177,51 +182,49 @@ Involved in Quests:\
             ["_source"] = "catseye_npc",
             ["icon"] = "Merchant.png",
             ["note"] = "Domain Invasion:\
-* Exchanges Domain Shards for\
-materials, equipment, accessories,\
-and Aeonic weapon skill unlocks.\
-* Can authorize Lesser Domain NM\
-fights for 60,000 shards.\
-* Can authorize Greater Domain NM\
-fights for 120,000 shards.",
+- Exchanges Domain Shards for materials, equipment, accessories, and Aeonic weapon skill unlocks.\
+- Authorizes Lesser Domain NM fights for 60,000 shards.\
+- Authorizes Greater Domain NM fights for 120,000 shards.",
             ["type"] = "Domain Shard Exchange",
         },
         ["Edlina"] = {
             ["_source"] = "npc",
             ["icon"] = "AdventurersAssistant.png",
             ["note"] = "Notes:\
-This NPC will display a map of Jeuno.",
+- Displays a map of Jeuno.",
             ["type"] = "Adventurer's Assistant",
         },
         ["Elijah"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Starts Quests:\
-* Records of Eminence: RoE Quests 4\
-",
+* Records of Eminence: RoE Quests 4",
             ["type"] = "Adventurers' Mutual Aid Network",
         },
         ["Emitt"] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
             ["note"] = "Notes:\
-;Notes for all characters: :*Casts Signet :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts traded Crystals for filling up the Mission-Rank bar of the character's appropriate Nation (the red bar at the character's profile) :*Sells items for Conquest Points of the character's appropriate Nation (Items for Bastok / Items for San d'Oria / Items for Windurst) at certain conditions. It will be also possible to get some items of other Nations at the guards, if your current Allegiance ranks higher at the weekly Conquest results (for further information see under the items articles) :*Explains the Conquest system by choosing some available questions. For further information see Conquest Overseer.",
+- Casts Signet.\
+- Exchanges Conquest Points for rewards.\
+- Recharges Emperor, Empress, and Chariot Bands.\
+- Accepts crystals for mission-rank progress.\
+- Explains the Conquest system.",
             ["type"] = "Conquest Overseer",
         },
         ["Esha'ntarl"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
 * The Shrouded Canvas\
-* The Warpin\
-",
-            ["type"] = "Quest Associate",
+* The Warpin",
+            ["type"] = "Mission Associate",
         },
         ["Finbarr"] = {
             ["_source"] = "npc",
             ["icon"] = "VCSChocoboRacingAssociate.png",
             ["note"] = "Notes:\
-A member of the Vana'diel Chocobo Society. He provides matchmaking services for chocobos:",
+- Provides VCS chocobo matchmaking services.",
             ["type"] = "VCS Chocobo Trainer",
         },
         ["Finnela"] = {
@@ -231,11 +234,11 @@ A member of the Vana'diel Chocobo Society. He provides matchmaking services for 
         },
         ["Galmut"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * A Clock Most Delicate\
 * The Clockmaster",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Quest Giver",
         },
         ["Garadaut"] = {
             ["_source"] = "npc",
@@ -244,7 +247,7 @@ A member of the Vana'diel Chocobo Society. He provides matchmaking services for 
         },
         ["Geebeh"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * San d'Oria Mission 4-1: Magicite\
 * Bastok Mission 4-1: Magicite\
@@ -267,7 +270,7 @@ A member of the Vana'diel Chocobo Society. He provides matchmaking services for 
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Borghertz's Sorcerous Hands: (BLM AF Hands)'\
+* Borghertz's Sorcerous Hands: (BLM AF Hands)\
 * Borghertz's Harmonious Hands: (BRD AF Hands)\
 * Borghertz's Wild Hands: (BST AF Hands)\
 * Borghertz's Dragon Hands: (DRG AF Hands)\
@@ -301,13 +304,12 @@ A member of the Vana'diel Chocobo Society. He provides matchmaking services for 
         },
         ["Inconspicuous Door"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * Hasten! In a Jam in Jeuno?\
-\
 Involved in Missions:\
 * A Moogle Kupo d'Etat",
-            ["type"] = "Door",
+            ["type"] = "Mission Giver",
         },
         ["Indika"] = {
             ["_source"] = "npc",
@@ -352,12 +354,11 @@ Involved in Missions:\
         },
         ["Laurana"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Girl in the Looking Glass\
 * Past Reflections\
-* Blessed Radiance\
-",
+* Blessed Radiance",
             ["type"] = "Cutscene NPC",
         },
         ["Lectilas"] = {
@@ -380,7 +381,7 @@ Involved in Missions:\
         },
         ["Luto Mewrilah"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Unlisted Qualities (FQ 1A)\
 * Girl in the Looking Glass (FQ 1B)\
@@ -396,13 +397,11 @@ Involved in Missions:\
 * A Trial in Tandem, Redux (FQ cap80)\
 * Yet Another Trial in Tandem (FQ cap85)\
 * A Quaternary Trial in Tandem (FQ cap90)\
-\
 Involved in Quests:\
-* Picture Perfect (FQ cap55) (not involved but listed for reference only)\
 * Mixed Signals (FQ cap65)\
 * Bait and Switch\
 * Lure of the Wildcat (Jeuno)",
-            ["type"] = "Adventuring Fellow",
+            ["type"] = "Quest Giver",
         },
         ["Mailloquetat"] = {
             ["_source"] = "npc",
@@ -418,14 +417,12 @@ Involved in Quests:\
         },
         ["Mapitoto"] = {
             ["_source"] = "npc",
-            ["icon"] = "ChocoboRenter.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Full Speed Ahead!\
-\
 Involved in Quests:\
-* The Flying Machine of Eld\
-",
-            ["type"] = "Chocobo Services",
+* The Flying Machine of Eld",
+            ["type"] = "Quest Giver",
         },
         ["Marshal"] = {
             ["_source"] = "npc",
@@ -441,7 +438,7 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "PastEventWatcher.png",
             ["note"] = "Notes:\
-* Paying this NPC 10 gil allows you to watch cutscenes that you have seen in Upper Jeuno for completed missions.Unlike most Melody Minstrels, she wears a Gambison, Linen Slacks, and Mithran Gaiters.",
+- Replays completed Upper Jeuno cutscenes for 10 gil.",
             ["type"] = "Past Event Watcher",
         },
         ["Migliorozz"] = {
@@ -455,20 +452,16 @@ Involved in Quests:\
             ["_source"] = "catseye_npc",
             ["icon"] = "MildTraveler.png",
             ["note"] = "Domain Invasion:\
-* Warps level 75 players to the\
-currently active Domain Invasion\
-battle.\
-* Same function as Domain Traveler.\
-* Warp is free after completing two\
-or more dailies.",
+- Warps level 75 players to the currently active Domain Invasion battle.\
+- Same function as Domain Traveler.\
+- Warp is free after completing two or more dailies.",
             ["type"] = "Domain Warp",
         },
         ["Mildaurion"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Chains of Promathia\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Chains of Promathia",
             ["type"] = "Mission Associate",
         },
         ["Mojuro-Nojuro"] = {
@@ -478,13 +471,12 @@ or more dailies.",
         },
         ["Monberaux"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * The Lost Cardian\
 * Regaining Trust\
 * Save the Clock Tower\
 * The Kind Cardian\
-\
 Involved in Missions:\
 * Bastok Mission 3-3: Jeuno\
 * Windurst Mission 3-3: A New Journey\
@@ -492,8 +484,7 @@ Involved in Missions:\
 * Promathia Mission 1-1: The Rites of Life\
 * Promathia Mission 3-5: Darkness Named\
 * Promathia Mission 5-3: Three Paths\
-* The Pursuit of Paradise (Tenzen's Path)\
-",
+* The Pursuit of Paradise (Tenzen's Path)",
             ["type"] = "Physician",
         },
         ["Moritz"] = {
@@ -505,19 +496,17 @@ Involved in Missions:\
         },
         ["Nag'molada"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Chains of Promathia\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Chains of Promathia",
             ["type"] = "Mission Associate",
         },
         ["Narihira"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* A Clock Most Delicate\
-",
-            ["type"] = "Cutscene NPC",
+* A Clock Most Delicate",
+            ["type"] = "Quest Associate",
         },
         ["Nekha Shachaba"] = {
             ["_source"] = "npc",
@@ -544,13 +533,11 @@ Involved in Missions:\
         ["Palarillont"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Dialog: *\"Long have I hoarded my gil, and the time for purchase is at hand! But shall I buy weaponry or armor?\" *\"In offense the best defense may lie, but quickly is the unarmored knight struck down. Hmm... Which to choose...\"",
             ["type"] = "Dialogue NPC",
         },
         ["Paya-Sabya"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * San d'Oria Mission 4-1: Magicite\
 * Bastok Mission 4-1: Magicite\
@@ -570,9 +557,8 @@ Dialog: *\"Long have I hoarded my gil, and the time for purchase is at hand! But
         ["Pheauclemand"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
-* The Star Oncie\
-",
+            ["note"] = "Involved in Quests:\
+* The Star Oncie",
             ["type"] = "Quest Associate",
         },
         ["Picklox"] = {
@@ -592,19 +578,17 @@ Dialog: *\"Long have I hoarded my gil, and the time for purchase is at hand! But
             ["_source"] = "catseye_npc",
             ["icon"] = "Populox.png",
             ["note"] = "CatsEyeXI Ventures:\
-* Registers players for the Goblin\
-Venture Guild.\
-* Registration costs 5000 gil.",
+- Registers players for the Goblin Venture Guild.\
+- Registration costs 5,000 gil.",
             ["type"] = "Venture Registration",
         },
         ["Prestix"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "Prestix.png",
+			["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_NPCs#Prestix",
             ["note"] = "CatsEyeXI:\
-* Allows characters to prestige\
-jobs.\
-* Prestige unlocks universal\
-bonuses.",
+- Allows characters to prestige jobs.\
+- Prestige unlocks universal bonuses.",
             ["type"] = "Prestige System",
         },
         ["Priztrix"] = {
@@ -619,11 +603,10 @@ bonuses.",
         },
         ["Ratoto"] = {
             ["_source"] = "npc",
-            ["icon"] = "AdventurersAssistant.png",
-            ["note"] = "Starts Quests:\
-* Mixed Signals (FQ cap65)\
-",
-            ["type"] = "Adventurer's Assistant",
+            ["icon"] = "Dialogue.png",
+            ["note"] = "Notes:\
+- Explains linkshells, linkpearls, and pearlsacks.",
+            ["type"] = "Linkshell Information",
         },
         ["Renik"] = {
             ["_source"] = "npc",
@@ -643,12 +626,8 @@ bonuses.",
             ["_source"] = "catseye_npc",
             ["icon"] = "Event.png",
             ["note"] = "Crystal Warrior:\
-* Applies unlocked mount\
-appearances to your Chocobo Whistle\
-mount.\
-* Skins come from Incursions, Kupo\
-Kudos, Grand Tokens, and other\
-unlocks.",
+- Applies unlocked mount appearances to your Chocobo Whistle mount.\
+- Skins come from Incursions, Kupo Kudos, Grand Tokens, and other unlocks.",
             ["type"] = "Mount Customization",
         },
         ["Rosaline"] = {
@@ -661,7 +640,6 @@ unlocks.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Candle-making\
-\
 Involved in Quests:\
 * A Candlelight Vigil",
             ["type"] = "Quest Giver",
@@ -733,10 +711,10 @@ Located in M & P's Market.",
         },
         ["Turlough"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * The Queen of the Dance",
-            ["type"] = "Mission",
+            ["type"] = "Mission Associate",
         },
         ["Ulesa"] = {
             ["_source"] = "npc",
@@ -758,10 +736,9 @@ Located in M & P's Market.",
         },
         ["Yve'noile"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Chains of Promathia\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Chains of Promathia",
             ["type"] = "Mission Associate",
         },
         ["Zekobi-Morokobi"] = {
@@ -776,13 +753,25 @@ Located in M & P's Market.",
         },
         ["Zuber"] = {
             ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Save the Clock Tower\
-\
 Involved in Missions:\
-* Promathia Mission 8-4: Dawn\
-",
+* Promathia Mission 8-4: Dawn",
+            ["type"] = "Mission Associate",
+        },
+        ["Antonia"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Merchant.png",
+            ["note"] = "Notes:\
+- Equipment requires 100 Job Points to equip.",
+            ["type"] = "Standard Merchant",
+        },
+        ["Jeridade"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
+* The Flying Machine of Eld",
             ["type"] = "Quest Associate",
         },
     },
@@ -790,55 +779,39 @@ Involved in Missions:\
         ["Door:\"Durable Shields\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic wooden barrier door partitioning the protective apparel retail shop layout blocks. Unlatching the door frame provides entry to check active trade manifests or advance urban side tasks.",
-            ["type"] = "Security Gate",
         },
         ["Door:\"Marble Bridge\""] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy timber entrance portal leading into the local commercial tavern. Turning the iron door handle coordinates your city navigation and uncovers neighborhood background records.",
-            ["type"] = "Security Gate",
         },
         ["Door:Chocobo Stables"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic timber sliding barrier sealing off regional mount stables. Unlatching the frame allows you to access transport paths, check vouchers, or purchase racing gear.",
-            ["type"] = "Security Gate",
         },
         ["Door:Goddess Temple"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "An ornate wooden barrier protecting the high cathedral chambers. Stepping through the grand threshold lets you offer municipal records to secure unique enhancements or clear national rank missions.",
-            ["type"] = "Security Gate",
         },
         ["Door:Infirmary"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic residential wooden door set into the clinic walls. Unlatching the frame allows you to enter medical quarters to fulfill emergency clinic delivery checks or urban side tasks.",
-            ["type"] = "Security Gate",
         },
         ["Door:M & P's Market"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A basic shopfront portal dividing market districts and trading counters. Interfacing with the latch updates urban tracking logs or triggers localized dialogue.",
-            ["type"] = "Security Gate",
         },
         ["Door:Viette's Weapons"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A simple merchant door framework leading straight into the weapon retail shop. Shifting the latch gives you access to browse armament sets or progress commercial delivery checks.",
-            ["type"] = "Security Gate",
         },
         ["Guide Stone"] = {
             ["_source"] = "item",
             ["icon"] = "GuideStone.png",
-            ["note"] = "A polished stone directory pillar positioned within municipal plazas. Examining its engraved surfaces updates your city exploration data or tracks regional orientation tasks.",
             ["type"] = "Quest Node",
         },
         ["Symphonic Curator"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
             ["type"] = "Quest Node",
         },
         ["Synergy Furnace"] = {

@@ -3,15 +3,15 @@ return {
         ["Apollyon Furnace"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-* Accepts trades of pieces of {{Cl|Reforged Artifact Armor +3",
+            ["note"] = "Limbus:\
+* Trade Reforged Artifact Armor +3 items.",
             ["type"] = "Limbus Entry",
         },
         ["Apollyon Operator"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-* Gives various explanations for the content flow within {{Cl|Limbus|Apollyon",
+            ["note"] = "Limbus:\
+* Explains Apollyon mechanics.",
             ["type"] = "Limbus Guide",
         },
     },
@@ -19,43 +19,50 @@ return {
         ["Apollyon Coffer #1"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "The primary floor tier prize box materializing post-combat within the instance. Cracking its lock rewards your alliance squad with ancient currency slips and unique gear upgrade items.",
+            ["note"] = "Limbus rewards:\
+* Contains loot.",
             ["type"] = "Loot Container",
         },
         ["Apollyon Coffer #2"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "The secondary designated reward chest spawned upon clearing localized target parameters. Prying open its locked frame awards your squad pristine armor fragments and shard resources.",
+            ["note"] = "Limbus rewards:\
+* Contains loot.",
             ["type"] = "Loot Container",
         },
         ["Apollyon Coffer #3"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "The third tactical treasure box stationed deep inside the challenge layers. Satisfying localized instance goals distributes rare artifact upgrade materials and crucial temporal rewards.",
+            ["note"] = "Limbus rewards:\
+* Contains loot.",
             ["type"] = "Loot Container",
         },
         ["Apollyon Coffer #4"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "The final milestone container dropped onto the stone floor tiers after a floor clear. Accessing its interface claims premium armor templates and ultimate loot components for your whole squad.",
+            ["note"] = "Limbus rewards:\
+* Contains loot.",
             ["type"] = "Loot Container",
         },
         ["Apollyon Furnace"] = {
             ["_source"] = "item",
             ["icon"] = "ApollyonFurnace.png",
-            ["note"] = "A glowing technological terminal podium manifest inside the instance layers. Interfacing with its volatile energy core compiles your team's tactical achievements or activates localized map exit mechanics.",
+            ["note"] = "Limbus:\
+* Exit the current area.",
             ["type"] = "Quest Node",
         },
         ["Radiant Aureole"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A brilliant architectural ring of white light hovering above the battlefield. Stepping directly into the halo transports your entire alliance out of the dangerous instance layers back to safety.",
+            ["note"] = "Exit portal:\
+* Leave the current instance.",
             ["type"] = "Transit Portal",
         },
         ["Swirling Vortex"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A shimmering dimensional rift warping the overworld landscape layers. Stepping directly into the spatial void verifies your credentials to transition between high-tier battlefield instances.",
+            ["note"] = "Limbus:\
+* Travel between areas.",
             ["type"] = "Transit Portal",
         },
     },

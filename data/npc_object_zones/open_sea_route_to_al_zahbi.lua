@@ -3,15 +3,16 @@ return {
         ["Adeben"] = {
             ["_source"] = "npc",
             ["icon"] = "Ferry-Schedule.png",
-            ["note"] = "Notes:\
-Will tell you how long until the Ferry arrives at its destination.",
+            ["note"] = "Ferry schedule:\
+* Reports time until the ferry arrives.",
             ["type"] = "Ferry Schedule",
         },
         ["Cehn Teyohngo"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
-            ["note"] = "Notes:\
-* Open: 1:00 - 23:00 *Similar to, but does not share stock with Pashi Maccaleh.",
+            ["note"] = "Fishing merchant:\
+* Open 1:00–23:00.\
+* Stock differs from Pashi Maccaleh.",
             ["type"] = "Fishing Merchant",
         },
     },
@@ -19,13 +20,14 @@ Will tell you how long until the Ferry arrives at its destination.",
         ["Cargo Ship Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The heavy wooden cabin door separating the main deck from the lower berths. Stepping through allows you to seek shelter from open-sea weather anomalies or retreat safely when high-seas pirate raids ambush your vessel.",
+            ["note"] = "Lower deck access:\
+* Shelter from sea weather and pirate attacks.",
             ["type"] = "Security Gate",
         },
         ["Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A standard portal separating regional compartments or ship cabins. Throwing open the wooden or iron framework handles room navigation or retreats your squad safely during pirate raids.",
+            ["note"] = "Opens the next room or area.",
             ["type"] = "Security Gate",
         },
     },

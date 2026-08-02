@@ -8,7 +8,7 @@ return {
         ["Alisa (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Quest NPC:\
 * Motherly Love\
 * Look to the Sky",
             ["type"] = "Quest Giver",
@@ -16,21 +16,21 @@ return {
         ["Atma Fabricant (Altepa)"] = {
             ["_source"] = "npc",
             ["icon"] = "AtmaFabricant.png",
-            ["note"] = "Notes:\
-* Creates Synthetic Atma from completed mission memories and cruor.",
+            ["note"] = "Abyssea service:\
+* Create Synthetic Atma.",
             ["type"] = "Atma Fabrication",
         },
         ["Atma Infusionist (Altepa)"] = {
             ["_source"] = "npc",
             ["icon"] = "AtmaInfusionist.png",
-            ["note"] = "Notes:\
-* Activates Atma effects if you have a Lunar Abyssite.",
+            ["note"] = "Abyssea service:\
+* Infuse Atma effects.",
             ["type"] = "Atma Infusion",
         },
         ["Biggorf (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * Slacking Subordinates",
             ["type"] = "Quest Associate",
         },
@@ -42,14 +42,14 @@ return {
         ["Brygid (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Quest NPC:\
 * Brygid the Stylist Strikes Back",
             ["type"] = "Quest Giver",
         },
         ["Chemioue (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * Slacking Subordinates",
             ["type"] = "Quest Associate",
         },
@@ -61,10 +61,8 @@ return {
         ["Chumimi (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Quest NPC:\
 * Slacking Subordinates\
-\
-Involved in Quests:\
 * The Titus Touch",
             ["type"] = "Quest Giver",
         },
@@ -81,22 +79,19 @@ Involved in Quests:\
         ["Dominion Sergeant (Altepa)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Notes:\
-* Offers Dominion Ops.",
+            ["note"] = "Dominion Ops NPC.",
             ["type"] = "Dominion Sergeant",
         },
         ["Dominion Tactician (Altepa)"] = {
             ["_source"] = "npc",
             ["icon"] = "DominionTactician.png",
-            ["note"] = "Notes:\
-* Exchanges Dominion Notes for equipment and key items.\
-* Exchanges battle trophies for augmented equipment.",
+            ["note"] = "Dominion rewards and exchanges.",
             ["type"] = "Dominion Tactician",
         },
         ["Excenmille (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Quest NPC:\
 * Proof of the Lion",
             ["type"] = "Camp Leader",
         },
@@ -118,30 +113,29 @@ Involved in Quests:\
         ["Ken (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Quest NPC:\
 * Help Not Wanted",
             ["type"] = "Quest Giver",
         },
         ["Machine Outfitter (Altepa)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
-* Refuel and Replenish (Altepa)\
-* A Mightier Martello (Altepa)",
+            ["note"] = "Martello support:\
+* Refuel and Replenish\
+* A Mightier Martello",
             ["type"] = "Martello Support",
         },
         ["Malene (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * Motherly Love",
             ["type"] = "Quest Associate",
         },
         ["Maunadolace (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "GoalTracker.png",
-            ["note"] = "Notes:\
-* Reports your Abyssea - Altepa objective progress.",
+            ["note"] = "Abyssea progress tracker.",
             ["type"] = "Recorder of Deeds",
         },
         ["Mheca Khetashipah (A)"] = {
@@ -152,7 +146,7 @@ Involved in Quests:\
         ["Moreno-Toeno (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Quest NPC:\
 * Classrooms Without Borders",
             ["type"] = "Quest Giver",
         },
@@ -169,14 +163,14 @@ Involved in Quests:\
         ["Nogelle (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Quest NPC:\
 * The Secret Ingredient",
             ["type"] = "Quest Giver",
         },
         ["Oiheaurese (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Quest NPC:\
 * The Unmarked Tomb",
             ["type"] = "Quest Giver",
         },
@@ -198,7 +192,7 @@ Involved in Quests:\
         ["Tapoh Lihzeh (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * Slacking Subordinates",
             ["type"] = "Quest Associate",
         },
@@ -210,7 +204,7 @@ Involved in Quests:\
         ["Titus (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Quest NPC:\
 * The Titus Touch",
             ["type"] = "Quest Giver",
         },
@@ -222,7 +216,7 @@ Involved in Quests:\
         ["Yachemidot (A)"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Quest NPC:\
 * The Unmarked Tomb",
             ["type"] = "Quest Associate",
         },
@@ -236,8 +230,7 @@ Involved in Quests:\
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "Notes:\
-* Replays eligible cutscenes when given the requested item or currency.",
+            ["note"] = "Cutscene replay point.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },

@@ -3,28 +3,30 @@ return {
         ["Akane, I.M. (Beaucedine Glacier)"] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Fauregandi is under weekly conquest-control by Bastok ;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Fauregandi Supplies for finishing Supply Quest :*Accepts Garrison starting item Tiger Leather Missive ;Notes for characters only without Bastok as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Bastokan Conquest Overseer. Appears when Bastok controls Fauregandi.",
             ["type"] = "Conquest Overseer",
         },
         ["Chopapa, W.W."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Fauregandi is under weekly conquest-control by Windurst ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Fauregandi Supplies for finishing Supply Quest ;Notes for characters only without Windurst as current Allegiance: :*Choice of setting Home Point for a fee",
+            ["note"] = "Windurstian Conquest Overseer. Appears when Windurst controls Fauregandi.",
             ["type"] = "Conquest Overseer",
         },
         ["Dariah"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Citizen",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quests:\
+* Love and Ice\
+* A Test of True Love\
+* Lovers in the Dusk\
+",
+            ["type"] = "Quest Associate",
         },
         ["Dragatama"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "Notes:\
-Very receptive to Shell Bugs.",
-            ["type"] = "Quest NPC",
+            ["icon"] = "Event.png",
+            ["note"] = "Roaming New Year event NPC. Accepts item and gil trades.",
+            ["type"] = "New Year Event",
         },
         ["Elrica"] = {
             ["_source"] = "npc",
@@ -37,54 +39,54 @@ Very receptive to Shell Bugs.",
         },
         ["Goblin Grenadier (NPC)"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
-            ["note"] = "Involved in Missions:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Mission:\
 * A Challenge! You Could Be a Winner",
             ["type"] = "Mission Associate",
         },
         ["Gueriette"] = {
             ["_source"] = "npc",
-            ["note"] = "Notes:\
-Appears when Fauregandi is under weekly conquest-control by one of the three nations. :*Sells to and buys items from characters allied with the nation that has the weekly conquest-control of this region.",
+            ["icon"] = "OutpostVendor.png",
+            ["note"] = "Trades with members of the nation controlling Fauregandi.",
             ["type"] = "Outpost Vendor",
         },
         ["Joyful Alicorn"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-Follows Jubilant Alicorn, which is the only member of the procession with which interaction is possible. It is preceded by Jubilant Alicorn and Joyous Alicorn, and proceeded by Mirthful Ixion.",
+            ["note"] = "Member of the roaming New Year procession.",
             ["type"] = "New Year Event",
         },
         ["Joyous Alicorn"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-Follows Jubilant Alicorn, which is the only member of the procession with which interaction is possible. It is preceded by Jubilant Alicorn and proceeded by Joyful Alicorn and Mirthful Ixion.",
+            ["note"] = "Member of the roaming New Year procession.",
             ["type"] = "New Year Event",
         },
         ["Jubilant Alicorn"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-Trade ordinary items one at a time (such as arrows, crossbow bolts, bullets, or ninja tools) to any Jubilant Alicorn to receive special items such as the monstrosity item Ake-Ome Spirit, which unlocks the monipulator form New Year Mandragora (MON). It is proceeded by Joyous Alicorn, Joyful Alicorn, and Mirthful Ixion, and roams the entire zone. It is the leader of the procession and the largest of the four.",
+            ["note"] = "Leads the roaming New Year procession and accepts item trades.",
             ["type"] = "New Year Event",
         },
         ["Klafaan"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Citizen",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Blessed Radiance",
+            ["type"] = "Quest Associate",
         },
         ["Leaufetie, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Fauregandi is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Fauregandi Supplies for finishing Supply Quest ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "San d'Orian Conquest Overseer. Appears when San d'Oria controls Fauregandi.",
             ["type"] = "Conquest Overseer",
         },
         ["Leigon-Moigon"] = {
             ["_source"] = "npc",
-            ["icon"] = "Defender.png",
-            ["type"] = "Defender",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Tuning Out",
+            ["type"] = "Quest Associate",
         },
         ["Mieuseloir"] = {
             ["_source"] = "npc",
@@ -97,39 +99,33 @@ Appears, when Fauregandi is under weekly conquest-control by San d'Oria ;Notes f
         },
         ["Nag'molada"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Chains of Promathia\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Chains of Promathia missions.",
             ["type"] = "Mission Associate",
         },
         ["Parledaire, R.K."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Fauregandi is under weekly conquest-control by San d'Oria ;Notes for characters only with San d'Oria as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Fauregandi Supplies for finishing Supply Quest :*Accepts Garrison starting item Tiger Leather Missive ;Notes for characters only without San d'Oria as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "San d'Orian Conquest Overseer. Appears when San d'Oria controls Fauregandi.",
             ["type"] = "Conquest Overseer",
         },
         ["Potete"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
-            ["note"] = "Involved in Missions:\
-* Promathia Mission 5-2\
-",
-            ["type"] = "Mission Associate",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Tuning Out",
+            ["type"] = "Quest Associate",
         },
         ["Rattling Rain, I.M."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Fauregandi is under weekly conquest-control by Bastok ;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts Fauregandi Supplies for finishing Supply Quest ;Notes for characters only without Bastok as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Bastokan Conquest Overseer. Appears when Bastok controls Fauregandi.",
             ["type"] = "Conquest Overseer",
         },
         ["Ryunchi-Pauchi, W.W."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Fauregandi is under weekly conquest-control by Windurst ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Fauregandi Supplies for finishing Supply Quest :*Accepts Garrison starting item Tiger Leather Missive ;Notes for characters only without Windurst as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Windurstian Conquest Overseer. Appears when Windurst controls Fauregandi.",
             ["type"] = "Conquest Overseer",
         },
         ["Torino-Samarino"] = {
@@ -154,94 +150,99 @@ Appears, when Fauregandi is under weekly conquest-control by Windurst ;Notes for
         ["Beastmen's Banner"] = {
             ["_source"] = "item",
             ["icon"] = "BeastmenBanner.png",
-            ["note"] = "A military standard planted deep within hostile territory. Securing this tactical marker advances your localized Expeditionary Force objectives and shifts continental conquest influence metrics.",
-            ["type"] = "Quest Node",
+            ["note"] = "Starts an Expeditionary Force battle.",
+            ["type"] = "Expeditionary Force",
         },
         ["Field Manual"] = {
             ["_source"] = "item",
             ["icon"] = "Dialogue.png",
-            ["note"] = "A stationary training ledger podium stationed at military outposts. Reading the text lets you enlist in regional combat regimes, check training metrics, or purchase field enhancements.",
-            ["type"] = "Training & Support",
-			["worldOffsetY"] = 0.65,
+            ["note"] = "Offers Fields of Valor regimes and field support.",
+            ["type"] = "Field Manual",
+            ["worldOffsetY"] = 0.65,
         },
         ["Field Parchment"] = {
             ["_source"] = "item",
             ["icon"] = "Dialogue.png",
-            ["note"] = "A blank magical scroll mounted near regional field manual locations. Binding your training orders to the parchment engages elite automated operations parameters or validates combat tracking.",
-            ["type"] = "Training & Support",
+            ["note"] = "Starts Fields of Valor elite training battles.",
+            ["type"] = "Elite Training",
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Replays cutscenes for this area.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Iron Gate"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A sturdy iron-barred defensive barrier blockading dungeon thresholds or reef paths. Solving localized lever puzzles or presenting specific key items lifts the grate to clear your exploration path.",
-            ["type"] = "Security Gate",
         },
         ["Lonely Evergreen"] = {
             ["_source"] = "item",
             ["icon"] = "Tree.png",
-            ["note"] = "A solitary, frost-laden pine tree weathering the brutal glacial winds. Searching the frozen roots uncovers buried regional relics or launches specialized artifact hunting side quests.",
-            ["type"] = "Quest Node",
+            ["note"] = "Involved in Mission:\
+* A Challenge! You Could Be a Winner",
+            ["type"] = "Mission Node",
         },
         ["Luck Rune"] = {
             ["_source"] = "item",
-            ["icon"] = "VoidwatchRift.png",
-            ["note"] = "An ancient runic seal etched directly into the dimensional boundaries. Activating this mystic distortion aligns your spatial metrics, drawing forth high-tier Voidwatch campaign campaign operations.",
-            ["type"] = "Transit Portal",
+            ["icon"] = "QuestNode.png",
+            ["note"] = "Awards an elemental crystal during Emila's lucky color mini-quest.",
+            ["type"] = "Quest Node",
         },
         ["Mirror Pond"] = {
             ["_source"] = "item",
             ["icon"] = "Pond.png",
-            ["note"] = "The frozen, glassy surface of a pristine glacial pond. Clearing away the snow reveals crystal visions, triggering historical storyline memories or validating rare artifact gathering goals.",
+            ["note"] = "Involved in Quests:\
+* Love and Ice\
+* Blessed Radiance\
+",
             ["type"] = "Quest Node",
         },
         ["Mog-Tablet"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A small, glowing tablet shard hidden across random corners of the world. Scouring the land to locate and recover all eleven missing stone relics unleashes world-wide exploration blessings for all adventurers.",
-            ["type"] = "Quest Node",
+            ["note"] = "One of eleven randomly placed tablets collected for the Mog-Tablet quest.",
+            ["type"] = "Mog-Tablet",
         },
         ["Peculiar Footprints"] = {
             ["_source"] = "item",
             ["icon"] = "Footprint.png",
-            ["note"] = "Faint, mysterious tracking grooves pressed into the dungeon mud or overworld soil layers. Studying the unusual marks uncovers hidden investigative records to advance active side quests.",
-            ["type"] = "Quest Node",
+            ["note"] = "Spawns Awoken Gorgimera for a monthly Records of Eminence objective.",
+            ["type"] = "Records of Eminence",
         },
         ["Point of Interest"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A localized geographic landmark or frozen overworld checkpoint. Investigating the snow-covered site uncovers forgotten records, triggers historic lore text, or advances regional side tasks.",
-            ["type"] = "Quest Node",
+            ["note"] = "Involved in Missions:\
+* Run, Excenmille, Run!\
+* Of Knights and Orcs\
+",
+            ["type"] = "Mission Node",
         },
         ["Riftworn Pyxis"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A locked extraplanar drop chest container materializing immediately post-combat across Voidwatch fields. Breaking its lock rewards your squad with combat currencies or temporary buffs.",
-            ["type"] = "Loot Container",
+            ["note"] = "Appears after a Voidwatch victory and contains battle rewards.",
+            ["type"] = "Voidwatch Reward",
         },
         ["Southeastern Pip"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A distinct geometric stone node inset along the frozen cliff sides. Tracing the weathered markings validates advanced geographical trials and updates expansion quest lines.",
-            ["type"] = "Quest Node",
+            ["note"] = "Puzzle marker for A Challenge! You Could Be a Winner.",
+            ["type"] = "Mission Node",
         },
         ["Southwestern Pip"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A twin geometric stone landmark enduring the harsh alpine weather. Examining its frozen surfaces uncovers forgotten trails or updates active artifact gathering paths.",
-            ["type"] = "Quest Node",
+            ["note"] = "Puzzle marker for A Challenge! You Could Be a Winner.",
+            ["type"] = "Mission Node",
         },
         ["Trail Markings"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "Faint, hurried layout markings scratched into the overworld rock faces and city streets. Studying these tracking anchors details regional lore and coordinates active investigative trials.",
-            ["type"] = "Quest Node",
+            ["note"] = "Entrance to Dynamis - Beaucedine and related cutscenes.",
+            ["type"] = "Dynamis Entrance",
         },
     },
 }

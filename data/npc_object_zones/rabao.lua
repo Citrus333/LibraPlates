@@ -3,39 +3,34 @@ return {
         ["Adeptus"] = {
             ["_source"] = "catseye_npc",
             ["icon"] = "Event.png",
-            ["note"] = "Adept Reforging:\
-* Starts repeatable level 65+\
-job-specific ENM armor augment\
-trials.\
-* Speak as the job whose equipment\
-you want to augment.\
-* After kill and NM trials, trade\
-armor plus required material to\
-upgrade.",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Adept_Reforging",
+            ["note"] = "Starts Quest:\
+* Adept Reforging\
+Requirements:\
+* Level 65+ on an eligible job.\
+* Complete the assigned trials, then trade the armor and required material.",
             ["type"] = "Adept Reforging",
         },
         ["Agado-Pugado"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Starts Quest:\
 * Trial by Wind\
-\
-Involved in Quests:\
+Involved in Quest:\
 * Carbuncle Debacle",
             ["type"] = "Quest Giver",
         },
         ["Alfesar"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Starts Quest:\
 * The Missing Piece",
             ["type"] = "Quest Giver",
         },
         ["Amaja-Kumaja"] = {
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
-            ["note"] = "Notes:\
-Checks weather for the following locations: :*Valkurm Dunes :*Cape Teriggan :*Eastern and Western Altepa Desert",
+            ["note"] = "Reports weather for Valkurm Dunes, Cape Teriggan, and the Altepa deserts.",
             ["type"] = "Weather Reporter",
         },
         ["Angry Goat"] = {
@@ -56,12 +51,12 @@ Checks weather for the following locations: :*Valkurm Dunes :*Cape Teriggan :*Ea
         ["Brave Ox"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
-            ["type"] = "Standard Merchant",
+            ["type"] = "Scroll Vendor",
         },
         ["Brave Wolf"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
-            ["type"] = "Standard Merchant",
+            ["type"] = "Armor Vendor",
         },
         ["Cavalgrinne"] = {
             ["_source"] = "npc",
@@ -75,11 +70,10 @@ Checks weather for the following locations: :*Valkurm Dunes :*Cape Teriggan :*Ea
         },
         ["Chelvadurai"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Chasing Dreams\
-",
-            ["type"] = "Cutscene NPC",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Chasing Dreams",
+            ["type"] = "Quest Associate",
         },
         ["Cothric"] = {
             ["_source"] = "npc",
@@ -88,22 +82,24 @@ Checks weather for the following locations: :*Valkurm Dunes :*Cape Teriggan :*Ea
         },
         ["Dancing Wolf"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
-* Bastok Mission 9-1: The Salt of the Earth",
+* The Salt of the Earth\
+* Raebrimm's Rebirth\
+* Koru-Moru's Hypothesis",
             ["type"] = "Mission Associate",
         },
         ["Datta"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Starts Quest:\
 * The Kuftal Tour",
             ["type"] = "Quest Giver",
         },
         ["Edigey"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
+            ["note"] = "Starts Quest:\
 * Don't Forget the Antidote",
             ["type"] = "Quest Giver",
         },
@@ -120,7 +116,7 @@ Checks weather for the following locations: :*Valkurm Dunes :*Cape Teriggan :*Ea
         ["Generoit"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
-            ["type"] = "Standard Merchant",
+            ["type"] = "Pet Food Vendor",
         },
         ["Golden Condor"] = {
             ["_source"] = "npc",
@@ -134,11 +130,12 @@ Checks weather for the following locations: :*Valkurm Dunes :*Cape Teriggan :*Ea
         },
         ["Gushing Spring"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Starts Quests:\
-* VW Op. #101: Detour to Zepwell\
-",
-            ["type"] = "Periapt of Clarity.",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Starts Quest:\
+* VW Op. 101: Detour to Zepwell\
+\
+Provides Outland Voidwatch services.",
+            ["type"] = "Quest Giver",
         },
         ["Hyesun"] = {
             ["_source"] = "npc",
@@ -166,8 +163,10 @@ Checks weather for the following locations: :*Valkurm Dunes :*Cape Teriggan :*Ea
         },
         ["Jourdenaux"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Citizen",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Starts Quests:\
+* Thanks for All the Fish",
+            ["type"] = "Quest Giver",
         },
         ["Kedhareshvar"] = {
             ["_source"] = "npc",
@@ -176,42 +175,41 @@ Checks weather for the following locations: :*Valkurm Dunes :*Cape Teriggan :*Ea
         },
         ["Leodarion"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Involved in Quests:\
-* I'll Take the Big Box\
-",
-            ["type"] = "Adopted Son",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* I'll Take the Big Box",
+            ["type"] = "Quest Associate",
         },
         ["Maryoh Comyujah"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
-            ["note"] = "Involved in Missions:\
-* Zilart Mission 12: The Mithra and the Crystal",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Mission:\
+* The Mithra and the Crystal",
             ["type"] = "Mission Associate",
         },
         ["Mei"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Appears when the special event Sunbreeze Festival is active. ;Notes: :*Sells Super Scoops and buys items from characters :*Gives goldfish scooping points for trading special event-caught fish :*Can give you a Goldfish Basket, but you lose all accumulated goldfish scooping points :*Exchanges prizes for goldfish scooping points For detailed information on fish, prices and other things related to this event see Goldfish Scooping. ;Items sold: *Super Scoop 100gil",
+            ["icon"] = "Event.png",
+            ["note"] = "Runs Goldfish Scooping during the Sunbreeze Festival.",
             ["type"] = "Goldfish Scooping",
         },
-        ["Mileon"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Lucky Roll",
-        },
+		["Mileon"] = {
+			["_source"] = "npc",
+			["icon"] = "MiniGame.png",
+			["note"] = "Lucky Roll:\
+		* Play the Lucky Roll mini-game.",
+			["type"] = "Lucky Roll",
+		},
         ["Pakhi Churhebi"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["type"] = "Dialogue NPC",
+            ["icon"] = "ItemDeliverer.png",
+            ["type"] = "Item Deliverer",
         },
         ["Pilgrimage Moogle"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quest:\
-* Moogle Pilgrimage\
-",
+* Moogle Pilgrimage",
             ["type"] = "Quest Associate",
         },
         ["Poko"] = {
@@ -222,8 +220,7 @@ Appears when the special event Sunbreeze Festival is active. ;Notes: :*Sells Sup
         ["Porter Moogle"] = {
             ["_source"] = "npc",
             ["icon"] = "ItemStorage.png",
-            ["note"] = "Notes:\
-Find a nearby Porter Moogle and talk to him and select the option to buy a Slip. Once you find the slip you want you select it and confirm your selection. Each slip will cost you 1000 gil to buy. After purchasing any storage slip, you may trade 1-7 corresponding items per trade along with the slip. NOTE: This does NOT mean you can only store up to 7 items on a single slip, it simply means you can only transfer up to 7 at a time to the Porter for storage. At any time after you have the slip you can continue to make trades of 1-7 items along with the corresponding slip, thereby storing all your like items with the Moogle instead of in your MH. This feature is handy when you later get another armor drop, like in Dynamis, and want to store it somewhere until you need it. To withdraw an item simply trade him the corresponding slip and he will give you an option to retrieve your armor. You only pay an initial fee of 1,000 gil when purchasing a storage slip, you will not pay every time you store or withdraw gear. Storage slips cannot be discarded unless all stored items are retrieved first. As of Feb. 14, 2011, items with a Magian Trial insignia can no longer be stored with a Porter Moogle. Any items with an active trial stored before that date have had all trial progress erased.",
+            ["note"] = "Stores eligible equipment using Porter Moogle storage slips.",
             ["type"] = "Item Storage",
         },
         ["Quwi Orihbhe"] = {
@@ -236,45 +233,41 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
         },
         ["Rahi Fohlatti"] = {
             ["_source"] = "npc",
-            ["icon"] = "WarpNPC.png",
-            ["note"] = "Starts Quests:\
-* Trial Size Trial by Wind\
-",
-            ["type"] = "Summoner Warp",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Starts Quest:\
+* Trial-Size Trial by Wind",
+            ["type"] = "Quest Giver",
         },
         ["Rudolfo"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quests:\
+            ["note"] = "Involved in Quest:\
 * Chasing Dreams",
             ["type"] = "Quest Associate",
         },
         ["Sanctia"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Chasing Dreams\
-* The Search for Goldmane\
-",
-            ["type"] = "Cutscene NPC",
+* The Search for Goldmane",
+            ["type"] = "Quest Associate",
         },
         ["Scamplix"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
-            ["type"] = "Standard Merchant",
+            ["type"] = "Item Vendor",
         },
         ["Shiny Teeth"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
-            ["type"] = "Standard Merchant",
+            ["type"] = "Weapon Vendor",
         },
         ["Shupah Mujuuk"] = {
             ["_source"] = "npc",
-            ["icon"] = "PastEventWatcher.png",
-            ["note"] = "Notes:\
-* Changes your title for a fee.\
-* Can give you a random title for free.",
-            ["type"] = "Traveling Bard",
+            ["icon"] = "TitleChanger.png",
+            ["note"] = "Changes titles for a fee or assigns a random title for free.",
+            ["type"] = "Title Changer",
         },
         ["Skeea"] = {
             ["_source"] = "npc",
@@ -327,8 +320,7 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
         ["Zungutt"] = {
             ["_source"] = "npc",
             ["icon"] = "PastEventWatcher.png",
-            ["note"] = "Notes:\
-* Replays cutscenes for this area.",
+            ["note"] = "Replays cutscenes for this area.",
             ["type"] = "Past Event Watcher",
         },
     },
@@ -338,16 +330,31 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
             ["icon"] = "QuestionMark.png",
             ["note"] = "Adept Reforging:\
 * Cancels current Adept trial.\
-* Transfers augments from augmented NQ armor to an unaugmented HQ version before the third trial.\
-* The NQ armor is consumed during transfer.",
+* Transfers augments from NQ armor to an unaugmented HQ version before the third trial; the NQ armor is consumed.",
+            ["type"] = "Adept Reforging Reset",
+            ["worldOffsetY"] = -0.15,
+        },
+        ["Box 1"] = {
+            ["_source"] = "catseye_item",
+            ["icon"] = "Box.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Adept_Reforging",
+            ["note"] = "Located beside Adeptus at the Adept Reforging station.",
             ["type"] = "Adept Reforging",
-            ["worldOffsetY"] = 0.25,
+            ["worldOffsetY"] = 0.5,
+        },
+        ["Box 2"] = {
+            ["_source"] = "catseye_item",
+            ["icon"] = "Box.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/Adept_Reforging",
+            ["note"] = "Located beside Adeptus at the Adept Reforging station.",
+            ["type"] = "Adept Reforging",
+            ["worldOffsetY"] = 0.5,
         },
         ["Memorian"] = {
             ["_source"] = "item",
             ["icon"] = "Automaton.png",
-            ["note"] = "A strange, magically animated doll standing as a hidden sentinel across various cities. Examining this eerie automaton tracks mysterious energy reactions to advance late-tier missions.",
-            ["type"] = "Quest Node",
+            ["note"] = "Restores memories during The Voracious Resurgence missions.",
+            ["type"] = "Mission Node",
         },
     },
 }

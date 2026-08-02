@@ -1,99 +1,126 @@
 return {
     ["npcs"] = {
+        ["Almid"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Quest NPC:\
+* Vegetable Vegetable Frustration",
+            ["type"] = "Quest Giver",
+        },
+        ["Sirius"] = {
+            ["_source"] = "npc",
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Quest NPC:\
+* Vegetable Vegetable Frustration",
+            ["type"] = "Quest Giver",
+        },
     },
     ["objects"] = {
         ["Dock Lever"] = {
             ["_source"] = "item",
             ["icon"] = "Lever.png",
-            ["note"] = "A heavy iron floor handle positioned right along the subterranean boat docks. Pulling this rusted lever powers up the automated transport vessel to ferry you across to the hidden sections of the mine.",
+            ["note"] = "Dungeon switch:\
+* Activate to move the ferry.",
             ["type"] = "Dungeon Switch",
         },
         ["Elevator Lever"] = {
             ["_source"] = "item",
             ["icon"] = "Lever.png",
-            ["note"] = "A crude, weighted floor handle linked to regional lift structures. Throwing your weight against the iron bar engages industrial pulley networks, hauling up mechanical platforms across vertical stronghold tiers.",
+            ["note"] = "Dungeon switch:\
+* Activate the elevator.",
             ["type"] = "Dungeon Switch",
         },
         ["Geomagnetic Fount"] = {
             ["_source"] = "item",
             ["icon"] = "GeomagneticFount.png",
-            ["note"] = "A pulsing crystalline fast-travel monument anchored to the regional ley lines. Interfacing with its energy lattice uncovers spatial archives and unlocks fast travel travel lines.",
+            ["note"] = "Proto-Waypoint:\
+* Unlock fast travel.",
             ["type"] = "Proto-Waypoint",
-			["worldOffsetY"] = 0.15,
+            ["worldOffsetY"] = 0.15,
         },
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Memorian"] = {
             ["_source"] = "item",
             ["icon"] = "Automaton.png",
-            ["note"] = "A strange, magically animated doll standing as a hidden sentinel across various cities. Examining this eerie automaton tracks mysterious energy reactions to advance late-tier missions.",
+            ["note"] = "Quest location:\
+* Examine for quest progress.",
             ["type"] = "Quest Node",
         },
         ["Mythril Seam"] = {
             ["_source"] = "item",
             ["icon"] = "MiningPoint.png",
-            ["note"] = "A rich metallic vein shimmering along the damp tunnel rock faces. Striking this outcrop with an equipped pickaxe extracts precious mythril ore, archives mining telemetry, and advances early Republic scenarios.",
+            ["note"] = "Mining point:\
+* Mine with a pickaxe.",
             ["type"] = "Mining Point",
         },
         ["Mining Point"] = {
             ["_source"] = "item",
             ["icon"] = "MiningPoint.png",
-            ["note"] = "A rich mineral vein shimmering along damp tunnel rock faces. Striking this outcrop with an equipped pickaxe extracts precious metallic ore, pristine gems, and archives mining telemetry.",
+            ["note"] = "Mining point:\
+* Mine with a pickaxe.",
             ["type"] = "Mining Point",
-			["worldOffsetY"] = 0.35,
+            ["worldOffsetY"] = 0.35,
         },
         ["Old Toolbox"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A rusted, iron-banded container forgotten along the mining tracks. Searching through the junk retrieves critical key items and logs exploration metrics for active regional tasks.",
+            ["note"] = "Loot container:\
+* Contains items and other rewards.",
             ["type"] = "Loot Container",
-			["worldOffsetY"] = 0.35,
+            ["worldOffsetY"] = 0.35,
         },
         ["Peculiar Fissure"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A strange natural crack splitting the damp stone tunnels of the mine. Reaching down into the narrow crevice uncovers hidden mining cargo or satisfies active explorer logs.",
+            ["note"] = "Quest location:\
+* Examine for quest progress.",
             ["type"] = "Quest Node",
         },
         ["Peculiar Footprints"] = {
             ["_source"] = "item",
             ["icon"] = "Footprint.png",
-            ["note"] = "Faint, mysterious tracking grooves pressed into the dungeon mud or overworld soil layers. Studying the unusual marks uncovers hidden investigative records to advance active side quests.",
+            ["note"] = "Quest location:\
+* Examine for quest progress.",
             ["type"] = "Quest Node",
         },
         ["Perversion's Refuge"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A dark, localized dimensional tear pulsing deep within the quadav mines. Gathering your squad before the distortion verifies your credentials to plunge directly into final Voracious Resurgence battlefields.",
+            ["note"] = "Battlefield entrance:\
+* Enter the battlefield.",
             ["type"] = "Transit Portal",
         },
         ["Refiner Lever"] = {
             ["_source"] = "item",
             ["icon"] = "Lever.png",
-            ["note"] = "A heavy iron floor handle connected to the industrial machinery of the Quadav mines. Throwing your weight against the lever powers up the automated burners to fulfill active Republic mission milestones.",
+            ["note"] = "Dungeon switch:\
+* Activate machinery.",
             ["type"] = "Dungeon Switch",
         },
         ["Refiner Lid"] = {
             ["_source"] = "item",
             ["icon"] = "Switch.png",
-            ["note"] = "The heavy mechanical top hatch of the quadav ore refining vat. Opening this lid lets you drop harvested raw materials straight into the furnace systems to process core story assignments.",
+            ["note"] = "Dungeon switch:\
+* Open the refiner.",
             ["type"] = "Dungeon Switch",
         },
         ["Teleporter"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "A mechanical elevator platform designed to transition between deep excavation layers. Activating its internal control network activates the lift chains to transport your group up and down the mine shafts.",
+            ["note"] = "Travel between mine levels.",
             ["type"] = "Transit Portal",
         },
         ["Teleporter2"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "The secondary mechanical elevator apparatus built into the industrial tunnels. Throwing the power lever commands the platform to shift your adventuring party between distinct vertical layout tiers.",
+            ["note"] = "Travel between mine levels.",
             ["type"] = "Transit Portal",
         },
     },

@@ -56,7 +56,6 @@ return {
             ["icon"] = "MissionGiver.png",
             ["note"] = "Starts Missions:\
 * Oshasha Violation\
-\
 Involved in Missions:\
 * The Princess's Dilemma",
             ["type"] = "Mission Giver",
@@ -342,13 +341,14 @@ Runje Desaali will buy back all he sells at 1/5 the price.",
             ["icon"] = "ItemDeliverer.png",
             ["type"] = "Item Deliverer",
         },
-        ["Detrovio"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-He will augment any Level 99 J.S.E. Cape upon trading the cape with a Refractive Crystal for a 400 Bayld fee. *If you do not like the new augments and choose to keep the old ones, it will still consume the crystal.",
-            ["type"] = "Augment NPC",
-        },
+		["Detrovio"] = {
+			["_source"] = "npc",
+			["icon"] = "Dialogue.png",
+			["note"] = "JSE Cape Augments:\
+* Trade a Lv.99 JSE Cape + Refractive Crystal.\
+* Costs 400 Bayld.",
+			["type"] = "Augment NPC",
+},
         ["Dewalt"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
@@ -446,7 +446,6 @@ He will augment any Level 99 J.S.E. Cape upon trading the cape with a Refractive
             ["icon"] = "Cutscene.png",
             ["note"] = "Involved in Quests:\
 * The Curious Case of Melvien\
-\
 Involved in Missions:\
 * Melvien de Malecroix",
             ["type"] = "Cutscene NPC",
@@ -458,13 +457,13 @@ Involved in Missions:\
 * Prices for the items sold by this NPC are not affected by Fame level.",
             ["type"] = "Standard Merchant",
         },
-        ["Fariska Lokhmi"] = {
-            ["_source"] = "npc",
-            ["icon"] = "MapMarker.png",
-            ["note"] = "Notes:\
-Marks one's town map with the locations of various NPCs important to adventures: *Home Points *Item Depository *Melody Mistrels *Weather Reporters *Traveling Bards *Reputation *Immigration *Armor Depository *Teleportation *Pursuivant *Gold World Pass Vendor In addition to Eastern and Western Adoulin NPCs, she will also mark Bivouac waypoints you've activated in: *Ceizak Battlegrounds *Yahse Hunting Grounds *Foret de Hennetiel *Morimar Basalt Fields",
-            ["type"] = "Map Marker",
-        },
+		["Fariska Lokhmi"] = {
+			["_source"] = "npc",
+			["icon"] = "MapMarker.png",
+			["note"] = "Map services:\
+* Marks important NPCs and unlocked bivouacs on your map.",
+		["type"] = "Map Marker",
+},
         ["Farso-Dafarso"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -552,7 +551,6 @@ Forri-Porri's inventory expands as you obtain Yggzi key items from defeating Del
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Rune Fencing the Night Away\
-\
 Involved in Quests:\
 * Forging New Bonds\
 * Destiny's Device",
@@ -577,13 +575,12 @@ Involved in Quests:\
             ["icon"] = "PastEventWatcher.png",
             ["type"] = "Past Event Watcher",
         },
-        ["Geosuke"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-Attracts customers to Runje Desaali, who rescued him. Runje's dialogue indicates he can make tinctures if given enough High-purity Bayld, which Runje can make into rings.",
-            ["type"] = "Town Crier",
-        },
+		["Geosuke"] = {
+			["_source"] = "npc",
+			["icon"] = "Dialogue.png",
+			["note"] = "Promotes Runje Desaali's Bayld tincture and ring services.",
+			["type"] = "Town Crier",
+		},
         ["Glowing Hearth"] = {
             ["_source"] = "npc",
             ["icon"] = "MissionNPC.png",
@@ -697,7 +694,6 @@ Attracts customers to Runje Desaali, who rescued him. Runje's dialogue indicates
 * The Bloodline of Zacariah\
 * Geomancer Relic Armor Quests\
 * Geomancerrific\
-\
 Involved in Missions:\
 * The Leafkin Monarch\
 * Tomatoes of Wrath\
@@ -717,7 +713,6 @@ Involved in Missions:\
             ["icon"] = "Cutscene.png",
             ["note"] = "Involved in Quests:\
 * No Mercy for the Wicked\
-\
 Involved in Missions:\
 * Return of the Exorcist\
 * The Merciless One\
@@ -740,13 +735,13 @@ Involved in Missions:\
 ",
             ["type"] = "Quest Associate",
         },
-        ["Inthius"] = {
-            ["_source"] = "npc",
-            ["icon"] = "WeatherChecker.png",
-            ["note"] = "Notes:\
-Checks weather for the following locations: :*Ceizak Battlegrounds :*Yahse Hunting Grounds :*Foret de Hennetiel :*Morimar Basalt Fields :*Yorcia Weald :*Marjami Ravine :*Kamihr Drifts",
-            ["type"] = "Weather Reporter",
-        },
+		["Inthius"] = {
+			["_source"] = "npc",
+			["icon"] = "WeatherChecker.png",
+			["note"] = "Weather reporter:\
+* Reports weather for Adoulin frontier areas.",
+			["type"] = "Weather Reporter",
+},
         ["Irate Destrier"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -754,13 +749,14 @@ Checks weather for the following locations: :*Ceizak Battlegrounds :*Yahse Hunti
 * The Longest Way Round...",
             ["type"] = "Dialogue NPC",
         },
-        ["Ishvad"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
-            ["note"] = "Notes:\
-* Prices for the items sold by this NPC are not affected by Fame level. *Prices for the items sold by this NPC are reduced by Alliance Shirt +1.",
-            ["type"] = "Standard Merchant",
-        },
+		["Ishvad"] = {
+			["_source"] = "npc",
+			["icon"] = "Merchant.png",
+			["note"] = "Merchant:\
+* Prices are unaffected by Fame.\
+* Alliance Shirt +1 grants a discount.",
+			["type"] = "Standard Merchant",
+		},
         ["Ivoh Haalameb"] = {
             ["_source"] = "npc",
             ["icon"] = "PastEventWatcher.png",
@@ -896,7 +892,6 @@ Sells permanent key items used to teleport from Adoulinian Waypoints to mainland
             ["note"] = "Starts Missions:\
 * Budding Prospects\
 * The Celennia Memorial Library\
-\
 Involved in Missions:\
 * Arciela Appears Again\
 * The Light Shining in Your Eyes\
@@ -918,7 +913,6 @@ Involved in Missions:\
             ["note"] = "Involved in Quests:\
 * Scaredy-Cats\
 * Not-So-Clean Bill\
-\
 Involved in Missions:\
 * An Extraordinary Gentleman\
 * Glimmer of Portent\
@@ -992,7 +986,6 @@ Allows you to trade 3 unwanted Level 99 J.S.E. Capes for any single Level 99 J.S
 * The Curious Case of Melvien\
 * Sick and Tired\
 * Not-So-Clean Bill\
-\
 Involved in Missions:\
 * Looking for Leads",
             ["type"] = "Cutscene NPC",
@@ -1002,7 +995,6 @@ Involved in Missions:\
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * Order Up\
-\
 Starts Missions:\
 * Phantasmic Heroes",
             ["type"] = "Quest Associate",
@@ -1012,7 +1004,6 @@ Starts Missions:\
             ["icon"] = "Merchant.png",
             ["note"] = "Involved in Quests:\
 * Flavors of Our Lives\
-\
 Involved in Missions:\
 * Budding Prospects\
 ",
@@ -1123,7 +1114,6 @@ Involved in Missions:\
             ["icon"] = "MentorRecruiter.png",
             ["note"] = "Starts Quests:\
 * Unity Concord\
-\
 Involved in Quests:\
 * Unity Concord (Quest)",
             ["type"] = "Unity Concord",
@@ -1279,7 +1269,6 @@ Involved in Quests:\
 * The Longest Way Round...\
 * Order Up\
 * The Ygnas Directive\
-\
 Involved in Missions:\
 * Meeting of the Minds",
             ["type"] = "Dialogue NPC",
@@ -1319,13 +1308,13 @@ Sells: *Apple Juice 300 *Frontier Soda 125 *Melon Pie 1,560 *Orange Juice 200",
 ",
             ["type"] = "Quest Giver",
         },
-        ["Quiri-Aliri"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Notes:\
-*  Ionis is a beneficial Status Effect recognizing adventurers as an official participant in the Ulbukan pioneering effort. The application of the Signet, Sanction, Sigil, and Ionis effects are mutually exclusive and overwrite each other.",
-            ["type"] = "Ionis",
-        },
+		["Quiri-Aliri"] = {
+			["_source"] = "npc",
+			["icon"] = "Dialogue.png",
+			["note"] = "Ionis:\
+* Grants the Ionis status effect.",
+			["type"] = "Ionis",
+		},
         ["Reepi-Molpi"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -1341,7 +1330,6 @@ Sells: *Apple Juice 300 *Frontier Soda 125 *Melon Pie 1,560 *Orange Juice 200",
             ["icon"] = "Cutscene.png",
             ["note"] = "Involved in Quests:\
 * The Curious Case of Melvien\
-\
 Involved in Missions:\
 * An Emergency Convocation",
             ["type"] = "Cutscene NPC",
@@ -1373,12 +1361,10 @@ Involved in Missions:\
             ["note"] = "Starts Quests:\
 * No Mercy for the Wicked\
 * Mistress of Ceremonies\
-\
 Involved in Quests:\
 * The Secret to Success\
 * Eye of the Beholder\
 * Order Up\
-\
 Involved in Missions:\
 * A Curse from the Past\
 * The Merciless One\
@@ -1484,7 +1470,6 @@ Replays cutscenes from Skokkr Undrborn's Temptation",
             ["icon"] = "Dialogue.png",
             ["note"] = "Starts Quests:\
 * Trial of the Chacharoon\
-\
 Involved in Quests:\
 * Jingly Dangler\
 * Release the Fleece\
@@ -1565,7 +1550,6 @@ Sells: *Pickaxe 200 *Hatchet 500 *Sickle 300 *Dart 10 *Hawkeye 60 *Iron Arrow 8"
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * A Barrel of Laughs\
-\
 Involved in Quests:\
 * All the Way to the Bank\
 * To Laugh Is to Love\
@@ -1620,13 +1604,6 @@ Involved in Quests:\
 * Reward gear can be augmented separately.",
             ["type"] = "Peacekeepers' Coalition Reward Bayld Vendor NPC",
         },
-        ["Vestavius"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
-            ["note"] = "Involved in Quests:\
-* For Whom the Bell Tolls",
-            ["type"] = "Quest Giver",
-        },
         ["Virsaint"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -1648,35 +1625,35 @@ Involved in Quests:\
             ["icon"] = "MissionNPC.png",
             ["note"] = "Involved in Quests:\
 * The Secret to Success\
-\
 Involved in Missions:\
 * For Whom Do We Toil?\
 * Looking for Leads\
 * Hypocritical Oath",
             ["type"] = "Mission",
         },
-        ["Wescolina"] = {
-            ["_source"] = "npc",
-            ["icon"] = "afstorage.png",
-            ["note"] = "Notes:\
-* You can commission Geomancer Artifact Armor from Wescolina by talking to her on Geomancer after flagging the quest The Bloodline of Zacariah. ",
-            ["type"] = "Artifact Quest",
-        },
-        ["Westerly Breeze"] = {
-            ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Starts Quests:\
+		["Wescolina"] = {
+			["_source"] = "npc",
+			["icon"] = "afstorage.png",
+			["note"] = "Artifact Armor:\
+* Commissions Geomancer artifact armor.",
+			["type"] = "Artifact Quest",
+		},
+		["Westerly Breeze"] = {
+			["_source"] = "npc",
+			["icon"] = "Dialogue.png",
+			["note"] = "Quest NPC:\
 * Hunger Strikes\
 * The Starving\
 * \"Always more,\" Quoth the Ravenous",
-            ["type"] = "Dialogue NPC",
-        },
-        ["Winrix"] = {
-            ["_source"] = "catseye_npc",
-            ["icon"] = "GobbieMysteryBox.png",
-            ["note"] = "CatsEyeXI:\\n* Opens random rewards using daily\\nGobbie Box points.\\n* New players must wait 14\\nreal-life days before using the\\nbox.\\n* Special Gobbie Keys can be\\nobtained by exchanging merit\\npoints.\\n* Crystal Warriors and Wings Era\\nWarriors cannot use this box.",
-            ["type"] = "Gobbie Mystery Box Vendor",
-        },
+			["type"] = "Dialogue NPC",
+		},
+		["Winrix"] = {
+			["_source"] = "catseye_npc",
+			["icon"] = "GobbieMysteryBox.png",
+			["note"] = "Gobbie Mystery Box:\
+* Spend daily Gobbie Box points for random rewards.",
+			["type"] = "Gobbie Mystery Box Vendor",
+		},
         ["Wortherton"] = {
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
@@ -1743,7 +1720,6 @@ Involved in Missions:\
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Cafe...teria\
-\
 Involved in Quests:\
 * A Thirst for the Eons",
             ["type"] = "Quest Giver",
@@ -1792,36 +1768,39 @@ Involved in Quests:\
             ["type"] = "Bayld Vendor",
         },
     },
-    ["objects"] = {
-        ["Door:"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A basic residential door frame set into the city stonework layouts. Unlatching the frame allows you to enter municipal quarters to fulfill urban side tasks or check localized logs.",
-            ["type"] = "Security Gate",
-        },
-        ["Door: Boarding House"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A standard shopfront portal dividing the civic street layouts from the local lodging rooms. Shifting the latch moves you off public paths to enter residential travel layers.",
-            ["type"] = "Security Gate",
-        },
-        ["Door:Research Chamber"] = {
-            ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A secure entrance framework partitioning off advanced pioneer research laboratories. Verifying your current challenge credentials commands the heavy wood frame to part.",
-            ["type"] = "Security Gate",
-        },
-        ["Soul Pyre"] = {
-            ["_source"] = "item",
-            ["icon"] = "TreasureCasket.png",
-            ["note"] = "A glowing extraction column manifesting immediately post-combat across the continent. Accessing its light yields lost items, recovery tokens, or temporary regional combat enhancements.",
-            ["type"] = "Loot Container",
-        },
-        ["Symphonic Curator"] = {
-            ["_source"] = "item",
-            ["icon"] = "QuestNode.png",
-            ["note"] = "An ornate structural orchestrion terminal situated near local residential entrances. Interfacing with this podium lets you purchase, configure, and alter the background acoustic music scores for the municipal region.",
-            ["type"] = "Quest Node",
-        },
+	["objects"] = {
+		["Door:"] = {
+			["_source"] = "item",
+			["icon"] = "Door.png",
+			["note"] = "Leads to the next room or area.",
+			["type"] = "Security Gate",
+		},
+		["Door: Boarding House"] = {
+			["_source"] = "item",
+			["icon"] = "Door.png",
+			["note"] = "Entrance to the boarding house.",
+			["type"] = "Security Gate",
+		},
+		["Door:Research Chamber"] = {
+			["_source"] = "item",
+			["icon"] = "Door.png",
+			["note"] = "Entrance to the Research Chamber.",
+			["type"] = "Security Gate",
+		},
+		["Soul Pyre"] = {
+			["_source"] = "item",
+			["icon"] = "TreasureCasket.png",
+			["note"] = "Battlefield rewards:\
+* Recover loot and temporary items.",
+			["type"] = "Loot Container",
+		},
+		["Symphonic Curator"] = {
+			["_source"] = "item",
+			["icon"] = "QuestNode.png",
+			["note"] = "Music player:\
+* Change the area's background music.",
+			["type"] = "Quest Node",
+		},
+	},
     },
 }

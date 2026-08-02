@@ -27,19 +27,17 @@ return {
         },
         ["Dragatama"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "Notes:\
-Very receptive to Shell Bugs.",
-            ["type"] = "Quest NPC",
+            ["icon"] = "Event.png",
+            ["note"] = "2012 New Year event NPC. Accepts traded items for event rewards or buffs.",
+            ["type"] = "New Year Event",
         },
         ["Esca"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
 * The Pickpocket\
-* Chasing Quotas\
-",
-            ["type"] = "Quest Giver",
+* Chasing Quotas",
+            ["type"] = "Quest Associate",
         },
         ["Gachemage"] = {
             ["_source"] = "npc",
@@ -48,37 +46,31 @@ Very receptive to Shell Bugs.",
         },
         ["Harvetour"] = {
             ["_source"] = "npc",
-            ["info"] = "Appears when Ronfaure is under weekly conquest-control by one of the three nations. :*Sells to and buys items from characters allied with the nation that has the weekly conquest-control of this region. :*All items which Standard Merchants normally buy, can be traded by all characters for regional influence points. The points are awarded to the trader's current Allegiance. :*Teleports players who have previously done a Supply Run for the specific region, to the Outpost Teleporter in their hometown. For further information, see Outpost Vendor. ;Items sold: *Antidote 316gil *Echo Drops 800gil *Ether 4832gil *Eye Drops 2595gil *Potion 910gil",
-            ["note"] = "Notes:\
-Appears when Ronfaure is under weekly conquest-control by one of the three nations. :*Sells to and buys items from characters allied with the nation that has the weekly conquest-control of this region. :*All items which Standard Merchants normally buy, can be traded by all characters for regional influence points. The points are awarded to the trader's current Allegiance. :*Teleports players who have previously done a Supply Run for the specific region, to the Outpost Teleporter in their hometown. For further information, see Outpost Vendor. ;Items sold: *Antidote 316gil *Echo Drops 800gil *Ether 4832gil *Eye Drops 2595gil *Potion 910gil",
+            ["note"] = "Trades with allies of the nation controlling Ronfaure and offers outpost teleportation after its supply quest.",
             ["type"] = "Outpost Vendor",
         },
         ["Joyful Alicorn"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-Follows Jubilant Alicorn, which is the only member of the procession with which interaction is possible. It is preceded by Jubilant Alicorn and Joyous Alicorn, and proceeded by Mirthful Ixion.",
+            ["note"] = "Non-interactive member of Jubilant Alicorn's New Year procession.",
             ["type"] = "New Year Event",
         },
         ["Joyous Alicorn"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-Follows Jubilant Alicorn, which is the only member of the procession with which interaction is possible. It is preceded by Jubilant Alicorn and proceeded by Joyful Alicorn and Mirthful Ixion.",
+            ["note"] = "Non-interactive member of Jubilant Alicorn's New Year procession.",
             ["type"] = "New Year Event",
         },
         ["Jubilant Alicorn"] = {
             ["_source"] = "npc",
             ["icon"] = "Event.png",
-            ["note"] = "Notes:\
-Trade ordinary items one at a time (such as arrows, crossbow bolts, bullets, or ninja tools) to any Jubilant Alicorn to receive special items such as the monstrosity item Ake-Ome Spirit, which unlocks the monipulator form New Year Mandragora (MON). It is proceeded by Joyous Alicorn, Joyful Alicorn, and Mirthful Ixion, and roams the entire zone. It is the leader of the procession and the largest of the four.",
+            ["note"] = "Leads the roaming New Year procession. Trade items one at a time for event rewards.",
             ["type"] = "New Year Event",
         },
         ["Kyanta-Pakyanta, W.W."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Ronfaure is under weekly conquest-control by Windurst ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Ronfaure Supplies for finishing Supply Quest :*Accepts Garrison starting item Red Cryptex ;Notes for characters only without Windurst as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Windurstian outpost guard. Appears when Windurst controls Ronfaure.",
             ["type"] = "Conquest Overseer",
         },
         ["Laette"] = {
@@ -99,17 +91,15 @@ Appears, when Ronfaure is under weekly conquest-control by Windurst ;Notes for c
         ["Molting Moth, I.M."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Ronfaure is under weekly conquest-control by Bastok ;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts Ronfaure Supplies for finishing Supply Quest ;Notes for characters only without Bastok as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Bastokan outland guard. Appears when Bastok controls Ronfaure.",
             ["type"] = "Conquest Overseer",
         },
         ["Phairet"] = {
             ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
-            ["note"] = "Involved in Quests:\
-* The Trader in the Forest\
-",
-            ["type"] = "Batagreens Vendor",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* The Trader in the Forest",
+            ["type"] = "Quest Associate",
         },
         ["Ramaufont"] = {
             ["_source"] = "npc",
@@ -119,37 +109,33 @@ Appears, when Ronfaure is under weekly conquest-control by Bastok ;Notes for cha
         ["Saradorial"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",
-            ["note"] = "Notes:\
-Appears when the special event Sunbreeze Festival is active. :*Sells Super Scoops and buys items of characters :*Gives goldfish scooping points for trading special event-caught fish :*Can give you a Goldfish Basket, but you lose any accumulated goldfish scooping points :*Exchanges prizes for goldfish scooping points :*Unwillingly tells players about the goldfish universe For detailed information on fish, prices and other things related to this event, see Goldfish Scooping. ;Items sold: *Super Scoop 100gil",
+            ["note"] = "Sunbreeze Festival vendor for Goldfish Scooping supplies, scoring, and prizes.",
             ["type"] = "Goldfish Scooping Vendor",
         },
         ["Somnelius"] = {
             ["_source"] = "catseye_npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Crystal Warrior:\
-* Starts quests: On Guard, On\
-Watch.\
+* Starts quest: On Guard, On Watch.\
 * San d'Oria starting gear quests.",
             ["type"] = "CW Starting Quest",
         },
         ["Spriggan Crier"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Seasonal holiday event creature coordinator.",
+            ["note"] = "Coordinates the seasonal Spriggan event.",
             ["type"] = "Special Event Coordinator",
         },
         ["Spriggan Crier (NPC)"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Notes:\
-After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossover, trade the Spriggan Crier one crystal of each of the 8 elements to obtain a Red Spriggan Spirit. Trade the Red Spriggan Spirit to Suibhne in the Feretory after completing Monstrosity (Quest) to unlock the playable Spriggan.C (MON) monster.",
+            ["note"] = "Trade one crystal of each element after unlocking a crossover booby prize to receive a Red Spriggan Spirit.",
             ["type"] = "Special Event",
         },
         ["Spriggan Graverobber (NPC)"] = {
             ["_source"] = "npc",
             ["icon"] = "SpecialEventCoordinator.png",
-            ["note"] = "Notes:\
-After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossover, trade the Spriggan Graverobber one crystal of each of the 8 elements to obtain a Purple Spriggan Spirit. Trade the Purple Spriggan Spirit to Suibhne in the Feretory after completing Monstrosity (Quest) to unlock the playable Spriggan.G (MON) monster.",
+            ["note"] = "Trade one crystal of each element after unlocking a crossover booby prize to receive a Purple Spriggan Spirit.",
             ["type"] = "Special Event",
         },
         ["Spriggan Sifter (NPC)"] = {
@@ -158,38 +144,34 @@ After unlocking one booby prize in the FINAL FANTASY XIV: A Realm Reborn Crossov
             ["note"] = "Involved in Quests:\
 * FINAL FANTASY XIV: A Realm Reborn Crossover\
 * FINAL FANTASY XIV: A Realm Reborn Crossover II\
-* Anniversary MMO Collaboration\
-",
+* Anniversary MMO Collaboration",
             ["type"] = "Special Event",
         },
         ["Tottoto, W.W."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Ronfaure is under weekly conquest-control by Windurst ;Notes for characters only with Windurst as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Empress Band or Chariot Band :*Accepts Ronfaure Supplies for finishing Supply Quest ;Notes for characters only without Windurst as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Windurstian outland guard. Appears when Windurst controls Ronfaure.",
             ["type"] = "Conquest Overseer",
         },
         ["Vilatroire"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
-* Introduction To Teamwork\
+* Introduction to Teamwork\
 * Intermediate Teamwork\
 * Advanced Teamwork",
-            ["type"] = "Scroll Quest",
+            ["type"] = "Quest Giver",
         },
         ["Yoshihiro, I.M."] = {
             ["_source"] = "npc",
             ["icon"] = "ConquestOverseer.png",
-            ["note"] = "Notes:\
-Appears, when Ronfaure is under weekly conquest-control by Bastok ;Notes for characters only with Bastok as current Allegiance: :*Casts Signet :*Choice of setting Home Point for free :*Recharges Emperor Band, Empress Band or Chariot Band :*Accepts Ronfaure Supplies for finishing Supply Quest :*Accepts Garrison starting item Red Cryptex ;Notes for characters only without Bastok as current Allegiance: :*Choice of setting Home Point for a fee - higher prices for higher Allegiance Ranks (Rank 10: 5600 gil) For further information see Conquest Overseer.",
+            ["note"] = "Bastokan outpost guard. Appears when Bastok controls Ronfaure.",
             ["type"] = "Conquest Overseer",
         },
         ["Zovriace"] = {
             ["_source"] = "npc",
             ["icon"] = "Scout.png",
-            ["note"] = "Notes:\
-When Spoken to says \"Let me be! I return to Southgate with word on La Theine.\" When he gets back to the south gate he says to Colmaie ( A guard at Southgate) \"Scout reporting! All is quiet on the roads to La Theine!\" Then runs back to his starting posistion.",
+            ["note"] = "Patrols between the south gate and the road to La Theine Plateau.",
             ["type"] = "Scout",
         },
     },
@@ -197,15 +179,15 @@ When Spoken to says \"Let me be! I return to Southgate with word on La Theine.\"
         ["Field Manual"] = {
             ["_source"] = "item",
             ["icon"] = "Dialogue.png",
-            ["note"] = "A stationary training ledger podium stationed at military outposts. Reading the text lets you enlist in regional combat regimes, check training metrics, or purchase field enhancements.",
-            ["type"] = "Training & Support",
-			["worldOffsetY"] = 0.65,
+            ["note"] = "Offers Fields of Valor regimes and field support.",
+            ["type"] = "Field Manual",
+            ["worldOffsetY"] = 0.65,
         },
         ["Field Parchment"] = {
             ["_source"] = "item",
             ["icon"] = "Dialogue.png",
-            ["note"] = "A blank magical scroll mounted near regional field manual locations. Binding your training orders to the parchment engages elite automated operations parameters or validates combat tracking.",
-            ["type"] = "Training & Support",
+            ["note"] = "Starts Fields of Valor elite training battles.",
+            ["type"] = "Elite Training",
         },
         ["Glittering Gift"] = {
             ["_source"] = "catseye_item",
@@ -220,33 +202,33 @@ When Spoken to says \"Let me be! I return to Southgate with word on La Theine.\"
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Replays cutscenes for this area.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Knightwell"] = {
             ["_source"] = "item",
             ["icon"] = "Spring.png",
-            ["note"] = "A historic stone water well enduring in the Ronfaure valleys. Peer into the deep masonry shaft to advance San d'Orian temple quests, fulfill active Trial of the Magians conditions, or exchange regional artifacts.",
+            ["note"] = "Fishing spot and quest target for The Young and the Threadless.",
             ["type"] = "Quest Node",
         },
         ["Mog-Tablet"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A small, glowing tablet shard hidden across random corners of the world. Scouring the land to locate and recover all eleven missing stone relics unleashes world-wide exploration blessings for all adventurers.",
-            ["type"] = "Quest Node",
+            ["note"] = "One of eleven randomly placed tablets collected for the Mog-Tablet quest.",
+            ["type"] = "Mog-Tablet",
         },
         ["Overturned Soil"] = {
             ["_source"] = "item",
             ["icon"] = "Sands.png",
-            ["note"] = "A localized patch of disturbed earth masking a violent spatial distortion. Channeling your temporary key items into the ground unseals an extraplanar rift to initiate high-tier Voidwatch operations.",
-            ["type"] = "Transit Portal",
+            ["note"] = "Voidwatch battle location.",
+            ["type"] = "Voidwatch Rift",
         },
         ["Riftworn Pyxis"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A locked extraplanar drop chest container materializing immediately post-combat across Voidwatch fields. Breaking its lock rewards your squad with combat currencies or temporary buffs.",
-            ["type"] = "Loot Container",
+            ["note"] = "Appears after a Voidwatch victory and contains battle rewards.",
+            ["type"] = "Voidwatch Reward",
         },
     },
 }

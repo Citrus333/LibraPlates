@@ -7,7 +7,6 @@ return {
 * Tango with a Tracker\
 * Requiem of Sin\
 * X Marks the Spot\
-\
 Involved in Missions:\
 * Promathia Mission 5-3: Three Paths\
 * Where Messengers Gather (Ulmia's Path)\
@@ -24,7 +23,6 @@ Involved in Missions:\
 * Tuning Out\
 * Tango with a Tracker\
 * Requiem of Sin\
-\
 Involved in Missions:\
 * Promathia Mission 5-3: Three Paths\
 * Where Messengers Gather (Ulmia's Path)\
@@ -39,7 +37,6 @@ Involved in Missions:\
             ["note"] = "Involved in Quests:\
 * One Good Deed?\
 * Requiem of Sin\
-\
 Involved in Missions:\
 * Promathia Mission 5-3: Three Paths\
 * Where Messengers Gather (Ulmia's Path)\
@@ -56,25 +53,29 @@ Involved in Missions:\
             ["type"] = "Mission Boss",
         },
     },
-    ["objects"] = {
-        ["Armoury Crate"] = {
-            ["_source"] = "item",
-            ["icon"] = "TreasureCasket.png",
-            ["note"] = "A reinforced storage chest appearing upon victory in battlefield instances or remnants sectors. Prying open the heavy lid drops specialized weapons, armor components, or unique instance progression resources for your squad.",
-            ["type"] = "Loot Container",
-        },
-        ["Dark Miasma"] = {
-            ["_source"] = "item",
-            ["icon"] = "QuestNode.png",
-            ["note"] = "A toxic cloud of dark environmental gas choking the ravine pathway. Utilizing a specialized filtering key item or regional counteragent neutralizes the vapor barrier to allow safe passage.",
-            ["type"] = "Obstacle Node",
-        },
-        ["Goblin Footprint"] = {
-            ["_source"] = "item",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
-            ["type"] = "Memory Recall",
-            ["worldOffsetY"] = 0,
-        },
+	["objects"] = {
+		["Armoury Crate"] = {
+			["_source"] = "item",
+			["icon"] = "TreasureCasket.png",
+			["note"] = "Battlefield rewards:\
+* Contains equipment and other loot.",
+			["type"] = "Loot Container",
+		},
+		["Dark Miasma"] = {
+			["_source"] = "item",
+			["icon"] = "QuestNode.png",
+			["note"] = "Obstacle:\
+* Clear the miasma to pass.",
+			["type"] = "Obstacle Node",
+		},
+		["Goblin Footprint"] = {
+			["_source"] = "item",
+			["icon"] = "Cutscene.png",
+			["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
+			["type"] = "Memory Recall",
+			["worldOffsetY"] = 0,
+		},
+	},
     },
 }

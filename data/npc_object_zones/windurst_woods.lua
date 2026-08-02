@@ -1185,6 +1185,11 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
 * Explains Windurst Woods' Mithran history and provides information about Cavernous Maws.",
             ["type"] = "Great War Veteran",
         },
+        ["Mono Nchaa"] = {
+            ["_source"] = "npc",
+            ["icon"] = "Merchant.png",
+            ["type"] = "Standard Merchant",
+        },
     },
     ["objects"] = {
         ["Door:Boneworkers' Guild"] = {

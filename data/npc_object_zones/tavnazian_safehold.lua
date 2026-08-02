@@ -27,14 +27,13 @@ return {
         },
         ["Atarefaunet"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * The Tenshodo Showdown\
 * Hitting the Marquisate\
 * Signed in Blood\
 * Tea with a Tonberry?\
 * Apocalypse Nigh\
-\
 Involved in Missions:\
 * San d'Oria Mission 2-3: Infiltrate Davoi\
 * Bastok Mission 2-3: The Emissary\
@@ -52,9 +51,8 @@ Involved in Missions:\
 * Promathia Mission 7-4: Calm Before the Storm\
 * Promathia Mission 8-1: The Garden of Antiquity\
 * Promathia Mission 8-3: When Angels Fall\
-* Promathia Mission 8-4: Dawn\
-",
-            ["type"] = "Mission",
+* Promathia Mission 8-4: Dawn",
+            ["type"] = "Mission Associate",
         },
         ["Bibokk-Molbukk"] = {
             ["_source"] = "npc",
@@ -75,13 +73,9 @@ Involved in Missions:\
             ["_source"] = "catseye_npc",
             ["icon"] = "Event.png",
             ["note"] = "Grand Trials:\
-* Offers no-cooldown trials to\
-augment existing equipment.\
-* Only one trial may be active at a\
-time; speak to Cassie to cancel.\
-* Can transfer NQ augments to HQ\
-crafted items after the current\
-trial is complete.",
+* Offers no-cooldown trials to augment existing equipment.\
+* Only one trial may be active at a time; speak to Cassie to cancel.\
+* Can transfer NQ augments to HQ crafted items after the current trial is complete.",
             ["type"] = "Grand Trials",
         },
         ["Chemioue"] = {
@@ -89,22 +83,20 @@ trial is complete.",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Petals for Parelbriaux\
-\
 Involved in Quests:\
 * In Search of the Truth\
-* Knocking on Forbidden Doors\
-",
+* Knocking on Forbidden Doors",
             ["type"] = "Quest Giver",
         },
         ["Cherukiki"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Promathia Mission 2-1: An Invitation West\
 * Promathia Mission 2-2: The Lost City\
 * Promathia Mission 2-3: Distant Beliefs\
 * Promathia Mission 2-5: Ancient Vows\
-* The Road Forks: The Road Forks\
+* Promathia Mission 3-3: The Road Forks\
 * Promathia Mission 4-2: The Savage\
 * Promathia Mission 5-2: Desires of Emptiness\
 * Promathia Mission 5-3: Three Paths\
@@ -118,22 +110,19 @@ Involved in Quests:\
 * Promathia Mission 7-5: The Warrior's Path\
 * Promathia Mission 8-1: The Garden of Antiquity\
 * Promathia Mission 8-3: When Angels Fall\
-* Promathia Mission 8-4: Dawn\
-",
-            ["type"] = "Cutscene NPC",
+* Promathia Mission 8-4: Dawn",
+            ["type"] = "Mission Associate",
         },
         ["Despachiaire"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Starts Quests:\
 * X Marks the Spot\
 * Elderly Pursuits\
 * Tango with a Tracker\
 * Requiem of Sin\
-\
 Involved in Quests:\
 * Secrets of Ovens Lost\
-\
 Involved in Missions:\
 * Promathia Mission 2-2: The Lost City\
 * Promathia Mission 2-4: An Eternal Melody\
@@ -142,9 +131,8 @@ Involved in Missions:\
 * Promathia Mission 4-4: Slanderous Utterings\
 * Promathia Mission 5-3: Three Paths\
 * Past Sins (Louverance Path)\
-* Promathia Mission 7-1: Chains and Bonds\
-",
-            ["type"] = "Quest Giver",
+* Promathia Mission 7-1: Chains and Bonds",
+            ["type"] = "Mission Associate",
         },
         ["Dominec"] = {
             ["_source"] = "npc",
@@ -195,11 +183,10 @@ Involved in Missions:\
         },
         ["Fardimant X Boncourge"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quests:\
-* Knocking on Forbidden Doors\
-",
-            ["type"] = "Cutscene NPC",
+* Knocking on Forbidden Doors",
+            ["type"] = "Quest Associate",
         },
         ["Ferchinne"] = {
             ["_source"] = "npc",
@@ -226,14 +213,9 @@ Involved in Missions:\
             ["_source"] = "catseye_npc",
             ["icon"] = "Event.png",
             ["note"] = "CatsEyeXI Augmenting:\
-* Augments corresponding Dynamis\
-items using Rank Points and stored\
-currency.\
-* Required currency is deducted\
-from Freya, the NPC beside him.\
-* Requires the matching essence\
-from defeating the Arch zone boss\
-once; check with !essences.",
+* Augments corresponding Dynamis items using Rank Points and stored currency.\
+* Required currency is deducted from Freya, the NPC beside him.\
+* Requires the matching essence from defeating the Arch zone boss once; check with !essences.",
             ["type"] = "Dynamis Augments",
         },
         ["Frescheque"] = {
@@ -247,20 +229,19 @@ once; check with !essences.",
             ["_source"] = "catseye_npc",
             ["icon"] = "Freya.png",
             ["note"] = "CatsEyeXI Augmenting:\
-* Stores currency used by Franz for\
-Dynamis item augments.\
-* Freya does not convert or break\
-down currency.\
-* Franz deducts the required\
-currency from Freya during\
-augmentation.",
+* Stores currency used by Franz for Dynamis item augments.\
+* Freya does not convert or break down currency.\
+* Franz deducts the required currency during augmentation.",
             ["type"] = "Dynamis Currency Storage",
         },
         ["Gennoue"] = {
             ["_source"] = "npc",
             ["icon"] = "WeatherChecker.png",
             ["note"] = "Notes:\
-Reports weather for the following areas: *Tavnazian Archipelago *Riverne - Site #A01 *Riverne - Site #B01",
+Reports weather for:\
+* Tavnazian Archipelago\
+* Riverne - Site #A01\
+* Riverne - Site #B01",
             ["type"] = "Weather Reporter",
         },
         ["Geuselibel"] = {
@@ -290,21 +271,13 @@ Reports weather for the following areas: *Tavnazian Archipelago *Riverne - Site 
 * Secrets of Ovens Lost",
             ["type"] = "Quest Giver",
         },
-        ["Jovial Rat"] = {
-            ["_source"] = "npc",
-            ["note"] = "Notes:\
-* Replays cutscenes for this area.",
-            ["type"] = "Past Event Watcher",
-        },
         ["Justinius"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestGiver.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Starts Quests:\
 * Uninvited Guests\
-\
 Involved in Quests:\
 * It's Raining Mannequins!\
-\
 Involved in Missions:\
 * Promathia Mission 2-1: An Invitation West\
 * Promathia Mission 2-2: The Lost City\
@@ -313,9 +286,8 @@ Involved in Missions:\
 * Promathia Mission 4-1: Sheltering Doubt\
 * Promathia Mission 4-2: The Savage\
 * Promathia Mission 4-3: The Secrets of Worship\
-* Promathia Mission 7-4: Calm Before the Storm\
-",
-            ["type"] = "Quest Giver",
+* Promathia Mission 7-4: Calm Before the Storm",
+            ["type"] = "Mission Associate",
         },
         ["Kokila"] = {
             ["_source"] = "npc",
@@ -334,13 +306,13 @@ Involved in Missions:\
         },
         ["Kukki-Chebukki"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Promathia Mission 2-1: An Invitation West\
 * Promathia Mission 2-2: The Lost City\
 * Promathia Mission 2-3: Distant Beliefs\
 * Promathia Mission 2-5: Ancient Vows\
-* The Road Forks: The Road Forks\
+* Promathia Mission 3-3: The Road Forks\
 * Promathia Mission 4-2: The Savage\
 * Promathia Mission 5-2: Desires of Emptiness\
 * Promathia Mission 5-3: Three Paths\
@@ -354,9 +326,8 @@ Involved in Missions:\
 * Promathia Mission 7-5: The Warrior's Path\
 * Promathia Mission 8-1: The Garden of Antiquity\
 * Promathia Mission 8-3: When Angels Fall\
-* Promathia Mission 8-4: Dawn\
-",
-            ["type"] = "Cutscene NPC",
+* Promathia Mission 8-4: Dawn",
+            ["type"] = "Mission Associate",
         },
         ["Latteaune"] = {
             ["_source"] = "npc",
@@ -379,13 +350,13 @@ Involved in Missions:\
         },
         ["Makki-Chebukki"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Promathia Mission 2-1: An Invitation West\
 * Promathia Mission 2-2: The Lost City\
 * Promathia Mission 2-3: Distant Beliefs\
 * Promathia Mission 2-5: Ancient Vows\
-* The Road Forks: The Road Forks\
+* Promathia Mission 3-3: The Road Forks\
 * Promathia Mission 4-2: The Savage\
 * Promathia Mission 5-2: Desires of Emptiness\
 * Promathia Mission 5-3: Three Paths\
@@ -399,9 +370,8 @@ Involved in Missions:\
 * Promathia Mission 7-5: The Warrior's Path\
 * Promathia Mission 8-1: The Garden of Antiquity\
 * Promathia Mission 8-3: When Angels Fall\
-* Promathia Mission 8-4: Dawn\
-",
-            ["type"] = "Cutscene NPC",
+* Promathia Mission 8-4: Dawn",
+            ["type"] = "Mission Associate",
         },
         ["Masis"] = {
             ["_source"] = "npc",
@@ -427,7 +397,7 @@ Involved in Missions:\
         },
         ["Mengrenaux"] = {
             ["_source"] = "npc",
-            ["icon"] = "MissionNPC.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * Promathia Mission 2-3: Distant Beliefs\
 * Promathia Mission 2-4: An Eternal Melody",
@@ -436,8 +406,9 @@ Involved in Missions:\
         ["Meret"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Notes:\
-Sea Gods item acquisition. You must complete her friend Yurim's quest, In the Name of Science, before Meret will accept any trades. Absolute Virtue * Futsuno Mitama * Aureole * Raphael's Rod * Ninurta's Sash * Mars's Ring * Bellona's Ring * Minerva's Ring Jailer of Love *Novio Earring *Novia Earring Ix'aern (MNK) * Merciful Cape Ix'aern (DRK) *Altruistic Cape Ix'aern (DRG) *Astute Cape Virtue Stone Pouch * Aern Organ * Euvhi Organ * Hpemde Organ * Phuabo Organ * Xzomit Organ * Yovra Organ * Luminion Chip * Luminian Tissue",
+            ["note"] = "Sea Gods:\
+* Trade Sea Gods drops for rewards.\
+* Requires 'In the Name of Science'.",
             ["type"] = "Quest Giver",
         },
         ["Merol"] = {
@@ -452,10 +423,9 @@ Sea Gods item acquisition. You must complete her friend Yurim's quest, In the Na
         },
         ["Mildaurion"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Chains of Promathia\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Chains of Promathia",
             ["type"] = "Mission Associate",
         },
         ["Misseulieu"] = {
@@ -465,7 +435,7 @@ Sea Gods item acquisition. You must complete her friend Yurim's quest, In the Na
         },
         ["Morangeart"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Bad Seed\
 * Fire in the Sky\
@@ -475,10 +445,9 @@ Sea Gods item acquisition. You must complete her friend Yurim's quest, In the Na
         },
         ["Nag'molada"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
-* Chains of Promathia\
-",
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Missions:\
+* Chains of Promathia",
             ["type"] = "Mission Associate",
         },
         ["Nery"] = {
@@ -515,10 +484,9 @@ Sea Gods item acquisition. You must complete her friend Yurim's quest, In the Na
         ["Ombelotte"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Quest:\
+            ["note"] = "Involved in Quests:\
 * An Uninvited Guest\
-* In the Mood for Love\
-",
+* In the Mood for Love",
             ["type"] = "Quest Associate",
         },
         ["Ondieulix"] = {
@@ -531,31 +499,31 @@ Sea Gods item acquisition. You must complete her friend Yurim's quest, In the Na
         },
         ["Owain"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
+            ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * Tavnazian Terrors\
-* Bibiki Bombardment\
-",
+* Bibiki Bombardment",
             ["type"] = "Voidwatch",
         },
         ["Parelbriaux"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * X Marks the Spot\
 * Petals for Parelbriaux\
-\
 Involved in Missions:\
 * Promathia Mission 2-3: Distant Beliefs\
 * Promathia Mission 2-4: An Eternal Melody\
 * Promathia Mission 4-3: The Secrets of Worship",
-            ["type"] = "Quest Associate",
+            ["type"] = "Mission Associate",
         },
         ["Porter Moogle"] = {
             ["_source"] = "npc",
             ["icon"] = "ItemStorage.png",
             ["note"] = "Notes:\
-Find a nearby Porter Moogle and talk to him and select the option to buy a Slip. Once you find the slip you want you select it and confirm your selection. Each slip will cost you 1000 gil to buy. After purchasing any storage slip, you may trade 1-7 corresponding items per trade along with the slip. NOTE: This does NOT mean you can only store up to 7 items on a single slip, it simply means you can only transfer up to 7 at a time to the Porter for storage. At any time after you have the slip you can continue to make trades of 1-7 items along with the corresponding slip, thereby storing all your like items with the Moogle instead of in your MH. This feature is handy when you later get another armor drop, like in Dynamis, and want to store it somewhere until you need it. To withdraw an item simply trade him the corresponding slip and he will give you an option to retrieve your armor. You only pay an initial fee of 1,000 gil when purchasing a storage slip, you will not pay every time you store or withdraw gear. Storage slips cannot be discarded unless all stored items are retrieved first. As of Feb. 14, 2011, items with a Magian Trial insignia can no longer be stored with a Porter Moogle. Any items with an active trial stored before that date have had all trial progress erased.",
+* Sells storage slips for 1,000 gil.\
+* Stores and retrieves eligible equipment using the corresponding slip.\
+* Equipment with an active Magian trial cannot be stored.",
             ["type"] = "Item Storage",
         },
         ["Pradiulot"] = {
@@ -567,7 +535,7 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
         },
         ["Prishe"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Storms of Fate\
 * Apocalypse Nigh\
@@ -576,7 +544,6 @@ Find a nearby Porter Moogle and talk to him and select the option to buy a Slip.
 * A Chocobo's Tale\
 * In the Mood for Love\
 * Hook, Line, and Sinker\
-\
 Involved in Missions:\
 * Promathia Mission 2-3: Distant Beliefs\
 * Promathia Mission 2-4: An Eternal Melody\
@@ -601,19 +568,16 @@ Involved in Missions:\
 * Promathia Mission 7-5: The Warrior's Path\
 * Promathia Mission 8-2: A Fate Decided\
 * Promathia Mission 8-3: When Angels Fall\
-* Promathia Mission 8-4: Dawn\
-",
-            ["type"] = "Cutscene NPC",
+* Promathia Mission 8-4: Dawn",
+            ["type"] = "Mission Associate",
         },
         ["Quelveuiat"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
             ["note"] = "Starts Quests:\
 * A Hard Day's Knight\
-\
 Involved in Quests:\
-* The Search for Goldmane\
-",
+* The Search for Goldmane",
             ["type"] = "Quest Giver",
         },
         ["Raminey"] = {
@@ -628,7 +592,7 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "ArmorStorer.png",
             ["note"] = "Notes:\
-Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
+* Stores eligible level 24-60 artifact, relic, RSE, and other equipment sets.",
             ["type"] = "Armor Depository",
         },
         ["Reaugettie"] = {
@@ -640,7 +604,7 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["note"] = "Notes:\
-:Provides information about a character's Fomor Hate level. :\"You are an adventurer... I can smell the dark blood of the undead as it drips slowly from your soiled garments. Beware, my friend, for you are not alone in your journey. Lost spirits lurk in the shadows behind you, waiting for their chance to rob you of your soul. Hmmm...\" :1) \"You still have a fairly good head start, but they will not let up until they have found you and filled your heart with poison and pain.? :Fomors will not aggro. :2) ?They are close, It is only a matter of time before you have fallen within their reach.\" :Fomors will aggro. :3) \"Can you not feel the hands that reach up from the bottomless depths of hell? Can you not feel the gaze of a thousand eyes, glowing red with anger and hate?\" :Fomors will aggro. :4) \"The grip of evil is tightening on the very essence of what makes you who you are. Be forewarned, as it will not be long before you are confronted with a battle for more than just your life.\" :Fomors will aggro. \"Oh, poor child! May the light of the Dawn Goddess lead you from the pitch-black depths of darkness!\"",
+* Reports your current Fomor hate level and whether Fomors will aggro.",
             ["type"] = "Fomor Informant",
         },
         ["Risunela"] = {
@@ -659,15 +623,6 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
             ["_source"] = "npc",
             ["icon"] = "Dialogue.png",
             ["type"] = "Citizen",
-        },
-        ["Sueleen"] = {
-            ["_source"] = "npc",
-            ["icon"] = "QuestNPC.png",
-            ["note"] = "Involved in Missions:\
-* Promathia Mission 7-2: Flames in the Darkness\
-* Promathia Mission 7-4: Calm Before the Storm\
-",
-            ["type"] = "Quest NPC",
         },
         ["Suzel"] = {
             ["_source"] = "npc",
@@ -695,28 +650,26 @@ Stores lvl 24-60 AF, Relic, RSE and other gearsets.",
         },
         ["Tressia"] = {
             ["_source"] = "npc",
-            ["icon"] = "QuestAssociate.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * In Search of the Truth\
 * Petals for Parelbriaux\
-\
 Involved in Missions:\
 * Promathia Mission 2-3: Distant Beliefs\
 * Promathia Mission 2-4: An Eternal Melody",
-            ["type"] = "Quest Associate",
+            ["type"] = "Mission Associate",
         },
         ["Ulmia"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Quests:\
 * Storms of Fate\
 * Apocalypse Nigh\
-\
 Involved in Missions:\
 * Promathia Mission 2-3: Distant Beliefs\
 * Promathia Mission 2-4: An Eternal Melody\
 * Promathia Mission 2-5: Ancient Vows\
-* The Road Forks: The Road Forks\
+* Promathia Mission 3-3: The Road Forks\
 * Promathia Mission 3-4: Tending Aged Wounds\
 * Promathia Mission 3-5: Darkness Named\
 * Promathia Mission 4-1: Sheltering Doubt\
@@ -741,9 +694,8 @@ Involved in Missions:\
 * Promathia Mission 8-1: The Garden of Antiquity\
 * Promathia Mission 8-2: A Fate Decided\
 * Promathia Mission 8-3: When Angels Fall\
-* Promathia Mission 8-4: Dawn\
-",
-            ["type"] = "Cutscene NPC",
+* Promathia Mission 8-4: Dawn",
+            ["type"] = "Mission Associate",
         },
         ["Wazozo"] = {
             ["_source"] = "npc",
@@ -774,31 +726,23 @@ Involved in Missions:\
         ["Hieroglyphics"] = {
             ["_source"] = "item",
             ["icon"] = "Hieroglyphics.png",
-            ["note"] = "Ancient geometric carvings etched directly into stone monuments. Examining the alien script uncovers historical archives or confirms dimensional travel clearances for Abyssea.",
             ["type"] = "Quest Node",
         },
         ["Main Gate"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "The massive iron-banded fortification gate protecting the safehold. Passing through this towering defensive archway leaves the underground shelter behind to transition you directly into the Lufaise Meadows.",
-            ["type"] = "Security Gate",
         },
         ["Sewer Entrance"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy iron-banded doorway framework locking off the underground aqueduct passages. Passing through this transitional archway leaves the residential sector behind to plunge you directly into the sewer grid.",
-            ["type"] = "Security Gate",
         },
         ["Walnut Door"] = {
             ["_source"] = "item",
             ["icon"] = "Door.png",
-            ["note"] = "A heavy wooden structural barrier partitioning the underground safehold. Turning the iron door handle coordinates your city navigation and uncovers localized story archives.",
-            ["type"] = "Security Gate",
         },
         ["Wooden Cabinet"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A polished wooden furniture piece integrated into the safehold's residential quarters. Searching the drawers uncovers dusty historical archives or updates active expansion side quest journals.",
             ["type"] = "Quest Node",
         },
     },

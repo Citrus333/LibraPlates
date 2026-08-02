@@ -3,19 +3,17 @@ return {
         ["Maxcimille"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Mission NPC:\
 * Gilded Claws\
-* The Voracious Resurgence\
-",
+* The Voracious Resurgence",
             ["type"] = "Mission Associate",
         },
         ["Rivetpounder Mekglok"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
-            ["note"] = "Involved in Mission:\
+            ["note"] = "Mission NPC:\
 * Gilded Claws\
-* The Voracious Resurgence\
-",
+* The Voracious Resurgence",
             ["type"] = "Mission Associate",
         },
     },
@@ -23,20 +21,23 @@ return {
         ["Goblin Footprint"] = {
             ["_source"] = "item",
             ["icon"] = "Cutscene.png",
-            ["note"] = "A small indention in the dirt storing dimensional memory data traces. Trading an overworld artifact or currency slip to the footprint triggers a vivid replay of historical region cutscenes.",
+            ["note"] = "Cutscene replay point.\
+* Replay previously viewed story cutscenes.",
             ["type"] = "Memory Recall",
             ["worldOffsetY"] = 0,
         },
         ["Resume Point"] = {
             ["_source"] = "item",
             ["icon"] = "RendezvousPoint.png",
-            ["note"] = "A localized temporal checkpoint node hovering at key battle paths. Interfacing with the core validates your key item progress parameters to resume interrupted storyline battlefields.",
+            ["note"] = "Battlefield checkpoint:\
+* Resume interrupted mission battles.",
             ["type"] = "Quest Node",
         },
         ["Scrape Mark"] = {
             ["_source"] = "item",
             ["icon"] = "QuestNode.png",
-            ["note"] = "A deep scratch trail scored straight into the damp cavern floor stones. Studying the trailing grooves validates active regional hunt records and advances specific San d'Orian side quests.",
+            ["note"] = "Quest objective:\
+* Examine for quest progress.",
             ["type"] = "Quest Node",
         },
     },

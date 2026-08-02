@@ -3,58 +3,53 @@ return {
         ["Adrienaure"] = {
             ["_source"] = "npc",
             ["icon"] = "PastEventWatcher.png",
-            ["note"] = "Notes:\
-* Replays Rala Waterways cutscenes for a fee.",
+            ["note"] = "Replays Rala Waterways cutscenes for a fee.",
             ["type"] = "Past Event Watcher",
         },
         ["Alaixion"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Missions:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Mission:\
 * The Watergarden Coliseum",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Mission Associate",
         },
         ["Aristide"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quest:\
-* An Errand for the Coalition\
-",
+* An Errand for the Coalition",
             ["type"] = "Quest Associate",
         },
         ["Bezetep"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quest:\
-* An Errand for the Coalition\
-",
+* An Errand for the Coalition",
             ["type"] = "Quest Associate",
         },
         ["Celestin"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quest:\
-* A Barrel of Laughs\
-",
+* A Barrel of Laughs",
             ["type"] = "Quest Associate",
         },
         ["Chalvava"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Starts Quests:\
+            ["icon"] = "QuestGiver.png",
+            ["note"] = "Starts Quest:\
 * Fertile Ground\
 \
 Involved in Quests:\
 * Flavors of Our Lives\
 * Not-So-Clean Bill",
-            ["type"] = "Dialogue NPC",
+            ["type"] = "Quest Giver",
         },
         ["Fabioso"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quest:\
-* A Barrel of Laughs\
-",
+* A Barrel of Laughs",
             ["type"] = "Quest Associate",
         },
         ["Faomahd"] = {
@@ -64,11 +59,10 @@ Involved in Quests:\
         },
         ["Fearless Fismar"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Raptor Rapture\
-",
-            ["type"] = "Cutscene NPC",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Raptor Rapture",
+            ["type"] = "Quest Associate",
         },
         ["Jaroney-Baroney"] = {
             ["_source"] = "npc",
@@ -77,11 +71,10 @@ Involved in Quests:\
         },
         ["Jerra Ndala"] = {
             ["_source"] = "npc",
-            ["icon"] = "afstorage.png",
-            ["note"] = "Involved in Quests:\
-* Forging New Bonds\
-",
-            ["type"] = "Artifact Quest",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Forging New Bonds",
+            ["type"] = "Quest Associate",
         },
         ["Kyairah Mochaafa"] = {
             ["_source"] = "npc",
@@ -92,8 +85,7 @@ Involved in Quests:\
             ["_source"] = "npc",
             ["icon"] = "QuestAssociate.png",
             ["note"] = "Involved in Quest:\
-* A Barrel of Laughs\
-",
+* A Barrel of Laughs",
             ["type"] = "Quest Associate",
         },
         ["Lohvi Rashiibo"] = {
@@ -108,20 +100,20 @@ Involved in Quests:\
         },
         ["Mistdagger"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * For Whom Do We Toil?\
 * Arciela's Promise\
 * Behind the Sluices",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Mission Associate",
         },
         ["Mufeh Hajrrha"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
 * The Watergarden Coliseum\
 * The Curious Case of Melvien",
-            ["type"] = "Cutscene NPC",
+            ["type"] = "Mission Associate",
         },
         ["Obolt"] = {
             ["_source"] = "npc",
@@ -140,25 +132,24 @@ Involved in Quests:\
         },
         ["Sainene"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Involved in Missions:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Mission:\
 * A Grave Mistake",
-            ["type"] = "Dialogue NPC",
+            ["type"] = "Mission Associate",
         },
         ["Saldinor"] = {
             ["_source"] = "npc",
             ["icon"] = "QuestGiver.png",
-            ["note"] = "Starts Quests:\
-* It Sets My Heart Aflutter\
-",
+            ["note"] = "Starts Quest:\
+* It Sets My Heart Aflutter",
             ["type"] = "Quest Giver",
         },
         ["Sivalda"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Involved in Quests:\
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
 * A Thirst for the Eons",
-            ["type"] = "Dialogue NPC",
+            ["type"] = "Quest Associate",
         },
         ["Soltargan"] = {
             ["_source"] = "npc",
@@ -167,25 +158,25 @@ Involved in Quests:\
         },
         ["Stout Weir"] = {
             ["_source"] = "npc",
-            ["icon"] = "Dialogue.png",
-            ["note"] = "Involved in Missions:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Mission:\
 * A Grave Mistake",
-            ["type"] = "Dialogue NPC",
+            ["type"] = "Mission Associate",
         },
         ["Tenacious Tirrod"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Raptor Rapture\
-",
-            ["type"] = "Cutscene NPC",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Raptor Rapture",
+            ["type"] = "Quest Associate",
         },
         ["The Keeper"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
+            ["icon"] = "MissionAssociate.png",
             ["note"] = "Involved in Missions:\
-* For Whom Do We Toil?",
-            ["type"] = "Cutscene NPC",
+* For Whom Do We Toil?\
+* Behind the Sluices",
+            ["type"] = "Mission Associate",
         },
         ["Trentain"] = {
             ["_source"] = "npc",
@@ -194,22 +185,20 @@ Involved in Quests:\
         },
         ["Vicious Vorahal"] = {
             ["_source"] = "npc",
-            ["icon"] = "Cutscene.png",
-            ["note"] = "Involved in Quests:\
-* Raptor Rapture\
-",
-            ["type"] = "Cutscene NPC",
+            ["icon"] = "QuestAssociate.png",
+            ["note"] = "Involved in Quest:\
+* Raptor Rapture",
+            ["type"] = "Quest Associate",
         },
         ["Yeggha Dolashi"] = {
             ["_source"] = "npc",
-            ["icon"] = "Guard.png",
-            ["note"] = "Involved in Quests:\
+            ["icon"] = "MissionAssociate.png",
+            ["note"] = "Involved in Quest:\
 * Open the Floodgates\
 \
-Involved in Missions:\
-* The Watergarden Coliseum\
-",
-            ["type"] = "Arena Guard",
+Involved in Mission:\
+* The Watergarden Coliseum",
+            ["type"] = "Mission Associate",
         },
         ["Zenngar"] = {
             ["_source"] = "npc",
@@ -221,80 +210,95 @@ Involved in Missions:\
         ["Alluring Plant"] = {
             ["_source"] = "item",
             ["icon"] = "FeyBlossoms.png",
-            ["note"] = "A strange bioluminescent floral growth thriving within the damp city sewer channels. Inspecting the glowing leaves triggers vivid pioneer memories or checks active wilderness research milestones.",
+            ["note"] = "Involved in Quest:\
+* Keep Your Bloomers On, Erisa",
             ["type"] = "Quest Node",
         },
         ["Antiquated Sluice Gate"] = {
             ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A massive iron water control gate tracking the city aqueduct network. Turning the heavy manual valve wheel drains flooding sewer sections to unlock restricted underground chambers.",
-            ["type"] = "Security Gate",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Mission:\
+* Behind the Sluices",
+            ["type"] = "Mission Node",
         },
         ["Augural Conveyor"] = {
             ["_source"] = "item",
             ["icon"] = "VeridicalConflux.png",
-            ["note"] = "An ancient teleportation monument tying into the Adoulin waypoint network. Utilizing this humming device transports you directly into challenging Skirmish and Alluvion Skirmish battlefields.",
-            ["type"] = "Transit Portal",
+            ["note"] = "Enters Rala Waterways Skirmishes.\
+\
+Involved in Mission:\
+* Balamor's Ruse",
+            ["type"] = "Skirmish Entrance",
         },
         ["Inconspicuous Barrel"] = {
             ["_source"] = "item",
-            ["icon"] = "Crate.png",
-            ["note"] = "A worn wooden storage barrel tucked away in town alleys or submerged within the sewer grids. Searching the container uncovers hidden contacts and secret patterns required to forge Rune Fencer Relic Armor.",
-            ["type"] = "Loot Container",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Mission:\
+* Gone but Not Forgotten",
+            ["type"] = "Mission Node",
         },
         ["Peculiar Footprints"] = {
             ["_source"] = "item",
             ["icon"] = "Footprint.png",
-            ["note"] = "Faint, mysterious tracking grooves pressed into the dungeon mud or overworld soil layers. Studying the unusual marks uncovers hidden investigative records to advance active side quests.",
-            ["type"] = "Quest Node",
+            ["note"] = "Spawns Awoken Hakenmann for the monthly Peculiar Foes XIII objective.",
+            ["type"] = "Records of Eminence",
         },
         ["Relentless Storm"] = {
             ["_source"] = "item",
             ["icon"] = "Storm.png",
-            ["note"] = "A violent atmospheric phenomenon or rushing vortex echoing inside the dark aqueducts. Investigating the swirling currents uncovers critical pioneer tracking records or updates active city side tasks.",
-            ["type"] = "Quest Node",
+            ["note"] = "Marks the Rala Waterways cutscene location for Raptor Rapture.",
+            ["type"] = "Quest Landmark",
         },
         ["Royal Sepulcher"] = {
             ["_source"] = "item",
-            ["icon"] = "QuestNode.png",
-            ["note"] = "A sacred stone tomb hidden securely inside the dark sewer architecture. Clearing away the moss uncovers historic royalty records to unlock advanced high-tier missions.",
-            ["type"] = "Quest Node",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Mission:\
+* Arciela's Resolve",
+            ["type"] = "Mission Node",
         },
         ["Sluice Gate"] = {
             ["_source"] = "item",
-            ["icon"] = "Door.png",
-            ["note"] = "A massive iron water control gate tracking the city aqueduct network. Turning the heavy manual valve wheel drains flooding sewer sections to unlock restricted underground chambers.",
-            ["type"] = "Security Gate",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Missions:\
+* For Whom Do We Toil?\
+* Predators and Prey\
+* Behind the Sluices",
+            ["type"] = "Mission Node",
         },
         ["Soul Pyre"] = {
             ["_source"] = "item",
             ["icon"] = "TreasureCasket.png",
-            ["note"] = "A glowing extraction column manifesting immediately post-combat across the continent. Accessing its light yields lost items, recovery tokens, or temporary regional combat enhancements.",
-            ["type"] = "Loot Container",
+            ["note"] = "May appear after defeating enemies and yield items or temporary bonuses.",
+            ["type"] = "Soul Pyre",
         },
         ["Storage Container"] = {
             ["_source"] = "item",
-            ["icon"] = "Crate.png",
-            ["note"] = "A reinforced wooden cargo box abandoned within the city aqueduct arches. Searching the container uncovers hidden contacts and retrieves specialized regional provisioning items.",
-            ["type"] = "Loot Container",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Mission:\
+* Behind the Sluices",
+            ["type"] = "Mission Node",
         },
         ["The Briars"] = {
             ["_source"] = "item",
             ["icon"] = "Briars.png",
-            ["note"] = "A dense thicket of thorny brambles blockading the aqueduct passages. Applying specialized cutting masteries or clearing out the roots updates active city side task logs.",
-            ["type"] = "Quest Node",
+            ["note"] = "Opponent in the Behind the Sluices battlefield.",
+            ["type"] = "Mission Battle Enemy",
         },
         ["Tomato Vantage Point"] = {
             ["_source"] = "item",
             ["icon"] = "Tomato.png",
-            ["note"] = "A unique structural viewpoint structure within the damp city aqueduct arches. Pausing at this platform railing registers your pioneer geographic metrics and updates active side tasks.",
+            ["note"] = "Involved in Quest:\
+* Forging New Bonds\
+\
+Commissions Rune Fencer artifact armor after the quest.",
             ["type"] = "Quest Node",
         },
         ["Waterways Overlook"] = {
             ["_source"] = "item",
-            ["icon"] = "Waterways.png",
-            ["note"] = "A strategic stone platform offering a broad view of the city aqueduct arches. Pausing at the railing registers your pioneer geographic metrics and advances advanced frontier side tasks.",
-            ["type"] = "Quest Node",
+            ["icon"] = "MissionNPC.png",
+            ["note"] = "Involved in Mission:\
+* A Grave Mistake",
+            ["type"] = "Mission Node",
         },
     },
 }

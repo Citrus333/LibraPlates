@@ -31,15 +31,25 @@ The big idea is simple: if something is on your screen, LibraPlates tries to mak
 
 This section is temporary while the screenshot set is being built.
 
-| Combat | Blacklist | SMN pet frame |
+| Combat | Combat details | Blacklist |
 | --- | --- | --- |
-| ![Combat feature card](docs/screenshots/features/combat.png) | ![Blacklist feature card](docs/screenshots/features/blacklist.png) | ![SMN pet frame feature card](docs/screenshots/features/smn.png) |
-| Clickable combat plates with useful enemy info. | Blacklist and privacy tools. | Custom SMN avatar/spirit pet frame support. |
+| <img src="docs/screenshots/features/combat.png" alt="Combat feature card" width="280"> | <img src="docs/screenshots/features/combat2.png" alt="Combat details feature card" width="280"> | <img src="docs/screenshots/features/blacklist.png" alt="Blacklist feature card" width="280"> |
+| Clickable combat plates and enemy info. | More combat/readability tools. | Blacklist and privacy tools. |
 
-| PUP automaton |
-| --- |
-| ![PUP automaton animation](docs/screenshots/features/pup_animation.gif) |
-| PUP automaton support with custom frame, maneuvers, and overload/burden helpers. |
+| Catseye QoL | Teleport tools | Jeuno/NPC info |
+| --- | --- | --- |
+| <img src="docs/screenshots/features/catseye%20.png" alt="Catseye quality-of-life feature card" width="280"> | <img src="docs/screenshots/features/Teleport.png" alt="Teleport feature card" width="280"> | <img src="docs/screenshots/features/jeuno.png" alt="Jeuno NPC feature card" width="280"> |
+| Catseye systems, services, and markers. | Quick travel and teleport helpers. | NPC/object info with useful labels. |
+
+| SMN pet frame | PUP automaton | DRG wyvern |
+| --- | --- | --- |
+| <img src="docs/screenshots/features/smn.png" alt="SMN pet frame feature card" width="280"> | <img src="docs/screenshots/features/pup_animation.gif" alt="PUP automaton animation" width="280"> | <img src="docs/screenshots/features/drg.png" alt="DRG wyvern feature card" width="280"> |
+| Custom SMN avatar/spirit pet frame support. | Automaton frame, maneuvers, overload, and burden helpers. | Wyvern plate support and pet-class QoL. |
+
+| Fishing | Norg services | Kazan / special NPCs |
+| --- | --- | --- |
+| <img src="docs/screenshots/features/fish.png" alt="Fishing feature card" width="280"> | <img src="docs/screenshots/features/norg.png" alt="Norg feature card" width="280"> | <img src="docs/screenshots/features/kazan.png" alt="Kazan feature card" width="280"> |
+| Fishing HUD, catches, fatigue, and life-skill helpers. | Service NPCs with icons, titles, and quick context. | Special NPC markers and Catseye-specific data. |
 
 ## Screenshots to add
 

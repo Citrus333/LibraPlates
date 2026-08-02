@@ -574,11 +574,13 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
             local col = (i - 1) % iconsPerRow;
             local layoutRowCount = math.min(iconsPerRow, total);
             local rowWidth = (layoutRowCount * iconSize) + ((layoutRowCount - 1) * spacing);
-            local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
+            local iconOffsetX = growLeft == true
+                and (baseX - rowWidth + (iconSize * 0.5) + (col * (iconSize + spacing)))
+                or (baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing)));
 
             if (anchored == true) then
                 iconOffsetX = growLeft == true
-                    and (baseX - rowWidth + (col * (iconSize + spacing)))
+                    and (baseX - rowWidth + iconSize + (col * (iconSize + spacing)))
                     or (baseX + (col * (iconSize + spacing)));
             end
 
@@ -590,6 +592,8 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
                 offsetY = baseY + (row * rowHeight),
                 anchorTo = iconSettings.anchorTo,
                 anchorPoint = iconSettings.anchorPoint,
+                anchorCollapse = iconSettings.anchorCollapse,
+                anchorSpacing = iconSettings.anchorSpacing,
                 timerText = nil,
                 timerFontFamily = fonts.GetRole(globalSettings, iconSettings.timerUseSmallFont == true),
                 timerFontFlags = fonts.GetRoleFlags(globalSettings, iconSettings.timerUseSmallFont == true),

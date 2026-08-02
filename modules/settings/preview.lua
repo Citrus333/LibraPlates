@@ -1412,7 +1412,9 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
             local col = (i - 1) % iconsPerRow;
             local layoutRowCount = math.min(iconsPerRow, total);
             local rowWidth = (layoutRowCount * iconSize) + ((layoutRowCount - 1) * spacing);
-            local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
+            local iconOffsetX = growLeft == true
+                and (baseX - rowWidth + (iconSize * 0.5) + (col * (iconSize + spacing)))
+                or (baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing)));
             local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
             local timerText = nil;
 
@@ -1422,7 +1424,7 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
 
             if (anchored == true) then
                 iconOffsetX = growLeft == true
-                    and (baseX - rowWidth + (col * (iconSize + spacing)))
+                    and (baseX - rowWidth + iconSize + (col * (iconSize + spacing)))
                     or (baseX + (col * (iconSize + spacing)));
             end
 
@@ -2463,7 +2465,7 @@ local function BuildPlate(entityName, stateName, context)
         for index, statusId in ipairs(buffStatusIds) do
             buffRows[#buffRows + 1] = {
                 id = statusId,
-                seconds = buffDurations[index],
+                seconds = entityName == 'Trust' and nil or buffDurations[index],
             };
         end
 
@@ -2477,7 +2479,7 @@ local function BuildPlate(entityName, stateName, context)
         for index, statusId in ipairs(debuffStatusIds) do
             debuffRows[#debuffRows + 1] = {
                 id = statusId,
-                seconds = buffDurations[index],
+                seconds = entityName == 'Trust' and nil or buffDurations[index],
             };
         end
 
@@ -2548,7 +2550,8 @@ local function BuildPlate(entityName, stateName, context)
             ['Distance'] = 'distance',
         },
         hpBar = {
-            enabled = (npcObjectPreview ~= true or npcTacticalPreview == true) and hpBarSettings.enabled == true,
+            enabled = not (entityName == 'Enemy' and (stateName == 'Idle' or stateName == 'World'))
+                and ((npcObjectPreview ~= true or npcTacticalPreview == true) and hpBarSettings.enabled == true),
             width = tonumber(hpBarSettings.width) or 180,
             height = tonumber(hpBarSettings.height) or 12,
             offsetX = tonumber(hpBarSettings.offsetX) or 0,
@@ -2850,7 +2853,7 @@ local function BuildPlate(entityName, stateName, context)
         -- selected NPC icon settings visible in every zone without affecting live
         -- NPC lookup or the preview's display name/type line.
         local iconTextureId = npcObjectInfo.GetTextureId(previewName, 'NPC', { ignoreZone = true })
-            or npcObjectInfo.GetTextureId('Almid', 'NPC', { ignoreZone = true });
+            or npcObjectInfo.GetTextureIdForInfo({ source = 'catseye_npc', icon = 'Hunter.png' });
 
         if (iconSettings ~= nil and iconSettings.enabled == true and iconTextureId ~= nil) then
             plateData.icons = plateData.icons or {};

@@ -197,6 +197,14 @@ Involved in Quests:\
             ["icon"] = "Merchant.png",
             ["type"] = "Standard Merchant",
         },
+        ["Gegeroon"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "HELMItemAppraiser.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/HELM",
+            ["note"] = "CatsEyeXI HELM:\
+* Item Appraiser at H-8.",
+            ["type"] = "HELM Item Appraiser",
+        },
         ["Memeroon"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",

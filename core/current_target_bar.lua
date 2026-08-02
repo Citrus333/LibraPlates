@@ -8,9 +8,11 @@ local engagedEnemies = require('core.engaged_enemies');
 local enemyStatuses = require('core.enemy_statuses');
 local partyStatuses = require('core.party_statuses');
 local playerStatuses = require('core.player_statuses');
+local trustStatusIcons = require('core.trust_status_icons');
 local currentTargetDebuffs = require('core.current_target_debuffs');
 local mobInfoData = require('core.mobinfo_data');
 local textureLoader = require('core.texture_loader');
+local npcObjectInfo = require('core.npc_object_info');
 local statusEffects = require('core.status_effects');
 local statusIconTextures = require('core.status_icon_textures');
 local statusTimerFormat = require('core.status_timer_format');
@@ -268,28 +270,21 @@ local function IsSelfTarget(targetIndex)
 end
 
 local function IsSelfTargetEntity(entity)
-    local memory = AshitaCore ~= nil and AshitaCore:GetMemoryManager() or nil;
-    local player = memory ~= nil and memory:GetPlayer() or nil;
-    local party = memory ~= nil and memory:GetParty() or nil;
-
-    if (entity == nil or player == nil or party == nil) then
+    if (entity == nil) then
         return false;
     end
 
-    local selfIndex = SafeCall(nil, function()
-        if (player.GetTargetIndex ~= nil) then
-            return player:GetTargetIndex();
-        end
-
-        return party:GetMemberTargetIndex(0);
-    end);
-
-    if (selfIndex == nil) then
+    local self = entities.GetSelf();
+    if (self == nil) then
         return false;
     end
 
-    local selfEntity = entities.GetEntity(selfIndex);
-    return selfEntity ~= nil and selfEntity == entity;
+    local entityServerId = GetEntityServerId(entity);
+    if (entityServerId ~= nil and tonumber(self.serverId) ~= nil) then
+        return tonumber(entityServerId) == tonumber(self.serverId);
+    end
+
+    return tostring(entity.Name or '') ~= '' and tostring(entity.Name or '') == tostring(self.name or '');
 end
 
 local function IsMemberOfParty(targetIndex)
@@ -399,7 +394,10 @@ local function BuildRowsFromStatusIds(statusIds, kind)
         return rows;
     end
 
-    for index = 1, 32 do
+    local startIndex = statusIds[0] ~= nil and 0 or 1;
+    local endIndex = statusIds[0] ~= nil and 31 or 32;
+
+    for index = startIndex, endIndex do
         local statusId = tonumber(statusIds[index]);
         if (
             statusId ~= nil and
@@ -427,7 +425,7 @@ local function GetStatusRows(targetIndex, entity, kind, isEnemy)
         return {};
     end
 
-    if (IsSelfTargetEntity(entity) == true or IsSelfTarget(targetIndex) == true) then
+    if (IsSelfTarget(targetIndex) == true or IsSelfTargetEntity(entity) == true) then
         local player = SafeCall(nil, function()
             return AshitaCore:GetMemoryManager():GetPlayer();
         end);
@@ -449,6 +447,27 @@ local function GetStatusRows(targetIndex, entity, kind, isEnemy)
 
     local isPartyMember = IsMemberOfParty(targetIndex) == true;
 
+    if (isPartyMember == true) then
+        local rows = partyStatuses.GetMemberRows(serverId, kind) or {};
+        if (#rows > 0) then
+            return rows;
+        end
+    end
+
+    if (isEnemy ~= true) then
+        local trustRows = trustStatusIcons.GetRows(serverId, kind) or {};
+        if (#trustRows > 0) then
+            return trustRows;
+        end
+    end
+
+    if (isEnemy ~= true and IsPlayerIndex(targetIndex) == true) then
+        local rows = BuildRowsFromEntityStatuses(entity, kind);
+        if (#rows > 0) then
+            return rows;
+        end
+    end
+
     if (isPartyMember ~= true and isEnemy ~= true and kind == 'debuff') then
         return currentTargetDebuffs.GetRows(serverId);
     end
@@ -468,12 +487,7 @@ local function GetStatusRows(targetIndex, entity, kind, isEnemy)
         return rows;
     end
 
-    local rows = isPartyMember == true and (partyStatuses.GetMemberRows(serverId, kind) or {}) or {};
-    if (#rows == 0 and IsPlayerIndex(targetIndex) == true) then
-        rows = BuildRowsFromEntityStatuses(entity, kind);
-    end
-
-    return rows;
+    return {};
 end
 
 local function DrawStatusRows(drawList, rows, settings, originX, originY)
@@ -637,6 +651,88 @@ local function AppendMobInfoIconRow(rows, info, settings)
     end
 end
 
+local function MeasureMobInfoEntry(row, rowTextStyle, rowFontSize, iconSize, spacing)
+    local iconCount = type(row.icons) == 'table' and #row.icons or (row.icon ~= nil and 1 or 0);
+    local width = iconCount > 0 and ((iconCount * iconSize) + (math.max(0, iconCount - 1) * spacing)) or 0;
+
+    if (row.text ~= nil and row.text ~= '') then
+        width = width + spacing + math.floor(GetTextureTextWidth(row.text, rowTextStyle, rowFontSize) + 0.5);
+    end
+
+    return math.max(0, width);
+end
+
+local function MeasureMobInfoGroup(rows, rowTextStyle, rowFontSize, iconSize, spacing, entrySpacing)
+    local width = 0;
+    for index, row in ipairs(rows or {}) do
+        if (index > 1) then
+            width = width + entrySpacing;
+        end
+        width = width + MeasureMobInfoEntry(row, rowTextStyle, rowFontSize, iconSize, spacing);
+    end
+
+    return width;
+end
+
+local function DrawMobInfoEntry(drawList, row, iconStyle, rowTextStyle, rowFontSize, iconSize, spacing, cursorX, baseY, globalSettings)
+    local rowIcons = type(row.icons) == 'table' and row.icons or { row.icon };
+    local drewIcon = false;
+
+    for _, iconName in ipairs(rowIcons) do
+        local textureId = GetPeerIconTextureId(iconName, iconStyle);
+        if (textureId ~= nil) then
+            drawList:AddImage(textureId, { cursorX, baseY }, { cursorX + iconSize, baseY + iconSize }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+            cursorX = cursorX + iconSize + spacing;
+            drewIcon = true;
+        end
+    end
+
+    if (drewIcon == true and row.text ~= nil and row.text ~= '') then
+        local modifierTextStyle = rowTextStyle;
+        if (row.kind == 'weak') then
+            modifierTextStyle = CopyTextStyle(rowTextStyle, { 0.44, 0.95, 0.70, 1.0 });
+        elseif (row.kind == 'resist') then
+            modifierTextStyle = CopyTextStyle(rowTextStyle, { 1.0, 0.58, 0.50, 1.0 });
+        end
+        modifierTextStyle.fontFamily = fonts.GetRole(globalSettings, true);
+        modifierTextStyle.fontFlags = fonts.GetRoleFlags(globalSettings, true);
+
+        AddTextureText(drawList, cursorX, baseY + math.floor((iconSize - rowFontSize) * 0.5), row.text, modifierTextStyle, rowFontSize);
+        cursorX = cursorX + math.floor(GetTextureTextWidth(row.text, modifierTextStyle, rowFontSize) + 0.5);
+    elseif (drewIcon == true) then
+        cursorX = cursorX - spacing;
+    end
+
+    return cursorX;
+end
+
+local function DrawMobInfoGroup(drawList, rows, iconStyle, rowTextStyle, rowFontSize, iconSize, spacing, entrySpacing, cursorX, baseY, globalSettings, backgroundColor)
+    if (rows == nil or #rows == 0) then
+        return cursorX;
+    end
+
+    local padX = backgroundColor ~= nil and 4 or 0;
+    local padY = backgroundColor ~= nil and 2 or 0;
+    local groupWidth = MeasureMobInfoGroup(rows, rowTextStyle, rowFontSize, iconSize, spacing, entrySpacing);
+    if (backgroundColor ~= nil and groupWidth > 0 and drawList.AddRectFilled ~= nil) then
+        drawList:AddRectFilled(
+            { cursorX - padX, baseY - padY },
+            { cursorX + groupWidth + padX, baseY + iconSize + padY },
+            ColorToU32(backgroundColor),
+            2
+        );
+    end
+
+    for index, row in ipairs(rows) do
+        if (index > 1) then
+            cursorX = cursorX + entrySpacing;
+        end
+        cursorX = DrawMobInfoEntry(drawList, row, iconStyle, rowTextStyle, rowFontSize, iconSize, spacing, cursorX, baseY, globalSettings);
+    end
+
+    return cursorX;
+end
+
 local function DrawMobInfoRow(drawList, entity, targetIndex, settings, textStyle, fontSize, originX, originY)
     if (
         drawList == nil or
@@ -682,40 +778,36 @@ local function DrawMobInfoRow(drawList, entity, targetIndex, settings, textStyle
         cursorX = cursorX + math.floor(GetTextureTextWidth(label, rowTextStyle, rowFontSize) + spacing + 4);
     end
 
-    local rows = {};
-    AppendMobInfoIconRow(rows, info, settings);
+    local neutralRows = {};
+    local resistRows = {};
+    local weakRows = {};
+    local allRows = {};
+    AppendMobInfoIconRow(allRows, info, settings);
 
-    for index = 1, math.min(maxIcons, #rows) do
-        local row = rows[index];
-        local rowIcons = type(row.icons) == 'table' and row.icons or { row.icon };
-        local drewIcon = false;
-
-        for _, iconName in ipairs(rowIcons) do
-            local textureId = GetPeerIconTextureId(iconName, iconStyle);
-            if (textureId ~= nil) then
-                drawList:AddImage(textureId, { cursorX, baseY }, { cursorX + iconSize, baseY + iconSize }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
-                cursorX = cursorX + iconSize + spacing;
-                drewIcon = true;
-            end
+    for _, row in ipairs(allRows) do
+        if (#neutralRows + #resistRows + #weakRows >= maxIcons) then
+            break;
         end
 
-        if (drewIcon == true) then
-            if (row.text ~= nil and row.text ~= '') then
-                local modifierTextStyle = rowTextStyle;
-                if (row.kind == 'weak') then
-                    modifierTextStyle = CopyTextStyle(rowTextStyle, { 0.44, 0.95, 0.70, 1.0 });
-                elseif (row.kind == 'resist') then
-                    modifierTextStyle = CopyTextStyle(rowTextStyle, { 1.0, 0.58, 0.50, 1.0 });
-                end
-                modifierTextStyle.fontFamily = fonts.GetRole(globalSettings, true);
-                modifierTextStyle.fontFlags = fonts.GetRoleFlags(globalSettings, true);
-
-                local textX = cursorX - spacing + 1;
-                AddTextureText(drawList, textX, baseY + math.floor(iconSize * 0.55), row.text, modifierTextStyle, rowFontSize);
-                cursorX = cursorX + math.floor(GetTextureTextWidth(row.text, modifierTextStyle, rowFontSize) + spacing + 3);
-            end
+        if (row.kind == 'resist') then
+            resistRows[#resistRows + 1] = row;
+        elseif (row.kind == 'weak') then
+            weakRows[#weakRows + 1] = row;
+        else
+            neutralRows[#neutralRows + 1] = row;
         end
     end
+
+    local entrySpacing = math.max(2, spacing + 3);
+    cursorX = DrawMobInfoGroup(drawList, neutralRows, iconStyle, rowTextStyle, rowFontSize, iconSize, spacing, entrySpacing, cursorX, baseY, globalSettings, nil);
+    if (#neutralRows > 0 and (#resistRows > 0 or #weakRows > 0)) then
+        cursorX = cursorX + math.max(4, spacing + 4);
+    end
+    cursorX = DrawMobInfoGroup(drawList, resistRows, iconStyle, rowTextStyle, rowFontSize, iconSize, spacing, entrySpacing, cursorX, baseY, globalSettings, settings.resistBackgroundColor or { 0.85, 0.18, 0.18, 0.38 });
+    if (#resistRows > 0 and #weakRows > 0) then
+        cursorX = cursorX + math.max(4, spacing + 4);
+    end
+    DrawMobInfoGroup(drawList, weakRows, iconStyle, rowTextStyle, rowFontSize, iconSize, spacing, entrySpacing, cursorX, baseY, globalSettings, settings.weakBackgroundColor or { 0.12, 0.70, 0.32, 0.34 });
 end
 
 local function GetClaimNameColor(nameSettings, claimCategory)
@@ -759,25 +851,65 @@ local function GetNameWidgetEntityName(entity, targetIndex, isEnemy)
         return 'Enemy';
     end
 
+    local rawEntityName = 'NPC';
+    if (entity ~= nil and (tonumber(entity.Type) == 2 or tonumber(entity.Type) == 3)) then
+        rawEntityName = 'Object';
+    end
+
+    local function ResolveNpcObjectKind(kind)
+        local name = tostring(entity ~= nil and entity.Name or ''):gsub('\170', '');
+        name = name:gsub('%c', ''):gsub('^%s+', ''):gsub('%s+$', '');
+        return npcObjectInfo.ResolveKind(name, kind, { targetIndex = targetIndex });
+    end
+
+    local resolvedEntityName = rawEntityName;
+    local npcInfo = nil;
+    local ok, resolved, info = pcall(ResolveNpcObjectKind, rawEntityName);
+    if (ok == true) then
+        resolvedEntityName = tostring(resolved or rawEntityName);
+        npcInfo = info;
+    end
+
+    if (npcInfo == nil) then
+        local fallbackKind = rawEntityName == 'Object' and 'NPC' or 'Object';
+        ok, resolved, info = pcall(ResolveNpcObjectKind, fallbackKind);
+        if (ok == true and info ~= nil) then
+            resolvedEntityName = tostring(resolved or fallbackKind);
+            npcInfo = info;
+        end
+    end
+
+    if (npcInfo ~= nil and resolvedEntityName == 'Object') then
+        return 'Object';
+    end
+
+    if (npcInfo ~= nil and resolvedEntityName == 'NPC') then
+        return 'NPC';
+    end
+
     if (IsPlayerIndex(targetIndex) == true) then
         return 'PC';
     end
 
-    if (entity ~= nil and (tonumber(entity.Type) == 2 or tonumber(entity.Type) == 3)) then
+    if (rawEntityName == 'Object') then
         return 'Object';
     end
 
     return 'NPC';
 end
 
-local function GetNameWidgetStateName(targetIndex)
+local function GetNameWidgetStateName(targetIndex, entityName)
+    if (entityName == 'Object') then
+        return 'Idle';
+    end
+
     local targetState = targeting.GetTargetStateName(targetIndex);
     return tostring(targetState or 'Idle') == 'Idle' and 'Idle' or 'Combat';
 end
 
 local function GetInheritedNameStyle(entity, targetIndex, isEnemy)
     local entityName = GetNameWidgetEntityName(entity, targetIndex, isEnemy);
-    local layoutStateName = GetNameWidgetStateName(targetIndex);
+    local layoutStateName = GetNameWidgetStateName(targetIndex, entityName);
     local nameSettings = state.GetWidgetSettings(entityName, layoutStateName, 'Name', nameDefaults);
     local globalSettings = state.GetGlobalSettings(globalDefaults);
     local claimCategory = isEnemy == true and engagedEnemies.GetClaimCategory(targetIndex) or nil;

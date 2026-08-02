@@ -234,6 +234,8 @@ local function NormalizeCurrentTargetBar(settings)
         GroupNumberField('iconSpacing', 0, 32);
         GroupColorField('textColor');
         GroupColorField('outlineColor');
+        GroupColorField('resistBackgroundColor');
+        GroupColorField('weakBackgroundColor');
     end
 
     local function NormalizeSharedText()

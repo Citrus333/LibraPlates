@@ -75,6 +75,7 @@ local petPrepare = {
     smn = nil,
     caches = {},
 };
+local lastSmnDetachedPlaceholder = nil;
 local petWidgetSettingsCache = {};
 local petGlobalSettingsCache = {
     revision = nil,
@@ -378,6 +379,14 @@ local function GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 
     end
 
     return value;
+end
+
+local function GetDetachedPetPositionSettingsPrefix(prefix, settingsPrefix)
+    if (tostring(prefix or '') == 'smn') then
+        return 'smnAvatar';
+    end
+
+    return tostring(settingsPrefix or prefix or '');
 end
 
 local function BuildStaticPetBackground(targetingSettings, prefix, settingsPrefix, staticScale, petName)
@@ -2090,8 +2099,8 @@ local function GetHighestPupBurden()
     return bestElement, bestChance;
 end
 
-local function DrawPupHighestBurdenElement(frameCenterX, frameCenterY, settings, preview, windowId, overallScale)
-    if (DrawStaticArtworkTexture == nil) then
+local function DrawPupHighestBurdenElement(drawList, frameCenterX, frameCenterY, settings, preview, overallScale)
+    if (drawList == nil or drawList.AddImage == nil) then
         return;
     end
 
@@ -2117,14 +2126,14 @@ local function DrawPupHighestBurdenElement(frameCenterX, frameCenterY, settings,
     local size = math.max(1, tonumber(settings.size) or 24) * overallScale;
     local centerX = frameCenterX + ((tonumber(settings.offsetX) or -112) * overallScale);
     local centerY = frameCenterY + ((tonumber(settings.offsetY) or -5) * overallScale);
-    DrawStaticArtworkTexture(
+
+    drawList:AddImage(
         textureId,
-        centerX,
-        centerY,
-        size,
-        size,
-        tostring(windowId or 'static_pup') .. '_element',
-        100
+        { centerX - (size * 0.5), centerY - (size * 0.5) },
+        { centerX + (size * 0.5), centerY + (size * 0.5) },
+        { 0, 0 },
+        { 1, 1 },
+        0xFFFFFFFF
     );
 end
 
@@ -2441,7 +2450,8 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
     local detachedTotalStart = perfMeter.Start();
     local detachedPrepareStart = perfMeter.Start();
     settingsPrefix = tostring(settingsPrefix or prefix);
-    local staticScale = math.max(0.10, math.min(2.00, (tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticScale')) or 35) / 100));
+    local positionSettingsPrefix = GetDetachedPetPositionSettingsPrefix(prefix, settingsPrefix);
+    local staticScale = math.max(0.10, math.min(2.00, (tonumber(GetDetachedPetSetting(targetingSettings, prefix, positionSettingsPrefix, 'PetStaticScale')) or 35) / 100));
     if (prefix == 'pup' or prefix == 'drg' or prefix == 'bst') then
         -- Wide detached artwork uses a fixed internal scale so it fits the
         -- 1024x512 canvas without being clipped before the final draw.
@@ -2566,8 +2576,8 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
     local uv1 = { cropX / staticTextureWidth, cropY / staticTextureHeight };
     local uv2 = { (cropX + cropWidth) / staticTextureWidth, (cropY + cropHeight) / staticTextureHeight };
 
-    local staticCenterX = tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticX')) or 170;
-    local staticCenterY = tonumber(GetDetachedPetSetting(targetingSettings, prefix, settingsPrefix, 'PetStaticY')) or 690;
+    local staticCenterX = tonumber(GetDetachedPetSetting(targetingSettings, prefix, positionSettingsPrefix, 'PetStaticX')) or 170;
+    local staticCenterY = tonumber(GetDetachedPetSetting(targetingSettings, prefix, positionSettingsPrefix, 'PetStaticY')) or 690;
     local editBounds = nil;
 
     if (prefix == 'pup' and editEnabled == true) then
@@ -2764,9 +2774,9 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
         windowId,
         editEnabled,
         function(nextX, nextY, nextW)
-            targetingSettings[settingsPrefix .. 'PetStaticX'] = nextX - positionOffsetX;
-            targetingSettings[settingsPrefix .. 'PetStaticY'] = nextY - positionOffsetY;
-            targetingSettings[settingsPrefix .. 'PetStaticScale'] = math.max(10, math.min(200, math.floor(((tonumber(nextW) or cropWidth) / math.max(1, cropWidth) * 100) + 0.5)));
+            targetingSettings[positionSettingsPrefix .. 'PetStaticX'] = nextX - positionOffsetX;
+            targetingSettings[positionSettingsPrefix .. 'PetStaticY'] = nextY - positionOffsetY;
+            targetingSettings[positionSettingsPrefix .. 'PetStaticScale'] = math.max(10, math.min(200, math.floor(((tonumber(nextW) or cropWidth) / math.max(1, cropWidth) * 100) + 0.5)));
             state.Save();
         end,
         uv1,
@@ -2778,6 +2788,14 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
                     staticCenterX,
                     staticCenterY,
                     staticBackground.pupOverloadSettings,
+                    staticPlateData.detachedPupSetupPreview == true,
+                    pupOverallScale
+                );
+                DrawPupHighestBurdenElement(
+                    drawList,
+                    staticCenterX,
+                    staticCenterY,
+                    staticBackground.pupElementSettings,
                     staticPlateData.detachedPupSetupPreview == true,
                     pupOverallScale
                 );
@@ -2798,16 +2816,6 @@ local function DrawDetachedStaticPetFrame(prefix, petIndex, plateData, targeting
         editBounds
     );
 
-    if (prefix == 'pup') then
-        DrawPupHighestBurdenElement(
-            staticCenterX,
-            staticCenterY,
-            staticBackground.pupElementSettings,
-            staticPlateData.detachedPupSetupPreview == true,
-            windowId,
-            pupOverallScale
-        );
-    end
     perfMeter.Stop('pet.detached.draw', detachedDrawStart);
     perfMeter.Stop('pet.detached.total', detachedTotalStart);
 end
@@ -2858,8 +2866,12 @@ local function IsPlayerOnSmn()
     return entities.GetPlayerMainJobId() == 15;
 end
 
-local function BuildSmnDetachedPlaceholderPlate()
-    local layoutStateName = 'Avatar';
+local function BuildSmnDetachedPlaceholderPlate(layoutStateName)
+    layoutStateName = tostring(layoutStateName or 'Avatar');
+    if (layoutStateName ~= 'Spirit') then
+        layoutStateName = 'Avatar';
+    end
+
     local nameSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'Name', nameDefaults);
     local backgroundSettings = GetPetWidgetSettings('Pet (SMN)', layoutStateName, 'Background', backgroundDefaults);
     local globalSettings = GetPetGlobalSettings();
@@ -2904,11 +2916,42 @@ local function BuildSmnDetachedPlaceholderPlate()
     };
 end
 
-local function DrawSmnDetachedPlaceholder(targetingSettings, plateData)
+local function GetSmnDetachedPlaceholderInfo(targetingSettings)
+    local cached = lastSmnDetachedPlaceholder;
+
+    if (
+        cached ~= nil and
+        tostring(GetDetachedPetSetting(targetingSettings, 'smn', cached.settingsPrefix, 'PetPlateMode') or 'Normal') ~= 'Normal'
+    ) then
+        return cached;
+    end
+
+    if (tostring(GetDetachedPetSetting(targetingSettings, 'smn', 'smnAvatar', 'PetPlateMode') or 'Normal') ~= 'Normal') then
+        return {
+            layoutStateName = 'Avatar',
+            settingsPrefix = 'smnAvatar',
+            petName = 'None',
+        };
+    end
+
+    if (tostring(GetDetachedPetSetting(targetingSettings, 'smn', 'smnSpirit', 'PetPlateMode') or 'Normal') ~= 'Normal') then
+        return {
+            layoutStateName = 'Spirit',
+            settingsPrefix = 'smnSpirit',
+            petName = 'None',
+        };
+    end
+
+    return nil;
+end
+
+local function DrawSmnDetachedPlaceholder(targetingSettings, plateData, placeholderInfo)
+    placeholderInfo = placeholderInfo or GetSmnDetachedPlaceholderInfo(targetingSettings);
+
     if (
         IsPlayerOnSmn() ~= true or
         targetingSettings == nil or
-        tostring(GetDetachedPetSetting(targetingSettings, 'smn', 'smnAvatar', 'PetPlateMode') or 'Normal') == 'Normal'
+        placeholderInfo == nil
     ) then
         return;
     end
@@ -2916,11 +2959,11 @@ local function DrawSmnDetachedPlaceholder(targetingSettings, plateData)
     DrawDetachedStaticPetFrame(
         'smn',
         'placeholder',
-        plateData or BuildSmnDetachedPlaceholderPlate(),
+        plateData or BuildSmnDetachedPlaceholderPlate(placeholderInfo.layoutStateName),
         targetingSettings,
         'static_smn_pet_placeholder',
-        'None',
-        'smnAvatar'
+        placeholderInfo.petName or 'None',
+        placeholderInfo.settingsPrefix or 'smnAvatar'
     );
 end
 
@@ -5290,6 +5333,12 @@ local function QueueSmnPet(pet)
         GetDetachedPetSetting(targetingSettings, 'smn', detachedSettingsPrefix, 'PetPlateMode')
         or 'Normal'
     );
+    lastSmnDetachedPlaceholder = {
+        layoutStateName = layoutStateName,
+        settingsPrefix = detachedSettingsPrefix,
+        petName = tostring(pet.name or 'None'),
+    };
+
     if (petPlateMode ~= 'Normal') then
         plateData.detachedSmnPetType = layoutStateName;
         plateData.detachedAvatarName = tostring(pet.name or '');
@@ -5970,17 +6019,14 @@ function petPlate.Render()
         QueueSmnPet(smnPet);
     elseif (detachedPreviewPrefix ~= 'smn') then
         local targetingSettings = targeting.GetSettings();
-        if (
-            mainJobId == SMN_MAIN_JOB_ID and
-            targetingSettings ~= nil and
-            tostring(GetDetachedPetSetting(targetingSettings, 'smn', 'smnAvatar', 'PetPlateMode') or 'Normal') ~= 'Normal'
-        ) then
-            local placeholderPlate = BuildSmnDetachedPlaceholderPlate();
+        local placeholderInfo = targetingSettings ~= nil and GetSmnDetachedPlaceholderInfo(targetingSettings) or nil;
+        if (mainJobId == SMN_MAIN_JOB_ID and placeholderInfo ~= nil) then
+            local placeholderPlate = BuildSmnDetachedPlaceholderPlate(placeholderInfo.layoutStateName);
             placeholderPlate.detachedAvatarBars = BuildDetachedSmnMeterSources(nil);
             placeholderPlate.detachedAvatarFavorActive = select(1, GetAvatarFavorStatusElapsed());
             placeholderPlate.detachedAvatarFavorCooldownSeconds = GetAvatarFavorCooldownSeconds();
             placeholderPlate.detachedAvatarHasPet = false;
-            DrawSmnDetachedPlaceholder(targetingSettings, placeholderPlate);
+            DrawSmnDetachedPlaceholder(targetingSettings, placeholderPlate, placeholderInfo);
         end
     end
 

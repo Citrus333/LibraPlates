@@ -881,7 +881,6 @@ local enemyIdleWidgets = T{
     'Behavior icon',
     'Detects icon',
     'Links icon',
-    'HP Bar',
     'Buffs',
     'Debuffs',
     'ID',
@@ -3584,15 +3583,40 @@ function DrawRestingColorPlacementRow(leftLabel, colorValue, colorId, rightLabel
 end
 
 function DrawRestingCheckboxPair(leftLabel, leftValue, leftOnChange, rightLabel, rightValue, rightOnChange)
+    local function DrawCheckboxOnly(id, value, onChange)
+        local ref = { value == true };
+
+        if (imgui.Checkbox ~= nil) then
+            if (imgui.Checkbox('##' .. tostring(id), ref) == true) then
+                onChange(ref[1] == true);
+            end
+
+            return;
+        end
+
+        imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, '[' .. (value == true and 'x' or ' ') .. ']');
+        if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+            onChange(value ~= true);
+        end
+    end
+
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
-        if (imgui.BeginTable('##resting_checkbox_pair_' .. tostring(leftLabel) .. '_' .. tostring(rightLabel), 2, settingsTableFlagsNoBorders)) then
-            imgui.TableSetupColumn('##left', 0, 256);
-            imgui.TableSetupColumn('##right', 0, 344);
+        if (imgui.BeginTable('##resting_checkbox_pair_' .. tostring(leftLabel) .. '_' .. tostring(rightLabel), 4, settingsTableFlagsNoBorders)) then
+            imgui.TableSetupColumn('##left_label', 0, 132);
+            imgui.TableSetupColumn('##left_control', 0, 124);
+            imgui.TableSetupColumn('##right_label', 0, 160);
+            imgui.TableSetupColumn('##right_control', 0, 124);
             imgui.TableNextRow();
             imgui.TableNextColumn();
-            DrawCheckbox(leftLabel, leftValue, leftOnChange);
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(settingsLabelColor, leftLabel);
             imgui.TableNextColumn();
-            DrawCheckbox(rightLabel, rightValue, rightOnChange);
+            DrawCheckboxOnly(leftLabel, leftValue, leftOnChange);
+            imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(settingsLabelColor, rightLabel);
+            imgui.TableNextColumn();
+            DrawCheckboxOnly(rightLabel, rightValue, rightOnChange);
             imgui.EndTable();
         end
 
@@ -7932,10 +7956,10 @@ function LibraPlatesSettingsDrawRestingModuleSettings(settings, hideActive)
             state.Save();
         end
 
-        DrawRestingCheckboxPair('Hide at full HP', settings.resting.hideAtFullHp == true, function(value)
+        DrawRestingCheckboxPair('Hide full HP', settings.resting.hideAtFullHp == true, function(value)
             settings.resting.hideAtFullHp = value == true;
             state.Save();
-        end, 'Hide at full MP', settings.resting.hideAtFullMp == true, function(value)
+        end, 'Hide full MP', settings.resting.hideAtFullMp == true, function(value)
             settings.resting.hideAtFullMp = value == true;
             state.Save();
         end);
@@ -8483,11 +8507,13 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
     end);
 
     DrawPanel('Text', function()
-        DrawCheckbox('Display remaining tools in inventory on break', settings.gathering.showCount == true, function(value)
+        local textGridWidth = 125;
+        local textNumericWidth = 58;
+
+        DrawCheckbox('Show tool count on break', settings.gathering.showCount == true, function(value)
             settings.gathering.showCount = value == true;
             state.Save();
         end);
-        imgui.SameLine();
         DrawCheckbox('Use small font', settings.gathering.countUseSmallFont == true, function(value)
             settings.gathering.countUseSmallFont = value == true;
             state.Save();
@@ -8502,7 +8528,9 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
             1,
             'Font color',
             settings.gathering.countColor,
-            'GatheringCountColor'
+            'GatheringCountColor',
+            textGridWidth,
+            textNumericWidth
         );
         if (countSizeChanged == true or countColorChanged == true) then
             settings.gathering.countFontSize = countSize;
@@ -8510,7 +8538,7 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
             state.Save();
         end
 
-        local countX, countXChanged, countY, countYChanged = DrawPlacementPairWide('Text X', settings.gathering.countOffsetX, 'GatheringCountX', 'Text Y', settings.gathering.countOffsetY, 'GatheringCountY', -500, 500, 1);
+        local countX, countXChanged, countY, countYChanged = DrawPlacementPair('Text X', settings.gathering.countOffsetX, 'GatheringCountX', 'Text Y', settings.gathering.countOffsetY, 'GatheringCountY', -500, 500, 1, textGridWidth, textNumericWidth);
         if (countXChanged == true or countYChanged == true) then
             settings.gathering.countOffsetX = countX;
             settings.gathering.countOffsetY = countY;
@@ -8526,7 +8554,9 @@ function LibraPlatesSettingsDrawGatheringModuleSettings(settings, hideActive)
             1,
             'Outline color',
             settings.gathering.countOutlineColor,
-            'GatheringCountOutlineColor'
+            'GatheringCountOutlineColor',
+            textGridWidth,
+            textNumericWidth
         );
         if (outlineSizeChanged == true or outlineColorChanged == true) then
             settings.gathering.countOutlineSize = outlineSize;
@@ -9644,6 +9674,14 @@ local function DrawGeneralNativeUiSection(settings)
                     mobInfo.outlineSize = outlineSize;
                     state.Save();
                 end
+
+                local resistBg, resistBgChanged = DrawSettingsColor('Resist box', mobInfo.resistBackgroundColor, 'CurrentTargetBarMobInfoResistBackground');
+                mobInfo.resistBackgroundColor = resistBg;
+                if (resistBgChanged == true) then state.Save(); end
+
+                local weakBg, weakBgChanged = DrawSettingsColor('Weak box', mobInfo.weakBackgroundColor, 'CurrentTargetBarMobInfoWeakBackground');
+                mobInfo.weakBackgroundColor = weakBg;
+                if (weakBgChanged == true) then state.Save(); end
 
                 local maxIcons, maxChanged, spacing, spacingChanged = DrawPlacementPair('Max icons', mobInfo.maxIcons, 'CurrentTargetBarMobInfoMaxIcons', 'Icon spacing', mobInfo.iconSpacing, 'CurrentTargetBarMobInfoIconSpacing', 0, 32, 1);
                 if (maxChanged == true or spacingChanged == true) then
@@ -15618,11 +15656,12 @@ function settingsUi.DrawDetachedFrameSettings()
         return;
     end
 
+    local positionSettingsPrefix = prefix == 'smn' and 'smnAvatar' or settingsPrefix;
     local modeKey = settingsPrefix .. 'PetPlateMode';
     local editKey = settingsPrefix .. 'PetStaticEditFrame';
-    local xKey = settingsPrefix .. 'PetStaticX';
-    local yKey = settingsPrefix .. 'PetStaticY';
-    local scaleKey = settingsPrefix .. 'PetStaticScale';
+    local xKey = positionSettingsPrefix .. 'PetStaticX';
+    local yKey = positionSettingsPrefix .. 'PetStaticY';
+    local scaleKey = positionSettingsPrefix .. 'PetStaticScale';
     local backgroundSettingsKey = settingsPrefix .. 'PetStaticBackgroundSettings';
     local sharedBackgroundSettingsKey = prefix .. 'PetStaticBackgroundSettings';
     local legacyBackgroundKey = prefix .. 'PetStaticBackground';

@@ -474,13 +474,15 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
             local col = (i - 1) % iconsPerRow;
             local layoutRowCount = math.min(iconsPerRow, total);
             local rowWidth = (layoutRowCount * iconSize) + ((layoutRowCount - 1) * spacing);
-            local iconOffsetX = baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing));
+            local iconOffsetX = growLeft == true
+                and (baseX - rowWidth + (iconSize * 0.5) + (col * (iconSize + spacing)))
+                or (baseX - (rowWidth * 0.5) + (iconSize * 0.5) + (col * (iconSize + spacing)));
             local timerSeconds = type(rowData) == 'table' and tonumber(rowData.seconds) or nil;
             local timerText = nil;
 
             if (anchored == true) then
                 iconOffsetX = growLeft == true
-                    and (baseX - rowWidth + (col * (iconSize + spacing)))
+                    and (baseX - rowWidth + iconSize + (col * (iconSize + spacing)))
                     or (baseX + (col * (iconSize + spacing)));
             end
 

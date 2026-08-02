@@ -339,6 +339,14 @@ Involved in Missions:\
 * Sells Phantom Roll dice.",
             ["type"] = "Standard Merchant",
         },
+        ["Ciciroon"] = {
+            ["_source"] = "catseye_npc",
+            ["icon"] = "HELMItemAppraiser.png",
+            ["link"] = "https://www.bg-wiki.com/ffxi/CatsEyeXI_Systems/HELM",
+            ["note"] = "CatsEyeXI HELM:\
+* Item Appraiser at J-9.",
+            ["type"] = "HELM Item Appraiser",
+        },
         ["Chochoroon"] = {
             ["_source"] = "npc",
             ["icon"] = "Merchant.png",

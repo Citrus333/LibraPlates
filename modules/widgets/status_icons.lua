@@ -1007,8 +1007,19 @@ function statusIcons.DrawSettings(settings, context)
     local label = tostring(context ~= nil and context.widget or 'Status icons');
     local itemLabel = (label == 'Buffs') and 'Buff' or ((label == 'Debuffs') and 'Debuff' or 'Icon');
     local itemPlural = (label == 'Buffs') and 'Buffs' or ((label == 'Debuffs') and 'Debuffs' or 'Icons');
+    local supportsTimers = context == nil or tostring(context.entity or '') ~= 'Trust';
 
     ApplyDefaults(settings, defaults);
+    if (supportsTimers ~= true) then
+        settings.showTimers = false;
+        settings.timerWarningEnabled = false;
+        settings.timerWarningTextColorEnabled = false;
+        settings.timerWarningOutlineColorEnabled = false;
+        settings.timerWarningBackgroundEnabled = false;
+        settings.timerWarningBorderEnabled = false;
+        settings.timerWarningBoxColorEnabled = false;
+        settings.timerWarningBoxBorderEnabled = false;
+    end
 
     if (context == nil or context.hideActive ~= true) then
         settings.enabled = DrawCheckbox('Active', settings.enabled);
@@ -1119,79 +1130,86 @@ function statusIcons.DrawSettings(settings, context)
         );
     end, true);
 
-    DrawPanel('Timer Settings', function()
-        settings.showTimers = DrawCheckbox('Show timers', settings.showTimers);
-        imgui.SameLine();
-        settings.timerUseSmallFont = DrawCheckbox('Use small font', settings.timerUseSmallFont);
+    if (supportsTimers == true) then
+        DrawPanel('Timer Settings', function()
+            settings.showTimers = DrawCheckbox('Show timers', settings.showTimers);
+            imgui.SameLine();
+            settings.timerUseSmallFont = DrawCheckbox('Use small font', settings.timerUseSmallFont);
 
-        if (settings.showTimers == true) then
-            settings.timerFontSize, settings.timerTextColor, settings.timerTextOutlineSize, settings.timerTextOutlineColor = DrawTextFontRows(
-                settings.timerFontSize,
-                settings.timerTextColor,
-                settings.timerTextOutlineSize,
-                settings.timerTextOutlineColor
-            );
-            settings.timerTextOutline = settings.timerTextOutlineSize > 0;
-
-            if (boxed ~= true) then imgui.Separator(); end
-            settings.timerBackground = DrawCheckbox('Show timer background', settings.timerBackground);
-
-            if (settings.timerBackground == true) then
-                imgui.TextColored(labelColor, 'BG color');
-                imgui.SameLine();
-                settings.timerBackgroundColor = DrawColor('timer_box_bg_color', settings.timerBackgroundColor);
-
-                settings.timerBackgroundPaddingX, settings.timerBackgroundPaddingY = DrawSliderPair(
-                    'timer_padding',
-                    'BG padding X',
-                    'timer_pad_x',
-                    settings.timerBackgroundPaddingX,
-                    0,
-                    24,
-                    'BG padding Y',
-                    'timer_pad_y',
-                    settings.timerBackgroundPaddingY,
-                    0,
-                    24
+            if (settings.showTimers == true) then
+                settings.timerFontSize, settings.timerTextColor, settings.timerTextOutlineSize, settings.timerTextOutlineColor = DrawTextFontRows(
+                    settings.timerFontSize,
+                    settings.timerTextColor,
+                    settings.timerTextOutlineSize,
+                    settings.timerTextOutlineColor
                 );
+                settings.timerTextOutline = settings.timerTextOutlineSize > 0;
 
-                settings.timerCornerRadius, settings.timerOffsetY = DrawSliderPair(
-                    'timer_corner_spacer',
-                    'BG corner radius',
-                    'timer_corner_radius',
-                    settings.timerCornerRadius,
-                    0,
-                    40,
-                    'BG box spacer',
-                    'timer_y',
-                    settings.timerOffsetY,
-                    -40,
-                    40
-                );
+                if (boxed ~= true) then imgui.Separator(); end
+                settings.timerBackground = DrawCheckbox('Show timer background', settings.timerBackground);
 
-                settings.timerBackgroundBorderSize, settings.timerBackgroundBorderColor = DrawSliderAndColorRow(
-                    'timer_box_border',
-                    'BG border size',
-                    'timer_box_border_size',
-                    settings.timerBackgroundBorderSize,
-                    0,
-                    12,
-                    'BG border color',
-                    'timer_box_border_color',
-                    settings.timerBackgroundBorderColor
-                );
+                if (settings.timerBackground == true) then
+                    imgui.TextColored(labelColor, 'BG color');
+                    imgui.SameLine();
+                    settings.timerBackgroundColor = DrawColor('timer_box_bg_color', settings.timerBackgroundColor);
+
+                    settings.timerBackgroundPaddingX, settings.timerBackgroundPaddingY = DrawSliderPair(
+                        'timer_padding',
+                        'BG padding X',
+                        'timer_pad_x',
+                        settings.timerBackgroundPaddingX,
+                        0,
+                        24,
+                        'BG padding Y',
+                        'timer_pad_y',
+                        settings.timerBackgroundPaddingY,
+                        0,
+                        24
+                    );
+
+                    settings.timerCornerRadius, settings.timerOffsetY = DrawSliderPair(
+                        'timer_corner_spacer',
+                        'BG corner radius',
+                        'timer_corner_radius',
+                        settings.timerCornerRadius,
+                        0,
+                        40,
+                        'BG box spacer',
+                        'timer_y',
+                        settings.timerOffsetY,
+                        -40,
+                        40
+                    );
+
+                    settings.timerBackgroundBorderSize, settings.timerBackgroundBorderColor = DrawSliderAndColorRow(
+                        'timer_box_border',
+                        'BG border size',
+                        'timer_box_border_size',
+                        settings.timerBackgroundBorderSize,
+                        0,
+                        12,
+                        'BG border color',
+                        'timer_box_border_color',
+                        settings.timerBackgroundBorderColor
+                    );
+                end
             end
-        end
-    end);
+        end);
+    end
 
     if (label == 'Buffs') then
         DrawPanel('Buff Filtering', function()
-            settings.hideAboveDurationEnabled, settings.hideAboveDurationMinutes, settings.hideAboveDurationUnit = DrawBuffFilterDurationRow(
-                'buff_filter_duration',
-                settings.hideAboveDurationEnabled,
-                settings.hideAboveDurationMinutes,
-                settings.hideAboveDurationUnit
-            );
+            if (supportsTimers == true) then
+                settings.hideAboveDurationEnabled, settings.hideAboveDurationMinutes, settings.hideAboveDurationUnit = DrawBuffFilterDurationRow(
+                    'buff_filter_duration',
+                    settings.hideAboveDurationEnabled,
+                    settings.hideAboveDurationMinutes,
+                    settings.hideAboveDurationUnit
+                );
+            else
+                settings.hideAboveDurationEnabled = false;
+            end
+
             DrawHideBuffsMode(settings);
         end);
     elseif (label == 'Debuffs') then
@@ -1208,7 +1226,7 @@ function statusIcons.DrawSettings(settings, context)
         settings.timerWarningBorderEnabled = false;
         settings.timerWarningBoxColorEnabled = false;
         settings.timerWarningBoxBorderEnabled = false;
-    elseif (label == 'Buffs') then
+    elseif (label == 'Buffs' and supportsTimers == true) then
         DrawPanel('Expiring Warnings', function()
             NormalizeTimerWarningSettings(settings, defaults);
             settings.timerWarningEnabled = DrawCheckbox('Expiring warnings', settings.timerWarningEnabled);

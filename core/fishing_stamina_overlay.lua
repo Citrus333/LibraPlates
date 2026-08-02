@@ -12,6 +12,7 @@ local staminaPreviewDrag = nil;
 local hudOpen = false;
 local closedRevision = -1;
 local previousHasHudData = false;
+local lastPreviewHudEnabled = false;
 local uiIconTextureIds = {};
 local lastReadyBarFishClock = 0;
 local hudMinWidth = 440;
@@ -369,6 +370,7 @@ local function ShouldRenderHud(settings, stamina)
     if (settings.previewHud == true and state.GetConfigOpen ~= nil and state.GetConfigOpen() ~= true) then
         settings.previewHud = false;
         hudOpen = false;
+        lastPreviewHudEnabled = false;
         previousHasHudData = stamina ~= nil or (fishing.HasHudData ~= nil and fishing.HasHudData() == true);
         closedRevision = fishing.GetHudRevision ~= nil and fishing.GetHudRevision() or closedRevision;
         state.Save();
@@ -377,8 +379,17 @@ local function ShouldRenderHud(settings, stamina)
 
     if (settings.previewHud == true) then
         hudOpen = true;
+        lastPreviewHudEnabled = true;
         previousHasHudData = stamina ~= nil or (fishing.HasHudData ~= nil and fishing.HasHudData() == true);
         return true;
+    end
+
+    if (lastPreviewHudEnabled == true) then
+        hudOpen = false;
+        lastPreviewHudEnabled = false;
+        previousHasHudData = stamina ~= nil or (fishing.HasHudData ~= nil and fishing.HasHudData() == true);
+        closedRevision = fishing.GetHudRevision ~= nil and fishing.GetHudRevision() or closedRevision;
+        return false;
     end
 
     local revision = fishing.GetHudRevision ~= nil and fishing.GetHudRevision() or 0;

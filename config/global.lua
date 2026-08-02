@@ -225,6 +225,8 @@ return {
                 textColor = { 1.0, 1.0, 1.0, 1.0 },
                 outlineColor = { 0.0, 0.0, 0.0, 1.0 },
                 outlineSize = 1,
+                resistBackgroundColor = { 0.85, 0.18, 0.18, 0.38 },
+                weakBackgroundColor = { 0.12, 0.70, 0.32, 0.34 },
                 maxIcons = 16,
                 iconSize = 18,
                 iconSpacing = 2,

@@ -242,6 +242,23 @@ local function GetPlateCostColor(value)
     return { 0.56, 0.96, 0.70, 1.0 };
 end
 
+local function GetDisplaySize()
+    if (imgui.GetIO == nil) then
+        return nil, nil;
+    end
+
+    local ok, io = pcall(function()
+        return imgui.GetIO();
+    end);
+
+    if (ok ~= true or io == nil or io.DisplaySize == nil) then
+        return nil, nil;
+    end
+
+    return tonumber(io.DisplaySize.x or io.DisplaySize.X or io.DisplaySize[1]),
+        tonumber(io.DisplaySize.y or io.DisplaySize.Y or io.DisplaySize[2]);
+end
+
 local function GetLastCounter(name)
     local key = tostring(name or '');
 
@@ -1681,14 +1698,16 @@ function perfMeter.RenderOverlay()
         local frameMs = adaptivePerformance.GetAverageFrameMs();
 
         lines = {
-            string.format('LibraPlates %.2fms  peak %.2fms', total.avg, total.peak),
+            string.format('LibraPlates %.2fms', total.avg),
+            string.format('Peak %.2fms', total.peak),
             string.format('Plates %.2fms  World %.2fms', plates.avg, worldDraw.avg),
-            string.format('Counts: Qued=%s | Drawn=%s | Canvas =%s',
+            string.format('Counts Q=%s D=%s C=%s',
                 tostring(GetCounter('queued')),
                 tostring(GetCounter('drawn')),
                 tostring(GetCounter('canvasRenders'))
             ),
-            string.format('Mode %s  FPS %.1f  Frame %.1fms', tostring(mode), tonumber(fps) or 0, tonumber(frameMs) or 0),
+            string.format('Mode %s', tostring(mode)),
+            string.format('FPS %.1f  Frame %.1fms', tonumber(fps) or 0, tonumber(frameMs) or 0),
         };
     else
         lines = perfMeter.GetSummaryLines();
@@ -1700,8 +1719,17 @@ function perfMeter.RenderOverlay()
         (_G.ImGuiWindowFlags_NoResize or 0) +
         (_G.ImGuiWindowFlags_NoScrollbar or 0);
 
-    local width = compactOverlay ~= false and 410 or 560;
-    local height = compactOverlay ~= false and math.max(138, (#lines * 18) + 46) or 430;
+    local width = compactOverlay ~= false and 300 or 560;
+    local height = compactOverlay ~= false and math.max(210, (#lines * 20) + 84) or 430;
+    local displayWidth, displayHeight = GetDisplaySize();
+
+    if (displayWidth ~= nil) then
+        width = math.min(width, math.max(220, displayWidth - 36));
+    end
+
+    if (displayHeight ~= nil) then
+        height = math.min(height, math.max(120, displayHeight - 166));
+    end
 
     if (imgui.SetNextWindowPos ~= nil) then
         imgui.SetNextWindowPos({ 18, 148 }, _G.ImGuiCond_FirstUseEver or 4);

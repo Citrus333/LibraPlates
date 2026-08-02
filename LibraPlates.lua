@@ -23,6 +23,7 @@ local enemyCasts = require('core.enemy_casts');
 local enemyAlerts = require('core.enemy_alerts');
 local alertSounds = require('core.alert_sounds');
 local enemyStatuses = require('core.enemy_statuses');
+local currentTargetDebuffs = require('core.current_target_debuffs');
 local partyStatuses = require('core.party_statuses');
 local trustStatusIcons = require('core.trust_status_icons');
 local luopanStatuses = require('core.luopan_statuses');
@@ -174,6 +175,7 @@ ashita.events.register('packet_in', 'libraplates_packet_in', function(e)
     errorBoundary.Call('packet_in.enemy_alerts', 'Enemy-alert incoming-packet handler', enemyAlerts.HandlePacketIn, e);
     perfMeter.EndDetail(alertsTimer);
     errorBoundary.Call('packet_in.enemy_statuses', 'Enemy-status incoming-packet handler', enemyStatuses.HandlePacketIn, e);
+    errorBoundary.Call('packet_in.current_target_debuffs', 'Current-target debuff incoming-packet handler', currentTargetDebuffs.HandlePacketIn, e);
     errorBoundary.Call('packet_in.party_statuses', 'Party-status incoming-packet handler', partyStatuses.HandlePacketIn, e);
     errorBoundary.Call('packet_in.trust_statuses', 'Trust-status incoming-packet handler', trustStatusIcons.HandlePacketIn, e);
     errorBoundary.Call('packet_in.luopan_statuses', 'Luopan-status incoming-packet handler', luopanStatuses.HandlePacketIn, e);

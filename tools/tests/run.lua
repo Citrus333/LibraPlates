@@ -198,6 +198,61 @@ Test('NPC/object manifest references loadable Lua tables', function()
     AssertTrue(count > 0, 'manifest must reference at least one zone file');
 end);
 
+Test('shutdown countdown clears only on resting status transition', function()
+    package.loaded['core.resting_tick'] = nil;
+    package.loaded['core.alert_sounds'] = nil;
+    package.loaded['core.state'] = nil;
+    package.loaded['config.global'] = nil;
+    local logoutSoundCount = 0;
+    package.preload['core.alert_sounds'] = function()
+        return {
+            Play = function()
+                logoutSoundCount = logoutSoundCount + 1;
+            end,
+        };
+    end;
+    package.preload['core.state'] = function()
+        return {
+            GetGlobalSettings = function()
+                return { resting = { logoutSoundEnabled = true } };
+            end,
+        };
+    end;
+    package.preload['config.global'] = function()
+        return { resting = {} };
+    end;
+
+    local restingTick = require('core.resting_tick');
+    local countdownSettings = {
+        enabled = true,
+        enableLogoutCountdown = true,
+    };
+
+    restingTick.ResetAll();
+    restingTick.HandlePlayerStatus(33);
+    restingTick.HandleTextIn({ message = 'Executing shutdown in 30 seconds.' });
+    AssertEqual(logoutSoundCount, 1, 'shutdown message must play sound once');
+    AssertEqual(restingTick.IsLogoutActive(countdownSettings), true, 'shutdown announcement must start countdown');
+
+    restingTick.HandlePlayerStatus(33);
+    AssertEqual(restingTick.IsLogoutActive(countdownSettings), true, 'remaining resting must keep countdown active');
+
+    restingTick.HandlePlayerStatus(0);
+    AssertEqual(restingTick.IsLogoutActive(countdownSettings), false, 'resting to non-resting transition must clear countdown');
+
+    restingTick.HandleTextIn({ message = 'Executing shutdown in 20 seconds.' });
+    AssertEqual(logoutSoundCount, 2, 'a new shutdown attempt after standing up may play sound once');
+
+    restingTick.ResetAll();
+    package.preload['core.alert_sounds'] = nil;
+    package.preload['core.state'] = nil;
+    package.preload['config.global'] = nil;
+    package.loaded['core.resting_tick'] = nil;
+    package.loaded['core.alert_sounds'] = nil;
+    package.loaded['core.state'] = nil;
+    package.loaded['config.global'] = nil;
+end);
+
 print(string.format('\nResult: %d passed, %d failed', passed, failed));
 
 if (failed > 0) then

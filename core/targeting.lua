@@ -46,6 +46,281 @@ local pcHeightBucketKeys = {
 };
 local pcHeightRaceKeys = { 'tarutaru', 'mithra', 'hume', 'elvaan', 'galka' };
 
+local function NormalizeCurrentTargetBar(settings)
+    local defaults = globalDefaults.targeting.currentTargetBar or {};
+
+    if (type(settings.currentTargetBar) ~= 'table') then
+        settings.currentTargetBar = {};
+    end
+
+    local bar = settings.currentTargetBar;
+
+    local function NumberField(key, minValue, maxValue)
+        local value = tonumber(bar[key]);
+        if (value == nil) then
+            value = tonumber(defaults[key]) or 0;
+        end
+
+        bar[key] = math.max(minValue, math.min(maxValue, math.floor(value + 0.5)));
+    end
+
+    local function ColorField(key)
+        local fallback = defaults[key] or { 1.0, 1.0, 1.0, 1.0 };
+        if (type(bar[key]) ~= 'table') then
+            bar[key] = {};
+        end
+
+        for index = 1, 4 do
+            local value = tonumber(bar[key][index]);
+            if (value == nil) then
+                value = tonumber(fallback[index]) or (index == 4 and 1.0 or 0.0);
+            end
+
+            if (value < 0) then value = 0; end
+            if (value > 1) then value = 1; end
+            bar[key][index] = value;
+        end
+    end
+
+    local function NormalizeTextGroup(key, useLegacy)
+        local groupDefaults = defaults[key] or {};
+        if (type(bar[key]) ~= 'table') then
+            bar[key] = {};
+        end
+
+        local group = bar[key];
+
+        local function GroupNumberField(field, legacyField, minValue, maxValue)
+            local value = tonumber(group[field]);
+            if (value == nil and useLegacy == true) then
+                value = tonumber(bar[legacyField or field]);
+            end
+            if (value == nil) then
+                value = tonumber(groupDefaults[field]) or 0;
+            end
+
+            group[field] = math.max(minValue, math.min(maxValue, math.floor(value + 0.5)));
+        end
+
+        local function GroupColorField(field, legacyField)
+            local fallback = groupDefaults[field] or defaults[legacyField or field] or { 1.0, 1.0, 1.0, 1.0 };
+            local legacy = useLegacy == true and type(bar[legacyField or field]) == 'table' and bar[legacyField or field] or nil;
+            if (type(group[field]) ~= 'table') then
+                group[field] = {};
+            end
+
+            for index = 1, 4 do
+                local value = tonumber(group[field][index]);
+                if (value == nil and legacy ~= nil) then
+                    value = tonumber(legacy[index]);
+                end
+                if (value == nil) then
+                    value = tonumber(fallback[index]) or (index == 4 and 1.0 or 0.0);
+                end
+
+                if (value < 0) then value = 0; end
+                if (value > 1) then value = 1; end
+                group[field][index] = value;
+            end
+        end
+
+        GroupNumberField('fontSize', 'fontSize', 6, 80);
+        GroupNumberField('nameOffsetX', 'nameOffsetX', -500, 500);
+        GroupNumberField('nameOffsetY', 'nameOffsetY', -500, 500);
+        GroupNumberField('distanceOffsetX', 'distanceOffsetX', -500, 500);
+        GroupNumberField('distanceOffsetY', 'distanceOffsetY', -500, 500);
+        GroupNumberField('hpPercentOffsetX', 'hpPercentOffsetX', -500, 500);
+        GroupNumberField('hpPercentOffsetY', 'hpPercentOffsetY', -500, 500);
+        group.inheritColors = true;
+        GroupColorField('textColor', 'textColor');
+        GroupColorField('outlineColor', 'outlineColor');
+    end
+
+    local function NormalizeStatusGroup(key)
+        local groupDefaults = defaults[key] or {};
+        if (type(bar[key]) ~= 'table') then
+            bar[key] = {};
+        end
+
+        local group = bar[key];
+
+        local function GroupNumberField(field, minValue, maxValue)
+            local value = tonumber(group[field]);
+            if (value == nil) then
+                value = tonumber(groupDefaults[field]) or 0;
+            end
+
+            group[field] = math.max(minValue, math.min(maxValue, math.floor(value + 0.5)));
+        end
+
+        if (group.enabled == nil) then group.enabled = groupDefaults.enabled == true; end
+
+        if (key == 'buffs' and group.enabled == false and tonumber(group.offsetY) == -44) then
+            group.enabled = true;
+            group.offsetY = 22;
+        end
+        if (key == 'debuffs' and tonumber(group.offsetY) == 22) then
+            group.offsetY = 44;
+        end
+
+        group.enabled = group.enabled == true;
+        group.showTimers = group.showTimers == true;
+        GroupNumberField('offsetX', -2000, 2000);
+        GroupNumberField('offsetY', -2000, 2000);
+        GroupNumberField('maxIcons', 1, 32);
+        GroupNumberField('iconsPerRow', 1, 32);
+        GroupNumberField('iconSize', 6, 96);
+        GroupNumberField('iconSpacing', 0, 32);
+        GroupNumberField('rowSpacing', 0, 48);
+    end
+
+    local function NormalizeMobInfoGroup()
+        local groupDefaults = defaults.mobInfo or {};
+        if (type(bar.mobInfo) ~= 'table') then
+            bar.mobInfo = {};
+        end
+
+        local group = bar.mobInfo;
+
+        local function GroupColorField(field)
+            local fallback = groupDefaults[field] or { 1.0, 1.0, 1.0, 1.0 };
+            if (type(group[field]) ~= 'table') then
+                group[field] = {};
+            end
+
+            for index = 1, 4 do
+                local value = tonumber(group[field][index]);
+                if (value == nil) then
+                    value = tonumber(fallback[index]) or (index == 4 and 1.0 or 0.0);
+                end
+
+                if (value < 0) then value = 0; end
+                if (value > 1) then value = 1; end
+                group[field][index] = value;
+            end
+        end
+
+        local function GroupNumberField(field, minValue, maxValue)
+            local value = tonumber(group[field]);
+            if (value == nil) then
+                value = tonumber(groupDefaults[field]) or 0;
+            end
+
+            group[field] = math.max(minValue, math.min(maxValue, math.floor(value + 0.5)));
+        end
+
+        if (group.enabled == nil) then group.enabled = groupDefaults.enabled == true; end
+        if (group.showJobLevel == nil) then group.showJobLevel = groupDefaults.showJobLevel ~= false; end
+        if (group.showBehavior == nil) then group.showBehavior = groupDefaults.showBehavior ~= false; end
+        if (group.showLinks == nil) then group.showLinks = groupDefaults.showLinks ~= false; end
+        if (group.showDetects == nil) then group.showDetects = groupDefaults.showDetects ~= false; end
+        if (group.showWeakResist == nil) then group.showWeakResist = groupDefaults.showWeakResist ~= false; end
+        if (group.showImmunities == nil) then group.showImmunities = groupDefaults.showImmunities == true; end
+
+        group.enabled = group.enabled == true;
+        group.showJobLevel = group.showJobLevel == true;
+        group.showBehavior = group.showBehavior == true;
+        group.showLinks = group.showLinks == true;
+        group.showDetects = group.showDetects == true;
+        group.showWeakResist = group.showWeakResist == true;
+        group.showImmunities = group.showImmunities == true;
+
+        GroupNumberField('offsetX', -2000, 2000);
+        GroupNumberField('offsetY', -2000, 2000);
+        GroupNumberField('fontSize', 6, 80);
+        GroupNumberField('outlineSize', 0, 12);
+        GroupNumberField('maxIcons', 1, 32);
+        GroupNumberField('iconSize', 6, 96);
+        GroupNumberField('iconSpacing', 0, 32);
+        GroupColorField('textColor');
+        GroupColorField('outlineColor');
+    end
+
+    local function NormalizeSharedText()
+        local textDefaults = defaults.text or {};
+        if (type(bar.text) ~= 'table') then
+            bar.text = {};
+        end
+
+        local text = bar.text;
+        local fallbackGroup = type(bar.enemyText) == 'table' and bar.enemyText or {};
+
+        local function SharedNumberField(field, legacyField, minValue, maxValue)
+            local value = tonumber(text[field]);
+            if (value == nil) then
+                value = tonumber(fallbackGroup[field]) or tonumber(bar[legacyField or field]) or tonumber(textDefaults[field]);
+            end
+
+            text[field] = math.max(minValue, math.min(maxValue, math.floor((tonumber(value) or 0) + 0.5)));
+        end
+
+        SharedNumberField('fontSize', 'fontSize', 6, 80);
+        SharedNumberField('nameOffsetX', 'nameOffsetX', -500, 500);
+        SharedNumberField('nameOffsetY', 'nameOffsetY', -500, 500);
+        SharedNumberField('distanceOffsetX', 'distanceOffsetX', -500, 500);
+        SharedNumberField('distanceOffsetY', 'distanceOffsetY', -500, 500);
+        SharedNumberField('hpPercentOffsetX', 'hpPercentOffsetX', -500, 500);
+        SharedNumberField('hpPercentOffsetY', 'hpPercentOffsetY', -500, 500);
+    end
+
+    if (bar.enabled == nil) then bar.enabled = defaults.enabled == true; end
+    bar.enabled = bar.enabled == true;
+
+    NumberField('x', 0, 4000);
+    NumberField('y', 0, 4000);
+    NumberField('width', 20, 2000);
+    NumberField('height', 1, 200);
+    NumberField('radius', 0, 40);
+    NumberField('borderSize', 0, 20);
+    NumberField('nameOffsetX', -500, 500);
+    NumberField('nameOffsetY', -500, 500);
+    NumberField('distanceOffsetX', -500, 500);
+    NumberField('distanceOffsetY', -500, 500);
+    NumberField('hpPercentOffsetX', -500, 500);
+    NumberField('hpPercentOffsetY', -500, 500);
+
+    ColorField('backgroundColor');
+    ColorField('fillColor');
+    ColorField('borderColor');
+    ColorField('textColor');
+    ColorField('outlineColor');
+
+    local mode = tostring(bar.hpPercentMode or defaults.hpPercentMode or 'Enemies only');
+    if (mode ~= 'Hidden' and mode ~= 'Enemies only' and mode ~= 'Always') then
+        mode = 'Enemies only';
+    end
+
+    bar.hpPercentMode = mode;
+
+    NormalizeTextGroup('enemyText', true);
+    NormalizeTextGroup('nonEnemyText', true);
+    NormalizeTextGroup('claimedText', false);
+    NormalizeTextGroup('objectText', false);
+    NormalizeTextGroup('selfText', false);
+    NormalizeTextGroup('playerText', false);
+    NormalizeSharedText();
+    NormalizeMobInfoGroup();
+    NormalizeStatusGroup('buffs');
+    NormalizeStatusGroup('debuffs');
+end
+
+local function NormalizeHpPrediction(settings)
+    local defaults = globalDefaults.targeting.hpPrediction or {};
+
+    if (type(settings.hpPrediction) ~= 'table') then
+        settings.hpPrediction = {};
+    end
+
+    local hpPrediction = settings.hpPrediction;
+    if (hpPrediction.smoothHpMovement == nil) then hpPrediction.smoothHpMovement = defaults.smoothHpMovement ~= false; end
+    if (hpPrediction.damagePrediction == nil) then hpPrediction.damagePrediction = defaults.damagePrediction ~= false; end
+    if (hpPrediction.healingPrediction == nil) then hpPrediction.healingPrediction = defaults.healingPrediction ~= false; end
+
+    hpPrediction.smoothHpMovement = hpPrediction.smoothHpMovement ~= false;
+    hpPrediction.damagePrediction = hpPrediction.damagePrediction ~= false;
+    hpPrediction.healingPrediction = hpPrediction.healingPrediction ~= false;
+end
+
 local function NormalizePlateClickNoGoZones(settings)
     if (type(settings.plateClickNoGoZones) ~= 'table') then
         settings.plateClickNoGoZones = {};
@@ -161,6 +436,9 @@ local function GetTargetingSettings()
     if (global.targeting.overwriteNativeNameColors == nil) then
         global.targeting.overwriteNativeNameColors = true;
     end
+
+    NormalizeCurrentTargetBar(global.targeting);
+    NormalizeHpPrediction(global.targeting);
 
     if (global.targeting.streamerModeEnabled == nil) then
         global.targeting.streamerModeEnabled = false;

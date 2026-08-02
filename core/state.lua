@@ -1606,6 +1606,10 @@ function state.GetGlobalSettings(defaults)
         profile.global.enemyIconStyle = tostring(peerStyle or 'round');
     end
 
+    if (type(profile.global.peer) == 'table') then
+        profile.global.peer.iconStyle = 'Use Settings theme default';
+    end
+
     return profile.global;
 end
 

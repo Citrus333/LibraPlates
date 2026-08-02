@@ -20,6 +20,7 @@ local logoutState = {
     duration = 30,
     label = 'Logout',
 };
+local lastPlayerStatus = nil;
 
 local function Reset()
     tickState.active = false;
@@ -121,6 +122,25 @@ end
 
 function restingTick.ShouldPreserveLogoutTransition()
     return ShouldPreserveLogoutTransition();
+end
+
+function restingTick.HandlePlayerStatus(status)
+    local currentStatus = tonumber(status);
+
+    if (currentStatus == nil) then
+        return false;
+    end
+
+    local wasResting = IsResting(lastPlayerStatus);
+    local isResting = IsResting(currentStatus);
+    lastPlayerStatus = currentStatus;
+
+    if (wasResting == true and isResting ~= true and logoutState.active == true) then
+        ClearLogout();
+        return true;
+    end
+
+    return false;
 end
 
 function restingTick.HandleTextIn(e)

@@ -93,6 +93,7 @@ local enemyPlatePositionOverrides = {
 };
 local user32 = nil;
 local mobInfoIconTextureIds = {};
+local missingMobInfoIconTextureIds = {};
 local catseyeIconTextureIds = {};
 local plateCache = {};
 local indexCache = {};
@@ -551,8 +552,27 @@ local function GetMobInfoIconTextureId(iconName, iconStyle)
     if (mobInfoIconTextureIds[cacheKey] ~= nil) then
         return mobInfoIconTextureIds[cacheKey];
     end
+    if (missingMobInfoIconTextureIds[cacheKey] == true) then
+        return nil;
+    end
 
     mobInfoIconTextureIds[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(GetMobInfoIconPath(iconName, iconStyle)));
+    if (mobInfoIconTextureIds[cacheKey] == nil and iconStyle ~= 'round') then
+        local fallbackKey = 'round:' .. iconName;
+        if (mobInfoIconTextureIds[fallbackKey] ~= nil) then
+            mobInfoIconTextureIds[cacheKey] = mobInfoIconTextureIds[fallbackKey];
+        elseif (missingMobInfoIconTextureIds[fallbackKey] ~= true) then
+            mobInfoIconTextureIds[fallbackKey] = textureLoader.ToTextureId(textureLoader.Load(GetMobInfoIconPath(iconName, 'round')));
+            mobInfoIconTextureIds[cacheKey] = mobInfoIconTextureIds[fallbackKey];
+            if (mobInfoIconTextureIds[fallbackKey] == nil) then
+                missingMobInfoIconTextureIds[fallbackKey] = true;
+            end
+        end
+    end
+    if (mobInfoIconTextureIds[cacheKey] == nil) then
+        missingMobInfoIconTextureIds[cacheKey] = true;
+    end
+
     return mobInfoIconTextureIds[cacheKey];
 end
 
@@ -789,15 +809,29 @@ local function AddEnemyMobInfoWidgetIcons(plateData, iconNames, iconSettings, de
     plateData.icons = plateData.icons or {};
 
     for _, icon in ipairs(renderIcons) do
+        local anchorTo = iconSettings.anchorTo or defaultSettings.anchorTo;
+        local anchorCollapse = iconSettings.anchorCollapse;
+        if (
+            anchorCollapse == nil and
+            (
+                tostring(kind or '') == 'Behavior icon' or
+                tostring(kind or '') == 'Detects icon' or
+                tostring(kind or '') == 'Links icon'
+            ) and
+            tostring(anchorTo or 'Plate') == 'Name'
+        ) then
+            anchorCollapse = false;
+        end
+
         plateData.icons[#plateData.icons + 1] = {
             kind = tostring(kind or 'icon'),
             textureId = icon.textureId,
             size = size,
             offsetX = x,
             offsetY = y,
-            anchorTo = iconSettings.anchorTo or defaultSettings.anchorTo,
+            anchorTo = anchorTo,
             anchorPoint = iconSettings.anchorPoint or defaultSettings.anchorPoint,
-            anchorCollapse = iconSettings.anchorCollapse,
+            anchorCollapse = anchorCollapse,
             anchorSpacing = iconSettings.anchorSpacing,
             anchorOrder = iconSettings.anchorOrder,
         };
@@ -845,6 +879,17 @@ local function GetEnemyMobInfoIconWidgetSignature(widgetSettings)
         'behaviorIconSettings=' .. SettingKey(widgetSettings.behavior, { 'enabled', 'iconStyle', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
         'detectsIconSettings=' .. SettingKey(widgetSettings.detects, { 'enabled', 'iconStyle', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
         'linksIconSettings=' .. SettingKey(widgetSettings.links, { 'enabled', 'iconStyle', 'iconSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
+    }, '\n');
+end
+
+local function GetResolvedEnemyMobInfoIconWidgetSignature(globalSettings, widgetSettings)
+    widgetSettings = widgetSettings or {};
+
+    return table.concat({
+        GetEnemyMobInfoIconWidgetSignature(widgetSettings),
+        'behaviorResolvedIconStyle=' .. ResolveEnemyIconStyle(globalSettings, widgetSettings.behavior),
+        'detectsResolvedIconStyle=' .. ResolveEnemyIconStyle(globalSettings, widgetSettings.detects),
+        'linksResolvedIconStyle=' .. ResolveEnemyIconStyle(globalSettings, widgetSettings.links),
     }, '\n');
 end
 
@@ -1229,7 +1274,7 @@ local function BuildMobInfoRows(enemy, globalSettings, peerSettings)
     end
 
     peerSettings = peerSettings or {};
-    iconStyle = SanitizeIconStyle(peerSettings.iconStyle);
+    iconStyle = ResolveEnemyIconStyle(globalSettings, peerSettings);
 
     local jobText = mobInfoData.GetJobString(info);
     local levelText = mobInfoData.GetLevelString(info);
@@ -2160,7 +2205,7 @@ local function BuildEnemyCacheSignature(context, useLiveHpBar)
         'levelSettings=' .. SettingKey(context.levelSettings, { 'enabled', 'textSize', 'color', 'difficultyColorsEnabled', 'twColor', 'epColor', 'dcColor', 'emColor', 'tColor', 'vtColor', 'itColor', 'outlineSize', 'outlineColor', 'twOutlineColor', 'epOutlineColor', 'dcOutlineColor', 'emOutlineColor', 'tOutlineColor', 'vtOutlineColor', 'itOutlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
         'idSettings=' .. SettingKey(context.idSettings, { 'enabled', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder', 'prefix' }),
         'distanceSettings=' .. SettingKey(context.distanceSettings, { 'enabled', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'useSmallFont', 'offsetX', 'offsetY', 'prefix', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing' }),
-        GetEnemyMobInfoIconWidgetSignature(context.mobInfoIconWidgetSettings),
+        GetResolvedEnemyMobInfoIconWidgetSignature(context.globalSettings, context.mobInfoIconWidgetSettings),
         'debug=' .. tostring(worldMarkerProbe.GetClickDebug()),
     }, '\n');
 end

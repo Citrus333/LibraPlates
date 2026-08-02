@@ -1093,7 +1093,6 @@ Involved in Quests:\
         },
         ["Suggestion Box"] = {
             ["_source"] = "catseye_item",
-            ["hidden"] = true,
             ["icon"] = "Box.png",
             ["type"] = "Suggestion Box",
         },

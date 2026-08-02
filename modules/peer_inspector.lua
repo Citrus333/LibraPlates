@@ -16,6 +16,7 @@ local targeting = require('core.targeting');
 local globalDefaults = require('config.global');
 
 local iconCache = {};
+local missingIconCache = {};
 local selfElementIconCache = {};
 local enemyInfoCache = {
     key = nil,
@@ -117,13 +118,21 @@ local function PeerWidgetLoads(peerWidgetSettings)
 end
 
 local function SanitizeIconStyle(style)
-    style = tostring(style or 'round');
+    style = tostring(style or 'round'):gsub('[\\/]', '');
 
     if (style == '') then
         return 'round';
     end
 
     return style;
+end
+
+local function ResolvePeerIconStyle(globalSettings, peerSettings)
+    if (globalSettings == nil) then
+        globalSettings = state.GetGlobalSettings(globalDefaults);
+    end
+
+    return SanitizeIconStyle(globalSettings ~= nil and globalSettings.enemyIconStyle or 'round');
 end
 
 local function GetIconTextureId(iconName, iconStyle)
@@ -139,9 +148,29 @@ local function GetIconTextureId(iconName, iconStyle)
     if (iconCache[cacheKey] ~= nil) then
         return iconCache[cacheKey];
     end
+    if (missingIconCache[cacheKey] == true) then
+        return nil;
+    end
 
     local path = tostring(addon.path or '') .. '\\assets\\images\\peer-icons\\' .. iconStyle .. '\\' .. iconName .. '.png';
     iconCache[cacheKey] = textureLoader.ToTextureId(textureLoader.Load(path));
+    if (iconCache[cacheKey] == nil and iconStyle ~= 'round') then
+        local fallbackKey = 'round:' .. iconName;
+        if (iconCache[fallbackKey] ~= nil) then
+            iconCache[cacheKey] = iconCache[fallbackKey];
+        elseif (missingIconCache[fallbackKey] ~= true) then
+            local fallbackPath = tostring(addon.path or '') .. '\\assets\\images\\peer-icons\\round\\' .. iconName .. '.png';
+            iconCache[fallbackKey] = textureLoader.ToTextureId(textureLoader.Load(fallbackPath));
+            iconCache[cacheKey] = iconCache[fallbackKey];
+            if (iconCache[fallbackKey] == nil) then
+                missingIconCache[fallbackKey] = true;
+            end
+        end
+    end
+    if (iconCache[cacheKey] == nil) then
+        missingIconCache[cacheKey] = true;
+    end
+
     return iconCache[cacheKey];
 end
 
@@ -1247,7 +1276,7 @@ local function DrawEnemyTextInspector(enemy, info, peerSettings)
     local good = ColorU32({ 0.44, 0.95, 0.70, 1.0 });
     local bad = ColorU32({ 1.0, 0.58, 0.50, 1.0 });
     local heading = ColorU32({ 1.0, 0.84, 0.0, 1.0 });
-    local iconStyle = SanitizeIconStyle(peerSettings.iconStyle);
+    local iconStyle = ResolvePeerIconStyle(nil, peerSettings);
     local behaviorIconSize = math.max(14, math.min(24, tonumber(peerSettings.iconSize) or 18));
     local labelX = x + 14;
     local valueX = x + 118;
@@ -1358,7 +1387,7 @@ local function DrawEnemyInspector(enemy, info, peerSettings)
     local good = ColorU32({ 0.44, 0.95, 0.70, 1.0 });
     local bad = ColorU32({ 1.0, 0.58, 0.50, 1.0 });
     local heading = ColorU32({ 1.0, 0.84, 0.0, 1.0 });
-    local iconStyle = SanitizeIconStyle(peerSettings.iconStyle);
+    local iconStyle = ResolvePeerIconStyle(nil, peerSettings);
     local iconSize = math.max(6, math.min(256, tonumber(peerSettings.iconSize) or 22));
     local labelX = x + 14;
     local contentX = x + 142;

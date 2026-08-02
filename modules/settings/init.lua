@@ -7487,7 +7487,7 @@ function LibraPlatesSettingsDrawPeerModuleSettings(settings, options)
     if (settings.peer.activationModifier == nil) then settings.peer.activationModifier = 'Shift'; end
     if (settings.peer.maxRange == nil) then settings.peer.maxRange = 49.9; end
     if (settings.peer.zoom == nil) then settings.peer.zoom = settings.peer.minScale or 3.0; end
-    if (settings.peer.iconStyle == nil) then settings.peer.iconStyle = 'round'; end
+    if (settings.peer.iconStyle == nil or settings.peer.iconStyle == '') then settings.peer.iconStyle = 'Use Settings theme default'; end
     if (settings.peer.iconSize == nil) then settings.peer.iconSize = 18; end
     if (settings.peer.iconOffsetX == nil) then settings.peer.iconOffsetX = -190; end
     if (settings.peer.iconOffsetY == nil) then settings.peer.iconOffsetY = -16; end
@@ -7560,10 +7560,10 @@ function LibraPlatesSettingsDrawPeerModuleSettings(settings, options)
                 state.Save();
             end
             else
-            DrawInlineComboRow('Icon pack', GetPeerIconStyles(), settings.peer.iconStyle, function(value)
-                settings.peer.iconStyle = value;
-                state.Save();
-            end, 'PeerIconStyle', settingsLabelColor, 104, nil, 210);
+            imgui.TextColored(settingsLabelColor, 'Icon pack');
+            imgui.SameLine();
+            imgui.Text(tostring(settings.enemyIconStyle or 'round'));
+            uiTooltip.Info('Peer enemy icons follow Settings > Theme > Enemy icon pack.');
 
             local iconSize, iconSizeChanged = DrawPlacementSingle('Icon size', settings.peer.iconSize, 'PeerInspectorIconSize', 6, 256, 1, 104, 124, 58);
             if (iconSizeChanged == true) then
@@ -9466,7 +9466,7 @@ local function DrawGeneralFontSection(global)
                 state.Save();
             end);
             LibraPlatesFileManager.Draw(GetEnemyIconPackFolderPath(), 'EnemyDefaultIconPackFolder');
-            uiTooltip.Info('This is the default pack used by Enemy Behavior, Detects, and Links icons. Each of those widgets can either follow this default or select its own pack. Peer Inspector has a separate icon-pack setting.');
+            uiTooltip.Info('This is the default pack used by Enemy Behavior, Detects, Links, Peer Inspector enemy icons, and Current Target Bar mob-info icons. Individual enemy widgets can still override this default.');
             DrawEnemyIconPackPreview(global.enemyIconStyle or 'round');
         end);
     end);
@@ -9513,6 +9513,221 @@ local function DrawGeneralNativeUiSection(settings)
 
             if (nativeUiForced == true) then
             end
+        end);
+
+        LibraPlatesSettingsDrawBoxedPanel('Current Target Bar', function()
+            local bar = settings.currentTargetBar or {};
+            settings.currentTargetBar = bar;
+
+            local function DrawCurrentTargetBarTextSettings(label, key)
+                if (type(bar[key]) ~= 'table') then
+                    bar[key] = {};
+                end
+
+                local text = bar[key];
+
+                DrawYellowHeader(label);
+
+                local fontSize, fontChanged = DrawPlacementSingle('Font size', text.fontSize, 'CurrentTargetBar' .. label .. 'FontSize', 6, 80, 1);
+                if (fontChanged == true) then
+                    text.fontSize = fontSize;
+                    state.Save();
+                end
+
+                local nameX, nameXChanged, nameY, nameYChanged = DrawPlacementPair('Name X', text.nameOffsetX, 'CurrentTargetBar' .. label .. 'NameX', 'Name Y', text.nameOffsetY, 'CurrentTargetBar' .. label .. 'NameY', -500, 500, 1);
+                if (nameXChanged == true or nameYChanged == true) then
+                    text.nameOffsetX = nameX;
+                    text.nameOffsetY = nameY;
+                    state.Save();
+                end
+
+                local distanceX, distanceXChanged, distanceY, distanceYChanged = DrawPlacementPair('Distance X', text.distanceOffsetX, 'CurrentTargetBar' .. label .. 'DistanceX', 'Distance Y', text.distanceOffsetY, 'CurrentTargetBar' .. label .. 'DistanceY', -500, 500, 1);
+                if (distanceXChanged == true or distanceYChanged == true) then
+                    text.distanceOffsetX = distanceX;
+                    text.distanceOffsetY = distanceY;
+                    state.Save();
+                end
+
+                local percentX, percentXChanged, percentY, percentYChanged = DrawPlacementPair('Percent X', text.hpPercentOffsetX, 'CurrentTargetBar' .. label .. 'PercentX', 'Percent Y', text.hpPercentOffsetY, 'CurrentTargetBar' .. label .. 'PercentY', -500, 500, 1);
+                if (percentXChanged == true or percentYChanged == true) then
+                    text.hpPercentOffsetX = percentX;
+                    text.hpPercentOffsetY = percentY;
+                    state.Save();
+                end
+            end
+
+            local function DrawCurrentTargetBarStatusSettings(label, key)
+                if (type(bar[key]) ~= 'table') then
+                    bar[key] = {};
+                end
+
+                local status = bar[key];
+
+                DrawYellowHeader(label);
+
+                DrawCheckbox('Enable ' .. tostring(label):lower(), status.enabled == true, function(value)
+                    status.enabled = value == true;
+                    state.Save();
+                end);
+
+                local x, xChanged, y, yChanged = DrawPlacementPair('Icons X', status.offsetX, 'CurrentTargetBar' .. label .. 'X', 'Icons Y', status.offsetY, 'CurrentTargetBar' .. label .. 'Y', -2000, 2000, 1);
+                if (xChanged == true or yChanged == true) then
+                    status.offsetX = x;
+                    status.offsetY = y;
+                    state.Save();
+                end
+
+                local iconSize, iconSizeChanged, iconSpacing, iconSpacingChanged = DrawPlacementPair('Icon size', status.iconSize, 'CurrentTargetBar' .. label .. 'IconSize', 'Icon spacing', status.iconSpacing, 'CurrentTargetBar' .. label .. 'IconSpacing', 0, 96, 1);
+                if (iconSizeChanged == true or iconSpacingChanged == true) then
+                    status.iconSize = iconSize;
+                    status.iconSpacing = iconSpacing;
+                    state.Save();
+                end
+
+                local maxIcons, maxChanged, iconsPerRow, perRowChanged = DrawPlacementPair('Max icons', status.maxIcons, 'CurrentTargetBar' .. label .. 'MaxIcons', 'Icons/row', status.iconsPerRow, 'CurrentTargetBar' .. label .. 'IconsPerRow', 1, 32, 1);
+                if (maxChanged == true or perRowChanged == true) then
+                    status.maxIcons = maxIcons;
+                    status.iconsPerRow = iconsPerRow;
+                    state.Save();
+                end
+
+                local rowSpacing, rowSpacingChanged = DrawPlacementSingle('Row spacing', status.rowSpacing, 'CurrentTargetBar' .. label .. 'RowSpacing', 0, 48, 1);
+                if (rowSpacingChanged == true) then
+                    status.rowSpacing = rowSpacing;
+                    state.Save();
+                end
+
+                DrawCheckbox('Show timers', status.showTimers == true, function(value)
+                    status.showTimers = value == true;
+                    state.Save();
+                end);
+            end
+
+            local function DrawCurrentTargetBarMobInfoSettings()
+                if (type(bar.mobInfo) ~= 'table') then
+                    bar.mobInfo = {};
+                end
+
+                local mobInfo = bar.mobInfo;
+
+                DrawYellowHeader('Mob info');
+
+                DrawCheckbox('Enable mob info', mobInfo.enabled == true, function(value)
+                    mobInfo.enabled = value == true;
+                    state.Save();
+                end);
+
+                local x, xChanged, y, yChanged = DrawPlacementPair('Icons X', mobInfo.offsetX, 'CurrentTargetBarMobInfoX', 'Icons Y', mobInfo.offsetY, 'CurrentTargetBarMobInfoY', -2000, 2000, 1);
+                if (xChanged == true or yChanged == true) then
+                    mobInfo.offsetX = x;
+                    mobInfo.offsetY = y;
+                    state.Save();
+                end
+
+                local fontSize, fontChanged, iconSize, iconChanged = DrawPlacementPair('Font size', mobInfo.fontSize, 'CurrentTargetBarMobInfoFontSize', 'Icon size', mobInfo.iconSize, 'CurrentTargetBarMobInfoIconSize', 6, 96, 1);
+                if (fontChanged == true or iconChanged == true) then
+                    mobInfo.fontSize = fontSize;
+                    mobInfo.iconSize = iconSize;
+                    state.Save();
+                end
+
+                local textColor, textChanged = DrawSettingsColor('Text', mobInfo.textColor, 'CurrentTargetBarMobInfoText');
+                mobInfo.textColor = textColor;
+                if (textChanged == true) then state.Save(); end
+
+                local outlineColor, outlineColorChanged = DrawSettingsColor('Outline', mobInfo.outlineColor, 'CurrentTargetBarMobInfoOutline');
+                mobInfo.outlineColor = outlineColor;
+                if (outlineColorChanged == true) then state.Save(); end
+
+                local outlineSize, outlineChanged = DrawPlacementSingle('Outline size', mobInfo.outlineSize, 'CurrentTargetBarMobInfoOutlineSize', 0, 12, 1);
+                if (outlineChanged == true) then
+                    mobInfo.outlineSize = outlineSize;
+                    state.Save();
+                end
+
+                local maxIcons, maxChanged, spacing, spacingChanged = DrawPlacementPair('Max icons', mobInfo.maxIcons, 'CurrentTargetBarMobInfoMaxIcons', 'Icon spacing', mobInfo.iconSpacing, 'CurrentTargetBarMobInfoIconSpacing', 0, 32, 1);
+                if (maxChanged == true or spacingChanged == true) then
+                    mobInfo.maxIcons = maxIcons;
+                    mobInfo.iconSpacing = spacing;
+                    state.Save();
+                end
+
+                DrawCheckbox('Show job/level', mobInfo.showJobLevel ~= false, function(value)
+                    mobInfo.showJobLevel = value == true;
+                    state.Save();
+                end);
+                DrawCheckbox('Show behavior', mobInfo.showBehavior ~= false, function(value)
+                    mobInfo.showBehavior = value == true;
+                    state.Save();
+                end);
+                DrawCheckbox('Show links', mobInfo.showLinks ~= false, function(value)
+                    mobInfo.showLinks = value == true;
+                    state.Save();
+                end);
+                DrawCheckbox('Show detects', mobInfo.showDetects ~= false, function(value)
+                    mobInfo.showDetects = value == true;
+                    state.Save();
+                end);
+                DrawCheckbox('Show weak/resist', mobInfo.showWeakResist ~= false, function(value)
+                    mobInfo.showWeakResist = value == true;
+                    state.Save();
+                end);
+                DrawCheckbox('Show immunities', mobInfo.showImmunities == true, function(value)
+                    mobInfo.showImmunities = value == true;
+                    state.Save();
+                end);
+            end
+
+            DrawCheckbox('Enable current target bar', bar.enabled == true, function(value)
+                bar.enabled = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('Static replacement bar for the current target. It shows for any selected target: PC, enemy, NPC, or object.');
+
+            local x, xChanged, y, yChanged = DrawPlacementPair('Position X', bar.x, 'CurrentTargetBarX', 'Position Y', bar.y, 'CurrentTargetBarY', 0, 4000, 1);
+            if (xChanged == true or yChanged == true) then
+                bar.x = x;
+                bar.y = y;
+                state.Save();
+            end
+
+            local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', bar.width, 'CurrentTargetBarWidth', 'Height', bar.height, 'CurrentTargetBarHeight', 20, 2000, 1);
+            if (widthChanged == true or heightChanged == true) then
+                bar.width = width;
+                bar.height = height;
+                state.Save();
+            end
+
+            local radius, radiusChanged, borderSize, borderChanged = DrawPlacementPair('Radius', bar.radius, 'CurrentTargetBarRadius', 'Border size', bar.borderSize, 'CurrentTargetBarBorderSize', 0, 40, 1);
+            if (radiusChanged == true or borderChanged == true) then
+                bar.radius = radius;
+                bar.borderSize = borderSize;
+                state.Save();
+            end
+
+            local bgColor, bgChanged = DrawSettingsColor('Background', bar.backgroundColor, 'CurrentTargetBarBackground');
+            bar.backgroundColor = bgColor;
+            if (bgChanged == true) then state.Save(); end
+
+            local fillColor, fillChanged = DrawSettingsColor('Fill', bar.fillColor, 'CurrentTargetBarFill');
+            bar.fillColor = fillColor;
+            if (fillChanged == true) then state.Save(); end
+
+            local borderColor, borderColorChanged = DrawSettingsColor('Border', bar.borderColor, 'CurrentTargetBarBorder');
+            bar.borderColor = borderColor;
+            if (borderColorChanged == true) then state.Save(); end
+
+            imgui.TextColored(settingsLabelColor, 'HP percent');
+            imgui.SameLine();
+            DrawInlineCombo('##CurrentTargetBarHpPercentMode', T{ 'Hidden', 'Enemies only', 'Always' }, bar.hpPercentMode or 'Enemies only', function(value)
+                bar.hpPercentMode = tostring(value or 'Enemies only');
+                state.Save();
+            end, nil, 150);
+
+            DrawCurrentTargetBarTextSettings('Text', 'text');
+            DrawCurrentTargetBarMobInfoSettings();
+            DrawCurrentTargetBarStatusSettings('Buffs', 'buffs');
+            DrawCurrentTargetBarStatusSettings('Debuffs', 'debuffs');
         end);
     end);
 end
@@ -11284,6 +11499,27 @@ local function DrawGeneralProfilesSection()
 
             uiTooltip.Info('Any sub job matches all subjobs and also matches when no subjob is set.');
         end
+    end);
+
+    DrawProfilePanel('HP Prediction', function()
+        local targetingSettings = targeting.GetSettings();
+        local hpPrediction = targetingSettings.hpPrediction or {};
+        targetingSettings.hpPrediction = hpPrediction;
+
+        DrawCheckbox('Smooth HP movement', hpPrediction.smoothHpMovement ~= false, function(value)
+            hpPrediction.smoothHpMovement = value == true;
+            state.Save();
+        end);
+
+        DrawCheckbox('Damage prediction', hpPrediction.damagePrediction ~= false, function(value)
+            hpPrediction.damagePrediction = value == true;
+            state.Save();
+        end);
+
+        DrawCheckbox('Healing prediction', hpPrediction.healingPrediction ~= false, function(value)
+            hpPrediction.healingPrediction = value == true;
+            state.Save();
+        end);
     end);
 
     DrawProfilePanel('', function()

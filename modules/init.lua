@@ -23,6 +23,7 @@ local perfMeter = require('core.perf_meter');
 local diagnostics = require('core.diagnostics');
 local lagTest = require('core.lag_test');
 local cursorOverlay = require('core.cursor_overlay');
+local currentTargetBar = require('core.current_target_bar');
 local jobChange = require('core.job_change');
 local enemyCasts = require('core.enemy_casts');
 local enemyAlerts = require('core.enemy_alerts');
@@ -30,6 +31,7 @@ local imgui = require('imgui');
 local fishing = require('core.fishing');
 local fishingStaminaOverlay = require('core.fishing_stamina_overlay');
 local warpMenu = require('core.warp_menu');
+local restingTick = require('core.resting_tick');
 
 -- ============================================================
 -- Module registry
@@ -316,6 +318,11 @@ function modules.Render()
     end
     perfMeter.Stop('native', nativeStart);
 
+    local selfEntity = entities.GetSelf();
+    if (selfEntity ~= nil) then
+        errorBoundary.Call('render.resting_status', 'Resting-status transition update', restingTick.HandlePlayerStatus, selfEntity.status);
+    end
+
     if (state.GetConfigOpen() ~= true) then
         errorBoundary.Call('render.world.focus', 'World-marker focus update', worldMarkerProbe.UpdateFocusState);
         errorBoundary.Call(
@@ -353,6 +360,7 @@ function modules.Render()
 
     if (perfIsolation.overlays ~= true) then
         errorBoundary.Call('render.cursor', 'Cursor-overlay render', cursorOverlay.Render);
+        errorBoundary.Call('render.current_target_bar', 'Current-target bar render', currentTargetBar.Render);
         errorBoundary.Call('render.fishing_stamina', 'Fishing-stamina render', fishingStaminaOverlay.Render);
         errorBoundary.Call('render.enemy_alerts', 'Enemy-alert render', enemyAlerts.Render);
     end

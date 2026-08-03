@@ -2,7 +2,7 @@
 
 
 
-![LibraPlates](https://img.shields.io/badge/LibraPlates-blue-50dfff)
+![LibraPlates](https://img.shields.io/badge/FFXI-50dfff)
 ![CatseyeXI](https://img.shields.io/badge/CatseyeXI-supported-38bdf8)
 ![Ashita](https://img.shields.io/badge/Ashita-addon-ffd700)
 

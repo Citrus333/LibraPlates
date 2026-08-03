@@ -1,13 +1,7 @@
 # LibraPlates
-
-
-
 ![LibraPlates](https://img.shields.io/badge/FFXI-50dfff)
-![LibraPlates](https://img.shields.io/badge/CatseyeXI-00ff00)
-![LibraPlates](https://img.shields.io/badge/Ashita-ffd700)
 ![CatseyeXI](https://img.shields.io/badge/CatseyeXI-supported-00ff00)
 ![Ashita](https://img.shields.io/badge/Ashita-addon-ffd700)
-
 
 Clickable, customizable nameplates and quality-of-life tools for Final Fantasy XI.
 

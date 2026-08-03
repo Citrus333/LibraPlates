@@ -6,9 +6,15 @@
 ![CatseyeXI](https://img.shields.io/badge/CatseyeXI-supported-38bdf8)
 ![Ashita](https://img.shields.io/badge/Ashita-addon-ffd700)
 
-<style>H1{color:Blue;}</style>
-<style>H2{color:DarkOrange;}</style>
-<style>p{color:Black;}</style>
+<style>
+H1{color:Blue !important;}
+H2{color:DarkOrange !important;}
+p{color:Black !important;}
+</style>
+
+# Color Test Document
+
+
 
 Clickable, customizable nameplates and quality-of-life tools for Final Fantasy XI.
 

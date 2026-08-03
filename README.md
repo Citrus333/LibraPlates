@@ -1,5 +1,5 @@
 # LibraPlates
-
+<span style="color:#50dfff;">LibraPlates</span>
 Clickable, customizable nameplates and quality-of-life tools for Final Fantasy XI.
 
 LibraPlates is an Ashita addon for Final Fantasy XI, with extra CatseyeXI-focused features built in. It adds clickable nameplates directly inside the 3D game world, giving players, NPCs, objects, pets, and enemies useful info, quick actions, combat helpers, and everyday quality-of-life tools.

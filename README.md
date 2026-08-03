@@ -8,7 +8,9 @@ The big idea is simple: if something is on your screen, LibraPlates tries to mak
 
 > Status: active work in progress. Expect ongoing polish, data fixes, and feature tuning.
 
-![LibraPlates hero screenshot](docs/screenshots/hero-target-bar-and-plates.png)
+<a href="docs/screenshots/features/main.png">
+  <img src="docs/screenshots/features/main.png" alt="LibraPlates main showcase" width="900">
+</a>
 
 ## Key features
 
@@ -27,47 +29,34 @@ The big idea is simple: if something is on your screen, LibraPlates tries to mak
 - **Highly customizable** — profiles, fonts, colors, textures, icons, anchors, auto-stacking, scaling, visibility rules, and performance options.
 - **Extra QoL modules** — resting tick/logout timer, fishing HUD, gathering tool count, crafting results, mount cooldown, blacklist tools, quick menus, and profile management.
 
-## Feature gallery draft
+## Feature gallery
 
-This section is temporary while the screenshot set is being built.
+Click any image to open it full-size.
 
-| Combat | Combat details | Blacklist |
+| Combat | Combat details | Quick menu |
 | --- | --- | --- |
-| <img src="docs/screenshots/features/combat.png" alt="Combat feature card" width="280"> | <img src="docs/screenshots/features/combat2.png" alt="Combat details feature card" width="280"> | <img src="docs/screenshots/features/blacklist.png" alt="Blacklist feature card" width="280"> |
-| Clickable combat plates and enemy info. | More combat/readability tools. | Blacklist and privacy tools. |
+| <a href="docs/screenshots/features/combat.png"><img src="docs/screenshots/features/combat.png" alt="Combat feature card" width="280"></a> | <a href="docs/screenshots/features/combat2.png"><img src="docs/screenshots/features/combat2.png" alt="Combat details feature card" width="280"></a> | <a href="docs/screenshots/features/quick.png"><img src="docs/screenshots/features/quick.png" alt="Quick menu feature card" width="280"></a> |
+| Clickable combat plates and enemy info. | More combat/readability tools. | Context menus for fast actions. |
 
 | Catseye QoL | Teleport tools | Jeuno/NPC info |
 | --- | --- | --- |
-| <img src="docs/screenshots/features/catseye%20.png" alt="Catseye quality-of-life feature card" width="280"> | <img src="docs/screenshots/features/Teleport.png" alt="Teleport feature card" width="280"> | <img src="docs/screenshots/features/jeuno.png" alt="Jeuno NPC feature card" width="280"> |
+| <a href="docs/screenshots/features/catseye%20.png"><img src="docs/screenshots/features/catseye%20.png" alt="Catseye quality-of-life feature card" width="280"></a> | <a href="docs/screenshots/features/Teleport.png"><img src="docs/screenshots/features/Teleport.png" alt="Teleport feature card" width="280"></a> | <a href="docs/screenshots/features/jeuno.png"><img src="docs/screenshots/features/jeuno.png" alt="Jeuno NPC feature card" width="280"></a> |
 | Catseye systems, services, and markers. | Quick travel and teleport helpers. | NPC/object info with useful labels. |
 
 | SMN pet frame | PUP automaton | DRG wyvern |
 | --- | --- | --- |
-| <img src="docs/screenshots/features/smn.png" alt="SMN pet frame feature card" width="280"> | <img src="docs/screenshots/features/pup_animation.gif" alt="PUP automaton animation" width="280"> | <img src="docs/screenshots/features/drg.png" alt="DRG wyvern feature card" width="280"> |
+| <a href="docs/screenshots/features/smn.png"><img src="docs/screenshots/features/smn.png" alt="SMN pet frame feature card" width="280"></a> | <a href="docs/screenshots/features/pup_animation.gif"><img src="docs/screenshots/features/pup_animation.gif" alt="PUP automaton animation" width="280"></a> | <a href="docs/screenshots/features/drg.png"><img src="docs/screenshots/features/drg.png" alt="DRG wyvern feature card" width="280"></a> |
 | Custom SMN avatar/spirit pet frame support. | Automaton frame, maneuvers, overload, and burden helpers. | Wyvern plate support and pet-class QoL. |
 
 | Fishing | Norg services | Kazan / special NPCs |
 | --- | --- | --- |
-| <img src="docs/screenshots/features/fish.png" alt="Fishing feature card" width="280"> | <img src="docs/screenshots/features/norg.png" alt="Norg feature card" width="280"> | <img src="docs/screenshots/features/kazan.png" alt="Kazan feature card" width="280"> |
+| <a href="docs/screenshots/features/fish.png"><img src="docs/screenshots/features/fish.png" alt="Fishing feature card" width="280"></a> | <a href="docs/screenshots/features/norg.png"><img src="docs/screenshots/features/norg.png" alt="Norg feature card" width="280"></a> | <a href="docs/screenshots/features/kazan.png"><img src="docs/screenshots/features/kazan.png" alt="Kazan feature card" width="280"></a> |
 | Fishing HUD, catches, fatigue, and life-skill helpers. | Service NPCs with icons, titles, and quick context. | Special NPC markers and Catseye-specific data. |
 
-## Screenshots to add
-
-These images will make the GitHub page feel polished without burying people in text.
-
-| Image | Suggested file | What to show |
+| Blacklist | Blacklist settings | Settings UI |
 | --- | --- | --- |
-| Hero image | `docs/screenshots/hero-target-bar-and-plates.png` | Current target bar plus several world plates in combat. |
-| Enemy info | `docs/screenshots/enemy-mob-info.png` | Enemy plate with level, behavior, detects, links, weakness/resist groups, and HP prediction. |
-| NPC/object info | `docs/screenshots/npc-object-info.png` | NPC/object plate and info popup with icon, type line, note, and wiki link. |
-| Quick menu | `docs/screenshots/quick-menu.png` | Self or player right-click menu with useful actions. |
-| Settings preview | `docs/screenshots/settings-preview.png` | Settings window with preview, selected widget, and clean layout. |
-| Pet/trust support | `docs/screenshots/trust-pet-status.png` | Trust or pet plate with buffs/debuffs, pet timers, or maneuver icons. |
-| Fishing/gathering | `docs/screenshots/fishing-gathering-hud.png` | Fishing HUD or gathering tool/count display. |
-| Alerts | `docs/screenshots/screen-alerts.png` | Alert lanes with enemy cast/readied action or event messages. |
-| Performance monitor | `docs/screenshots/performance-monitor.png` | Compact performance monitor/report view. |
-
-Tip: use bright, uncluttered scenes for overview shots, then crop tighter for feature examples.
+| <a href="docs/screenshots/features/blacklist.png"><img src="docs/screenshots/features/blacklist.png" alt="Blacklist feature card" width="280"></a> | <a href="docs/screenshots/features/bl-settings.png"><img src="docs/screenshots/features/bl-settings.png" alt="Blacklist settings feature card" width="280"></a> | <a href="docs/screenshots/features/settings%20(1).png"><img src="docs/screenshots/features/settings%20(1).png" alt="Settings UI feature card" width="280"></a> |
+| Privacy and blacklist tools. | Simple blacklist controls. | Live preview and profile/settings management. |
 
 ## What LibraPlates does
 

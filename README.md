@@ -1,14 +1,10 @@
 # LibraPlates
 
 
-<font color="#50dfff">LibraPlates blue text</font>
+
 ![LibraPlates](https://img.shields.io/badge/LibraPlates-blue-50dfff)
 ![CatseyeXI](https://img.shields.io/badge/CatseyeXI-supported-38bdf8)
 ![Ashita](https://img.shields.io/badge/Ashita-addon-ffd700)
-
-<span style="color: red;">This text is red.</span>
-
-
 
 
 Clickable, customizable nameplates and quality-of-life tools for Final Fantasy XI.

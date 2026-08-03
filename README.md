@@ -63,6 +63,10 @@ Click any image to open it full-size.
 
 ### Clickable in-world nameplates
 
+|  |  |
+|---|---|
+| <a href="docs/screenshots/features/Clickable-in-world-nameplates.png"><img src="docs/screenshots/features/Clickable-in-world-nameplates.png" alt="Clickable in-world nameplates" width="180"></a> | Plates live inside the 3D game world and can be clicked directly for targeting, context, and actions. |
+
 LibraPlates plates are not just labels. They sit inside the 3D game world, follow the entity they belong to, and can be clicked for targeting, actions, and context.
 
 - Left-click plates to target directly instead of cycling through targets.
@@ -76,6 +80,10 @@ LibraPlates plates are not just labels. They sit inside the 3D game world, follo
 
 ### Current target bar
 
+|  |  |
+|---|---|
+| <a href="docs/screenshots/features/Current-target-bar.png"><img src="docs/screenshots/features/Current-target-bar.png" alt="Current target bar" width="180"></a> | A static target display for anything you target, with optional target-of-target, status icons, and combat info. |
+
 A static target bar for whatever you are targeting: enemies, NPCs, objects, PCs, trusts, pets, and self.
 
 - Name, distance, HP percent, and optional mob/status information.
@@ -86,6 +94,10 @@ A static target bar for whatever you are targeting: enemies, NPCs, objects, PCs,
 - Reuses LibraPlates plate colors/styles so it feels like part of the same UI.
 
 ### Enemy awareness
+
+|  |  |
+|---|---|
+| <a href="docs/screenshots/features/Enemy-awareness-small.png"><img src="docs/screenshots/features/Enemy-awareness-small.png" alt="Enemy awareness" width="180"></a> | Enemy plates can show behavior, detection, links, weaknesses, resists, casts, and alert information at a glance. |
 
 Enemy plates are built to reduce the “what am I looking at?” tax during combat.
 
@@ -98,6 +110,10 @@ Enemy plates are built to reduce the “what am I looking at?” tax during comb
 
 ### NPC and object library
 
+|  |  |
+|---|---|
+| <a href="docs/screenshots/features/NPC-and-object-library.png"><img src="docs/screenshots/features/NPC-and-object-library.png" alt="NPC and object library" width="180"></a> | A large NPC/object database adds type labels, icons, services, quest and mission info, and wiki links directly to plates. |
+
 LibraPlates includes a large built-in library of NPC and object data across Vana'diel, with custom icon sets for different NPC types, services, quests, missions, and special CatseyeXI content. It can show who starts a quest, who is tied to a mission, what service an NPC offers, and which objects matter — with direct wiki links when available.
 
 - Clear type lines such as vendor, quest giver, mission associate, survival guide, home point, event NPC, and Catseye service NPC.
@@ -109,6 +125,10 @@ LibraPlates includes a large built-in library of NPC and object data across Vana
 
 ### Quick menu
 
+|  |  |
+|---|---|
+| <a href="docs/screenshots/features/Quick-menu.png"><img src="docs/screenshots/features/Quick-menu.png" alt="Quick menu" width="180"></a> | Right-click plates to open actions that match the thing you clicked: players, NPCs, objects, enemies, pets, travel points, and more. |
+
 Right-click supported plates for useful actions.
 
 - Player actions: examine, follow, invite, request invite, party/alliance actions, Catseye profile, and blacklist.
@@ -119,6 +139,10 @@ Right-click supported plates for useful actions.
 
 ### Job, mount, and travel helpers
 
+|  |  |
+|---|---|
+| <a href="docs/screenshots/features/Job-mount-travel.png"><img src="docs/screenshots/features/Job-mount-travel.png" alt="Job, mount, and travel helpers" width="180"></a> | Job favorites, mount helpers, teleport menus, Mog House exits, macro pages, and lockstyle setup can be reached from quick actions. |
+
 - One-click job-change favorites at supported Moogles.
 - Optional lockstyle, macro book, and macro page setup after changing jobs.
 - Main/sub job swap handling.
@@ -128,6 +152,10 @@ Right-click supported plates for useful actions.
 
 ### Resting, fishing, gathering, and crafting
 
+|  |  |
+|---|---|
+| <a href="docs/screenshots/features/fishing.png"><img src="docs/screenshots/features/fishing.png" alt="Fishing and gathering helpers" width="180"></a> | Small QoL modules help with resting ticks, logout timing, fishing, gathering tools, and crafting results. |
+
 - Resting tick bar/ring and logout countdown helper.
 - Fishing result display.
 - Fishing HUD for stamina/readiness, recent catches, rod, bait, target, fatigue, and Catseye fishing ventures where supported.
@@ -136,6 +164,10 @@ Right-click supported plates for useful actions.
 - Crafting result display for NQ, HQ, and breaks.
 
 ### Buffs, debuffs, pets, and luopans
+
+|  |  |
+|---|---|
+| <a href="docs/screenshots/features/pet-bst.png"><img src="docs/screenshots/features/pet-bst.png" alt="Pet and luopan helpers" width="180"></a> | Pet and job-specific plates add extra bars, timers, alerts, maneuvers, avatar helpers, and status tracking where the game normally hides details. |
 
 - Self, party/player, trust, enemy, pet, and luopan status icons.
 - Trust buff/debuff tracking.
@@ -155,6 +187,10 @@ Right-click supported plates for useful actions.
 
 ### Privacy and player controls
 
+|  |  |
+|---|---|
+| <a href="docs/screenshots/features/blacklist-settings.png"><img src="docs/screenshots/features/blacklist-settings.png" alt="Privacy and blacklist settings" width="180"></a> | Blacklist and privacy tools help you remember why someone was blocked, change how they appear locally, or anonymize names for screenshots and streaming. |
+
 - Blacklist players from commands or quick menus.
 - Mirror native blacklist add/remove commands.
 - Add blacklist reasons.
@@ -163,6 +199,10 @@ Right-click supported plates for useful actions.
 - Streamer Mode can anonymize local player names with safe labels.
 
 ## Settings and profiles
+
+|  |  |
+|---|---|
+| <a href="docs/screenshots/features/settings-ui.png"><img src="docs/screenshots/features/settings-ui.png" alt="Settings and profiles" width="180"></a> | Profiles, previews, visual settings, search, and troubleshooting live inside the in-game LibraPlates settings UI. |
 
 Open settings with:
 

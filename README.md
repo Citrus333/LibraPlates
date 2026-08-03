@@ -35,52 +35,44 @@ Click any image to open it full-size.
   <tr>
     <td width="33%" align="center"><strong>Clickable Combat Plates</strong><br><a href="docs/screenshots/features/combat-nameplates.png"><img src="docs/screenshots/features/combat-nameplates.png" alt="Combat feature card" width="100%"></a><br><sub>Target, attack, and switch enemies fast.</sub></td>
     <td width="33%" align="center"><strong>Detailed NPC Interaction</strong><br><a href="docs/screenshots/features/npc-info-plate.png"><img src="docs/screenshots/features/npc-info-plate.png" alt="NPC info feature card" width="100%"></a><br><sub>Icons, titles, notes, quests, and links.</sub></td>
-    <td width="33%" align="center"><strong>Blacklist Tools</strong><br><a href="docs/screenshots/features/blacklist-fomor.png"><img src="docs/screenshots/features/blacklist-fomor.png" alt="Blacklist feature card" width="100%"></a><br><sub>Notes, local renames, colors, hiding, and Fomors.</sub></td>
+    <td width="33%" align="center"><strong>Blacklist Tools</strong><br><a href="docs/screenshots/features/blacklist-fomor.png"><img src="docs/screenshots/features/blacklist-fomor.png" alt="Blacklist feature card" width="100%"></a><br><sub>Notes, local renames, colors, and Fomors.</sub></td>
   </tr>
   <tr>
-    <td width="33%" align="center"><strong>CatseyeXI Systems</strong><br><a href="docs/screenshots/features/catseye-systems.png"><img src="docs/screenshots/features/catseye-systems.png" alt="Catseye quality-of-life feature card" width="100%"></a><br><sub>Markers and shortcuts for custom systems.</sub></td>
-    <td width="33%" align="center"><strong>NPC &amp; Object Library</strong><br><a href="docs/screenshots/features/npc-object-library.png"><img src="docs/screenshots/features/npc-object-library.png" alt="NPC and object library feature card" width="100%"></a><br><sub>Quest, mission, service, and object data.</sub></td>
+    <td width="33%" align="center"><strong>Quest Info &amp; Wiki Links</strong><br><a href="docs/screenshots/features/catseye-systems.png"><img src="docs/screenshots/features/catseye-systems.png" alt="Quest info and wiki links feature card" width="100%"></a><br><sub>Useful quest information shown before you click.</sub></td>
+    <td width="33%" align="center"><strong>Nameplate Stacking</strong><br><a href="docs/screenshots/features/npc-object-library.png"><img src="docs/screenshots/features/npc-object-library.png" alt="Nameplate stacking feature card" width="100%"></a><br><sub>Keep crowded plates visible and clickable.</sub></td>
     <td width="33%" align="center"><strong>Fishing HUD</strong><br><a href="docs/screenshots/features/fishing-hud.png"><img src="docs/screenshots/features/fishing-hud.png" alt="Fishing feature card" width="100%"></a><br><sub>Fishing state, fatigue, catches, and bait tips.</sub></td>
   </tr>
   <tr>
-    <td width="33%" align="center"><strong>Live Settings Preview</strong><br><a href="docs/screenshots/features/settings-ui.png"><img src="docs/screenshots/features/settings-ui.png" alt="Settings UI feature card" width="100%"></a><br><sub>Customize layouts with an in-game preview.</sub></td>
+    <td width="33%" align="center"><strong>Extensive Settings</strong><br><a href="docs/screenshots/features/settings-ui.png"><img src="docs/screenshots/features/settings-ui.png" alt="Settings UI feature card" width="100%"></a><br><sub>Easy control over layouts, profiles, and visuals.</sub></td>
     <td width="33%" align="center"><strong>Enemy Awareness</strong><br><a href="docs/screenshots/features/enemy-awareness.png"><img src="docs/screenshots/features/enemy-awareness.png" alt="Enemy awareness feature card" width="100%"></a><br><sub>Behavior, detects, links, resists, and casts.</sub></td>
-    <td width="33%" align="center"><strong>Service NPCs</strong><br><a href="docs/screenshots/features/service-npcs.png"><img src="docs/screenshots/features/service-npcs.png" alt="Service NPCs feature card" width="100%"></a><br><sub>Vendors and services labeled before clicking.</sub></td>
+    <td width="33%" align="center"><strong>Huge NPC Database</strong><br><a href="docs/screenshots/features/service-npcs.png"><img src="docs/screenshots/features/service-npcs.png" alt="Huge NPC database feature card" width="100%"></a><br><sub>Services, quest NPCs, and useful labels in-world.</sub></td>
   </tr>
   <tr>
-    <td width="33%" align="center"><strong>SMN pet frame</strong><br><a href="docs/screenshots/features/smn-avatar-plate.png"><img src="docs/screenshots/features/smn-avatar-plate.png" alt="SMN pet frame feature card" width="100%"></a><br><sub>Avatar/spirit bars, timers, and alerts.</sub></td>
-    <td width="33%" align="center"><strong>PUP automaton</strong><br><a href="docs/screenshots/features/pup-automaton.gif"><img src="docs/screenshots/features/pup-automaton.gif" alt="PUP automaton animation" width="100%"></a><br><sub>Automaton bars, maneuvers, burden, and risk.</sub></td>
-    <td width="33%" align="center"><strong>DRG wyvern</strong><br><a href="docs/screenshots/features/drg-wyvern.png"><img src="docs/screenshots/features/drg-wyvern.png" alt="DRG wyvern feature card" width="100%"></a><br><sub>Wyvern status, timers, and pet-action helpers.</sub></td>
+    <td width="33%" align="center"><strong>Detached Info Frames</strong><br><a href="docs/screenshots/features/smn-avatar-plate.png"><img src="docs/screenshots/features/smn-avatar-plate.png" alt="Detached info frames feature card" width="100%"></a><br><sub>Extra job info with visual timers and alerts.</sub></td>
+    <td width="33%" align="center"><strong>Real-Time Effects</strong><br><a href="docs/screenshots/features/pup-automaton.gif"><img src="docs/screenshots/features/pup-automaton.gif" alt="Real-time effects feature card" width="100%"></a><br><sub>Live meters and effects for changing job states.</sub></td>
+    <td width="33%" align="center"><strong>Custom Art Assets</strong><br><a href="docs/screenshots/features/drg-wyvern.png"><img src="docs/screenshots/features/drg-wyvern.png" alt="Custom art assets feature card" width="100%"></a><br><sub>Swap textures and use your own artwork.</sub></td>
   </tr>
   <tr>
-    <td width="33%" align="center"><strong>Quick Menus</strong><br><a href="docs/screenshots/features/quick-menus.png"><img src="docs/screenshots/features/quick-menus.png" alt="Quick menu feature card" width="100%"></a><br><sub>Context actions from right-click plates.</sub></td>
-    <td width="33%" align="center"><strong>Travel Helpers</strong><br><a href="docs/screenshots/features/travel-helpers.png"><img src="docs/screenshots/features/travel-helpers.png" alt="Travel helpers feature card" width="100%"></a><br><sub>Teleports, guides, manuals, and exits.</sub></td>
-    <td width="33%" align="center"><strong>Blacklist Settings</strong><br><a href="docs/screenshots/features/blacklist-settings.png"><img src="docs/screenshots/features/blacklist-settings.png" alt="Blacklist settings feature card" width="100%"></a><br><sub>Manage notes, names, colors, and privacy.</sub></td>
+    <td width="33%" align="center"><strong>Quick Menus</strong><br><a href="docs/screenshots/features/quick-menus.png"><img src="docs/screenshots/features/quick-menus.png" alt="Quick menu feature card" width="100%"></a><br><sub>Quick actions from right-click plates.</sub></td>
+    <td width="33%" align="center"><strong>Travel Helpers</strong><br><a href="docs/screenshots/features/travel-helpers.png"><img src="docs/screenshots/features/travel-helpers.png" alt="Travel helpers feature card" width="100%"></a><br><sub>Auto-teleport to selected destinations.</sub></td>
+    <td width="33%" align="center"><strong>Profile Management</strong><br><a href="docs/screenshots/features/blacklist-settings.png"><img src="docs/screenshots/features/blacklist-settings.png" alt="Profile management feature card" width="100%"></a><br><sub>Manage profiles and settings with less friction.</sub></td>
   </tr>
 </table>
 
 ## What LibraPlates does
 
-### Clickable nameplates
+### Clickable in-world nameplates
 
-This is one of the biggest differences from a normal nameplate addon: LibraPlates plates are not just labels.
+LibraPlates plates are not just labels. They sit inside the 3D game world, follow the entity they belong to, and can be clicked for targeting, actions, and context.
 
 - Left-click plates to target directly instead of cycling through targets.
-- Right-click enemies to start combat.
-- Right-click gathering points to use the correct tool.
-- Right-click players, self, trusts, NPCs, and objects to open supported quick actions.
+- Right-click enemies to start combat or switch combat targets without having to navigate menus.
+- Right-click gathering nodes to use the right tool when available.
+- Right-click players, self, trusts, NPCs, objects, pets, and enemies to open supported quick actions.
 - Open teleport, Mog House exit, Ephemeral Box, blacklist, mount, job-change, and Catseye service actions from contextual menus.
-- Use plate information before clicking: icon, title, distance, type, behavior, quest/mission role, or service category.
-
-### Nameplates
-
-LibraPlates can show different plate layouts for different entity types and situations.
-
-- Self, PC, enemy, trust, BST pet, SMN avatar/spirit, DRG wyvern, PUP automaton, luopan, NPC, and object plates.
-- Name, background, HP/MP/TP bars, cast bars, job, level, ID, distance, target markers, type lines, icons, buffs, and debuffs.
-- Anchoring and auto-stacking so widgets can attach to the plate, name, HP bar, or another widget.
-- Per-entity styling for fonts, colors, outlines, textures, bar warnings, opacity, scale, and distance behavior.
-- Plate stacking and screen clamping helpers to reduce overlap.
+- Show different layouts for self, PCs, enemies, trusts, pets, luopans, NPCs, and objects.
+- Customize names, backgrounds, HP/MP/TP bars, cast bars, jobs, levels, IDs, distance, target markers, type lines, icons, buffs, and debuffs.
+- Use anchors, auto-stacking, screen clamping, visibility rules, fonts, colors, textures, and scaling to keep plates readable.
 
 ### Current target bar
 
@@ -123,12 +115,12 @@ Right-click supported plates for useful actions.
 - Self actions: accept/decline invite, leave party/alliance, mount/dismount, job favorites, and travel helpers.
 - Trust actions: dismiss one trust, dismiss all trusts, and trust visibility helpers.
 - Teleport helpers for supported Home Points, Survival Guides, Field Manuals, Mog House exits, and related systems.
-- Ephemeral Box actions for storing, browsing, searching, favoriting, and extracting items.
+- Ephemeral Box actions for storing items and pulling favorite items.
 
 ### Job, mount, and travel helpers
 
 - One-click job-change favorites at supported Moogles.
-- Optional lockstyle, macro book, and macro page steps after job change.
+- Optional lockstyle, macro book, and macro page setup after changing jobs.
 - Main/sub job swap handling.
 - Mount and random mount actions.
 - Remount cooldown display.

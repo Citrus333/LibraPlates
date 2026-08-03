@@ -1,4 +1,8 @@
 # LibraPlates
+
+![LibraPlates blue text](https://dummyimage.com/600x60/000/50dfff.png&text=LibraPlates+blue+text)
+
+
 ![LibraPlates](https://img.shields.io/badge/FFXI-50dfff)
 ![CatseyeXI](https://img.shields.io/badge/CatseyeXI-supported-00ff00)
 ![Ashita](https://img.shields.io/badge/Ashita-addon-ffd700)

@@ -16,7 +16,7 @@ LibraPlates is an Ashita addon for Final Fantasy XI, with extra CatseyeXI-focuse
 - **Right-click combat** — right-click enemy plates to start attacking or quickly switch combat targets, even when mounted. LibraPlates can dismount you and begin the attack automatically.
 - **Right-click gathering** — right-click gathering nodes and LibraPlates will pick the right tool for the job, using a Pickaxe, Hatchet, or Sickle from your inventory when available.
 - **NPC and object library** — a large built-in library of NPCs and objects with titles, custom icon sets, services, quest starts, mission roles, special CatseyeXI markers, and clickable wiki links.
-- **CatseyeXI quality-of-life markers** — special Catseye NPCs, services, events, HELM, weekly hunts, Adept Reforging, Voidwatch, Ephemeral Box, and more.
+- **CatseyeXI quality-of-life markers** — special Catseye NPCs, services, events, HELM, weekly hunts, Adept Reforging, Voidwatch, Ephemeral Box, venture/incursion enemy markers, and more.
 - **Combat information on plates** — enemy behavior, detection, links, weaknesses, resists, immunities, buffs, debuffs, cast alerts, claim colors, and AOE helpers.
 - **Plate stacking** — reduces messy overlap in crowded areas so names, bars, and icons stay readable.
 - **Special job plates** — custom plates and helpers for BST pets, SMN avatars/spirits, DRG wyverns, PUP automatons, and luopans, including timers, maneuvers, avatar/spirit bars, and pet action alerts.
@@ -33,27 +33,27 @@ Click any image to open it full-size.
 
 | Clickable Combat Plates | Detailed NPC Interaction | Blacklist Tools |
 | --- | --- | --- |
-| <a href="docs/screenshots/features/combat-nameplates.png"><img src="docs/screenshots/features/combat-nameplates.png" alt="Combat feature card" width="280"></a> | <a href="docs/screenshots/features/npc-info-plate.png"><img src="docs/screenshots/features/npc-info-plate.png" alt="NPC info feature card" width="280"></a> | <a href="docs/screenshots/features/blacklist-fomor.png"><img src="docs/screenshots/features/blacklist-fomor.png" alt="Blacklist feature card" width="280"></a> |
+| <a href="docs/screenshots/features/combat-nameplates.png"><img src="docs/screenshots/features/combat-nameplates.png" alt="Combat feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/npc-info-plate.png"><img src="docs/screenshots/features/npc-info-plate.png" alt="NPC info feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/blacklist-fomor.png"><img src="docs/screenshots/features/blacklist-fomor.png" alt="Blacklist feature card" width="280" height="280"></a> |
 | Target, attack, and switch enemies fast. | Icons, titles, notes, quests, and links. | Notes, local renames, colors, hiding, and Fomors. |
 
 | CatseyeXI Systems | NPC & Object Library | Fishing HUD |
 | --- | --- | --- |
-| <a href="docs/screenshots/features/catseye-systems.png"><img src="docs/screenshots/features/catseye-systems.png" alt="Catseye quality-of-life feature card" width="280"></a> | <a href="docs/screenshots/features/npc-object-library.png"><img src="docs/screenshots/features/npc-object-library.png" alt="NPC and object library feature card" width="280"></a> | <a href="docs/screenshots/features/fishing-hud.png"><img src="docs/screenshots/features/fishing-hud.png" alt="Fishing feature card" width="280"></a> |
+| <a href="docs/screenshots/features/catseye-systems.png"><img src="docs/screenshots/features/catseye-systems.png" alt="Catseye quality-of-life feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/npc-object-library.png"><img src="docs/screenshots/features/npc-object-library.png" alt="NPC and object library feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/fishing-hud.png"><img src="docs/screenshots/features/fishing-hud.png" alt="Fishing feature card" width="280" height="280"></a> |
 | Markers and shortcuts for custom systems. | Quest, mission, service, and object data. | Fishing state, fatigue, catches, and bait tips. |
 
 | Live Settings Preview | Enemy Awareness | Service NPCs |
 | --- | --- | --- |
-| <a href="docs/screenshots/features/settings-ui.png"><img src="docs/screenshots/features/settings-ui.png" alt="Settings UI feature card" width="280"></a> | <a href="docs/screenshots/features/enemy-awareness.png"><img src="docs/screenshots/features/enemy-awareness.png" alt="Enemy awareness feature card" width="280"></a> | <a href="docs/screenshots/features/service-npcs.png"><img src="docs/screenshots/features/service-npcs.png" alt="Service NPCs feature card" width="280"></a> |
+| <a href="docs/screenshots/features/settings-ui.png"><img src="docs/screenshots/features/settings-ui.png" alt="Settings UI feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/enemy-awareness.png"><img src="docs/screenshots/features/enemy-awareness.png" alt="Enemy awareness feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/service-npcs.png"><img src="docs/screenshots/features/service-npcs.png" alt="Service NPCs feature card" width="280" height="280"></a> |
 | Customize layouts with an in-game preview. | Behavior, detects, links, resists, and casts. | Vendors and services labeled before clicking. |
 
 | SMN pet frame | PUP automaton | DRG wyvern |
 | --- | --- | --- |
-| <a href="docs/screenshots/features/smn-avatar-plate.png"><img src="docs/screenshots/features/smn-avatar-plate.png" alt="SMN pet frame feature card" width="280"></a> | <a href="docs/screenshots/features/pup-automaton.gif"><img src="docs/screenshots/features/pup-automaton.gif" alt="PUP automaton animation" width="280"></a> | <a href="docs/screenshots/features/drg-wyvern.png"><img src="docs/screenshots/features/drg-wyvern.png" alt="DRG wyvern feature card" width="280"></a> |
+| <a href="docs/screenshots/features/smn-avatar-plate.png"><img src="docs/screenshots/features/smn-avatar-plate.png" alt="SMN pet frame feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/pup-automaton.gif"><img src="docs/screenshots/features/pup-automaton.gif" alt="PUP automaton animation" width="280" height="280"></a> | <a href="docs/screenshots/features/drg-wyvern.png"><img src="docs/screenshots/features/drg-wyvern.png" alt="DRG wyvern feature card" width="280" height="280"></a> |
 | Avatar/spirit bars, timers, and alerts. | Automaton bars, maneuvers, burden, and risk. | Wyvern status, timers, and pet-action helpers. |
 
 | Quick Menus | Travel Helpers | Blacklist Settings |
 | --- | --- | --- |
-| <a href="docs/screenshots/features/quick-menus.png"><img src="docs/screenshots/features/quick-menus.png" alt="Quick menu feature card" width="280"></a> | <a href="docs/screenshots/features/travel-helpers.png"><img src="docs/screenshots/features/travel-helpers.png" alt="Travel helpers feature card" width="280"></a> | <a href="docs/screenshots/features/blacklist-settings.png"><img src="docs/screenshots/features/blacklist-settings.png" alt="Blacklist settings feature card" width="280"></a> |
+| <a href="docs/screenshots/features/quick-menus.png"><img src="docs/screenshots/features/quick-menus.png" alt="Quick menu feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/travel-helpers.png"><img src="docs/screenshots/features/travel-helpers.png" alt="Travel helpers feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/blacklist-settings.png"><img src="docs/screenshots/features/blacklist-settings.png" alt="Blacklist settings feature card" width="280" height="280"></a> |
 | Context actions from right-click plates. | Teleports, guides, manuals, and exits. | Manage notes, names, colors, and privacy. |
 
 ## What LibraPlates does
@@ -109,7 +109,7 @@ LibraPlates includes a large built-in library of NPC and object data across Vana
 - Icon categories for common NPC/object roles.
 - Concise notes for important services.
 - Quest and mission entries with clickable wiki links that open directly to the related wiki page where supported.
-- Special Catseye markers for custom systems and NPCs.
+- Special Catseye markers for custom systems, NPCs, and venture/incursion enemies.
 - Object support for boxes, guides, books, doors, gathering points, and other interactables.
 
 ### Quick menu

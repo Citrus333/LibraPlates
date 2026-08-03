@@ -236,18 +236,6 @@ LibraPlates does a lot for an older game client, so performance is treated as a 
 - Textures and generated plates are cached.
 - Distant or expensive plate features can be reduced through settings.
 
-## Suggested README image order
-
-If you only want to make a few images first, make these:
-
-1. `hero-target-bar-and-plates.png`
-2. `enemy-mob-info.png`
-3. `npc-object-info.png`
-4. `settings-preview.png`
-5. `quick-menu.png`
-
-That gives the page a strong first impression without needing screenshots for every subsystem.
-
 ## Credits
 
 LibraPlates is a love-of-the-game project by Lunem.

@@ -31,30 +31,33 @@ LibraPlates is an Ashita addon for Final Fantasy XI, with extra CatseyeXI-focuse
 
 Click any image to open it full-size.
 
-| Clickable Combat Plates | Detailed NPC Interaction | Blacklist Tools |
-| --- | --- | --- |
-| <a href="docs/screenshots/features/combat-nameplates.png"><img src="docs/screenshots/features/combat-nameplates.png" alt="Combat feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/npc-info-plate.png"><img src="docs/screenshots/features/npc-info-plate.png" alt="NPC info feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/blacklist-fomor.png"><img src="docs/screenshots/features/blacklist-fomor.png" alt="Blacklist feature card" width="280" height="280"></a> |
-| Target, attack, and switch enemies fast. | Icons, titles, notes, quests, and links. | Notes, local renames, colors, hiding, and Fomors. |
-
-| CatseyeXI Systems | NPC & Object Library | Fishing HUD |
-| --- | --- | --- |
-| <a href="docs/screenshots/features/catseye-systems.png"><img src="docs/screenshots/features/catseye-systems.png" alt="Catseye quality-of-life feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/npc-object-library.png"><img src="docs/screenshots/features/npc-object-library.png" alt="NPC and object library feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/fishing-hud.png"><img src="docs/screenshots/features/fishing-hud.png" alt="Fishing feature card" width="280" height="280"></a> |
-| Markers and shortcuts for custom systems. | Quest, mission, service, and object data. | Fishing state, fatigue, catches, and bait tips. |
-
-| Live Settings Preview | Enemy Awareness | Service NPCs |
-| --- | --- | --- |
-| <a href="docs/screenshots/features/settings-ui.png"><img src="docs/screenshots/features/settings-ui.png" alt="Settings UI feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/enemy-awareness.png"><img src="docs/screenshots/features/enemy-awareness.png" alt="Enemy awareness feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/service-npcs.png"><img src="docs/screenshots/features/service-npcs.png" alt="Service NPCs feature card" width="280" height="280"></a> |
-| Customize layouts with an in-game preview. | Behavior, detects, links, resists, and casts. | Vendors and services labeled before clicking. |
-
-| SMN pet frame | PUP automaton | DRG wyvern |
-| --- | --- | --- |
-| <a href="docs/screenshots/features/smn-avatar-plate.png"><img src="docs/screenshots/features/smn-avatar-plate.png" alt="SMN pet frame feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/pup-automaton.gif"><img src="docs/screenshots/features/pup-automaton.gif" alt="PUP automaton animation" width="280" height="280"></a> | <a href="docs/screenshots/features/drg-wyvern.png"><img src="docs/screenshots/features/drg-wyvern.png" alt="DRG wyvern feature card" width="280" height="280"></a> |
-| Avatar/spirit bars, timers, and alerts. | Automaton bars, maneuvers, burden, and risk. | Wyvern status, timers, and pet-action helpers. |
-
-| Quick Menus | Travel Helpers | Blacklist Settings |
-| --- | --- | --- |
-| <a href="docs/screenshots/features/quick-menus.png"><img src="docs/screenshots/features/quick-menus.png" alt="Quick menu feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/travel-helpers.png"><img src="docs/screenshots/features/travel-helpers.png" alt="Travel helpers feature card" width="280" height="280"></a> | <a href="docs/screenshots/features/blacklist-settings.png"><img src="docs/screenshots/features/blacklist-settings.png" alt="Blacklist settings feature card" width="280" height="280"></a> |
-| Context actions from right-click plates. | Teleports, guides, manuals, and exits. | Manage notes, names, colors, and privacy. |
+<table>
+  <tr>
+    <td width="33%" align="center"><strong>Clickable Combat Plates</strong><br><a href="docs/screenshots/features/combat-nameplates.png"><img src="docs/screenshots/features/combat-nameplates.png" alt="Combat feature card" width="100%"></a><br><sub>Target, attack, and switch enemies fast.</sub></td>
+    <td width="33%" align="center"><strong>Detailed NPC Interaction</strong><br><a href="docs/screenshots/features/npc-info-plate.png"><img src="docs/screenshots/features/npc-info-plate.png" alt="NPC info feature card" width="100%"></a><br><sub>Icons, titles, notes, quests, and links.</sub></td>
+    <td width="33%" align="center"><strong>Blacklist Tools</strong><br><a href="docs/screenshots/features/blacklist-fomor.png"><img src="docs/screenshots/features/blacklist-fomor.png" alt="Blacklist feature card" width="100%"></a><br><sub>Notes, local renames, colors, hiding, and Fomors.</sub></td>
+  </tr>
+  <tr>
+    <td width="33%" align="center"><strong>CatseyeXI Systems</strong><br><a href="docs/screenshots/features/catseye-systems.png"><img src="docs/screenshots/features/catseye-systems.png" alt="Catseye quality-of-life feature card" width="100%"></a><br><sub>Markers and shortcuts for custom systems.</sub></td>
+    <td width="33%" align="center"><strong>NPC &amp; Object Library</strong><br><a href="docs/screenshots/features/npc-object-library.png"><img src="docs/screenshots/features/npc-object-library.png" alt="NPC and object library feature card" width="100%"></a><br><sub>Quest, mission, service, and object data.</sub></td>
+    <td width="33%" align="center"><strong>Fishing HUD</strong><br><a href="docs/screenshots/features/fishing-hud.png"><img src="docs/screenshots/features/fishing-hud.png" alt="Fishing feature card" width="100%"></a><br><sub>Fishing state, fatigue, catches, and bait tips.</sub></td>
+  </tr>
+  <tr>
+    <td width="33%" align="center"><strong>Live Settings Preview</strong><br><a href="docs/screenshots/features/settings-ui.png"><img src="docs/screenshots/features/settings-ui.png" alt="Settings UI feature card" width="100%"></a><br><sub>Customize layouts with an in-game preview.</sub></td>
+    <td width="33%" align="center"><strong>Enemy Awareness</strong><br><a href="docs/screenshots/features/enemy-awareness.png"><img src="docs/screenshots/features/enemy-awareness.png" alt="Enemy awareness feature card" width="100%"></a><br><sub>Behavior, detects, links, resists, and casts.</sub></td>
+    <td width="33%" align="center"><strong>Service NPCs</strong><br><a href="docs/screenshots/features/service-npcs.png"><img src="docs/screenshots/features/service-npcs.png" alt="Service NPCs feature card" width="100%"></a><br><sub>Vendors and services labeled before clicking.</sub></td>
+  </tr>
+  <tr>
+    <td width="33%" align="center"><strong>SMN pet frame</strong><br><a href="docs/screenshots/features/smn-avatar-plate.png"><img src="docs/screenshots/features/smn-avatar-plate.png" alt="SMN pet frame feature card" width="100%"></a><br><sub>Avatar/spirit bars, timers, and alerts.</sub></td>
+    <td width="33%" align="center"><strong>PUP automaton</strong><br><a href="docs/screenshots/features/pup-automaton.gif"><img src="docs/screenshots/features/pup-automaton.gif" alt="PUP automaton animation" width="100%"></a><br><sub>Automaton bars, maneuvers, burden, and risk.</sub></td>
+    <td width="33%" align="center"><strong>DRG wyvern</strong><br><a href="docs/screenshots/features/drg-wyvern.png"><img src="docs/screenshots/features/drg-wyvern.png" alt="DRG wyvern feature card" width="100%"></a><br><sub>Wyvern status, timers, and pet-action helpers.</sub></td>
+  </tr>
+  <tr>
+    <td width="33%" align="center"><strong>Quick Menus</strong><br><a href="docs/screenshots/features/quick-menus.png"><img src="docs/screenshots/features/quick-menus.png" alt="Quick menu feature card" width="100%"></a><br><sub>Context actions from right-click plates.</sub></td>
+    <td width="33%" align="center"><strong>Travel Helpers</strong><br><a href="docs/screenshots/features/travel-helpers.png"><img src="docs/screenshots/features/travel-helpers.png" alt="Travel helpers feature card" width="100%"></a><br><sub>Teleports, guides, manuals, and exits.</sub></td>
+    <td width="33%" align="center"><strong>Blacklist Settings</strong><br><a href="docs/screenshots/features/blacklist-settings.png"><img src="docs/screenshots/features/blacklist-settings.png" alt="Blacklist settings feature card" width="100%"></a><br><sub>Manage notes, names, colors, and privacy.</sub></td>
+  </tr>
+</table>
 
 ## What LibraPlates does
 

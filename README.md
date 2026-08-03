@@ -169,7 +169,6 @@ Right-click supported plates for useful actions.
   <a href="docs/screenshots/features/NPC-and-object-library.png"><img src="docs/screenshots/features/NPC-and-object-library.png" alt="NPC and object library" width="105"></a>
   <a href="docs/screenshots/features/Quick-menu.png"><img src="docs/screenshots/features/Quick-menu.png" alt="Quick menu" width="105"></a>
   <a href="docs/screenshots/features/Job-mount-travel.png"><img src="docs/screenshots/features/Job-mount-travel.png" alt="Job, mount, and travel helpers" width="105"></a>
-  <a href="docs/screenshots/features/fishing.png"><img src="docs/screenshots/features/fishing.png" alt="Fishing helpers" width="105"></a>
   <a href="docs/screenshots/features/pet-bst.png"><img src="docs/screenshots/features/pet-bst.png" alt="Pet helpers" width="105"></a>
 </p>
 

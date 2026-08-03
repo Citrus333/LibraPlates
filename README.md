@@ -6,13 +6,8 @@
 ![CatseyeXI](https://img.shields.io/badge/CatseyeXI-supported-38bdf8)
 ![Ashita](https://img.shields.io/badge/Ashita-addon-ffd700)
 
-<style>
-H1{color:Blue !important;}
-H2{color:DarkOrange !important;}
-p{color:Black !important;}
-</style>
+<span style="color: red;">This text is red.</span>
 
-# Color Test Document
 
 
 

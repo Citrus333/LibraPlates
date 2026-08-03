@@ -2,7 +2,7 @@
 
 Clickable, customizable nameplates and quality-of-life tools for Final Fantasy XI.
 
-LibraPlates is an Ashita addon built for the CatseyeXI private server, with many features that should also work on other FFXI servers. It adds clickable nameplates, NPC/object info, combat helpers, and CatseyeXI-focused quality-of-life tools.
+LibraPlates is an Ashita addon for Final Fantasy XI, with extra CatseyeXI-focused features built in. It adds clickable nameplates directly inside the 3D game world, giving players, NPCs, objects, pets, and enemies useful info, quick actions, combat helpers, and everyday quality-of-life tools.
 
 > Status: active work in progress. Expect ongoing polish, data fixes, and feature tuning.
 
@@ -12,49 +12,49 @@ LibraPlates is an Ashita addon built for the CatseyeXI private server, with many
 
 ## Key features
 
-- **Clickable nameplates** — click plates to target, inspect, open menus, attack, gather, travel, and use supported Catseye systems faster.
-- **Right-click combat** — right-click enemy plates to start attacking, including automatic dismount handling.
-- **Right-click gathering** — use Pickaxes, Hatchets, and Sickles directly on supported gathering points.
-- **NPCs and objects with real context** — icons, titles, service labels, quest info, mission info, and clickable wiki links.
+- **Clickable nameplates** — click plates to target, inspect, open menus, gather, travel, and use supported Catseye systems faster.
+- **Right-click combat** — right-click enemy plates to start attacking or quickly switch combat targets, even when mounted. LibraPlates can dismount you and begin the attack automatically.
+- **Right-click gathering** — right-click gathering nodes and LibraPlates will pick the right tool for the job, using a Pickaxe, Hatchet, or Sickle from your inventory when available.
+- **NPC and object library** — a large built-in library of NPCs and objects with titles, custom icon sets, services, quest starts, mission roles, special CatseyeXI markers, and clickable wiki links.
 - **CatseyeXI quality-of-life markers** — special Catseye NPCs, services, events, HELM, weekly hunts, Adept Reforging, Voidwatch, Ephemeral Box, and more.
 - **Combat information on plates** — enemy behavior, detection, links, weaknesses, resists, immunities, buffs, debuffs, cast alerts, claim colors, and AOE helpers.
 - **Plate stacking** — reduces messy overlap in crowded areas so names, bars, and icons stay readable.
-- **Pet-class support** — special plates and helpers for BST, SMN, DRG, PUP, luopans, trusts, pet timers, maneuvers, avatar/spirit bars, and pet action alerts.
+- **Special job plates** — custom plates and helpers for BST pets, SMN avatars/spirits, DRG wyverns, PUP automatons, and luopans, including timers, maneuvers, avatar/spirit bars, and pet action alerts.
 - **Current target bar** — static target display for enemies, NPCs, objects, PCs, trusts, pets, and self.
 - **Screen alerts** — built-in and custom alerts with optional sounds and separate visual lanes.
-- **Blacklist tools** — hide, rename, recolor, or replace blacklisted players, with quick-menu controls.
-- **Streamer Mode** — replace local player names with safe labels like `Player1`, `Player2`, and similar.
-- **Highly customizable** — profiles, fonts, colors, textures, icons, anchors, auto-stacking, scaling, visibility rules, and performance options.
-- **Extra QoL modules** — resting tick/logout timer, fishing HUD, gathering tool count, crafting results, mount cooldown, blacklist tools, quick menus, and profile management.
+- **Blacklist tools** — keep notes on blacklisted players, hide or recolor them, change their displayed name locally, or turn them into Fomors on your screen.
+- **Streamer Mode** — replace visible player names with privacy-friendly labels like `Player1` and `Player2`.
+- **Highly customizable** — profiles, fonts, colors, textures, icons, anchors, auto-stacking, scaling, visibility rules, performance options, and clear file paths so users can freely change or swap assets.
+- **Extra QoL modules** — resting tick/logout timer, fishing HUD, gathering tool count, crafting result display, teleport and Mog House exit helpers, mount cooldown, mount roulette, Ephemeral Box tools, quick menus, blacklist tools, and profile management.
 
 ## Feature gallery
 
 Click any image to open it full-size.
 
-| Combat | Combat details | Quick menu |
+| Clickable Combat Plates | Detailed NPC Interaction | Blacklist Tools |
 | --- | --- | --- |
-| <a href="docs/screenshots/features/combat.png"><img src="docs/screenshots/features/combat.png" alt="Combat feature card" width="280"></a> | <a href="docs/screenshots/features/combat2.png"><img src="docs/screenshots/features/combat2.png" alt="Combat details feature card" width="280"></a> | <a href="docs/screenshots/features/quick.png"><img src="docs/screenshots/features/quick.png" alt="Quick menu feature card" width="280"></a> |
-| Clickable combat plates and enemy info. | More combat/readability tools. | Context menus for fast actions. |
+| <a href="docs/screenshots/features/combat-nameplates.png"><img src="docs/screenshots/features/combat-nameplates.png" alt="Combat feature card" width="280"></a> | <a href="docs/screenshots/features/npc-info-plate.png"><img src="docs/screenshots/features/npc-info-plate.png" alt="NPC info feature card" width="280"></a> | <a href="docs/screenshots/features/blacklist-fomor.png"><img src="docs/screenshots/features/blacklist-fomor.png" alt="Blacklist feature card" width="280"></a> |
+| Target, attack, and switch enemies fast. | Icons, titles, notes, quests, and links. | Notes, local renames, colors, hiding, and Fomors. |
 
-| Catseye QoL | Teleport tools | Jeuno/NPC info |
+| CatseyeXI Systems | NPC & Object Library | Fishing HUD |
 | --- | --- | --- |
-| <a href="docs/screenshots/features/catseye%20.png"><img src="docs/screenshots/features/catseye%20.png" alt="Catseye quality-of-life feature card" width="280"></a> | <a href="docs/screenshots/features/Teleport.png"><img src="docs/screenshots/features/Teleport.png" alt="Teleport feature card" width="280"></a> | <a href="docs/screenshots/features/jeuno.png"><img src="docs/screenshots/features/jeuno.png" alt="Jeuno NPC feature card" width="280"></a> |
-| Catseye systems, services, and markers. | Quick travel and teleport helpers. | NPC/object info with useful labels. |
+| <a href="docs/screenshots/features/catseye-systems.png"><img src="docs/screenshots/features/catseye-systems.png" alt="Catseye quality-of-life feature card" width="280"></a> | <a href="docs/screenshots/features/npc-object-library.png"><img src="docs/screenshots/features/npc-object-library.png" alt="NPC and object library feature card" width="280"></a> | <a href="docs/screenshots/features/fishing-hud.png"><img src="docs/screenshots/features/fishing-hud.png" alt="Fishing feature card" width="280"></a> |
+| Markers and shortcuts for custom systems. | Quest, mission, service, and object data. | Fishing state, fatigue, catches, and bait tips. |
+
+| Live Settings Preview | Enemy Awareness | Service NPCs |
+| --- | --- | --- |
+| <a href="docs/screenshots/features/settings-ui.png"><img src="docs/screenshots/features/settings-ui.png" alt="Settings UI feature card" width="280"></a> | <a href="docs/screenshots/features/enemy-awareness.png"><img src="docs/screenshots/features/enemy-awareness.png" alt="Enemy awareness feature card" width="280"></a> | <a href="docs/screenshots/features/service-npcs.png"><img src="docs/screenshots/features/service-npcs.png" alt="Service NPCs feature card" width="280"></a> |
+| Customize layouts with an in-game preview. | Behavior, detects, links, resists, and casts. | Vendors and services labeled before clicking. |
 
 | SMN pet frame | PUP automaton | DRG wyvern |
 | --- | --- | --- |
-| <a href="docs/screenshots/features/smn.png"><img src="docs/screenshots/features/smn.png" alt="SMN pet frame feature card" width="280"></a> | <a href="docs/screenshots/features/pup_animation.gif"><img src="docs/screenshots/features/pup_animation.gif" alt="PUP automaton animation" width="280"></a> | <a href="docs/screenshots/features/drg.png"><img src="docs/screenshots/features/drg.png" alt="DRG wyvern feature card" width="280"></a> |
-| Custom SMN avatar/spirit pet frame support. | Automaton frame, maneuvers, overload, and burden helpers. | Wyvern plate support and pet-class QoL. |
+| <a href="docs/screenshots/features/smn-avatar-plate.png"><img src="docs/screenshots/features/smn-avatar-plate.png" alt="SMN pet frame feature card" width="280"></a> | <a href="docs/screenshots/features/pup-automaton.gif"><img src="docs/screenshots/features/pup-automaton.gif" alt="PUP automaton animation" width="280"></a> | <a href="docs/screenshots/features/drg-wyvern.png"><img src="docs/screenshots/features/drg-wyvern.png" alt="DRG wyvern feature card" width="280"></a> |
+| Avatar/spirit bars, timers, and alerts. | Automaton bars, maneuvers, burden, and risk. | Wyvern status, timers, and pet-action helpers. |
 
-| Fishing | Norg services | Kazan / special NPCs |
+| Quick Menus | Travel Helpers | Blacklist Settings |
 | --- | --- | --- |
-| <a href="docs/screenshots/features/fish.png"><img src="docs/screenshots/features/fish.png" alt="Fishing feature card" width="280"></a> | <a href="docs/screenshots/features/norg.png"><img src="docs/screenshots/features/norg.png" alt="Norg feature card" width="280"></a> | <a href="docs/screenshots/features/kazan.png"><img src="docs/screenshots/features/kazan.png" alt="Kazan feature card" width="280"></a> |
-| Fishing HUD, catches, fatigue, and life-skill helpers. | Service NPCs with icons, titles, and quick context. | Special NPC markers and Catseye-specific data. |
-
-| Blacklist | Blacklist settings | Settings UI |
-| --- | --- | --- |
-| <a href="docs/screenshots/features/blacklist.png"><img src="docs/screenshots/features/blacklist.png" alt="Blacklist feature card" width="280"></a> | <a href="docs/screenshots/features/bl-settings.png"><img src="docs/screenshots/features/bl-settings.png" alt="Blacklist settings feature card" width="280"></a> | <a href="docs/screenshots/features/settings%20(1).png"><img src="docs/screenshots/features/settings%20(1).png" alt="Settings UI feature card" width="280"></a> |
-| Privacy and blacklist tools. | Simple blacklist controls. | Live preview and profile/settings management. |
+| <a href="docs/screenshots/features/quick-menus.png"><img src="docs/screenshots/features/quick-menus.png" alt="Quick menu feature card" width="280"></a> | <a href="docs/screenshots/features/travel-helpers.png"><img src="docs/screenshots/features/travel-helpers.png" alt="Travel helpers feature card" width="280"></a> | <a href="docs/screenshots/features/blacklist-settings.png"><img src="docs/screenshots/features/blacklist-settings.png" alt="Blacklist settings feature card" width="280"></a> |
+| Context actions from right-click plates. | Teleports, guides, manuals, and exits. | Manage notes, names, colors, and privacy. |
 
 ## What LibraPlates does
 
@@ -101,9 +101,9 @@ Enemy plates are built to reduce the “what am I looking at?” tax during comb
 - Enmity markers for enemies targeting you or allies.
 - Peer Inspector details for deeper enemy information.
 
-### NPC and object data
+### NPC and object library
 
-LibraPlates includes zone data for NPCs and objects so plates can be useful before clicking.
+LibraPlates includes a large built-in library of NPC and object data across Vana'diel, with custom icon sets for different NPC types, services, quests, missions, and special CatseyeXI content. It can show who starts a quest, who is tied to a mission, what service an NPC offers, and which objects matter — with direct wiki links when available.
 
 - Clear type lines such as vendor, quest giver, mission associate, survival guide, home point, event NPC, and Catseye service NPC.
 - Icon categories for common NPC/object roles.

@@ -1,6 +1,7 @@
 # LibraPlates
 
 ![LibraPlates](https://img.shields.io/badge/FFXI-50dfff)
+![LibraPlates](https://img.shields.io/badge/Nameplates-3b82f6)
 ![Optimized for 30fps](https://img.shields.io/static/v1?label=Optimized%20for&message=30fps&color=ff66cc)
 ![CatseyeXI](https://img.shields.io/badge/CatseyeXI-supported-00b050)
 ![Ashita](https://img.shields.io/badge/Ashita-addon-ffd700)

@@ -2,7 +2,7 @@
 
 ![LibraPlates](https://img.shields.io/badge/FFXI-50dfff)
 ![Optimized for 30fps](https://img.shields.io/static/v1?label=Optimized%20for&message=30fps&color=ff66cc)
-![CatseyeXI](https://img.shields.io/badge/CatseyeXI-supported-00ff00)
+![CatseyeXI](https://img.shields.io/badge/CatseyeXI-supported-00b050)
 ![Ashita](https://img.shields.io/badge/Ashita-addon-ffd700)
 
 Clickable, customizable nameplates and quality-of-life tools for Final Fantasy XI.

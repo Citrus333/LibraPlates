@@ -10,13 +10,15 @@ Clickable, customizable nameplates and quality-of-life tools for Final Fantasy X
 
 LibraPlates is an Ashita addon for Final Fantasy XI, with extra CatseyeXI-focused features built in. It adds clickable nameplates directly inside the 3D game world, giving players, NPCs, objects, pets, and enemies useful info, quick actions, combat helpers, and everyday quality-of-life tools.
 
-> [!NOTE]
-> **Status: coding break**
->
-> LibraPlates is active, but I’m taking a break from coding after a long development push. I’ve spent months building it, and now I want to actually play FFXI and enjoy what I made for a while. Anyone is welcome to fork it, make fixes, share ideas, or continue development.
+<div style="border-left: 6px solid #50dfff; background: #07131f; padding: 14px 18px; margin: 18px 0; border-radius: 8px;">
+  <strong style="color: #50dfff; font-size: 1.08em;">Status: coding break</strong>
+  <p style="margin: 8px 0 0 0;">
+    LibraPlates is active, but I’m taking a break from coding after a long development push. I’ve spent months building it, and now I want to actually play FFXI and enjoy what I made for a while. Anyone is welcome to fork it, make fixes, share ideas, or continue development.
+  </p>
+</div>
 
-<a href="docs/screenshots/features/main.png">
-  <img src="docs/screenshots/features/main.png" alt="LibraPlates main showcase" width="900">
+<a href="screenshots/features/main.png">
+  <img src="screenshots/features/main.png" alt="LibraPlates main showcase" width="900">
 </a>
 
 ## Key features
@@ -42,29 +44,29 @@ Click any image to open it full-size.
 
 <table>
   <tr>
-    <td width="33%" align="center"><strong>Clickable Combat Plates</strong><br><a href="docs/screenshots/features/combat-nameplates.png"><img src="docs/screenshots/features/combat-nameplates.png" alt="Combat feature card" width="100%"></a><br><sub>Target, attack, and switch enemies fast.</sub></td>
-    <td width="33%" align="center"><strong>Detailed NPC Interaction</strong><br><a href="docs/screenshots/features/npc-info-plate.png"><img src="docs/screenshots/features/npc-info-plate.png" alt="NPC info feature card" width="100%"></a><br><sub>Icons, titles, notes, quests, and links.</sub></td>
-    <td width="33%" align="center"><strong>Blacklist Tools</strong><br><a href="docs/screenshots/features/blacklist-fomor.png"><img src="docs/screenshots/features/blacklist-fomor.png" alt="Blacklist feature card" width="100%"></a><br><sub>Notes, local renames, colors, and Fomors.</sub></td>
+    <td width="33%" align="center"><strong>Clickable Combat Plates</strong><br><a href="screenshots/features/combat-nameplates.png"><img src="screenshots/features/combat-nameplates.png" alt="Combat feature card" width="100%"></a><br><sub>Target, attack, and switch enemies fast.</sub></td>
+    <td width="33%" align="center"><strong>Detailed NPC Interaction</strong><br><a href="screenshots/features/npc-info-plate.png"><img src="screenshots/features/npc-info-plate.png" alt="NPC info feature card" width="100%"></a><br><sub>Icons, titles, notes, quests, and links.</sub></td>
+    <td width="33%" align="center"><strong>Blacklist Tools</strong><br><a href="screenshots/features/blacklist-fomor.png"><img src="screenshots/features/blacklist-fomor.png" alt="Blacklist feature card" width="100%"></a><br><sub>Notes, local renames, colors, and Fomors.</sub></td>
   </tr>
   <tr>
-    <td width="33%" align="center"><strong>Quest Info &amp; Wiki Links</strong><br><a href="docs/screenshots/features/catseye-systems.png"><img src="docs/screenshots/features/catseye-systems.png" alt="Quest info and wiki links feature card" width="100%"></a><br><sub>Useful quest information shown before you click.</sub></td>
-    <td width="33%" align="center"><strong>Nameplate Stacking</strong><br><a href="docs/screenshots/features/npc-object-library.png"><img src="docs/screenshots/features/npc-object-library.png" alt="Nameplate stacking feature card" width="100%"></a><br><sub>Keep crowded plates visible and clickable.</sub></td>
-    <td width="33%" align="center"><strong>Fishing HUD</strong><br><a href="docs/screenshots/features/fishing-hud.png"><img src="docs/screenshots/features/fishing-hud.png" alt="Fishing feature card" width="100%"></a><br><sub>Fishing state, fatigue, catches, and bait tips.</sub></td>
+    <td width="33%" align="center"><strong>Quest Info &amp; Wiki Links</strong><br><a href="screenshots/features/catseye-systems.png"><img src="screenshots/features/catseye-systems.png" alt="Quest info and wiki links feature card" width="100%"></a><br><sub>Useful quest information shown before you click.</sub></td>
+    <td width="33%" align="center"><strong>Nameplate Stacking</strong><br><a href="screenshots/features/npc-object-library.png"><img src="screenshots/features/npc-object-library.png" alt="Nameplate stacking feature card" width="100%"></a><br><sub>Keep crowded plates visible and clickable.</sub></td>
+    <td width="33%" align="center"><strong>Fishing HUD</strong><br><a href="screenshots/features/fishing-hud.png"><img src="screenshots/features/fishing-hud.png" alt="Fishing feature card" width="100%"></a><br><sub>Fishing state, fatigue, catches, and bait tips.</sub></td>
   </tr>
   <tr>
-    <td width="33%" align="center"><strong>Extensive Settings</strong><br><a href="docs/screenshots/features/settings-ui.png"><img src="docs/screenshots/features/settings-ui.png" alt="Settings UI feature card" width="100%"></a><br><sub>Easy control over layouts, profiles, and visuals.</sub></td>
-    <td width="33%" align="center"><strong>Enemy Awareness</strong><br><a href="docs/screenshots/features/enemy-awareness.png"><img src="docs/screenshots/features/enemy-awareness.png" alt="Enemy awareness feature card" width="100%"></a><br><sub>Behavior, detects, links, resists, and casts.</sub></td>
-    <td width="33%" align="center"><strong>Huge NPC Database</strong><br><a href="docs/screenshots/features/service-npcs.png"><img src="docs/screenshots/features/service-npcs.png" alt="Huge NPC database feature card" width="100%"></a><br><sub>Services, quest NPCs, and useful labels in-world.</sub></td>
+    <td width="33%" align="center"><strong>Extensive Settings</strong><br><a href="screenshots/features/settings-ui.png"><img src="screenshots/features/settings-ui.png" alt="Settings UI feature card" width="100%"></a><br><sub>Easy control over layouts, profiles, and visuals.</sub></td>
+    <td width="33%" align="center"><strong>Enemy Awareness</strong><br><a href="screenshots/features/enemy-awareness.png"><img src="screenshots/features/enemy-awareness.png" alt="Enemy awareness feature card" width="100%"></a><br><sub>Behavior, detects, links, resists, and casts.</sub></td>
+    <td width="33%" align="center"><strong>Huge NPC Database</strong><br><a href="screenshots/features/service-npcs.png"><img src="screenshots/features/service-npcs.png" alt="Huge NPC database feature card" width="100%"></a><br><sub>Services, quest NPCs, and useful labels in-world.</sub></td>
   </tr>
   <tr>
-    <td width="33%" align="center"><strong>Detached Info Frames</strong><br><a href="docs/screenshots/features/smn-avatar-plate.png"><img src="docs/screenshots/features/smn-avatar-plate.png" alt="Detached info frames feature card" width="100%"></a><br><sub>Extra job info with visual timers and alerts.</sub></td>
-    <td width="33%" align="center"><strong>Real-Time Effects</strong><br><a href="docs/screenshots/features/pup-automaton.gif"><img src="docs/screenshots/features/pup-automaton.gif" alt="Real-time effects feature card" width="100%"></a><br><sub>Live meters and effects for changing job states.</sub></td>
-    <td width="33%" align="center"><strong>Custom Art Assets</strong><br><a href="docs/screenshots/features/drg-wyvern.png"><img src="docs/screenshots/features/drg-wyvern.png" alt="Custom art assets feature card" width="100%"></a><br><sub>Swap textures and use your own artwork.</sub></td>
+    <td width="33%" align="center"><strong>Detached Info Frames</strong><br><a href="screenshots/features/smn-avatar-plate.png"><img src="screenshots/features/smn-avatar-plate.png" alt="Detached info frames feature card" width="100%"></a><br><sub>Extra job info with visual timers and alerts.</sub></td>
+    <td width="33%" align="center"><strong>Real-Time Effects</strong><br><a href="screenshots/features/pup-automaton.gif"><img src="screenshots/features/pup-automaton.gif" alt="Real-time effects feature card" width="100%"></a><br><sub>Live meters and effects for changing job states.</sub></td>
+    <td width="33%" align="center"><strong>Custom Art Assets</strong><br><a href="screenshots/features/drg-wyvern.png"><img src="screenshots/features/drg-wyvern.png" alt="Custom art assets feature card" width="100%"></a><br><sub>Swap textures and use your own artwork.</sub></td>
   </tr>
   <tr>
-    <td width="33%" align="center"><strong>Quick Menus</strong><br><a href="docs/screenshots/features/quick-menus.png"><img src="docs/screenshots/features/quick-menus.png" alt="Quick menu feature card" width="100%"></a><br><sub>Quick actions from right-click plates.</sub></td>
-    <td width="33%" align="center"><strong>Travel Helpers</strong><br><a href="docs/screenshots/features/travel-helpers.png"><img src="docs/screenshots/features/travel-helpers.png" alt="Travel helpers feature card" width="100%"></a><br><sub>Auto-teleport to selected destinations.</sub></td>
-    <td width="33%" align="center"><strong>Profile Management</strong><br><a href="docs/screenshots/features/blacklist-settings.png"><img src="docs/screenshots/features/blacklist-settings.png" alt="Profile management feature card" width="100%"></a><br><sub>Manage profiles and settings with less friction.</sub></td>
+    <td width="33%" align="center"><strong>Quick Menus</strong><br><a href="screenshots/features/quick-menus.png"><img src="screenshots/features/quick-menus.png" alt="Quick menu feature card" width="100%"></a><br><sub>Quick actions from right-click plates.</sub></td>
+    <td width="33%" align="center"><strong>Travel Helpers</strong><br><a href="screenshots/features/travel-helpers.png"><img src="screenshots/features/travel-helpers.png" alt="Travel helpers feature card" width="100%"></a><br><sub>Auto-teleport to selected destinations.</sub></td>
+    <td width="33%" align="center"><strong>Profile Management</strong><br><a href="screenshots/features/blacklist-settings.png"><img src="screenshots/features/blacklist-settings.png" alt="Profile management feature card" width="100%"></a><br><sub>Manage profiles and settings with less friction.</sub></td>
   </tr>
 </table>
 
@@ -172,13 +174,13 @@ Right-click supported plates for useful actions.
 - Streamer Mode can anonymize local player names with safe labels.
 
 <p align="center">
-  <a href="docs/screenshots/features/Clickable-in-world-nameplates.png"><img src="docs/screenshots/features/Clickable-in-world-nameplates.png" alt="Clickable in-world nameplates" width="105"></a>
-  <a href="docs/screenshots/features/Current-target-bar.png"><img src="docs/screenshots/features/Current-target-bar.png" alt="Current target bar" width="105"></a>
-  <a href="docs/screenshots/features/Enemy-awareness-small.png"><img src="docs/screenshots/features/Enemy-awareness-small.png" alt="Enemy awareness" width="105"></a>
-  <a href="docs/screenshots/features/NPC-and-object-library.png"><img src="docs/screenshots/features/NPC-and-object-library.png" alt="NPC and object library" width="105"></a>
-  <a href="docs/screenshots/features/Quick-menu.png"><img src="docs/screenshots/features/Quick-menu.png" alt="Quick menu" width="105"></a>
-  <a href="docs/screenshots/features/Job-mount-travel.png"><img src="docs/screenshots/features/Job-mount-travel.png" alt="Job, mount, and travel helpers" width="105"></a>
-  <a href="docs/screenshots/features/pet-bst.png"><img src="docs/screenshots/features/pet-bst.png" alt="Pet helpers" width="105"></a>
+  <a href="screenshots/features/Clickable-in-world-nameplates.png"><img src="screenshots/features/Clickable-in-world-nameplates.png" alt="Clickable in-world nameplates" width="105"></a>
+  <a href="screenshots/features/Current-target-bar.png"><img src="screenshots/features/Current-target-bar.png" alt="Current target bar" width="105"></a>
+  <a href="screenshots/features/Enemy-awareness-small.png"><img src="screenshots/features/Enemy-awareness-small.png" alt="Enemy awareness" width="105"></a>
+  <a href="screenshots/features/NPC-and-object-library.png"><img src="screenshots/features/NPC-and-object-library.png" alt="NPC and object library" width="105"></a>
+  <a href="screenshots/features/Quick-menu.png"><img src="screenshots/features/Quick-menu.png" alt="Quick menu" width="105"></a>
+  <a href="screenshots/features/Job-mount-travel.png"><img src="screenshots/features/Job-mount-travel.png" alt="Job, mount, and travel helpers" width="105"></a>
+  <a href="screenshots/features/pet-bst.png"><img src="screenshots/features/pet-bst.png" alt="Pet helpers" width="105"></a>
 </p>
 
 ## Settings and profiles
@@ -251,3 +253,4 @@ LibraPlates is a love-of-the-game project by Lunem.
 Special thanks to the Ashita community, including atom0s and Thorny, and to public addon authors whose shared work helped guide parts of LibraPlates.
 
 Feedback, corrections, bug reports, missing NPC/object data, and UI polish suggestions are welcome.
+

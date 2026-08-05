@@ -1,4 +1,8 @@
 TEMP WORK FOLDER/
+.codex/
+.restore_points/
+restore-points/
+tmp/
 *.rar
 *.zip
 *.7z
@@ -6,4 +10,6 @@ TEMP WORK FOLDER/
 *.DAT
 test-logs/
 .codex-gif-frames/
+npc_icons_long_notes.csv
+npc_list.sql
 restore-points/

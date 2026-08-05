@@ -446,14 +446,15 @@ local function GetPreviewIdBoxColor(settings, defaults)
 end
 
 local function ClampPercent(value, fallback)
+    local maxValue = (tonumber(fallback) ~= nil and tonumber(fallback) > 100) and tonumber(fallback) or 100;
     local percent = tonumber(value) or fallback or 100;
 
     if (percent < 0) then
         return 0;
     end
 
-    if (percent > 100) then
-        return 100;
+    if (percent > maxValue) then
+        return maxValue;
     end
 
     return percent;
@@ -952,7 +953,9 @@ local function BuildResourceText(settings, label, value, maxValue, percent)
     end
 
     if (settings.showPercent == true) then
-        table.insert(parts, tostring(math.floor(ClampPercent(percent, 100) + 0.5)) .. '%');
+        local percentValue = (label == 'TP' and value ~= nil) and ((tonumber(value) or 0) / 10) or percent;
+        local percentMax = (label == 'TP') and 300 or 100;
+        table.insert(parts, tostring(math.floor(ClampPercent(percentValue, percentMax) + 0.5)) .. '%');
     end
 
     return table.concat(parts, ' ');
@@ -966,7 +969,9 @@ local function BuildPercentFallbackResourceText(settings, label, value, maxValue
     end
 
     if (settings ~= nil and settings.showValue == true and percent ~= nil) then
-        return tostring(math.floor(ClampPercent(percent, 100) + 0.5)) .. '%';
+        local percentValue = (label == 'TP' and value ~= nil) and ((tonumber(value) or 0) / 10) or percent;
+        local percentMax = (label == 'TP') and 300 or 100;
+        return tostring(math.floor(ClampPercent(percentValue, percentMax) + 0.5)) .. '%';
     end
 
     return text;
@@ -1144,6 +1149,24 @@ local function BuildPreviewAnchorFallbackRects(definitions)
     end
 
     return fallbacks;
+end
+
+function LibraPlatesBuildPlayerPreviewAnchorFallbackRects(playerIconSettings)
+    playerIconSettings = playerIconSettings or {};
+
+    return BuildPreviewAnchorFallbackRects({
+        { kind = 'gameModeIcon', settings = playerIconSettings.gameMode, defaults = gameModeIconDefaults, defaultX = -72, defaultY = -54 },
+        { kind = 'linkshellIcon', settings = playerIconSettings.linkshell, defaults = linkshellIconDefaults, defaultX = 48, defaultY = -54 },
+        { kind = 'bazaarIcon', settings = playerIconSettings.bazaar, defaults = bazaarIconDefaults, defaultX = 72, defaultY = -54 },
+        { kind = 'awayIcon', settings = playerIconSettings.away, defaults = awayIconDefaults, defaultX = 120, defaultY = -54 },
+        { kind = 'disconnectIcon', settings = playerIconSettings.disconnect, defaults = disconnectIconDefaults, defaultX = 144, defaultY = -54 },
+        { kind = 'anonIcon', settings = playerIconSettings.anon, defaults = anonIconDefaults, defaultX = -120, defaultY = -54 },
+        { kind = 'starsIcon', settings = playerIconSettings.stars, defaults = starsIconDefaults, defaultX = -48, defaultY = -54 },
+        { kind = 'levelSyncIcon', settings = playerIconSettings.levelSync, defaults = levelSyncIconDefaults, defaultX = -24, defaultY = -54 },
+        { kind = 'newAdventurerIcon', settings = playerIconSettings.newAdventurer, defaults = newAdventurerIconDefaults, defaultX = 24, defaultY = -54 },
+        { kind = 'partyLeaderIcon', settings = playerIconSettings.partyLeader, defaults = partyLeaderIconDefaults, defaultX = -96, defaultY = -54 },
+        { kind = 'allianceLeaderIcon', settings = playerIconSettings.allianceLeader, defaults = allianceLeaderIconDefaults, defaultX = -120, defaultY = -54 },
+    });
 end
 
 local function AddEnmityPreviewIcon(plateData, globalSettings, context)
@@ -2550,8 +2573,7 @@ local function BuildPlate(entityName, stateName, context)
             ['Distance'] = 'distance',
         },
         hpBar = {
-            enabled = not (entityName == 'Enemy' and (stateName == 'Idle' or stateName == 'World'))
-                and ((npcObjectPreview ~= true or npcTacticalPreview == true) and hpBarSettings.enabled == true),
+            enabled = (npcObjectPreview ~= true or npcTacticalPreview == true) and hpBarSettings.enabled == true,
             width = tonumber(hpBarSettings.width) or 180,
             height = tonumber(hpBarSettings.height) or 12,
             offsetX = tonumber(hpBarSettings.offsetX) or 0,
@@ -2690,6 +2712,7 @@ local function BuildPlate(entityName, stateName, context)
             iconGap = 4,
         },
         icons = icons,
+        anchorFallbackRects = LibraPlatesBuildPlayerPreviewAnchorFallbackRects(playerIconSettings),
         targetMarker = BuildPreviewTargetMarker(entityName, stateName, context, hpBarSettings),
         background = {
             enabled = backgroundSettings.enabled == true,
@@ -2705,6 +2728,9 @@ local function BuildPlate(entityName, stateName, context)
             imageOpacity = backgroundSettings.imageOpacity or backgroundDefaults.imageOpacity,
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+            anchorCollapse = backgroundSettings.anchorCollapse,
+            anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
     };
 

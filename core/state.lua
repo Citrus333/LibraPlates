@@ -787,6 +787,10 @@ local function NormalizePcTacticalWidget(entity, stateName, widgetKey, node)
             node.offsetX = -110;
             node.offsetY = 4;
         end
+    elseif (tostring(widgetKey or '') == 'New adventurer icon') then
+        if (tostring(node.loadMode or '') == 'Out of combat') then
+            node.loadMode = nil;
+        end
     end
 end
 
@@ -1431,13 +1435,22 @@ function state.CopyProfile(sourceName, newName)
         return false, 'Profile name already exists.';
     end
 
-    state.Save();
-
-    local sourcePath = GetProfileDataPath(state.characterProfileName, sourceId);
     local targetPath = GetProfileDataPath(state.characterProfileName, newId);
 
-    if (CopyFile(sourcePath, targetPath) ~= true) then
-        return false, 'Profile copy failed.';
+    if (tostring(sourceId) == tostring(state.activeProfileName or '')) then
+        local source = CopyTable(state.GetProfile());
+
+        if (WriteLuaTableFile(targetPath, source) ~= true) then
+            return false, 'Profile copy failed.';
+        end
+    else
+        state.Save();
+
+        local sourcePath = GetProfileDataPath(state.characterProfileName, sourceId);
+
+        if (CopyFile(sourcePath, targetPath) ~= true) then
+            return false, 'Profile copy failed.';
+        end
     end
 
     local now = GetTimestamp();

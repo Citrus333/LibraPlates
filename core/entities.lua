@@ -480,6 +480,18 @@ function entities.GetSelf()
         maxMp = party:GetMemberMaxMP(0);
     end);
 
+    if (tonumber(maxHp) == nil or tonumber(maxHp) <= 0) then
+        pcall(function()
+            maxHp = AshitaCore:GetMemoryManager():GetPlayer():GetHPMax();
+        end);
+    end
+
+    if (tonumber(maxMp) == nil or tonumber(maxMp) <= 0) then
+        pcall(function()
+            maxMp = AshitaCore:GetMemoryManager():GetPlayer():GetMPMax();
+        end);
+    end;
+
     pcall(function()
         mpPercent = party:GetMemberMPPercent(0);
     end);
@@ -1372,20 +1384,60 @@ local function GetTrustMemberVitals(party, slot)
     end);
 
     pcall(function()
+        cache.maxHp = tonumber(party:GetMemberMaxHP(slot));
+    end);
+
+    pcall(function()
+        cache.hpPercent = tonumber(party:GetMemberHPPercent(slot));
+    end);
+
+    pcall(function()
+        cache.mp = tonumber(party:GetMemberMP(slot));
+    end);
+
+    pcall(function()
+        cache.maxMp = tonumber(party:GetMemberMaxMP(slot));
+    end);
+
+    pcall(function()
+        cache.mpPercent = tonumber(party:GetMemberMPPercent(slot));
+    end);
+
+    pcall(function()
         cache.tp = tonumber(party:GetMemberTP(slot));
     end);
+
+    if ((cache.hpPercent == nil or cache.hpPercent <= 0) and cache.hp ~= nil and cache.maxHp ~= nil and cache.maxHp > 0) then
+        cache.hpPercent = math.floor(((cache.hp / cache.maxHp) * 100) + 0.5);
+    end
+
+    if (
+        (cache.maxHp == nil or cache.maxHp <= 0) and
+        cache.hp ~= nil and
+        cache.hp > 0 and
+        cache.hpPercent ~= nil and
+        cache.hpPercent > 0
+    ) then
+        cache.maxHp = math.floor((cache.hp / (cache.hpPercent / 100)) + 0.5);
+    end
+
+    if ((cache.mpPercent == nil or cache.mpPercent <= 0) and cache.mp ~= nil and cache.maxMp ~= nil and cache.maxMp > 0) then
+        cache.mpPercent = math.floor(((cache.mp / cache.maxMp) * 100) + 0.5);
+    end
+
+    if (
+        (cache.maxMp == nil or cache.maxMp <= 0) and
+        cache.mp ~= nil and
+        cache.mp > 0 and
+        cache.mpPercent ~= nil and
+        cache.mpPercent > 0
+    ) then
+        cache.maxMp = math.floor((cache.mp / (cache.mpPercent / 100)) + 0.5);
+    end
 
     trustPartyVitalCache[slot] = cache;
 
     return cache;
-end
-
-local function GetTrustMemberHP(party, slot)
-    return GetTrustMemberVitals(party, slot).hp;
-end
-
-local function GetTrustMemberTP(party, slot)
-    return GetTrustMemberVitals(party, slot).tp;
 end
 
 function entities.IsPartyMemberIndex(index)
@@ -1462,6 +1514,7 @@ function entities.GetPartyTrusts(maxDistance)
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq
             ) then
+                local vitals = GetTrustMemberVitals(party, slot);
                 results[#results + 1] = {
                     index = index,
                     serverId = SafeCall(nil, function() return party:GetMemberServerId(slot); end),
@@ -1470,13 +1523,13 @@ function entities.GetPartyTrusts(maxDistance)
                     status = ent.Status,
                     spawnFlags = spawnFlags,
                     distance = math.sqrt(ent.Distance),
-                    hp = GetTrustMemberHP(party, slot),
-                    maxHp = nil,
-                    hpPercent = ent.HPPercent or 100,
-                    mp = nil,
-                    maxMp = nil,
-                    mpPercent = nil,
-                    tp = GetTrustMemberTP(party, slot),
+                    hp = vitals.hp,
+                    maxHp = vitals.maxHp,
+                    hpPercent = vitals.hpPercent or ent.HPPercent or 100,
+                    mp = vitals.mp,
+                    maxMp = vitals.maxMp,
+                    mpPercent = vitals.mpPercent,
+                    tp = vitals.tp,
                 };
             end
         end

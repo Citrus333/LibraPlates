@@ -32,6 +32,7 @@ local fishing = require('core.fishing');
 local fishingStaminaOverlay = require('core.fishing_stamina_overlay');
 local warpMenu = require('core.warp_menu');
 local restingTick = require('core.resting_tick');
+local windowFocus = require('core.window_focus');
 
 -- ============================================================
 -- Module registry
@@ -60,6 +61,8 @@ local nativeNamesPeriodicIntervalFrames = 600;
 local nativeNamesNextPeriodicFrame = 0;
 local targetModulePrewarmQueue = {};
 local targetModulePrewarmWarned = false;
+local suppressEmptyWorldLeftRelease = false;
+local emptyWorldLeftClickFocusSuspended = false;
 local perfIsolation = {
     targeting = false,
     native = false,
@@ -109,18 +112,13 @@ local function UpdateNativeTargetArrowVisibility()
     local hasAnyTarget = HasAnyTarget();
     local mogHouseNativePassthrough = entities.IsMogHouseObjectSuppressionArea() == true;
     local fishingBarCaptureActive = fishing.ShouldCaptureFishBar ~= nil and fishing.ShouldCaptureFishBar() == true;
-    local nativeHideSettingEnabled =
-        targetingSettings.hideNativeTargetArrow == true and
-        mogHouseNativePassthrough ~= true;
+    local nativeHideSettingEnabled = targetingSettings.hideNativeTargetArrow == true;
     local hideNativePartyTargetUi =
-        (
-            targetingSettings.hideNativePartyTargetUi == true or
-            targetingSettings.hideNativeTargetArrow == true
-        ) and mogHouseNativePassthrough ~= true;
+        targetingSettings.hideNativePartyTargetUi == true and
+        mogHouseNativePassthrough ~= true;
     local hideNativeTargetArrow =
         nativeHideSettingEnabled == true and
-        hasAnyTarget == true and
-        hideNativePartyTargetUi ~= true;
+        hasAnyTarget == true;
     local startupBurstActive =
         nativeHideSettingEnabled == true and
         hasAnyTarget == true and
@@ -371,9 +369,142 @@ function modules.Render()
     errorBoundary.Call('render.perf_overlay', 'Performance-overlay render', perfMeter.RenderOverlay);
 end
 
+local function IsImguiCapturingMouse()
+    if (imgui.GetIO == nil) then
+        return false;
+    end
+
+    local ok, io = pcall(function()
+        return imgui.GetIO();
+    end);
+
+    if (ok ~= true or io == nil) then
+        return false;
+    end
+
+    return io.WantCaptureMouse == true or io.WantCaptureMouseUnlessPopupClose == true;
+end
+
+local function GetDisplaySize()
+    if (imgui.GetIO == nil) then
+        return 2560, 1440;
+    end
+
+    local ok, io = pcall(function()
+        return imgui.GetIO();
+    end);
+
+    if (ok ~= true or io == nil or io.DisplaySize == nil) then
+        return 2560, 1440;
+    end
+
+    local display = io.DisplaySize;
+    return
+        tonumber(display.x or display.X or display[1]) or 2560,
+        tonumber(display.y or display.Y or display[2]) or 1440;
+end
+
+local function IsInNativeMenuSafeArea(x, y)
+    local mouseX = tonumber(x);
+    local mouseY = tonumber(y);
+
+    if (mouseX == nil or mouseY == nil) then
+        return true;
+    end
+
+    local _, displayHeight = GetDisplaySize();
+
+    -- Temporary native FFXI safe area.  This keeps the bottom-left native
+    -- menu/chat region clickable while we test blocking empty 3D-world clicks.
+    return mouseX <= 420 and mouseY >= (displayHeight - 420);
+end
+
+local function ShouldBypassEmptyWorldLeftClickForFocus(e)
+    if (e == nil) then
+        return false;
+    end
+
+    local focused = windowFocus.IsGameWindowFocused();
+    local message = tonumber(e.message);
+
+    if (focused == false) then
+        emptyWorldLeftClickFocusSuspended = true;
+        suppressEmptyWorldLeftRelease = false;
+        return true;
+    end
+
+    if (emptyWorldLeftClickFocusSuspended == true) then
+        if (message == 514) then
+            emptyWorldLeftClickFocusSuspended = false;
+        end
+
+        suppressEmptyWorldLeftRelease = false;
+        return true;
+    end
+
+    return false;
+end
+
+local function BlockEmptyWorldLeftClick(e)
+    if (e == nil) then
+        return false;
+    end
+
+    local targetingSettings = targeting.GetSettings();
+    if (targetingSettings.blockEmptyWorldLeftClick == false) then
+        return false;
+    end
+
+    local message = tonumber(e.message);
+
+    if (ShouldBypassEmptyWorldLeftClickForFocus(e) == true) then
+        return false;
+    end
+
+    if (message == 514 and suppressEmptyWorldLeftRelease == true) then
+        suppressEmptyWorldLeftRelease = false;
+        e.blocked = true;
+        return true;
+    end
+
+    if (message ~= 513) then
+        return false;
+    end
+
+    if (worldMarkerProbe.IsGameWindowFocused ~= nil and worldMarkerProbe.IsGameWindowFocused() == false) then
+        suppressEmptyWorldLeftRelease = false;
+        return false;
+    end
+
+    if (
+        state.GetConfigOpen() == true or
+        IsImguiCapturingMouse() == true or
+        (quickMenu.IsOpen ~= nil and quickMenu.IsOpen() == true) or
+        IsInNativeMenuSafeArea(e.x, e.y) == true
+    ) then
+        return false;
+    end
+
+    suppressEmptyWorldLeftRelease = true;
+    e.blocked = true;
+    return true;
+end
+
 function modules.HandleMouse(e)
     if (perfIsolation.mouse == true) then
         errorBoundary.Call('mouse.release', 'Mouse-control release', mouseControls.Release);
+        return;
+    end
+
+    if (
+        e ~= nil and
+        tonumber(e.message) == 513 and
+        windowFocus.IsGameWindowFocused() == false
+    ) then
+        emptyWorldLeftClickFocusSuspended = true;
+        suppressEmptyWorldLeftRelease = false;
+        errorBoundary.Call('mouse.focus.activate', 'Game-window focus repair', windowFocus.FocusGameWindow);
+        errorBoundary.Call('mouse.focus.release', 'Mouse-control focus release', mouseControls.Release);
         return;
     end
 
@@ -400,6 +531,18 @@ function modules.HandleMouse(e)
     end);
 
     if (handled == true) then
+        return;
+    end
+
+    local _, currentTargetHandled = errorBoundary.Call('mouse.current_target_bar', 'Current-target bar mouse handler', function()
+        return currentTargetBar.HandleMouse(e) == true;
+    end);
+
+    if (currentTargetHandled == true) then
+        return;
+    end
+
+    if (BlockEmptyWorldLeftClick(e) == true) then
         return;
     end
 
@@ -515,17 +658,12 @@ function modules.UpdateNativeTargetArrow()
     local mogHouseNativePassthrough = entities.IsMogHouseObjectSuppressionArea() == true;
     local fishingBarCaptureActive = fishing.ShouldCaptureFishBar ~= nil and fishing.ShouldCaptureFishBar() == true;
     local hideNativePartyTargetUi =
-        (
-            targetingSettings.hideNativePartyTargetUi == true or
-            targetingSettings.hideNativeTargetArrow == true
-        ) and mogHouseNativePassthrough ~= true;
-    local nativeHideSettingEnabled =
-        targetingSettings.hideNativeTargetArrow == true and
+        targetingSettings.hideNativePartyTargetUi == true and
         mogHouseNativePassthrough ~= true;
+    local nativeHideSettingEnabled = targetingSettings.hideNativeTargetArrow == true;
     local hideNativeTargetArrow =
         nativeHideSettingEnabled == true and
-        hasAnyTarget == true and
-        hideNativePartyTargetUi ~= true;
+        hasAnyTarget == true;
     local startupBurstActive =
         nativeHideSettingEnabled == true and
         hasAnyTarget == true and

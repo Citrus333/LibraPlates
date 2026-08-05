@@ -1419,9 +1419,22 @@ Involved in Missions:\
             ["_source"] = "npc",
             ["icon"] = "MissionGiver.png",
             ["link"] = "https://www.bg-wiki.com/ffxi/Naja_Salaheem",
-            ["note"] = "Mercenary Missions:\
-* Starts mercenary promotion quests from Private First Class through First Lieutenant.\
-* Starts and advances most Aht Urhgan missions.\
+            ["note"] = "Starts Quests:\
+* Promotion: Private First Class\
+* Promotion: Superior Private\
+* Promotion: Corporal\
+* Promotion: Sergeant\
+* Promotion: Sergeant Major\
+Starts Missions:\
+* Aht Urhgan Mission 1\
+* Aht Urhgan Mission 3: President Salaheem\
+* Aht Urhgan Mission 48: Eternal Mercenary\
+Involved in Quests:\
+* An Imperial Heist\
+* Coming Full Circle\
+* Promotion: Lance Corporal\
+Notes:\
+* Starts and advances many Aht Urhgan missions.\
 * Handles Wildcat invitation-card rewards after Immortal Sentries.",
             ["type"] = "Mission Giver",
         },

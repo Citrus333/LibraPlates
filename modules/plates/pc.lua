@@ -224,14 +224,15 @@ local function SettingKey(settings, fields)
 end
 
 local function ClampPercent(percent, fallback)
+    local maxValue = (tonumber(fallback) ~= nil and tonumber(fallback) > 100) and tonumber(fallback) or 100;
     percent = tonumber(percent) or fallback or 0;
 
     if (percent < 0) then
         return 0;
     end
 
-    if (percent > 100) then
-        return 100;
+    if (percent > maxValue) then
+        return maxValue;
     end
 
     return percent;
@@ -264,7 +265,9 @@ local function BuildResourceText(settings, label, value, maxValue, percent)
     end
 
     if (settings.showPercent == true) then
-        table.insert(parts, tostring(math.floor(ClampPercent(percent, 100) + 0.5)) .. '%');
+        local percentValue = (label == 'TP' and value ~= nil) and ((tonumber(value) or 0) / 10) or percent;
+        local percentMax = (label == 'TP') and 300 or 100;
+        table.insert(parts, tostring(math.floor(ClampPercent(percentValue, percentMax) + 0.5)) .. '%');
     end
 
     return table.concat(parts, ' ');
@@ -581,7 +584,6 @@ local pcSocialLoadDefaults = {
     ['Disconnect icon'] = 'Out of combat',
     ['Stars icon'] = 'Out of combat',
     ['Level sync icon'] = 'Out of combat',
-    ['New adventurer icon'] = 'Out of combat',
 };
 
 local currentPlayerEngaged = false;
@@ -1081,6 +1083,7 @@ local function BuildPcPlateData(context)
             anchorPoint = context.backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
             anchorCollapse = context.backgroundSettings.anchorCollapse,
             anchorSpacing = context.backgroundSettings.anchorSpacing,
+            anchorOrder = context.backgroundSettings.anchorOrder,
         },
     };
 

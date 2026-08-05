@@ -10,6 +10,7 @@ local partyStatuses = require('core.party_statuses');
 local playerStatuses = require('core.player_statuses');
 local trustStatusIcons = require('core.trust_status_icons');
 local currentTargetDebuffs = require('core.current_target_debuffs');
+local actionRelevance = require('core.action_relevance');
 local mobInfoData = require('core.mobinfo_data');
 local textureLoader = require('core.texture_loader');
 local npcObjectInfo = require('core.npc_object_info');
@@ -30,6 +31,9 @@ local hpVisualState = {
     trailHp = nil,
     healHp = nil,
 };
+local targetOfTargetActionTracker = {};
+local targetOfTargetActionCount = 0;
+local GetEntityServerId = nil;
 local GetServerId = nil;
 local CopyTextStyle = nil;
 local GetDistanceTextStyle = nil;
@@ -37,6 +41,8 @@ local GetTextureTextWidth = nil;
 local AddTextureText = nil;
 local peerIconTextureIds = {};
 local missingPeerIconTextureIds = {};
+local targetOfTargetArrowTextureIds = {};
+local lastTargetOfTargetClickRect = nil;
 
 local function Clamp(value, minimum, maximum)
     value = tonumber(value) or minimum;
@@ -55,6 +61,77 @@ local function SafeCall(fallback, fn)
     return result;
 end
 
+local function ReadImguiVec2(valueA, valueB)
+    if (type(valueA) == 'table') then
+        return tonumber(valueA.x or valueA.X or valueA[1]) or 0, tonumber(valueA.y or valueA.Y or valueA[2]) or 0;
+    end
+
+    return tonumber(valueA) or 0, tonumber(valueB) or 0;
+end
+
+local function GetMousePosition()
+    if (imgui.GetMousePos ~= nil) then
+        return ReadImguiVec2(imgui.GetMousePos());
+    end
+
+    if (imgui.GetIO == nil) then
+        return nil, nil;
+    end
+
+    local ok, io = pcall(function()
+        return imgui.GetIO();
+    end);
+
+    if (ok ~= true or io == nil or io.MousePos == nil) then
+        return nil, nil;
+    end
+
+    return ReadImguiVec2(io.MousePos);
+end
+
+local function IsImguiCapturingMouse()
+    if (imgui.GetIO == nil) then
+        return false;
+    end
+
+    local ok, io = pcall(function()
+        return imgui.GetIO();
+    end);
+
+    if (ok ~= true or io == nil) then
+        return false;
+    end
+
+    return io.WantCaptureMouse == true or io.WantCaptureMouseUnlessPopupClose == true;
+end
+
+local function IsMouseClickedInRect(rect)
+    if (rect == nil or imgui.IsMouseClicked == nil or IsImguiCapturingMouse() == true) then
+        return false;
+    end
+
+    local mouseX, mouseY = GetMousePosition();
+    if (mouseX == nil or mouseY == nil) then
+        return false;
+    end
+
+    return
+        mouseX >= rect.x1 and mouseX <= rect.x2 and
+        mouseY >= rect.y1 and mouseY <= rect.y2 and
+        imgui.IsMouseClicked(0) == true;
+end
+
+local function IsPointInRect(x, y, rect)
+    local mouseX = tonumber(x);
+    local mouseY = tonumber(y);
+
+    if (mouseX == nil or mouseY == nil or rect == nil) then
+        return false;
+    end
+
+    return mouseX >= rect.x1 and mouseX <= rect.x2 and mouseY >= rect.y1 and mouseY <= rect.y2;
+end
+
 local function ColorToU32(color, fallback)
     if (imgui.GetColorU32 ~= nil) then
         return imgui.GetColorU32(color or fallback or { 1.0, 1.0, 1.0, 1.0 });
@@ -67,6 +144,33 @@ local function ColorToU32(color, fallback)
     local alpha = math.floor(Clamp(source[4] or 1.0, 0, 1) * 255);
 
     return (alpha * 0x1000000) + (blue * 0x10000) + (green * 0x100) + red;
+end
+
+local function GetAddonPath()
+    local ok, path = pcall(function()
+        return AshitaCore:GetInstallPath() .. '\\addons\\LibraPlates\\';
+    end);
+
+    if (ok == true and path ~= nil) then
+        return tostring(path);
+    end
+
+    return '.\\';
+end
+
+local function GetTargetOfTargetArrowTextureId(fileName)
+    fileName = tostring(fileName or 'arrow_01.png'):gsub('^.*[\\/]', '');
+    if (fileName == '' or fileName == 'None') then
+        return nil;
+    end
+
+    if (targetOfTargetArrowTextureIds[fileName] ~= nil) then
+        return targetOfTargetArrowTextureIds[fileName];
+    end
+
+    local path = GetAddonPath() .. 'assets\\images\\target-of-target\\' .. fileName;
+    targetOfTargetArrowTextureIds[fileName] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(path));
+    return targetOfTargetArrowTextureIds[fileName];
 end
 
 local function ReadVec2(value)
@@ -128,7 +232,178 @@ local function GetTarget()
     return entity, targetIndex;
 end
 
-local function GetEntityServerId(entity)
+local function GetSelfIndex()
+    local memory = AshitaCore ~= nil and AshitaCore:GetMemoryManager() or nil;
+    local party = memory ~= nil and memory:GetParty() or nil;
+    if (party == nil or party.GetMemberTargetIndex == nil) then
+        return nil;
+    end
+
+    local ok, index = pcall(function()
+        return party:GetMemberTargetIndex(0);
+    end);
+
+    if (ok ~= true) then
+        return nil;
+    end
+
+    return tonumber(index);
+end
+
+local function GetTargetOfTarget(targetIndex)
+    targetIndex = tonumber(targetIndex);
+    if (targetIndex == nil or targetIndex == 0) then
+        return nil, nil;
+    end
+
+    local targetEntity = entities.GetEntity(targetIndex);
+    if (targetEntity == nil) then
+        return nil, nil;
+    end
+
+    if (tonumber(targetIndex) == tonumber(GetSelfIndex())) then
+        return targetEntity, targetIndex;
+    end
+
+    local targetOfTargetIndex = nil;
+    local serverId = GetEntityServerId(targetEntity) or GetServerId(targetIndex);
+
+    if (serverId ~= nil) then
+        local tracked = targetOfTargetActionTracker[serverId];
+        if (tracked ~= nil and (tracked.timestamp + 30) >= os.time()) then
+            targetOfTargetIndex = tonumber(tracked.targetIndex);
+        elseif (tracked ~= nil) then
+            targetOfTargetActionTracker[serverId] = nil;
+        end
+    end
+
+    if (targetOfTargetIndex == nil or targetOfTargetIndex == 0) then
+        targetOfTargetIndex = tonumber(targetEntity.TargetedIndex);
+    end
+
+    if (targetOfTargetIndex == nil or targetOfTargetIndex == 0) then
+        return nil, nil;
+    end
+
+    local entity = entities.GetEntity(targetOfTargetIndex);
+    if (entity == nil or entity.Name == nil or entity.Name == '') then
+        return nil, nil;
+    end
+
+    return entity, targetOfTargetIndex;
+end
+
+local function ParseActionPacket(e)
+    if (e == nil or e.id ~= 0x0028 or e.data_raw == nil or ashita.bits == nil) then
+        return nil;
+    end
+
+    local bitData = e.data_raw;
+    local bitOffset = 40;
+    local maxLength = (tonumber(e.size) or 0) * 8;
+
+    local function UnpackBits(length)
+        if ((bitOffset + length) >= maxLength) then
+            maxLength = 0;
+            return 0;
+        end
+
+        local value = ashita.bits.unpack_be(bitData, 0, bitOffset, length);
+        bitOffset = bitOffset + length;
+        return value;
+    end
+
+    local packet = {
+        UserId = UnpackBits(32),
+        Targets = {},
+    };
+
+    local targetCount = UnpackBits(6);
+    bitOffset = bitOffset + 4;
+    packet.Type = UnpackBits(4);
+
+    if (packet.Type == 8 or packet.Type == 9) then
+        packet.Param = UnpackBits(16);
+        packet.SpellGroup = UnpackBits(16);
+    else
+        packet.Param = UnpackBits(32);
+    end
+
+    packet.Recast = UnpackBits(32);
+
+    if (targetCount > 0) then
+        for _ = 1, targetCount do
+            local target = {
+                Id = UnpackBits(32),
+                Actions = {},
+            };
+            local actionCount = UnpackBits(4);
+
+            if (actionCount == 0) then
+                break;
+            end
+
+            for _ = 1, actionCount do
+                local action = {};
+                action.Reaction = UnpackBits(5);
+                action.Animation = UnpackBits(12);
+                action.SpecialEffect = UnpackBits(7);
+                action.Knockback = UnpackBits(3);
+                action.Param = UnpackBits(17);
+                action.Message = UnpackBits(10);
+                action.Flags = UnpackBits(31);
+
+                if (UnpackBits(1) == 1) then
+                    action.AdditionalEffect = {
+                        Damage = UnpackBits(10),
+                        Param = UnpackBits(17),
+                        Message = UnpackBits(10),
+                    };
+                end
+
+                if (UnpackBits(1) == 1) then
+                    action.SpikesEffect = {
+                        Damage = UnpackBits(10),
+                        Param = UnpackBits(14),
+                        Message = UnpackBits(10),
+                    };
+                end
+
+                target.Actions[#target.Actions + 1] = action;
+            end
+
+            packet.Targets[#packet.Targets + 1] = target;
+        end
+    end
+
+    if (maxLength ~= 0 and #packet.Targets > 0) then
+        return packet;
+    end
+
+    return nil;
+end
+
+local function CleanupTargetOfTargetTracker()
+    local now = os.time();
+    for serverId, entry in pairs(targetOfTargetActionTracker) do
+        if (entry == nil or (tonumber(entry.timestamp) or 0) + 30 < now) then
+            targetOfTargetActionTracker[serverId] = nil;
+        end
+    end
+end
+
+local function IsCombatActionType(actionType)
+    actionType = tonumber(actionType);
+    return actionType == 1 or actionType == 4 or actionType == 7 or actionType == 11;
+end
+
+local function IsPlayerServerId(serverId)
+    local index = actionRelevance.GetIndexFromServerId(serverId);
+    index = tonumber(index);
+    return index ~= nil and index >= 1024 and index <= 1791;
+end
+
+GetEntityServerId = function(entity)
     if (entity == nil) then
         return nil;
     end
@@ -1040,6 +1315,86 @@ local function GetTextSettings(settings)
     return settings;
 end
 
+local function DrawTargetOfTargetBar(drawList, x, y, width, height, radius, borderSize, colors, textSettings, targetIndex, settings)
+    if (drawList == nil or drawList.AddRectFilled == nil) then
+        return nil;
+    end
+
+    settings = type(settings) == 'table' and settings or {};
+    if (settings.enabled ~= true) then
+        return nil;
+    end
+
+    local entity, index = GetTargetOfTarget(targetIndex);
+    if (entity == nil or index == nil) then
+        return nil;
+    end
+
+    local miniWidth = math.floor(Clamp(settings.width or (width * 0.36), 20, 1000) + 0.5);
+    local miniHeight = math.floor(Clamp(settings.height or height, 1, 200) + 0.5);
+    local offsetX = math.floor(tonumber(settings.offsetX) or 42);
+    local offsetY = math.floor(tonumber(settings.offsetY) or 0);
+    local arrowSize = math.floor(Clamp(settings.arrowSize or 22, 0, 200) + 0.5);
+    local arrowOffsetX = math.floor(tonumber(settings.arrowOffsetX) or 0);
+    local arrowOffsetY = math.floor(tonumber(settings.arrowOffsetY) or 0);
+    local miniX = x + width + offsetX;
+    local miniY = y + offsetY;
+    local arrowX = x + width + math.floor((offsetX - arrowSize) * 0.5) + arrowOffsetX;
+    local centerY = y + math.floor(height * 0.5);
+    local arrowY = centerY - math.floor(arrowSize * 0.5) + arrowOffsetY;
+    local miniRadius = math.max(0, math.min(radius, math.floor(miniHeight * 0.45)));
+    local miniBorderSize = math.max(1, borderSize);
+
+    local arrowColor = ColorToU32(settings.arrowColor or { 0.92, 0.95, 1.0, 1.0 });
+    local arrowShadow = ColorToU32({ 0.0, 0.0, 0.0, 0.95 });
+
+    if (arrowSize > 0) then
+        local arrowTextureId = GetTargetOfTargetArrowTextureId(settings.arrowFile or 'arrow_01.png');
+        if (arrowTextureId ~= nil and drawList.AddImage ~= nil) then
+            drawList:AddImage(arrowTextureId, { arrowX, arrowY }, { arrowX + arrowSize, arrowY + arrowSize }, { 0, 0 }, { 1, 1 }, arrowColor);
+        elseif (drawList.AddLine ~= nil) then
+            drawList:AddLine({ arrowX, centerY - 8 }, { arrowX + arrowSize - 8, centerY }, arrowShadow, 5);
+            drawList:AddLine({ arrowX, centerY + 8 }, { arrowX + arrowSize - 8, centerY }, arrowShadow, 5);
+            drawList:AddLine({ arrowX, centerY - 8 }, { arrowX + arrowSize - 8, centerY }, arrowColor, 3);
+            drawList:AddLine({ arrowX, centerY + 8 }, { arrowX + arrowSize - 8, centerY }, arrowColor, 3);
+        end
+    end
+
+    local hpPercent = Clamp(entity.HPPercent or 100, 0, 100);
+    local fillWidth = math.floor((miniWidth * hpPercent / 100) + 0.5);
+
+    if (miniBorderSize > 0) then
+        drawList:AddRectFilled(
+            { miniX - miniBorderSize, miniY - miniBorderSize },
+            { miniX + miniWidth + miniBorderSize, miniY + miniHeight + miniBorderSize },
+            colors.border,
+            miniRadius + miniBorderSize
+        );
+    end
+
+    drawList:AddRectFilled({ miniX, miniY }, { miniX + miniWidth, miniY + miniHeight }, colors.background, miniRadius);
+    if (fillWidth > 0) then
+        drawList:AddRectFilled({ miniX, miniY }, { miniX + fillWidth, miniY + miniHeight }, colors.fill, miniRadius);
+    end
+
+    local isEnemy = entities.IsEnemy(index) == true;
+    local nameStyle = GetInheritedNameStyle(entity, index, isEnemy);
+    local fontSize = textSettings.fontSize or 14;
+    local nameText = tostring(entity.Name or '');
+    local nameX = miniX + 8;
+    local nameY = miniY + math.floor(tonumber(textSettings.nameOffsetY) or -19);
+
+    AddTextureText(drawList, nameX, nameY, nameText, nameStyle, fontSize);
+
+    return {
+        targetIndex = index,
+        x1 = math.min(miniX - miniBorderSize, arrowSize > 0 and arrowX or miniX),
+        y1 = math.min(miniY - miniBorderSize, nameY, arrowSize > 0 and arrowY or miniY),
+        x2 = math.max(miniX + miniWidth + miniBorderSize, arrowSize > 0 and (arrowX + arrowSize) or (miniX + miniWidth)),
+        y2 = math.max(miniY + miniHeight + miniBorderSize, arrowSize > 0 and (arrowY + arrowSize) or (miniY + miniHeight)),
+    };
+end
+
 local EndTextWindow = nil;
 
 local function BeginTextWindow(fontSize)
@@ -1092,15 +1447,86 @@ EndTextWindow = function()
     end
 end
 
+function currentTargetBar.HandlePacketIn(e)
+    local targetingSettings = targeting.GetSettings();
+    local settings = targetingSettings ~= nil and targetingSettings.currentTargetBar or nil;
+    local targetOfTargetSettings = settings ~= nil and settings.targetOfTarget or nil;
+
+    if (
+        settings == nil or
+        settings.enabled ~= true or
+        targetOfTargetSettings == nil or
+        targetOfTargetSettings.enabled ~= true
+    ) then
+        return;
+    end
+
+    local packet = ParseActionPacket(e);
+    if (packet == nil or packet.UserId == nil) then
+        return;
+    end
+
+    if (IsCombatActionType(packet.Type) ~= true) then
+        return;
+    end
+
+    if (IsPlayerServerId(packet.UserId) == true) then
+        return;
+    end
+
+    if (packet.Targets == nil or packet.Targets[1] == nil or packet.Targets[1].Id == nil) then
+        return;
+    end
+
+    local targetIndex = actionRelevance.GetIndexFromServerId(packet.Targets[1].Id);
+    if (targetIndex == nil or tonumber(targetIndex) == 0) then
+        return;
+    end
+
+    targetOfTargetActionTracker[packet.UserId] = {
+        targetId = packet.Targets[1].Id,
+        targetIndex = tonumber(targetIndex),
+        timestamp = os.time(),
+    };
+
+    targetOfTargetActionCount = targetOfTargetActionCount + 1;
+    if ((targetOfTargetActionCount % 100) == 0) then
+        CleanupTargetOfTargetTracker();
+    end
+end
+
+function currentTargetBar.HandleMouse(e)
+    if (e == nil or tonumber(e.message) ~= 513) then
+        return false;
+    end
+
+    if (IsImguiCapturingMouse() == true) then
+        return false;
+    end
+
+    if (IsPointInRect(e.x, e.y, lastTargetOfTargetClickRect) ~= true) then
+        return false;
+    end
+
+    if (targeting.SelectTarget(lastTargetOfTargetClickRect.targetIndex) == true) then
+        e.blocked = true;
+        return true;
+    end
+
+    return false;
+end
+
 function currentTargetBar.Render()
     local targetingSettings = targeting.GetSettings();
     local settings = targetingSettings.currentTargetBar;
     if (settings == nil or settings.enabled ~= true) then
+        lastTargetOfTargetClickRect = nil;
         return;
     end
 
     local entity, targetIndex = GetTarget();
     if (entity == nil) then
+        lastTargetOfTargetClickRect = nil;
         return;
     end
 
@@ -1122,14 +1548,19 @@ function currentTargetBar.Render()
     end
 
     if (drawList == nil or drawList.AddRectFilled == nil) then
+        lastTargetOfTargetClickRect = nil;
         if (beganTextWindow == true) then
             EndTextWindow();
         end
         return;
     end
 
-    local buffRows = GetStatusRows(targetIndex, entity, 'buff', isEnemy);
-    local debuffRows = GetStatusRows(targetIndex, entity, 'debuff', isEnemy);
+    local buffRows = (settings.buffs ~= nil and settings.buffs.enabled == true)
+        and GetStatusRows(targetIndex, entity, 'buff', isEnemy)
+        or {};
+    local debuffRows = (settings.debuffs ~= nil and settings.debuffs.enabled == true)
+        and GetStatusRows(targetIndex, entity, 'debuff', isEnemy)
+        or {};
 
     local x = math.floor(Clamp(settings.x, 0, 4000) + 0.5);
     local y = math.floor(Clamp(settings.y, 0, 4000) + 0.5);
@@ -1164,6 +1595,12 @@ function currentTargetBar.Render()
     if (fillWidth > 0) then
         drawList:AddRectFilled({ x, y }, { x + fillWidth, y + height }, fillColor, radius);
     end
+
+    lastTargetOfTargetClickRect = DrawTargetOfTargetBar(drawList, x, y, width, height, radius, borderSize, {
+        background = bgColor,
+        fill = fillColor,
+        border = borderColor,
+    }, textSettings, targetIndex, settings.targetOfTarget);
 
     pcall(DrawMobInfoRow, drawList, entity, targetIndex, settings.mobInfo, inheritedNameStyle, textSettings.fontSize or 14, x, y);
     DrawStatusRows(statusDrawList, buffRows, settings.buffs, x, y);

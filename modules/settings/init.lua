@@ -24,6 +24,7 @@ local cursorOverlay = require('core.cursor_overlay');
 local perfMeter = require('core.perf_meter');
 local adaptivePerformance = require('core.adaptive_performance');
 local canvasTexture = require('core.canvas_texture');
+LibraPlatesEphemeralBox = require('core.ephemeral_box');
 LibraPlatesPupManeuvers = require('core.pup_maneuvers');
 LibraPlatesBarTextures = require('core.bar_textures');
 local gameFps = require('core.game_fps');
@@ -67,6 +68,7 @@ local settingsHeaderColor = { 1.0, 0.84, 0.0, 1.0 };
 LibraPlatesSettingsUiIconCache = LibraPlatesSettingsUiIconCache or {};
 LibraPlatesEnemyIconPreviewCache = LibraPlatesEnemyIconPreviewCache or {};
 LibraPlatesAssetIconPreviewCache = LibraPlatesAssetIconPreviewCache or {};
+LibraPlatesTargetOfTargetArrowPreviewCache = LibraPlatesTargetOfTargetArrowPreviewCache or {};
 LibraPlatesSettingsPalette = {
     shellBg = { 0.094, 0.094, 0.094, 1.0 },
     panelBg = { 0.145, 0.145, 0.145, 1.0 },
@@ -700,6 +702,7 @@ _G.LibraPlatesSettingsProfileChoicesCache = _G.LibraPlatesSettingsProfileChoices
 local detectedGameFpsMode = 'Unknown';
 local openDropdown = nil;
 local helpSearchBuffer = { '' };
+LibraPlatesEBoxFavoriteNameBuffer = LibraPlatesEBoxFavoriteNameBuffer or { '' };
 _G.LibraPlatesUserGuideSearchBuffer = _G.LibraPlatesUserGuideSearchBuffer or { '' };
 LibraPlatesCustomAlertTriggerBuffers = LibraPlatesCustomAlertTriggerBuffers or {};
 LibraPlatesCustomAlertExpandedIndex = LibraPlatesCustomAlertExpandedIndex or nil;
@@ -832,6 +835,7 @@ local selfCombatWidgets = T{
     'New adventurer icon',
     'Quick Menu (module)',
     'Peer (module)',
+    'Enmity (module)',
     'Target (module)',
     'Subtarget (module)',
     'AOE range (module)',
@@ -875,6 +879,7 @@ local selfCraftingWidgets = T{
 local enemyIdleWidgets = T{
     'Background',
     'Name',
+    'HP Bar',
     'Job',
     'Level',
     'Distance',
@@ -3302,6 +3307,55 @@ function DrawInlineColorControl(value, id)
     return color, false;
 end
 
+function DrawColorPair(leftLabel, leftValue, leftId, rightLabel, rightValue, rightId, labelWidth, controlWidth)
+    local function DrawInlineColorPair(label, value, id, keepSameLine)
+        if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+        imgui.TextColored(settingsLabelColor, label);
+        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+
+        local result, changed = DrawInlineColorControl(value, id);
+
+        if (keepSameLine == true and imgui.SameLine ~= nil) then
+            imgui.SameLine();
+            if (imgui.Dummy ~= nil) then
+                imgui.Dummy({ 20, 1 });
+                imgui.SameLine();
+            end
+        end
+
+        return result, changed;
+    end
+
+    local firstValue, firstChanged = DrawInlineColorPair(leftLabel, leftValue, leftId, true);
+    local secondValue, secondChanged = DrawInlineColorPair(rightLabel, rightValue, rightId, false);
+    return firstValue, firstChanged, secondValue, secondChanged;
+end
+
+function DrawColorTriple(firstLabel, firstValue, firstId, secondLabel, secondValue, secondId, thirdLabel, thirdValue, thirdId, labelWidth, controlWidth)
+    local function DrawInlineColorPair(label, value, id, keepSameLine)
+        if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+        imgui.TextColored(settingsLabelColor, label);
+        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+
+        local result, changed = DrawInlineColorControl(value, id);
+
+        if (keepSameLine == true and imgui.SameLine ~= nil) then
+            imgui.SameLine();
+            if (imgui.Dummy ~= nil) then
+                imgui.Dummy({ 20, 1 });
+                imgui.SameLine();
+            end
+        end
+
+        return result, changed;
+    end
+
+    local firstResult, firstChanged = DrawInlineColorPair(firstLabel, firstValue, firstId, true);
+    local secondResult, secondChanged = DrawInlineColorPair(secondLabel, secondValue, secondId, true);
+    local thirdResult, thirdChanged = DrawInlineColorPair(thirdLabel, thirdValue, thirdId, false);
+    return firstResult, firstChanged, secondResult, secondChanged, thirdResult, thirdChanged;
+end
+
 function DrawPeerFontRow(peer, prefix, label)
     if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
         if (imgui.BeginTable('##peer_font_row_' .. tostring(label), 4, settingsTableFlags)) then
@@ -4327,7 +4381,6 @@ function LibraPlatesSettingsDefaultLoadMode(entityName, stateName, widgetName)
             ['Away icon'] = true,
             ['Disconnect icon'] = true,
             ['Stars icon'] = true,
-            ['New adventurer icon'] = true,
             ['Quick Menu'] = true,
             ['Quick Menu (module)'] = true,
             ['Peer'] = true,
@@ -4914,6 +4967,152 @@ function GetTargetAssetFiles(category)
 
     targetAssetFileCache[category] = files;
     return files;
+end
+
+function GetTargetOfTargetArrowFiles()
+    local cacheKey = 'target-of-target/arrows';
+    if (targetAssetFileCache[cacheKey] ~= nil) then
+        return targetAssetFileCache[cacheKey];
+    end
+
+    local files = T{ 'None' };
+    local folder = GetTargetOfTargetArrowFolderPath();
+    local pipe = io.popen('dir /b "' .. folder .. '*.png" 2>nul');
+
+    if (pipe ~= nil) then
+        for line in pipe:lines() do
+            AddTargetAssetFile(files, line);
+        end
+
+        pipe:close();
+    end
+
+    table.sort(files, function(a, b)
+        if (a == 'None') then return true; end
+        if (b == 'None') then return false; end
+        return string.lower(tostring(a)) < string.lower(tostring(b));
+    end);
+
+    targetAssetFileCache[cacheKey] = files;
+    return files;
+end
+
+function GetTargetOfTargetArrowFolderPath()
+    return GetAddonPath() .. 'assets\\images\\target-of-target\\';
+end
+
+function GetTargetOfTargetArrowPreviewTextureId(fileName)
+    fileName = tostring(fileName or 'None');
+    if (fileName == '' or fileName == 'None') then
+        return nil;
+    end
+
+    if (LibraPlatesTargetOfTargetArrowPreviewCache[fileName] ~= nil) then
+        return LibraPlatesTargetOfTargetArrowPreviewCache[fileName];
+    end
+
+    local path = GetTargetOfTargetArrowFolderPath() .. fileName;
+    LibraPlatesTargetOfTargetArrowPreviewCache[fileName] = textureLoader.ToTextureId(textureLoader.LoadPreserveAlpha(path));
+    return LibraPlatesTargetOfTargetArrowPreviewCache[fileName];
+end
+
+function DrawTargetOfTargetArrowPreviewTooltip(fileName)
+    if (imgui.IsItemHovered == nil or imgui.IsItemHovered() ~= true) then
+        return;
+    end
+
+    local textureId = GetTargetOfTargetArrowPreviewTextureId(fileName);
+    if (
+        textureId ~= nil and
+        imgui.BeginTooltip ~= nil and
+        imgui.EndTooltip ~= nil and
+        imgui.Image ~= nil
+    ) then
+        imgui.BeginTooltip();
+        imgui.Text(tostring(fileName or ''));
+        imgui.Image(textureId, { 110, 110 }, { 0, 0 }, { 1, 1 });
+        imgui.EndTooltip();
+    elseif (imgui.SetTooltip ~= nil) then
+        imgui.SetTooltip(tostring(fileName or ''));
+    end
+end
+
+function DrawTargetOfTargetArrowComboRow(selected, onSelect)
+    local items = GetTargetOfTargetArrowFiles();
+    local current = tostring(selected or 'None');
+    local comboId = '##CurrentTargetBarTotArrowImage';
+    local labelWidth = 104;
+    local controlWidth = 260;
+
+    local function DrawControl()
+        if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+            if (imgui.PushItemWidth ~= nil) then
+                imgui.PushItemWidth(controlWidth);
+            end
+
+            local comboOpen = imgui.BeginCombo(comboId, current) == true;
+            DrawTargetOfTargetArrowPreviewTooltip(current);
+
+            if (comboOpen == true) then
+                for _, item in ipairs(items) do
+                    local isSelected = tostring(item or '') == current;
+                    if (imgui.Selectable(tostring(item or ''), isSelected) == true) then
+                        current = tostring(item or 'None');
+                        onSelect(current);
+                    end
+                    DrawTargetOfTargetArrowPreviewTooltip(item);
+
+                    if (isSelected == true and imgui.SetItemDefaultFocus ~= nil) then
+                        imgui.SetItemDefaultFocus();
+                    end
+                end
+
+                imgui.EndCombo();
+            end
+
+            if (imgui.PopItemWidth ~= nil) then
+                imgui.PopItemWidth();
+            end
+        else
+            imgui.TextColored({ 0.92, 0.92, 0.90, 1.0 }, '[' .. current .. ' v]');
+            if (imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true) then
+                local index = 1;
+                for i, item in ipairs(items) do
+                    if (tostring(item or '') == current) then
+                        index = i;
+                        break;
+                    end
+                end
+                index = index + 1;
+                if (index > #items) then index = 1; end
+                current = tostring(items[index] or 'None');
+                onSelect(current);
+            end
+        end
+
+        LibraPlatesFileManager.Draw(GetTargetOfTargetArrowFolderPath(), 'CurrentTargetBarTotArrowImageFile');
+    end
+
+    if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+        if (imgui.BeginTable('##settings_tot_arrow_combo', 2, settingsTableFlagsNoBorders)) then
+            imgui.TableSetupColumn('##label', 0, labelWidth);
+            imgui.TableSetupColumn('##control', 0, controlWidth + 32);
+            imgui.TableNextRow();
+            imgui.TableNextColumn();
+            if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+            imgui.TextColored(settingsLabelColor, 'Arrow');
+            imgui.TableNextColumn();
+            DrawControl();
+            imgui.EndTable();
+        end
+
+        return;
+    end
+
+    if (imgui.AlignTextToFramePadding ~= nil) then imgui.AlignTextToFramePadding(); end
+    imgui.TextColored(settingsLabelColor, 'Arrow');
+    if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+    DrawControl();
 end
 
 function DrawTargetModulePlacementSettings(settings, defaults, label, entityName)
@@ -8981,6 +9180,10 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     if (menu.warp.confirmBeforeWarp == nil) then menu.warp.confirmBeforeWarp = false; end
     if (menu.warp.debug == nil) then menu.warp.debug = false; end
     if (menu.warp.favorites == nil) then menu.warp.favorites = {}; end
+    menu.ephemeralBox = menu.ephemeralBox or {};
+    if (menu.ephemeralBox.favorites == nil) then menu.ephemeralBox.favorites = {}; end
+    if (menu.ephemeralBox.newFavoriteName == nil) then menu.ephemeralBox.newFavoriteName = ''; end
+    if (menu.ephemeralBox.newFavoriteAmount == nil) then menu.ephemeralBox.newFavoriteAmount = 1; end
 
     if (selectedTab == 'Plates') then
         scopedEntity = GetStorageEntity(selectedEntity);
@@ -9048,6 +9251,89 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
         end);
     end
 
+    local function DrawEphemeralBoxFavoritesPanel()
+        local selfMode = tostring(LibraPlatesSettingsGetSelfGameMode() or '');
+        if (selfMode ~= 'CW' and selfMode ~= 'UCW') then
+            return;
+        end
+
+        LibraPlatesSettingsDrawBoxedPanel('Ephemeral Box Favorites', function()
+            menu.ephemeralBox.newFavoriteAmount = math.max(1, math.floor(tonumber(menu.ephemeralBox.newFavoriteAmount) or 1));
+            if (LibraPlatesEBoxFavoriteNameBuffer[1] == '' and tostring(menu.ephemeralBox.newFavoriteName or '') ~= '') then
+                LibraPlatesEBoxFavoriteNameBuffer[1] = tostring(menu.ephemeralBox.newFavoriteName or '');
+            end
+
+            imgui.TextColored(settingsLabelColor, 'Item');
+            if (imgui.SameLine ~= nil) then imgui.SameLine(70); end
+            if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(260); end
+            if (imgui.InputText ~= nil and imgui.InputText('##EBoxFavoriteItem', LibraPlatesEBoxFavoriteNameBuffer, 80) == true) then
+                menu.ephemeralBox.newFavoriteName = tostring(LibraPlatesEBoxFavoriteNameBuffer[1] or '');
+                state.Save();
+            end
+            if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            imgui.TextColored(settingsLabelColor, 'Amount');
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            local amount, amountChanged = DrawPlacementControl(menu.ephemeralBox.newFavoriteAmount, 1, 99, 1, 'EBoxFavoriteAmount', 44);
+            if (amountChanged == true) then
+                menu.ephemeralBox.newFavoriteAmount = amount;
+                state.Save();
+            end
+
+            if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+            if (imgui.Button('Add##EBoxFavoriteAdd', { 58, 24 }) == true) then
+                local itemName = tostring(LibraPlatesEBoxFavoriteNameBuffer[1] or ''):gsub('^%s+', ''):gsub('%s+$', '');
+                if (itemName ~= '') then
+                    menu.ephemeralBox.favorites[#menu.ephemeralBox.favorites + 1] = {
+                        itemName = itemName,
+                        amount = math.max(1, math.floor(tonumber(menu.ephemeralBox.newFavoriteAmount) or 1)),
+                    };
+                    LibraPlatesEBoxFavoriteNameBuffer[1] = '';
+                    menu.ephemeralBox.newFavoriteName = '';
+                    state.Save();
+                end
+            end
+
+            local suggestions = LibraPlatesEphemeralBox.GetItemNameSuggestions(LibraPlatesEBoxFavoriteNameBuffer[1], 8);
+            if (#suggestions > 0) then
+                imgui.TextColored({ 0.72, 0.88, 0.90, 1.0 }, 'Suggestions');
+                for index, itemName in ipairs(suggestions) do
+                    if (imgui.Selectable(tostring(itemName) .. '##EBoxSuggest' .. tostring(index), false) == true) then
+                        LibraPlatesEBoxFavoriteNameBuffer[1] = tostring(itemName);
+                        menu.ephemeralBox.newFavoriteName = tostring(itemName);
+                        state.Save();
+                    end
+                end
+            end
+
+            if (#menu.ephemeralBox.favorites > 0) then
+                imgui.Spacing();
+                imgui.TextColored(settingsLabelColor, 'Favorites');
+                for index = #menu.ephemeralBox.favorites, 1, -1 do
+                    local favorite = menu.ephemeralBox.favorites[index];
+                    local itemName = tostring(favorite.itemName or favorite.name or '');
+                    local amountText = tostring(math.max(1, math.floor(tonumber(favorite.amount) or 1)));
+                    imgui.Text(itemName .. ' x' .. amountText);
+                    if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+                    local removeClicked = false;
+                    if (imgui.SmallButton ~= nil) then
+                        removeClicked = imgui.SmallButton('Remove##EBoxFavoriteRemove' .. tostring(index)) == true;
+                    elseif (imgui.Button ~= nil) then
+                        removeClicked = imgui.Button('Remove##EBoxFavoriteRemove' .. tostring(index), { 70, 22 }) == true;
+                    end
+
+                    if (removeClicked == true) then
+                        table.remove(menu.ephemeralBox.favorites, index);
+                        state.Save();
+                    end
+                end
+            else
+                imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'No favorites yet.');
+            end
+        end);
+    end
+
     LibraPlatesSettingsDrawBoxedPanel('Menu settings', function()
         DrawInlineComboRow('Modifier', T{ 'None', 'Shift', 'Ctrl', 'Alt' }, menu.modifier or 'None', function(value)
             menu.modifier = value;
@@ -9099,6 +9385,8 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     LibraPlatesSettingsDrawBoxedPanel('Colors', function()
         DrawQuickMenuColorRow(menu);
     end);
+
+    DrawEphemeralBoxFavoritesPanel();
 
     if (scopedEntity == nil or scopedEntity == 'PC') then
         LibraPlatesSettingsDrawBoxedPanel('PC actions', function()
@@ -9541,6 +9829,12 @@ local function DrawGeneralNativeUiSection(settings)
             end);
             uiTooltip.Info('When on, LibraPlates names use known native special colors such as /anon blue and CW/UCW orange. Use native names still hides LibraPlates name text.');
 
+            DrawCheckbox('Block empty world left-click', settings.blockEmptyWorldLeftClick ~= false, function(value)
+                settings.blockEmptyWorldLeftClick = value == true;
+                state.Save();
+            end);
+            uiTooltip.Info('Prevents left-clicks on empty 3D world space from opening the native FFXI menu. Clicks on LP plates, ImGui addon windows, quick menus, settings, and the protected native menu area still work.');
+
             if (nativeUiForced == true) then
             end
         end);
@@ -9556,9 +9850,7 @@ local function DrawGeneralNativeUiSection(settings)
 
                 local text = bar[key];
 
-                DrawYellowHeader(label);
-
-                local fontSize, fontChanged = DrawPlacementSingle('Font size', text.fontSize, 'CurrentTargetBar' .. label .. 'FontSize', 6, 80, 1);
+                local fontSize, fontChanged = DrawPlacementSingle('Font size', text.fontSize, 'CurrentTargetBar' .. label .. 'FontSize', 6, 80, 1, 104, 124, 58);
                 if (fontChanged == true) then
                     text.fontSize = fontSize;
                     state.Save();
@@ -9593,10 +9885,11 @@ local function DrawGeneralNativeUiSection(settings)
 
                 local status = bar[key];
 
-                DrawYellowHeader(label);
-
-                DrawCheckbox('Enable ' .. tostring(label):lower(), status.enabled == true, function(value)
+                DrawRestingCheckboxPair('Enable', status.enabled == true, function(value)
                     status.enabled = value == true;
+                    state.Save();
+                end, 'Timers', status.showTimers == true, function(value)
+                    status.showTimers = value == true;
                     state.Save();
                 end);
 
@@ -9621,16 +9914,12 @@ local function DrawGeneralNativeUiSection(settings)
                     state.Save();
                 end
 
-                local rowSpacing, rowSpacingChanged = DrawPlacementSingle('Row spacing', status.rowSpacing, 'CurrentTargetBar' .. label .. 'RowSpacing', 0, 48, 1);
+                local rowSpacing, rowSpacingChanged = DrawPlacementSingle('Row spacing', status.rowSpacing, 'CurrentTargetBar' .. label .. 'RowSpacing', 0, 48, 1, 104, 124, 58);
                 if (rowSpacingChanged == true) then
                     status.rowSpacing = rowSpacing;
                     state.Save();
                 end
 
-                DrawCheckbox('Show timers', status.showTimers == true, function(value)
-                    status.showTimers = value == true;
-                    state.Save();
-                end);
             end
 
             local function DrawCurrentTargetBarMobInfoSettings()
@@ -9640,9 +9929,7 @@ local function DrawGeneralNativeUiSection(settings)
 
                 local mobInfo = bar.mobInfo;
 
-                DrawYellowHeader('Mob info');
-
-                DrawCheckbox('Enable mob info', mobInfo.enabled == true, function(value)
+                DrawCheckbox('Enable', mobInfo.enabled == true, function(value)
                     mobInfo.enabled = value == true;
                     state.Save();
                 end);
@@ -9661,27 +9948,21 @@ local function DrawGeneralNativeUiSection(settings)
                     state.Save();
                 end
 
-                local textColor, textChanged = DrawSettingsColor('Text', mobInfo.textColor, 'CurrentTargetBarMobInfoText');
+                local textColor, textChanged, outlineColor, outlineColorChanged = DrawColorPair('Text', mobInfo.textColor, 'CurrentTargetBarMobInfoText', 'Outline', mobInfo.outlineColor, 'CurrentTargetBarMobInfoOutline', 96, 44);
                 mobInfo.textColor = textColor;
-                if (textChanged == true) then state.Save(); end
-
-                local outlineColor, outlineColorChanged = DrawSettingsColor('Outline', mobInfo.outlineColor, 'CurrentTargetBarMobInfoOutline');
                 mobInfo.outlineColor = outlineColor;
-                if (outlineColorChanged == true) then state.Save(); end
+                if (textChanged == true or outlineColorChanged == true) then state.Save(); end
 
-                local outlineSize, outlineChanged = DrawPlacementSingle('Outline size', mobInfo.outlineSize, 'CurrentTargetBarMobInfoOutlineSize', 0, 12, 1);
+                local outlineSize, outlineChanged = DrawPlacementSingle('Outline size', mobInfo.outlineSize, 'CurrentTargetBarMobInfoOutlineSize', 0, 12, 1, 104, 124, 58);
                 if (outlineChanged == true) then
                     mobInfo.outlineSize = outlineSize;
                     state.Save();
                 end
 
-                local resistBg, resistBgChanged = DrawSettingsColor('Resist box', mobInfo.resistBackgroundColor, 'CurrentTargetBarMobInfoResistBackground');
+                local resistBg, resistBgChanged, weakBg, weakBgChanged = DrawColorPair('Resist box', mobInfo.resistBackgroundColor, 'CurrentTargetBarMobInfoResistBackground', 'Weak box', mobInfo.weakBackgroundColor, 'CurrentTargetBarMobInfoWeakBackground', 96, 44);
                 mobInfo.resistBackgroundColor = resistBg;
-                if (resistBgChanged == true) then state.Save(); end
-
-                local weakBg, weakBgChanged = DrawSettingsColor('Weak box', mobInfo.weakBackgroundColor, 'CurrentTargetBarMobInfoWeakBackground');
                 mobInfo.weakBackgroundColor = weakBg;
-                if (weakBgChanged == true) then state.Save(); end
+                if (resistBgChanged == true or weakBgChanged == true) then state.Save(); end
 
                 local maxIcons, maxChanged, spacing, spacingChanged = DrawPlacementPair('Max icons', mobInfo.maxIcons, 'CurrentTargetBarMobInfoMaxIcons', 'Icon spacing', mobInfo.iconSpacing, 'CurrentTargetBarMobInfoIconSpacing', 0, 32, 1);
                 if (maxChanged == true or spacingChanged == true) then
@@ -9690,82 +9971,150 @@ local function DrawGeneralNativeUiSection(settings)
                     state.Save();
                 end
 
-                DrawCheckbox('Show job/level', mobInfo.showJobLevel ~= false, function(value)
+                DrawRestingCheckboxPair('Job/level', mobInfo.showJobLevel ~= false, function(value)
                     mobInfo.showJobLevel = value == true;
                     state.Save();
-                end);
-                DrawCheckbox('Show behavior', mobInfo.showBehavior ~= false, function(value)
+                end, 'Behavior', mobInfo.showBehavior ~= false, function(value)
                     mobInfo.showBehavior = value == true;
                     state.Save();
                 end);
-                DrawCheckbox('Show links', mobInfo.showLinks ~= false, function(value)
+                DrawRestingCheckboxPair('Links', mobInfo.showLinks ~= false, function(value)
                     mobInfo.showLinks = value == true;
                     state.Save();
-                end);
-                DrawCheckbox('Show detects', mobInfo.showDetects ~= false, function(value)
+                end, 'Detects', mobInfo.showDetects ~= false, function(value)
                     mobInfo.showDetects = value == true;
                     state.Save();
                 end);
-                DrawCheckbox('Show weak/resist', mobInfo.showWeakResist ~= false, function(value)
+                DrawRestingCheckboxPair('Weak/resist', mobInfo.showWeakResist ~= false, function(value)
                     mobInfo.showWeakResist = value == true;
                     state.Save();
-                end);
-                DrawCheckbox('Show immunities', mobInfo.showImmunities == true, function(value)
+                end, 'Immunities', mobInfo.showImmunities == true, function(value)
                     mobInfo.showImmunities = value == true;
                     state.Save();
                 end);
             end
 
-            DrawCheckbox('Enable current target bar', bar.enabled == true, function(value)
-                bar.enabled = value == true;
-                state.Save();
+            local function DrawCurrentTargetOfTargetSettings()
+                if (type(bar.targetOfTarget) ~= 'table') then
+                    bar.targetOfTarget = {};
+                end
+
+                local tot = bar.targetOfTarget;
+
+                DrawCheckbox('Enable', tot.enabled == true, function(value)
+                    tot.enabled = value == true;
+                    state.Save();
+                end);
+
+                DrawTargetOfTargetArrowComboRow(tot.arrowFile or 'arrow_01.png', function(value)
+                    tot.arrowFile = tostring(value or 'None');
+                    state.Save();
+                end);
+
+                local arrowColor, arrowColorChanged = DrawSettingsColor('Arrow color', tot.arrowColor or { 0.92, 0.95, 1.0, 1.0 }, 'CurrentTargetBarTotArrowColor', 104, 44);
+                if (arrowColorChanged == true) then
+                    tot.arrowColor = arrowColor;
+                    state.Save();
+                end
+
+                local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', tot.width, 'CurrentTargetBarTotWidth', 'Height', tot.height, 'CurrentTargetBarTotHeight', 1, 1000, 1);
+                if (widthChanged == true or heightChanged == true) then
+                    tot.width = width;
+                    tot.height = height;
+                    state.Save();
+                end
+
+                local offsetX, offsetXChanged, offsetY, offsetYChanged = DrawPlacementPair('Bar X', tot.offsetX, 'CurrentTargetBarTotX', 'Bar Y', tot.offsetY, 'CurrentTargetBarTotY', -1000, 1000, 1);
+                if (offsetXChanged == true or offsetYChanged == true) then
+                    tot.offsetX = offsetX;
+                    tot.offsetY = offsetY;
+                    state.Save();
+                end
+
+                local arrowSize, arrowSizeChanged = DrawPlacementSingle('Arrow size', tot.arrowSize, 'CurrentTargetBarTotArrowSize', 0, 200, 1, 104, 124, 58);
+                if (arrowSizeChanged == true) then
+                    tot.arrowSize = arrowSize;
+                    state.Save();
+                end
+
+                local arrowX, arrowXChanged, arrowY, arrowYChanged = DrawPlacementPair('Arrow X', tot.arrowOffsetX, 'CurrentTargetBarTotArrowX', 'Arrow Y', tot.arrowOffsetY, 'CurrentTargetBarTotArrowY', -500, 500, 1);
+                if (arrowXChanged == true or arrowYChanged == true) then
+                    tot.arrowOffsetX = arrowX;
+                    tot.arrowOffsetY = arrowY;
+                    state.Save();
+                end
+            end
+
+            local firstCurrentTargetSection = true;
+            local function DrawCurrentTargetSection(label, render)
+                if (firstCurrentTargetSection ~= true and imgui.Separator ~= nil) then
+                    imgui.Spacing();
+                    imgui.Separator();
+                end
+
+                LibraPlatesSettingsDrawBoxedPanel(label, render, firstCurrentTargetSection == true);
+                firstCurrentTargetSection = false;
+            end
+
+            DrawCurrentTargetSection('Main bar', function()
+                DrawCheckbox('Enable', bar.enabled == true, function(value)
+                    bar.enabled = value == true;
+                    state.Save();
+                end);
+                uiTooltip.Info('Static replacement bar for the current target. It shows for any selected target: PC, enemy, NPC, or object.');
+
+                local x, xChanged, y, yChanged = DrawPlacementPair('Position X', bar.x, 'CurrentTargetBarX', 'Position Y', bar.y, 'CurrentTargetBarY', 0, 4000, 1);
+                if (xChanged == true or yChanged == true) then
+                    bar.x = x;
+                    bar.y = y;
+                    state.Save();
+                end
+
+                local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', bar.width, 'CurrentTargetBarWidth', 'Height', bar.height, 'CurrentTargetBarHeight', 20, 2000, 1);
+                if (widthChanged == true or heightChanged == true) then
+                    bar.width = width;
+                    bar.height = height;
+                    state.Save();
+                end
+
+                local radius, radiusChanged, borderSize, borderChanged = DrawPlacementPair('Radius', bar.radius, 'CurrentTargetBarRadius', 'Border size', bar.borderSize, 'CurrentTargetBarBorderSize', 0, 40, 1);
+                if (radiusChanged == true or borderChanged == true) then
+                    bar.radius = radius;
+                    bar.borderSize = borderSize;
+                    state.Save();
+                end
+
+                local bgColor, bgChanged, fillColor, fillChanged, borderColor, borderColorChanged = DrawColorTriple('Background', bar.backgroundColor, 'CurrentTargetBarBackground', 'Fill', bar.fillColor, 'CurrentTargetBarFill', 'Border', bar.borderColor, 'CurrentTargetBarBorder', 122, 36);
+                bar.backgroundColor = bgColor;
+                bar.fillColor = fillColor;
+                bar.borderColor = borderColor;
+                if (bgChanged == true or fillChanged == true or borderColorChanged == true) then state.Save(); end
+
+                DrawInlineComboRow('HP percent', T{ 'Hidden', 'Enemies only', 'Always' }, bar.hpPercentMode or 'Enemies only', function(value)
+                    bar.hpPercentMode = tostring(value or 'Enemies only');
+                    state.Save();
+                end, 'CurrentTargetBarHpPercentMode', settingsLabelColor, 104, settingsTableFlagsNoBorders, 150);
             end);
-            uiTooltip.Info('Static replacement bar for the current target. It shows for any selected target: PC, enemy, NPC, or object.');
 
-            local x, xChanged, y, yChanged = DrawPlacementPair('Position X', bar.x, 'CurrentTargetBarX', 'Position Y', bar.y, 'CurrentTargetBarY', 0, 4000, 1);
-            if (xChanged == true or yChanged == true) then
-                bar.x = x;
-                bar.y = y;
-                state.Save();
-            end
+            DrawCurrentTargetSection('Text', function()
+                DrawCurrentTargetBarTextSettings('Text', 'text');
+            end);
 
-            local width, widthChanged, height, heightChanged = DrawPlacementPair('Width', bar.width, 'CurrentTargetBarWidth', 'Height', bar.height, 'CurrentTargetBarHeight', 20, 2000, 1);
-            if (widthChanged == true or heightChanged == true) then
-                bar.width = width;
-                bar.height = height;
-                state.Save();
-            end
+            DrawCurrentTargetSection('Target of target', function()
+                DrawCurrentTargetOfTargetSettings();
+            end);
 
-            local radius, radiusChanged, borderSize, borderChanged = DrawPlacementPair('Radius', bar.radius, 'CurrentTargetBarRadius', 'Border size', bar.borderSize, 'CurrentTargetBarBorderSize', 0, 40, 1);
-            if (radiusChanged == true or borderChanged == true) then
-                bar.radius = radius;
-                bar.borderSize = borderSize;
-                state.Save();
-            end
+            DrawCurrentTargetSection('Mob info', function()
+                DrawCurrentTargetBarMobInfoSettings();
+            end);
 
-            local bgColor, bgChanged = DrawSettingsColor('Background', bar.backgroundColor, 'CurrentTargetBarBackground');
-            bar.backgroundColor = bgColor;
-            if (bgChanged == true) then state.Save(); end
+            DrawCurrentTargetSection('Buffs', function()
+                DrawCurrentTargetBarStatusSettings('Buffs', 'buffs');
+            end);
 
-            local fillColor, fillChanged = DrawSettingsColor('Fill', bar.fillColor, 'CurrentTargetBarFill');
-            bar.fillColor = fillColor;
-            if (fillChanged == true) then state.Save(); end
-
-            local borderColor, borderColorChanged = DrawSettingsColor('Border', bar.borderColor, 'CurrentTargetBarBorder');
-            bar.borderColor = borderColor;
-            if (borderColorChanged == true) then state.Save(); end
-
-            imgui.TextColored(settingsLabelColor, 'HP percent');
-            imgui.SameLine();
-            DrawInlineCombo('##CurrentTargetBarHpPercentMode', T{ 'Hidden', 'Enemies only', 'Always' }, bar.hpPercentMode or 'Enemies only', function(value)
-                bar.hpPercentMode = tostring(value or 'Enemies only');
-                state.Save();
-            end, nil, 150);
-
-            DrawCurrentTargetBarTextSettings('Text', 'text');
-            DrawCurrentTargetBarMobInfoSettings();
-            DrawCurrentTargetBarStatusSettings('Buffs', 'buffs');
-            DrawCurrentTargetBarStatusSettings('Debuffs', 'debuffs');
+            DrawCurrentTargetSection('Debuffs', function()
+                DrawCurrentTargetBarStatusSettings('Debuffs', 'debuffs');
+            end);
         end);
     end);
 end
@@ -17458,11 +17807,25 @@ function settingsUi.OpenJobChangePresets()
     PersistUiSelection();
 end
 
+function settingsUi.OpenEphemeralBoxFavorites()
+    selectedTab = 'Modules';
+    selectedModuleEntity = 'Self';
+    selectedModuleState = 'World';
+    selectedModuleWidget = 'Quick Menu';
+    windowOpen[1] = true;
+    state.SetConfigOpen(true);
+    PersistUiSelection();
+end
+
 function settingsUi.SyncScreenAlertsPreviewVisibility()
     local enemyAlerts = require('core.enemy_alerts');
     local shouldShowPreview = state.GetConfigOpen() == true and selectedTab == 'Settings' and selectedGeneralSection == 'Screen Alerts';
 
-    if (shouldShowPreview ~= true and enemyAlerts.GetPreviewEnabled() == true) then
+    if (shouldShowPreview == true) then
+        local global = state.GetGlobalSettings(globalDefaults);
+        local settings = (global ~= nil and global.enemyAlerts) or {};
+        enemyAlerts.SetPreviewEnabled(settings.layoutPreviewEditFrame == true);
+    elseif (enemyAlerts.GetPreviewEnabled() == true) then
         enemyAlerts.SetPreviewEnabled(false);
     end
 end

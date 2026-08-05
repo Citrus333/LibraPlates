@@ -2,6 +2,7 @@ require('common');
 
 local entities = require('core.entities');
 local log = require('core.log');
+local state = require('core.state');
 
 local mogHouseExit = {};
 
@@ -9,7 +10,7 @@ local debugEnabled = false;
 -- Default to the locked state so reloading the addon while already inside a
 -- Mog House still shows useful quest guidance. The next 0x00A packet replaces
 -- this with the server-authoritative value.
-local currentExitBit = 0;
+local currentExitBit = nil;
 
 -- The server writes MyRoomExitBit into the 0x00A zone-in packet. It is 0 when
 -- the character has not unlocked alternate exits for the current city, and is
@@ -78,6 +79,46 @@ for _, group in ipairs(cityGroups) do
     for _, zone in ipairs(group.zones) do
         zoneToGroup[zone.zoneId] = group;
     end
+end
+
+local function GetStorage()
+    local global = state.GetGlobalSettings({});
+    if (type(global.mogHouseExit) ~= 'table') then
+        global.mogHouseExit = {};
+    end
+
+    if (type(global.mogHouseExit.exitBitsByGroup) ~= 'table') then
+        global.mogHouseExit.exitBitsByGroup = {};
+    end
+
+    return global.mogHouseExit.exitBitsByGroup;
+end
+
+local function GetStoredExitBit(group)
+    if (group == nil or group.bit == nil) then
+        return nil;
+    end
+
+    local storage = GetStorage();
+    return tonumber(storage[tostring(group.bit)]);
+end
+
+local function StoreExitBit(group, value)
+    if (group == nil or group.bit == nil or tonumber(value) == nil) then
+        return;
+    end
+
+    local storage = GetStorage();
+    storage[tostring(group.bit)] = tonumber(value) or 0;
+    state.SaveThrottled(1.0);
+end
+
+local function GetCurrentExitBit(group)
+    if (currentExitBit ~= nil) then
+        return tonumber(currentExitBit) or 0;
+    end
+
+    return GetStoredExitBit(group);
 end
 
 local function FormatBytes(bytes, maxBytes)
@@ -160,6 +201,7 @@ function mogHouseExit.HandlePacketIn(e)
     local ok, value = pcall(struct.unpack, 'B', packetData, LOGIN_PACKET_MOG_HOUSE_EXIT_BIT_OFFSET + 1);
     if (ok == true and tonumber(value) ~= nil) then
         currentExitBit = tonumber(value);
+        StoreExitBit(zoneToGroup[GetCurrentZoneId()], currentExitBit);
     end
 
     if (debugEnabled == true) then
@@ -177,7 +219,7 @@ function mogHouseExit.IsAvailable()
         return false;
     end
 
-    return tonumber(currentExitBit) == tonumber(group.bit);
+    return tonumber(GetCurrentExitBit(group)) == tonumber(group.bit);
 end
 
 function mogHouseExit.IsLocked()
@@ -186,7 +228,8 @@ function mogHouseExit.IsLocked()
     end
 
     local group = zoneToGroup[GetCurrentZoneId()];
-    return group ~= nil and group.unlockQuest ~= nil and tonumber(currentExitBit) == 0;
+    local exitBit = GetCurrentExitBit(group);
+    return group ~= nil and group.unlockQuest ~= nil and (exitBit == nil or tonumber(exitBit) == 0);
 end
 
 function mogHouseExit.GetUnlockQuest()

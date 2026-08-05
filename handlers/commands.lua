@@ -1650,6 +1650,13 @@ function commands.Handle(e)
         return;
     end
 
+    if (subcommand == 'targetdebug' or subcommand == 'targetmarkerdebug') then
+        log.Info('Targeting: ' .. tostring(targeting.GetDebugStatus()));
+        log.Info('Native target: ' .. tostring(modules.GetNativeTargetArrowDebugStatus()));
+        log.Info('Target module: ' .. tostring(targetModuleMarker.GetDebugStatus()));
+        return;
+    end
+
     if (subcommand == 'anon' or subcommand == 'anonymous') then
         local value = tostring(args[3] or ''):lower();
         local anonStatus = require('core.anon_status');

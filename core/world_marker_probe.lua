@@ -50,6 +50,9 @@ ffi.cdef[[
     typedef void (__thiscall* lp_get_nameplate_offset_f)(void* pThis, int32_t idx, lp_d3dx_vector3_t* vec3);
     void* __stdcall GetForegroundWindow(void);
     void* __stdcall GetActiveWindow(void);
+    int __stdcall SetForegroundWindow(void* hWnd);
+    int __stdcall BringWindowToTop(void* hWnd);
+    void* __stdcall SetFocus(void* hWnd);
     int __stdcall ClientToScreen(void* hWnd, lp_mouse_snap_point_t* point);
     int __stdcall SetCursorPos(int x, int y);
     short __stdcall GetAsyncKeyState(int key);
@@ -177,6 +180,7 @@ local fontStatus = 'not-ready';
 local imguiApi = defaultImgui;
 local user32 = nil;
 local lastWindowFocused = nil;
+local lastGameWindow = nil;
 local suppressFocusClickUntil = 0;
 local suppressFocusRelease = false;
 local verts = ffi.new('lp_world_marker_vertex_t[?]', DOT_SEGMENTS * 3);
@@ -286,6 +290,10 @@ local function IsGameWindowFocused()
         return nil;
     end
 
+    if (active ~= nil and active ~= ffi.NULL) then
+        lastGameWindow = active;
+    end
+
     return foreground == active and foreground ~= ffi.NULL;
 end
 
@@ -303,6 +311,67 @@ function worldMarkerProbe.UpdateFocusState()
     end
 
     lastWindowFocused = focused == true;
+end
+
+function worldMarkerProbe.IsGameWindowFocused()
+    return IsGameWindowFocused();
+end
+
+function worldMarkerProbe.FocusGameWindow()
+    local lib = GetUser32();
+
+    if (lib == nil) then
+        return false;
+    end
+
+    local window = lastGameWindow;
+
+    if (window == nil or window == ffi.NULL) then
+        pcall(function()
+            window = lib.GetActiveWindow();
+        end);
+    end
+
+    if (window == nil or window == ffi.NULL) then
+        return false;
+    end
+
+    pcall(function()
+        lib.BringWindowToTop(window);
+    end);
+
+    pcall(function()
+        lib.SetForegroundWindow(window);
+    end);
+
+    pcall(function()
+        lib.SetFocus(window);
+    end);
+
+    return true;
+end
+
+function worldMarkerProbe.ConsumeFocusPassthrough(e)
+    if (e == nil) then
+        return false;
+    end
+
+    local message = tonumber(e.message);
+
+    if (message == 513 and os.clock() < (tonumber(suppressFocusClickUntil) or 0)) then
+        suppressFocusClickUntil = 0;
+        suppressFocusRelease = true;
+        lastClickStatus = 'ignored focus left down message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y);
+        return true;
+    end
+
+    if (message == 514 and suppressFocusRelease == true) then
+        suppressFocusRelease = false;
+        lastClickStatus = 'ignored focus left release message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y);
+        return true;
+    end
+
+    return false;
 end
 
 -- ==========================================================
@@ -5650,19 +5719,8 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
         return false;
     end
 
-    if (message == 513 and os.clock() < (tonumber(suppressFocusClickUntil) or 0)) then
-        suppressFocusClickUntil = 0;
-        suppressFocusRelease = true;
-        e.blocked = true;
-        lastClickStatus = 'suppressed focus left down message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y);
-        return true;
-    end
-
-    if (message == 514 and suppressFocusRelease == true) then
-        suppressFocusRelease = false;
-        e.blocked = true;
-        lastClickStatus = 'suppressed focus left release message=' .. tostring(message) .. ' x=' .. tostring(e.x) .. ' y=' .. tostring(e.y);
-        return true;
+    if (worldMarkerProbe.ConsumeFocusPassthrough(e) == true) then
+        return false;
     end
 
     if (message == 514 and suppressNextLeftRelease == true) then

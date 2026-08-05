@@ -305,7 +305,7 @@ local function BuildWorldVitalSignature(center, hpPercent, mpPercent, tpValue, c
     }, '\n');
 end
 
-local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layoutStateName, plateTextureId, textureWidth, textureHeight, plateClickRects)
+local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layoutStateName, plateTextureId, textureWidth, textureHeight, plateClickRects, targetMarker)
     local plateWorldOffsetY = mounted.IsStatus(center.status) and (0.05 - mounted.GetPlateLift(center.index)) or 0.05;
     local plateWorldWidth, plateWorldHeight = canvasTexture.GetWorldSize(2.35, 1.18, textureWidth, textureHeight);
 
@@ -333,6 +333,7 @@ local function QueueRenderedWorldPlate(center, hpPercent, targetStateName, layou
             plateTextureWidth = textureWidth,
             plateTextureHeight = textureHeight,
             plateClickRects = plateClickRects,
+            targetMarker = targetMarker,
             jobEnabled = false,
             selfBarModelDepthLift = 0.18,
             clickTargetType = 'self',
@@ -639,14 +640,15 @@ local function ColorToU32(color)
 end
 
 local function ClampPercent(value, fallback)
+    local maxValue = (tonumber(fallback) ~= nil and tonumber(fallback) > 100) and tonumber(fallback) or 100;
     local percent = tonumber(value) or fallback or 100;
 
     if (percent < 0) then
         return 0;
     end
 
-    if (percent > 100) then
-        return 100;
+    if (percent > maxValue) then
+        return maxValue;
     end
 
     return percent;
@@ -679,7 +681,9 @@ local function BuildResourceText(settings, label, value, maxValue, percent)
     end
 
     if (settings.showPercent == true) then
-        table.insert(parts, tostring(math.floor(ClampPercent(percent, 100) + 0.5)) .. '%');
+        local percentValue = (label == 'TP' and value ~= nil) and ((tonumber(value) or 0) / 10) or percent;
+        local percentMax = (label == 'TP') and 300 or 100;
+        table.insert(parts, tostring(math.floor(ClampPercent(percentValue, percentMax) + 0.5)) .. '%');
     end
 
     return table.concat(parts, ' ');
@@ -834,6 +838,14 @@ end
 local function QueueWorldMarker(center, nameSettings, stateName)
     local targetStateName = targeting.GetTargetStateName(center.index);
     local layoutStateName = (targetStateName == 'Target' or targetStateName == 'Subtarget') and 'Combat' or GetLayoutStateName(stateName);
+    local targetMarker = nil;
+    local targetMarkerActive = false;
+
+    if (targetStateName == 'Target' or targetStateName == 'Subtarget') then
+        local earlyHpBarSettings = selfSettingsCache.GetWidget(layoutStateName, 'HP Bar', barDefaults);
+        targetMarker, targetMarkerActive = BuildTargetMarkerIfEnabled(layoutStateName, targetStateName, earlyHpBarSettings);
+    end
+
     local earlyCacheKey = GetWorldCacheKey(stateName, targetStateName, layoutStateName, false);
     local earlyCached = cachedWorldPlates[earlyCacheKey];
     local now = os.clock();
@@ -868,7 +880,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             earlyCached.plateTextureId,
             earlyCached.textureWidth,
             earlyCached.textureHeight,
-            earlyCached.plateClickRects
+            earlyCached.plateClickRects,
+            targetMarker
         );
         return;
     end
@@ -910,7 +923,9 @@ local function QueueWorldMarker(center, nameSettings, stateName)
     local isEngaged = tonumber(center.status) == 1;
     local shouldLoadBuffs = ShouldLoadStatusRows(buffsSettings, isEngaged);
     local shouldLoadDebuffs = ShouldLoadStatusRows(debuffsSettings, isEngaged);
-    local targetMarker, targetMarkerActive = BuildTargetMarkerIfEnabled(layoutStateName, targetStateName, hpBarSettings);
+    if (targetMarker == nil) then
+        targetMarker, targetMarkerActive = BuildTargetMarkerIfEnabled(layoutStateName, targetStateName, hpBarSettings);
+    end
     local nameAoeActive = aoeRangeSettings.enabled == true and aoeNameHighlight.IsHighlighted(center.index, 'self');
     local enmityActive = globalSettings.enmity ~= nil and globalSettings.enmity.enabled == true and enmity.ShouldDrawAlly(center, globalSettings) == true;
     local fishingActive = (stateName == 'Fishing' or fishing.IsSessionActive() == true) and globalSettings.fishing ~= nil and globalSettings.fishing.enabled ~= false;
@@ -1014,8 +1029,6 @@ local function QueueWorldMarker(center, nameSettings, stateName)
 
     if (tpPercent >= 100) then
         tpColor = tpBarSettings.fullColor or tpBarDefaults.fullColor or tpColor;
-        tpColor2 = tpColor;
-        tpColor3 = tpColor;
     end
     local nameEnabled = nameLoaded == true;
     local defaultOffsetY = tonumber(nameDefaults.offsetY) or 0;
@@ -1254,6 +1267,7 @@ local function QueueWorldMarker(center, nameSettings, stateName)
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
             anchorCollapse = backgroundSettings.anchorCollapse,
             anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
         name = nameEnabled and displayName or '',
         aoeNameActive = nameAoeActive == true,
@@ -1569,7 +1583,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
                 cachedWorldPlate.plateTextureId,
                 cachedWorldPlate.textureWidth,
                 cachedWorldPlate.textureHeight,
-                cachedWorldPlate.plateClickRects
+                cachedWorldPlate.plateClickRects,
+                targetMarker
             );
             return;
         end
@@ -1615,7 +1630,8 @@ local function QueueWorldMarker(center, nameSettings, stateName)
         plateTextureId,
         textureWidth,
         textureHeight,
-        plateClickRects
+        plateClickRects,
+        targetMarker
     );
 end
 

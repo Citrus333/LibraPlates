@@ -238,6 +238,37 @@ local function NormalizeCurrentTargetBar(settings)
         GroupColorField('weakBackgroundColor');
     end
 
+    local function NormalizeTargetOfTargetGroup()
+        local groupDefaults = defaults.targetOfTarget or {};
+        if (type(bar.targetOfTarget) ~= 'table') then
+            bar.targetOfTarget = {};
+        end
+
+        local group = bar.targetOfTarget;
+
+        local function GroupNumberField(field, minValue, maxValue)
+            local value = tonumber(group[field]);
+            if (value == nil) then
+                value = tonumber(groupDefaults[field]) or 0;
+            end
+
+            group[field] = math.max(minValue, math.min(maxValue, math.floor(value + 0.5)));
+        end
+
+        if (group.enabled == nil) then group.enabled = groupDefaults.enabled ~= false; end
+        group.enabled = group.enabled == true;
+        group.arrowFile = tostring(group.arrowFile or groupDefaults.arrowFile or 'arrow_01.png'):gsub('^.*[\\/]', '');
+        if (group.arrowFile == '') then group.arrowFile = 'arrow_01.png'; end
+
+        GroupNumberField('width', 20, 1000);
+        GroupNumberField('height', 1, 200);
+        GroupNumberField('offsetX', -1000, 1000);
+        GroupNumberField('offsetY', -500, 500);
+        GroupNumberField('arrowSize', 0, 200);
+        GroupNumberField('arrowOffsetX', -500, 500);
+        GroupNumberField('arrowOffsetY', -500, 500);
+    end
+
     local function NormalizeSharedText()
         local textDefaults = defaults.text or {};
         if (type(bar.text) ~= 'table') then
@@ -302,6 +333,7 @@ local function NormalizeCurrentTargetBar(settings)
     NormalizeTextGroup('playerText', false);
     NormalizeSharedText();
     NormalizeMobInfoGroup();
+    NormalizeTargetOfTargetGroup();
     NormalizeStatusGroup('buffs');
     NormalizeStatusGroup('debuffs');
 end

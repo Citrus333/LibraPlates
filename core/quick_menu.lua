@@ -735,7 +735,7 @@ local function EnsureSettings()
     if (menu.npc.openLink == nil) then menu.npc.openLink = true; end
     if (menu.npc.maxInfoChars == nil) then menu.npc.maxInfoChars = 420; end
     if (menu.npc.maxInfoLines == nil) then menu.npc.maxInfoLines = 10; end
-    if (menu.npc.maxQuestLinks == nil or tonumber(menu.npc.maxQuestLinks) == 4) then menu.npc.maxQuestLinks = 8; end
+    if (menu.npc.maxQuestLinks == nil or tonumber(menu.npc.maxQuestLinks) == 4 or tonumber(menu.npc.maxQuestLinks) == 8) then menu.npc.maxQuestLinks = 64; end
     if (menu.warp == nil) then menu.warp = {}; end
     if (menu.warp.enabled == nil) then menu.warp.enabled = true; end
     if (menu.warp.grouping == nil) then menu.warp.grouping = 'Region'; end
@@ -1341,6 +1341,11 @@ local function MenuItem(label, iconFile, action, menu, keepOpen, textureIdOverri
             imgui.CloseCurrentPopup();
         end
     end
+end
+
+local function OpenJobChangePresetSettings()
+    local settingsUi = require('modules.settings.init');
+    settingsUi.OpenJobChangePresets();
 end
 
 local function ToggleMenuItem(label, iconFile, currentState, commandBase, setState, menu, offIconFile, keepOpen)
@@ -2301,16 +2306,16 @@ function quickMenu.Render()
                             end
                         end, menu, false, row.textureId);
                     end
+
+                    imgui.Separator();
+                    MenuItem('Edit Presets...', nil, OpenJobChangePresetSettings, menu);
                 else
-                    MenuItem('Open preset settings', nil, function()
-                        local settingsUi = require('modules.settings.init');
-                        settingsUi.OpenJobChangePresets();
-                    end, menu);
+                    MenuItem('Edit Presets...', nil, OpenJobChangePresetSettings, menu);
                 end
             end
         elseif (pendingMenu.targetType == 'self') then
             local context = GetPartyContext(pendingMenu.targetIndex);
-            local isTown = jobChange.IsTownZone() == true;
+            local isTown = (jobChange.IsQuickMenuTownZone ~= nil and jobChange.IsQuickMenuTownZone() == true) or jobChange.IsTownZone() == true;
 
             local hasPendingInvite = quickMenu.HasPendingInvite() == true;
 
@@ -2372,7 +2377,7 @@ function quickMenu.Render()
                     if (unlockQuest ~= nil) then
                         imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Mog House Exit');
                         imgui.TextColored(GetReadableTextColor(menu), 'Alternate exits are locked.');
-                        MenuItem('Complete ' .. unlockQuest .. ' to unlock them.', 'catseye.png', function()
+                        MenuItem('Unlock: ' .. unlockQuest, 'catseye.png', function()
                             OpenUrl(BuildWikiLink(unlockQuest));
                         end, menu);
                         imgui.Separator();
@@ -2396,6 +2401,7 @@ function quickMenu.Render()
                     end
 
                     imgui.Separator();
+                    MenuItem('Edit Presets...', nil, OpenJobChangePresetSettings, menu);
                 end
             end
 

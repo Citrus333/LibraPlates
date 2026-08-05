@@ -1761,7 +1761,7 @@ local function AddStatusIconsToPlate(plateData, statusIds, iconSettings, isEngag
 
             if (anchored == true) then
                 iconOffsetX = growLeft == true
-                    and (baseX - rowWidth + (col * (iconSize + spacing)))
+                    and (baseX - rowWidth + iconSize + (col * (iconSize + spacing)))
                     or (baseX + (col * (iconSize + spacing)));
             end
 
@@ -2366,6 +2366,39 @@ local function MakeLiveHpBarStyle(settings, color, hpPercent, globalSettings)
     };
 end
 
+local function EnemyLayoutAnchorsToHpBar(context)
+    if (context == nil) then
+        return false;
+    end
+
+    local widgetSettings = T{
+        context.nameSettings,
+        context.jobSettings,
+        context.levelSettings,
+        context.idSettings,
+        context.distanceSettings,
+        context.specialIconSettings,
+        context.buffsSettings,
+        context.debuffsSettings,
+    };
+    local mobInfoSettings = context.mobInfoIconWidgetSettings or {};
+    widgetSettings[#widgetSettings + 1] = mobInfoSettings.behavior;
+    widgetSettings[#widgetSettings + 1] = mobInfoSettings.detects;
+    widgetSettings[#widgetSettings + 1] = mobInfoSettings.links;
+
+    for _, settings in ipairs(widgetSettings) do
+        if (
+            settings ~= nil and
+            settings.enabled == true and
+            tostring(settings.anchorTo or '') == 'HP Bar'
+        ) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
 local function ApplyEnemyStatusWidgets(context, plateData)
     AddStatusIconsToPlate(plateData, context.buffRows, context.buffsSettings, context.isEngaged, context.globalSettings, 'buffs');
     AddStatusIconsToPlate(plateData, context.debuffRows, context.debuffsSettings, context.isEngaged, context.globalSettings, 'debuffs');
@@ -2381,7 +2414,7 @@ local function QueueEnemy(enemy)
     local settingsTimer = perfMeter.BeginDetail('enemy.settings');
     local context = BuildEnemyQueueContext(enemy);
     local liveHpBarStyle = MakeLiveHpBarStyle(context.hpBarSettings, context.hpColor, context.hpPercent, context.globalSettings);
-    local useLiveHpBar = context.stateName == 'Idle' and liveHpBarStyle.enabled == true;
+    local useLiveHpBar = context.stateName == 'Idle' and liveHpBarStyle.enabled == true and EnemyLayoutAnchorsToHpBar(context) ~= true;
 
     local cacheSkipReason = nil;
     local hasDynamicDistance = context.distanceText ~= nil and context.distanceText ~= '';

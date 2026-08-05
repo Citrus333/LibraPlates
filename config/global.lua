@@ -114,6 +114,18 @@ return {
             hpPercentMode = 'Enemies only',
             hpPercentOffsetX = -12,
             hpPercentOffsetY = 16,
+            targetOfTarget = {
+                enabled = true,
+                width = 170,
+                height = 14,
+                offsetX = 42,
+                offsetY = 0,
+                arrowFile = 'arrow_01.png',
+                arrowColor = { 0.92, 0.95, 1.0, 1.0 },
+                arrowSize = 22,
+                arrowOffsetX = 0,
+                arrowOffsetY = 0,
+            },
             text = {
                 fontSize = 14,
                 nameOffsetX = 12,
@@ -602,6 +614,7 @@ return {
         geoPetStaticY = 690,
         geoPetStaticScale = 100,
         blockPlateClicksWhenImguiCapturesMouse = true,
+        blockEmptyWorldLeftClick = true,
         pcMouseSnapMode = 'Off',
         enemyMouseSnapMode = 'Off',
         pcMouseSnapStrength = 5,
@@ -1032,7 +1045,7 @@ return {
             openLink = true,
             maxInfoChars = 420,
             maxInfoLines = 10,
-            maxQuestLinks = 8,
+            maxQuestLinks = 64,
         },
         warp = {
             enabled = true,
@@ -1043,7 +1056,11 @@ return {
             confirmBeforeWarp = false,
             debug = false,
             favorites = {},
-            eboxFavorites = {},
+        },
+        ephemeralBox = {
+            favorites = {},
+            newFavoriteName = '',
+            newFavoriteAmount = 1,
         },
     },
     peer = {

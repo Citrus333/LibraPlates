@@ -1008,10 +1008,19 @@ function statusIcons.DrawSettings(settings, context)
     local itemLabel = (label == 'Buffs') and 'Buff' or ((label == 'Debuffs') and 'Debuff' or 'Icon');
     local itemPlural = (label == 'Buffs') and 'Buffs' or ((label == 'Debuffs') and 'Debuffs' or 'Icons');
     local supportsTimers = context == nil or tostring(context.entity or '') ~= 'Trust';
+    local isEnemyBuffs = context ~= nil and tostring(context.entity or '') == 'Enemy' and label == 'Buffs';
 
     ApplyDefaults(settings, defaults);
     if (supportsTimers ~= true) then
         settings.showTimers = false;
+        settings.timerWarningEnabled = false;
+        settings.timerWarningTextColorEnabled = false;
+        settings.timerWarningOutlineColorEnabled = false;
+        settings.timerWarningBackgroundEnabled = false;
+        settings.timerWarningBorderEnabled = false;
+        settings.timerWarningBoxColorEnabled = false;
+        settings.timerWarningBoxBorderEnabled = false;
+    elseif (isEnemyBuffs == true) then
         settings.timerWarningEnabled = false;
         settings.timerWarningTextColorEnabled = false;
         settings.timerWarningOutlineColorEnabled = false;
@@ -1091,19 +1100,32 @@ function statusIcons.DrawSettings(settings, context)
             );
         end
 
-        settings.iconWarningPadding, settings.iconSpacing = DrawSliderPair(
-            'icon_padding_spacing',
-            itemLabel .. ' padding',
-            'icon_warning_padding',
-            settings.iconWarningPadding,
-            0,
-            32,
-            'Icon spacing',
-            'icon_spacing',
-            settings.iconSpacing,
-            0,
-            32
-        );
+        if (isEnemyBuffs == true) then
+            settings.iconWarningPadding = 0;
+            settings.iconSpacing = DrawSingleSliderRow(
+                'icon_spacing',
+                'Icon spacing',
+                'icon_spacing',
+                settings.iconSpacing,
+                0,
+                32,
+                1
+            );
+        else
+            settings.iconWarningPadding, settings.iconSpacing = DrawSliderPair(
+                'icon_padding_spacing',
+                itemLabel .. ' padding',
+                'icon_warning_padding',
+                settings.iconWarningPadding,
+                0,
+                32,
+                'Icon spacing',
+                'icon_spacing',
+                settings.iconSpacing,
+                0,
+                32
+            );
+        end
 
         settings.rowSpacing = DrawSingleSliderRow(
             'row_spacing',
@@ -1197,7 +1219,7 @@ function statusIcons.DrawSettings(settings, context)
         end);
     end
 
-    if (label == 'Buffs') then
+    if (label == 'Buffs' and isEnemyBuffs ~= true) then
         DrawPanel('Buff Filtering', function()
             if (supportsTimers == true) then
                 settings.hideAboveDurationEnabled, settings.hideAboveDurationMinutes, settings.hideAboveDurationUnit = DrawBuffFilterDurationRow(
@@ -1212,6 +1234,9 @@ function statusIcons.DrawSettings(settings, context)
 
             DrawHideBuffsMode(settings);
         end);
+    elseif (isEnemyBuffs == true) then
+        settings.hideAboveDurationEnabled = false;
+        settings.hideBuffsMode = nil;
     elseif (label == 'Debuffs') then
         DrawPanel('Debuff Filtering', function()
             settings.hideOutOfCombat = DrawCheckbox('Hide debuffs out of combat', settings.hideOutOfCombat);
@@ -1226,7 +1251,7 @@ function statusIcons.DrawSettings(settings, context)
         settings.timerWarningBorderEnabled = false;
         settings.timerWarningBoxColorEnabled = false;
         settings.timerWarningBoxBorderEnabled = false;
-    elseif (label == 'Buffs' and supportsTimers == true) then
+    elseif (label == 'Buffs' and supportsTimers == true and isEnemyBuffs ~= true) then
         DrawPanel('Expiring Warnings', function()
             NormalizeTimerWarningSettings(settings, defaults);
             settings.timerWarningEnabled = DrawCheckbox('Expiring warnings', settings.timerWarningEnabled);

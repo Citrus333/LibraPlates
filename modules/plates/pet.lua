@@ -2895,6 +2895,9 @@ local function BuildSmnDetachedPlaceholderPlate(layoutStateName)
             imageOpacity = backgroundSettings.imageOpacity or backgroundDefaults.imageOpacity,
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+            anchorCollapse = backgroundSettings.anchorCollapse,
+            anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
         name = '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
@@ -3253,14 +3256,15 @@ local smnCastBarDefaults = CopySettingsWith(castBarDefaults, {
     color = { 0.95, 0.75, 0.20, 1.0 },
 });
 local function ClampPercent(percent, fallback)
+    local maxValue = (tonumber(fallback) ~= nil and tonumber(fallback) > 100) and tonumber(fallback) or 100;
     percent = tonumber(percent) or fallback or 0;
 
     if (percent < 0) then
         return 0;
     end
 
-    if (percent > 100) then
-        return 100;
+    if (percent > maxValue) then
+        return maxValue;
     end
 
     return percent;
@@ -3321,7 +3325,9 @@ BuildResourceText = function(settings, label, value, maxValue, percent)
     end
 
     if (settings.showPercent == true) then
-        table.insert(parts, tostring(math.floor(ClampPercent(percent, 100) + 0.5)) .. '%');
+        local percentValue = (label == 'TP' and value ~= nil) and ((tonumber(value) or 0) / 10) or percent;
+        local percentMax = (label == 'TP') and 300 or 100;
+        table.insert(parts, tostring(math.floor(ClampPercent(percentValue, percentMax) + 0.5)) .. '%');
     end
 
     return table.concat(parts, ' ');
@@ -3335,7 +3341,9 @@ BuildPercentFallbackResourceText = function(settings, label, value, maxValue, pe
     end
 
     if (settings ~= nil and settings.showValue == true and percent ~= nil) then
-        return tostring(math.floor(ClampPercent(percent, 100) + 0.5)) .. '%';
+        local percentValue = (label == 'TP' and value ~= nil) and ((tonumber(value) or 0) / 10) or percent;
+        local percentMax = (label == 'TP') and 300 or 100;
+        return tostring(math.floor(ClampPercent(percentValue, percentMax) + 0.5)) .. '%';
     end
 
     return text;
@@ -4738,6 +4746,9 @@ local function QueueBstPet(pet)
             imageOpacity = backgroundSettings.imageOpacity or backgroundDefaults.imageOpacity,
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+            anchorCollapse = backgroundSettings.anchorCollapse,
+            anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
         name = (nameSettings.enabled == true) and ShortenName(pet.name, nameSettings.shortenName) or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
@@ -5208,6 +5219,9 @@ local function QueueSmnPet(pet)
             imageOpacity = backgroundSettings.imageOpacity or backgroundDefaults.imageOpacity,
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+            anchorCollapse = backgroundSettings.anchorCollapse,
+            anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
         name = (nameSettings.enabled == true) and ShortenName(pet.name, nameSettings.shortenName) or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
@@ -5435,8 +5449,6 @@ local function QueueWyvernPet(pet)
 
     if (tpPercent >= 100) then
         tpColor = tpBarSettings.fullColor or tpBarDefaults.fullColor or tpColor;
-        tpColor2 = tpColor;
-        tpColor3 = tpColor;
     end
 
     local plateData = {
@@ -5459,6 +5471,9 @@ local function QueueWyvernPet(pet)
             imageOpacity = backgroundSettings.imageOpacity or backgroundDefaults.imageOpacity,
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+            anchorCollapse = backgroundSettings.anchorCollapse,
+            anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
         name = (nameSettings.enabled == true) and ShortenName(pet.name, nameSettings.shortenName) or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
@@ -5648,6 +5663,9 @@ local function QueuePupPet(pet)
             imageOpacity = backgroundSettings.imageOpacity or backgroundDefaults.imageOpacity,
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+            anchorCollapse = backgroundSettings.anchorCollapse,
+            anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
         name = (nameSettings.enabled == true) and ShortenName(pet.name, nameSettings.shortenName) or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),
@@ -5852,6 +5870,9 @@ local function QueueLuopan(pet)
             imageOpacity = backgroundSettings.imageOpacity or backgroundDefaults.imageOpacity,
             anchorTo = backgroundSettings.anchorTo or backgroundDefaults.anchorTo,
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
+            anchorCollapse = backgroundSettings.anchorCollapse,
+            anchorSpacing = backgroundSettings.anchorSpacing,
+            anchorOrder = backgroundSettings.anchorOrder,
         },
         name = (nameSettings.enabled == true) and ShortenName(pet.name, nameSettings.shortenName) or '',
         nameFontFamily = fonts.GetRole(globalSettings, false),

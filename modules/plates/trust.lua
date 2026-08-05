@@ -468,14 +468,15 @@ local function BuildTargetMarkerKey(marker)
 end
 
 local function ClampPercent(percent, fallback)
+    local maxValue = (tonumber(fallback) ~= nil and tonumber(fallback) > 100) and tonumber(fallback) or 100;
     percent = tonumber(percent) or fallback or 0;
 
     if (percent < 0) then
         return 0;
     end
 
-    if (percent > 100) then
-        return 100;
+    if (percent > maxValue) then
+        return maxValue;
     end
 
     return percent;
@@ -519,7 +520,9 @@ local function BuildResourceText(settings, label, value, maxValue, percent)
     end
 
     if (settings.showPercent == true) then
-        table.insert(parts, tostring(math.floor(ClampPercent(percent, 100) + 0.5)) .. '%');
+        local percentValue = (label == 'TP' and value ~= nil) and ((tonumber(value) or 0) / 10) or percent;
+        local percentMax = (label == 'TP') and 300 or 100;
+        table.insert(parts, tostring(math.floor(ClampPercent(percentValue, percentMax) + 0.5)) .. '%');
     end
 
     return table.concat(parts, ' ');
@@ -768,9 +771,9 @@ local function QueueTrust(trust)
             'bg:' .. SettingKey(backgroundSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'texture', 'imageOpacity', 'color', 'borderColor', 'borderSize', 'anchorTo', 'anchorPoint' }),
             'name:' .. SettingKey(nameSettings, { 'enabled', 'shortenName', 'textSize', 'color', 'outlineSize', 'outlineColor', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
             'job:' .. SettingKey(jobSettings, { 'enabled', 'displayModeIndex', 'iconTheme', 'iconSize', 'textSize', 'color', 'outlineEnabled', 'outlineColor', 'outlineSize', 'offsetX', 'offsetY', 'anchorTo', 'anchorPoint' }),
-            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'criticalColorEnabled', 'criticalColorPercent', 'criticalColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
-            'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
-            'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
+            'hp:' .. SettingKey(hpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'criticalColorEnabled', 'criticalColorPercent', 'criticalColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
+            'mp:' .. SettingKey(mpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'lowColorEnabled', 'lowColorPercent', 'lowColor', 'lowAnimationEnabled', 'lowAnimation', 'lowAnimationSpeed', 'lowAnimationColor' }),
+            'tp:' .. SettingKey(tpBarSettings, { 'enabled', 'width', 'height', 'offsetX', 'offsetY', 'color', 'color2', 'color3', 'backgroundColor', 'borderColor', 'borderSize', 'cornerRadius', 'anchorTo', 'anchorPoint', 'anchorCollapse', 'anchorSpacing', 'anchorOrder', 'texture', 'textureStrength', 'showValue', 'showPercent', 'fontSize', 'textColor', 'textOutlineEnabled', 'textOutlineColor', 'textOutlineSize', 'segmented', 'segmentGap' }),
             'buffs:' .. SettingKey(buffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'rowSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'hideCombatMode', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(buffRows),
             'debuffs:' .. SettingKey(debuffsSettings, { 'enabled', 'iconPack', 'iconSize', 'offsetX', 'offsetY', 'iconSpacing', 'rowSpacing', 'iconsPerRow', 'maxIcons', 'hideOutOfCombat', 'hideCombatMode', 'anchorTo', 'anchorPoint', 'growthDirection' }) .. ':' .. BuildStatusRowsKey(debuffRows),
             'targetMarker:' .. BuildTargetMarkerKey(targetMarker),
@@ -842,6 +845,9 @@ local function QueueTrust(trust)
             cornerRadius = tonumber(hpBarSettings.cornerRadius) or 0,
             anchorTo = hpBarSettings.anchorTo or barDefaults.anchorTo,
             anchorPoint = hpBarSettings.anchorPoint or barDefaults.anchorPoint,
+            anchorCollapse = hpBarSettings.anchorCollapse,
+            anchorSpacing = hpBarSettings.anchorSpacing,
+            anchorOrder = hpBarSettings.anchorOrder,
             texture = hpBarSettings.texture or 'Solid',
             textureStrength = tonumber(hpBarSettings.textureStrength) or 100,
             textureId = barTextures.GetTextureId(hpBarSettings.texture),
@@ -874,6 +880,9 @@ local function QueueTrust(trust)
             cornerRadius = tonumber(mpBarSettings.cornerRadius) or 0,
             anchorTo = mpBarSettings.anchorTo or mpBarDefaults.anchorTo,
             anchorPoint = mpBarSettings.anchorPoint or mpBarDefaults.anchorPoint,
+            anchorCollapse = mpBarSettings.anchorCollapse,
+            anchorSpacing = mpBarSettings.anchorSpacing,
+            anchorOrder = mpBarSettings.anchorOrder,
             texture = mpBarSettings.texture or 'Solid',
             textureStrength = tonumber(mpBarSettings.textureStrength) or 100,
             textureId = barTextures.GetTextureId(mpBarSettings.texture),
@@ -906,6 +915,9 @@ local function QueueTrust(trust)
             cornerRadius = tonumber(tpBarSettings.cornerRadius) or 0,
             anchorTo = tpBarSettings.anchorTo or tpBarDefaults.anchorTo,
             anchorPoint = tpBarSettings.anchorPoint or tpBarDefaults.anchorPoint,
+            anchorCollapse = tpBarSettings.anchorCollapse,
+            anchorSpacing = tpBarSettings.anchorSpacing,
+            anchorOrder = tpBarSettings.anchorOrder,
             texture = tpBarSettings.texture or 'Solid',
             textureStrength = tonumber(tpBarSettings.textureStrength) or 100,
             textureId = barTextures.GetTextureId(tpBarSettings.texture),

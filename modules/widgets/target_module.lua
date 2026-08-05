@@ -856,11 +856,9 @@ function targetModule.DrawSettings(settings, context)
 
     local function DrawLockOnIconPanel()
         DrawBoxedPanel('Lock-on icon', function()
-            if (lockOnly ~= true) then
-                settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
-            end
+            settings.lockEnabled = DrawToggle('Show lock-on icon', settings.lockEnabled ~= false);
 
-            if (lockOnly == true or settings.lockEnabled ~= false) then
+            if (settings.lockEnabled ~= false) then
                 local lockTypeOptions = T{ 'Still image', 'Animation' };
                 local lockType = settings.lockSprite == true and 'Animation' or 'Still image';
                 lockType = DrawOption('Lock-on type', lockTypeOptions, lockType, 'TargetModuleLockType');

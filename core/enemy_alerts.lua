@@ -1764,18 +1764,75 @@ local function GetViewportSize()
     return viewportW, viewportH;
 end
 
-local function DrawAlertRows(settings, rows, drawListOverride, viewportWidth, viewportHeight)
-    local drawList = drawListOverride or (imgui.GetForegroundDrawList ~= nil and imgui.GetForegroundDrawList() or nil);
+local function GetAlertOverlayWindowFlags()
+    return
+        (_G.ImGuiWindowFlags_NoTitleBar or 0) +
+        (_G.ImGuiWindowFlags_NoScrollbar or 0) +
+        (_G.ImGuiWindowFlags_NoScrollWithMouse or 0) +
+        (_G.ImGuiWindowFlags_NoSavedSettings or 0) +
+        (_G.ImGuiWindowFlags_NoBackground or 0) +
+        (_G.ImGuiWindowFlags_NoResize or 0) +
+        (_G.ImGuiWindowFlags_NoMove or 0) +
+        (_G.ImGuiWindowFlags_NoInputs or 0) +
+        (_G.ImGuiWindowFlags_NoFocusOnAppearing or 0) +
+        (_G.ImGuiWindowFlags_NoBringToFrontOnFocus or 0);
+end
 
-    if (drawList == nil) then
-        return;
+local function BeginAlertOverlayWindow(viewportW, viewportH)
+    if (imgui.Begin == nil or imgui.End == nil or imgui.SetNextWindowPos == nil or imgui.SetNextWindowSize == nil) then
+        return false, nil;
     end
 
+    imgui.SetNextWindowPos({ 0, 0 }, _G.ImGuiCond_Always or 1);
+    imgui.SetNextWindowSize({ viewportW, viewportH }, _G.ImGuiCond_Always or 1);
+
+    if (imgui.PushStyleVar ~= nil and _G.ImGuiStyleVar_WindowPadding ~= nil) then
+        imgui.PushStyleVar(_G.ImGuiStyleVar_WindowPadding, { 0, 0 });
+    end
+
+    local visible = imgui.Begin('LibraPlates Screen Alerts Overlay##ScreenAlertsOverlay', true, GetAlertOverlayWindowFlags());
+    if (visible ~= true or imgui.GetWindowDrawList == nil) then
+        if (imgui.End ~= nil) then
+            imgui.End();
+        end
+
+        if (imgui.PopStyleVar ~= nil and _G.ImGuiStyleVar_WindowPadding ~= nil) then
+            imgui.PopStyleVar();
+        end
+
+        return false, nil;
+    end
+
+    return true, imgui.GetWindowDrawList();
+end
+
+local function EndAlertOverlayWindow()
+    if (imgui.End ~= nil) then
+        imgui.End();
+    end
+
+    if (imgui.PopStyleVar ~= nil and _G.ImGuiStyleVar_WindowPadding ~= nil) then
+        imgui.PopStyleVar();
+    end
+end
+
+local function DrawAlertRows(settings, rows, drawListOverride, viewportWidth, viewportHeight)
     local viewportW = tonumber(viewportWidth) or 1920;
     local viewportH = tonumber(viewportHeight) or 1080;
 
     if (viewportWidth == nil or viewportHeight == nil) then
         viewportW, viewportH = GetViewportSize();
+    end
+
+    local beganOverlay = false;
+    local drawList = drawListOverride;
+
+    if (drawList == nil) then
+        beganOverlay, drawList = BeginAlertOverlayWindow(viewportW, viewportH);
+    end
+
+    if (drawList == nil) then
+        return;
     end
 
     local x = (viewportW * 0.5) + (tonumber(settings.offsetX) or 0);
@@ -1785,7 +1842,10 @@ local function DrawAlertRows(settings, rows, drawListOverride, viewportWidth, vi
     -- Foreground draw lists can retain the clip rectangle of the most recently
     -- rendered ImGui child/card. Always establish a full-screen clip for both
     -- live and preview alerts so Settings scrolling cannot clip the game UI.
-    if (drawList.PushClipRect ~= nil and drawList.PopClipRect ~= nil) then
+    if (drawList.PushClipRectFullScreen ~= nil and drawList.PopClipRect ~= nil) then
+        drawList:PushClipRectFullScreen();
+        pushedClip = true;
+    elseif (drawList.PushClipRect ~= nil and drawList.PopClipRect ~= nil) then
         drawList:PushClipRect({ 0, 0 }, { viewportW, viewportH }, false);
         pushedClip = true;
     end
@@ -1809,6 +1869,10 @@ local function DrawAlertRows(settings, rows, drawListOverride, viewportWidth, vi
 
     if (pushedClip == true) then
         drawList:PopClipRect();
+    end
+
+    if (beganOverlay == true) then
+        EndAlertOverlayWindow();
     end
 end
 

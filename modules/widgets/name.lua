@@ -687,13 +687,13 @@ function name.DrawSettings(settings, context)
                 'Position X',
                 'offset_x',
                 settings.offsetX,
-                -400,
-                400,
+                -900,
+                900,
                 'Position Y',
                 'offset_y',
                 settings.offsetY,
-                -400,
-                400
+                -900,
+                900
             );
         end
 

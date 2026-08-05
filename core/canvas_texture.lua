@@ -1436,12 +1436,23 @@ local function DrawPlateBackground(device, centerX, centerY, background, resolve
     local bgX = centerX - (bgW * 0.5) + (tonumber(background.offsetX) or 0);
     local bgY = centerY - (bgH * 0.5) + (tonumber(background.offsetY) or 0);
     local borderSize = math.max(0, tonumber(background.borderSize) or 0);
+    local border = math.min(borderSize, math.floor(math.min(bgW, bgH) * 0.5));
 
     if (resolvedRect ~= nil) then
-        bgX = tonumber(resolvedRect.drawX1) or bgX;
-        bgY = tonumber(resolvedRect.drawY1) or bgY;
-        bgW = math.max(1, (tonumber(resolvedRect.drawX2) or (bgX + bgW)) - bgX);
-        bgH = math.max(1, (tonumber(resolvedRect.drawY2) or (bgY + bgH)) - bgY);
+        local x1 = tonumber(resolvedRect.drawX1);
+        local y1 = tonumber(resolvedRect.drawY1);
+        local x2 = tonumber(resolvedRect.drawX2);
+        local y2 = tonumber(resolvedRect.drawY2);
+
+        if (x1 ~= nil and y1 ~= nil and x2 ~= nil and y2 ~= nil and x2 > x1 and y2 > y1) then
+            local outerW = math.max(1, x2 - x1);
+            local outerH = math.max(1, y2 - y1);
+            border = math.min(borderSize, math.floor(math.min(outerW, outerH) * 0.5));
+            bgX = x1 + border;
+            bgY = y1 + border;
+            bgW = math.max(1, outerW - (border * 2));
+            bgH = math.max(1, outerH - (border * 2));
+        end
     end
 
     DrawRect(device, bgX, bgY, bgW, bgH, ColorToD3D(background.color, { 0.0, 0.0, 0.0, 0.45 }));
@@ -1457,14 +1468,17 @@ local function DrawPlateBackground(device, centerX, centerY, background, resolve
         DrawTexture(device, background.textureId, bgX, bgY, bgW, bgH, ColorToD3D({ 1.0, 1.0, 1.0, textureAlpha }, { 1.0, 1.0, 1.0, 0.45 }));
     end
 
-    if (borderSize > 0) then
+    if (border > 0) then
         local borderColor = ColorToD3D(background.borderColor, { 0.0, 0.0, 0.0, 0.80 });
-        local border = math.min(borderSize, math.floor(math.min(bgW, bgH) * 0.5));
+        local outerX = bgX - border;
+        local outerY = bgY - border;
+        local outerW = bgW + (border * 2);
+        local outerH = bgH + (border * 2);
 
-        DrawRect(device, bgX, bgY, bgW, border, borderColor);
-        DrawRect(device, bgX, bgY + bgH - border, bgW, border, borderColor);
-        DrawRect(device, bgX, bgY + border, border, bgH - (border * 2), borderColor);
-        DrawRect(device, bgX + bgW - border, bgY + border, border, bgH - (border * 2), borderColor);
+        DrawRect(device, outerX, outerY, outerW, border, borderColor);
+        DrawRect(device, outerX, outerY + outerH - border, outerW, border, borderColor);
+        DrawRect(device, outerX, outerY + border, border, outerH - (border * 2), borderColor);
+        DrawRect(device, outerX + outerW - border, outerY + border, border, outerH - (border * 2), borderColor);
     end
 end
 
@@ -2037,7 +2051,9 @@ local function ResolveAnchorRects(rects, plate)
 
         local layout = rect.anchorLayout;
         local anchorTo = tostring(layout ~= nil and layout.anchorTo or 'Plate');
-        if (layout ~= nil and anchorTo ~= 'Plate' and layout.anchorCollapse ~= false) then
+        local targetKey = anchorMap[anchorTo];
+        local anchorExists = targetKey ~= nil and bounds[targetKey] ~= nil;
+        if (layout ~= nil and anchorTo ~= 'Plate' and layout.anchorCollapse ~= false and anchorExists == true) then
             local anchorPoint = tostring(layout.anchorPoint or 'Center');
             local groupKey = anchorTo .. '\30' .. anchorPoint;
             groups[groupKey] = groups[groupKey] or {
@@ -2071,7 +2087,9 @@ local function ResolveAnchorRects(rects, plate)
 
         if (present[rectKind] ~= true and present[kind] ~= true and fallback ~= nil and fallback.layout ~= nil and fallback.layout.anchorCollapse ~= false) then
             local anchorTo = tostring(fallback.layout.anchorTo or 'Plate');
-            if (anchorTo ~= 'Plate') then
+            local targetKey = anchorMap[anchorTo];
+            local anchorExists = targetKey ~= nil and bounds[targetKey] ~= nil;
+            if (anchorTo ~= 'Plate' and anchorExists == true) then
                 local anchorPoint = tostring(fallback.layout.anchorPoint or 'Center');
                 local slot = ResolveMissingAnchorSlot(kind, bounds, {});
                 if (slot ~= nil) then
@@ -2218,44 +2236,44 @@ local function ResolveAnchorRects(rects, plate)
                     end
 
                     for _, entry in ipairs(entries) do
-                        if (entry.visible == true and entry.rect ~= nil) then
-                            local rect = entry.rect;
-                            local entryBounds = GetEntryBounds(entry);
-                            local groupedRects = entry.rects ~= nil and #entry.rects > 1;
-                            local currentX = groupedRects == true and (tonumber(entryBounds.x) or 0) or (tonumber(rect.drawX1) or 0);
-                            local currentY = groupedRects == true and (tonumber(entryBounds.y) or 0) or (tonumber(rect.drawY1) or 0);
-                            local padding = tonumber(entryBounds.padding) or 0;
-                            local itemW = math.max(0, tonumber(entryBounds.width) or 0);
-                            local itemH = math.max(0, tonumber(entryBounds.height) or 0);
-                            local targetX = currentX;
-                            local targetY = currentY;
-                            local layout = rect.anchorLayout or {};
-                            local fineX = tonumber(layout.offsetX) or 0;
-                            local fineY = tonumber(layout.offsetY) or 0;
-                            local gap = GetEntrySpacing(entry);
+                        local rect = entry.rect;
+                        local entryBounds = GetEntryBounds(entry);
+                        local groupedRects = entry.rects ~= nil and #entry.rects > 1;
+                        local currentX = groupedRects == true and (tonumber(entryBounds.x) or 0) or (rect ~= nil and tonumber(rect.drawX1) or tonumber(entryBounds.x) or 0);
+                        local currentY = groupedRects == true and (tonumber(entryBounds.y) or 0) or (rect ~= nil and tonumber(rect.drawY1) or tonumber(entryBounds.y) or 0);
+                        local padding = tonumber(entryBounds.padding) or 0;
+                        local itemW = math.max(0, tonumber(entryBounds.width) or 0);
+                        local itemH = math.max(0, tonumber(entryBounds.height) or 0);
+                        local targetX = currentX;
+                        local targetY = currentY;
+                        local layout = (rect ~= nil and rect.anchorLayout) or entry.layout or {};
+                        local fineX = tonumber(layout.offsetX) or 0;
+                        local fineY = tonumber(layout.offsetY) or 0;
+                        local gap = GetEntrySpacing(entry);
 
-                            if (axis == 'x') then
-                                if (nearHigh == true) then
-                                    local baseX = cursor - gap - itemW + padding;
-                                    targetX = baseX + fineX;
-                                    cursor = baseX - padding;
-                                else
-                                    local baseX = cursor + gap + padding;
-                                    targetX = baseX + fineX;
-                                    cursor = baseX - padding + itemW;
-                                end
+                        if (axis == 'x') then
+                            if (nearHigh == true) then
+                                local baseX = cursor - gap - itemW + padding;
+                                targetX = baseX + fineX;
+                                cursor = baseX - padding;
                             else
-                                if (nearHigh == true) then
-                                    local baseY = cursor - gap - itemH + padding;
-                                    targetY = baseY + fineY;
-                                    cursor = baseY - padding;
-                                else
-                                    local baseY = cursor + gap + padding;
-                                    targetY = baseY + fineY;
-                                    cursor = baseY - padding + itemH;
-                                end
+                                local baseX = cursor + gap + padding;
+                                targetX = baseX + fineX;
+                                cursor = baseX - padding + itemW;
                             end
+                        else
+                            if (nearHigh == true) then
+                                local baseY = cursor - gap - itemH + padding;
+                                targetY = baseY + fineY;
+                                cursor = baseY - padding;
+                            else
+                                local baseY = cursor + gap + padding;
+                                targetY = baseY + fineY;
+                                cursor = baseY - padding + itemH;
+                            end
+                        end
 
+                        if (entry.visible == true and rect ~= nil) then
                             local shiftX = targetX - currentX;
                             local shiftY = targetY - currentY;
                             if groupedRects == true then
@@ -2731,13 +2749,15 @@ function canvasTexture.GetElementRects(plate)
         local bgH = tonumber(background.height) or 74;
         local bgX = centerX - (bgW * 0.5) + (tonumber(background.offsetX) or 0);
         local bgY = centerY - (bgH * 0.5) + (tonumber(background.offsetY) or 0);
+        local borderSize = math.max(0, tonumber(background.borderSize) or 0);
+        local border = math.min(borderSize, math.floor(math.min(bgW, bgH) * 0.5));
 
         AddRect(
             rects,
-            bgX,
-            bgY,
-            bgW,
-            bgH,
+            bgX - border,
+            bgY - border,
+            bgW + (border * 2),
+            bgH + (border * 2),
             0,
             'background',
             background
@@ -3429,15 +3449,23 @@ function canvasTexture.Render(plate, key, renderSignature)
             DrawExtraBars(false);
             DrawForegroundExtraBarLabels();
 
-            local hpTextRect = FindRect(elementRects, 'hp');
-            if (plate.hpBar ~= nil and hpTextRect ~= nil and hpTextRect.anchorOnly ~= true and tostring(plate.hpBar.text or '') ~= '') then
-                local hpBorderSize = math.max(0, tonumber(plate.hpBar.borderSize) or 0);
-                local hpTextX = (tonumber(hpTextRect.drawX1) or tonumber(hpTextRect.x1) or 0) + hpBorderSize;
-                local hpTextY = (tonumber(hpTextRect.drawY1) or tonumber(hpTextRect.y1) or 0) + hpBorderSize;
-                local hpTextW = math.max(1, (tonumber(hpTextRect.drawX2) or tonumber(hpTextRect.x2) or hpTextX) - hpTextX - hpBorderSize);
-                local hpTextH = math.max(1, (tonumber(hpTextRect.drawY2) or tonumber(hpTextRect.y2) or hpTextY) - hpTextY - hpBorderSize);
-                DrawBarLabel(device, hpTextX, hpTextY, hpTextW, hpTextH, plate.hpBar);
+            local function DrawForegroundBarLabel(kind, bar)
+                local textRect = FindRect(elementRects, kind);
+                if (bar == nil or textRect == nil or textRect.anchorOnly == true or tostring(bar.text or '') == '') then
+                    return;
+                end
+
+                local borderSize = math.max(0, tonumber(bar.borderSize) or 0);
+                local textX = (tonumber(textRect.drawX1) or tonumber(textRect.x1) or 0) + borderSize;
+                local textY = (tonumber(textRect.drawY1) or tonumber(textRect.y1) or 0) + borderSize;
+                local textW = math.max(1, (tonumber(textRect.drawX2) or tonumber(textRect.x2) or textX) - textX - borderSize);
+                local textH = math.max(1, (tonumber(textRect.drawY2) or tonumber(textRect.y2) or textY) - textY - borderSize);
+                DrawBarLabel(device, textX, textY, textW, textH, bar);
             end
+
+            DrawForegroundBarLabel('hp', plate.hpBar);
+            DrawForegroundBarLabel('mp', plate.mpBar);
+            DrawForegroundBarLabel('tp', plate.tpBar);
 
             local badgeOccurrences = {};
 

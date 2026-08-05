@@ -80,6 +80,10 @@ local aceTownZoneIds = {
     [257] = true, -- Eastern Adoulin
 };
 
+local quickMenuTownZoneIds = {
+    [222] = true, -- Provenance
+};
+
 local function GetNow()
     return os.clock();
 end
@@ -500,6 +504,10 @@ end
 
 function jobChange.IsTownZone()
     return IsAceTownZone() == true;
+end
+
+function jobChange.IsQuickMenuTownZone()
+    return IsAceTownZone() == true or quickMenuTownZoneIds[GetCurrentZoneId()] == true;
 end
 
 function jobChange.CanUseAceTownMog()

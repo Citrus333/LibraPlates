@@ -42,10 +42,6 @@ function nativeUiPolicy.ShowNativeParty()
 end
 
 function nativeUiPolicy.UseNativeTargetingSystem()
-    if (ForceNativeUi() == true) then
-        return true;
-    end
-
     local settings = GetTargetingSettings();
 
     if (settings.hideNativePartyTargetUi == true) then

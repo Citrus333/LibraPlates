@@ -46,6 +46,7 @@ local MOVEFILE_WRITE_THROUGH = 0x00000008;
 local SerializeValue = nil;
 local CopyTable = nil;
 local ApplyLoadedWorldEnabled = nil;
+local CreateDefaultProfile = nil;
 
 -- ============================================================
 -- Lifecycle
@@ -119,6 +120,10 @@ end
 
 local function GetPresetsFolder()
     return GetAddonFolder() .. '\\' .. profilesFolderName .. '\\' .. presetsFolderName;
+end
+
+local function GetDefaultProfilePath()
+    return GetAddonFolder() .. '\\' .. profilesFolderName .. '\\default.lua';
 end
 
 local function GetProfileDataPath(characterProfileName, userProfileName)
@@ -606,10 +611,7 @@ local function LoadActiveUserProfile()
         return true;
     end
 
-    state.profile = {
-        global = {},
-        plates = {},
-    };
+    state.profile = CreateDefaultProfile();
     metadata.modified = GetTimestamp();
 
     return false;
@@ -630,8 +632,16 @@ local function InstallProfileSystem(characterProfileName, sourceProfile, sourceP
 
     local profileName = defaultUserProfileName;
     local profilePath = GetProfileDataPath(characterProfileName, profileName);
+    local installProfile = sourceProfile;
 
-    if (ReadFileSize(profilePath) <= 0 and WriteLuaTableFile(profilePath, sourceProfile) ~= true) then
+    if (
+        type(sourceProfile.global) == 'table' and next(sourceProfile.global) == nil and
+        type(sourceProfile.plates) == 'table' and next(sourceProfile.plates) == nil
+    ) then
+        installProfile = CreateDefaultProfile();
+    end
+
+    if (ReadFileSize(profilePath) <= 0 and WriteLuaTableFile(profilePath, installProfile) ~= true) then
         return false;
     end
 
@@ -639,7 +649,7 @@ local function InstallProfileSystem(characterProfileName, sourceProfile, sourceP
     state.profileManifest = CreateDefaultManifest(profileName);
     state.profileManifest.migratedAt = GetTimestamp();
     state.profileManifest.migratedFrom = sourcePath ~= nil and tostring(sourcePath) or 'generated';
-    state.profile = CopyTable(sourceProfile);
+    state.profile = CopyTable(installProfile);
     SetActiveUserProfileName(profileName);
     SaveProfileManifest();
     ApplyLoadedWorldEnabled(state.profile);
@@ -876,7 +886,7 @@ function state.Load()
     else
         state.profileManifest = CreateDefaultManifest(defaultUserProfileName);
         SetActiveUserProfileName(defaultUserProfileName);
-        state.profile = nil;
+        state.profile = CreateDefaultProfile();
     end
 
     ApplyLoadedWorldEnabled(state.profile);
@@ -1043,10 +1053,7 @@ function state.GetProfile()
     end
 
     if (state.profile == nil) then
-        state.profile = {
-            global = {},
-            plates = {},
-        };
+        state.profile = CreateDefaultProfile();
     end
 
     if (type(state.profile.global) ~= 'table') then
@@ -1135,6 +1142,31 @@ end
 
 function state.GetProfileNames()
     local manifest = state.GetProfileManifest();
+    local changed = false;
+
+    for _, entry in ipairs(GetDirectoryEntries(GetProfilesFolder(state.characterProfileName))) do
+        local fileName = GetDirectoryEntryName(entry):gsub('^.*[\\/]', '');
+
+        if (fileName:lower():match('%.lua$') ~= nil and fileName:lower():find('%.before%-') == nil) then
+            local profileId = SanitizeProfilePart(fileName:gsub('%.lua$', ''));
+
+            if (profileId ~= nil and type(manifest.profiles[profileId]) ~= 'table') then
+                manifest.profiles[profileId] = {
+                    name = profileId,
+                    file = GetProfileRelativePath(profileId),
+                    version = profileSystemVersion,
+                    created = GetTimestamp(),
+                    modified = GetTimestamp(),
+                };
+                changed = true;
+            end
+        end
+    end
+
+    if (changed == true) then
+        SaveProfileManifest();
+    end
+
     local names = {};
 
     for name, metadata in pairs(manifest.profiles or {}) do
@@ -1206,6 +1238,19 @@ end
 
 function state.GetPreset(presetName)
     return LoadPreset(presetName);
+end
+
+CreateDefaultProfile = function()
+    local profile = LoadLuaTableFile(GetDefaultProfilePath());
+
+    if (IsSettingsProfile(profile) == true) then
+        return CopyTable(profile);
+    end
+
+    return {
+        global = {},
+        plates = {},
+    };
 end
 
 function state.GetPresetCopyName(presetName)
@@ -1580,10 +1625,7 @@ function state.ResetProfile(profileName)
 
     CopyFile(profilePath, GetProfileBackupPath(state.characterProfileName, profileId));
 
-    local fresh = {
-        global = {},
-        plates = {},
-    };
+    local fresh = CreateDefaultProfile();
 
     if (WriteLuaTableFile(profilePath, fresh) ~= true) then
         return false, 'Profile reset failed.';

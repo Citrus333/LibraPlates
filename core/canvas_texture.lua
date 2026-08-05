@@ -1988,7 +1988,10 @@ local function ResolveAnchorRects(rects, plate)
                 };
                 local anchorTo = tostring(layout.anchorTo or 'Plate');
                 local targetKey = anchorMap[anchorTo];
-                local fallbackTarget = (hasFallbacks == true and targetKey ~= nil and bounds[targetKey] == nil) and ResolveMissingAnchorSlot(anchorTo, bounds) or nil;
+                -- Fallback rects are for preserving hidden auto-stack sibling slots.
+                -- A visible child anchored to a disabled/missing parent should fall back
+                -- to its own plate-relative default rect instead of chasing an invisible parent.
+                local fallbackTarget = nil;
                 local resolved = nil;
 
                 if (fallbackTarget ~= nil) then
@@ -2246,29 +2249,26 @@ local function ResolveAnchorRects(rects, plate)
                         local itemH = math.max(0, tonumber(entryBounds.height) or 0);
                         local targetX = currentX;
                         local targetY = currentY;
-                        local layout = (rect ~= nil and rect.anchorLayout) or entry.layout or {};
-                        local fineX = tonumber(layout.offsetX) or 0;
-                        local fineY = tonumber(layout.offsetY) or 0;
                         local gap = GetEntrySpacing(entry);
 
                         if (axis == 'x') then
                             if (nearHigh == true) then
                                 local baseX = cursor - gap - itemW + padding;
-                                targetX = baseX + fineX;
+                                targetX = baseX;
                                 cursor = baseX - padding;
                             else
                                 local baseX = cursor + gap + padding;
-                                targetX = baseX + fineX;
+                                targetX = baseX;
                                 cursor = baseX - padding + itemW;
                             end
                         else
                             if (nearHigh == true) then
                                 local baseY = cursor - gap - itemH + padding;
-                                targetY = baseY + fineY;
+                                targetY = baseY;
                                 cursor = baseY - padding;
                             else
                                 local baseY = cursor + gap + padding;
-                                targetY = baseY + fineY;
+                                targetY = baseY;
                                 cursor = baseY - padding + itemH;
                             end
                         end

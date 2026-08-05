@@ -1265,9 +1265,9 @@ end
 
 function LibraPlatesSettingsAddWidgetCopySource(sources, currentEntity, currentState, entity, stateName, widgetName)
     local storageEntity = GetStorageEntity(entity);
-    local storageState = GetStorageState(stateName);
+    local storageState = GetWidgetStorageState(entity, stateName, widgetName);
     local currentStorageEntity = GetStorageEntity(currentEntity);
-    local currentStorageState = GetStorageState(currentState);
+    local currentStorageState = GetWidgetStorageState(currentEntity, currentState, widgetName);
     local storageWidget = widgetKeys[tostring(widgetName or '')] or tostring(widgetName or '');
     local entityName = NormalizeEntityName(entity);
     local state = tostring(stateName or '');
@@ -2326,10 +2326,20 @@ _G.LibraPlatesSettingsGetAnchorChoices = function(entityName, stateName, widgetN
         return false;
     end
 
+    local function IsAnchorParentEnabled(candidate)
+        if (candidate == currentAnchor) then
+            return true;
+        end
+
+        local candidateSettings = GetAnchorHierarchySettings(entityName, stateName, candidate);
+        return candidateSettings ~= nil and candidateSettings.enabled == true;
+    end
+
     for _, candidate in ipairs(editWidgetsForContext) do
         if (
             candidate ~= widgetName and
             IsAnchorableWidget(candidate) == true and
+            IsAnchorParentEnabled(candidate) == true and
             (candidate == currentAnchor or WouldCreateCycle(candidate) ~= true)
         ) then
             choices[#choices + 1] = candidate;
@@ -11468,6 +11478,16 @@ local function DrawGeneralVisibilitySection(settings)
             local stackGap, stackGapChanged = DrawVisibilityNumber('Stack padding', settings.plateStackGap or 10, 'PlateStackGap', 0, 20, 1, 'Controls how much space stacking keeps around plates. 0 allows a little overlap; 10 uses the plate/click area; 20 adds extra space.');
             if (stackGapChanged == true) then
                 settings.plateStackGap = math.max(0, math.min(20, math.floor((tonumber(stackGap) or 10) + 0.5)));
+            end
+
+            local horizontalOverlap, horizontalOverlapChanged = DrawVisibilityNumber('Horizontal overlap', settings.plateStackHorizontalOverlap or 2, 'PlateStackHorizontalOverlap', 0, 80, 1, 'Allows stacked plate click areas to overlap horizontally before they push apart.');
+            if (horizontalOverlapChanged == true) then
+                settings.plateStackHorizontalOverlap = math.max(0, math.min(80, math.floor((tonumber(horizontalOverlap) or 2) + 0.5)));
+            end
+
+            local verticalOverlap, verticalOverlapChanged = DrawVisibilityNumber('Vertical overlap', settings.plateStackVerticalOverlap or 2, 'PlateStackVerticalOverlap', 0, 80, 1, 'Allows stacked plate click areas to overlap vertically before they push apart.');
+            if (verticalOverlapChanged == true) then
+                settings.plateStackVerticalOverlap = math.max(0, math.min(80, math.floor((tonumber(verticalOverlap) or 2) + 0.5)));
             end
 
             local travelSpeed, travelSpeedChanged = DrawVisibilityNumber('Stack travel speed', settings.plateStackTravelSpeed or 14, 'PlateStackTravelSpeed', 1, 40, 1, 'How quickly stacked plates travel to their new position. Lower is smoother/slower; higher is snappier.');

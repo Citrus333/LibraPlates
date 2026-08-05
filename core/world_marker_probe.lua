@@ -4225,8 +4225,8 @@ local function ApplyScreenPlateStacking(drawablePlates)
     local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
     local stackTypes = type(settings.plateStackingTypes) == 'table' and settings.plateStackingTypes or {};
     local stackPadding = math.max(0, math.min(20, math.floor((tonumber(settings.plateStackGap) or 10) + 0.5))) - 10;
-    local horizontalAllowance = 0;
-    local verticalAllowance = 0;
+    local horizontalAllowance = math.max(0, math.min(80, math.floor((tonumber(settings.plateStackHorizontalOverlap) or 0) + 0.5)));
+    local verticalAllowance = math.max(0, math.min(80, math.floor((tonumber(settings.plateStackVerticalOverlap) or 0) + 0.5)));
     local gap = 0;
     local stackEntries = {};
 
@@ -4528,7 +4528,6 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
         local plateWorldWidth = (tonumber(style.plateWorldWidth) or 0.84) * plateScale;
         local plateWorldHeight = (tonumber(style.plateWorldHeight) or 0.315) * plateScale;
         plateX, plateY, plateZ = worldMarkerProbe._ApplyCanvasCropWorldOffset(device, style.plateTextureId, plateX, plateY, plateZ, plateWorldWidth, plateWorldHeight);
-
         if (worldMarkerProbe._IsObjectWorldPointInFrontOfCamera(device, plate, plateX, plateY, plateZ) ~= true) then
             -- Some static door actors return a valid exact nameplate anchor
             -- for one frame and then a behind-camera offset while remaining
@@ -6007,8 +6006,8 @@ function worldMarkerProbe.DrawRawClickDebug()
     end
 
     for _, entry in ipairs(clickRects) do
-        local alpha = 0.01;
-        local color = (entry.targetType == 'enemy') and { 1.0, 0.35, 0.0, alpha } or { 1.0, 0.0, 1.0, alpha };
+        local alpha = 0.65;
+        local color = (entry.targetType == 'enemy') and { 1.0, 0.35, 0.0, alpha } or { 0.25, 0.9, 1.0, alpha };
 
         for _, rect in ipairs(entry.rects or {}) do
             drawList:AddRect(
@@ -6017,7 +6016,7 @@ function worldMarkerProbe.DrawRawClickDebug()
                 imguiApi.GetColorU32(color),
                 0,
                 0,
-                1
+                2
             );
         end
     end

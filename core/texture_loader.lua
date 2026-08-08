@@ -44,6 +44,10 @@ local function IsDetachedArtworkPath(path)
     return string.find(normalized, '\\detached\\', 1, true) ~= nil;
 end
 
+local function IsPngPath(path)
+    return string.match(string.lower(tostring(path or '')), '%.png$') ~= nil;
+end
+
 local function LoadWithColorKey(path, colorKey, cacheKey)
     path = tostring(path or '');
 
@@ -115,7 +119,7 @@ function textureLoader.ClearCache()
 end
 
 function textureLoader.Load(path)
-    if (IsDetachedArtworkPath(path)) then
+    if (IsDetachedArtworkPath(path) or IsPngPath(path)) then
         return LoadWithColorKey(path, 0, GetCacheKey(path, true));
     end
 

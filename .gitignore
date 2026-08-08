@@ -10,6 +10,7 @@ tmp/
 *.DAT
 test-logs/
 .codex-gif-frames/
+tools/
 npc_icons_long_notes.csv
 npc_list.sql
 restore-points/

@@ -437,10 +437,13 @@ Involved in Missions:\
         },
         ["Scavnix"] = {
             ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
-            ["note"] = "Notes:\
-* Located under the bridge, down the ramp at H-4.",
-            ["type"] = "Standard Merchant",
+            ["icon"] = "ChipMechant.png",
+            ["note"] = "Starts Quests:\
+* Strange Apparatus\
+Notes:\
+* Sells colored chips for 21,000 gil each.\
+* Open daily from 11:00 to 22:00.",
+            ["type"] = "Chip Merchant",
         },
         ["Selh'teus"] = {
             ["_source"] = "npc",

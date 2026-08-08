@@ -26,6 +26,7 @@ local chevronMinEdgeSpacing = 28;
 local chevronMaxEdgeSpacing = 280;
 local lastDebug = 'target overlay has not drawn yet';
 local lastNativeHideDebug = 'native hide gate has not run yet';
+local lastAlwaysVisibleDebug = 'always-visible plates have not drawn yet';
 local DrawImage;
 local bstMainJobId = 9;
 local smnMainJobId = 15;
@@ -437,7 +438,7 @@ local function ResolveEntityContext(index)
     elseif (IsPartyMemberIndex(index) == true and (tonumber(index) == nil or tonumber(index) < 1024 or tonumber(index) > 1791)) then
         entityName = 'Trust';
         targetType = 'trust';
-    elseif (tonumber(index) ~= nil and tonumber(index) >= 1024 and tonumber(index) <= 1791) then
+    elseif (entities.IsRealPlayerActorIndex(index) == true) then
         entityName = 'PC';
         targetType = 'pc';
     elseif (entities.GetEnemy(index, true) ~= nil) then
@@ -601,7 +602,36 @@ local function DrawFallbackCorners(drawList, cx, cy, settings, tint)
 end
 
 local function DrawAlwaysVisiblePlates(drawList)
+    local pushedClip = false;
+    local total = 0;
+    local drawn = 0;
+    local skipped = 0;
+    local selfDrawn = 0;
+    local selfRect = 'none';
+
+    if (drawList ~= nil and drawList.PopClipRect ~= nil and drawList.PushClipRect ~= nil) then
+        local width = 2560;
+        local height = 1440;
+
+        if (imgui.GetIO ~= nil) then
+            pcall(function()
+                local io = imgui.GetIO();
+                if (io ~= nil and io.DisplaySize ~= nil) then
+                    width = tonumber(io.DisplaySize.x or io.DisplaySize.X or io.DisplaySize[1]) or width;
+                    height = tonumber(io.DisplaySize.y or io.DisplaySize.Y or io.DisplaySize[2]) or height;
+                end
+            end);
+        end
+
+        drawList:PushClipRect({ 0, 0 }, { width, height }, false);
+        pushedClip = true;
+    elseif (drawList ~= nil and drawList.PopClipRect ~= nil and drawList.PushClipRectFullScreen ~= nil) then
+        drawList:PushClipRectFullScreen();
+        pushedClip = true;
+    end
+
     for _, plate in ipairs(worldMarkerProbe.GetAlwaysVisiblePlates()) do
+        total = total + 1;
         local rect = plate.rect;
         local textureId = tonumber(plate.textureId);
         if (
@@ -631,6 +661,17 @@ local function DrawAlwaysVisiblePlates(drawList)
                 { 1, 1 },
                 0xFFFFFFFF
             );
+            drawn = drawn + 1;
+            if (tostring(plate.targetType or '') == 'self') then
+                selfDrawn = selfDrawn + 1;
+                selfRect = string.format(
+                    '%.1f,%.1f,%.1f,%.1f',
+                    tonumber(rect.x1) or 0,
+                    tonumber(rect.y1) or 0,
+                    tonumber(rect.x2) or 0,
+                    tonumber(rect.y2) or 0
+                );
+            end
 
             local animatedMarker = plate.animatedTargetMarker;
             local function DrawAnimatedComponent(component)
@@ -679,8 +720,22 @@ local function DrawAlwaysVisiblePlates(drawList)
                 drawList:AddRectFilled({ cx - 5, cy - 5 }, { cx + 5, cy + 5 }, 0xFFFF2020);
                 drawList:AddRect({ cx - 8, cy - 8 }, { cx + 8, cy + 8 }, 0xFFFFFF00, 0, 0, 2);
             end
+        else
+            skipped = skipped + 1;
         end
     end
+
+    if (pushedClip == true) then
+        drawList:PopClipRect();
+    end
+
+    lastAlwaysVisibleDebug =
+        'alwaysVisible total=' .. tostring(total) ..
+        ' drawn=' .. tostring(drawn) ..
+        ' skipped=' .. tostring(skipped) ..
+        ' selfDrawn=' .. tostring(selfDrawn) ..
+        ' selfRect=' .. tostring(selfRect) ..
+        ' pushedClip=' .. tostring(pushedClip);
 end
 
 local function DrawObjectTargetInfo(drawList, index)
@@ -1355,7 +1410,7 @@ function targetOverlay.Render()
 end
 
 function targetOverlay.GetDebugStatus()
-    return lastDebug;
+    return tostring(lastDebug) .. ' ' .. tostring(lastAlwaysVisibleDebug);
 end
 
 function targetOverlay.GetNativeHideDebugStatus()

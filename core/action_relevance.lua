@@ -51,7 +51,7 @@ end
 function actionRelevance.IsPcIndex(index)
     index = tonumber(index) or 0;
 
-    return index >= 1024 and index <= 1791;
+    return entities.IsRealPlayerActorIndex(index) == true;
 end
 
 function actionRelevance.IsPartyOrAllianceIndex(index)

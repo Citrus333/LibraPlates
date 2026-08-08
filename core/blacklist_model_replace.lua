@@ -1810,17 +1810,9 @@ local function CachePlayerPacket(player, e)
     };
     local nameKey = NormalizeName(player.name);
     local idKey = ServerIdKey(player.serverId);
-    local settings = playerBlacklist.GetModelReplaceSettings();
 
     if (nameKey ~= '') then
         cachedPlayerPacketsByName[nameKey] = cacheEntry;
-        settings.modelReplacePacketCache[nameKey] = {
-            bytes = ClonePacketBytes(packetBytes),
-            savedAt = cacheEntry.savedAt,
-            name = cacheEntry.name,
-            serverId = cacheEntry.serverId,
-        };
-        state.SaveThrottled(2.0);
     end
 
     if (idKey ~= nil) then
@@ -1830,25 +1822,6 @@ end
 
 local function GetCachedPlayerPacket(playerOrName)
     local function GetSavedByName(name)
-        local nameKey = NormalizeName(name);
-
-        if (nameKey == '') then
-            return nil;
-        end
-
-        local settings = playerBlacklist.GetModelReplaceSettings();
-        local saved = type(settings.modelReplacePacketCache) == 'table' and settings.modelReplacePacketCache[nameKey] or nil;
-
-        if (type(saved) == 'table' and type(saved.bytes) == 'table') then
-            return {
-                bytes = ClonePacketBytes(saved.bytes),
-                at = os.clock(),
-                savedAt = tonumber(saved.savedAt) or 0,
-                name = tostring(saved.name or name or ''),
-                serverId = tonumber(saved.serverId) or 0,
-            };
-        end
-
         return nil;
     end
 
@@ -2297,7 +2270,6 @@ function blacklistModelReplace.HandlePacketIn(e)
     local packetLength = GetWritablePacketByteLength(e);
     local name = HasFlag(sendFlag, 0x08) == true and ReadName(ffiRef, packet, packetLength) or '';
     local player = GetEntityPlayer(actIndex, serverId, name);
-    CachePlayerPacket(player, e);
     local entry = playerBlacklist.GetEntry(player);
     local queuedCostume = nil;
     local queuedLook = nil;
@@ -2364,6 +2336,10 @@ function blacklistModelReplace.HandlePacketIn(e)
             ' ' .. GetRawEntityCostumeSummary(actIndex) ..
             ' bytes=' .. FormatPacketBytes(data, 96)
         );
+    end
+
+    if (entry ~= nil) then
+        CachePlayerPacket(player, e);
     end
 
     if (queuedLook ~= nil) then

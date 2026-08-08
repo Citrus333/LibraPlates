@@ -490,10 +490,8 @@ Involved in Missions:\
             ["icon"] = "ChipMechant.png",
             ["note"] = "Starts Quests:\
 * Strange Apparatus\
-\
 Notes:\
-* Sells colored chips for 21,000 gil\
-each.\
+* Sells colored chips for 21,000 gil each.\
 * Open daily from 11:00 to 22:00.",
             ["type"] = "Chip Merchant",
         },

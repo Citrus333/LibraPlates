@@ -45,6 +45,7 @@ local MOVEFILE_REPLACE_EXISTING = 0x00000001;
 local MOVEFILE_WRITE_THROUGH = 0x00000008;
 local SerializeValue = nil;
 local CopyTable = nil;
+local SanitizeValueForSerialization = nil;
 local ApplyLoadedWorldEnabled = nil;
 local CreateDefaultProfile = nil;
 
@@ -462,9 +463,14 @@ local function WriteSerializedLuaFile(path, serialized, validator)
 end
 
 local function WriteLuaTableFile(path, value)
+    local writeValue = value;
+    if (type(SanitizeValueForSerialization) == 'function') then
+        writeValue = SanitizeValueForSerialization(value);
+    end
+
     return WriteSerializedLuaFile(
         path,
-        'return ' .. SerializeValue(value, 0) .. '\n',
+        'return ' .. SerializeValue(writeValue, 0) .. '\n',
         function(loaded)
             return type(loaded) == 'table';
         end
@@ -740,6 +746,35 @@ CopyTable = function(value)
     return copy;
 end
 
+local function StripRuntimeOnlyProfileData(value)
+    if (type(value) ~= 'table') then
+        return;
+    end
+
+    -- This cache contains live packet/model data for seen players.  It is
+    -- runtime-only and must never be persisted into user profiles or shipped
+    -- preset/default profiles.
+    if (value.modelReplacePacketCache ~= nil) then
+        value.modelReplacePacketCache = {};
+    end
+
+    for _, child in pairs(value) do
+        if (type(child) == 'table') then
+            StripRuntimeOnlyProfileData(child);
+        end
+    end
+end
+
+SanitizeValueForSerialization = function(value)
+    if (type(value) ~= 'table') then
+        return value;
+    end
+
+    local clean = CopyTable(value);
+    StripRuntimeOnlyProfileData(clean);
+    return clean;
+end
+
 local defaultBarBackgroundColor = { 0.255, 0.255, 0.255, 0.95 };
 
 local function ColorsMatch(left, right)
@@ -931,7 +966,7 @@ function state.Save()
         return false;
     end
 
-    local serialized = 'return ' .. SerializeValue(profile, 0) .. '\n';
+    local serialized = 'return ' .. SerializeValue(SanitizeValueForSerialization(profile), 0) .. '\n';
     local oldSize = ReadFileSize(state.activeProfilePath);
     local newSize = string.len(serialized);
 

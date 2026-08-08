@@ -73,8 +73,13 @@ can no longer use.",
         },
         ["Blabbivix"] = {
             ["_source"] = "npc",
-            ["icon"] = "Merchant.png",
-            ["type"] = "Merchant",
+            ["icon"] = "ChipMechant.png",
+            ["note"] = "Starts Quests:\
+* Strange Apparatus\
+Notes:\
+* Sells colored chips for 21,000 gil each.\
+* Open daily from 11:00 to 22:00.",
+            ["type"] = "Chip Merchant",
         },
         ["Blayne"] = {
             ["_source"] = "npc",

@@ -433,6 +433,26 @@ function entities.GetEntity(index)
     end);
 end
 
+function entities.IsRealPlayerActorIndex(index)
+    index = tonumber(index);
+
+    if (IsPlayerIndexRange(index) ~= true) then
+        return false;
+    end
+
+    local entityManager = entities.GetEntityManager();
+    local ent = entities.GetEntity(index);
+
+    if (entityManager == nil or ent == nil or ent.Name == nil or ent.Name == '') then
+        return false;
+    end
+
+    return
+        IsPlayerActorEntity(ent, index) == true and
+        IsObjectCostumePlayer(entityManager, index, ent) ~= true and
+        IsCampaignBattleActor(entityManager, index, ent) ~= true;
+end
+
 function entities.GetBone(actorPointer, bone)
     return GetBone(actorPointer, bone);
 end
@@ -1547,6 +1567,15 @@ function entities.GetNearbyTrusts(maxDistance)
     local maxDistanceSq = (tonumber(maxDistance) or 50) * (tonumber(maxDistance) or 50);
     local entityManager = AshitaCore:GetMemoryManager():GetEntity();
     local partyIndexes = nil;
+    local mogHouseObjectSuppressionArea = entities.IsMogHouseObjectSuppressionArea() == true;
+
+    local function IsMogHouseServiceMoogle(ent)
+        if (mogHouseObjectSuppressionArea ~= true or ent == nil) then
+            return false;
+        end
+
+        return tostring(ent.Name or ''):gsub('\170', '') == 'Moogle';
+    end
 
     if (entityManager == nil) then
         return results;
@@ -1560,6 +1589,7 @@ function entities.GetNearbyTrusts(maxDistance)
                 ent ~= nil and
                 ent.Name ~= nil and
                 ent.Name ~= '' and
+                IsMogHouseServiceMoogle(ent) ~= true and
                 ent.Distance ~= nil and
                 ent.Distance <= maxDistanceSq and
                 IsTrustStatusAllowed(ent.Status) == true and
@@ -1978,10 +2008,15 @@ function entities.GetNearbyNpcObjects(maxDistance, isKnownNpcObject)
         local inPlayerIndexRange = index >= 1024 and index <= 1791;
         local isCurrentTargetContext = tonumber(index) == tonumber(targetIndex) or tonumber(index) == tonumber(subTargetIndex);
         local isMob = ent ~= nil and IsMobIndex(entityManager, index) == true;
-        local allowTargetedNpcObject = isCurrentTargetContext == true and isMob ~= true;
+        local objectCostumePlayer = ent ~= nil and inPlayerIndexRange == true and IsObjectCostumePlayer(entityManager, index, ent) == true;
+        local isRealPlayerActor = ent ~= nil
+            and inPlayerIndexRange == true
+            and objectCostumePlayer ~= true
+            and IsPlayerActorEntity(ent, index) == true;
+        local allowTargetedNpcObject = isCurrentTargetContext == true and isMob ~= true and isRealPlayerActor ~= true;
         local cleanName = tostring(ent ~= nil and ent.Name or ''):gsub('\170', '');
         local rawEntityType = ent ~= nil and ((ent.Type == 2 or ent.Type == 3) and 'Object' or 'NPC') or 'NPC';
-        local allowKnownNpcObject = isMob ~= true and SafeCall(false, function()
+        local allowKnownNpcObject = isMob ~= true and isRealPlayerActor ~= true and SafeCall(false, function()
             return ent ~= nil and cleanName ~= '' and
                 type(isKnownNpcObject) == 'function' and
                 isKnownNpcObject(cleanName, rawEntityType, index) == true;
@@ -1991,6 +2026,7 @@ function entities.GetNearbyNpcObjects(maxDistance, isKnownNpcObject)
 
         if (ent ~= nil and inPlayerIndexRange == true) then
             allowPlayerRangeNpcObject =
+                isRealPlayerActor ~= true and
                 (ent.HPPercent == nil or isCurrentTargetContext == true) and
                 (IsNpcObjectStatusAllowed(ent.Status) == true or allowNonstandardNpcObject == true);
         end
@@ -2149,11 +2185,14 @@ function entities.GetEntityDebugInfo(index, maxDistance)
     local isCurrentTargetContext =
         targetIndex == tonumber(currentTargetIndex) or
         targetIndex == tonumber(currentSubTargetIndex);
-    local allowTargetedNpcObject = isCurrentTargetContext == true and isMob ~= true;
     local isParty = entities.IsPartyMemberIndex(targetIndex);
     local actorPointer = SafeCall(nil, function() return entityManager:GetActorPointer(targetIndex); end);
     local invisibleActor = IsInvisiblePlayerActor(entityManager, targetIndex, actorPointer);
     local objectCostumePlayer = IsObjectCostumePlayer(entityManager, targetIndex, ent);
+    local isRealPlayerActor = IsPlayerIndexRange(targetIndex) == true
+        and objectCostumePlayer ~= true
+        and IsPlayerActorEntity(ent, targetIndex) == true;
+    local allowTargetedNpcObject = isCurrentTargetContext == true and isMob ~= true and isRealPlayerActor ~= true;
     local visible = IsVisibleEntity(entityManager, targetIndex, false);
     local visibleWithSkeleton = IsVisibleEntity(entityManager, targetIndex, true);
     local mogHouseFurniturePlaceholder = IsMogHouseFurniturePlaceholder(entityManager, targetIndex, ent);

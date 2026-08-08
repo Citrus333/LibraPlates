@@ -1126,6 +1126,10 @@ local function GetNameWidgetEntityName(entity, targetIndex, isEnemy)
         return 'Enemy';
     end
 
+    if (entities.IsRealPlayerActorIndex(targetIndex) == true) then
+        return 'PC';
+    end
+
     local rawEntityName = 'NPC';
     if (entity ~= nil and (tonumber(entity.Type) == 2 or tonumber(entity.Type) == 3)) then
         rawEntityName = 'Object';

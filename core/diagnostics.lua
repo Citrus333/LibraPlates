@@ -388,7 +388,7 @@ function diagnostics.Update()
             autoRunning = false;
             WriteLine('auto complete');
             diagnostics.Stop();
-            log.Info('Lag diagnostics done. Say k and I will check the latest log.');
+            log.Info('Lag diagnostics done. Check the generated diagnostics log for details.');
             return;
         end
     end

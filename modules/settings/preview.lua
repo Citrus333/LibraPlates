@@ -1397,7 +1397,7 @@ local function AddStatusPreviewIcons(icons, settings, statusIds, kind)
     local iconsPerRow = math.max(1, math.min(24, tonumber(settings.iconsPerRow) or 6));
     local iconSize = math.max(6, math.min(256, tonumber(settings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(settings.iconSpacing) or 2));
-    local rowSpacing = math.max(0, math.min(32, tonumber(settings.rowSpacing) or 2));
+    local rowSpacing = math.max(0, math.min(80, tonumber(settings.rowSpacing) or 2));
     local rowHeight = iconSize + rowSpacing;
     local growLeft = tostring(settings.growthDirection or 'Right') == 'Left';
     local anchored = tostring(settings.anchorTo or 'Plate') ~= 'Plate';
@@ -2251,6 +2251,7 @@ local function BuildSmnPetPreviewPlate(stateName, nameSettings, backgroundSettin
             backgroundColor = castBarSettings.backgroundColor or castBarDefaults.backgroundColor,
             borderColor = castBarSettings.borderColor or castBarDefaults.borderColor,
             borderSize = tonumber(castBarSettings.borderSize) or castBarDefaults.borderSize,
+            cornerRadius = tonumber(castBarSettings.cornerRadius) or castBarDefaults.cornerRadius or 0,
             anchorTo = castBarSettings.anchorTo or castBarDefaults.anchorTo,
             anchorPoint = castBarSettings.anchorPoint or castBarDefaults.anchorPoint,
             anchorCollapse = castBarSettings.anchorCollapse,
@@ -2686,6 +2687,7 @@ local function BuildPlate(entityName, stateName, context)
             backgroundColor = castBarSettings.backgroundColor or { 0.05, 0.05, 0.05, 0.85 },
             borderColor = castBarSettings.borderColor or { 0.0, 0.0, 0.0, 1.0 },
             borderSize = tonumber(castBarSettings.borderSize) or 0,
+            cornerRadius = tonumber(castBarSettings.cornerRadius) or castBarDefaults.cornerRadius or 0,
             anchorTo = castBarSettings.anchorTo or castBarDefaults.anchorTo,
             anchorPoint = castBarSettings.anchorPoint or castBarDefaults.anchorPoint,
             anchorCollapse = castBarSettings.anchorCollapse,

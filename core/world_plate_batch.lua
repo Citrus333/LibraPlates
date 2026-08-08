@@ -428,9 +428,7 @@ local function ApplyState(device)
     device:SetRenderState(D3DRS_ZENABLE, 1);
     device:SetRenderState(D3DRS_ZWRITEENABLE, 1);
     device:SetRenderState(D3DRS_ZBIAS, 8);
-    device:SetRenderState(D3DRS_ALPHATESTENABLE, 1);
-    device:SetRenderState(D3DRS_ALPHAREF, 0x20);
-    device:SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);
+    device:SetRenderState(D3DRS_ALPHATESTENABLE, 0);
     device:SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
     device:SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
     device:SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);

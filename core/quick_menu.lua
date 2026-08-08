@@ -1,4 +1,6 @@
 local imgui = require('imgui');
+local ffi = require('ffi');
+local d3d8 = require('d3d8');
 local state = require('core.state');
 local globalDefaults = require('config.global');
 local textureLoader = require('core.texture_loader');
@@ -24,11 +26,14 @@ local pendingInviteUntil = 0;
 local partyInviteDuration = 300;
 local pendingPartyRequestUntil = 0;
 local pendingSelfToggles = {};
+local customCommandQueue = {};
 local teleportWindowPositionDirty = false;
 local popupId = 'LibraPlates Quick Menu';
 local confirmPopupId = 'LibraPlates Quick Menu Confirm';
 local iconCache = {};
 local missingIcon = {};
+local itemIconCache = {};
+local itemBitmapTextureCache = {};
 local aceHeaderIconPath = 'widget-icons\\ace.png';
 local npcBodyTextColor = { 0.92, 0.92, 0.90, 1.0 };
 local npcSectionTextColor = { 1.0, 0.86, 0.36, 1.0 };
@@ -38,6 +43,32 @@ local npcInfoBullet = '*';
 local npcInfoMoreText = 'More on wiki...';
 local OpenUrl = nil;
 local EnsurePresetSettings = nil;
+
+pcall(ffi.cdef, [[
+    typedef void* LPVOID;
+    typedef const void* LPCVOID;
+    typedef unsigned int UINT;
+    typedef unsigned long DWORD;
+    typedef struct IDirect3DTexture8 IDirect3DTexture8;
+    typedef long HRESULT;
+    HRESULT D3DXCreateTextureFromFileInMemoryEx(
+        LPVOID pDevice,
+        LPCVOID pSrcData,
+        UINT SrcDataSize,
+        UINT Width,
+        UINT Height,
+        UINT MipLevels,
+        DWORD Usage,
+        DWORD Format,
+        DWORD Pool,
+        UINT Filter,
+        UINT MipFilter,
+        DWORD ColorKey,
+        LPVOID pSrcInfo,
+        LPVOID pPalette,
+        IDirect3DTexture8** ppTexture
+    );
+]]);
 
 local function ColorToU32(color, fallback)
     local c = color or fallback or { 1.0, 1.0, 1.0, 1.0 };
@@ -562,6 +593,10 @@ local function SafeCall(fallback, fn)
     return fallback;
 end
 
+local function Trim(value)
+    return tostring(value or ''):gsub('^%s+', ''):gsub('%s+$', '');
+end
+
 local function GetIcon(fileName)
     local name = tostring(fileName or '');
     local cacheKey = tostring(iconPack.GetRevision()) .. ':' .. name;
@@ -659,6 +694,207 @@ local function GetImageIcon(relativePath)
     return iconCache[cacheKey];
 end
 
+local function PointerToTextureId(value)
+    if (value == nil) then
+        return nil;
+    end
+
+    local ok, number = pcall(function()
+        return tonumber(ffi.cast('uintptr_t', value));
+    end);
+
+    if (ok == true and tonumber(number) ~= nil and tonumber(number) ~= 0) then
+        return tonumber(number);
+    end
+
+    ok, number = pcall(function()
+        return tonumber(ffi.cast('uint32_t', value));
+    end);
+
+    if (ok == true and tonumber(number) ~= nil and tonumber(number) ~= 0) then
+        return tonumber(number);
+    end
+
+    return nil;
+end
+
+local function GetItemBitmapTextureId(itemId)
+    itemId = tonumber(itemId) or 0;
+    if (itemId <= 0) then
+        return nil;
+    end
+
+    local cached = itemBitmapTextureCache[itemId];
+    if (cached ~= nil and cached.textureId ~= nil and cached.texture ~= nil) then
+        return cached.textureId;
+    end
+
+    local resource = nil;
+    pcall(function()
+        resource = AshitaCore:GetResourceManager():GetItemById(itemId);
+    end);
+
+    if (resource == nil or resource.Bitmap == nil) then
+        return nil;
+    end
+
+    local device = d3d8.get_device();
+    if (device == nil or ffi.C.D3DXCreateTextureFromFileInMemoryEx == nil) then
+        return nil;
+    end
+
+    local out = ffi.new('IDirect3DTexture8*[1]');
+    local imageSize = -1;
+    pcall(function()
+        if (ashita ~= nil and ashita.interface_version == nil) then
+            imageSize = tonumber(resource.ImageSize) or -1;
+        end
+    end);
+
+    local D3DX_DEFAULT = 0xFFFFFFFF;
+    local D3DFMT_A8R8G8B8 = 21;
+    local D3DPOOL_MANAGED = 1;
+    local S_OK = 0;
+    local ok, result = pcall(function()
+        return ffi.C.D3DXCreateTextureFromFileInMemoryEx(
+            device,
+            resource.Bitmap,
+            imageSize,
+            D3DX_DEFAULT,
+            D3DX_DEFAULT,
+            1,
+            0,
+            D3DFMT_A8R8G8B8,
+            D3DPOOL_MANAGED,
+            D3DX_DEFAULT,
+            D3DX_DEFAULT,
+            0xFF000000,
+            nil,
+            nil,
+            out
+        );
+    end);
+
+    if (ok ~= true or result ~= S_OK or out[0] == nil) then
+        return nil;
+    end
+
+    local texture = d3d8.gc_safe_release(ffi.cast('IDirect3DTexture8*', out[0]));
+    local textureId = PointerToTextureId(texture);
+    if (textureId == nil) then
+        return nil;
+    end
+
+    itemBitmapTextureCache[itemId] = {
+        texture = texture,
+        textureId = textureId,
+    };
+
+    return textureId;
+end
+
+local function GetItemIconTextureId(itemId)
+    itemId = tonumber(itemId) or 0;
+    if (itemId <= 0) then
+        return nil;
+    end
+
+    if (itemIconCache[itemId] ~= nil) then
+        return itemIconCache[itemId];
+    end
+
+    local bitmapTextureId = GetItemBitmapTextureId(itemId);
+    if (bitmapTextureId ~= nil) then
+        itemIconCache[itemId] = bitmapTextureId;
+        return bitmapTextureId;
+    end
+
+    local resourceManager = nil;
+    pcall(function()
+        resourceManager = AshitaCore:GetResourceManager();
+    end);
+
+    if (resourceManager == nil) then
+        return nil;
+    end
+
+    local texture = nil;
+    if (texture == nil and resourceManager.GetItemIconById ~= nil) then
+        pcall(function() texture = resourceManager:GetItemIconById(itemId); end);
+    end
+    if (texture == nil and resourceManager.GetItemIcon ~= nil) then
+        pcall(function() texture = resourceManager:GetItemIcon(itemId); end);
+    end
+    if (texture == nil and resourceManager.GetIconByItemId ~= nil) then
+        pcall(function() texture = resourceManager:GetIconByItemId(itemId); end);
+    end
+
+    local textureId = PointerToTextureId(texture);
+    if (textureId ~= nil) then
+        itemIconCache[itemId] = textureId;
+    end
+
+    return textureId;
+end
+
+local function GetCustomActionIcon(iconValue)
+    local value = Trim(iconValue);
+
+    if (value == '') then
+        return nil, nil;
+    end
+
+    local itemId = value:match('^ITEM:(%d+)$') or value:match('^item:(%d+)$');
+    if (itemId ~= nil) then
+        local itemTextureId = GetItemIconTextureId(itemId);
+        if (itemTextureId ~= nil) then
+            return nil, itemTextureId;
+        end
+
+        local itemName = '';
+        pcall(function()
+            local item = AshitaCore:GetResourceManager():GetItemById(tonumber(itemId));
+            if (item ~= nil and item.Name ~= nil) then
+                itemName = tostring(item.Name[1] or item.Name or '');
+            end
+        end);
+
+        local fileName = itemName:gsub('[%s%p]+', '') .. '.png';
+        local texture = GetImageIcon('item_icons\\' .. fileName);
+        if (texture ~= nil) then
+            return nil, texture;
+        end
+
+        texture = GetImageIcon('quick-menu\\custom\\item.png');
+        if (texture ~= nil) then
+            return nil, texture;
+        end
+
+        return 'item.png', nil;
+    end
+
+    if (value:lower():match('%.png$') ~= nil) then
+        local texture = GetImageIcon('quick-menu\\custom\\' .. value);
+        if (texture ~= nil) then
+            return nil, texture;
+        end
+
+        texture = GetImageIcon('quick-menu\\' .. value);
+        if (texture ~= nil) then
+            return nil, texture;
+        end
+
+        texture = GetImageIcon(value);
+        if (texture ~= nil) then
+            return nil, texture;
+        end
+
+        return value, nil;
+    end
+
+    return value, nil;
+end
+
 local function IsCatseyeInfo(info)
     local source = tostring(info ~= nil and info.source or '');
 
@@ -725,6 +961,7 @@ local function EnsureSettings()
     if (menu.self.ignoreTrustState == nil) then menu.self.ignoreTrustState = false; end
     if (menu.self.hideTrustState == nil) then menu.self.hideTrustState = false; end
     if (menu.self.emoteTrustState == nil) then menu.self.emoteTrustState = false; end
+    if (menu.self.customActions == nil) then menu.self.customActions = {}; end
     if (menu.trust == nil) then menu.trust = {}; end
     if (menu.trust.dismiss == nil) then menu.trust.dismiss = true; end
     if (menu.trust.dismissAll == nil) then menu.trust.dismissAll = true; end
@@ -801,6 +1038,48 @@ local function QueueCommand(command, mode)
     end
 
     AshitaCore:GetChatManager():QueueCommand(tonumber(mode) or 1, tostring(command or ''));
+end
+
+local function QueueCustomCommands(commands)
+    customCommandQueue = {};
+
+    for line in tostring(commands or ''):gmatch('[^\r\n]+') do
+        local command = Trim(line);
+
+        if (command ~= '' and command:sub(1, 2) ~= '--') then
+            customCommandQueue[#customCommandQueue + 1] = {
+                command = command,
+                queuedAt = os.clock(),
+            };
+        end
+    end
+end
+
+local function ProcessCustomCommandQueue()
+    if (#customCommandQueue == 0) then
+        return;
+    end
+
+    local now = os.clock();
+    local nextEntry = customCommandQueue[1];
+
+    if (nextEntry.waitUntil ~= nil and now < nextEntry.waitUntil) then
+        return;
+    end
+
+    table.remove(customCommandQueue, 1);
+
+    local command = Trim(nextEntry.command);
+    local waitSeconds = command:match('^/wait%s+([%d%.]+)%s*$') or command:match('^wait%s+([%d%.]+)%s*$');
+
+    if (waitSeconds ~= nil) then
+        if (#customCommandQueue > 0) then
+            customCommandQueue[1].waitUntil = now + math.max(0, math.min(30, tonumber(waitSeconds) or 0));
+        end
+        return;
+    end
+
+    QueueCommand(command, 1);
 end
 
 local function QuoteCommandName(name)
@@ -1892,6 +2171,7 @@ end
 
 function quickMenu.Render()
     local menu = EnsureSettings();
+    ProcessCustomCommandQueue();
 
     if (pendingMenu == nil and pendingConfirm == nil) then
         return;
@@ -2439,6 +2719,28 @@ function quickMenu.Render()
                 SelfToggleMenuItem('emoteTrust', 'Emote Trust', 'emote-trusts-on.png', menu.self.emoteTrustState == true, '/emotetrust', function(value)
                     menu.self.emoteTrustState = value == true;
                 end, menu, 'emote-trusts-off.png');
+            end
+
+            if (type(menu.self.customActions) == 'table' and #menu.self.customActions > 0) then
+                local drewHeader = false;
+
+                for _, action in ipairs(menu.self.customActions) do
+                    local label = Trim(action ~= nil and action.label or '');
+                    local commands = Trim(action ~= nil and action.commands or action.command or '');
+
+                    if (action ~= nil and action.enabled ~= false and label ~= '' and commands ~= '') then
+                        if (drewHeader ~= true) then
+                            imgui.Separator();
+                            imgui.TextColored(menu.headerColor or npcSectionTextColor, 'Custom');
+                            drewHeader = true;
+                        end
+
+                        local iconFile, textureId = GetCustomActionIcon(action.icon or '');
+                        MenuItem(label, iconFile, function()
+                            QueueCustomCommands(commands);
+                        end, menu, false, textureId);
+                    end
+                end
             end
         elseif (pendingMenu.targetType == 'trust') then
             if (pendingMenu.trustIsMine == true) then

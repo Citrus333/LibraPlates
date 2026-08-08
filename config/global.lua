@@ -1033,6 +1033,7 @@ return {
             ignoreTrust = true,
             hideTrust = true,
             emoteTrust = true,
+            customActions = {},
         },
         trust = {
             dismiss = true,

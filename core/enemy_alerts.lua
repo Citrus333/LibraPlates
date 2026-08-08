@@ -1528,7 +1528,7 @@ function enemyAlerts.HandleTextIn(e)
         return;
     end
 
-    local actorName, actionName = message:match('^The (.-) readies (.-)[%.!]?$');
+    local actorName, actionName = message:match('^The (.-) readies ([^%.!]+)[%.!]?.*$');
     local verb = 'readies';
 
     if (actorName == nil or actionName == nil) then
@@ -1627,6 +1627,25 @@ local function GetMouseDragDelta()
     return ReadImguiVec2(imgui.GetMouseDragDelta(0));
 end
 
+local function IsMouseInsideSettingsWindow(mouseX, mouseY)
+    local rect = _G.LibraPlatesSettingsWindowRect;
+
+    if (type(rect) ~= 'table' or rect.active ~= true) then
+        return false;
+    end
+
+    local x = tonumber(rect.x);
+    local y = tonumber(rect.y);
+    local w = tonumber(rect.w);
+    local h = tonumber(rect.h);
+
+    if (x == nil or y == nil or w == nil or h == nil or mouseX == nil or mouseY == nil) then
+        return false;
+    end
+
+    return mouseX >= x and mouseX <= (x + w) and mouseY >= y and mouseY <= (y + h);
+end
+
 local function GetLaneEditKeys(lane)
     if (lane == 'offensive') then
         return 'offensiveFontSize', 'offensiveOffsetX', 'offensiveOffsetY', 'Offensive magic';
@@ -1672,7 +1691,13 @@ local function DrawLinePreviewEditOverlay(settings, row, baseX, baseY, rowX, row
     local mouseX, mouseY = GetMousePosition();
     local hitPad = 10;
 
-    if (mouseX ~= nil and mouseY ~= nil and imgui.IsMouseClicked(0) == true and IsImguiCapturingMouse() ~= true) then
+    if (
+        mouseX ~= nil and
+        mouseY ~= nil and
+        imgui.IsMouseClicked(0) == true and
+        IsImguiCapturingMouse() ~= true and
+        IsMouseInsideSettingsWindow(mouseX, mouseY) ~= true
+    ) then
         local inRect = mouseX >= x and mouseX <= x + w and mouseY >= y and mouseY <= y + h;
         local inRightHandle = mouseX >= x + w - handleSize and mouseX <= x + w and mouseY >= y + h - handleSize and mouseY <= y + h;
         local inLeftHandle = mouseX >= x and mouseX <= x + handleSize and mouseY >= y + h - handleSize and mouseY <= y + h;
@@ -2014,7 +2039,19 @@ local function RenderPreview(settings)
     end
 
     settings = settings or GetSettings();
-    DrawAlertRows(settings, BuildPreviewRows(settings));
+
+    -- Settings preview must be draw-list only.  Opening the normal fullscreen
+    -- alert overlay window from inside/around the Settings UI can steal ImGui
+    -- popup/combo input on some Ashita builds, which makes dropdowns stop
+    -- responding at certain scroll positions.  DrawAlertRows already pushes a
+    -- fullscreen clip when a draw list is supplied, so this remains visible
+    -- without creating an input-owning ImGui window.
+    if (imgui.GetForegroundDrawList == nil) then
+        return false;
+    end
+
+    local viewportW, viewportH = GetViewportSize();
+    DrawAlertRows(settings, BuildPreviewRows(settings), imgui.GetForegroundDrawList(), viewportW, viewportH);
 
     if (frame ~= nil) then
         previewRenderedFrame = frame;
@@ -2117,6 +2154,10 @@ end
 
 function enemyAlerts.SetPreviewEnabled(value)
     previewEnabled = value == true;
+    previewRenderedFrame = nil;
+    if (previewEnabled ~= true) then
+        layoutPreviewEditDrag = nil;
+    end
 end
 
 function enemyAlerts.GetPreviewEnabled()

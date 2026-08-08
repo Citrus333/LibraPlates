@@ -392,13 +392,7 @@ local function ReleaseTextureKeyIfIdle(key)
 end
 
 local function GetManualNameOutlineRadius(value)
-    local size = math.max(0, tonumber(value) or 0);
-
-    if (size <= 2) then
-        return 0;
-    end
-
-    return math.min(8, math.floor(size + 0.5));
+    return 0;
 end
 
 local function BuildOutlineOffsets(radius)
@@ -2084,36 +2078,11 @@ local function ResolveAnchorRects(rects, plate)
         end
     end
 
-    for _, kind in ipairs(fallbackNames) do
-        local fallback = fallbackDefs[kind];
-        local rectKind = tostring(fallback ~= nil and fallback.kind or kind);
-
-        if (present[rectKind] ~= true and present[kind] ~= true and fallback ~= nil and fallback.layout ~= nil and fallback.layout.anchorCollapse ~= false) then
-            local anchorTo = tostring(fallback.layout.anchorTo or 'Plate');
-            local targetKey = anchorMap[anchorTo];
-            local anchorExists = targetKey ~= nil and bounds[targetKey] ~= nil;
-            if (anchorTo ~= 'Plate' and anchorExists == true) then
-                local anchorPoint = tostring(fallback.layout.anchorPoint or 'Center');
-                local slot = ResolveMissingAnchorSlot(kind, bounds, {});
-                if (slot ~= nil) then
-                    local groupKey = anchorTo .. '\30' .. anchorPoint;
-                    groups[groupKey] = groups[groupKey] or {
-                        anchorTo = anchorTo,
-                        anchorPoint = anchorPoint,
-                        entries = {},
-                    };
-                    groups[groupKey].entries[#groups[groupKey].entries + 1] = {
-                        visible = false,
-                        slot = slot,
-                        layout = fallback.layout,
-                        padding = tonumber(fallback.padding) or 0,
-                        sourceOrder = #groups[groupKey].entries + 1,
-                        anchorOrder = tonumber(fallback.layout.anchorOrder),
-                    };
-                end
-            end
-        end
-    end
+    -- Fallback rects are allowed to help children resolve where a missing
+    -- parent would have been, but they must never become auto-stack members.
+    -- Auto-stack is a compact chain of visible/present widgets only; adding
+    -- invisible fallback entries here reserved empty slots when optional
+    -- widgets such as New Adventurer were absent.
 
     local groupingChanged = false;
 

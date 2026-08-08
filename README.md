@@ -160,7 +160,7 @@ Right-click supported plates for useful actions.
 - Pet action alerts.
 - Custom text alerts.
 - Built-in alert categories for common CatseyeXI and FFXI event flows.
-- Performance monitor, reports, FPS/adaptive modes, diagnostic captures, and lag testing tools.
+- Performance monitor, reports, and FPS/adaptive modes.
 
 ### Privacy and player controls
 

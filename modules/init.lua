@@ -164,6 +164,26 @@ local function QueueNativeNamesCommand(hidden)
     return true;
 end
 
+local function RestoreNativeNamesOnUnload()
+    nativeNamesLastHidden = nil;
+    nativeNamesPendingHidden = nil;
+    nativeNamesRetryFrames = 0;
+
+    if (GetLoginStatus() ~= 2) then
+        return false;
+    end
+
+    pcall(function()
+        AshitaCore:GetChatManager():QueueCommand(-1, '/names on');
+    end);
+
+    pcall(function()
+        AshitaCore:GetChatManager():QueueCommand(1, '/names on');
+    end);
+
+    return true;
+end
+
 local function ScheduleNativeNamesSync(hidden, retryCount, retryIntervalFrames)
     nativeNamesPendingHidden = hidden == true;
     nativeNamesRetryFrames = math.max(0, tonumber(retryCount) or 0);
@@ -266,6 +286,7 @@ function modules.Load()
 end
 
 function modules.Unload()
+    RestoreNativeNamesOnUnload();
     entityResolver.Reset();
     jobChange.Cancel();
     nativeTargetArrow.RestoreAll();
@@ -293,10 +314,6 @@ function modules.Render()
     elseif (state.GetConfigOpen() ~= true) then
         errorBoundary.Call('render.mouse.update', 'Mouse-control update', mouseControls.Update);
     end
-
-    local settingsStart = perfMeter.Start();
-    errorBoundary.Call('render.settings', 'Settings render', modules.settings.Render);
-    perfMeter.Stop('settings', settingsStart);
 
     local targetingStart = perfMeter.Start();
     if (perfIsolation.targeting ~= true) then
@@ -367,6 +384,14 @@ function modules.Render()
     errorBoundary.Call('render.lag_test', 'Lag-test update', lagTest.Update);
     errorBoundary.Call('render.diagnostics', 'Diagnostics update', diagnostics.Update);
     errorBoundary.Call('render.perf_overlay', 'Performance-overlay render', perfMeter.RenderOverlay);
+
+    -- Settings must be the final ImGui surface for the frame.  Several
+    -- gameplay overlays render as transparent/no-title windows; if any of
+    -- them draw after Settings, combo popups can appear visually present but
+    -- stop receiving mouse input at certain scroll/window positions.
+    local settingsStart = perfMeter.Start();
+    errorBoundary.Call('render.settings', 'Settings render', modules.settings.Render);
+    perfMeter.Stop('settings', settingsStart);
 end
 
 local function IsImguiCapturingMouse()

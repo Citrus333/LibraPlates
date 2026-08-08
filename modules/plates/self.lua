@@ -408,7 +408,7 @@ local function AddStatusIconsToPlate(plateData, statusRows, iconSettings, isEnga
     local iconsPerRow = math.max(1, math.min(24, tonumber(iconSettings.iconsPerRow) or 6));
     local iconSize = math.max(6, math.min(256, tonumber(iconSettings.iconSize) or 18));
     local spacing = math.max(0, math.min(24, tonumber(iconSettings.iconSpacing) or 2));
-    local rowSpacing = math.max(0, math.min(32, tonumber(iconSettings.rowSpacing) or 2));
+    local rowSpacing = math.max(0, math.min(80, tonumber(iconSettings.rowSpacing) or 2));
     local growLeft = tostring(iconSettings.growthDirection or 'Right') == 'Left';
     local anchored = tostring(iconSettings.anchorTo or 'Plate') ~= 'Plate';
     local rowHeight = iconSize + rowSpacing;
@@ -761,6 +761,7 @@ local function BuildCastBar(castData, castBarSettings, globalSettings)
         backgroundColor = castBarSettings.backgroundColor or castBarDefaults.backgroundColor,
         borderColor = castBarSettings.borderColor or castBarDefaults.borderColor,
         borderSize = tonumber(castBarSettings.borderSize) or castBarDefaults.borderSize,
+        cornerRadius = tonumber(castBarSettings.cornerRadius) or castBarDefaults.cornerRadius or 0,
         texture = castBarSettings.texture or castBarDefaults.texture,
         textureId = barTextures.GetTextureId(castBarSettings.texture or castBarDefaults.texture),
         text = showText == true and displayText or '',

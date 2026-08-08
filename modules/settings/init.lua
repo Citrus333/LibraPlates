@@ -2757,6 +2757,14 @@ function GetCursorScreenPos()
     return tonumber(posA) or 0, tonumber(posB) or 0;
 end
 
+function GetImguiVec2XY(valueA, valueB)
+    if (type(valueA) == 'table') then
+        return tonumber(valueA.x or valueA.X or valueA[1]) or 0, tonumber(valueA.y or valueA.Y or valueA[2]) or 0;
+    end
+
+    return tonumber(valueA) or 0, tonumber(valueB) or 0;
+end
+
 function GetSplitterArrowTextureId()
     if (splitterArrowTextureId ~= nil) then
         return splitterArrowTextureId;
@@ -3892,33 +3900,27 @@ end
 
 function DrawSettingsSoundToggle(id, enabled, onChange)
     local nextEnabled = enabled == true;
-    local iconFile = nextEnabled == true and 'sound-on.png' or 'sound-off.png';
     local tooltip = nextEnabled == true and 'Sound on' or 'Sound off';
-    local buttonId = '##' .. tostring(id or 'SoundToggle');
     local size = 22;
-    local iconSize = 18;
-    local x, y = nil, nil;
     local clicked = false;
+    local label = nextEnabled == true and 'On' or 'Off';
+    local pushedStyle = false;
 
     if (imgui.Button == nil) then
         return nextEnabled;
     end
 
-    if (imgui.GetWindowDrawList ~= nil and GetCursorScreenPos ~= nil) then
-        x, y = GetCursorScreenPos();
+    if (nextEnabled ~= true and imgui.PushStyleColor ~= nil) then
+        imgui.PushStyleColor(ImGuiCol_Button, { 0.58, 0.12, 0.12, 1.0 });
+        imgui.PushStyleColor(ImGuiCol_ButtonHovered, { 0.72, 0.18, 0.18, 1.0 });
+        imgui.PushStyleColor(ImGuiCol_ButtonActive, { 0.86, 0.24, 0.24, 1.0 });
+        pushedStyle = true;
     end
 
-    clicked = imgui.Button(buttonId, { size, size }) == true;
+    clicked = imgui.Button(label .. '##' .. tostring(id or 'SoundToggle'), { size + 20, size }) == true;
 
-    if (x ~= nil and y ~= nil) then
-        local textureId = GetSettingsUiIconTextureId(iconFile);
-        local drawList = imgui.GetWindowDrawList();
-        local iconX = x + math.floor((size - iconSize) * 0.5);
-        local iconY = y + math.floor((size - iconSize) * 0.5);
-
-        if (textureId ~= nil and drawList ~= nil and drawList.AddImage ~= nil) then
-            drawList:AddImage(textureId, { iconX, iconY }, { iconX + iconSize, iconY + iconSize }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
-        end
+    if (pushedStyle == true and imgui.PopStyleColor ~= nil) then
+        imgui.PopStyleColor(3);
     end
 
     if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and tooltip ~= nil and imgui.SetTooltip ~= nil) then
@@ -9129,6 +9131,612 @@ local function DrawQuickMenuColorRow(menu)
     end
 end
 
+local function DrawQuickMenuCustomActionsPanel(menu)
+    menu.self = menu.self or {};
+    menu.self.customActions = menu.self.customActions or {};
+    LibraPlatesQuickMenuCustomEditIndex = tonumber(LibraPlatesQuickMenuCustomEditIndex) or 1;
+
+    local function Trim(value)
+        return tostring(value or ''):gsub('^%s+', ''):gsub('%s+$', '');
+    end
+
+    local function GetCustomIconFolder()
+        return addon.path .. '\\assets\\images\\quick-menu\\custom\\';
+    end
+
+    local function GetCustomHelperTexture(fileName)
+        fileName = tostring(fileName or '');
+        if (fileName == '') then return nil; end
+
+        local key = 'quick-menu-custom/' .. fileName;
+        if (LibraPlatesAssetIconPreviewCache[key] ~= nil) then
+            return LibraPlatesAssetIconPreviewCache[key];
+        end
+
+        LibraPlatesAssetIconPreviewCache[key] = textureLoader.ToTextureId(textureLoader.Load(GetCustomIconFolder() .. fileName));
+        return LibraPlatesAssetIconPreviewCache[key];
+    end
+
+    local function DrawCustomHelperIcon(id, fileName, tooltip)
+        local size = 30;
+        local textureId = GetCustomHelperTexture(fileName);
+
+        if (imgui.GetWindowDrawList ~= nil and imgui.SetCursorScreenPos ~= nil and imgui.InvisibleButton ~= nil) then
+            local x, y = GetCursorScreenPos();
+            local drawList = imgui.GetWindowDrawList();
+            if (textureId ~= nil and drawList ~= nil and drawList.AddImage ~= nil) then
+                drawList:AddImage(textureId, { x, y }, { x + size, y + size }, { 0, 0 }, { 1, 1 }, 0xFFFFFFFF);
+            elseif (drawList ~= nil and drawList.AddRectFilled ~= nil) then
+                drawList:AddRectFilled({ x, y }, { x + size, y + size }, 0xAA2F7478);
+            end
+
+            imgui.SetCursorScreenPos({ x, y });
+            local clicked = imgui.InvisibleButton('##QuickMenuCustomHelper' .. tostring(id), { size, size }) == true;
+            if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and imgui.SetTooltip ~= nil) then
+                imgui.SetTooltip(tostring(tooltip or ''));
+            end
+            return clicked;
+        end
+
+        local clicked = imgui.Button(tostring(id), { size, size }) == true;
+        if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and imgui.SetTooltip ~= nil) then
+            imgui.SetTooltip(tostring(tooltip or ''));
+        end
+        return clicked;
+    end
+
+    local function AddAction()
+        menu.self.customActions[#menu.self.customActions + 1] = {
+            enabled = true,
+            label = 'New Command',
+            icon = '',
+            commands = '',
+        };
+        LibraPlatesQuickMenuCustomEditIndex = #menu.self.customActions;
+        state.Save();
+    end
+
+    local function SetActionCommand(action, label, icon, commands)
+        action.enabled = true;
+        action.label = tostring(label or '');
+        action.icon = tostring(icon or '');
+        action.commands = tostring(commands or '');
+        action.command = nil;
+        state.Save();
+    end
+
+    local function GetResourceName(resource)
+        if (resource == nil or resource.Name == nil) then
+            return '';
+        end
+
+        if (type(resource.Name) == 'table' or type(resource.Name) == 'userdata') then
+            local ok, value = pcall(function() return resource.Name[1]; end);
+            if (ok == true and value ~= nil) then
+                return tostring(value);
+            end
+        end
+
+        return tostring(resource.Name or '');
+    end
+
+    local function DrawPickerFilter(id, stateKey)
+        LibraPlatesQuickMenuCustomPickerState = LibraPlatesQuickMenuCustomPickerState or {};
+        local current = tostring(LibraPlatesQuickMenuCustomPickerState[stateKey] or '');
+        local ref = { current };
+
+        imgui.TextColored(settingsLabelColor, 'Search:');
+        if (imgui.SameLine ~= nil) then imgui.SameLine(76); end
+        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(320); end
+        if (imgui.InputText ~= nil and imgui.InputText('##' .. tostring(id), ref, 64) == true) then
+            LibraPlatesQuickMenuCustomPickerState[stateKey] = tostring(ref[1] or '');
+        end
+        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+        return tostring(LibraPlatesQuickMenuCustomPickerState[stateKey] or ''):lower();
+    end
+
+    local function MatchesFilter(text, filter)
+        filter = tostring(filter or ''):lower();
+        if (filter == '') then return true; end
+        return tostring(text or ''):lower():find(filter, 1, true) ~= nil;
+    end
+
+    local function GetCatseyeCommands()
+        LibraPlatesQuickMenuCustomCatseyeCommands = LibraPlatesQuickMenuCustomCatseyeCommands or {
+            { label = '!artifacts', icon = 'catseye.png', command = '!artifacts' },
+            { label = '!box ITEM_NAME', icon = 'box-store.png', command = '!box ITEM_NAME' },
+            { label = '!box ITEM_ID', icon = 'box-store.png', command = '!box ITEM_ID' },
+            { label = '!box QUANTITY ITEM_NAME', icon = 'box-store.png', command = '!box QUANTITY ITEM_NAME' },
+            { label = '!box QUANTITY ITEM_ID', icon = 'box-store.png', command = '!box QUANTITY ITEM_ID' },
+            { label = '!box ammo', icon = 'box-store.png', command = '!box ammo' },
+            { label = '!box cluster', icon = 'box-store.png', command = '!box cluster' },
+            { label = '!box store', icon = 'box-store.png', command = '!box store' },
+            { label = '!chef', icon = 'item.png', command = '!chef' },
+            { label = '!config', icon = 'settings.png', command = '!config' },
+            { label = '!currency', icon = 'Money.png', command = '!currency' },
+            { label = '!dailies', icon = 'venture.png', command = '!dailies' },
+            { label = '!dailykills', icon = 'venture.png', command = '!dailykills' },
+            { label = '!dawnunstuck', icon = 'catseye.png', command = '!dawnunstuck' },
+            { label = '!delexp', icon = 'catseye.png', command = '!delexp' },
+            { label = '!essences', icon = 'catseye.png', command = '!essences' },
+            { label = '!fatigue', icon = 'fishing.png', command = '!fatigue' },
+            { label = '!help', icon = 'catseye.png', command = '!help' },
+            { label = '!hunter', icon = 'venture.png', command = '!hunter' },
+            { label = '!incursion', icon = 'catseye.png', command = '!incursion' },
+            { label = '!keys', icon = 'Keys.png', command = '!keys' },
+            { label = '!lsstats', icon = 'catseye.png', command = '!lsstats' },
+            { label = '!maat', icon = 'catseye.png', command = '!maat' },
+            { label = '!mog', icon = 'catseye.png', command = '!mog' },
+            { label = '!newadventurer', icon = 'catseye.png', command = '!newadventurer' },
+            { label = '!pass', icon = 'catseye.png', command = '!pass' },
+            { label = '!pf', icon = 'pf.png', command = '!pf' },
+            { label = '!points', icon = 'points.png', command = '!points' },
+            { label = '!pops', icon = 'catseye.png', command = '!pops' },
+            { label = '!prestige', icon = 'catseye.png', command = '!prestige' },
+            { label = '!quest', icon = 'catseye.png', command = '!quest' },
+            { label = '!re', icon = 'reraise.png', command = '!re' },
+            { label = '!rifts', icon = 'flux.png', command = '!rifts' },
+            { label = '!rubyweather', icon = 'catseye.png', command = '!rubyweather' },
+            { label = '!sanction', icon = 'conquest.png', command = '!sanction' },
+            { label = '!scroll SCROLL_NAME', icon = 'scroll.png', command = '!scroll SCROLL_NAME' },
+            { label = '!sigil', icon = 'conquest.png', command = '!sigil' },
+            { label = '!signet', icon = 'conquest.png', command = '!signet' },
+            { label = '!skills', icon = 'skill.png', command = '!skills' },
+            { label = '!skipfloor', icon = 'catseye.png', command = '!skipfloor' },
+            { label = '!summit', icon = 'catseye.png', command = '!summit' },
+            { label = '!summitcalc', icon = 'catseye.png', command = '!summitcalc' },
+            { label = '!summitcalc POINTS_AMOUNT', icon = 'catseye.png', command = '!summitcalc POINTS_AMOUNT' },
+            { label = '!summitnotify', icon = 'catseye.png', command = '!summitnotify' },
+            { label = '!summitreward', icon = 'catseye.png', command = '!summitreward' },
+            { label = '!summitreward gil', icon = 'catseye.png', command = '!summitreward gil' },
+            { label = '!summitreward wyrmgold', icon = 'catseye.png', command = '!summitreward wyrmgold' },
+            { label = '!trials', icon = 'catseye.png', command = '!trials' },
+            { label = '!vault', icon = 'Knapsack.png', command = '!vault' },
+            { label = '!venture', icon = 'venture.png', command = '!venture' },
+            { label = '!ventures', icon = 'venture.png', command = '!ventures' },
+            { label = '!ventures dynamis', icon = 'venture.png', command = '!ventures dynamis' },
+            { label = '!ventures exp', icon = 'venture.png', command = '!ventures exp' },
+            { label = '!ventures fishing', icon = 'fishing.png', command = '!ventures fishing' },
+            { label = '!ventures helm', icon = 'excavation.png', command = '!ventures helm' },
+            { label = '!wspoints main', icon = 'ws.png', command = '!wspoints main' },
+            { label = '!wspoints sub', icon = 'ws.png', command = '!wspoints sub' },
+            { label = '!wspoints ranged', icon = 'ws.png', command = '!wspoints ranged' },
+        };
+        return LibraPlatesQuickMenuCustomCatseyeCommands;
+    end
+
+    local function DrawCommandRows(action, popupId, stateKey, rows, onPick)
+        if (imgui.BeginPopup == nil or imgui.EndPopup == nil) then
+            return;
+        end
+
+        if (imgui.BeginPopup(popupId) == true) then
+            local filter = DrawPickerFilter(popupId .. 'Filter', stateKey);
+            local beganChild = false;
+            if (imgui.BeginChild ~= nil) then
+                imgui.BeginChild(popupId .. 'List', { 420, 260 }, true);
+                beganChild = true;
+            end
+
+            local shown = 0;
+            for _, row in ipairs(rows or {}) do
+                local label = tostring(row.label or row.name or row.command or '');
+                local command = tostring(row.command or '');
+                if (MatchesFilter(label .. ' ' .. command, filter) == true) then
+                    shown = shown + 1;
+                    if (imgui.Selectable ~= nil) then
+                        if (imgui.Selectable(label .. '##' .. popupId .. tostring(shown), false) == true) then
+                            onPick(row);
+                            if (imgui.CloseCurrentPopup ~= nil) then imgui.CloseCurrentPopup(); end
+                        end
+                    elseif (imgui.Button(label .. '##' .. popupId .. tostring(shown), { 360, 22 }) == true) then
+                        onPick(row);
+                        if (imgui.CloseCurrentPopup ~= nil) then imgui.CloseCurrentPopup(); end
+                    end
+                    if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and imgui.SetTooltip ~= nil and command ~= '') then
+                        imgui.SetTooltip(command);
+                    end
+                end
+            end
+
+            if (shown == 0) then
+                imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'No matches.');
+            end
+
+            if (beganChild == true and imgui.EndChild ~= nil) then imgui.EndChild(); end
+            imgui.EndPopup();
+        end
+    end
+
+    local function GetInventoryRows()
+        LibraPlatesQuickMenuCustomInventoryRows = {};
+        local rowsById = {};
+        local inventory = nil;
+        local resources = nil;
+
+        pcall(function() inventory = AshitaCore:GetMemoryManager():GetInventory(); end);
+        pcall(function() resources = AshitaCore:GetResourceManager(); end);
+        if (inventory == nil or resources == nil or resources.GetItemById == nil) then
+            return {};
+        end
+
+        local function ScanBag(container, flagMask)
+            for slot = 0, 80 do
+                local item = nil;
+                pcall(function() item = inventory:GetContainerItem(container, slot); end);
+                local itemId = item ~= nil and tonumber(item.Id) or 0;
+                local count = item ~= nil and tonumber(item.Count) or 0;
+                if (itemId ~= nil and itemId > 0 and count ~= nil and count > 0) then
+                    local row = rowsById[itemId];
+                    if (row == nil) then
+                        local resource = nil;
+                        pcall(function() resource = resources:GetItemById(itemId); end);
+                        local flags = tonumber(resource ~= nil and resource.Flags or 0) or 0;
+                        local name = GetResourceName(resource);
+                        if (
+                            resource ~= nil and
+                            bit ~= nil and
+                            bit.band(flags, tonumber(flagMask) or 0) == (tonumber(flagMask) or 0) and
+                            Trim(name) ~= ''
+                        ) then
+                            row = { id = itemId, name = name, count = 0 };
+                            rowsById[itemId] = row;
+                            LibraPlatesQuickMenuCustomInventoryRows[#LibraPlatesQuickMenuCustomInventoryRows + 1] = row;
+                        end
+                    end
+                    if (row ~= nil) then
+                        row.count = row.count + (tonumber(item.Count) or 1);
+                    end
+                end
+            end
+        end
+
+        ScanBag(0, 0x200);
+        ScanBag(3, 0x200);
+        ScanBag(8, 0x400);
+        ScanBag(10, 0x400);
+        ScanBag(11, 0x400);
+        ScanBag(12, 0x400);
+        ScanBag(13, 0x400);
+        ScanBag(14, 0x400);
+        ScanBag(15, 0x400);
+        ScanBag(16, 0x400);
+
+        for _, row in ipairs(LibraPlatesQuickMenuCustomInventoryRows) do
+            row.label = tostring(row.name or '') .. ' x' .. tostring(row.count or 0);
+            row.command = '/item "' .. tostring(row.name or '') .. '" <me>';
+        end
+
+        table.sort(LibraPlatesQuickMenuCustomInventoryRows, function(a, b)
+            return tostring(a.name or ''):lower() < tostring(b.name or ''):lower();
+        end);
+
+        return LibraPlatesQuickMenuCustomInventoryRows;
+    end
+
+    local function BuildCustomIconMap()
+        local map = {};
+        local folder = GetCustomIconFolder();
+        local ok, pipe = pcall(function()
+            return io.popen('dir /b "' .. folder:gsub('"', '') .. '*.png"');
+        end);
+        if (ok == true and pipe ~= nil) then
+            for fileName in pipe:lines() do
+                map[tostring(fileName):lower()] = tostring(fileName);
+            end
+            pipe:close();
+        end
+        return map;
+    end
+
+    local function GetCustomIconRows()
+        local rows = {};
+        local folder = GetCustomIconFolder();
+        local ok, pipe = pcall(function()
+            return io.popen('dir /b "' .. folder:gsub('"', '') .. '*.png"');
+        end);
+
+        if (ok == true and pipe ~= nil) then
+            for fileName in pipe:lines() do
+                rows[#rows + 1] = {
+                    label = tostring(fileName),
+                    file = tostring(fileName),
+                };
+            end
+            pipe:close();
+        end
+
+        table.sort(rows, function(a, b)
+            return tostring(a.label or ''):lower() < tostring(b.label or ''):lower();
+        end);
+
+        return rows;
+    end
+
+    local function DrawIconPickerPopup(action, popupId, rows)
+        if (imgui.BeginPopup == nil or imgui.EndPopup == nil) then
+            return;
+        end
+
+        if (imgui.BeginPopup(popupId) == true) then
+            if (imgui.Button ~= nil and imgui.Button('Open folder##' .. popupId, { 110, 22 }) == true) then
+                LibraPlatesFileManager.OpenFolder(GetCustomIconFolder());
+            end
+
+            local filter = DrawPickerFilter(popupId .. 'Filter', 'iconFilter');
+            local beganChild = false;
+            if (imgui.BeginChild ~= nil) then
+                imgui.BeginChild(popupId .. 'List', { 420, 300 }, true);
+                beganChild = true;
+            end
+
+            local shown = 0;
+            for _, row in ipairs(rows or {}) do
+                local fileName = tostring(row.file or row.label or '');
+                if (MatchesFilter(fileName, filter) == true) then
+                    shown = shown + 1;
+                    local textureId = GetCustomHelperTexture(fileName);
+                    if (textureId ~= nil and imgui.Image ~= nil) then
+                        imgui.Image(textureId, { 24, 24 }, { 0, 0 }, { 1, 1 });
+                        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+                    end
+
+                    local clicked = false;
+                    if (imgui.Selectable ~= nil) then
+                        clicked = imgui.Selectable(fileName .. '##' .. popupId .. tostring(shown), false) == true;
+                    elseif (imgui.Button ~= nil) then
+                        clicked = imgui.Button(fileName .. '##' .. popupId .. tostring(shown), { 320, 22 }) == true;
+                    end
+
+                    if (clicked == true) then
+                        action.icon = fileName;
+                        state.Save();
+                        if (imgui.CloseCurrentPopup ~= nil) then imgui.CloseCurrentPopup(); end
+                    end
+                end
+            end
+
+            if (shown == 0) then
+                imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'No icons found.');
+            end
+
+            if (beganChild == true and imgui.EndChild ~= nil) then imgui.EndChild(); end
+            imgui.EndPopup();
+        end
+    end
+
+    local function ResolveTrustIcon(name)
+        local map = BuildCustomIconMap();
+        local cleaned = tostring(name or ''):lower():gsub("'", ''):gsub('%s+', '-'):gsub('[^%w%-]', '-'):gsub('%-+', '-'):gsub('^%-', ''):gsub('%-$', '');
+        local candidates = {
+            'trust-' .. cleaned .. '.png',
+            ('trust-' .. cleaned .. '.png'):gsub('%-ii%.png$', '-II.png'),
+            'trust-kupipi.png',
+        };
+
+        for _, candidate in ipairs(candidates) do
+            local found = map[tostring(candidate):lower()];
+            if (found ~= nil) then
+                return found;
+            end
+        end
+
+        return 'trust-kupipi.png';
+    end
+
+    local function PlayerHasSpell(player, spellId, resource)
+        if (player == nil or player.HasSpell == nil) then return false; end
+        local ok, result = pcall(function() return player:HasSpell(spellId); end);
+        if (ok == true and result == true) then return true; end
+        ok, result = pcall(function() return player:HasSpell(resource); end);
+        return ok == true and result == true;
+    end
+
+    local function GetOwnedTrustRows()
+        LibraPlatesQuickMenuCustomTrustRows = {};
+        local resources = nil;
+        local player = nil;
+        pcall(function() resources = AshitaCore:GetResourceManager(); end);
+        pcall(function() player = AshitaCore:GetMemoryManager():GetPlayer(); end);
+        if (resources == nil or resources.GetSpellById == nil or player == nil) then
+            return {};
+        end
+
+        for spellId = 1, 2048 do
+            local resource = nil;
+            pcall(function() resource = resources:GetSpellById(spellId); end);
+            if (resource ~= nil and resource.LevelRequired ~= nil) then
+                local trustFlag = nil;
+                pcall(function() trustFlag = resource.LevelRequired[2]; end);
+                if (tonumber(trustFlag) == 1 and PlayerHasSpell(player, spellId, resource) == true) then
+                    local name = GetResourceName(resource);
+                    if (Trim(name) ~= '') then
+                        LibraPlatesQuickMenuCustomTrustRows[#LibraPlatesQuickMenuCustomTrustRows + 1] = {
+                            id = spellId,
+                            name = name,
+                            icon = ResolveTrustIcon(name),
+                            command = '/ma "' .. name .. '" <me>',
+                        };
+                    end
+                end
+            end
+        end
+
+        table.sort(LibraPlatesQuickMenuCustomTrustRows, function(a, b)
+            return tostring(a.name or ''):lower() < tostring(b.name or ''):lower();
+        end);
+
+        return LibraPlatesQuickMenuCustomTrustRows;
+    end
+
+    LibraPlatesSettingsDrawBoxedPanel('Custom commands', function()
+        local listHeight = (#menu.self.customActions > 3) and 104 or math.max(48, (#menu.self.customActions * 28) + 12);
+        local beganChild = false;
+        if (imgui.BeginChild ~= nil) then
+            imgui.BeginChild('##QuickMenuCustomCommandsList', { 560, listHeight }, true);
+            beganChild = true;
+        end
+
+        if (#menu.self.customActions == 0) then
+            imgui.TextColored({ 0.72, 0.72, 0.72, 1.0 }, 'No custom commands yet.');
+        else
+            for index, listAction in ipairs(menu.self.customActions) do
+                local label = Trim(listAction ~= nil and listAction.label or '');
+                if (label == '') then label = 'Command #' .. tostring(index); end
+
+                local selected = index == LibraPlatesQuickMenuCustomEditIndex;
+                imgui.TextColored(selected == true and settingsHeaderColor or settingsLabelColor, label .. ' -');
+
+                if (imgui.SameLine ~= nil) then imgui.SameLine(330); end
+                if (imgui.Button('Edit##QuickMenuCustomEdit' .. tostring(index), { 48, 22 }) == true) then
+                    LibraPlatesQuickMenuCustomEditIndex = index;
+                end
+                if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and imgui.SetTooltip ~= nil) then
+                    imgui.SetTooltip('Edit this command');
+                end
+
+                if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+                if (imgui.Button('Delete##QuickMenuCustomDelete' .. tostring(index), { 58, 22 }) == true) then
+                    table.remove(menu.self.customActions, index);
+                    LibraPlatesQuickMenuCustomEditIndex = math.max(1, math.min(#menu.self.customActions, index));
+                    state.Save();
+                    break;
+                end
+                if (imgui.IsItemHovered ~= nil and imgui.IsItemHovered() == true and imgui.SetTooltip ~= nil) then
+                    imgui.SetTooltip('Delete this command');
+                end
+            end
+        end
+
+        if (beganChild == true and imgui.EndChild ~= nil) then
+            imgui.EndChild();
+        end
+
+        imgui.Spacing();
+        if (imgui.Button('Add command##QuickMenuCustomAddCommand', { 120, 24 }) == true) then
+            AddAction();
+        end
+
+        if (#menu.self.customActions == 0) then
+            return;
+        end
+
+        LibraPlatesQuickMenuCustomEditIndex = math.max(1, math.min(#menu.self.customActions, tonumber(LibraPlatesQuickMenuCustomEditIndex) or 1));
+
+        imgui.Spacing();
+        local index = LibraPlatesQuickMenuCustomEditIndex;
+        local action = menu.self.customActions[index] or {};
+        menu.self.customActions[index] = action;
+
+        if (action.enabled == nil) then action.enabled = true; end
+        if (action.label == nil) then action.label = 'New Command'; end
+        if (action.icon == nil) then action.icon = ''; end
+        if (action.commands == nil) then action.commands = action.command or ''; end
+
+        local title = Trim(action.label);
+        if (title == '') then title = 'Command #' .. tostring(index); end
+
+        DrawYellowHeader('Edit command: ' .. title);
+
+        local labelRef = { tostring(action.label or '') };
+        imgui.TextColored(settingsLabelColor, 'Label:');
+        if (imgui.SameLine ~= nil) then imgui.SameLine(96); end
+        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(520); end
+        if (imgui.InputText ~= nil and imgui.InputText('##QuickMenuCustomLabel' .. tostring(index), labelRef, 64) == true) then
+            action.label = tostring(labelRef[1] or '');
+            state.Save();
+        end
+        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+        local iconRef = { tostring(action.icon or '') };
+        imgui.TextColored(settingsLabelColor, 'Icon:');
+        if (imgui.SameLine ~= nil) then imgui.SameLine(96); end
+        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(520); end
+        if (imgui.InputText ~= nil and imgui.InputText('##QuickMenuCustomIcon' .. tostring(index), iconRef, 96) == true) then
+            action.icon = tostring(iconRef[1] or '');
+            state.Save();
+        end
+        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+        if (DrawCustomHelperIcon('Browse' .. tostring(index), 'browse.png', 'Choose a custom icon') == true) then
+            LibraPlatesQuickMenuCustomIconRows = GetCustomIconRows();
+            if (imgui.OpenPopup ~= nil) then
+                imgui.OpenPopup('##LPQuickMenuIconPicker' .. tostring(index));
+            end
+        end
+
+        imgui.TextColored(settingsLabelColor, 'Macro:');
+        local commandRef = { tostring(action.commands or '') };
+        local changed = false;
+        if (imgui.SameLine ~= nil) then imgui.SameLine(96); end
+        local helperX, helperY = nil, nil;
+        if (GetCursorScreenPos ~= nil) then
+            helperX, helperY = GetCursorScreenPos();
+            helperX = helperX + 532;
+        end
+        if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(520); end
+        if (imgui.InputTextMultiline ~= nil) then
+            local ok, result = pcall(function()
+                return imgui.InputTextMultiline('##QuickMenuCustomCommands' .. tostring(index), commandRef, 768, { 520, 96 });
+            end);
+            changed = ok == true and result == true;
+            if (ok ~= true and imgui.InputText ~= nil) then
+                changed = imgui.InputText('##QuickMenuCustomCommandsFallback' .. tostring(index), commandRef, 768) == true;
+            end
+        elseif (imgui.InputText ~= nil) then
+            changed = imgui.InputText('##QuickMenuCustomCommandsFallback' .. tostring(index), commandRef, 768) == true;
+        end
+        if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+
+        if (changed == true) then
+            action.commands = tostring(commandRef[1] or '');
+            state.Save();
+        end
+
+        if (helperX ~= nil and helperY ~= nil and imgui.SetCursorScreenPos ~= nil) then
+            imgui.SetCursorScreenPos({ helperX, helperY });
+            if (DrawCustomHelperIcon('Catseye' .. tostring(index), 'catseye.png', 'Choose a Catseye command') == true) then
+                if (imgui.OpenPopup ~= nil) then
+                    imgui.OpenPopup('##LPQuickMenuCatseyePicker' .. tostring(index));
+                end
+            end
+            imgui.SetCursorScreenPos({ helperX, helperY + 34 });
+            if (DrawCustomHelperIcon('Item' .. tostring(index), 'item.png', 'Choose from current inventory') == true) then
+                LibraPlatesQuickMenuCustomInventoryRows = GetInventoryRows();
+                if (imgui.OpenPopup ~= nil) then
+                    imgui.OpenPopup('##LPQuickMenuItemPicker' .. tostring(index));
+                end
+            end
+            imgui.SetCursorScreenPos({ helperX, helperY + 68 });
+            if (DrawCustomHelperIcon('Trust' .. tostring(index), 'trust-kupipi.png', 'Choose from owned trusts') == true) then
+                LibraPlatesQuickMenuCustomTrustRows = GetOwnedTrustRows();
+                if (imgui.OpenPopup ~= nil) then
+                    imgui.OpenPopup('##LPQuickMenuTrustPicker' .. tostring(index));
+                end
+            end
+            imgui.SetCursorScreenPos({ helperX - 532, helperY + 104 });
+        end
+
+        DrawCommandRows(action, '##LPQuickMenuCatseyePicker' .. tostring(index), 'catseyeFilter', GetCatseyeCommands(), function(row)
+            SetActionCommand(action, row.label or row.command, row.icon or 'catseye.png', row.command or '');
+        end);
+
+        local inventoryRows = LibraPlatesQuickMenuCustomInventoryRows or {};
+        DrawCommandRows(action, '##LPQuickMenuItemPicker' .. tostring(index), 'itemFilter', inventoryRows, function(row)
+            local name = tostring(row.name or '');
+            SetActionCommand(action, name, 'ITEM:' .. tostring(row.id or 0), '/item "' .. name .. '" <me>');
+        end);
+
+        local trustRows = LibraPlatesQuickMenuCustomTrustRows or {};
+        DrawCommandRows(action, '##LPQuickMenuTrustPicker' .. tostring(index), 'trustFilter', trustRows, function(row)
+            SetActionCommand(action, row.name or '', row.icon or 'trust-kupipi.png', row.command or '');
+        end);
+
+        DrawIconPickerPopup(action, '##LPQuickMenuIconPicker' .. tostring(index), LibraPlatesQuickMenuCustomIconRows or {});
+    end);
+end
+
 function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     settings.quickMenu = settings.quickMenu or {};
     local menu = settings.quickMenu;
@@ -9173,6 +9781,7 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
     if (menu.self.ignoreTrust == nil) then menu.self.ignoreTrust = (menu.self.ignoreTrustOn ~= false or menu.self.ignoreTrustOff ~= false); end
     if (menu.self.hideTrust == nil) then menu.self.hideTrust = (menu.self.hideTrustOn ~= false or menu.self.hideTrustOff ~= false); end
     if (menu.self.emoteTrust == nil) then menu.self.emoteTrust = (menu.self.emoteTrustOn ~= false or menu.self.emoteTrustOff ~= false); end
+    if (menu.self.customActions == nil) then menu.self.customActions = {}; end
     menu.trust = menu.trust or {};
     if (menu.trust.dismiss == nil) then menu.trust.dismiss = true; end
     if (menu.trust.dismissAll == nil) then menu.trust.dismissAll = true; end
@@ -9539,6 +10148,8 @@ function LibraPlatesSettingsDrawQuickMenuModuleSettings(settings, hideActive)
             state.Save();
         end);
     end);
+
+        DrawQuickMenuCustomActionsPanel(menu);
 
         if (scopedEntity == 'Self') then
             DrawHomePointWarpsPanel();
@@ -13428,6 +14039,71 @@ local troubleshooterEntries = {
     },
 };
 
+LibraPlatesScreenAlertsDiagnosticStage = 99;
+
+function LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, label, id)
+    local key = 'diagnostic' .. tostring(id);
+    local value = tostring(settings[key] or 'Option A');
+
+    imgui.TextColored(settingsLabelColor, tostring(label or 'Test dropdown'));
+    if (imgui.SameLine ~= nil) then imgui.SameLine(180); end
+    if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(220); end
+    if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
+        if (imgui.BeginCombo('##ScreenAlertsDiagnosticCombo' .. tostring(id), value) == true) then
+            for _, item in ipairs({ 'Option A', 'Option B', 'Option C' }) do
+                local selected = item == value;
+                if (imgui.Selectable(item, selected) == true) then
+                    settings[key] = item;
+                    value = item;
+                end
+                if (selected == true and imgui.SetItemDefaultFocus ~= nil) then
+                    imgui.SetItemDefaultFocus();
+                end
+            end
+            imgui.EndCombo();
+        end
+    else
+        imgui.TextColored(settingsLabelColor, value);
+    end
+    if (imgui.PopItemWidth ~= nil) then imgui.PopItemWidth(); end
+end
+
+function LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer(label, height)
+    LibraPlatesSettingsDrawBoxedPanel(label, function()
+        imgui.TextColored({ 0.70, 0.72, 0.76, 1.0 }, 'Diagnostic spacer. No real Screen Alerts controls are rendered here.');
+        if (imgui.Dummy ~= nil) then
+            imgui.Dummy({ 1, tonumber(height) or 160 });
+        else
+            for _ = 1, 8 do imgui.Spacing(); end
+        end
+    end);
+end
+
+function LibraPlatesSettingsDrawScreenAlertsDiagnosticPage(settings)
+    LibraPlatesSettingsDrawBoxedBreadcrumb(T{ 'Settings', 'Screen Alerts', 'Diagnostic stage ' .. tostring(LibraPlatesScreenAlertsDiagnosticStage) });
+    if (imgui.Indent ~= nil) then imgui.Indent(16); end
+
+    LibraPlatesSettingsDrawBoxedPanel('Diagnostic controls', function()
+        imgui.TextColored(settingsHeaderColor, 'Screen Alerts diagnostic stage 0');
+        imgui.TextColored(settingsLabelColor, 'This page intentionally renders only simple dropdowns and spacers.');
+        LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'Top dropdown', 'Top');
+    end, true);
+
+    LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer('Spacer A', 180);
+
+    LibraPlatesSettingsDrawBoxedPanel('Middle diagnostic controls', function()
+        LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'Middle dropdown', 'Middle');
+    end);
+
+    LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer('Spacer B', 220);
+
+    LibraPlatesSettingsDrawBoxedPanel('Bottom diagnostic controls', function()
+        LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'Bottom dropdown', 'Bottom');
+    end);
+
+    if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+end
+
 function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
     local enemyAlerts = require('core.enemy_alerts');
     local alertSounds = require('core.alert_sounds');
@@ -13442,6 +14118,12 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
     if (settings.customTriggers == (globalDefaults.enemyAlerts or {}).customTriggers) then
         settings.customTriggers = {};
     end
+
+    if (LibraPlatesScreenAlertsDiagnosticStage == 0) then
+        LibraPlatesSettingsDrawScreenAlertsDiagnosticPage(settings);
+        return;
+    end
+
     local function GetSoundVolumeLevel(value)
         value = tonumber(value) or 10;
         if (value > 10) then
@@ -14167,18 +14849,20 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         local soundEnabled = settings[soundEnabledKey] == true;
         local soundFile = alertSounds.ResolveFile(settings[soundFileKey], settings.builtInSoundFile or settings.soundFile or 'Alert01.wav');
 
+        imgui.TableNextRow();
+        imgui.TableNextColumn();
         if (imgui.Indent ~= nil) then imgui.Indent(18); end
         imgui.TextColored(settingsLabelColor, tostring(label or ''));
         if (imgui.Unindent ~= nil) then imgui.Unindent(18); end
 
-        if (imgui.SameLine ~= nil) then imgui.SameLine(248); end
+        imgui.TableNextColumn();
         DrawSettingsSoundToggle('BuiltInAlertSound' .. tostring(soundPrefix), soundEnabled, function(value)
             settings[soundEnabledKey] = value == true;
             state.Save();
         end);
 
+        imgui.TableNextColumn();
         if (soundEnabled == true) then
-            if (imgui.SameLine ~= nil) then imgui.SameLine(282); end
             if (imgui.BeginCombo ~= nil and imgui.Selectable ~= nil) then
                 if (imgui.PushItemWidth ~= nil) then imgui.PushItemWidth(204); end
                 if (imgui.BeginCombo('##' .. tostring(soundPrefix) .. 'SoundFile', soundFile) == true) then
@@ -14207,7 +14891,7 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
             end
         end
 
-        if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+        imgui.TableNextColumn();
         if (imgui.Button ~= nil and imgui.Button('Test##' .. tostring(soundPrefix) .. 'PreviewAlert') == true) then
             enemyAlerts.TestBuiltIn(label, previewText or label, soundPrefix, lane);
         end
@@ -14220,8 +14904,25 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         end);
 
         if (settings[enabledKey] ~= false) then
-            for _, row in ipairs(rows) do
-                DrawBuiltInFishingAlertChildLine(row[1], row[2], row[3], lane);
+            if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+                if (imgui.BeginTable('##BuiltInFishingAlertRows' .. tostring(enabledKey), 4, settingsTableFlags)) then
+                    imgui.TableSetupColumn('##fishing_alert', 0, 196);
+                    imgui.TableSetupColumn('##fishing_sound_toggle', 0, 44);
+                    imgui.TableSetupColumn('##fishing_sound_file', 0, 204);
+                    imgui.TableSetupColumn('##fishing_sound_actions', 0, 96);
+                    for _, row in ipairs(rows) do
+                        DrawBuiltInFishingAlertChildLine(row[1], row[2], row[3], lane);
+                    end
+                    imgui.EndTable();
+                end
+            else
+                for _, row in ipairs(rows) do
+                    imgui.TextColored(settingsLabelColor, tostring(row[1] or ''));
+                    if (imgui.SameLine ~= nil) then imgui.SameLine(); end
+                    if (imgui.Button ~= nil and imgui.Button('Test##' .. tostring(row[2]) .. 'PreviewAlert') == true) then
+                        enemyAlerts.TestBuiltIn(row[1], row[3] or row[1], row[2], lane);
+                    end
+                end
             end
         end
     end
@@ -14298,6 +14999,165 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         end
     end
 
+    local function DrawBuiltInAlertsWithoutSoundCombos()
+        DrawCheckbox('Enabled', settings.builtInAlertsEnabled ~= false, function(value)
+            settings.builtInAlertsEnabled = value == true;
+            state.Save();
+        end);
+
+        local rows = {
+            { 'Wildkeeper Reive', 'builtInWildkeeperEnabled', 'builtInWildkeeper', 'Wildkeeper Reive: Achuka in Morimar Basalt Fields soon' },
+            { 'Campaign', 'builtInCampaignEnabled', 'builtInCampaign', 'Campaign: enemy forces headed to Jugner Forest [S]' },
+            { 'Ventures', 'builtInVenturesEnabled', 'builtInVentures', 'Ventures: something is interrupting ventures' },
+            { 'Voidwatch', 'builtInVoidwatchEnabled', 'builtInVoidwatch', 'Voidwatch: Nyx in Batallia Downs [S] (E-5)' },
+            { 'Learned Blue Magic', 'builtInBlueMagicEnabled', 'builtInBlueMagic', 'Learned Blue Magic: Refueling' },
+            { 'Dynamis', 'builtInDynamisEnabled', 'builtInDynamis', 'Dynamis: +10 minutes' },
+            { 'Incursion', 'builtInIncursionEnabled', 'builtInIncursion', 'Incursion objective: Defeat 15 enemies' },
+        };
+
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            if (imgui.BeginTable('##BuiltInAlertRowsNoSoundCombos', 3, settingsTableFlags)) then
+                imgui.TableSetupColumn('##built_in_alert_no_sound', 0, 196);
+                imgui.TableSetupColumn('##built_in_note_no_sound', 0, 220);
+                imgui.TableSetupColumn('##built_in_actions_no_sound', 0, 96);
+                for _, row in ipairs(rows) do
+                    local label = row[1];
+                    local enabledKey = row[2];
+                    local soundPrefix = row[3];
+                    local previewText = row[4];
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    DrawCheckbox(label, settings[enabledKey] ~= false, function(value)
+                        settings[enabledKey] = value == true;
+                        state.Save();
+                    end);
+                    imgui.TableNextColumn();
+                    imgui.TextColored(settingsLabelColor, 'sound combo disabled for diagnostic');
+                    imgui.TableNextColumn();
+                    if (imgui.Button ~= nil and imgui.Button('Test##' .. tostring(soundPrefix) .. 'NoSoundComboPreviewAlert') == true) then
+                        enemyAlerts.TestBuiltIn(label, previewText, soundPrefix);
+                    end
+                end
+                imgui.EndTable();
+            end
+        else
+            for _, row in ipairs(rows) do
+                DrawCheckbox(row[1], settings[row[2]] ~= false, function(value)
+                    settings[row[2]] = value == true;
+                    state.Save();
+                end);
+            end
+        end
+    end
+
+    local function DrawBuiltInAlertsWithSoundTogglesNoCombos()
+        DrawCheckbox('Enabled', settings.builtInAlertsEnabled ~= false, function(value)
+            settings.builtInAlertsEnabled = value == true;
+            state.Save();
+        end);
+
+        local rows = {
+            { 'Wildkeeper Reive', 'builtInWildkeeperEnabled', 'builtInWildkeeper', 'Wildkeeper Reive: Achuka in Morimar Basalt Fields soon' },
+            { 'Campaign', 'builtInCampaignEnabled', 'builtInCampaign', 'Campaign: enemy forces headed to Jugner Forest [S]' },
+            { 'Ventures', 'builtInVenturesEnabled', 'builtInVentures', 'Ventures: something is interrupting ventures' },
+            { 'Voidwatch', 'builtInVoidwatchEnabled', 'builtInVoidwatch', 'Voidwatch: Nyx in Batallia Downs [S] (E-5)' },
+            { 'Learned Blue Magic', 'builtInBlueMagicEnabled', 'builtInBlueMagic', 'Learned Blue Magic: Refueling' },
+            { 'Dynamis', 'builtInDynamisEnabled', 'builtInDynamis', 'Dynamis: +10 minutes' },
+            { 'Incursion', 'builtInIncursionEnabled', 'builtInIncursion', 'Incursion objective: Defeat 15 enemies' },
+        };
+
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            if (imgui.BeginTable('##BuiltInAlertRowsSoundTogglesNoCombos', 4, settingsTableFlags)) then
+                imgui.TableSetupColumn('##built_in_alert_toggle_no_combo', 0, 196);
+                imgui.TableSetupColumn('##built_in_sound_toggle_no_combo', 0, 44);
+                imgui.TableSetupColumn('##built_in_note_toggle_no_combo', 0, 220);
+                imgui.TableSetupColumn('##built_in_actions_toggle_no_combo', 0, 96);
+                for _, row in ipairs(rows) do
+                    local label = row[1];
+                    local enabledKey = row[2];
+                    local soundPrefix = row[3];
+                    local previewText = row[4];
+                    local soundEnabledKey = soundPrefix .. 'SoundEnabled';
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    DrawCheckbox(label, settings[enabledKey] ~= false, function(value)
+                        settings[enabledKey] = value == true;
+                        state.Save();
+                    end);
+                    imgui.TableNextColumn();
+                    local soundEnabled = settings[soundEnabledKey] == true;
+                    local soundLabel = soundEnabled == true and 'On' or 'Off';
+                    if (imgui.Button ~= nil and imgui.Button(soundLabel .. '##BuiltInAlertSoundTextButton' .. tostring(soundPrefix), { 42, 22 }) == true) then
+                        settings[soundEnabledKey] = not soundEnabled;
+                        state.Save();
+                    end
+                    imgui.TableNextColumn();
+                    imgui.TextColored(settingsLabelColor, 'sound file dropdown disabled for diagnostic');
+                    imgui.TableNextColumn();
+                    if (imgui.Button ~= nil and imgui.Button('Test##' .. tostring(soundPrefix) .. 'SoundToggleNoComboPreviewAlert') == true) then
+                        enemyAlerts.TestBuiltIn(label, previewText, soundPrefix);
+                    end
+                end
+                imgui.EndTable();
+            end
+        else
+            DrawBuiltInAlertsWithoutSoundCombos();
+        end
+    end
+
+    local function DrawBuiltInAlertsWithPlainSoundCheckboxes()
+        DrawCheckbox('Enabled', settings.builtInAlertsEnabled ~= false, function(value)
+            settings.builtInAlertsEnabled = value == true;
+            state.Save();
+        end);
+
+        local rows = {
+            { 'Wildkeeper Reive', 'builtInWildkeeperEnabled', 'builtInWildkeeper', 'Wildkeeper Reive: Achuka in Morimar Basalt Fields soon' },
+            { 'Campaign', 'builtInCampaignEnabled', 'builtInCampaign', 'Campaign: enemy forces headed to Jugner Forest [S]' },
+            { 'Ventures', 'builtInVenturesEnabled', 'builtInVentures', 'Ventures: something is interrupting ventures' },
+            { 'Voidwatch', 'builtInVoidwatchEnabled', 'builtInVoidwatch', 'Voidwatch: Nyx in Batallia Downs [S] (E-5)' },
+            { 'Learned Blue Magic', 'builtInBlueMagicEnabled', 'builtInBlueMagic', 'Learned Blue Magic: Refueling' },
+            { 'Dynamis', 'builtInDynamisEnabled', 'builtInDynamis', 'Dynamis: +10 minutes' },
+            { 'Incursion', 'builtInIncursionEnabled', 'builtInIncursion', 'Incursion objective: Defeat 15 enemies' },
+        };
+
+        if (imgui.BeginTable ~= nil and imgui.TableSetupColumn ~= nil) then
+            if (imgui.BeginTable('##BuiltInAlertRowsPlainSoundCheckboxes', 4, settingsTableFlags)) then
+                imgui.TableSetupColumn('##built_in_alert_plain_sound', 0, 196);
+                imgui.TableSetupColumn('##built_in_sound_plain_checkbox', 0, 96);
+                imgui.TableSetupColumn('##built_in_note_plain_sound', 0, 180);
+                imgui.TableSetupColumn('##built_in_actions_plain_sound', 0, 96);
+                for _, row in ipairs(rows) do
+                    local label = row[1];
+                    local enabledKey = row[2];
+                    local soundPrefix = row[3];
+                    local previewText = row[4];
+                    local soundEnabledKey = soundPrefix .. 'SoundEnabled';
+                    imgui.TableNextRow();
+                    imgui.TableNextColumn();
+                    DrawCheckbox(label, settings[enabledKey] ~= false, function(value)
+                        settings[enabledKey] = value == true;
+                        state.Save();
+                    end);
+                    imgui.TableNextColumn();
+                    DrawCheckbox('Sound##Plain' .. tostring(soundPrefix), settings[soundEnabledKey] == true, function(value)
+                        settings[soundEnabledKey] = value == true;
+                        state.Save();
+                    end);
+                    imgui.TableNextColumn();
+                    imgui.TextColored(settingsLabelColor, 'sound file dropdown disabled');
+                    imgui.TableNextColumn();
+                    if (imgui.Button ~= nil and imgui.Button('Test##' .. tostring(soundPrefix) .. 'PlainSoundPreviewAlert') == true) then
+                        enemyAlerts.TestBuiltIn(label, previewText, soundPrefix);
+                    end
+                end
+                imgui.EndTable();
+            end
+        else
+            DrawBuiltInAlertsWithoutSoundCombos();
+        end
+    end
+
     local function DrawContent()
         DrawIntroContent(true);
         DrawSectionDivider();
@@ -14342,6 +15202,219 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
 
         if (imgui.Indent ~= nil) then imgui.Indent(16); end
 
+        if (LibraPlatesScreenAlertsDiagnosticStage == 8) then
+            DrawAlertsPanel('Screen Alerts', function()
+                DrawIntroContent(false);
+            end, true);
+            DrawAlertsPanel('Global alert settings', function()
+                DrawGeneralControls(false);
+            end);
+            DrawAlertsPanel('Custom alerts', function()
+                DrawCustomAlertLane(false);
+                imgui.Spacing();
+                DrawCustomTriggers();
+            end);
+            DrawAlertsPanel('Built-in alerts', function()
+                DrawBuiltInSoundFolderHelp();
+                imgui.Spacing();
+                DrawAlertLineStyleControls('Built-in alert line', 'builtIn');
+                imgui.Spacing();
+                DrawBuiltInAlertsWithPlainSoundCheckboxes();
+            end);
+
+            LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer('Diagnostic spacer after plain sound checkboxes', 240);
+            LibraPlatesSettingsDrawBoxedPanel('Diagnostic dropdown after plain sound checkboxes', function()
+                LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'After plain sound checkbox dropdown', 'AfterBuiltInPlainSoundCheckboxes');
+            end);
+
+            if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+            return;
+        end
+
+        if (LibraPlatesScreenAlertsDiagnosticStage == 7) then
+            DrawAlertsPanel('Screen Alerts', function()
+                DrawIntroContent(false);
+            end, true);
+            DrawAlertsPanel('Global alert settings', function()
+                DrawGeneralControls(false);
+            end);
+            DrawAlertsPanel('Custom alerts', function()
+                DrawCustomAlertLane(false);
+                imgui.Spacing();
+                DrawCustomTriggers();
+            end);
+            DrawAlertsPanel('Built-in alerts', function()
+                DrawBuiltInSoundFolderHelp();
+                imgui.Spacing();
+                DrawAlertLineStyleControls('Built-in alert line', 'builtIn');
+                imgui.Spacing();
+                DrawBuiltInAlertsWithSoundTogglesNoCombos();
+            end);
+
+            LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer('Diagnostic spacer after built-in sound toggles without combos', 240);
+            LibraPlatesSettingsDrawBoxedPanel('Diagnostic dropdown after built-in sound toggles without combos', function()
+                LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'After sound toggles dropdown', 'AfterBuiltInSoundTogglesNoCombos');
+            end);
+
+            if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+            return;
+        end
+
+        if (LibraPlatesScreenAlertsDiagnosticStage == 6) then
+            DrawAlertsPanel('Screen Alerts', function()
+                DrawIntroContent(false);
+            end, true);
+            DrawAlertsPanel('Global alert settings', function()
+                DrawGeneralControls(false);
+            end);
+            DrawAlertsPanel('Custom alerts', function()
+                DrawCustomAlertLane(false);
+                imgui.Spacing();
+                DrawCustomTriggers();
+            end);
+            DrawAlertsPanel('Built-in alerts', function()
+                DrawBuiltInSoundFolderHelp();
+                imgui.Spacing();
+                DrawAlertLineStyleControls('Built-in alert line', 'builtIn');
+                imgui.Spacing();
+                DrawBuiltInAlertsWithoutSoundCombos();
+            end);
+
+            LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer('Diagnostic spacer after built-in rows without sound combos', 240);
+            LibraPlatesSettingsDrawBoxedPanel('Diagnostic dropdown after built-in rows without sound combos', function()
+                LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'After built-in rows dropdown', 'AfterBuiltInRowsNoCombos');
+            end);
+
+            if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+            return;
+        end
+
+        if (LibraPlatesScreenAlertsDiagnosticStage == 5) then
+            DrawAlertsPanel('Screen Alerts', function()
+                DrawIntroContent(false);
+            end, true);
+            DrawAlertsPanel('Global alert settings', function()
+                DrawGeneralControls(false);
+            end);
+            DrawAlertsPanel('Custom alerts', function()
+                DrawCustomAlertLane(false);
+                imgui.Spacing();
+                DrawCustomTriggers();
+            end);
+            DrawAlertsPanel('Built-in alerts', function()
+                DrawBuiltInSoundFolderHelp();
+                imgui.Spacing();
+                DrawAlertLineStyleControls('Built-in alert line', 'builtIn');
+                imgui.Spacing();
+                imgui.TextColored(settingsLabelColor, 'Diagnostic: built-in alert rows are not rendered in this stage.');
+            end);
+
+            LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer('Diagnostic spacer after built-in style controls', 240);
+            LibraPlatesSettingsDrawBoxedPanel('Diagnostic dropdown after built-in style controls', function()
+                LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'After built-in style dropdown', 'AfterBuiltInStyle');
+            end);
+
+            if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+            return;
+        end
+
+        if (LibraPlatesScreenAlertsDiagnosticStage == 4) then
+            DrawAlertsPanel('Screen Alerts', function()
+                DrawIntroContent(false);
+            end, true);
+            DrawAlertsPanel('Global alert settings', function()
+                DrawGeneralControls(false);
+            end);
+            DrawAlertsPanel('Custom alerts', function()
+                DrawCustomAlertLane(false);
+                imgui.Spacing();
+                DrawCustomTriggers();
+            end);
+            DrawAlertsPanel('Built-in alerts', function()
+                DrawBuiltInSoundFolderHelp();
+                imgui.Spacing();
+                DrawAlertLineStyleControls('Built-in alert line', 'builtIn');
+                imgui.Spacing();
+                DrawBuiltInAlerts(false);
+            end);
+
+            LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer('Diagnostic spacer after built-in alerts', 240);
+            LibraPlatesSettingsDrawBoxedPanel('Diagnostic dropdown after built-ins', function()
+                LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'After built-ins dropdown', 'AfterBuiltIns');
+            end);
+
+            if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+            return;
+        end
+
+        if (LibraPlatesScreenAlertsDiagnosticStage == 3) then
+            DrawAlertsPanel('Screen Alerts', function()
+                DrawIntroContent(false);
+            end, true);
+            DrawAlertsPanel('Global alert settings', function()
+                DrawGeneralControls(false);
+            end);
+            DrawAlertsPanel('Custom alerts', function()
+                DrawCustomAlertLane(false);
+                imgui.Spacing();
+                DrawCustomTriggers();
+            end);
+
+            LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer('Diagnostic spacer after custom alerts', 280);
+            LibraPlatesSettingsDrawBoxedPanel('Diagnostic dropdown after custom alerts', function()
+                LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'After custom dropdown', 'AfterCustom');
+            end);
+
+            if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+            return;
+        end
+
+        if (LibraPlatesScreenAlertsDiagnosticStage == 2) then
+            DrawAlertsPanel('Screen Alerts', function()
+                DrawIntroContent(false);
+            end, true);
+            DrawAlertsPanel('Global alert settings', function()
+                DrawGeneralControls(false);
+            end);
+
+            LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer('Diagnostic spacer after global settings', 360);
+            LibraPlatesSettingsDrawBoxedPanel('Diagnostic dropdown after global settings', function()
+                LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'After global dropdown', 'AfterGlobal');
+            end);
+
+            if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+            return;
+        end
+
+        if (LibraPlatesScreenAlertsDiagnosticStage == 1) then
+            DrawAlertsPanel('Screen Alerts', function()
+                DrawIntroContent(false);
+            end, true);
+            DrawAlertsPanel('Global alert settings', function()
+                DrawGeneralControls(false);
+            end);
+            DrawAlertsPanel('Custom alerts', function()
+                DrawCustomAlertLane(false);
+                imgui.Spacing();
+                DrawCustomTriggers();
+            end);
+            DrawAlertsPanel('Built-in alerts', function()
+                DrawBuiltInSoundFolderHelp();
+                imgui.Spacing();
+                DrawAlertLineStyleControls('Built-in alert line', 'builtIn');
+                imgui.Spacing();
+                DrawBuiltInAlerts(false);
+            end);
+
+            LibraPlatesSettingsDrawScreenAlertsDiagnosticSpacer('Diagnostic spacer before fishing sections', 240);
+            LibraPlatesSettingsDrawBoxedPanel('Diagnostic dropdown after built-ins', function()
+                LibraPlatesSettingsDrawScreenAlertsDiagnosticCombo(settings, 'After built-ins dropdown', 'AfterBuiltIns');
+            end);
+
+            if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
+            return;
+        end
+
         DrawAlertsPanel('Screen Alerts', function()
             DrawIntroContent(false);
         end, true);
@@ -14384,7 +15457,6 @@ function LibraPlatesSettingsDrawEnemyAlertsSection(useBoxedPage)
         end);
 
         if (imgui.Unindent ~= nil) then imgui.Unindent(16); end
-
     else
         DrawContent();
     end
@@ -15277,32 +16349,8 @@ local function DrawSelectedEditorPlatesWidgetWithStorageDefaults(widgetName, def
     };
 
     if (extras ~= nil) then
-        if (extras.showSmallFontToggle ~= nil) then
-            payload.showSmallFontToggle = extras.showSmallFontToggle;
-        end
-
-        if (extras.resourceName ~= nil) then
-            payload.resourceName = extras.resourceName;
-        end
-
-        if (extras.showValueControl ~= nil) then
-            payload.showValueControl = extras.showValueControl;
-        end
-
-        if (extras.labelIconOptions ~= nil) then
-            payload.labelIconOptions = extras.labelIconOptions;
-        end
-
-        if (extras.displayLabel ~= nil) then
-            payload.displayLabel = extras.displayLabel;
-        end
-
-        if (extras.infoTooltip ~= nil) then
-            payload.infoTooltip = extras.infoTooltip;
-        end
-
-        if (extras.extraBeforeReset ~= nil) then
-            payload.extraBeforeReset = extras.extraBeforeReset;
+        for key, value in pairs(extras) do
+            payload[key] = value;
         end
         payload.hideActive = true;
     else
@@ -15443,6 +16491,7 @@ function LibraPlatesSettingsGetBoxedPlateWidgetInfo()
         drawFn = widgets.bar.DrawSettings;
     elseif (widgetName == 'Cast bar') then
         defaults = storageEntity == 'Pet (SMN)' and smnCastBarDefaults or castBarDefaults;
+        extras.showCornerRadius = true;
         drawFn = widgets.castBar.DrawSettings;
     elseif (widgetName == 'Pet timer' or widgetName == 'Pet state') then
         defaults = widgetName == 'Pet timer' and petTimerDefaults or petStateDefaults;
@@ -17670,7 +18719,9 @@ local function DrawSelectedEditorPlates()
         if (storageEntity == 'Pet (SMN)') then
             defaults = smnCastBarDefaults;
         end
-        DrawSelectedEditorPlatesWidgetWithStorageDefaults(selectedWidget, defaults, widgets.castBar.DrawSettings);
+        DrawSelectedEditorPlatesWidgetWithStorageDefaults(selectedWidget, defaults, widgets.castBar.DrawSettings, {
+            showCornerRadius = true,
+        });
     end
 
     if (selectedWidget == 'Pet timer' or selectedWidget == 'Pet state') then
@@ -17841,11 +18892,7 @@ function settingsUi.SyncScreenAlertsPreviewVisibility()
     local enemyAlerts = require('core.enemy_alerts');
     local shouldShowPreview = state.GetConfigOpen() == true and selectedTab == 'Settings' and selectedGeneralSection == 'Screen Alerts';
 
-    if (shouldShowPreview == true) then
-        local global = state.GetGlobalSettings(globalDefaults);
-        local settings = (global ~= nil and global.enemyAlerts) or {};
-        enemyAlerts.SetPreviewEnabled(settings.layoutPreviewEditFrame == true);
-    elseif (enemyAlerts.GetPreviewEnabled() == true) then
+    if (shouldShowPreview ~= true and enemyAlerts.GetPreviewEnabled() == true) then
         enemyAlerts.SetPreviewEnabled(false);
     end
 end
@@ -17922,6 +18969,7 @@ end
 function settingsUi.Render()
     if (state.GetConfigOpen() ~= true) then
         settingsUi.LockDetachedFrameEditors();
+        _G.LibraPlatesSettingsWindowRect = nil;
         local enemyAlerts = require('core.enemy_alerts');
         if (enemyAlerts.GetPreviewEnabled() == true) then
             enemyAlerts.SetPreviewEnabled(false);
@@ -17960,6 +19008,16 @@ function settingsUi.Render()
     local began = imgui.Begin('LibraPlates Settings', windowOpen, windowFlags);
 
     if (began) then
+        if (imgui.GetWindowPos ~= nil and imgui.GetWindowSize ~= nil) then
+            local posA, posB = imgui.GetWindowPos();
+            local sizeA, sizeB = imgui.GetWindowSize();
+            local x, y = GetImguiVec2XY(posA, posB);
+            local w, h = GetImguiVec2XY(sizeA, sizeB);
+            _G.LibraPlatesSettingsWindowRect = { active = true, x = x, y = y, w = w, h = h };
+        else
+            _G.LibraPlatesSettingsWindowRect = { active = true, x = 0, y = 0, w = 0, h = 0 };
+        end
+
         LibraPlatesSettingsWindowLayout.Save();
 
         local ok, err = pcall(function()
@@ -18020,6 +19078,13 @@ function settingsUi.Render()
                     end
                 end
 
+                if (selectedTab == 'Settings' and selectedGeneralSection == 'Screen Alerts') then
+                    local enemyAlerts = require('core.enemy_alerts');
+                    if (enemyAlerts.GetPreviewEnabled() == true) then
+                        enemyAlerts.RenderPreview();
+                    end
+                end
+
                 DrawChild('##right_panel', { math.max(280, availWidth - selectorWidth - 12), math.max(260, availHeight - 24) }, rightPanelBorder, function()
                     if (selectedTab == 'Settings' or selectedTab == 'Help') then
                         DrawSelectedEditor();
@@ -18041,6 +19106,8 @@ function settingsUi.Render()
         if (ok ~= true) then
             renderError = err;
         end
+    else
+        _G.LibraPlatesSettingsWindowRect = nil;
     end
 
     imgui.End();
@@ -18049,6 +19116,7 @@ function settingsUi.Render()
 
     if (windowOpen[1] ~= true) then
         state.SetConfigOpen(false);
+        _G.LibraPlatesSettingsWindowRect = nil;
     end
 
     if (renderError ~= nil) then

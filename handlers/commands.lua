@@ -1654,6 +1654,7 @@ function commands.Handle(e)
         log.Info('Targeting: ' .. tostring(targeting.GetDebugStatus()));
         log.Info('Native target: ' .. tostring(modules.GetNativeTargetArrowDebugStatus()));
         log.Info('Target module: ' .. tostring(targetModuleMarker.GetDebugStatus()));
+        log.Info('Target overlay: ' .. tostring(targetOverlay.GetDebugStatus()));
         return;
     end
 
@@ -2111,6 +2112,12 @@ function commands.Handle(e)
             state.SetWorldEnabled(true);
         elseif (value == 'off') then
             state.SetWorldEnabled(false);
+        elseif (value == 'status') then
+            log.Info(
+                'World plates enabled=' .. tostring(state.GetWorldEnabled()) .. ' ' ..
+                worldMarkerProbe.GetStatusText()
+            );
+            return;
         else
             state.SetWorldEnabled(not state.GetWorldEnabled());
         end
@@ -2762,7 +2769,7 @@ function commands.Handle(e)
 
     if (subcommand == 'lag') then
         local path, phaseName, seconds = diagnostics.StartAuto(tonumber(args[3]) or 15);
-        log.Info('Lag diagnostics started. Play normally; I will say when done. file=' .. tostring(path) .. ' phase=' .. tostring(phaseName) .. ' seconds=' .. tostring(seconds));
+        log.Info('Lag diagnostics started. Play normally; LibraPlates will report when the capture is done. file=' .. tostring(path) .. ' phase=' .. tostring(phaseName) .. ' seconds=' .. tostring(seconds));
         return;
     end
 
@@ -4044,7 +4051,7 @@ function commands.Handle(e)
         return;
     end
 
-    log.Info('Commands: /lp config, /lp petprobe, /lp perf on, /lp perf detail on, /lp isolate status, /lp diag start, /lp diag scenario target-on, /lp diag restore, /lp world on, /lp world off, /lp mousemove on, /lp mousesteer on, /lp bridge status, /lp depthbridge, /lp depthtest, /lp castdebug on [seconds], /lp fpsstatus, /lp imgui, /lp cursor on');
+    log.Info('Commands: /lp config, /lp petprobe, /lp perf on, /lp perf detail on, /lp isolate status, /lp world on, /lp world off, /lp mousemove on, /lp mousesteer on, /lp bridge status, /lp depthbridge, /lp depthtest, /lp castdebug on [seconds], /lp fpsstatus, /lp imgui, /lp cursor on');
 end
 
 return commands;

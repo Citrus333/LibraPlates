@@ -1133,7 +1133,7 @@ function statusIcons.DrawSettings(settings, context)
             'row_spacing',
             settings.rowSpacing or defaults.rowSpacing or 2,
             0,
-            32,
+            80,
             1
         );
 

@@ -9,12 +9,15 @@ ffi.cdef[[
     typedef unsigned long DWORD;
     typedef unsigned long long ULONG_PTR;
     void keybd_event(unsigned char bVk, unsigned char bScan, DWORD dwFlags, ULONG_PTR dwExtraInfo);
+    short GetAsyncKeyState(int vKey);
 ]];
 
 local mouseControls = {};
 
 local KEYEVENTF_KEYUP = 0x0002;
 local KEYEVENTF_SCANCODE = 0x0008;
+local VK_LBUTTON = 0x01;
+local VK_RBUTTON = 0x02;
 local SCAN_A = 0x1E;
 local SCAN_D = 0x20;
 local SCAN_W = 0x11;
@@ -26,6 +29,23 @@ local turnLeftDown = false;
 local turnRightDown = false;
 local lastMouseX = nil;
 local lastMouseMoveClock = 0;
+
+local function IsMouseButtonDown(vKey)
+    local ok, stateValue = pcall(function()
+        return ffi.C.GetAsyncKeyState(vKey);
+    end);
+
+    if (ok ~= true or stateValue == nil) then
+        return false;
+    end
+
+    return bit.band(tonumber(stateValue) or 0, 0x8000) ~= 0;
+end
+
+local function SyncPhysicalMouseButtons()
+    leftDown = IsMouseButtonDown(VK_LBUTTON);
+    rightDown = IsMouseButtonDown(VK_RBUTTON);
+end
 
 local function GetSettings()
     local global = state.GetGlobalSettings(globalDefaults);
@@ -112,6 +132,8 @@ local function Refresh()
         return;
     end
 
+    SyncPhysicalMouseButtons();
+
     local bothDown = (leftDown == true and rightDown == true);
 
     SetForwardDown(bothDown);
@@ -157,6 +179,8 @@ end
 function mouseControls.Update()
     local settings = GetSettings();
 
+    SyncPhysicalMouseButtons();
+
     if (
         settings.enableBothButtonForward ~= true or
         settings.enableBothButtonSteer ~= true or
@@ -195,6 +219,8 @@ function mouseControls.HandleMouse(e)
         local deltaX = x - lastMouseX;
         lastMouseX = x;
         lastMouseMoveClock = os.clock();
+
+        SyncPhysicalMouseButtons();
 
         if (
             settings.enableBothButtonForward ~= true or

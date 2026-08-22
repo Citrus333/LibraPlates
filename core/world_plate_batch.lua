@@ -201,6 +201,8 @@ local function BuildLayout(items)
             width = item.width,
             height = item.height,
             textureId = item.textureId,
+            cropX = item.cropX or 0,
+            cropY = item.cropY or 0,
         };
 
         x = x + item.width + ATLAS_PADDING;
@@ -255,11 +257,14 @@ local function CopyLayout(device, layout, pageCount)
             return false;
         end
 
+        local cropX = math.max(0, math.floor(tonumber(entry.cropX) or 0));
+        local cropY = math.max(0, math.floor(tonumber(entry.cropY) or 0));
+
         local sourceRect = ffi.new('lp_world_plate_batch_rect_t[1]');
-        sourceRect[0].left = 0;
-        sourceRect[0].top = 0;
-        sourceRect[0].right = entry.width;
-        sourceRect[0].bottom = entry.height;
+        sourceRect[0].left = cropX;
+        sourceRect[0].top = cropY;
+        sourceRect[0].right = cropX + entry.width;
+        sourceRect[0].bottom = cropY + entry.height;
 
         local destination = ffi.new('lp_world_plate_batch_point_t[1]');
         destination[0].x = entry.x;
@@ -302,6 +307,8 @@ local function EnsureLayout(device)
                 textureId = command.textureId,
                 width = command.sourceWidth,
                 height = command.sourceHeight,
+                cropX = command.cropX,
+                cropY = command.cropY,
             };
         end
     end
@@ -576,6 +583,12 @@ function batch.Queue(textureId, info, geometry)
         textureId = tonumber(textureId),
         sourceWidth = sourceWidth,
         sourceHeight = sourceHeight,
+        -- BUGFIX: origin of the meaningful content within the (possibly
+        -- shared/pooled) source texture. Previously unset, which meant
+        -- CopyLayout always copied from the source texture's (0,0)
+        -- corner regardless of where the actual plate content lived.
+        cropX = math.max(0, math.floor(tonumber(info.cropX) or 0)),
+        cropY = math.max(0, math.floor(tonumber(info.cropY) or 0)),
         wx = geometry.wx,
         wy = geometry.wy,
         wz = geometry.wz,

@@ -1,3 +1,11 @@
+# LibraPlates with optimization for 60fps - Fork of Libraplates by Lunem-LumenLee: https://github.com/Lunem-LumenLee/LibraPlates
+
+-Most areas should stay a stable 60fps now
+-Cities and Towns with lots of Players/NPCs/Objects will still have some drops, about 45-50fps on my machine
+-I recommend using the performance or mid setting, and turning off any features you don't use
+-Keeping "Use native party/target UI" checked on helps performance a lot
+-Quick Menu is very cool but sucks up some resources, turn off for things you don't use it on.  I only have it on for Objects.
+
 # LibraPlates
 
 ![LibraPlates](https://img.shields.io/badge/FFXI-50dfff)

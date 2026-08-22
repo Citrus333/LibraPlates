@@ -124,6 +124,25 @@ local enabled = false;
 local replacePlates = false;
 local drawSuppressed = false;
 local compareAnchors = false;
+-- ============================================================
+-- Tier 1.5 perf fix: idle NPC anchor throttling
+-- ============================================================
+-- GetAnchor() does a real native memory read (skeleton/bone lookup) to
+-- find where to hang a plate above an entity's head. That is necessary
+-- for anything that moves, but idle town NPCs (Norg, Bastok, etc.) are
+-- effectively stationary. Without this cache, every idle NPC plate pays
+-- that native read every single frame, in addition to combat mobs and
+-- players who actually need it. This cache lets idle NPC plates reuse
+-- their last resolved position for a short window instead, the same way
+-- GetDistanceRefreshBucket() already throttles distance-text redraws
+-- elsewhere in the addon. (Helper functions that call GetAnchor() live
+-- just below its own definition further down this file, since GetAnchor
+-- is a local function and isn't in scope up here yet.)
+worldMarkerProbe._idleNpcAnchor = { cache = {}, refreshSeconds = 0.5 };
+-- EXPERIMENTAL: set to false to instantly revert plate drawing to the
+-- original unbatched path (one SetTexture+DrawPrimitive call per plate)
+-- if enabling batching causes any visual issues.
+worldMarkerProbe._experimentalPlateBatchingEnabled = true;
 local showText = false;
 local showDistance = false;
 local showCanvasCenter = false;
@@ -2754,6 +2773,61 @@ local function GetAnchor(actorPointer, getBone, style)
     return getBone(actorPointer, bone);
 end
 
+worldMarkerProbe._idleNpcAnchor.IsEligible = function(plate, isObjectPlate)
+    -- Objects are deliberately excluded: FFXI can return a stale object
+    -- offset on the first read, and the existing code already relies on
+    -- re-resolving them every pass to work around that. Only ordinary
+    -- NPCs, and only while genuinely idle (not targeted/subtargeted),
+    -- are safe to throttle here.
+    if (isObjectPlate == true) then
+        return false;
+    end
+
+    if (tostring(plate.clickTargetType or ''):lower() ~= 'npc') then
+        return false;
+    end
+
+    local stateName = plate.stateName or (plate.worldMarker ~= nil and plate.worldMarker.layoutStateName) or nil;
+
+    return stateName == 'Idle' or stateName == nil;
+end
+
+worldMarkerProbe._idleNpcAnchor.Resolve = function(targetIndex, actorPointer, getBone, style)
+    local now = os.clock();
+    local cache = worldMarkerProbe._idleNpcAnchor.cache;
+    local cached = cache[targetIndex];
+
+    if (
+        cached ~= nil and
+        cached.actorPointer == actorPointer and
+        (now - (tonumber(cached.at) or 0)) < worldMarkerProbe._idleNpcAnchor.refreshSeconds
+    ) then
+        if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+            perfMeter.Count('world.anchor.idleNpcReuse', 1);
+        end
+
+        return cached.x, cached.y, cached.z;
+    end
+
+    local x, y, z = GetAnchor(actorPointer, getBone, style);
+
+    if (x ~= nil and y ~= nil and z ~= nil) then
+        cache[targetIndex] = {
+            actorPointer = actorPointer,
+            x = x,
+            y = y,
+            z = z,
+            at = now,
+        };
+    end
+
+    if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+        perfMeter.Count('world.anchor.resolve', 1);
+    end
+
+    return x, y, z;
+end
+
 function worldMarkerProbe._IsObjectWorldPointInFrontOfCamera(device, plate, wx, wy, wz)
     if (tostring(plate ~= nil and plate.clickTargetType or ''):lower() ~= 'object') then
         return true;
@@ -3762,6 +3836,7 @@ function worldMarkerProbe.Shutdown()
     worldMarkerProbe._pendingStackRects = {};
     worldMarkerProbe._deferredLiveResourceBars = {};
     worldMarkerProbe._projectionCache = nil;
+    worldMarkerProbe._idleNpcAnchor.cache = {};
     lastQueuedCount = 0;
     lastDrawCount = 0;
     lastError = nil;
@@ -4460,7 +4535,15 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
             perfMeter.Count('world.anchor.reuse', 1);
         end
     else
-        wx, wy, wz = GetAnchor(actorPointer, getBone, style);
+        if (worldMarkerProbe._idleNpcAnchor.IsEligible(plate, isObjectPlate) == true) then
+            wx, wy, wz = worldMarkerProbe._idleNpcAnchor.Resolve(targetIndex, actorPointer, getBone, style);
+        else
+            wx, wy, wz = GetAnchor(actorPointer, getBone, style);
+
+            if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+                perfMeter.Count('world.anchor.resolve', 1);
+            end
+        end
 
         if (
             updateClickOnly == true and
@@ -4473,10 +4556,6 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
                 y = wy,
                 z = wz,
             };
-        end
-
-        if (perfMeter ~= nil and perfMeter.Count ~= nil) then
-            perfMeter.Count('world.anchor.resolve', 1);
         end
     end
 
@@ -4757,7 +4836,17 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
             false,
             plateWorldHeight,
             style.plateAlwaysOnTop == true or stackMoved == true,
-            false
+            -- EXPERIMENTAL: this was previously a hardcoded `false`, which
+            -- meant the fully-built atlas batching system in
+            -- world_plate_batch.lua never received a single plate to
+            -- batch (confirmed via /lp perf report: world.batch.commands
+            -- was always 0). That forced every visible plate to draw via
+            -- its own individual SetTexture+DrawPrimitive call every
+            -- frame. Flip worldMarkerProbe._experimentalPlateBatchingEnabled
+            -- to false below to instantly revert to the old behavior if
+            -- plates render incorrectly (wrong texture, flicker, wrong
+            -- position) with this on.
+            worldMarkerProbe._experimentalPlateBatchingEnabled == true
         );
 
         if (style.liveResourceBars == true) then

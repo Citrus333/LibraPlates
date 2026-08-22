@@ -1747,10 +1747,21 @@ function canvasTexture.GetWorldBatchInfo(value)
         return nil;
     end
 
+    local crop = info.crop;
+
     return {
         key = key,
         width = tonumber(info.width),
         height = tonumber(info.height),
+        -- BUGFIX: the atlas batching path was previously always copying
+        -- from (0,0) of each source texture, ignoring the crop offset
+        -- that the normal (unbatched) draw path already applies. Since
+        -- plates share/reuse a pooled staging texture and only their own
+        -- cropped sub-rectangle is meaningful, that caused the atlas to
+        -- be populated from the wrong region of the source texture --
+        -- visible as a grey rectangle behind each batched nameplate.
+        cropX = crop ~= nil and tonumber(crop.x) or 0,
+        cropY = crop ~= nil and tonumber(crop.y) or 0,
         revision = tonumber(info.createdAt),
     };
 end

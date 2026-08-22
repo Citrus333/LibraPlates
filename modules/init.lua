@@ -125,7 +125,12 @@ local function UpdateNativeTargetArrowVisibility()
         nativeTargetStartupBurstFrames > 0;
 
     nativeTargetArrow.SetHideAllPrimitivesEnabled(hideNativePartyTargetUi == true and fishingBarCaptureActive ~= true);
-    nativeTargetArrow.SetHardHideEveryDrawEnabled(hideNativeTargetArrow);
+    -- Tier 1 perf fix: never hold the per-draw hard-hide hooks open just
+    -- because a target is selected. The once-per-frame soft write below
+    -- plus VerifyTargetHiddenAndEscalate() handles this far more cheaply;
+    -- SetHardHideBurstFrames() is what actually re-arms the hooks, and
+    -- only for a handful of frames when genuinely needed.
+    nativeTargetArrow.SetHardHideEveryDrawEnabled(false);
     nativeTargetArrow.SetFishingBarCaptureEnabled(fishingBarCaptureActive);
     nativeTargetArrow.SetTargetPrimitiveHideAllowed(mogHouseNativePassthrough ~= true or hasAnyTarget == true);
     nativeTargetArrow.SetEnabled(hideNativeTargetArrow or startupBurstActive or fishingBarCaptureActive);
@@ -135,6 +140,7 @@ local function UpdateNativeTargetArrowVisibility()
     end
 
     nativeTargetArrow.Update();
+    nativeTargetArrow.VerifyTargetHiddenAndEscalate(hideNativeTargetArrow);
 
     if (startupBurstActive == true) then
         nativeTargetArrow.HideTargetPrimitiveOnce();
@@ -695,13 +701,17 @@ function modules.UpdateNativeTargetArrow()
         nativeTargetStartupBurstFrames > 0;
 
     nativeTargetArrow.SetHideAllPrimitivesEnabled(hideNativePartyTargetUi == true and fishingBarCaptureActive ~= true);
-    nativeTargetArrow.SetHardHideEveryDrawEnabled(hideNativeTargetArrow);
+    -- Tier 1 perf fix: same reasoning as UpdateNativeTargetArrowVisibility
+    -- above -- never hold the hooks open continuously, only escalate
+    -- reactively via a short burst when verification says it's needed.
+    nativeTargetArrow.SetHardHideEveryDrawEnabled(false);
     nativeTargetArrow.SetFishingBarCaptureEnabled(fishingBarCaptureActive);
     nativeTargetArrow.SetTargetPrimitiveHideAllowed(mogHouseNativePassthrough ~= true or hasAnyTarget == true);
     nativeTargetArrow.SetEnabled(hideNativeTargetArrow or startupBurstActive or fishingBarCaptureActive);
 
     if (hideNativePartyTargetUi == true or hideNativeTargetArrow == true or fishingBarCaptureActive == true) then
         nativeTargetArrow.Update();
+        nativeTargetArrow.VerifyTargetHiddenAndEscalate(hideNativeTargetArrow);
     elseif (startupBurstActive == true) then
         nativeTargetArrow.SetHardHideBurstFrames(nativeTargetStartupBurstFrames);
         nativeTargetArrow.HideTargetPrimitiveOnce();

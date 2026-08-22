@@ -288,7 +288,11 @@ end);
 
 ashita.events.register('d3d_beginscene', 'libraplates_world_marker_beginscene', function()
     local eventStart = perfMeter.Start();
-    errorBoundary.Call('beginscene.native_target', 'Begin-scene native target-arrow update', modules.UpdateNativeTargetArrow);
+    -- Tier 1 perf fix: modules.UpdateNativeTargetArrow() already ran in
+    -- full this frame from d3d_present below. Re-running the entire
+    -- settings/target recompute here added nothing but cost -- all this
+    -- stage needs is to make sure hook registration matches whatever
+    -- state present left behind (e.g. if a burst just expired).
     errorBoundary.Call('beginscene.native_hooks', 'Begin-scene native draw-hook update', UpdateNativeDrawHooks);
     errorBoundary.Call('beginscene.trace_pause', 'Begin-scene native trace pause', nativeTargetArrow.SetTraceCapturePaused, true);
     errorBoundary.Call('beginscene.world_marker', 'Begin-scene world-marker render', modules.DrawWorldMarker);
@@ -298,7 +302,7 @@ end);
 
 ashita.events.register('d3d_endscene', 'libraplates_native_target_endscene', function()
     local eventStart = perfMeter.Start();
-    errorBoundary.Call('endscene.native_target', 'End-scene native target-arrow update', modules.UpdateNativeTargetArrow);
+    -- Tier 1 perf fix: same reasoning as beginscene above.
     errorBoundary.Call('endscene.native_hooks', 'End-scene native draw-hook update', UpdateNativeDrawHooks);
     perfMeter.Stop('endscene.frame', eventStart);
 end);

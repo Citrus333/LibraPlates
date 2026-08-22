@@ -1460,6 +1460,60 @@ function nativeTargetArrow.SetHardHideBurstFrames(frames)
     end
 end
 
+-- ============================================================
+-- Tier 1 performance fix
+-- ============================================================
+--
+-- Historically, whenever the "hide native target arrow" setting was on
+-- and the player had any target, hardHideManualEnabled was held true for
+-- the ENTIRE duration of that target selection. That keeps the d3d_dp /
+-- d3d_dip / d3d_dpup / d3d_dipup hooks registered continuously, which
+-- means every single DirectX draw call the game makes gets routed
+-- through Lua (event marshaling + errorBoundary.Call + pcall) for as
+-- long as combat lasts. That is the primary FPS cost reported by users.
+--
+-- The once-per-frame soft write (nativeTargetArrow.Update(), which calls
+-- SetPrimitiveVisibility once) is cheap, but was believed to be
+-- unreliable on its own because something in the game's native UI code
+-- can reset the visibility byte back to "visible" later in the same
+-- frame, before the arrow is actually drawn.
+--
+-- Instead of assuming that happens and holding the hooks open the whole
+-- time, VerifyTargetHiddenAndEscalate() checks: did the byte we wrote
+-- last frame actually stay hidden? If yes (the common case), nothing
+-- else happens and the draw hooks stay unregistered. If no (the game
+-- reset it), only THEN do we escalate to a short burst of per-draw
+-- enforcement via the existing SetHardHideBurstFrames mechanism, which
+-- self-expires after a handful of frames in nativeTargetArrow.EndTraceFrame().
+--
+-- This keeps the exact same visual guarantee (the arrow gets forced
+-- hidden on every draw when needed) but only pays the expensive path on
+-- the rare frames that actually need it, instead of every frame for the
+-- whole engagement.
+function nativeTargetArrow.VerifyTargetHiddenAndEscalate(shouldBeHidden)
+    if (shouldBeHidden ~= true) then
+        return;
+    end
+
+    local address = tonumber(primitiveVisibilityAddresses.target);
+
+    if (address == nil or address == 0) then
+        -- We don't have a resolved address yet (e.g. right after login/
+        -- zone). Let the normal Update()/ResolvePointers() path handle
+        -- resolution; nothing to verify this frame.
+        return;
+    end
+
+    local currentValue = ReadUInt8(address);
+
+    -- currentValue == nil means the read failed (e.g. transient bad
+    -- pointer during a zone transition) -- don't treat that as "the game
+    -- fought back", just skip this frame.
+    if (currentValue ~= nil and currentValue ~= 0) then
+        nativeTargetArrow.SetHardHideBurstFrames(6);
+    end
+end
+
 function nativeTargetArrow.HandleDrawPrimitive(e)
     local perfToken = perfMeter.BeginDetail('native.hook');
 

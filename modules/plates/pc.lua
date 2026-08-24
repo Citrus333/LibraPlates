@@ -949,6 +949,13 @@ local function BuildPcPlateData(context)
         tp = context.tpPercent,
         aoeNameActive = context.nameAoeActive == true,
         name = (context.nameLoads == true) and displayName or '',
+        -- Type-toggle fix: reaching this function already implies PC
+        -- plates are enabled (pcPlate.Render() returns early otherwise),
+        -- so the name should always draw for this type regardless of the
+        -- separate global "Use native names" setting -- that global check
+        -- predates per-type toggles and was only ever meant to apply when
+        -- LibraPlates handles every type uniformly.
+        forceName = true,
         nameFontFamily = fonts.GetRole(context.globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(context.globalSettings, false),
         nameFontSize = textScale.ToNameTextureFontSize(context.nameTextSize, nameDefaults.textSize),
@@ -1847,6 +1854,10 @@ function pcPlate.Render()
         return;
     end
 
+    if ((targeting.GetSettings() or {}).pcPlatesTypeEnabled == false) then
+        return;
+    end
+
     local configOpen = state.GetConfigOpen() == true;
 
     if (configOpen == true and wasConfigOpen ~= true) then
@@ -2006,12 +2017,27 @@ function pcPlate.Render()
     perfMeter.SetCounter('pcCrowdedTownZone', isTownZone == true and 1 or 0);
     perfMeter.SetCounter('pcCrowdedActive', crowdedActive == true and 1 or 0);
 
+    -- Q=D fix: previously every scanned player got the full, expensive
+    -- QueuePlayer() build (icon lookups, name/signature computation,
+    -- cache checks) regardless of maxVisiblePlates -- the cap only
+    -- trimmed what happened afterward in world_marker_probe.lua, so
+    -- "queued" count never actually dropped and neither did the real
+    -- cost. `players` is already distance-sorted by GetNearbyPlayers(),
+    -- so capping here is just a count check, no extra sort needed.
+    -- Party and target/subtarget players (queued above) are exempt.
+    local maxVisiblePlatesSetting = tonumber(targetingSettings.maxVisiblePcPlates) or 0;
+    local unrelatedQueuedThisFrame = 0;
+
     for _, player in ipairs(players) do
         if (queuedSpecialPlayers[tonumber(player.index) or 0] ~= true and entities.IsOwnPetIndex(player.index) ~= true) then
-            QueuePlayer(player, targetingSettings, nearbyPlayerDetail);
+            if (maxVisiblePlatesSetting <= 0 or unrelatedQueuedThisFrame < maxVisiblePlatesSetting) then
+                QueuePlayer(player, targetingSettings, nearbyPlayerDetail);
+                unrelatedQueuedThisFrame = unrelatedQueuedThisFrame + 1;
+            end
         end
     end
 
+    perfMeter.SetCounter('pcUnrelatedQueuedThisFrame', unrelatedQueuedThisFrame);
     perfMeter.SetCounter('pcScanned', #(players or {}));
 
     pcIdleCanvasBuildLimitThisFrame = 0;

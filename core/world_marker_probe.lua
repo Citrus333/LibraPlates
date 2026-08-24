@@ -142,7 +142,38 @@ worldMarkerProbe._idleNpcAnchor = { cache = {}, refreshSeconds = 0.5 };
 -- EXPERIMENTAL: set to false to instantly revert plate drawing to the
 -- original unbatched path (one SetTexture+DrawPrimitive call per plate)
 -- if enabling batching causes any visual issues.
-worldMarkerProbe._experimentalPlateBatchingEnabled = true;
+-- DISABLED (2026-08-23): two attempts at fixing the crop-offset atlas
+-- copy each failed differently -- first with an outright CopyRects
+-- error, then (after adding a GetDesc() probe to query/clamp against
+-- the real source dimensions) with CopyRects reporting success while
+-- silently copying wrong content. The visual artifact's behavior
+-- (color/gradient varies with font size and text content; disappears
+-- for the currently-targeted plate specifically) suggests the wrongly
+-- copied region is picking up rendered text/GDI content rather than a
+-- static background panel, but this isn't confirmed. Given two
+-- increasingly-risky failed attempts, batching is turned off here
+-- rather than attempting a third fix -- the individual (non-batched)
+-- draw path is proven-correct and this flag is the single toggle to
+-- revisit batching later if desired.
+worldMarkerProbe._experimentalPlateBatchingEnabled = false;
+-- Perf: how far outside the viewport (in pixels, in any direction) a
+-- plate's projected screen position has to be before it's treated as
+-- "clearly not visible" and skipped entirely. Deliberately generous --
+-- lower it (e.g. 200) for a more aggressive cull if profiling shows
+-- this is still conservative for your setup; raise it if anything near
+-- screen edges seems to flicker or vanish too early.
+worldMarkerProbe._offScreenCullMargin = 350;
+-- DISABLED (2026-08-24): both left-click targeting and the Quick Menu
+-- (right-click) stopped working, but only when the settings window is
+-- closed. Both features depend on the same underlying click-rect
+-- detection in this file. This cull is the newest change touching the
+-- code path directly upstream of click-rect construction (everything
+-- from style.clickTargetType onward, including click-rect building,
+-- only runs AFTER this check passes) -- so it's the prime suspect,
+-- though not yet confirmed with live diagnostic data. Disabled here to
+-- immediately restore known-working click behavior; re-enable once the
+-- actual interaction is found and fixed, rather than guessing further.
+worldMarkerProbe._offScreenCullEnabled = false;
 local showText = false;
 local showDistance = false;
 local showCanvasCenter = false;
@@ -3291,6 +3322,207 @@ local function ShouldHideProjectedBelowViewportPlate(device, entityManager, styl
     return false;
 end
 
+-- ============================================================
+-- Perf: general off-screen cull
+-- ============================================================
+-- ShouldHideProjectedBelowViewportPlate() above only ever fires for
+-- plates that explicitly opt in (style.hideWhenProjectedBelowViewport)
+-- and only catches the "below the bottom edge" case. Every other plate
+-- -- including ones directly behind the camera, or off to the far left
+-- or right, which is common for anyone standing in a crowd -- still pays
+-- the full remaining cost of DrawOne(): click-rect construction, D3D
+-- render-state save/restore, and either an individual draw call or a
+-- batch-queue append. None of that is skippable once you know the plate
+-- has zero chance of being visible this frame.
+--
+-- This is deliberately generous (large margin, and it treats a failed
+-- projection as "can't prove it's off-screen" rather than culling it) so
+-- it only ever removes work for plates that are unambiguously not going
+-- to be seen, never for anything genuinely near an edge.
+worldMarkerProbe._IsClearlyOffScreen = function(device, wx, wy, wz)
+    local view, proj, viewport = worldMarkerProbe._GetProjectionState(device);
+
+    if (view == nil or proj == nil or viewport == nil or viewport.Width == nil or viewport.Height == nil) then
+        -- Can't determine screen position; don't risk hiding something
+        -- that might actually be visible.
+        return false;
+    end
+
+    local screenX, screenY = ProjectWithZ(view, proj, viewport.Width, viewport.Height, wx, wy, wz);
+
+    if (screenX == nil or screenY == nil) then
+        -- ProjectWithZ returns nil specifically when the point is behind
+        -- (or essentially at) the camera -- unambiguously not visible.
+        return true;
+    end
+
+    local margin = worldMarkerProbe._offScreenCullMargin;
+
+    return
+        screenX < -margin or
+        screenX > (tonumber(viewport.Width) + margin) or
+        screenY < -margin or
+        screenY > (tonumber(viewport.Height) + margin);
+end
+
+-- ============================================================
+-- Quick Menu without a visible plate
+-- ============================================================
+-- The Quick Menu previously only opened for entities that currently
+-- have a LibraPlates click-rect -- which only exist for plates that are
+-- actually visible (not off-screen-culled, not trimmed by a max-plates
+-- cap, not a disabled type). Right-clicking a character whose nameplate
+-- isn't showing did nothing, even though the character itself is
+-- clearly visible on screen.
+--
+-- This scans nearby entities directly (bypassing the plate system
+-- entirely) and finds whichever one projects closest to the click
+-- position on screen, within a fixed pixel radius -- deliberately
+-- approximate, since without an existing plate there's no known
+-- on-screen size/hitbox for the entity, just its anchor point. Only
+-- called as a fallback when the normal click-rect lookup finds nothing,
+-- and only ever wired into right-click handling (see HandleMouse) --
+-- left-click targeting is untouched by this entirely.
+worldMarkerProbe._rightClickFallbackRadius = 45;
+
+worldMarkerProbe._FindNearbyEntityAt = function(x, y)
+    local mouseX = tonumber(x);
+    local mouseY = tonumber(y);
+
+    if (mouseX == nil or mouseY == nil) then
+        return nil;
+    end
+
+    local device = d3d8.get_device();
+
+    if (device == nil) then
+        return nil;
+    end
+
+    -- BUGFIX: previously used worldMarkerProbe._GetProjectionState(device),
+    -- which can call _RefreshProjectionCache -- directly querying the D3D
+    -- device's transform/viewport state. Confirmed by an actual runtime
+    -- error (a partially-populated view matrix, missing field _12) that
+    -- doing this from inside a mouse-event handler, rather than the
+    -- normal per-frame render loop, can return incomplete data. This now
+    -- only ever reads the existing cache as-is, never triggering a fresh
+    -- device query itself -- the camera barely moves between one render
+    -- frame and a click moments later, so slightly-stale cached data is
+    -- more than good enough for finding the closest nearby entity.
+    local cache = worldMarkerProbe._projectionCache;
+
+    if (
+        cache == nil or cache.device ~= device or
+        cache.view == nil or cache.projection == nil or cache.viewport == nil or
+        cache.viewport.Width == nil or cache.viewport.Height == nil
+    ) then
+        return nil;
+    end
+
+    local view, proj, viewport = cache.view, cache.projection, cache.viewport;
+
+    local entityManager = AshitaCore:GetMemoryManager():GetEntity();
+
+    if (entityManager == nil) then
+        return nil;
+    end
+
+    local candidates = {};
+
+    local okPc, players = pcall(function() return entities.GetNearbyPlayers(50); end);
+    if (okPc == true and type(players) == 'table') then
+        for _, player in ipairs(players) do
+            candidates[#candidates + 1] = {
+                targetIndex = player.index,
+                serverId = player.serverId,
+                name = player.name,
+                targetType = 'pc',
+            };
+        end
+    end
+
+    local okNpc, npcObjects = pcall(function() return entities.GetNearbyNpcObjects(50, nil); end);
+    if (okNpc == true and type(npcObjects) == 'table') then
+        for _, item in ipairs(npcObjects) do
+            candidates[#candidates + 1] = {
+                targetIndex = item.index,
+                name = item.name,
+                targetType = tostring(item.entityType or ''):lower() == 'object' and 'object' or 'npc',
+            };
+        end
+    end
+
+    local okEnemy, enemies = pcall(function() return entities.GetNearbyEnemies(50); end);
+    if (okEnemy == true and type(enemies) == 'table') then
+        for _, enemy in ipairs(enemies) do
+            candidates[#candidates + 1] = {
+                targetIndex = enemy.index,
+                serverId = enemy.serverId,
+                name = enemy.name,
+                targetType = 'enemy',
+            };
+        end
+    end
+
+    local okTrust, trusts = pcall(function() return entities.GetNearbyTrusts(50); end);
+    if (okTrust == true and type(trusts) == 'table') then
+        for _, trust in ipairs(trusts) do
+            candidates[#candidates + 1] = {
+                targetIndex = trust.index,
+                serverId = trust.serverId,
+                name = trust.name,
+                targetType = 'trust',
+            };
+        end
+    end
+
+    local best = nil;
+    local bestDistSq = worldMarkerProbe._rightClickFallbackRadius * worldMarkerProbe._rightClickFallbackRadius;
+
+    for _, candidate in ipairs(candidates) do
+        local okAnchor, wx, wy, wz = pcall(function()
+            return GetObjectEntityAnchor(entityManager, tonumber(candidate.targetIndex));
+        end);
+
+        if (
+            okAnchor == true and
+            type(wx) == 'number' and type(wy) == 'number' and type(wz) == 'number'
+        ) then
+            -- +1.0 rough head-height offset, same convention used
+            -- elsewhere in this file for approximate anchor checks.
+            local okProject, screenX, screenY = pcall(function()
+                return ProjectWithZ(view, proj, viewport.Width, viewport.Height, wx, wz + 1.0, wy);
+            end);
+
+            if (
+                okProject == true and
+                type(screenX) == 'number' and type(screenY) == 'number'
+            ) then
+                local dx = screenX - mouseX;
+                local dy = screenY - mouseY;
+                local distSq = (dx * dx) + (dy * dy);
+
+                if (distSq <= bestDistSq) then
+                    bestDistSq = distSq;
+                    best = candidate;
+                end
+            end
+        end
+    end
+
+    if (best == nil) then
+        return nil;
+    end
+
+    return {
+        targetIndex = best.targetIndex,
+        serverId = best.serverId,
+        targetType = best.targetType,
+        name = best.name,
+        rawName = best.name,
+    };
+end
+
 -- ==========================================================
 -- = PUBLIC API =
 -- ==========================================================
@@ -4763,6 +4995,46 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
             return;
         end
 
+        if (stackMoved ~= true and style.plateTacticalOverlayOnly ~= true) then
+            -- BUGFIX: previously exempted anything not literally in
+            -- 'Idle' state, which is far broader than "things the player
+            -- shouldn't lose track of" -- it also covered other people's
+            -- targets, general combat states, etc., letting genuinely
+            -- off-screen entities through uncounted. This now checks
+            -- specifically whether the plate IS the player's own current
+            -- target/subtarget (by index) or has an active tactical
+            -- marker, which is a precise definition of "never hide this"
+            -- rather than a broad state guess.
+            local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
+            local plateIndex = tonumber(plate.targetIndex);
+            local isOwnTarget =
+                plateIndex ~= nil and
+                (plateIndex == tonumber(targetIndex) or plateIndex == tonumber(subTargetIndex));
+            local hasActiveMarker = style.targetMarker ~= nil and style.targetMarker.enabled == true;
+
+            if (
+                isOwnTarget ~= true and
+                hasActiveMarker ~= true and
+                worldMarkerProbe._offScreenCullEnabled == true and
+                worldMarkerProbe._IsClearlyOffScreen(device, plateX, plateY, plateZ) == true
+            ) then
+                if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+                    perfMeter.Count('world.cull.offScreen', 1);
+                end
+                return;
+            end
+        end
+
+        if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+            -- Distinct from queued/drawn (which count "processed without
+            -- crashing", including early-returns from culling above).
+            -- This only increments once a plate has passed every
+            -- visibility gate and is genuinely about to be drawn/queued,
+            -- so it's the counter to actually watch when checking whether
+            -- culling is doing anything.
+            perfMeter.Count('world.draw.actuallyVisible', 1);
+        end
+
         style.clickTargetType = plate.clickTargetType or style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy');
         style.serverId = plate.serverId or style.serverId;
         style.distance = plate.distance or style.distance;
@@ -4889,6 +5161,31 @@ local function DrawOne(plate, entityManager, getBone, device, updateClickOnly)
 
         if (worldMarkerProbe._HasStackScreenOffset(plate) ~= true and ShouldHideProjectedBelowViewportPlate(device, entityManager, style, plateX, plateY, plateZ) == true) then
             return;
+        end
+
+        if (worldMarkerProbe._HasStackScreenOffset(plate) ~= true and style.plateTacticalOverlayOnly ~= true) then
+            local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
+            local plateIndex = tonumber(plate.targetIndex);
+            local isOwnTarget =
+                plateIndex ~= nil and
+                (plateIndex == tonumber(targetIndex) or plateIndex == tonumber(subTargetIndex));
+            local hasActiveMarker = style.targetMarker ~= nil and style.targetMarker.enabled == true;
+
+            if (
+                isOwnTarget ~= true and
+                hasActiveMarker ~= true and
+                worldMarkerProbe._offScreenCullEnabled == true and
+                worldMarkerProbe._IsClearlyOffScreen(device, plateX, plateY, plateZ) == true
+            ) then
+                if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+                    perfMeter.Count('world.cull.offScreen', 1);
+                end
+                return;
+            end
+        end
+
+        if (perfMeter ~= nil and perfMeter.Count ~= nil) then
+            perfMeter.Count('world.draw.actuallyVisible', 1);
         end
 
         style.clickTargetType = plate.clickTargetType or style.clickTargetType or (plate.isSelf == true and 'self' or 'enemy');
@@ -5043,6 +5340,173 @@ local function GetPlateQueuePriority(plate, targetIndex, subTargetIndex)
     return 70;
 end
 
+-- ============================================================
+-- Perf: hard cap on simultaneously visible plates ("overall" cap)
+-- ============================================================
+-- This is the THIRD, final layer of the max-plates system, and the
+-- only one that operates on a true cross-type combined ranking:
+--   1. pc.lua's own final loop caps ordinary players via
+--      settings.maxVisiblePcPlates before the expensive per-player
+--      build (QueuePlayer) ever runs.
+--   2. npc.lua's own final loop caps ordinary NPCs/objects the same
+--      way via settings.maxVisibleNpcPlates.
+--   3. THIS function then applies settings.maxVisiblePlates (the
+--      "overall" cap) across whatever survived steps 1-2, plus enemy/
+--      trust/pet plates (which don't have their own per-type quota
+--      yet), giving a real, predictable worst case on total plates
+--      drawn regardless of how many entities are nearby.
+--
+-- Because steps 1-2 happen first, this function's own cost (and the
+-- draw-side cost of anything it trims) is now bounded by however much
+-- steps 1-2 already let through, not the full unfiltered entity count.
+-- Note steps 1-2 don't coordinate with each other or with this cap, so
+-- it's possible for more to be queued here than the overall cap allows
+-- (e.g. maxVisiblePcPlates=10 + maxVisibleNpcPlates=10 both maxed out,
+-- while maxVisiblePlates=15) -- the excess still gets its expensive
+-- build paid for even though it won't be drawn, but that waste is
+-- bounded by (maxVisiblePcPlates + maxVisibleNpcPlates - maxVisiblePlates)
+-- rather than being unbounded like before any of these settings existed.
+--
+-- Reuses the exact same importance ranking SortDrawablePlatesForDraw
+-- already uses for draw order (self > current target/subtarget > active
+-- marker > by entity type), so what gets dropped under the cap is
+-- consistent with what the addon already treats as "less important".
+-- Within a priority tier, closer plates are kept over farther ones.
+--
+-- Controlled by settings.maxVisiblePlates (0 = unlimited, the default,
+-- so this has zero effect and zero cost until explicitly enabled).
+worldMarkerProbe._GetPlateKeepPriority = function(plate, drawPriority)
+    if (drawPriority <= 2) then
+        -- self / current target-subtarget / active tactical marker: same
+        -- as draw order, always most important, never dropped first.
+        return drawPriority;
+    end
+
+    -- GetPlateQueuePriority() above intentionally ranks NPCs ahead of
+    -- ordinary players for DRAW ORDER (so a quest-giver/shop NPC paints
+    -- on top and stays legible in a crowd). That's a sensible z-order
+    -- rule, but reusing it for the KEEP/DROP decision under a hard
+    -- population cap had the effect of preferring incidental town NPCs
+    -- over nearby players, which isn't what most people mean by "limit
+    -- how many plates I see" -- so this uses a separate ordering for
+    -- that specific decision instead.
+    local targetType = tostring(plate ~= nil and plate.clickTargetType or ''):lower();
+
+    if (targetType == 'pc') then return 10; end
+    if (targetType == 'trust') then return 15; end
+    if (targetType == 'pet') then return 18; end
+    if (targetType == 'enemy') then return 20; end
+    if (targetType == 'npc') then return 30; end
+    if (targetType == 'object') then return 40; end
+
+    return 50;
+end
+
+worldMarkerProbe._ApplyMaxVisiblePlatesLimit = function(plates, entityManager, device)
+    if (type(plates) ~= 'table') then
+        return plates;
+    end
+
+    local settings = targeting.GetSettings();
+    local limit = settings ~= nil and tonumber(settings.maxVisiblePlates) or 0;
+
+    if (limit == nil or limit <= 0 or #plates <= limit) then
+        if (perfMeter ~= nil and perfMeter.SetCounter ~= nil) then
+            perfMeter.SetCounter('world.maxPlatesLimit.dropped', 0);
+        end
+
+        return plates;
+    end
+
+    local targetIndex, subTargetIndex = targeting.GetCurrentTargetAndSubTargetIndexes();
+
+    -- BUGFIX: previously ranked candidates purely by priority+distance
+    -- with no notion of whether they were actually in front of the
+    -- camera. In a crowd, the "closest" handful can easily all be
+    -- standing behind the player, and the earlier off-screen cull
+    -- (world.cull.offScreen) would then reject every single one of
+    -- them -- netting zero visible plates even though the cap was
+    -- "working" by its own count. This does a cheap raw-position
+    -- projection (not the expensive exact-anchor helper DrawOne uses)
+    -- purely to bias selection toward plates likely to actually be
+    -- visible.
+    local view, proj, viewport = nil, nil, nil;
+
+    if (device ~= nil) then
+        view, proj, viewport = worldMarkerProbe._GetProjectionState(device);
+    end
+
+    local canCheckVisibility =
+        entityManager ~= nil and
+        view ~= nil and proj ~= nil and viewport ~= nil and
+        viewport.Width ~= nil and viewport.Height ~= nil;
+
+    local ranked = {};
+
+    for order, plate in ipairs(plates) do
+        local drawPriority = GetPlateQueuePriority(plate, targetIndex, subTargetIndex);
+        local behindCamera = false;
+
+        -- Protected plates (self/target/subtarget/active marker) are
+        -- never visibility-checked here -- they're always kept
+        -- regardless of facing, same as before.
+        if (canCheckVisibility == true and drawPriority > 2) then
+            local ex, ey, ez = GetObjectEntityAnchor(entityManager, tonumber(plate ~= nil and plate.targetIndex));
+
+            if (ex ~= nil and ey ~= nil and ez ~= nil) then
+                -- FFXI actor memory is x/y/z; D3D world here is x/z/y
+                -- (z is FFXI's vertical axis). +1.0 is a rough head-height
+                -- offset -- this only needs to be approximately right
+                -- for ranking purposes, not pixel-accurate.
+                local sx, sy = ProjectWithZ(view, proj, viewport.Width, viewport.Height, ex, ez + 1.0, ey);
+
+                if (sx == nil or sy == nil) then
+                    behindCamera = true;
+                end
+            end
+        end
+
+        ranked[#ranked + 1] = {
+            plate = plate,
+            priority = worldMarkerProbe._GetPlateKeepPriority(plate, drawPriority),
+            behindCamera = behindCamera,
+            distance = tonumber(plate ~= nil and plate.distance) or 9999,
+            order = order,
+        };
+    end
+
+    table.sort(ranked, function(left, right)
+        if (left.priority ~= right.priority) then
+            return left.priority < right.priority;
+        end
+
+        if (left.behindCamera ~= right.behindCamera) then
+            -- Not-behind-camera sorts before behind-camera within the
+            -- same priority tier.
+            return right.behindCamera == true;
+        end
+
+        if (left.distance ~= right.distance) then
+            return left.distance < right.distance;
+        end
+
+        return left.order < right.order;
+    end);
+
+    local kept = {};
+    local keepCount = math.min(limit, #ranked);
+
+    for i = 1, keepCount do
+        kept[#kept + 1] = ranked[i].plate;
+    end
+
+    if (perfMeter ~= nil and perfMeter.SetCounter ~= nil) then
+        perfMeter.SetCounter('world.maxPlatesLimit.dropped', #plates - #kept);
+    end
+
+    return kept;
+end
+
 local function SortDrawablePlatesForDraw(drawablePlates)
     if (type(drawablePlates) ~= 'table' or #drawablePlates <= 1) then
         return drawablePlates;
@@ -5132,7 +5596,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         pendingClickRects = {};
         worldMarkerProbe._pendingStackRects = {};
 
-        local drawablePlates = SortDrawablePlatesForDraw(queuedPlates);
+        local drawablePlates = SortDrawablePlatesForDraw(worldMarkerProbe._ApplyMaxVisiblePlatesLimit(queuedPlates, entityManager, device));
         worldMarkerProbe._lastClickPlates = drawablePlates;
         worldMarkerProbe._lastClickGetEntityManager = getEntityManager;
         worldMarkerProbe._lastClickGetBone = getBone;
@@ -5180,7 +5644,7 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
     end
 
     lastDrawCount = 0;
-    local drawablePlates = SortDrawablePlatesForDraw(queuedPlates);
+    local drawablePlates = SortDrawablePlatesForDraw(worldMarkerProbe._ApplyMaxVisiblePlatesLimit(queuedPlates, entityManager, device));
     worldMarkerProbe._lastClickPlates = drawablePlates;
     worldMarkerProbe._lastClickGetEntityManager = getEntityManager;
     worldMarkerProbe._lastClickGetBone = getBone;
@@ -5845,6 +6309,14 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
             rawName = worldMarkerProbe._fallbackSelfClickRect.rawName,
             layoutStateName = worldMarkerProbe._fallbackSelfClickRect.layoutStateName,
         };
+    end
+
+    -- Quick Menu without a visible plate: only for right-click (516/517),
+    -- deliberately never touching left-click (513/514) targeting at all.
+    -- Falls back to scanning nearby entities directly when nothing was
+    -- found via the normal plate-based click-rect lookup above.
+    if (entry == nil and (message == 516 or message == 517)) then
+        entry = worldMarkerProbe._FindNearbyEntityAt(e.x, e.y);
     end
 
     if (message == 516) then

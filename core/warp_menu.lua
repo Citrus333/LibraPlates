@@ -912,33 +912,49 @@ local function DrawDestination(settings, destination, favoriteRow, context, unlo
     local labelColor = (unavailable == true or unlockState == false) and { 0.55, 0.55, 0.58, 1.0 } or nil;
     local rowStartX, rowStartY = GetCursorPos();
     local rowHeight = 22;
+    local starWidth = 22;
     local rowWidth = math.max(220, (#label * 8) + 46);
+
+    -- BUGFIX: the star toggle and the row's own warp-click previously
+    -- shared the same screen region (a full-row Selectable submitted
+    -- first, with the icon/text drawn on top of it afterward via
+    -- SetCursorPos), so clicking the star always triggered the row's
+    -- warp instead of favoriting -- the underlying Selectable had
+    -- already claimed that area's hit-testing. The star now gets its
+    -- own, separate, non-overlapping Selectable sized to just its own
+    -- area, so it can never compete with the row's click.
+    local favoriteClicked = imgui.Selectable(
+        '##warp_fav_' .. FavoriteKey(destination.zone, destination.id),
+        false,
+        0,
+        { starWidth, rowHeight }
+    ) == true;
+
+    SetCursorPos(rowStartX, rowStartY + 2);
+
+    if (icon ~= nil and imgui.Image ~= nil) then
+        imgui.Image(icon, { 16, 16 }, { 0, 0 }, { 1, 1 });
+    else
+        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, favorite and '[*]' or '[ ]');
+    end
+
+    SetCursorPos(rowStartX + starWidth, rowStartY);
+
     local clicked = imgui.Selectable(
         '##warp_dest_' .. FavoriteKey(destination.zone, destination.id),
         false,
         0,
-        { rowWidth, rowHeight }
+        { math.max(1, rowWidth - starWidth), rowHeight }
     ) == true;
-    SetCursorPos(rowStartX, rowStartY + 2);
-    local favoriteClicked = false;
 
-    if (icon ~= nil and imgui.Image ~= nil) then
-        imgui.Image(icon, { 16, 16 }, { 0, 0 }, { 1, 1 });
-        favoriteClicked = imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true;
-
-        imgui.SameLine();
-    else
-        imgui.TextColored({ 1.0, 0.84, 0.0, 1.0 }, favorite and '[*]' or '[ ]');
-        favoriteClicked = imgui.IsItemClicked ~= nil and imgui.IsItemClicked(0) == true;
-
-        imgui.SameLine();
-    end
+    SetCursorPos(rowStartX + starWidth + 4, rowStartY + 2);
 
     if (labelColor ~= nil) then
         imgui.TextColored(labelColor, label);
     else
         imgui.Text(label);
     end
+
     SetCursorPos(rowStartX, rowStartY + rowHeight);
 
     if (favoriteClicked == true) then

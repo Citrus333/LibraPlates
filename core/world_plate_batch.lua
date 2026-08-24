@@ -215,6 +215,8 @@ end
 local function CopyLayout(device, layout, pageCount)
     local pageSurfaces = {};
     lastAtlasCopies = 0;
+    local failureCount = 0;
+    local successCount = 0;
 
     local function Cleanup()
         for _, surface in pairs(pageSurfaces) do
@@ -242,7 +244,12 @@ local function CopyLayout(device, layout, pageCount)
         pageSurfaces[pageIndex] = surface;
     end
 
-    for _, entry in pairs(layout) do
+    -- NOTE: iterating with pairs() and clearing the current key (layout[token]
+    -- = nil) is explicitly documented as safe in the Lua reference manual;
+    -- only ADDING new keys during traversal is undefined. We rely on that
+    -- here to prune individual entries that fail without restarting or
+    -- aborting the whole pass.
+    for token, entry in pairs(layout) do
         local sourceTexture = ffi.cast(
             'IDirect3DTexture8*',
             ffi.cast('uintptr_t', tonumber(entry.textureId))
@@ -251,47 +258,80 @@ local function CopyLayout(device, layout, pageCount)
             return sourceTexture:GetSurfaceLevel(0);
         end);
 
+        local entryFailed = false;
+
         if (ok ~= true or hr ~= C.S_OK or sourceSurface == nil) then
             lastStatus = 'source-surface-failed:' .. tostring(hr);
-            Cleanup();
-            return false;
+            entryFailed = true;
+        else
+            -- Back to the known-good (0,0) origin copy. Two earlier
+            -- attempts at a crop-aware offset both failed in different
+            -- ways: first with an outright CopyRects error, then --
+            -- after adding a GetDesc() call to query and clamp to the
+            -- source surface's real dimensions -- with CopyRects
+            -- reporting success while actually copying blank content.
+            -- The second failure is the more informative one: since the
+            -- copy rectangle here is unchanged from the known-good
+            -- version, merely CALLING GetDesc() on the source surface
+            -- (regardless of what's done with its result) appears able
+            -- to leave the surface in a state where a subsequent
+            -- CopyRects silently misbehaves without either call
+            -- reporting an error. That's a real, separate risk from the
+            -- crop-math question this was meant to diagnose, so
+            -- GetDesc() is removed entirely here, not just unused --
+            -- calling it at all is what's suspect, not just trusting its
+            -- return value.
+            local sourceRect = ffi.new('lp_world_plate_batch_rect_t[1]');
+            sourceRect[0].left = 0;
+            sourceRect[0].top = 0;
+            sourceRect[0].right = entry.width;
+            sourceRect[0].bottom = entry.height;
+
+            local destination = ffi.new('lp_world_plate_batch_point_t[1]');
+            destination[0].x = entry.x;
+            destination[0].y = entry.y;
+
+            local copyOk, copyHr = pcall(function()
+                return device:CopyRects(
+                    sourceSurface,
+                    ffi.cast('const RECT*', sourceRect),
+                    1,
+                    pageSurfaces[entry.pageIndex],
+                    ffi.cast('const POINT*', destination)
+                );
+            end);
+
+            ReleaseInterface(sourceSurface);
+
+            if (copyOk ~= true or copyHr ~= C.S_OK) then
+                lastStatus = 'atlas-copy-failed:' .. tostring(copyHr) ..
+                    ':size=' .. tostring(entry.width) .. 'x' .. tostring(entry.height);
+                entryFailed = true;
+            end
         end
 
-        local cropX = math.max(0, math.floor(tonumber(entry.cropX) or 0));
-        local cropY = math.max(0, math.floor(tonumber(entry.cropY) or 0));
-
-        local sourceRect = ffi.new('lp_world_plate_batch_rect_t[1]');
-        sourceRect[0].left = cropX;
-        sourceRect[0].top = cropY;
-        sourceRect[0].right = cropX + entry.width;
-        sourceRect[0].bottom = cropY + entry.height;
-
-        local destination = ffi.new('lp_world_plate_batch_point_t[1]');
-        destination[0].x = entry.x;
-        destination[0].y = entry.y;
-
-        local copyOk, copyHr = pcall(function()
-            return device:CopyRects(
-                sourceSurface,
-                ffi.cast('const RECT*', sourceRect),
-                1,
-                pageSurfaces[entry.pageIndex],
-                ffi.cast('const POINT*', destination)
-            );
-        end);
-
-        ReleaseInterface(sourceSurface);
-
-        if (copyOk ~= true or copyHr ~= C.S_OK) then
-            lastStatus = 'atlas-copy-failed:' .. tostring(copyHr);
-            Cleanup();
-            return false;
+        if (entryFailed == true) then
+            failureCount = failureCount + 1;
+            -- Drop just this one plate from the layout. BuildRuns() already
+            -- skips any command whose token isn't in layoutByToken, so this
+            -- plate simply won't be part of the batched draw this frame
+            -- instead of taking every other plate down with it.
+            layout[token] = nil;
+        else
+            successCount = successCount + 1;
+            lastAtlasCopies = lastAtlasCopies + 1;
         end
-
-        lastAtlasCopies = lastAtlasCopies + 1;
     end
 
     Cleanup();
+
+    if (successCount == 0 and failureCount > 0) then
+        -- Nothing usable came out of this pass at all -- treat it as a
+        -- real failure so the caller falls back cleanly rather than
+        -- flushing an empty atlas.
+        return false;
+    end
+
     return true;
 end
 
@@ -461,30 +501,36 @@ local function BuildRuns()
         [D3DCMP_LESSEQUAL] = {},
         [D3DCMP_ALWAYS] = {},
     };
+    local skipped = {};
 
     for _, command in ipairs(commands) do
         local layout = layoutByToken[command.token];
+
         if (layout == nil) then
-            return nil;
-        end
+            -- This specific plate's texture failed to copy into the atlas
+            -- (see CopyLayout). Rather than aborting the whole batched
+            -- draw over one bad texture, fall back to drawing just this
+            -- one plate the old way; everything else still batches.
+            skipped[#skipped + 1] = command;
+        else
+            local zMode = command.alwaysOnTop == true and D3DCMP_ALWAYS or D3DCMP_LESSEQUAL;
+            local byPage = grouped[zMode];
+            local current = byPage[layout.pageIndex];
 
-        local zMode = command.alwaysOnTop == true and D3DCMP_ALWAYS or D3DCMP_LESSEQUAL;
-        local byPage = grouped[zMode];
-        local current = byPage[layout.pageIndex];
+            if (current == nil) then
+                current = {
+                    pageIndex = layout.pageIndex,
+                    zMode = zMode,
+                    entries = {},
+                };
+                byPage[layout.pageIndex] = current;
+            end
 
-        if (current == nil) then
-            current = {
-                pageIndex = layout.pageIndex,
-                zMode = zMode,
-                entries = {},
+            current.entries[#current.entries + 1] = {
+                command = command,
+                layout = layout,
             };
-            byPage[layout.pageIndex] = current;
         end
-
-        current.entries[#current.entries + 1] = {
-            command = command,
-            layout = layout,
-        };
     end
 
     local runs = {};
@@ -497,7 +543,7 @@ local function BuildRuns()
         end
     end
 
-    return runs;
+    return runs, skipped;
 end
 
 local function DrawRuns(device, runs)
@@ -621,14 +667,10 @@ function batch.Flush(device, suppressDraw)
     if (suppressDraw == true) then
         lastStatus = 'draw-suppressed';
         lastDrawCalls = 0;
-        return true, commands;
+        return true, {};
     end
 
-    local runs = BuildRuns();
-    if (runs == nil) then
-        lastStatus = 'layout-command-missing';
-        return false, commands;
-    end
+    local runs, skipped = BuildRuns();
 
     local saved, captureError = CaptureState(device);
     if (saved == nil) then
@@ -649,8 +691,18 @@ function batch.Flush(device, suppressDraw)
         return false, commands;
     end
 
-    lastStatus = 'active';
-    return true, commands;
+    if (#skipped > 0) then
+        lastStatus = 'active-partial:' .. tostring(#skipped) .. '/' .. tostring(#commands);
+    else
+        lastStatus = 'active';
+    end
+
+    -- true here means "the batch pass ran"; skipped (possibly empty) is
+    -- what the caller still needs to draw individually. This used to
+    -- return the full `commands` list on any per-texture failure, which
+    -- silently meant every plate re-drew unbatched for the whole frame
+    -- over a single bad texture.
+    return true, skipped;
 end
 
 function batch.GetStatus()

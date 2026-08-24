@@ -58,6 +58,23 @@ local function ShouldPlayLogoutSound()
     return resting.logoutSoundEnabled ~= false;
 end
 
+local function GetLogoutSoundVolume()
+    local global = state.GetGlobalSettings(globalDefaults);
+    local resting = global.resting or {};
+    -- BUGFIX: this previously always played at a hardcoded 100 (max
+    -- volume) regardless of any setting. logoutSoundVolume is a new
+    -- field -- add `resting = { logoutSoundVolume = <0-100> }` to
+    -- settings.lua to adjust it further; defaults to a much less jarring
+    -- level than before.
+    local volume = tonumber(resting.logoutSoundVolume);
+
+    if (volume == nil) then
+        return 40;
+    end
+
+    return math.max(0, math.min(100, volume));
+end
+
 local function GetLogoutCountdown(settings)
     settings = settings or {};
 
@@ -185,7 +202,7 @@ function restingTick.HandleTextIn(e)
         logoutState.duration = duration;
         logoutState.label = label;
         if (ShouldPlayLogoutSound() == true) then
-            alertSounds.Play('FFXIV_Log_Out.wav', 100);
+            alertSounds.Play('FFXIV_Log_Out.wav', GetLogoutSoundVolume());
         end
         return;
     end

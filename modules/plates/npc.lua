@@ -481,6 +481,23 @@ local function QueueNpcObject(entity)
 
     local settingsEntityName = resolvedEntityName;
     local clickTargetType = string.lower(resolvedEntityName);
+
+    do
+        local typeSettings = targeting.GetSettings() or {};
+        local isNpcKind = (clickTargetType == 'npc');
+        local thisTypeEnabled;
+
+        if (isNpcKind == true) then
+            thisTypeEnabled = typeSettings.npcPlatesTypeEnabled ~= false;
+        else
+            thisTypeEnabled = typeSettings.objectPlatesTypeEnabled ~= false;
+        end
+
+        if (thisTypeEnabled ~= true) then
+            perfMeter.EndDetail(resolveTimer);
+            return;
+        end
+    end
     local targetStateName = targeting.GetTargetStateName(entity.index);
     local isTacticalTarget = targetStateName ~= 'Idle';
     -- A normal town/service NPC keeps its World widgets while targeted.
@@ -652,6 +669,11 @@ local function QueueNpcObject(entity)
 
     local plateData = {
         name = (nameSettings.enabled == true and (targetStateName == 'Idle' or HasReadableDisplayName(renderedDisplayName) == true)) and ShortenName(renderedDisplayName, nameSettings.shortenName) or '',
+        -- Type-toggle fix: reaching this point already implies the
+        -- specific type (NPC or Object) is enabled via the per-entity
+        -- type gate earlier in this function -- so the name should draw
+        -- regardless of the separate global "Use native names" setting.
+        forceName = true,
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
         nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
@@ -884,6 +906,9 @@ local function QueueTacticalNpc(entity)
             anchorPoint = backgroundSettings.anchorPoint or backgroundDefaults.anchorPoint,
         },
         name = nameSettings.enabled == true and ShortenName(displayName, nameSettings.shortenName) or '',
+        -- Type-toggle fix: see the matching comment on the first
+        -- plateData construction above in this file.
+        forceName = true,
         nameFontFamily = fonts.GetRole(globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(globalSettings, false),
         nameFontSize = textScale.ToNameTextureFontSize(nameSettings.textSize, nameDefaults.textSize),
@@ -1125,6 +1150,18 @@ function npcPlate.Render()
         return;
     end
 
+    do
+        local typeSettings = targeting.GetSettings() or {};
+        if (typeSettings.npcPlatesTypeEnabled == false and typeSettings.objectPlatesTypeEnabled == false) then
+            -- Both disabled: skip everything, including the scan itself.
+            -- If only one is off, the scan still has to run (it finds
+            -- both NPCs and objects together) -- that case is gated
+            -- per-entity inside QueueNpcObject instead, once the
+            -- resolved type is actually known.
+            return;
+        end
+    end
+
     local configOpen = state.GetConfigOpen() == true;
 
     if (configOpen == true and wasConfigOpen ~= true) then
@@ -1300,11 +1337,25 @@ function npcPlate.Render()
         end
     end
 
+    -- Q=D fix: same reasoning as pc.lua's identical change -- every
+    -- scanned NPC/object previously got the full, expensive
+    -- QueueNpcObject() build regardless of maxVisiblePlates. entitiesList
+    -- is already distance-sorted by GetNearbyNpcObjects(), so this is
+    -- just a count check. Tactical NPCs (handled above, excluded from
+    -- this loop already) are unaffected.
+    local npcMaxVisiblePlatesSetting = tonumber((targeting.GetSettings() or {}).maxVisibleNpcPlates) or 0;
+    local npcUnrelatedQueuedThisFrame = 0;
+
     for _, entity in ipairs(entitiesList) do
         if (tacticalNpcIndexes[tonumber(entity.index) or 0] ~= true) then
-            QueueNpcObject(entity);
+            if (npcMaxVisiblePlatesSetting <= 0 or npcUnrelatedQueuedThisFrame < npcMaxVisiblePlatesSetting) then
+                QueueNpcObject(entity);
+                npcUnrelatedQueuedThisFrame = npcUnrelatedQueuedThisFrame + 1;
+            end
         end
     end
+
+    perfMeter.SetCounter('npcUnrelatedQueuedThisFrame', npcUnrelatedQueuedThisFrame);
 end
 
 return npcPlate;

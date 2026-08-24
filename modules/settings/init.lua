@@ -11438,6 +11438,26 @@ local function DrawGeneralPerformanceSection(settings)
                 DrawPerformanceRate('Tactical medium/sec', 'tacticalMediumRefreshRate', 'TacticalMediumRefreshRate', 'How often Tactical plate medium data refreshes, such as distance, range/opacity helpers, AOE name highlight, and mouse hit zones where supported.');
                 DrawPerformanceRate('Tactical static/sec', 'tacticalStaticRefreshRate', 'TacticalStaticRefreshRate', 'How often Tactical plate static identity refreshes, such as names, backgrounds, job/level, icons, and static cache rebuilds.');
 
+                DrawPerformanceCheckbox('Show PC plates', settings.pcPlatesTypeEnabled ~= false, function(value)
+                    settings.performancePreset = 'Custom';
+                    settings.pcPlatesTypeEnabled = value == true;
+                end, 'When off, LibraPlates ignores players entirely -- no plates are built, scanned, or drawn for them, and the game\'s native nameplate/HP display is left alone for players.', 'PcPlatesTypeEnabled');
+
+                DrawPerformanceCheckbox('Show NPC plates', settings.npcPlatesTypeEnabled ~= false, function(value)
+                    settings.performancePreset = 'Custom';
+                    settings.npcPlatesTypeEnabled = value == true;
+                end, 'When off, LibraPlates ignores ordinary NPCs entirely. Tactical/combat NPCs (allies, escorts) are unaffected by this toggle.', 'NpcPlatesTypeEnabled');
+
+                DrawPerformanceCheckbox('Show Object plates', settings.objectPlatesTypeEnabled ~= false, function(value)
+                    settings.performancePreset = 'Custom';
+                    settings.objectPlatesTypeEnabled = value == true;
+                end, 'When off, LibraPlates ignores objects (doors, gathering points, etc.) entirely.', 'ObjectPlatesTypeEnabled');
+
+                DrawPerformanceCheckbox('Show Enemy plates', settings.enemyPlatesTypeEnabled ~= false, function(value)
+                    settings.performancePreset = 'Custom';
+                    settings.enemyPlatesTypeEnabled = value == true;
+                end, 'When off, LibraPlates ignores enemies entirely -- no plates are built, scanned, or drawn for them, and the game\'s native nameplate/HP display is left alone for enemies.', 'EnemyPlatesTypeEnabled');
+
                 DrawPerformanceCheckbox('Hide distant world plates', settings.hideDistantWorldPlates == true, function(value)
                     settings.performancePreset = 'Custom';
                     settings.hideDistantWorldPlates = value == true;
@@ -11447,6 +11467,30 @@ local function DrawGeneralPerformanceSection(settings)
                 if (distanceLimitChanged == true) then
                     settings.performancePreset = 'Custom';
                     settings.worldPlateDistanceLimit = math.max(5.0, math.min(64.4, tonumber(distanceLimit) or 49.9));
+                end
+
+                local maxVisiblePcPlates, maxVisiblePcPlatesChanged = DrawPerformanceNumber('Max PC plates', settings.maxVisiblePcPlates or 0, 'MaxVisiblePcPlates', 0, 200, 1, 'Caps how many ordinary (non-party, non-targeted) player plates get built and drawn at all, before the overall cap below even applies. 0 = unlimited. Self, party members, and current target/subtarget are always kept regardless of this setting.');
+                if (maxVisiblePcPlatesChanged == true) then
+                    settings.performancePreset = 'Custom';
+                    settings.maxVisiblePcPlates = math.max(0, math.floor(tonumber(maxVisiblePcPlates) or 0));
+                end
+
+                local maxVisibleNpcPlates, maxVisibleNpcPlatesChanged = DrawPerformanceNumber('Max NPC/Object plates', settings.maxVisibleNpcPlates or 0, 'MaxVisibleNpcPlates', 0, 200, 1, 'Caps how many ordinary NPC/object plates get built and drawn at all, before the overall cap below even applies. 0 = unlimited. Tactical/targeted NPCs are always kept regardless of this setting.');
+                if (maxVisibleNpcPlatesChanged == true) then
+                    settings.performancePreset = 'Custom';
+                    settings.maxVisibleNpcPlates = math.max(0, math.floor(tonumber(maxVisibleNpcPlates) or 0));
+                end
+
+                local maxVisibleEnemyPlates, maxVisibleEnemyPlatesChanged = DrawPerformanceNumber('Max enemy plates', settings.maxVisibleEnemyPlates or 0, 'MaxVisibleEnemyPlates', 0, 200, 1, 'Caps how many background (non-target, non-engaged) enemy plates get built and drawn at all, before the overall cap below even applies. Applies regardless of combat state -- separate from the automatic combat-only background limit already tied to your performance mode. 0 = unlimited. Your current target/subtarget and any enemy actively engaged with you are always kept regardless of this setting.');
+                if (maxVisibleEnemyPlatesChanged == true) then
+                    settings.performancePreset = 'Custom';
+                    settings.maxVisibleEnemyPlates = math.max(0, math.floor(tonumber(maxVisibleEnemyPlates) or 0));
+                end
+
+                local maxVisiblePlates, maxVisiblePlatesChanged = DrawPerformanceNumber('Max plates overall', settings.maxVisiblePlates or 0, 'MaxVisiblePlates', 0, 200, 1, 'Final hard cap across ALL plate types combined (PC, NPC/Object, enemy, trust, pet) -- the true worst-case limit on how many plates are ever drawn at once, applied after the Max PC/NPC/Enemy caps above. 0 = unlimited. When over the limit, self, current target/subtarget, and active tactical markers are always kept; everything else is kept by distance (closest first). Set this lower than the per-type caps combined to guarantee the overall total never exceeds it -- e.g. 10 PC + 10 NPC/Object + 15 overall means you could see 10 PCs and 5 NPCs, or 10 NPCs and 5 PCs, but never more than 15 total. Takes effect immediately, no reload needed.');
+                if (maxVisiblePlatesChanged == true) then
+                    settings.performancePreset = 'Custom';
+                    settings.maxVisiblePlates = math.max(0, math.floor(tonumber(maxVisiblePlates) or 0));
                 end
 
             end);

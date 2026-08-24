@@ -804,6 +804,7 @@ local function QueueTrust(trust)
         mp = mpPercent,
         tp = tpPercent,
         targetMarker = targetMarker,
+		forceName = true,
         aoeNameActive = nameAoeActive == true,
         background = {
             enabled = backgroundSettings.enabled == true,

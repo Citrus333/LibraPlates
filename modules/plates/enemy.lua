@@ -2242,7 +2242,16 @@ local function BuildEnemyPlateData(context)
         },
         name = (context.nameSettings.enabled == true) and ShortenName(context.displayName, context.nameSettings.shortenName) or '',
         aoeNameActive = nameAoeActive == true,
-        forceName = nameAoeActive == true,
+        -- Type-toggle fix: previously only forced the name to draw during
+        -- active AOE naming, deferring to native names otherwise. Now
+        -- always true, matching the same fix applied to PC/NPC/Object --
+        -- reaching this point already implies enemy plates are enabled
+        -- via the type toggle, so the name should draw regardless of the
+        -- separate global "Use native names" setting. Note this is a
+        -- real behavior change from before: previously "use native
+        -- names" + enemy plates on meant "no LibraPlates enemy name
+        -- except during AOE"; now it means "always show it".
+        forceName = true,
         nameFontFamily = fonts.GetRole(context.globalSettings, false),
         nameFontFlags = fonts.GetRoleFlags(context.globalSettings, false),
         nameFontSize = textScale.ToNameTextureFontSize(nameTextSize, nameDefaults.textSize),
@@ -2800,6 +2809,10 @@ function enemyPlate.Render(importantOnly)
         return;
     end
 
+    if ((targeting.GetSettings() or {}).enemyPlatesTypeEnabled == false) then
+        return;
+    end
+
     local configOpen = state.GetConfigOpen() == true;
 
     if (configOpen == true and wasConfigOpen ~= true) then
@@ -2858,7 +2871,20 @@ function enemyPlate.Render(importantOnly)
 
     local playerEngaged = targeting.IsPlayerEngaged() == true;
     local combatLike = playerEngaged == true or trackedCount > 0;
-    local backgroundLimit = GetCombatBackgroundEnemyLimit(combatLike);
+    local combatBackgroundLimit = GetCombatBackgroundEnemyLimit(combatLike);
+    -- Q=D fix: the combat-only background limit above only ever applies
+    -- while engaged, which is exactly when this report showed it doing
+    -- nothing (enemyCombatLike=0). This setting works the same way
+    -- regardless of combat state, matching the equivalent fix already
+    -- applied to PC and NPC/Object plates.
+    local userMaxVisibleEnemyPlates = tonumber((targeting.GetSettings() or {}).maxVisibleEnemyPlates) or 0;
+    local backgroundLimit = combatBackgroundLimit;
+
+    if (userMaxVisibleEnemyPlates > 0) then
+        if (backgroundLimit == nil or userMaxVisibleEnemyPlates < backgroundLimit) then
+            backgroundLimit = userMaxVisibleEnemyPlates;
+        end
+    end
 
     perfMeter.SetCounter('enemyPlayerEngaged', playerEngaged == true and 1 or 0);
     perfMeter.SetCounter('enemyCombatLike', combatLike == true and 1 or 0);

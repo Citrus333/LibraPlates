@@ -571,6 +571,38 @@ local function GetTargetingSettings()
         global.targeting.worldPlateUpdateRate = 'Full';
     end
 
+    if (global.targeting.maxVisiblePlates == nil) then
+        global.targeting.maxVisiblePlates = 0;
+    end
+
+    if (global.targeting.maxVisiblePcPlates == nil) then
+        global.targeting.maxVisiblePcPlates = 0;
+    end
+
+    if (global.targeting.maxVisibleNpcPlates == nil) then
+        global.targeting.maxVisibleNpcPlates = 0;
+    end
+
+    if (global.targeting.maxVisibleEnemyPlates == nil) then
+        global.targeting.maxVisibleEnemyPlates = 0;
+    end
+
+    if (global.targeting.pcPlatesTypeEnabled == nil) then
+        global.targeting.pcPlatesTypeEnabled = true;
+    end
+
+    if (global.targeting.npcPlatesTypeEnabled == nil) then
+        global.targeting.npcPlatesTypeEnabled = true;
+    end
+
+    if (global.targeting.objectPlatesTypeEnabled == nil) then
+        global.targeting.objectPlatesTypeEnabled = true;
+    end
+
+    if (global.targeting.enemyPlatesTypeEnabled == nil) then
+        global.targeting.enemyPlatesTypeEnabled = true;
+    end
+
     if (global.targeting.pcWorldRefreshRate == nil) then
         global.targeting.pcWorldRefreshRate = 1.0;
     end

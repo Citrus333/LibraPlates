@@ -1,5 +1,6 @@
 # LibraPlates with optimization for 60fps - Fork of Libraplates by Lunem-LumenLee: https://github.com/Lunem-LumenLee/LibraPlates
 
+- (8-24 )Made some new improvements, added some new settings like Max Nameplates for each type NPC/PC/Enemy/Object, and the ability to completely hide certain Nameplates, this should help tuning on the fly if we're going to be doing something with a lot of other players.  Combined with the Nameplate plugin we can now choose to show Native Nameplates for PCs and use LibraPlates for everything else, or vice versa, I think this is as much optimization I get can out of it without creating some DLLs.
 - Most areas should stay a stable 60fps now
 - Cities and Towns with lots of Players/NPCs/Objects will still have some drops, about 45-50fps on my machine
 - I recommend using the performance or mid setting, and turning off any features you don't use

@@ -138,7 +138,7 @@ local compareAnchors = false;
 -- elsewhere in the addon. (Helper functions that call GetAnchor() live
 -- just below its own definition further down this file, since GetAnchor
 -- is a local function and isn't in scope up here yet.)
-worldMarkerProbe._idleNpcAnchor = { cache = {}, refreshSeconds = 0.5 };
+worldMarkerProbe._idleNpcAnchor = { cache = {}, refreshSeconds = 0.025 };
 -- EXPERIMENTAL: set to false to instantly revert plate drawing to the
 -- original unbatched path (one SetTexture+DrawPrimitive call per plate)
 -- if enabling batching causes any visual issues.
@@ -3375,152 +3375,106 @@ end
 -- isn't showing did nothing, even though the character itself is
 -- clearly visible on screen.
 --
--- This scans nearby entities directly (bypassing the plate system
--- entirely) and finds whichever one projects closest to the click
--- position on screen, within a fixed pixel radius -- deliberately
--- approximate, since without an existing plate there's no known
--- on-screen size/hitbox for the entity, just its anchor point. Only
+-- ATTEMPT 1 (removed): scanned nearby entities and matched whichever one
+-- projected closest to the click position on screen. This didn't work --
+-- confirmed by live testing showing errors of 500-1800+ pixels even for
+-- a click immediately next to the intended target. The coordinate
+-- conversion itself was correct (verified against this file's own
+-- pre-existing, proven usage of the same conversion), but the
+-- UNDERLYING POSITION DATA (GetObjectEntityAnchor, backed by
+-- GetLocalPositionX/Y/Z) isn't precise enough for pixel-level screen
+-- matching -- everywhere else in this file, it's only ever used for
+-- coarse plausibility checks (an 8-16 YALM tolerance, not a pixel
+-- tolerance) or as a last-resort fallback when the precise method
+-- (getBone/GetExactNameplateAnchor) fails. That precise method isn't
+-- reachable from a mouse-click handler at all -- it's only available
+-- during the normal per-frame render loop.
+--
+-- ATTEMPT 2 (current): sidesteps position math entirely. If you
+-- currently have a target selected -- via native click, tab-target, or
+-- however you normally target, all of which already work regardless of
+-- LibraPlates nameplate visibility -- open the Quick Menu for that
+-- target instead of trying to figure out what's under the cursor. Only
 -- called as a fallback when the normal click-rect lookup finds nothing,
 -- and only ever wired into right-click handling (see HandleMouse) --
 -- left-click targeting is untouched by this entirely.
-worldMarkerProbe._rightClickFallbackRadius = 45;
-
-worldMarkerProbe._FindNearbyEntityAt = function(x, y)
-    local mouseX = tonumber(x);
-    local mouseY = tonumber(y);
-
-    if (mouseX == nil or mouseY == nil) then
-        return nil;
-    end
-
-    local device = d3d8.get_device();
-
-    if (device == nil) then
-        return nil;
-    end
-
-    -- BUGFIX: previously used worldMarkerProbe._GetProjectionState(device),
-    -- which can call _RefreshProjectionCache -- directly querying the D3D
-    -- device's transform/viewport state. Confirmed by an actual runtime
-    -- error (a partially-populated view matrix, missing field _12) that
-    -- doing this from inside a mouse-event handler, rather than the
-    -- normal per-frame render loop, can return incomplete data. This now
-    -- only ever reads the existing cache as-is, never triggering a fresh
-    -- device query itself -- the camera barely moves between one render
-    -- frame and a click moments later, so slightly-stale cached data is
-    -- more than good enough for finding the closest nearby entity.
-    local cache = worldMarkerProbe._projectionCache;
-
-    if (
-        cache == nil or cache.device ~= device or
-        cache.view == nil or cache.projection == nil or cache.viewport == nil or
-        cache.viewport.Width == nil or cache.viewport.Height == nil
-    ) then
-        return nil;
-    end
-
-    local view, proj, viewport = cache.view, cache.projection, cache.viewport;
-
-    local entityManager = AshitaCore:GetMemoryManager():GetEntity();
-
+worldMarkerProbe._BuildEntryForCurrentTarget = function(entityManager)
     if (entityManager == nil) then
         return nil;
     end
 
-    local candidates = {};
+    local targetIndex = targeting.GetCurrentTargetIndex();
+    targetIndex = tonumber(targetIndex);
 
-    local okPc, players = pcall(function() return entities.GetNearbyPlayers(50); end);
-    if (okPc == true and type(players) == 'table') then
-        for _, player in ipairs(players) do
-            candidates[#candidates + 1] = {
-                targetIndex = player.index,
-                serverId = player.serverId,
-                name = player.name,
-                targetType = 'pc',
-            };
-        end
+    if (targetIndex == nil or targetIndex == 0) then
+        return nil;
     end
 
-    local okNpc, npcObjects = pcall(function() return entities.GetNearbyNpcObjects(50, nil); end);
-    if (okNpc == true and type(npcObjects) == 'table') then
-        for _, item in ipairs(npcObjects) do
-            candidates[#candidates + 1] = {
-                targetIndex = item.index,
-                name = item.name,
-                targetType = tostring(item.entityType or ''):lower() == 'object' and 'object' or 'npc',
-            };
-        end
+    local okName, name = pcall(function()
+        return entityManager:GetName(targetIndex);
+    end);
+    name = (okName == true and name ~= nil) and name or '';
+
+    -- Self: party slot 0 is always your own character.
+    local okSelf, selfIndex = pcall(function()
+        return AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0);
+    end);
+
+    if (okSelf == true and tonumber(selfIndex) == targetIndex) then
+        return { targetIndex = targetIndex, targetType = 'self', name = name };
     end
 
-    local okEnemy, enemies = pcall(function() return entities.GetNearbyEnemies(50); end);
-    if (okEnemy == true and type(enemies) == 'table') then
-        for _, enemy in ipairs(enemies) do
-            candidates[#candidates + 1] = {
-                targetIndex = enemy.index,
-                serverId = enemy.serverId,
-                name = enemy.name,
-                targetType = 'enemy',
-            };
-        end
+    -- Same classification rules used by the entity scan this replaces:
+    -- SpawnFlags bit 0x10 = enemy/mob; player-index-range (1024-1791)
+    -- with Type 0 or 2 = PC; Type 2 or 3 = object; otherwise NPC.
+    local inPlayerRange = targetIndex >= 1024 and targetIndex <= 1791;
+
+    local okFlags, spawnFlags = pcall(function()
+        return entityManager:GetSpawnFlags(targetIndex);
+    end);
+    local isMob =
+        okFlags == true and spawnFlags ~= nil and
+        bit.band(tonumber(spawnFlags) or 0, 0x10) ~= 0;
+
+    if (isMob == true) then
+        return { targetIndex = targetIndex, targetType = 'enemy', name = name };
     end
 
-    local okTrust, trusts = pcall(function() return entities.GetNearbyTrusts(50); end);
-    if (okTrust == true and type(trusts) == 'table') then
-        for _, trust in ipairs(trusts) do
-            candidates[#candidates + 1] = {
-                targetIndex = trust.index,
-                serverId = trust.serverId,
-                name = trust.name,
-                targetType = 'trust',
-            };
-        end
+    local okType, entType = pcall(function()
+        return entityManager:GetType(targetIndex);
+    end);
+    entType = (okType == true) and tonumber(entType) or nil;
+
+    if (inPlayerRange == true and (entType == 0 or entType == 2)) then
+        return { targetIndex = targetIndex, targetType = 'pc', name = name };
     end
 
-    local best = nil;
-    local bestDistSq = worldMarkerProbe._rightClickFallbackRadius * worldMarkerProbe._rightClickFallbackRadius;
-
-    for _, candidate in ipairs(candidates) do
-        local okAnchor, wx, wy, wz = pcall(function()
-            return GetObjectEntityAnchor(entityManager, tonumber(candidate.targetIndex));
+    -- Trust: occupies one of your own party slots (1-5; slot 0 is self,
+    -- already handled above) but isn't in the player index range --
+    -- real player party members would be.
+    if (inPlayerRange ~= true) then
+        local okParty, party = pcall(function()
+            return AshitaCore:GetMemoryManager():GetParty();
         end);
 
-        if (
-            okAnchor == true and
-            type(wx) == 'number' and type(wy) == 'number' and type(wz) == 'number'
-        ) then
-            -- +1.0 rough head-height offset, same convention used
-            -- elsewhere in this file for approximate anchor checks.
-            local okProject, screenX, screenY = pcall(function()
-                return ProjectWithZ(view, proj, viewport.Width, viewport.Height, wx, wz + 1.0, wy);
-            end);
+        if (okParty == true and party ~= nil) then
+            for slot = 1, 5 do
+                local okSlot, slotIndex = pcall(function()
+                    return party:GetMemberTargetIndex(slot);
+                end);
 
-            if (
-                okProject == true and
-                type(screenX) == 'number' and type(screenY) == 'number'
-            ) then
-                local dx = screenX - mouseX;
-                local dy = screenY - mouseY;
-                local distSq = (dx * dx) + (dy * dy);
-
-                if (distSq <= bestDistSq) then
-                    bestDistSq = distSq;
-                    best = candidate;
+                if (okSlot == true and tonumber(slotIndex) == targetIndex) then
+                    return { targetIndex = targetIndex, targetType = 'trust', name = name };
                 end
             end
         end
     end
 
-    if (best == nil) then
-        return nil;
+    if (entType == 2 or entType == 3) then
+        return { targetIndex = targetIndex, targetType = 'object', name = name };
     end
 
-    return {
-        targetIndex = best.targetIndex,
-        serverId = best.serverId,
-        targetType = best.targetType,
-        name = best.name,
-        rawName = best.name,
-    };
+    return { targetIndex = targetIndex, targetType = 'npc', name = name };
 end
 
 -- ==========================================================
@@ -5566,10 +5520,6 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         return;
     end
 
-    if (#queuedPlates == 0 and #queuedStaticPlates == 0) then
-        return;
-    end
-
     if (drawSuppressed == true) then
         if (pass == 2) then
             lastDrawCount = 0;
@@ -5588,7 +5538,17 @@ function worldMarkerProbe.DrawQueued(getEntityManager, getBone)
         return;
     end
 
+    -- BUGFIX: this refresh used to happen only after the "nothing
+    -- queued" early-exit below, so it never ran at all in a scene with
+    -- zero currently-visible plates -- exactly when the right-click
+    -- fallback (which reads this same cache) is most needed. Moved
+    -- earlier so it always runs whenever the addon is enabled, whether
+    -- or not there's currently anything to actually draw.
     worldMarkerProbe._RefreshProjectionCache(device);
+
+    if (#queuedPlates == 0 and #queuedStaticPlates == 0) then
+        return;
+    end
 
     if (pass == 1) then
         pendingSelfClickRect = nil;
@@ -6313,10 +6273,16 @@ function worldMarkerProbe.HandleMouse(e, selectTarget, selectEnemyTarget, attack
 
     -- Quick Menu without a visible plate: only for right-click (516/517),
     -- deliberately never touching left-click (513/514) targeting at all.
-    -- Falls back to scanning nearby entities directly when nothing was
-    -- found via the normal plate-based click-rect lookup above.
+    -- Falls back to your current target when nothing was found via the
+    -- normal plate-based click-rect lookup above.
     if (entry == nil and (message == 516 or message == 517)) then
-        entry = worldMarkerProbe._FindNearbyEntityAt(e.x, e.y);
+        local okFallbackEntity, fallbackEntityManager = pcall(function()
+            return AshitaCore:GetMemoryManager():GetEntity();
+        end);
+
+        if (okFallbackEntity == true and fallbackEntityManager ~= nil) then
+            entry = worldMarkerProbe._BuildEntryForCurrentTarget(fallbackEntityManager);
+        end
     end
 
     if (message == 516) then
